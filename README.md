@@ -4,7 +4,7 @@ RAGent 是一个基于检索增强生成 (RAG) 技术的企业知识库问答系
 
 ---
 
-## 🛠 技术选型
+## 技术选型
 
 - **用户层**:
   - 前端: Vue 单页面应用 (Vue 3 / SFC)
@@ -25,7 +25,7 @@ RAGent 是一个基于检索增强生成 (RAG) 技术的企业知识库问答系
 
 ---
 
-## 📁 项目目录结构
+## 项目目录结构
 
 当前已搭建好的项目骨架结构如下：
 
@@ -83,4 +83,26 @@ RAGent/
     ├── test_retrieval.py        # 检索及 RRF 融合测试
     └── test_agent.py            # Agent 与 LLM 链路测试
 ```
+
+---
+
+## 项目启动
+
+### 1. 启动 Docker 服务
+在项目根目录下执行下面的命令，启动 Milvus 及其依赖组件（etcd、MinIO）：
+
+```bash
+docker-compose up -d
+```
+
+### 2. 安装 Python 依赖
+建议先创建并激活 Python 虚拟环境，然后安装后端依赖：
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+
 
