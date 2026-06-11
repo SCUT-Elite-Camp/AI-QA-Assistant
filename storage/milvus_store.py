@@ -17,10 +17,11 @@ class MilvusStore:
         if utility.has_collection(collection_name):
             self.collection = Collection(collection_name)
         else:
-            # 字段定义：id(自增), embedding(向量), chunk_text(原始文本), doc_id(文档ID), chunk_index(分块序号), source_url(链接)
+            # 字段定义：id(自增), embedding(向量), chunk_id(全局分块ID), chunk_text(原始文本), doc_id(文档ID), chunk_index(分块序号), source_url(链接)
             fields = [
                 FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
                 FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=dim),
+                FieldSchema(name="chunk_id", dtype=DataType.VARCHAR, max_length=256),
                 FieldSchema(name="chunk_text", dtype=DataType.VARCHAR, max_length=65535),
                 FieldSchema(name="doc_id", dtype=DataType.VARCHAR, max_length=128),
                 FieldSchema(name="chunk_index", dtype=DataType.INT32),
@@ -41,7 +42,7 @@ class MilvusStore:
         self.collection.load()
         return self.collection
 
-    def insert_chunks(self, embeddings: list, chunk_texts: list, doc_ids: list, chunk_indices: list, source_urls: list = None, collection_name: str = "doc_chunks"):
+    def insert_chunks(self, embeddings: list, chunk_ids: list, chunk_texts: list, doc_ids: list, chunk_indices: list, source_urls: list = None, collection_name: str = "doc_chunks"):
      
         if not embeddings:
             return None
@@ -52,9 +53,10 @@ class MilvusStore:
             
         if source_urls is None:
             source_urls = [""] * len(embeddings)
-            
+
         data = [
             embeddings,      # float 向量列表
+            chunk_ids,       # 全局分块ID 列表
             chunk_texts,     # 文本列表
             doc_ids,         # 文档 ID 列表
             chunk_indices,   # 分块序号列表
@@ -81,7 +83,7 @@ class MilvusStore:
             param={"metric_type": "IP", "params": {"nprobe": 10}},
             limit=top_k,
             expr=expr,
-            output_fields=["chunk_text", "doc_id", "chunk_index", "source_url"]
+            output_fields=["chunk_id", "chunk_text", "doc_id", "chunk_index", "source_url"]
         )
         return results[0] if results else []
 
