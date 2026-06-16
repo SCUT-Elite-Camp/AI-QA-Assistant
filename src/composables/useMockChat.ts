@@ -18,78 +18,69 @@ interface MockChatOptions {
   isOwner?: boolean
 }
 
+/**
+ * Mock chat that mirrors the Chat class API from @ai-sdk/vue.
+ * Uses getter/setter properties like the Chat class so Vue templates
+ * properly track reactivity and receive unwrapped values.
+ */
 export function useMockChat(options: MockChatOptions = {}) {
-  const messages = shallowRef<UIMessage[]>(options.messages || [])
-  const status = ref<'ready' | 'submitted' | 'streaming' | 'error'>('ready')
-  const error = ref<Error | undefined>(undefined)
+  // Internal refs – NOT exposed directly
+  const _messages = shallowRef<UIMessage[]>(options.messages || [])
+  const _status = ref<'ready' | 'submitted' | 'streaming' | 'error'>('ready')
+  const _error = ref<Error | undefined>(undefined)
 
-  console.log('[useMockChat] INIT:', {
-    id: options.id,
-    msgCount: options.messages?.length,
-    msgRoles: options.messages?.map(m => m.role),
-    initialPartsLen: options.messages?.map(m => m.parts?.length),
-  })
+  // Core streaming helper: appends assistant message & streams response
+  async function generateResponse(query: string) {
+    _error.value = undefined
+    _status.value = 'submitted'
 
-  async function sendMessage(params: { text: string; messageId?: string }) {
-    console.log('[useMockChat] sendMessage called:', { text: params.text, status: status.value })
-    if (status.value === 'streaming') return
-
-    status.value = 'submitted'
-    error.value = undefined
-
-    const userMsg = createMockUserMessage(params.text)
     const assistantMsg = createMockAssistantMessage()
-    messages.value = [...messages.value, userMsg, assistantMsg]
-    console.log('[useMockChat] added messages, count:', messages.value.length, 'userParts:', userMsg.parts?.length, 'asstParts:', assistantMsg.parts?.length)
-
-    status.value = 'streaming'
+    _messages.value = [..._messages.value, assistantMsg]
+    _status.value = 'streaming'
 
     await mockSendChatMessageStream(
-      { query: params.text },
+      { query },
       // onDelta
       (chunk: string) => {
-        const msgs = messages.value
+        const msgs = _messages.value
         const lastIdx = msgs.length - 1
         if (lastIdx >= 0 && msgs[lastIdx]!.role === 'assistant') {
           const current = msgs[lastIdx]!
           const currentText = getTextFromParts(current.parts || [])
           const newText = currentText + chunk
-          messages.value = [
+          _messages.value = [
             ...msgs.slice(0, lastIdx),
             {
               ...current,
               parts: [{ type: 'text' as const, text: newText }],
             },
           ]
-          if (messages.value.length <= 3) console.log('[useMockChat] onDelta updated msg, partsLen:', messages.value[lastIdx]?.parts?.length)
         }
       },
       // onDone
       (finalMsg: UIMessage) => {
-        console.log('[useMockChat] onDone called')
-        const msgs = messages.value
+        const msgs = _messages.value
         const lastIdx = msgs.length - 1
         if (lastIdx >= 0 && msgs[lastIdx]!.role === 'assistant') {
           const accumulatedText = getTextFromParts(msgs[lastIdx]!.parts || [])
           const finalText = accumulatedText || getTextFromParts(finalMsg.parts || [])
-          messages.value = [
+          _messages.value = [
             ...msgs.slice(0, lastIdx),
             {
               ...finalMsg,
               parts: [{ type: 'text' as const, text: finalText }],
             },
           ]
-          console.log('[useMockChat] onDone final msg parts len:', messages.value[lastIdx]?.parts?.length, 'text preview:', finalText.substring(0, 50))
         }
-        status.value = 'ready'
+        _status.value = 'ready'
       },
       // onError
       (err: Error & { status?: string }) => {
-        const msgs = messages.value
+        const msgs = _messages.value
         const lastIdx = msgs.length - 1
         const errorText = getErrorMessage(err.status, err.message)
         if (lastIdx >= 0 && msgs[lastIdx]!.role === 'assistant') {
-          messages.value = [
+          _messages.value = [
             ...msgs.slice(0, lastIdx),
             {
               ...msgs[lastIdx]!,
@@ -97,15 +88,24 @@ export function useMockChat(options: MockChatOptions = {}) {
             },
           ]
         }
-        status.value = 'error'
-        error.value = err
+        _status.value = 'error'
+        _error.value = err
       },
     )
   }
 
+  async function sendMessage(params: { text: string; messageId?: string }) {
+    if (_status.value === 'streaming') return
+
+    const userMsg = createMockUserMessage(params.text)
+    _messages.value = [..._messages.value, userMsg]
+
+    await generateResponse(params.text)
+  }
+
   async function regenerate(options?: { messageId?: string }) {
-    error.value = undefined
-    const msgs = messages.value
+    _error.value = undefined
+    const msgs = _messages.value
     const targetId = options?.messageId
 
     let targetIndex = -1
@@ -126,22 +126,29 @@ export function useMockChat(options: MockChatOptions = {}) {
     if (targetIndex === -1) return
 
     const text = getTextFromParts(msgs[targetIndex]!.parts || [])
-    messages.value = msgs.slice(0, targetIndex)
+    // Keep the user message, strip only assistant responses after it
+    _messages.value = msgs.slice(0, targetIndex + 1)
 
     if (text) {
-      sendMessage({ text })
+      await generateResponse(text)
     }
   }
 
   function stop() {
-    status.value = 'ready'
-    error.value = undefined
+    _status.value = 'ready'
+    _error.value = undefined
   }
 
+  // Return object with getter/setter properties (matches Chat class API)
+  // This is critical: Vue templates need getters that return raw values,
+  // not Ref objects. The Chat class from @ai-sdk/vue does exactly this.
   return {
-    messages,
-    status,
-    error,
+    get messages(): UIMessage[] { return _messages.value },
+    set messages(v: UIMessage[]) { _messages.value = v },
+    get status() { return _status.value },
+    set status(v: 'ready' | 'submitted' | 'streaming' | 'error') { _status.value = v },
+    get error() { return _error.value },
+    set error(v: Error | undefined) { _error.value = v },
     sendMessage,
     regenerate,
     stop,

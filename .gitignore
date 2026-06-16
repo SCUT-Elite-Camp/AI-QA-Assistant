@@ -43,3 +43,6 @@ tsconfig.node.tsbuildinfo
 
 # Vite cache
 .vite/
+
+# Playwright
+.playwright-cli/

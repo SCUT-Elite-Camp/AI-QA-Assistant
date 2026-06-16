@@ -26,7 +26,8 @@ const greeting = computed(() => {
 })
 
 async function createChat(prompt: string) {
-  input.value = prompt
+  if (loading.value || !prompt.trim()) return
+  input.value = ''
   loading.value = true
   try {
     const chat = await $fetch('/api/chats', {
@@ -47,7 +48,9 @@ async function createChat(prompt: string) {
 }
 
 function onSubmit() {
-  createChat(input.value)
+  const text = input.value
+  input.value = ''
+  createChat(text)
 }
 
 const quickChats = [
