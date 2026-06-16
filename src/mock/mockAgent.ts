@@ -54,30 +54,25 @@ export function createMockUserMessage(text: string): UIMessage {
   return {
     id: createMessageId(),
     role: 'user',
-    content: text,
     parts: [{ type: 'text' as const, text }],
-  } as UIMessage
+  } as unknown as UIMessage
 }
 
 export function createMockAssistantMessage(): UIMessage {
   return {
     id: createMessageId(),
     role: 'assistant',
-    content: '',
     parts: [],
-  } as UIMessage
+  } as unknown as UIMessage
 }
 
 export function createNormalResponse(query: string): UIMessage {
   const isNoLink = query.includes('无链接')
   const sourceUrl = isNoLink ? '' : 'https://example.com/doc'
 
-  const citationText = `\n\n**引用来源**: ${isNoLink ? '无外部链接' : '[Q1 Web Layer MVP 说明](' + sourceUrl + ')'}`
-
   return {
     id: createMessageId(),
     role: 'assistant',
-    content: NORMAL_ANSWER + citationText,
     parts: [
       { type: 'text' as const, text: NORMAL_ANSWER },
       {
@@ -103,9 +98,8 @@ export function createBusinessErrorResponse(status: string): UIMessage {
   return {
     id: createMessageId(),
     role: 'assistant',
-    content: getErrorMessage(status),
     parts: [{ type: 'text' as const, text: getErrorMessage(status) }],
-  } as UIMessage
+  } as unknown as UIMessage
 }
 
 // Non-streaming mock: returns UIMessage
