@@ -1,89 +1,120 @@
-# AI 智能问答助手 Web Layer MVP Demo
+# AI 智能问答助手
 
-这是一个 Vue Web Layer Mock Demo，基于 Vue 3 构建，用于在 Agent Layer 接口稳定前演示基础问答链路。
+基于 **Vue 3 + TypeScript + Nuxt UI + AI SDK + Nitro** 的全栈智能问答应用。
 
-用户可以输入自然语言问题，前端通过统一的 Agent API 层发起请求。默认情况下，Mock Agent 会返回回答、`trace_id` 和引用来源，并支持常见错误场景与流式输出模拟。
+[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+[![Nitro](https://img.shields.io/badge/Built%20with-Nitro-ff637e?logo=nitro&labelColor=18181B)](https://nitro.build)
 
 ## 功能
 
-- 自然语言问题输入
-- Enter 发送，Shift + Enter 换行
-- 用户消息与助手消息展示
-- loading / generating 状态
-- `trace_id` 展示
-- citations 引用来源展示
-- 正常回答、业务错误和本地错误模拟
-- 流式回答模拟
-- 复制助手回答
-- 清空当前对话
+- ⚡️ **AI 流式对话** — 基于 [AI SDK](https://ai-sdk.dev) 的流式问答，支持 thinking/reasoning
+- 🤖 **多模型支持** — Claude Haiku 4.5 / Gemini 3 Flash / GPT-5 Nano（通过 Vercel AI Gateway）
+- 🔍 **Web 搜索** — 内置搜索工具（Anthropic、OpenAI）
+- 📊 **图表和天气** — Tool Calling 富 UI 渲染
+- 🔐 **GitHub OAuth 认证** — Nitro httpOnly Cookie 会话
+- 💾 **对话历史持久化** — SQLite / Turso + Drizzle ORM
+- ✨ **Markdown 渲染** — 流式代码高亮 (Comark + Shiki)
+- 🎨 **明暗主题** — 17 种主色可切换
+- ⌨️ **键盘快捷键** — meta+o 新建对话, meta+k 搜索
+- 📂 **可折叠侧边栏** — 对话历史按时间分组
+- 📤 **对话分享** — public/private + 复制链接
+- 👍 **消息反馈** — 赞/踩 + 编辑 + 重新生成
+- 🧪 **Mock 模式** — 无 API Key 时自动使用本地 Mock
 
 ## 技术栈
 
-- Vue 3
-- Vite
-- JavaScript
-- Mock Agent
+| 层 | 技术 |
+|---|---|
+| 前端框架 | Vue 3.5 + TypeScript 6.0 |
+| 构建工具 | Vite 7.3 |
+| UI 组件库 | Nuxt UI 4.8 (125+ Tailwind 组件) |
+| AI 集成 | @ai-sdk/vue + Vercel AI Gateway |
+| 后端 | Nitro 3.0 (内嵌 Vite) |
+| 数据库 | SQLite/Turso + Drizzle ORM |
+| 认证 | GitHub OAuth + httpOnly Session |
+| 验证 | Zod |
+| Markdown | Comark + Shiki |
 
 ## 项目结构
 
 ```text
-src/
-├─ api/
-│  ├─ agentApi.js          # 统一 Agent API，集中切换 Mock / Real
-│  └─ mockAgent.js         # Mock Agent 与流式模拟
-├─ components/
-│  ├─ ChatInput.vue        # 问题输入与发送
-│  ├─ ChatWindow.vue       # 消息列表容器
-│  ├─ ChatMessage.vue      # 用户/助手消息展示
-│  └─ CitationList.vue     # 引用来源展示
-├─ composables/
-│  └─ useChat.js           # 聊天状态与发送流程
-├─ utils/
-│  └─ errorMap.js          # 状态与中文错误文案映射
-├─ App.vue
-├─ main.js
-└─ style.css
+htc-web/
+├── src/
+│   ├── pages/
+│   │   ├── index.vue              # 首页：问候语 + 快捷问题
+│   │   └── chat/[id].vue          # 聊天页：AI 对话核心
+│   ├── components/
+│   │   ├── chat/
+│   │   │   ├── ChatTitle.vue      # 对话标题/重命名
+│   │   │   ├── ChatVisibility.vue # 分享设置
+│   │   │   ├── Indicator.vue      # 动画加载指示器
+│   │   │   ├── Comark.ts          # Markdown 渲染器
+│   │   │   ├── message/
+│   │   │   │   ├── MessageContent.vue  # 消息内容（reasoning/text/tool）
+│   │   │   │   ├── MessageActions.vue  # 复制/赞/踩/重新生成/编辑
+│   │   │   │   └── MessageEdit.vue     # 内联编辑
+│   │   │   └── tool/
+│   │   │       ├── Chart.vue      # 图表渲染
+│   │   │       ├── Weather.vue    # 天气卡片
+│   │   │       └── Sources.vue    # 搜索来源
+│   │   ├── Navbar.vue
+│   │   ├── UserMenu.vue           # 用户菜单（主题/外观/登出）
+│   │   ├── ModelSelect.vue        # 模型选择器
+│   │   └── Modal*.vue             # 弹窗组件
+│   ├── composables/
+│   │   ├── useMockChat.ts         # Mock 桥接层
+│   │   ├── useChats.ts            # 对话列表管理
+│   │   ├── useChatActions.ts      # 重命名/删除
+│   │   ├── useUserSession.ts      # 用户会话
+│   │   └── ...
+│   ├── mock/                      # Mock 降级系统
+│   │   ├── mockAgent.ts           # Mock Agent 逻辑
+│   │   └── errorMap.ts            # 中文错误映射
+│   └── utils/                     # 工具函数
+├── server/                        # Nitro 后端
+│   ├── database/schema.ts         # Drizzle Schema
+│   ├── routes/api/                # RESTful API
+│   └── utils/tools/               # AI 工具定义
+└── shared/utils/models.ts         # 模型列表
 ```
 
 ## 启动方式
 
-在 PowerShell 中进入项目目录：
+```bash
+# 安装依赖
+pnpm install
 
-```powershell
-Set-Location "D:\project\HTC web"
-npm install
-npm run dev
-```
+# 启动开发服务器
+pnpm dev
+# → http://localhost:3000/
 
-浏览器打开：
-
-<http://127.0.0.1:5173/>
-
-生产构建：
-
-```powershell
-npm run build
+# 生产构建
+pnpm build
+pnpm preview
 ```
 
 ## 环境变量
 
-复制 `.env.example` 为本地 `.env` 后可调整配置：
+复制 `.env.example` 为 `.env`：
 
-```dotenv
-VITE_USE_MOCK=true
-VITE_AGENT_BASE_URL=http://localhost:8000
-VITE_AGENT_CHAT_PATH=/api/chat
-```
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `VITE_USE_MOCK` | 是否使用 Mock 模式 | `true` |
+| `AI_GATEWAY_API_KEY` | Vercel AI Gateway API Key | - |
+| `GITHUB_OAUTH_CLIENT_ID` | GitHub OAuth App ID | - |
+| `GITHUB_OAUTH_CLIENT_SECRET` | GitHub OAuth App Secret | - |
+| `SESSION_SECRET` | 会话加密密钥 | 必填 |
+| `TURSO_DATABASE_URL` | Turso 数据库地址 | 本地 SQLite |
+| `TURSO_AUTH_TOKEN` | Turso 认证 Token | - |
 
-- `VITE_USE_MOCK`：默认使用 Mock；只有明确设置为 `false` 时才请求真实 Agent。
-- `VITE_AGENT_BASE_URL`：真实 Agent 服务地址。
-- `VITE_AGENT_CHAT_PATH`：真实 Agent 问答接口路径。
+- `VITE_USE_MOCK=true`：默认使用 Mock；设置为 `false` 时才请求真实 Agent
+- Mock 模式下无需配置 `AI_GATEWAY_API_KEY`
 
-## Mock 测试问题
+## Mock 测试场景
 
 | 输入 | 预期场景 |
-| --- | --- |
-| `你好` | 正常回答、trace_id、引用来源 |
+|---|---|
+| `你好` | 正常回答 + 引用来源 |
 | `无相关` | 无相关上下文 |
 | `检索异常` | 检索服务异常 |
 | `模型异常` | 模型服务异常 |
@@ -93,36 +124,29 @@ VITE_AGENT_CHAT_PATH=/api/chat
 | `流式异常` | 流式生成中断 |
 | `无链接` | citation 无外部链接 |
 
+## 接入真实 AI
+
+1. 在 `.env` 中设置 `VITE_USE_MOCK=false`
+2. 配置 `AI_GATEWAY_API_KEY`
+3. 刷新页面即可切换到真实 AI 对话模式
+
 ## 手工演示检查
 
-- [ ] 正常问题能展示用户消息和助手回答
-- [ ] 助手消息展示 `trace_id`
-- [ ] 正常 citation 展示标题、链接、文档和片段信息
-- [ ] 无链接 citation 不生成空链接
-- [ ] 空输入或纯空格不发送，并提示“请输入有效问题”
-- [ ] Enter 发送问题
-- [ ] Shift + Enter 输入换行
-- [ ] 请求期间展示 loading 状态并防止重复提交
-- [ ] 错误发生后页面不白屏，输入框恢复可用
-- [ ] 流式回答逐步展示，结束后 loading 消失
-- [ ] 复制按钮可复制助手回答
-- [ ] 清空对话后恢复空状态
-
-## 接入真实 Agent
-
-UI 组件不会直接调用 `fetch`，也不需要知道当前使用的是 Mock 还是真实服务。Mock / Real 切换、请求参数标准化和真实 HTTP 请求统一由 `src/api/agentApi.js` 管理。
-
-Agent 接口可用后：
-
-1. 在本地 `.env` 中设置 `VITE_USE_MOCK=false`。
-2. 配置 `VITE_AGENT_BASE_URL` 和 `VITE_AGENT_CHAT_PATH`。
-3. 如果最终接口契约发生变化，只在 `agentApi.js` 中调整请求或响应适配。
-
-真实 SSE 数据格式尚未确定。目前真实流式请求会回退到普通完整响应，Mock 模式仍支持流式增量展示。
+- [ ] 首页展示中文问候语和快捷问题标签
+- [ ] 输入问题后创建对话并跳转
+- [ ] 流式回答逐步展示
+- [ ] 消息操作：复制 / 赞 / 踩 / 重新生成 / 编辑
+- [ ] 侧边栏对话历史按时间分组（今天/昨天/上周/上个月）
+- [ ] 重命名 / 删除对话
+- [ ] 对话分享（公开/私有 + 复制链接）
+- [ ] 模型切换（Claude / Gemini / GPT）
+- [ ] 暗色/亮色主题切换
+- [ ] 主色/中性色自定义
+- [ ] 快捷键 meta+o 新建对话, meta+k 搜索
+- [ ] Mock 错误场景正常展示（不白屏）
 
 ## 当前限制
 
-- 当前默认使用 Mock 数据。
-- 对话历史不会持久化，刷新页面后会清空。
-- Web Layer 不包含真实 RAG、LLM、PDF 解析、embedding 或 Milvus 集成。
-- 真实流式协议仍需等待 Agent Layer 接口契约确认。
+- 真实流式对话需要配置 AI Gateway API Key
+- 对话历史默认使用本地 SQLite，部署时建议使用 Turso
+- Web Layer 不包含真实 RAG、LLM、PDF 解析、embedding 或 Milvus 集成

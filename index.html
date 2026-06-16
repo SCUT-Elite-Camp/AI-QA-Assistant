@@ -1,12 +1,34 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI 智能问答助手 Web Layer MVP Demo</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fafafa" />
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700" rel="stylesheet" />
+  <title>AI 智能问答助手</title>
+  <meta name="description" content="基于 Vue 3 和 AI SDK 构建的智能问答助手，支持流式对话、工具调用和对话管理。">
+  <meta property="og:title" content="AI 智能问答助手">
+  <meta property="og:description" content="基于 Vue 3 和 AI SDK 构建的智能问答助手，支持流式对话、工具调用和对话管理。">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>html { background-color: #fafafa } html.dark { background-color: #09090b }</style>
+  <script>
+    (function () {
+      var mode = localStorage.getItem('vueuse-color-scheme') || 'auto'
+      var dark = mode === 'dark' || (mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      if (dark) {
+        document.documentElement.classList.add('dark')
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#09090b')
+      }
+    })()
+  </script>
+</head>
+
+<body>
+  <div id="app" class="isolate"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
