@@ -28,14 +28,22 @@ const greeting = computed(() => {
 async function createChat(prompt: string) {
   input.value = prompt
   loading.value = true
-  const chat = await $fetch('/api/chats', {
-    method: 'POST',
-    headers: { [headerName]: csrf() },
-    body: { input: prompt }
-  })
-
-  await fetchChats()
-  router.push(`/chat/${chat?.id}`)
+  try {
+    const chat = await $fetch('/api/chats', {
+      method: 'POST',
+      headers: { [headerName]: csrf() },
+      body: { input: prompt }
+    })
+    await fetchChats()
+    if (chat?.id) {
+      router.push(`/chat/${chat.id}`)
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '创建对话失败'
+    console.error('createChat error:', msg)
+  } finally {
+    loading.value = false
+  }
 }
 
 function onSubmit() {

@@ -91,7 +91,8 @@ export function useMockChat(options: MockChatOptions = {}) {
     )
   }
 
-  function regenerate(options?: { messageId?: string }) {
+  async function regenerate(options?: { messageId?: string }) {
+    error.value = undefined
     const msgs = messages.value
     const targetId = options?.messageId
 
@@ -122,6 +123,7 @@ export function useMockChat(options: MockChatOptions = {}) {
 
   function stop() {
     status.value = 'ready'
+    error.value = undefined
   }
 
   return {
