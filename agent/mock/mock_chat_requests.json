@@ -1,0 +1,33 @@
+[
+  {
+    "name": "正常问题",
+    "request": {
+      "query": "项目 Q1 阶段需要完成哪些功能？",
+      "session_id": "demo-session-001",
+      "top_k": 5,
+      "filters": null,
+      "stream": false
+    }
+  },
+  {
+    "name": "空问题",
+    "request": {
+      "query": "   ",
+      "session_id": "demo-session-002",
+      "top_k": 5,
+      "filters": null,
+      "stream": false
+    }
+  },
+  {
+    "name": "知识库外问题",
+    "request": {
+      "query": "真实 HSBC 客户权限数据如何查询？",
+      "session_id": "demo-session-003",
+      "top_k": 5,
+      "filters": null,
+      "stream": false
+    }
+  }
+]
+
