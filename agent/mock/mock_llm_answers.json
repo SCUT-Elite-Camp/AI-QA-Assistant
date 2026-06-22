@@ -1,0 +1,7 @@
+[
+  {
+    "query": "项目 Q1 阶段需要完成哪些功能？",
+    "answer": "Q1 阶段需要完成简化版单轮 RAG Agent，包括 /api/chat、Mock Retrieval、Prompt Builder、Mock LLM 和 Answer Formatter 等最小闭环能力。[1]"
+  }
+]
+
