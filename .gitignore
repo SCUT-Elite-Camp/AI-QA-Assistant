@@ -30,6 +30,9 @@ yarn-error.log*
 .eslintcache
 .cache/
 
+# Docker volumes
+volumes/
+
 # OS
 .DS_Store
 Thumbs.db
