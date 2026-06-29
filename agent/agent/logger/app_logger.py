@@ -15,7 +15,24 @@ logging.basicConfig(
 logger = logging.getLogger("agent-layer")
 
 
-def log_chat_result(trace_id: str, query: str, retrieval_count: int, status: str) -> None:
+def log_chat_result(
+    trace_id: str,
+    query: str,
+    retrieval_count: int,
+    status: str,
+    stage: str = "completed",
+    retrieval_mode: str = "",
+    top_k: int | None = None,
+    error: str = "",
+) -> None:
     logger.info(
-        f"trace_id={trace_id} query={query} retrieval_count={retrieval_count} status={status}"
+        "trace_id=%s stage=%s query=%s retrieval_mode=%s top_k=%s retrieval_count=%s status=%s error=%s",
+        trace_id,
+        stage,
+        query,
+        retrieval_mode,
+        top_k,
+        retrieval_count,
+        status,
+        error,
     )

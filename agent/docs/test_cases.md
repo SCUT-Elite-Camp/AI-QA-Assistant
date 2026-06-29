@@ -19,6 +19,13 @@
 - 不调用 LLM。
 - 期望 `status = no_relevant_context`。
 
+## 低相关文档
+
+- Retrieval 返回低于 `MIN_RETRIEVAL_SCORE` 的文档块。
+- Agent 过滤低相关结果。
+- 不调用 LLM。
+- 期望 `status = no_relevant_context`。
+
 ## 检索异常
 
 - Mock Retrieval 抛异常。
@@ -29,10 +36,17 @@
 - Mock LLM 抛异常。
 - 期望 `status = llm_error`。
 
+## LLM 空输出
+
+- LLM 返回空字符串或纯空格。
+- 期望 `status = llm_error`。
+
 ## citations 生成
 
 - 输入 RetrievalResult 列表。
 - 期望 Citation 从 1 编号，并包含 `doc_id`、`chunk_id`、`title`、`source_url`、`score`、`snippet`。
+- answer 缺少引用编号时，成功响应补齐 `[1]`。
+- answer 包含不存在的引用编号时，移除无效编号并补齐有效编号。
 
 ## 真实 Tool Layer 冒烟
 
@@ -44,4 +58,4 @@
 ## trace_id 追踪
 
 - 每次请求生成 `trace-xxxxxxxx` 格式 ID。
-- 日志记录 `trace_id`、`query`、`retrieval_count`、`status`。
+- 日志记录 `trace_id`、阶段、`query`、`retrieval_mode`、`top_k`、`retrieval_count`、`status` 和错误类型。

@@ -2,7 +2,7 @@
 
 ## POST /api/chat
 
-Current stage: Week 2 single-turn RAG chain with configurable Mock / Tool Layer retrieval and configurable Mock / real LLM client.
+Current stage: Week 3 single-turn RAG chain with configurable Mock / Tool Layer retrieval, configurable Mock / real LLM client, quality gates, hallucination suppression, and citation consistency checks.
 
 The endpoint runs the minimal Agent Core flow:
 
@@ -85,6 +85,25 @@ Fields:
 - `no_relevant_context`
 - `retrieval_error`
 - `llm_error`
+
+## Week 3 Quality Rules
+
+- Empty or whitespace-only `query` returns `invalid_query` before retrieval or LLM calls.
+- Empty retrieval results return `no_relevant_context` before LLM calls.
+- Retrieval results below `MIN_RETRIEVAL_SCORE` are filtered out; if none remain, Agent returns `no_relevant_context`.
+- Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
+- LLM exceptions or empty LLM output return `llm_error` with an empty answer and empty citations.
+- Success responses normalize answer references so bracketed citation IDs only point to existing citations.
+
+## Prompt Trust Rules
+
+The prompt requires the LLM to:
+
+- answer only from retrieved context;
+- avoid using outside knowledge;
+- avoid inventing facts, numbers, workflows, owners, or dates;
+- attach citation IDs to key claims;
+- state that current materials are insufficient when context cannot support an answer.
 
 ## Tool Layer Integration
 

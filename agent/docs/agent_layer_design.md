@@ -30,3 +30,13 @@ Q1 版本采用单轮 RAG Agent：
 - Tool Layer 返回的 `dict` 会统一转换为 `RetrievalResult`。
 - `ContextAssembler` 将标题、`doc_id`、`chunk_id` 和 `chunk_text` 写入 Prompt 上下文。
 - `AnswerFormatter` 使用检索结果生成 citations。
+
+## 第三周质量控制
+
+- `ChatService` 在检索后执行相关度质量门禁，过滤低于 `MIN_RETRIEVAL_SCORE` 的结果。
+- 检索为空或低相关时直接返回 `no_relevant_context`，不调用 LLM。
+- 检索异常统一映射为 `retrieval_error`。
+- LLM 异常或空输出统一映射为 `llm_error`。
+- Prompt 模板明确要求只基于检索上下文回答，不使用外部常识补全。
+- `AnswerFormatter` 会移除无效引用编号，并在缺少引用时补齐可用的 `[1]`。
+- 日志记录 `trace_id`、阶段、检索模式、`top_k`、检索数量、状态和错误类型。

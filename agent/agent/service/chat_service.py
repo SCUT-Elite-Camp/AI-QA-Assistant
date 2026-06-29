@@ -31,6 +31,7 @@ class ChatService:
     def chat(self, request: ChatRequest) -> ChatResponse:
         trace_id = generate_trace_id()
         query = request.query.strip()
+        retrieval_mode = request.retrieval_mode
 
         if not query:
             response = ChatResponse(
@@ -40,7 +41,7 @@ class ChatService:
                 message="请输入有效问题。",
                 citations=[],
             )
-            log_chat_result(trace_id, request.query, 0, response.status)
+            log_chat_result(trace_id, request.query, 0, response.status, stage="validation")
             return response
 
         # Q1 keeps stream as an interface placeholder; /api/chat always returns JSON.
@@ -51,11 +52,12 @@ class ChatService:
                 query=query,
                 top_k=request.top_k,
                 filters=filters,
-                mode=request.retrieval_mode,
+                mode=retrieval_mode,
                 min_score=settings.MIN_RETRIEVAL_SCORE,
                 trace_id=trace_id,
             )
-        except Exception:
+            retrieval_results = self._filter_relevant_results(retrieval_results)
+        except Exception as exc:
             response = ChatResponse(
                 trace_id=trace_id,
                 status=StatusCode.RETRIEVAL_ERROR,
@@ -63,7 +65,16 @@ class ChatService:
                 message="检索服务暂时不可用，请稍后重试。",
                 citations=[],
             )
-            log_chat_result(trace_id, query, 0, response.status)
+            log_chat_result(
+                trace_id,
+                query,
+                0,
+                response.status,
+                stage="retrieval",
+                retrieval_mode=retrieval_mode,
+                top_k=request.top_k,
+                error=exc.__class__.__name__,
+            )
             return response
 
         if not retrieval_results:
@@ -74,7 +85,15 @@ class ChatService:
                 message="当前知识库没有足够信息回答该问题。",
                 citations=[],
             )
-            log_chat_result(trace_id, query, 0, response.status)
+            log_chat_result(
+                trace_id,
+                query,
+                0,
+                response.status,
+                stage="quality_gate",
+                retrieval_mode=retrieval_mode,
+                top_k=request.top_k,
+            )
             return response
 
         context = self.context_assembler.assemble(retrieval_results)
@@ -82,7 +101,9 @@ class ChatService:
 
         try:
             answer = self.llm.generate(prompt)
-        except Exception:
+            if not answer or not answer.strip():
+                raise ValueError("empty llm answer")
+        except Exception as exc:
             response = ChatResponse(
                 trace_id=trace_id,
                 status=StatusCode.LLM_ERROR,
@@ -90,7 +111,16 @@ class ChatService:
                 message="模型服务暂时不可用，请稍后重试。",
                 citations=[],
             )
-            log_chat_result(trace_id, query, len(retrieval_results), response.status)
+            log_chat_result(
+                trace_id,
+                query,
+                len(retrieval_results),
+                response.status,
+                stage="llm",
+                retrieval_mode=retrieval_mode,
+                top_k=request.top_k,
+                error=exc.__class__.__name__,
+            )
             return response
 
         response = self.answer_formatter.format_success(
@@ -98,5 +128,20 @@ class ChatService:
             answer=answer,
             retrieval_results=retrieval_results,
         )
-        log_chat_result(trace_id, query, len(retrieval_results), response.status)
+        log_chat_result(
+            trace_id,
+            query,
+            len(retrieval_results),
+            response.status,
+            stage="completed",
+            retrieval_mode=retrieval_mode,
+            top_k=request.top_k,
+        )
         return response
+
+    def _filter_relevant_results(self, retrieval_results):
+        return [
+            result
+            for result in retrieval_results
+            if result.score is not None and result.score >= settings.MIN_RETRIEVAL_SCORE
+        ]

@@ -25,13 +25,13 @@
 
 ## 第 3 周
 
-- `no_relevant_context`
-- `retrieval_error`
-- `llm_error`
-- `invalid_query`
-- 幻觉抑制 Prompt
-- answer 与 citation 一致性检查
-- 日志链路完善
+- `no_relevant_context` 已覆盖空检索和低相关检索。
+- `retrieval_error` 已覆盖检索异常和真实 Tool Layer 缺失。
+- `llm_error` 已覆盖 LLM 异常和空输出。
+- `invalid_query` 已在入口校验阶段返回。
+- 幻觉抑制 Prompt 已强化，只允许基于检索上下文回答。
+- answer 与 citation 一致性检查已在 AnswerFormatter 中实现。
+- 日志链路已记录阶段、检索模式、top_k、检索数量、状态和错误类型。
 
 ## 第 4 周
 

@@ -86,6 +86,43 @@ class RecordingRetriever:
         ]
 
 
+class RecordingLLM:
+    def __init__(self) -> None:
+        self.called = False
+
+    def generate(self, prompt: str) -> str:
+        self.called = True
+        return "测试答案 [1]"
+
+
+class EmptyLLM:
+    def generate(self, prompt: str) -> str:
+        return "   "
+
+
+class LowScoreRetriever:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        filters: dict | None = None,
+        mode: str = "hybrid",
+        min_score: float = 0.0,
+        trace_id: str | None = None,
+    ) -> list[RetrievalResult]:
+        return [
+            RetrievalResult(
+                doc_id="doc-low",
+                chunk_id="doc-low::chunk_0",
+                chunk_index=0,
+                chunk_text="低相关上下文",
+                title="低相关文档",
+                source_url="",
+                score=0.2,
+            )
+        ]
+
+
 def test_chat_service_passes_week2_retrieval_parameters() -> None:
     retriever = RecordingRetriever()
     service = ChatService(retriever=retriever)
@@ -117,3 +154,26 @@ def test_chat_service_returns_retrieval_error_when_real_tool_missing(monkeypatch
     assert response.status == StatusCode.RETRIEVAL_ERROR
     assert response.answer == ""
     assert response.message == "检索服务暂时不可用，请稍后重试。"
+
+
+def test_low_score_retrieval_returns_no_relevant_context(monkeypatch) -> None:
+    monkeypatch.setattr("agent.service.chat_service.settings.MIN_RETRIEVAL_SCORE", 0.8)
+    llm = RecordingLLM()
+    service = ChatService(retriever=LowScoreRetriever(), llm=llm)
+
+    response = service.chat(ChatRequest(query="知识库外问题"))
+
+    assert response.status == StatusCode.NO_RELEVANT_CONTEXT
+    assert response.answer == ""
+    assert response.citations == []
+    assert llm.called is False
+
+
+def test_empty_llm_answer_returns_llm_error() -> None:
+    service = ChatService(llm=EmptyLLM())
+
+    response = service.chat(ChatRequest(query="触发空模型答案"))
+
+    assert response.status == StatusCode.LLM_ERROR
+    assert response.answer == ""
+    assert response.citations == []

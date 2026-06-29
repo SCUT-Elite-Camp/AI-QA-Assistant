@@ -101,3 +101,39 @@ def test_retrieval_adapter_defers_real_tool_layer_loading(monkeypatch) -> None:
 
     with pytest.raises(RetrievalError):
         adapter.retrieve(query="真实模式但 tool_layer 未安装")
+
+
+def test_retrieval_adapter_logs_start_and_end(caplog) -> None:
+    adapter = RetrievalAdapter(use_mock=True)
+
+    with caplog.at_level("INFO"):
+        results = adapter.retrieve(
+            query="test query",
+            top_k=2,
+            trace_id="trace-log-001",
+        )
+
+    assert len(results) == 2
+
+    log_text = caplog.text
+    assert "[RETRIEVAL_START]" in log_text
+    assert "[RETRIEVAL_END]" in log_text
+    assert "trace-log-001" in log_text
+    assert "results_count=2" in log_text
+
+
+def test_retrieval_adapter_logs_error_with_trace_id(caplog) -> None:
+    adapter = RetrievalAdapter(use_mock=True)
+
+    with caplog.at_level("ERROR"):
+        with pytest.raises(RetrievalError):
+            adapter.retrieve(
+                query="test query",
+                mode="invalid_mode",
+                trace_id="trace-error-001",
+            )
+
+    log_text = caplog.text
+    assert "[RETRIEVAL_ERROR]" in log_text
+    assert "trace-error-001" in log_text
+    assert "Unsupported retrieval mode" in log_text
