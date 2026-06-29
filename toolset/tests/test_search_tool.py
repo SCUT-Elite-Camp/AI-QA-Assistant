@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tool_layer import RetrievalError, RetrievalParameterError, SearchTool
+from tool_layer import RetrievalError, RetrievalParameterError, SearchTool, evaluate_retrieval
 
 
 class FakeBackend:
@@ -95,6 +95,19 @@ class SearchToolTest(unittest.TestCase):
         with self.assertRaises(RetrievalError):
             SearchTool(backend=BrokenBackend()).search("query")
 
+    def test_logs_trace_mode_latency_result_count_and_top_scores(self):
+        tool = SearchTool(backend=FakeBackend())
+
+        with self.assertLogs("tool_layer.search_tool", level="INFO") as logs:
+            tool.search("query", top_k=2, mode="hybrid", trace_id="trace-log")
+
+        line = "\n".join(logs.output)
+        self.assertIn("trace_id=trace-log", line)
+        self.assertIn("mode=hybrid", line)
+        self.assertIn("results=2", line)
+        self.assertIn("latency=", line)
+        self.assertIn("top_scores=1.0000,0.0000", line)
+
     def test_min_score_filters_normalized_results(self):
         tool = SearchTool(backend=FakeBackend())
         results = tool.search("query", min_score=0.5)
@@ -141,6 +154,29 @@ class SearchToolTest(unittest.TestCase):
 
         hybrid_keys = [(row["doc_id"], row["chunk_index"]) for row in hybrid_results]
         self.assertEqual(len(hybrid_keys), len(set(hybrid_keys)))
+
+    def test_evaluate_retrieval_exports_hit_rate_and_mrr(self):
+        eval_cases = [
+            {"query": "first", "expected_doc_ids": ["doc_001"]},
+            {"query": "second", "expected_doc_ids": ["doc_002"]},
+            {"query": "missing", "expected_doc_ids": ["doc_003"]},
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "eval_results.json"
+            report = evaluate_retrieval(
+                SearchTool(backend=FakeBackend()),
+                eval_cases,
+                output_path=output_path,
+            )
+            exported = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(report["case_count"], 3)
+        self.assertEqual(report["metrics"]["hit_rate@1"], 0.333333)
+        self.assertEqual(report["metrics"]["hit_rate@3"], 0.666667)
+        self.assertEqual(report["metrics"]["hit_rate@5"], 0.666667)
+        self.assertEqual(report["metrics"]["mrr"], 0.5)
+        self.assertEqual(exported["metrics"], report["metrics"])
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
-# 工具集层 CP2
+# 工具集层 CP3
 
-本目录用于放置项目代码中的工具集层实现。CP2 在 CP1 统一接口基础上，补齐本地 vector 检索、BM25 检索和 hybrid RRF 融合逻辑。
+本目录用于放置项目代码中的工具集层实现。CP3 在 CP1/CP2 统一检索接口、vector 检索、BM25 检索和 hybrid RRF 融合基础上，补充日志、错误处理和检索评估能力。
 
 ## 开发规则
 
@@ -75,10 +75,41 @@ results = tool.search(
 - 如果底层没有 `chunk_id`，工具集层按 `{doc_id}::chunk_{chunk_index}` 自动生成。
 - 如果底层没有 `title`，工具集层优先根据 `doc_id` 查询 `data/documents/{doc_id}.json`，查不到则用 `doc_id` 兜底。
 
+## CP3 说明
+
+- 每次检索都会记录 `trace_id`、`mode`、`top_k`、结果数量、耗时和前 5 个 top scores。
+- 后端异常会被包装为 `RetrievalError`，参数错误会抛出 `RetrievalParameterError`。
+- `evaluate_retrieval` 支持 `hit_rate@1`、`hit_rate@3`、`hit_rate@5` 和 `mrr`。
+- 评估结果可导出为 `eval_results.json`。
+- 评测样例位于 `data/eval_questions.json`。
+
 ## 验证
 
 在 `toolset` 目录下运行：
 
 ```powershell
 python -m unittest discover -s tests
+```
+
+## 演示数据
+
+仓库内置了一份小型演示数据：
+
+```text
+data/chunks.jsonl
+data/documents/*.json
+```
+
+这份数据只用于 CP2 本地演示和接口联调，不代表真实业务数据。真实 `chunks.jsonl` 后续应由数据处理 Pipeline 模块从 Confluence、PDF 或 Office 文档解析分块后生成。
+
+可用以下命令快速演示三种检索模式、融合分数和过滤条件：
+
+```powershell
+python demo_cp2_search.py
+```
+
+可通过 `evaluate_retrieval` 导出 CP3 评估结果：
+
+```text
+eval_results.json
 ```

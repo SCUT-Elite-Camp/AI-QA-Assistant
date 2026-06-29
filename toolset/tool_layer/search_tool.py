@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+
 class RetrievalError(Exception):
     """Raised when the retrieval tool cannot complete a search."""
 
@@ -56,16 +59,34 @@ class SearchTool:
         try:
             raw_results = self.backend.search(query.strip(), top_k=top_k, mode=mode, filters=filters)
             results = self._normalize_results(raw_results, filters=filters, min_score=float(min_score))
+        except RetrievalError as exc:
+            latency_ms = int((time.perf_counter() - started) * 1000)
+            self._log(trace, mode, top_k, 0, latency_ms, [])
+            self.logger.error(
+                "[RETRIEVAL_ERROR] trace_id=%s mode=%s error=%s",
+                trace,
+                mode,
+                exc,
+            )
+            raise
         except RetrievalParameterError:
             raise
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
-            self._log(trace, mode, top_k, 0, latency_ms)
+            self._log(trace, mode, top_k, 0, latency_ms, [])
+            self.logger.error(
+                "[RETRIEVAL_ERROR] trace_id=%s mode=%s error=%s",
+                trace,
+                mode,
+                exc,
+            )
             raise RetrievalError(f"retrieval_error: {exc}") from exc
 
         latency_ms = int((time.perf_counter() - started) * 1000)
-        self._log(trace, mode, top_k, len(results), latency_ms)
-        return results[:top_k]
+        results = results[:top_k]
+        top_scores = [row["score"] for row in results[:5]]
+        self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
+        return results
 
     def _validate_params(
         self,
@@ -173,14 +194,24 @@ class SearchTool:
         except Exception:
             return {}
 
-    def _log(self, trace_id: str, mode: str, top_k: int, results: int, latency_ms: int) -> None:
+    def _log(
+        self,
+        trace_id: str,
+        mode: str,
+        top_k: int,
+        results: int,
+        latency_ms: int,
+        top_scores: List[float],
+    ) -> None:
+        score_text = ",".join(f"{score:.4f}" for score in top_scores)
         self.logger.info(
-            "[RETRIEVAL] trace_id=%s mode=%s top_k=%s results=%s latency=%sms",
+            "[RETRIEVAL] trace_id=%s mode=%s top_k=%s results=%s latency=%sms top_scores=%s",
             trace_id,
             mode,
             top_k,
             results,
             latency_ms,
+            score_text,
         )
 
 
