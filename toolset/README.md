@@ -111,12 +111,6 @@ data/documents/*.json
 
 这份数据只用于 CP2 本地演示和接口联调，不代表真实业务数据。真实 `chunks.jsonl` 后续应由数据处理 Pipeline 模块从 Confluence、PDF 或 Office 文档解析分块后生成。
 
-可用以下命令快速演示三种检索模式、融合分数和过滤条件：
-
-```powershell
-python demo_cp2_search.py
-```
-
 可通过 `evaluate_retrieval` 导出 CP3 评估结果：
 
 ```text
