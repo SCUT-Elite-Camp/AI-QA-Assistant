@@ -21,6 +21,9 @@ Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为�
 - 低相关和空检索兜底
 - 幻觉抑制 Prompt
 - answer 与 citations 一致性检查
+- Web CORS
+- SSE 演示接口
+- Demo 问题集和 Week 4 验收脚本
 - Answer Formatter
 - trace_id、基础 logger、状态码和 pytest
 
@@ -70,6 +73,8 @@ uvicorn app:app --reload --port 8000
 
 ```bash
 pytest
+python scripts/check_contract.py
+python scripts/run_week4_acceptance.py
 ```
 
 ## API 示例
@@ -160,3 +165,11 @@ LLM_MODEL=gpt-3.5-turbo
 - LLM 异常或空输出返回 `llm_error`。
 - Prompt 明确要求只基于检索上下文回答，不得编造。
 - 成功响应会规范化 answer 中的引用编号，避免 `[9]` 这类无效 citation。
+
+## Week 4 Web 联调
+
+- 普通问答接口：`POST /api/chat`。
+- SSE 演示接口：`POST /api/chat/stream`。
+- Web 联调说明见 `docs/web_integration_guide.md`。
+- Demo 问题集见 `mock/demo_questions.json`。
+- 最终交接说明见 `docs/final_handoff.md`。

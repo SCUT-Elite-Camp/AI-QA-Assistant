@@ -143,7 +143,17 @@ Full Tool Layer contract is in `docs/tool_layer_interface.md`.
 
 ## Not Implemented In Current Version
 
-- SSE streaming.
+- Production-level real LLM streaming.
 - ACL permission filtering.
 - Production-level retrieval quality tuning.
 - Production secret management.
+
+## Demo SSE Endpoint
+
+`POST /api/chat/stream` is available for Q1 Web demo streaming UI. It returns `text/event-stream` events:
+
+- `token`
+- `citations`
+- `done`
+
+This endpoint reuses the normal chat response and emits demo streaming events. The stable integration contract remains `POST /api/chat`.

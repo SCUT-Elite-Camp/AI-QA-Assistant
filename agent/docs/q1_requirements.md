@@ -64,6 +64,30 @@ Q1 不做登录鉴权。
 - Tool Layer 异常返回 `retrieval_error`。
 - LLM 异常或空输出返回 `llm_error`。
 
+## REQ-CHAT-002 SSE 演示接口
+
+### 需求描述
+
+Q1 提供演示级 SSE 接口，支持 Web 层展示流式 UI。该接口复用普通 `/api/chat` 结果切分事件，不等同于生产级真实 LLM streaming。
+
+### 关联接口
+
+`POST /api/chat/stream`
+
+### 输出事件
+
+| event | data |
+| --- | --- |
+| `token` | `{"content":"..."}` |
+| `citations` | Citation 数组 |
+| `done` | `{"trace_id":"...","status":"...","message":"...","citations_count":3}` |
+
+### 验收标准
+
+- 响应 `content-type` 为 `text/event-stream`。
+- 成功响应包含 `token`、`citations`、`done` 事件。
+- `done` 事件包含 `trace_id` 和 `status`。
+
 ## REQ-RET-001 Retrieval Adapter
 
 ### 需求描述
@@ -219,11 +243,14 @@ Agent Layer 提供单元测试与集成测试，覆盖主流程、异常状态�
 - LLM 空输出
 - citation 一致性
 - trace-aware retrieval logging
+- Web JSON contract
+- CORS preflight
+- SSE demo endpoint
 
 ### 当前结果
 
 ```text
-34 passed
+39 passed
 ```
 
 ## 待确认

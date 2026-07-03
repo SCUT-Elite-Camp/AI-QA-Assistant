@@ -1,10 +1,12 @@
 # app.py
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from agent.api.chat_routes import router as chat_router
-from agent.logger.logger import setup_logger, get_logger
 from agent.config.settings import settings
+from agent.logger.logger import get_logger, setup_logger
 
 
 # 初始化日志
@@ -24,6 +26,14 @@ app = FastAPI(
     title=settings.APP_NAME,
     version="0.1.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

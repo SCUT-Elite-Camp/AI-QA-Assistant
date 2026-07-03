@@ -59,3 +59,16 @@
 
 - 每次请求生成 `trace-xxxxxxxx` 格式 ID。
 - 日志记录 `trace_id`、阶段、`query`、`retrieval_mode`、`top_k`、`retrieval_count`、`status` 和错误类型。
+
+## Web 联调契约
+
+- `GET /health` 返回 `{"status":"ok"}`。
+- `POST /api/chat` 成功响应包含 `trace_id`、`status`、`answer`、`message`、`citations`。
+- 异常响应保持同一字段结构。
+- CORS preflight 请求返回成功。
+
+## SSE 演示接口
+
+- `POST /api/chat/stream` 返回 `text/event-stream`。
+- 响应包含 `token`、`citations`、`done` 三类事件。
+- `done` 事件包含 `trace_id`、`status`、`message` 和 `citations_count`。

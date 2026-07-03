@@ -35,9 +35,9 @@
 
 ## 第 4 周
 
-- Web 联调
-- 全链路测试
-- 异常场景测试
-- Demo 问题集验证
-- Bug 修复
-- 技术文档整理
+- Web 联调接口已稳定，`/api/chat` 返回普通 JSON。
+- 已新增 `/api/chat/stream` 作为 Q1 SSE 演示接口。
+- 已完成全链路测试、异常场景测试、CORS 测试和 SSE 事件测试。
+- 已新增 Demo 问题集 `mock/demo_questions.json`。
+- 已新增 Week 4 验收脚本 `scripts/run_week4_acceptance.py`。
+- 已整理 Web 联调指南、Week 4 报告和 Q1 交接说明。
