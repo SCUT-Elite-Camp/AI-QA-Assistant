@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { $fetch } from 'ofetch'
-import { Chat } from '@ai-sdk/vue'
-import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { useModels } from '../../composables/useModels'
 import { useChats } from '../../composables/useChats'
 import { useCsrf } from '../../composables/useCsrf'
 import { useMockChat } from '../../composables/useMockChat'
+import { useBffChat } from '../../composables/useBffChat'
 import { useRoute } from 'vue-router'
 import ChatMessageContent from '../../components/chat/message/MessageContent.vue'
 import ChatMessageActions from '../../components/chat/message/MessageActions.vue'
@@ -20,13 +19,25 @@ import type { Vote } from '../../../server/utils/drizzle'
 const route = useRoute<'/chat/[id]'>()
 const toast = useToast()
 const { model } = useModels()
-const { fetchChats, chats } = useChats()
+const { chats } = useChats()
 const { csrf, headerName } = useCsrf()
 
-const data = await $fetch(`/api/chats/${route.params.id}`).catch((e) => {
-  console.error('[chat/[id]] fetch failed:', e)
-  return null
-})
+// Mock/Real switch
+const isMock = import.meta.env.VITE_USE_MOCK !== 'false'
+const initialPrompt = typeof route.query.prompt === 'string' ? route.query.prompt : ''
+
+const data = isMock
+  ? await $fetch(`/api/chats/${route.params.id}`).catch((e) => {
+      console.error('[chat/[id]] fetch failed:', e)
+      return null
+    })
+  : {
+      id: String(route.params.id || 'local-session-001'),
+      isOwner: true,
+      visibility: 'private' as const,
+      title: 'BFF Mock Chat',
+      messages: [] as UIMessage[],
+    }
 
 const isOwner = computed(() => data?.isOwner ?? false)
 const visibility = ref<'public' | 'private'>(data?.visibility ?? 'private')
@@ -39,7 +50,7 @@ watch(() => chats.value.find(c => c.id === data?.id)?.label, (label) => {
 })
 
 const votes = ref<Vote[]>([])
-if (isOwner.value) {
+if (isMock && isOwner.value) {
   $fetch(`/api/chats/votes/${route.params.id}`).then((v) => {
     votes.value = v
   }).catch(() => {})
@@ -47,41 +58,9 @@ if (isOwner.value) {
 
 const input = ref('')
 
-// Mock/Real switch
-const isMock = import.meta.env.VITE_USE_MOCK !== 'false'
-
 const chat = isMock
   ? useMockChat({ id: data?.id, messages: data?.messages ?? [], isOwner: isOwner.value })
-  : new Chat({
-      id: data?.id,
-      messages: data?.messages,
-      transport: new DefaultChatTransport({
-        api: `/api/chats/${data?.id}`,
-        headers: { [headerName]: csrf() },
-        body: { model: model.value },
-      }),
-      onData: (dataPart) => {
-        if (dataPart.type === 'data-chat-title') {
-          fetchChats()
-        }
-      },
-      onError(error) {
-        let message = error.message
-        if (typeof message === 'string' && message[0] === '{') {
-          try {
-            message = JSON.parse(message).message || message
-          } catch {
-            // keep original message on malformed JSON
-          }
-        }
-        toast.add({
-          description: message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 0,
-        })
-      },
-    })
+  : useBffChat({ id: data?.id, messages: data?.messages ?? [] })
 
 function handleSubmit(e: Event) {
   e.preventDefault()
@@ -103,7 +82,7 @@ function cancelEdit() {
 }
 
 async function saveEdit(message: UIMessage, text: string) {
-  if (!isMock) {
+  if (isMock) {
     try {
       await $fetch(`/api/chats/messages/${data!.id}`, {
         method: 'DELETE',
@@ -125,7 +104,7 @@ async function saveEdit(message: UIMessage, text: string) {
 }
 
 async function regenerateMessage(message: UIMessage) {
-  if (!isMock) {
+  if (isMock) {
     try {
       await $fetch(`/api/chats/messages/${data!.id}`, {
         method: 'DELETE',
@@ -152,6 +131,8 @@ function getVote(messageId: string) {
 }
 
 async function vote(message: UIMessage, isUpvoted: boolean) {
+  if (!isMock) return
+
   const snapshot = votes.value.map(v => ({ ...v }))
   const toggling = getVote(message.id) === isUpvoted
   const next = toggling ? null : isUpvoted
@@ -181,6 +162,11 @@ async function vote(message: UIMessage, isUpvoted: boolean) {
 
 // On mount, if chat has only 1 message (unanswered user message), trigger response generation
 onMounted(() => {
+  if (initialPrompt.trim() && chat.messages.length === 0) {
+    chat.sendMessage({ text: initialPrompt })
+    return
+  }
+
   if (isOwner.value && data?.messages?.length === 1 && data.messages[0]?.role === 'user') {
     chat.regenerate()
   }
@@ -226,7 +212,10 @@ onMounted(() => {
           <template #indicator>
             <div class="flex items-center gap-1.5">
               <ChatIndicator />
-              <UChatShimmer text="Thinking..." class="text-sm" />
+              <UChatShimmer
+                text="Thinking..."
+                class="text-sm"
+              />
             </div>
           </template>
 
@@ -258,7 +247,6 @@ onMounted(() => {
         <UChatPrompt
           v-if="isOwner"
           v-model="input"
-          :error="chat.error"
           variant="subtle"
           class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
           :ui="{ base: 'px-1.5' }"
@@ -288,7 +276,11 @@ onMounted(() => {
       class="min-h-full"
     >
       <template #links>
-        <UButton to="/" size="lg" label="Go back to home" />
+        <UButton
+          to="/"
+          size="lg"
+          label="Go back to home"
+        />
       </template>
     </UError>
   </UContainer>

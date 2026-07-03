@@ -46,3 +46,9 @@ tsconfig.node.tsbuildinfo
 
 # Playwright
 .playwright-cli/
+playwright-report/
+test-results/
+
+# Temp files
+~$*
+*.pptx.cjs
