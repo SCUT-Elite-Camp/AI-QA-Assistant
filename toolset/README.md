@@ -1,6 +1,6 @@
-# 工具集层 CP3
+# 工具集层 CP4
 
-本目录用于放置项目代码中的工具集层实现。CP3 在 CP1/CP2 统一检索接口、vector 检索、BM25 检索和 hybrid RRF 融合基础上，补充日志、错误处理和检索评估能力。
+本目录用于放置项目代码中的工具集层实现。CP4 在 CP1/CP2/CP3 统一检索、hybrid RRF 融合、日志、错误处理和检索评估能力基础上，补充一个单步 RAG Agent 集成层，用于验证“用户问题 -> 检索 -> 生成答案 -> 返回引用”的端到端链路。
 
 ## 开发规则
 
@@ -83,6 +83,15 @@ results = tool.search(
 - 评估结果可导出为 `eval_results.json`。
 - 评测样例位于 `data/eval_questions.json`。
 
+## CP4 说明
+
+- `agent_layer.SimpleRagAgent` 提供 Agent 入口，接收 `query`、生成 `trace_id`，并且每轮只调用一次 `SearchTool.search`。
+- Agent 默认使用 `hybrid` 模式和 `top_k=5`，检索结果会转换为前端可直接展示的 `citations`。
+- `build_prompt` 会把用户问题、检索上下文、来源字段和“仅基于上下文回答、不得编造”的约束组装成稳定 Prompt。
+- 默认 `ExtractiveAnswerGenerator` 是离线验收用生成器，接口与 LLM client 一致，后续可替换为真实模型。
+- Agent 会处理空问题、检索为空、检索异常、生成异常和引用编号异常，并返回明确 `status`。
+- `demo_cp4_agent_integration.py` 会输出端到端响应，并检查 3-5 个 chunk、citation-ready 字段和 `top_k=5` 检索延迟小于 1 秒。
+
 ## 验证
 
 在 `toolset` 目录下运行：
@@ -112,4 +121,10 @@ python demo_cp2_search.py
 
 ```text
 eval_results.json
+```
+
+CP4 Agent 集成验收演示：
+
+```powershell
+python demo_cp4_agent_integration.py
 ```
