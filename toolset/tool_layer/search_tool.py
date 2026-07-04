@@ -40,9 +40,10 @@ class SearchTool:
         import os
         if backend == "milvus" or os.getenv("RETRIEVAL_BACKEND") == "milvus":
             self.backend = MilvusSearchBackend()
+            self.documents_dir = Path(__file__).resolve().parent.parent.parent / "data-persistence" / "data" / "documents"
         else:
             self.backend = backend or LocalJsonlSearchBackend(chunks_path=chunks_path)
-        self.documents_dir = Path(documents_dir)
+            self.documents_dir = Path(documents_dir)
         self.logger = logger or logging.getLogger(__name__)
 
     def search(
