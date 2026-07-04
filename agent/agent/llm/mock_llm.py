@@ -39,18 +39,18 @@ class MockLLM(BaseLLM):
             chunk_id = ""
             content = ""
             for line in lines:
-                if line.startswith("[") and "]" in line:
-                    idx = line[1:line.index("]")]
-                    if "title=" in line:
-                        title = line[line.index("title=") + 6:]
-                elif line.startswith("title="):
-                    title = line[6:]
-                elif line.startswith("doc_id="):
-                    doc_id = line[7:]
-                elif line.startswith("chunk_id="):
-                    chunk_id = line[9:]
-                elif line.startswith("content="):
-                    content = line[8:]
+                if line.startswith("[") and line.endswith("]"):
+                    idx = line[1:-1]
+                elif "title" in line:
+                    title = line.split("title")[-1].lstrip("=: ")
+                elif "doc_id" in line:
+                    doc_id = line.split("doc_id")[-1].lstrip("=: ")
+                elif "chunk_id" in line:
+                    chunk_id = line.split("chunk_id")[-1].lstrip("=: ")
+                elif "chunk_text" in line:
+                    content = line.split("chunk_text")[-1].lstrip("=: ")
+                elif "content" in line:
+                    content = line.split("content")[-1].lstrip("=: ")
             if idx and content:
                 chunks.append((idx, title, doc_id, chunk_id, content))
 
