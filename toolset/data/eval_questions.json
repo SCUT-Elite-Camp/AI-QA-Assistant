@@ -1,0 +1,20 @@
+{
+  "cases": [
+    {
+      "query": "CP3 needs logging error handling Hit Rate MRR evaluation",
+      "expected_doc_ids": ["cp3_reliability_plan"]
+    },
+    {
+      "query": "SearchTool should return citation source_url and chunk fields for Agent",
+      "expected_doc_ids": ["agent_integration_notes"]
+    },
+    {
+      "query": "data pipeline outputs chunks jsonl with doc_id chunk_index chunk_text",
+      "expected_doc_ids": ["pipeline_chunk_contract"]
+    },
+    {
+      "query": "hybrid retrieval uses vector BM25 RRF fusion",
+      "expected_doc_ids": ["tool_cp2_design"]
+    }
+  ]
+}
