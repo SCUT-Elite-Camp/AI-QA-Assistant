@@ -37,7 +37,11 @@ class SearchTool:
         documents_dir: str = "data/documents",
         logger: Optional[logging.Logger] = None,
     ):
-        self.backend = backend or LocalJsonlSearchBackend(chunks_path=chunks_path)
+        import os
+        if backend == "milvus" or os.getenv("RETRIEVAL_BACKEND") == "milvus":
+            self.backend = MilvusSearchBackend()
+        else:
+            self.backend = backend or LocalJsonlSearchBackend(chunks_path=chunks_path)
         self.documents_dir = Path(documents_dir)
         self.logger = logger or logging.getLogger(__name__)
 
@@ -470,3 +474,171 @@ def _cosine(
 
 def _chunk_key(row: Dict) -> tuple:
     return (str(row.get("doc_id")), int(row.get("chunk_index", 0)))
+
+
+class MilvusSearchBackend:
+    """Production retrieval backend using Milvus and BM25 index.
+
+    Vector search query is embedded using pipeline.embedder and queried in MilvusStore.
+    BM25 search is queried using rank_bm25 BM25Index.
+    Hybrid mode fuses both rankings with RRF and deduplicates.
+    """
+
+    def __init__(self, rrf_k: int = 60):
+        self.rrf_k = rrf_k
+        self.project_root = Path(__file__).resolve().parent.parent.parent
+        self.documents_dir = self.project_root / "data-persistence" / "data" / "documents"
+        self.bm25_path = self.project_root / "data-persistence" / "data" / "bm25_index.pkl"
+        
+        self._milvus_store = None
+        self._bm25_index = None
+
+    @property
+    def milvus_store(self):
+        if self._milvus_store is None:
+            import sys
+            if str(self.project_root / "data-persistence") not in sys.path:
+                sys.path.insert(0, str(self.project_root / "data-persistence"))
+            from storage.milvus_store import MilvusStore
+            self._milvus_store = MilvusStore()
+        return self._milvus_store
+
+    @property
+    def bm25_index(self):
+        if self._bm25_index is None:
+            import sys
+            if str(self.project_root / "data-pipeline") not in sys.path:
+                sys.path.insert(0, str(self.project_root / "data-pipeline"))
+            from retrieval.bm25_index import BM25Index
+            if self.bm25_path.exists():
+                self._bm25_index = BM25Index.load_from_file(str(self.bm25_path))
+            else:
+                self._bm25_index = BM25Index()
+        return self._bm25_index
+
+    def search(self, query: str, top_k: int, mode: str, filters: Optional[Dict] = None) -> List[Dict]:
+        filters = filters or {}
+        candidate_limit = max(top_k * 5, top_k, 20)
+
+        if mode == "vector":
+            return self._vector_search(query, candidate_limit, filters)[:top_k]
+        if mode == "bm25":
+            return self._bm25_search(query, candidate_limit, filters)[:top_k]
+        return self._hybrid_search(query, candidate_limit, filters)[:top_k]
+
+    def _vector_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
+        import sys
+        if str(self.project_root / "data-pipeline") not in sys.path:
+            sys.path.insert(0, str(self.project_root / "data-pipeline"))
+        from pipeline.embedder import embed_texts
+
+        query_vector = embed_texts([query])[0]
+        
+        doc_ids_filter = None
+        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
+        if doc_ids:
+            if isinstance(doc_ids, str):
+                doc_ids_filter = [doc_ids]
+            else:
+                doc_ids_filter = list(doc_ids)
+
+        milvus_results = self.milvus_store.search_similar(
+            query_vector=query_vector,
+            top_k=top_k,
+            doc_ids_filter=doc_ids_filter
+        )
+
+        rows = []
+        for hit in milvus_results:
+            row = {
+                "doc_id": hit.entity.get("doc_id"),
+                "chunk_id": hit.entity.get("chunk_id"),
+                "chunk_index": int(hit.entity.get("chunk_index")),
+                "chunk_text": hit.entity.get("chunk_text"),
+                "score": hit.distance,
+                "vector_score": hit.distance,
+                "bm25_score": 0.0,
+                "source_url": hit.entity.get("source_url") or "",
+            }
+            if not self._matches_filters(row, filters):
+                continue
+            rows.append(row)
+        return rows
+
+    def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
+        if self.bm25_index.is_empty:
+            return []
+            
+        bm25_results = self.bm25_index.search(query, top_k=top_k)
+        
+        rows = []
+        for res in bm25_results:
+            row = {
+                "doc_id": res.get("doc_id"),
+                "chunk_id": res.get("chunk_id"),
+                "chunk_index": int(res.get("chunk_index")),
+                "chunk_text": res.get("text"),
+                "score": res.get("score"),
+                "vector_score": 0.0,
+                "bm25_score": res.get("score"),
+                "source_url": "",
+            }
+            if not self._matches_filters(row, filters):
+                continue
+            rows.append(row)
+            
+        bm25_scores = _normalize_scores([row["bm25_score"] for row in rows])
+        for row, score in zip(rows, bm25_scores):
+            row["score"] = score
+            row["bm25_score"] = score
+
+        return rows
+
+    def _hybrid_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
+        vector_rows = self._vector_search(query, top_k, filters)
+        bm25_rows = self._bm25_search(query, top_k, filters)
+
+        vector_rank = {_chunk_key(row): rank for rank, row in enumerate(vector_rows, start=1)}
+        bm25_rank = {_chunk_key(row): rank for rank, row in enumerate(bm25_rows, start=1)}
+        vector_scores = {_chunk_key(row): row["vector_score"] for row in vector_rows}
+        bm25_scores = {_chunk_key(row): row["bm25_score"] for row in bm25_rows}
+
+        merged: Dict[tuple, Dict] = {}
+
+        for row in vector_rows + bm25_rows:
+            key = _chunk_key(row)
+            if key not in merged:
+                merged[key] = dict(row)
+
+            rrf_score = 0.0
+            if key in vector_rank:
+                rrf_score += 1.0 / (self.rrf_k + vector_rank[key])
+            if key in bm25_rank:
+                rrf_score += 1.0 / (self.rrf_k + bm25_rank[key])
+
+            merged[key]["score"] = rrf_score
+            merged[key]["vector_score"] = vector_scores.get(key, 0.0)
+            merged[key]["bm25_score"] = bm25_scores.get(key, 0.0)
+
+        rows = list(merged.values())
+        rows.sort(key=lambda item: item["score"], reverse=True)
+
+        final_scores = _normalize_scores([row["score"] for row in rows])
+        for row, score in zip(rows, final_scores):
+            row["score"] = score
+
+        rows.sort(key=lambda item: item["score"], reverse=True)
+        return rows[:top_k]
+
+    def _matches_filters(self, row: Dict, filters: Dict) -> bool:
+        if not filters:
+            return True
+        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
+        if doc_ids is not None:
+            if isinstance(doc_ids, str):
+                doc_ids = {doc_ids}
+            else:
+                doc_ids = set(doc_ids)
+            if str(row.get("doc_id")) not in doc_ids:
+                return False
+        return True

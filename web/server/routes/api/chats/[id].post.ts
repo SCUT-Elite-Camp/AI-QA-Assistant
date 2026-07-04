@@ -1,19 +1,10 @@
 import type { UIMessage } from 'ai'
-import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, generateText, smoothStream, stepCountIs, streamText } from 'ai'
-import { gateway } from '@ai-sdk/gateway'
+import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
-import type { AnthropicLanguageModelOptions } from '@ai-sdk/anthropic'
-import { anthropic } from '@ai-sdk/anthropic'
-import type { GoogleLanguageModelOptions } from '@ai-sdk/google'
-// import { google } from '@ai-sdk/google'
-import type { OpenAILanguageModelResponsesOptions } from '@ai-sdk/openai'
-import { openai } from '@ai-sdk/openai'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { weatherTool } from '../../../utils/tools/weather'
-import { chartTool } from '../../../utils/tools/chart'
 import { MODELS } from '../../../../shared/utils/models'
 
 export default defineHandler(async (event) => {
@@ -42,18 +33,10 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
+  // Generate title locally from first message to avoid external API calls
   if (!chat.title) {
-    const { text: title } = await generateText({
-      model: gateway('openai/gpt-4.1-nano'),
-      system: `You are a title generator for a chat:
-          - Generate a short title based on the first user's message
-          - The title should be less than 30 characters long
-          - The title should be a summary of the user's message
-          - Do not use quotes (' or ") or colons (:) or any other punctuation
-          - Do not use markdown, just plain text`,
-      prompt: JSON.stringify(messages[0])
-    })
-
+    const firstMsgText = messages[0]?.content || 'New Chat'
+    const title = firstMsgText.length > 25 ? firstMsgText.slice(0, 25) + '...' : firstMsgText
     await db.update(tables.chats).set({ title }).where(eq(tables.chats.id, id as string))
   }
 
@@ -71,83 +54,150 @@ export default defineHandler(async (event) => {
   event.runtime?.node?.req?.on('close', () => abortController.abort())
 
   const stream = createUIMessageStream({
+    onError: (err: any) => {
+      console.error('[web-stream] onError occurred:', err)
+      return err.message || 'An error occurred.'
+    },
     execute: async ({ writer }) => {
-      const result = streamText({
-        abortSignal: abortController.signal,
-        model: gateway(model),
-        system: `You are a knowledgeable and helpful AI assistant. ${session.data.user?.username ? `The user's name is ${session.data.user.username}.` : ''} Your goal is to provide clear, accurate, and well-structured responses.
+      try {
+        const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+        console.log("[DEBUG queryText]", queryText)
+        
+        // Write a transient status so the user knows RAG is searching
+        if (!chat.title) {
+          writer.write({
+            type: 'data-chat-title',
+            data: { message: 'Generating title...' },
+            transient: true
+          })
+        }
 
-**FORMATTING RULES (CRITICAL):**
-- ABSOLUTELY NO MARKDOWN HEADINGS: Never use #, ##, ###, ####, #####, or ######
-- NO underline-style headings with === or ---
-- Use **bold text** for emphasis and section labels instead
-- Examples:
-  * Instead of "## Usage", write "**Usage:**" or just "Here's how to use it:"
-  * Instead of "# Complete Guide", write "**Complete Guide**" or start directly with content
-- Start all responses with content, never with a heading
+        // 1. Call real Python Agent API (port 8000)
+        const agentUrl = "http://127.0.0.1:8000/api/chat"
+        const agentRes = await fetch(agentUrl, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            query: queryText,
+            top_k: 5,
+            retrieval_mode: "hybrid"
+          }),
+          signal: abortController.signal
+        })
 
-**WEB SEARCH:**
-- You have access to a web search tool to find current, up-to-date information
-- Only use it when the user explicitly asks about recent events, real-time data, or current facts
-- Do NOT search proactively — rely on your knowledge first
-- Cite your sources when providing information from web search results
+        if (!agentRes.ok) {
+          throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+        }
 
-**RESPONSE QUALITY:**
-- Be concise yet comprehensive
-- Use examples when helpful
-- Break down complex topics into digestible parts
-- Maintain a friendly, professional tone`,
-        messages: await convertToModelMessages(messages),
-        tools: {
-          chart: chartTool,
-          weather: weatherTool,
-          ...(model.startsWith('anthropic/') && { web_search: anthropic.tools.webSearch_20250305() }),
-          ...(model.startsWith('openai/') && { web_search: openai.tools.webSearch() })
-          // TODO: enable once AI SDK supports combining provider-defined tools with custom tools
-          // ...(model.startsWith('google/') && { google_search: google.tools.googleSearch({}) })
-        },
-        providerOptions: {
-          anthropic: {
-            thinking: {
-              type: 'enabled',
-              budgetTokens: 2048
-            }
-          } satisfies AnthropicLanguageModelOptions,
-          google: {
-            thinkingConfig: {
-              includeThoughts: true,
-              thinkingLevel: 'low'
-            }
-          } satisfies GoogleLanguageModelOptions,
-          openai: {
-            reasoningEffort: 'low',
-            reasoningSummary: 'detailed'
-          } satisfies OpenAILanguageModelResponsesOptions
-        },
-        stopWhen: stepCountIs(5),
-        experimental_transform: smoothStream()
-      })
+        const agentData = await agentRes.json()
 
-      if (!chat.title) {
+        if (agentData.status !== "success") {
+          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
+          const responseId = `err-msg-${Date.now()}`
+          writer.write({
+            type: 'text-start',
+            id: responseId
+          })
+          writer.write({
+            type: 'text-delta',
+            id: responseId,
+            delta: `Error: ${errMsg}`
+          })
+          writer.write({
+            type: 'text-end',
+            id: responseId
+          })
+          return
+        }
+
+        const rawAnswer = agentData.answer || ""
+        const citationsList = agentData.citations || []
+
+        // 2. Format citations as inline markdown source-links for comark with proper spacing
+        let processedAnswer = rawAnswer
+        for (let i = 0; i < citationsList.length; i++) {
+          const cit = citationsList[i]
+          const index = i + 1
+          const url = cit.source_url || `https://local-document/${cit.doc_id}`
+          const label = cit.title || cit.doc_id || `Doc ${index}`
+          const favicon = `https://www.google.com/s2/favicons?sz=32&domain=example.com`
+          const replacement = `[${index}] :source-link{url="${url.replace(/"/g, '&quot;')}" favicon="${favicon}" label="${label.replace(/"/g, '&quot;')}"}`
+          processedAnswer = processedAnswer.split(`[${index}]`).join(replacement)
+        }
+
+        // 3. Write search tool invocation & results to trigger the Sources UI component
+        const toolCallId = `call_${Date.now()}`
         writer.write({
-          type: 'data-chat-title',
-          data: { message: 'Generating title...' },
-          transient: true
+          type: 'tool-input-available',
+          toolCallId,
+          toolName: 'web_search',
+          input: { query: queryText }
+        })
+
+        writer.write({
+          type: 'tool-output-available',
+          toolCallId,
+          output: citationsList.map((cit: any, idx: number) => ({
+            url: cit.source_url || `https://local-document/${cit.doc_id}`,
+            title: cit.title || cit.doc_id || `Document ${idx + 1}`
+          }))
+        })
+
+        // 4. Stream answer text chunk-by-chunk to simulate real-time typing
+        const responseId = `assistant-msg-${Date.now()}`
+        writer.write({
+          type: 'text-start',
+          id: responseId
+        })
+
+        const chunkSize = 2
+        for (let i = 0; i < processedAnswer.length; i += chunkSize) {
+          const chunk = processedAnswer.slice(i, i + chunkSize)
+          writer.write({
+            type: 'text-delta',
+            id: responseId,
+            delta: chunk
+          })
+          // Small delay for natural streaming pacing
+          await new Promise((resolve) => setTimeout(resolve, 20))
+        }
+
+        writer.write({
+          type: 'text-end',
+          id: responseId
+        })
+
+      } catch (err: any) {
+        console.error('[web-post] error in agent call:', err)
+        const responseId = `err-msg-${Date.now()}`
+        writer.write({
+          type: 'text-start',
+          id: responseId
+        })
+        writer.write({
+          type: 'text-delta',
+          id: responseId,
+          delta: `Failed to retrieve answer from Agent Layer: ${err.message}`
+        })
+        writer.write({
+          type: 'text-end',
+          id: responseId
         })
       }
-
-      writer.merge(result.toUIMessageStream({
-        sendSources: true,
-        sendReasoning: true
-      }))
     },
     onFinish: async ({ messages }) => {
-      await db.insert(tables.messages).values(messages.map(message => ({
-        id: message.id,
-        chatId: chat.id,
-        role: message.role as 'user' | 'assistant',
-        parts: message.parts
-      }))).onConflictDoNothing()
+      try {
+        await db.insert(tables.messages).values(messages.map(message => ({
+          id: message.id,
+          chatId: chat.id,
+          role: message.role as 'user' | 'assistant',
+          parts: message.parts
+        }))).onConflictDoNothing()
+      } catch (dbErr) {
+        console.error('[web-onFinish] DB save error:', dbErr)
+      }
     }
   })
 

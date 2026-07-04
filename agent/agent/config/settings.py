@@ -1,7 +1,11 @@
 import os
 from typing import Optional
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def _env_bool(name: str, default: bool) -> bool:
