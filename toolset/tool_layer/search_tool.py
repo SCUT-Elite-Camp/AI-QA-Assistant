@@ -4,7 +4,6 @@ import math
 import os
 import re
 import time
-from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -15,10 +14,12 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 class RetrievalError(Exception):
     """Raised when the retrieval tool cannot complete a search."""
+    pass
 
 
 class RetrievalParameterError(ValueError):
     """Raised when the caller passes invalid retrieval parameters."""
+    pass
 
 
 def _normalize_scores(scores: Iterable[float]) -> List[float]:
@@ -48,9 +49,6 @@ def _safe_float(value) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
-
-
-
 
 
 def _chunk_key(row: Dict) -> tuple:
@@ -115,17 +113,31 @@ def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, r
     return rows[:top_k]
 
 
+class SearchTool(BaseTool):
+    """Agent-facing retrieval tool."""
 
+    VALID_MODES = {"vector", "bm25", "hybrid"}
 
-
-class MilvusSearchBackend:
-    """Production retrieval backend using Milvus and BM25 index."""
-
-    def __init__(self, rrf_k: int = 60):
-        self.rrf_k = rrf_k
+    def __init__(
+        self,
+        backend=None,
+        documents_dir: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
+        min_score: float = 0.0,
+        rrf_k: int = 60,
+    ):
         self.project_root = Path(__file__).resolve().parent.parent.parent
-        self.documents_dir = self.project_root / "data-persistence" / "data" / "documents"
+        self.documents_dir = (
+            Path(documents_dir) if documents_dir else
+            self.project_root / "data-persistence" / "data" / "documents"
+        )
         self.bm25_path = self.project_root / "data-persistence" / "data" / "bm25_index.pkl"
+
+        self.backend = backend
+        self.logger = logger or logging.getLogger(__name__)
+        self.latest_results = []
+        self.min_score = min_score
+        self.rrf_k = rrf_k
 
         self._milvus_store = None
         self._bm25_index = None
@@ -146,121 +158,6 @@ class MilvusSearchBackend:
             else:
                 self._bm25_index = BM25Index()
         return self._bm25_index
-
-    def _load_document_meta(self, doc_id: str) -> Dict:
-        path = self.documents_dir / f"{doc_id}.json"
-        if not path.exists():
-            return {}
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            return data if isinstance(data, dict) else {}
-        except Exception:
-            return {}
-
-    def _matches_filters(self, row: Dict, filters: Dict) -> bool:
-        doc_id = str(row.get("doc_id", ""))
-        doc_meta = self._load_document_meta(doc_id)
-        return _matches_filters(row, filters, doc_meta)
-
-    def _vector_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        from pipeline.embedder import embed_texts
-
-        query_vector = embed_texts([query])[0]
-
-        doc_ids_filter = None
-        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
-        if doc_ids:
-            if isinstance(doc_ids, str):
-                doc_ids_filter = [doc_ids]
-            else:
-                doc_ids_filter = list(doc_ids)
-
-        milvus_results = self.milvus_store.search_similar(
-            query_vector=query_vector,
-            top_k=top_k,
-            doc_ids_filter=doc_ids_filter
-        )
-
-        rows = []
-        for hit in milvus_results:
-            row = {
-                "doc_id": hit.entity.get("doc_id"),
-                "chunk_id": hit.entity.get("chunk_id"),
-                "chunk_index": int(hit.entity.get("chunk_index")),
-                "chunk_text": hit.entity.get("chunk_text"),
-                "score": hit.distance,
-                "vector_score": hit.distance,
-                "bm25_score": 0.0,
-                "source_url": hit.entity.get("source_url") or "",
-            }
-            if not self._matches_filters(row, filters):
-                continue
-            rows.append(row)
-        return rows
-
-    def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        if self.bm25_index.is_empty:
-            return []
-
-        bm25_results = self.bm25_index.search(query, top_k=top_k)
-
-        rows = []
-        for res in bm25_results:
-            row = {
-                "doc_id": res.get("doc_id"),
-                "chunk_id": res.get("chunk_id"),
-                "chunk_index": int(res.get("chunk_index")),
-                "chunk_text": res.get("text"),
-                "score": res.get("score"),
-                "vector_score": 0.0,
-                "bm25_score": res.get("score"),
-                "source_url": "",
-            }
-            if not self._matches_filters(row, filters):
-                continue
-            rows.append(row)
-
-        bm25_scores = _normalize_scores([row["bm25_score"] for row in rows])
-        for row, score in zip(rows, bm25_scores):
-            row["score"] = score
-            row["bm25_score"] = score
-
-        return rows
-
-    def search(self, query: str, top_k: int, mode: str, filters: Optional[Dict] = None) -> List[Dict]:
-        filters = filters or {}
-        candidate_limit = max(top_k * 5, 20)
-        if mode == "vector":
-            return self._vector_search(query, candidate_limit, filters)[:top_k]
-        if mode == "bm25":
-            return self._bm25_search(query, candidate_limit, filters)[:top_k]
-
-        vector_rows = self._vector_search(query, candidate_limit, filters)
-        bm25_rows = self._bm25_search(query, candidate_limit, filters)
-        return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
-
-
-class SearchTool(BaseTool):
-    """Agent-facing retrieval tool."""
-
-    VALID_MODES = {"vector", "bm25", "hybrid"}
-
-    def __init__(
-        self,
-        backend=None,
-        documents_dir: Optional[str] = None,
-        logger: Optional[logging.Logger] = None,
-        min_score: float = 0.0,
-    ):
-        self.backend = backend or MilvusSearchBackend()
-        self.documents_dir = (
-            Path(documents_dir) if documents_dir else
-            Path(__file__).resolve().parent.parent.parent / "data-persistence" / "data" / "documents"
-        )
-        self.logger = logger or logging.getLogger(__name__)
-        self.latest_results = []
-        self.min_score = min_score
 
     @property
     def name(self) -> str:
@@ -301,13 +198,13 @@ class SearchTool(BaseTool):
         query = kwargs.get("query")
         top_k = kwargs.get("top_k", 5)
         mode = kwargs.get("mode", "hybrid")
-        
+
         results = self.search(query=query, top_k=top_k, mode=mode, min_score=self.min_score)
         self.latest_results = results
-        
+
         if not results:
             return "No relevant documents found."
-            
+
         blocks = []
         for index, item in enumerate(results, start=1):
             blocks.append(
@@ -329,26 +226,13 @@ class SearchTool(BaseTool):
         trace_id: Optional[str] = None,
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
-
         started = time.perf_counter()
         trace = trace_id or "-"
         filters = filters or {}
 
         try:
-            raw_results = self.backend.search(query.strip(), top_k=top_k, mode=mode, filters=filters)
-            results = self._normalize_results(raw_results, filters=filters, min_score=float(min_score))
-        except RetrievalError as exc:
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            self._log(trace, mode, top_k, 0, latency_ms, [])
-            self.logger.error(
-                "[RETRIEVAL_ERROR] trace_id=%s mode=%s error=%s",
-                trace,
-                mode,
-                exc,
-            )
-            raise
-        except RetrievalParameterError:
-            raise
+            raw_results = self._search_internal(query.strip(), top_k, mode, filters)
+            results = self._normalize_results(raw_results, filters, float(min_score))
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
             self._log(trace, mode, top_k, 0, latency_ms, [])
@@ -358,6 +242,8 @@ class SearchTool(BaseTool):
                 mode,
                 exc,
             )
+            if isinstance(exc, RetrievalParameterError):
+                raise
             raise RetrievalError(f"retrieval_error: {exc}") from exc
 
         latency_ms = int((time.perf_counter() - started) * 1000)
@@ -365,6 +251,95 @@ class SearchTool(BaseTool):
         top_scores = [row["score"] for row in results[:5]]
         self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
         return results
+
+    def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
+        if self.backend is not None:
+            return self.backend.search(query, top_k=top_k, mode=mode, filters=filters)
+
+        candidate_limit = max(top_k * 5, 20)
+        if mode == "vector":
+            return self._vector_search(query, candidate_limit, filters)[:top_k]
+        if mode == "bm25":
+            return self._bm25_search(query, candidate_limit, filters)[:top_k]
+
+        vector_rows = self._vector_search(query, candidate_limit, filters)
+        bm25_rows = self._bm25_search(query, candidate_limit, filters)
+        return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
+
+    def _vector_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
+        from pipeline.embedder import embed_texts
+
+        query_vector = embed_texts([query])[0]
+
+        doc_ids_filter = None
+        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
+        if doc_ids:
+            if isinstance(doc_ids, str):
+                doc_ids_filter = [doc_ids]
+            else:
+                doc_ids_filter = list(doc_ids)
+
+        try:
+            hits = self.milvus_store.search_similar(
+                query_vector=query_vector,
+                top_k=top_k,
+                doc_ids_filter=doc_ids_filter,
+            )
+        except Exception as e:
+            raise RetrievalError(f"milvus_search_failed: {e}") from e
+
+        rows = []
+        for hit in hits:
+            entity = hit.entity
+            row = {
+                "doc_id": entity.get("doc_id"),
+                "chunk_index": entity.get("chunk_index"),
+                "chunk_text": entity.get("chunk_text") or entity.get("text") or "",
+                "score": hit.distance,
+                "vector_score": hit.distance,
+                "bm25_score": 0.0,
+            }
+            if not _matches_filters(row, filters):
+                continue
+            rows.append(row)
+
+        scores = _normalize_scores([row["vector_score"] for row in rows])
+        for row, score in zip(rows, scores):
+            row["score"] = score
+            row["vector_score"] = score
+
+        return rows
+
+    def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
+        try:
+            hits = self.bm25_index.search(query, top_k=top_k)
+        except Exception as e:
+            raise RetrievalError(f"bm25_search_failed: {e}") from e
+
+        rows = []
+        for hit in hits:
+            doc_id = hit.get("doc_id")
+            chunk_index = hit.get("chunk_index")
+            row = {
+                "doc_id": doc_id,
+                "chunk_index": chunk_index,
+                "chunk_text": hit.get("chunk_text", hit.get("text")),
+                "score": hit.get("score", 0.0),
+                "vector_score": 0.0,
+                "bm25_score": hit.get("score", 0.0),
+            }
+
+            doc_meta = self._load_document_meta(str(doc_id))
+            if not _matches_filters(row, filters, doc_meta):
+                continue
+            rows.append(row)
+
+        bm25_scores = _normalize_scores([row["bm25_score"] for row in rows])
+        for row, score in zip(rows, bm25_scores):
+            row["score"] = score
+            row["bm25_score"] = score
+
+        return rows
 
     def _validate_params(
         self,
@@ -410,8 +385,6 @@ class SearchTool(BaseTool):
             doc_id = str(doc_id)
             chunk_index = int(chunk_index)
 
-            # Skip checking matches filters in normalized results if backend already filtered
-            # (But checking doc_meta matches filters just in case backend filters were partial)
             doc_meta = self._load_document_meta(doc_id)
             if not _matches_filters(item, filters, doc_meta):
                 continue
