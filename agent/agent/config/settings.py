@@ -37,8 +37,6 @@ class Settings(BaseModel):
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = _env_int("PORT", 8000)
 
-    USE_MOCK_RETRIEVAL: bool = _env_bool("USE_MOCK_RETRIEVAL", True)
-    USE_MOCK_LLM: bool = _env_bool("USE_MOCK_LLM", True)
     DEFAULT_TOP_K: int = Field(default_factory=lambda: _env_int("DEFAULT_TOP_K", 5), ge=1, le=20)
     MIN_RETRIEVAL_SCORE: float = Field(
         default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.0),
@@ -46,9 +44,6 @@ class Settings(BaseModel):
         le=1.0,
     )
     DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
-
-    TOOL_LAYER_IMPORT: str = os.getenv("TOOL_LAYER_IMPORT", "tool_layer")
-    TOOL_LAYER_CLASS: str = os.getenv("TOOL_LAYER_CLASS", "SearchTool")
 
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
     LLM_API_BASE: str = os.getenv(
@@ -62,10 +57,6 @@ class Settings(BaseModel):
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
-
-    @property
-    def is_mock_mode(self) -> bool:
-        return self.USE_MOCK_RETRIEVAL and self.USE_MOCK_LLM
 
 
 settings = Settings()

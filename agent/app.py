@@ -17,21 +17,20 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    logger.info(f"Starting {settings.APP_NAME} in {'mock' if settings.is_mock_mode else 'real'} mode")
+    logger.info(f"Starting {settings.APP_NAME}")
     
-    if not settings.is_mock_mode:
-        logger.info("Preloading retrieval model weights and dictionary (cold-start prevention)...")
-        try:
-            from agent.service.chat_service import ChatService
-            from agent.schemas.chat import ChatRequest
-            service = ChatService()
-            # Send a dummy request to trigger cold start loading of SearchTool
-            dummy_request = ChatRequest(query="预热", top_k=1, retrieval_mode="hybrid")
-            service.chat(dummy_request)
-            logger.info("Retrieval model preloaded successfully!")
-        except Exception as e:
-            logger.error(f"Failed to preload retrieval model: {e}")
-            
+    logger.info("Preloading retrieval model weights and dictionary (cold-start prevention)...")
+    try:
+        from agent.service.chat_service import ChatService
+        from agent.schemas.chat import ChatRequest
+        service = ChatService()
+        # Send a dummy request to trigger cold start loading of SearchTool
+        dummy_request = ChatRequest(query="预热", top_k=1, retrieval_mode="hybrid")
+        service.chat(dummy_request)
+        logger.info("Retrieval model preloaded successfully!")
+    except Exception as e:
+        logger.error(f"Failed to preload retrieval model: {e}")
+        
     yield
     logger.info("Shutting down")
 

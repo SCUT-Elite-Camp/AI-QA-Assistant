@@ -3,14 +3,13 @@ from agent.formatter.answer_formatter import AnswerFormatter
 from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
-from agent.llm.mock_llm import MockLLM
 from agent.logger.app_logger import log_chat_result
 from agent.prompt.context_assembler import ContextAssembler
 from agent.prompt.prompt_builder import PromptBuilder
 from agent.retrieval.base import BaseRetriever
-from agent.retrieval.retrieval_adapter import RetrievalAdapter
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.schemas.common import StatusCode
+from agent.schemas.retrieval import RetrievalResult
 from agent.trace.trace_id import generate_trace_id, set_trace_id, clear_trace_id
 from storage.chat_history_store import ChatHistoryStore
 
@@ -24,11 +23,43 @@ class ChatService:
         prompt_builder: PromptBuilder | None = None,
         answer_formatter: AnswerFormatter | None = None,
     ) -> None:
-        self.retriever = retriever or RetrievalAdapter()
-        self.llm = llm or (MockLLM() if settings.USE_MOCK_LLM else LLMClient())
+        self.llm = llm or LLMClient()
         self.context_assembler = context_assembler or ContextAssembler()
         self.prompt_builder = prompt_builder or PromptBuilder()
         self.answer_formatter = answer_formatter or AnswerFormatter()
+
+        # Expose tools from Toolset layer
+        from toolset.tool_layer import get_tools, SearchTool
+        self.tools = get_tools()
+
+        # Inject min_score from settings to SearchTool
+        for t in self.tools:
+            if isinstance(t, SearchTool):
+                t.min_score = settings.MIN_RETRIEVAL_SCORE
+
+        # If a custom retriever is passed (e.g. in unit tests), override SearchTool's search behavior
+        if retriever is not None:
+            for t in self.tools:
+                if isinstance(t, SearchTool):
+                    def mock_search(query, top_k=5, mode="hybrid", filters=None):
+                        results = retriever.retrieve(query, top_k=top_k, mode=mode, filters=filters)
+                        return [
+                            {
+                                "doc_id": r.doc_id,
+                                "chunk_id": r.chunk_id,
+                                "chunk_index": r.chunk_index,
+                                "chunk_text": r.chunk_text,
+                                "title": r.title,
+                                "source_url": r.source_url,
+                                "score": r.score
+                            }
+                            for r in results
+                        ]
+                    t.search = mock_search
+
+        from agent.prompt.templates import SYSTEM_ROLE
+        from agent.service.agent import Agent
+        self.agent = Agent(self.llm, self.tools, system_prompt=SYSTEM_ROLE)
 
     def _error_response(
         self,
@@ -108,28 +139,62 @@ class ChatService:
             )
 
         try:
-            retrieval_results = self.retriever.retrieve(
-                query=query,
-                top_k=request.top_k,
-                filters=filters,
-                mode=retrieval_mode,
-                min_score=settings.MIN_RETRIEVAL_SCORE,
-                trace_id=trace_id,
-            )
+            # Run the Agent loop
+            search_tool = self.agent.tools.get("search_documents")
+            if search_tool and hasattr(search_tool, "latest_results"):
+                search_tool.latest_results = []
+
+            answer = self.agent.run(query)
+
+            # Retrieve execution results from search tool
+            latest_results = []
+            if search_tool and hasattr(search_tool, "latest_results"):
+                latest_results = search_tool.latest_results
+
+            retrieval_results = [
+                RetrievalResult(
+                    doc_id=r["doc_id"],
+                    chunk_id=r["chunk_id"],
+                    chunk_index=r["chunk_index"],
+                    chunk_text=r["chunk_text"],
+                    title=r["title"],
+                    source_url=r["source_url"],
+                    score=r["score"]
+                )
+                for r in latest_results
+            ]
             retrieval_results = [
                 r for r in retrieval_results
                 if r.score is not None and r.score >= settings.MIN_RETRIEVAL_SCORE
             ]
         except Exception as exc:
+            from agent.errors.exceptions import LLMError
+            status_code = StatusCode.LLM_ERROR
+            message = "服务异常，请稍后重试。"
+            if not isinstance(exc, LLMError):
+                status_code = StatusCode.RETRIEVAL_ERROR
+                message = "检索服务暂时不可用，请稍后重试。"
+
             return self._error_response(
                 trace_id=trace_id,
                 query=query,
-                status=StatusCode.RETRIEVAL_ERROR,
-                message="检索服务暂时不可用，请稍后重试。",
-                stage="retrieval",
+                status=status_code,
+                message=message,
+                stage="agent_loop",
                 retrieval_mode=retrieval_mode,
                 top_k=request.top_k,
                 error=exc.__class__.__name__
+            )
+
+        if not answer or not answer.strip():
+            return self._error_response(
+                trace_id=trace_id,
+                query=query,
+                status=StatusCode.LLM_ERROR,
+                message="模型服务暂时不可用，请稍后重试。",
+                stage="llm",
+                retrieval_mode=retrieval_mode,
+                top_k=request.top_k
             )
 
         if not retrieval_results:
@@ -141,26 +206,6 @@ class ChatService:
                 stage="quality_gate",
                 retrieval_mode=retrieval_mode,
                 top_k=request.top_k
-            )
-
-        context = self.context_assembler.assemble(retrieval_results)
-        prompt = self.prompt_builder.build(query=query, context=context)
-
-        try:
-            answer = self.llm.generate(prompt)
-            if not answer or not answer.strip():
-                raise ValueError("empty llm answer")
-        except Exception as exc:
-            return self._error_response(
-                trace_id=trace_id,
-                query=query,
-                status=StatusCode.LLM_ERROR,
-                message="模型服务暂时不可用，请稍后重试。",
-                stage="llm",
-                retrieval_mode=retrieval_mode,
-                top_k=request.top_k,
-                retrieval_count=len(retrieval_results),
-                error=exc.__class__.__name__
             )
 
         response = self.answer_formatter.format_success(

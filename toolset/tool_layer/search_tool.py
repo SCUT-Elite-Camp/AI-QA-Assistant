@@ -7,7 +7,8 @@ import time
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
+from tool_layer.base_tool import BaseTool
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -410,7 +411,7 @@ class MilvusSearchBackend(SearchBackend):
         return rows
 
 
-class SearchTool:
+class SearchTool(BaseTool):
     """Agent-facing retrieval tool."""
 
     VALID_MODES = {"vector", "bm25", "hybrid"}
@@ -421,6 +422,7 @@ class SearchTool:
         chunks_path: str = "data/chunks.jsonl",
         documents_dir: str = "data/documents",
         logger: Optional[logging.Logger] = None,
+        min_score: float = 0.0,
     ):
         if backend == "milvus" or os.getenv("RETRIEVAL_BACKEND") == "milvus":
             self.backend = MilvusSearchBackend()
@@ -429,6 +431,65 @@ class SearchTool:
             self.backend = backend or LocalJsonlSearchBackend(chunks_path=chunks_path)
             self.documents_dir = Path(documents_dir)
         self.logger = logger or logging.getLogger(__name__)
+        self.latest_results = []
+        self.min_score = min_score
+
+    @property
+    def name(self) -> str:
+        return "search_documents"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Search the document database for information matching the query. "
+            "Use this tool when you need to answer questions about regulations, "
+            "rules, project structures, or work divisions."
+        )
+
+    @property
+    def parameters(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The search query keywords or question."
+                },
+                "top_k": {
+                    "type": "integer",
+                    "description": "Number of document chunks to retrieve (1-20).",
+                    "default": 5
+                },
+                "mode": {
+                    "type": "string",
+                    "description": "Retrieval mode: 'vector', 'bm25', or 'hybrid'.",
+                    "default": "hybrid"
+                }
+            },
+            "required": ["query"]
+        }
+
+    def execute(self, **kwargs: Any) -> Any:
+        query = kwargs.get("query")
+        top_k = kwargs.get("top_k", 5)
+        mode = kwargs.get("mode", "hybrid")
+        
+        results = self.search(query=query, top_k=top_k, mode=mode, min_score=self.min_score)
+        self.latest_results = results
+        
+        if not results:
+            return "No relevant documents found."
+            
+        blocks = []
+        for index, item in enumerate(results, start=1):
+            blocks.append(
+                f"[{index}] title: {item.get('title')}\n"
+                f"doc_id: {item.get('doc_id')}\n"
+                f"chunk_id: {item.get('chunk_id')}\n"
+                f"content: {item.get('chunk_text')}\n"
+                f"score: {item.get('score'):.4f}"
+            )
+        return "\n\n".join(blocks)
 
     def search(
         self,

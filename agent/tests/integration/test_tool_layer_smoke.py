@@ -5,9 +5,6 @@ from agent.service.chat_service import ChatService
 
 
 def test_real_tool_layer_smoke_path(monkeypatch) -> None:
-    monkeypatch.setattr(settings, "USE_MOCK_RETRIEVAL", False)
-    monkeypatch.setattr(settings, "TOOL_LAYER_IMPORT", "toolset.tool_layer")
-    monkeypatch.setattr(settings, "TOOL_LAYER_CLASS", "SearchTool")
     monkeypatch.setattr(settings, "MIN_RETRIEVAL_SCORE", 0.0)
 
     from toolset.tool_layer import SearchTool
