@@ -20,9 +20,11 @@ class Agent:
         llm: BaseLLM | None = None,
         tools: List[BaseTool] | None = None,
         answer_formatter: AnswerFormatter | None = None,
+        bypass_llm: bool = True,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
+        self.bypass_llm = bypass_llm
 
         # Load auxiliary services
         self.trace_service = TraceService()
@@ -173,6 +175,14 @@ class Agent:
 
     def run(self, query: str, max_iterations: int = 1) -> str:
         """Executes the core ReAct loop steps."""
+        if self.bypass_llm:
+            tool = self.tools.get("search_documents")
+            if tool:
+                self.audit_service.log_step(0, query)
+                self.audit_service.log_tool_call(tool.name, {"query": query})
+                return tool.execute(query=query)
+            return "Simulated search tool not found."
+
         messages = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
