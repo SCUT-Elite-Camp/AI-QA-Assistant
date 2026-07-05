@@ -104,74 +104,40 @@ def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None)
     return True
 
 
-class SearchBackend(ABC):
-    """Abstract base class for search backends."""
+def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, rrf_k: int = 60) -> list[dict]:
+    vector_rank = {_chunk_key(row): rank for rank, row in enumerate(vector_rows, start=1)}
+    bm25_rank = {_chunk_key(row): rank for rank, row in enumerate(bm25_rows, start=1)}
+    vector_scores = {_chunk_key(row): row["vector_score"] for row in vector_rows}
+    bm25_scores = {_chunk_key(row): row["bm25_score"] for row in bm25_rows}
 
-    def __init__(self, rrf_k: int = 60):
-        self.rrf_k = rrf_k
+    merged = {}
+    for row in vector_rows + bm25_rows:
+        key = _chunk_key(row)
+        if key not in merged:
+            merged[key] = dict(row)
 
-    def _has_chunks(self) -> bool:
-        return True
+        rrf_score = 0.0
+        if key in vector_rank:
+            rrf_score += 1.0 / (rrf_k + vector_rank[key])
+        if key in bm25_rank:
+            rrf_score += 1.0 / (rrf_k + bm25_rank[key])
 
-    def search(self, query: str, top_k: int, mode: str, filters: Optional[Dict] = None) -> List[Dict]:
-        if not self._has_chunks():
-            return []
+        merged[key]["score"] = rrf_score
+        merged[key]["vector_score"] = vector_scores.get(key, 0.0)
+        merged[key]["bm25_score"] = bm25_scores.get(key, 0.0)
 
-        filters = filters or {}
-        candidate_limit = max(top_k * 5, top_k, 20)
+    rows = list(merged.values())
+    rows.sort(key=lambda item: item["score"], reverse=True)
 
-        if mode == "vector":
-            return self._vector_search(query, candidate_limit, filters)[:top_k]
-        if mode == "bm25":
-            return self._bm25_search(query, candidate_limit, filters)[:top_k]
-        return self._hybrid_search(query, candidate_limit, filters)[:top_k]
+    final_scores = _normalize_scores([row["score"] for row in rows])
+    for row, score in zip(rows, final_scores):
+        row["score"] = score
 
-    @abstractmethod
-    def _vector_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        pass
-
-    @abstractmethod
-    def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        pass
-
-    def _hybrid_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        vector_rows = self._vector_search(query, top_k, filters)
-        bm25_rows = self._bm25_search(query, top_k, filters)
-
-        vector_rank = {_chunk_key(row): rank for rank, row in enumerate(vector_rows, start=1)}
-        bm25_rank = {_chunk_key(row): rank for rank, row in enumerate(bm25_rows, start=1)}
-        vector_scores = {_chunk_key(row): row["vector_score"] for row in vector_rows}
-        bm25_scores = {_chunk_key(row): row["bm25_score"] for row in bm25_rows}
-
-        merged: Dict[tuple, Dict] = {}
-
-        for row in vector_rows + bm25_rows:
-            key = _chunk_key(row)
-            if key not in merged:
-                merged[key] = dict(row)
-
-            rrf_score = 0.0
-            if key in vector_rank:
-                rrf_score += 1.0 / (self.rrf_k + vector_rank[key])
-            if key in bm25_rank:
-                rrf_score += 1.0 / (self.rrf_k + bm25_rank[key])
-
-            merged[key]["score"] = rrf_score
-            merged[key]["vector_score"] = vector_scores.get(key, 0.0)
-            merged[key]["bm25_score"] = bm25_scores.get(key, 0.0)
-
-        rows = list(merged.values())
-        rows.sort(key=lambda item: item["score"], reverse=True)
-
-        final_scores = _normalize_scores([row["score"] for row in rows])
-        for row, score in zip(rows, final_scores):
-            row["score"] = score
-
-        rows.sort(key=lambda item: item["score"], reverse=True)
-        return rows[:top_k]
+    rows.sort(key=lambda item: item["score"], reverse=True)
+    return rows[:top_k]
 
 
-class LocalJsonlSearchBackend(SearchBackend):
+class LocalJsonlSearchBackend:
     """Dependency-free local retrieval backend.
 
     Vector mode uses TF-IDF cosine similarity. BM25 mode uses the standard BM25
@@ -179,7 +145,7 @@ class LocalJsonlSearchBackend(SearchBackend):
     """
 
     def __init__(self, chunks_path: str, rrf_k: int = 60):
-        super().__init__(rrf_k=rrf_k)
+        self.rrf_k = rrf_k
         self.chunks_path = Path(chunks_path)
         self.chunks = self._load_chunks()
         self.tokenized_chunks = [_tokenize(self._chunk_text(chunk)) for chunk in self.chunks]
@@ -189,8 +155,19 @@ class LocalJsonlSearchBackend(SearchBackend):
         self.tfidf_vectors = [self._tfidf_vector(tokens) for tokens in self.tokenized_chunks]
         self.tfidf_norms = [_vector_norm(vec) for vec in self.tfidf_vectors]
 
-    def _has_chunks(self) -> bool:
-        return bool(self.chunks)
+    def search(self, query: str, top_k: int, mode: str, filters: Optional[Dict] = None) -> List[Dict]:
+        if not self.chunks:
+            return []
+        filters = filters or {}
+        candidate_limit = max(top_k * 5, 20)
+        if mode == "vector":
+            return self._vector_search(query, candidate_limit, filters)[:top_k]
+        if mode == "bm25":
+            return self._bm25_search(query, candidate_limit, filters)[:top_k]
+
+        vector_rows = self._vector_search(query, candidate_limit, filters)
+        bm25_rows = self._bm25_search(query, candidate_limit, filters)
+        return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
 
     def _load_chunks(self) -> List[Dict]:
         if not self.chunks_path.exists():
@@ -300,11 +277,11 @@ class LocalJsonlSearchBackend(SearchBackend):
         return str(chunk.get("chunk_text", chunk.get("text", "")))
 
 
-class MilvusSearchBackend(SearchBackend):
+class MilvusSearchBackend:
     """Production retrieval backend using Milvus and BM25 index."""
 
     def __init__(self, rrf_k: int = 60):
-        super().__init__(rrf_k=rrf_k)
+        self.rrf_k = rrf_k
         self.project_root = Path(__file__).resolve().parent.parent.parent
         self.documents_dir = self.project_root / "data-persistence" / "data" / "documents"
         self.bm25_path = self.project_root / "data-persistence" / "data" / "bm25_index.pkl"
@@ -409,6 +386,18 @@ class MilvusSearchBackend(SearchBackend):
             row["bm25_score"] = score
 
         return rows
+
+    def search(self, query: str, top_k: int, mode: str, filters: Optional[Dict] = None) -> List[Dict]:
+        filters = filters or {}
+        candidate_limit = max(top_k * 5, 20)
+        if mode == "vector":
+            return self._vector_search(query, candidate_limit, filters)[:top_k]
+        if mode == "bm25":
+            return self._bm25_search(query, candidate_limit, filters)[:top_k]
+
+        vector_rows = self._vector_search(query, candidate_limit, filters)
+        bm25_rows = self._bm25_search(query, candidate_limit, filters)
+        return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
 
 
 class SearchTool(BaseTool):
