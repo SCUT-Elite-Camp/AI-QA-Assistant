@@ -111,6 +111,10 @@ class Agent:
                 if r.score is not None and r.score >= settings.MIN_RETRIEVAL_SCORE
             ]
         except Exception as exc:
+            import logging
+            logging.getLogger("agent-layer").exception(
+                "[CHAT_ERROR] Exception occurred in agent_loop for query '%s': %s", query, exc
+            )
             from agent.errors.exceptions import LLMError
             status_code = StatusCode.LLM_ERROR
             message = "服务异常，请稍后重试。"
@@ -167,7 +171,7 @@ class Agent:
         )
         return response
 
-    def run(self, query: str, max_iterations: int = 5) -> str:
+    def run(self, query: str, max_iterations: int = 1) -> str:
         """Executes the core ReAct loop steps."""
         messages = []
         if self.system_prompt:
