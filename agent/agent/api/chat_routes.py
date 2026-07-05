@@ -21,6 +21,14 @@ def chat(
     return chat_service.chat(request)
 
 
+@router.get("/chat/history")
+def chat_history(
+    limit: int = 50,
+    chat_service: ChatService = Depends(get_chat_service),
+) -> list[dict]:
+    return chat_service.get_history(limit)
+
+
 @router.post("/chat/stream")
 def chat_stream(
     request: ChatRequest,
