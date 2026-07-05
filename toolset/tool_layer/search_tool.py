@@ -50,29 +50,7 @@ def _safe_float(value) -> float:
         return 0.0
 
 
-def _tokenize(text: str) -> List[str]:
-    text = str(text).lower()
-    word_tokens = re.findall(r"[a-z0-9_]+", text)
-    cjk_tokens = re.findall(r"[\u4e00-\u9fff]", text)
-    return word_tokens + cjk_tokens
 
-
-def _vector_norm(vector: Dict[str, float]) -> float:
-    return math.sqrt(sum(value * value for value in vector.values()))
-
-
-def _cosine(
-    left: Dict[str, float],
-    left_norm: float,
-    right: Dict[str, float],
-    right_norm: float,
-) -> float:
-    if left_norm <= 0 or right_norm <= 0:
-        return 0.0
-    if len(left) > len(right):
-        left, right = right, left
-    dot = sum(value * right.get(token, 0.0) for token, value in left.items())
-    return dot / (left_norm * right_norm)
 
 
 def _chunk_key(row: Dict) -> tuple:
@@ -137,144 +115,7 @@ def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, r
     return rows[:top_k]
 
 
-class LocalJsonlSearchBackend:
-    """Dependency-free local retrieval backend.
 
-    Vector mode uses TF-IDF cosine similarity. BM25 mode uses the standard BM25
-    scoring formula. Hybrid mode fuses both rankings with RRF and deduplicates.
-    """
-
-    def __init__(self, chunks_path: str, rrf_k: int = 60):
-        self.rrf_k = rrf_k
-        self.chunks_path = Path(chunks_path)
-        self.chunks = self._load_chunks()
-        self.tokenized_chunks = [_tokenize(self._chunk_text(chunk)) for chunk in self.chunks]
-        self.doc_freq = self._build_doc_freq()
-        self.avg_doc_len = self._average_doc_len()
-        self.idf = self._build_idf()
-        self.tfidf_vectors = [self._tfidf_vector(tokens) for tokens in self.tokenized_chunks]
-        self.tfidf_norms = [_vector_norm(vec) for vec in self.tfidf_vectors]
-
-    def search(self, query: str, top_k: int, mode: str, filters: Optional[Dict] = None) -> List[Dict]:
-        if not self.chunks:
-            return []
-        filters = filters or {}
-        candidate_limit = max(top_k * 5, 20)
-        if mode == "vector":
-            return self._vector_search(query, candidate_limit, filters)[:top_k]
-        if mode == "bm25":
-            return self._bm25_search(query, candidate_limit, filters)[:top_k]
-
-        vector_rows = self._vector_search(query, candidate_limit, filters)
-        bm25_rows = self._bm25_search(query, candidate_limit, filters)
-        return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
-
-    def _load_chunks(self) -> List[Dict]:
-        if not self.chunks_path.exists():
-            return []
-
-        chunks = []
-        with self.chunks_path.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    chunks.append(json.loads(line))
-        return chunks
-
-    def _vector_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        query_tokens = _tokenize(query)
-        query_vec = self._tfidf_vector(query_tokens)
-        query_norm = _vector_norm(query_vec)
-
-        rows = []
-        for idx, chunk in enumerate(self.chunks):
-            if not _matches_filters(chunk, filters):
-                continue
-
-            score = _cosine(query_vec, query_norm, self.tfidf_vectors[idx], self.tfidf_norms[idx])
-            if score <= 0:
-                continue
-
-            row = dict(chunk)
-            row["score"] = score
-            row["vector_score"] = score
-            row["bm25_score"] = 0.0
-            rows.append(row)
-
-        rows.sort(key=lambda item: item["score"], reverse=True)
-        return rows[:top_k]
-
-    def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
-        query_tokens = _tokenize(query)
-
-        rows = []
-        for idx, chunk in enumerate(self.chunks):
-            if not _matches_filters(chunk, filters):
-                continue
-
-            score = self._bm25_score(query_tokens, self.tokenized_chunks[idx])
-            if score <= 0:
-                continue
-
-            row = dict(chunk)
-            row["score"] = score
-            row["vector_score"] = 0.0
-            row["bm25_score"] = score
-            rows.append(row)
-
-        bm25_scores = _normalize_scores([row["bm25_score"] for row in rows])
-        for row, score in zip(rows, bm25_scores):
-            row["score"] = score
-            row["bm25_score"] = score
-
-        rows.sort(key=lambda item: item["score"], reverse=True)
-        return rows[:top_k]
-
-    def _build_doc_freq(self) -> Counter:
-        doc_freq = Counter()
-        for tokens in self.tokenized_chunks:
-            doc_freq.update(set(tokens))
-        return doc_freq
-
-    def _average_doc_len(self) -> float:
-        if not self.tokenized_chunks:
-            return 0.0
-        return sum(len(tokens) for tokens in self.tokenized_chunks) / len(self.tokenized_chunks)
-
-    def _build_idf(self) -> Dict[str, float]:
-        total_docs = max(len(self.tokenized_chunks), 1)
-        return {
-            token: math.log(1.0 + (total_docs - freq + 0.5) / (freq + 0.5))
-            for token, freq in self.doc_freq.items()
-        }
-
-    def _tfidf_vector(self, tokens: List[str]) -> Dict[str, float]:
-        counts = Counter(tokens)
-        total = max(len(tokens), 1)
-        return {token: (count / total) * self.idf.get(token, 0.0) for token, count in counts.items()}
-
-    def _bm25_score(self, query_tokens: List[str], doc_tokens: List[str]) -> float:
-        if not query_tokens or not doc_tokens:
-            return 0.0
-
-        k1 = 1.5
-        b = 0.75
-        doc_len = len(doc_tokens)
-        avg_len = self.avg_doc_len or 1.0
-        tf = Counter(doc_tokens)
-
-        score = 0.0
-        for token in query_tokens:
-            freq = tf.get(token, 0)
-            if freq <= 0:
-                continue
-            idf = self.idf.get(token, 0.0)
-            denom = freq + k1 * (1.0 - b + b * doc_len / avg_len)
-            score += idf * (freq * (k1 + 1.0)) / denom
-        return score
-
-    def _chunk_text(self, chunk: Dict) -> str:
-        return str(chunk.get("chunk_text", chunk.get("text", "")))
 
 
 class MilvusSearchBackend:
@@ -408,17 +249,15 @@ class SearchTool(BaseTool):
     def __init__(
         self,
         backend=None,
-        chunks_path: str = "data/chunks.jsonl",
-        documents_dir: str = "data/documents",
+        documents_dir: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
         min_score: float = 0.0,
     ):
-        if backend == "milvus" or os.getenv("RETRIEVAL_BACKEND") == "milvus":
-            self.backend = MilvusSearchBackend()
-            self.documents_dir = Path(__file__).resolve().parent.parent.parent / "data-persistence" / "data" / "documents"
-        else:
-            self.backend = backend or LocalJsonlSearchBackend(chunks_path=chunks_path)
-            self.documents_dir = Path(documents_dir)
+        self.backend = backend or MilvusSearchBackend()
+        self.documents_dir = (
+            Path(documents_dir) if documents_dir else
+            Path(__file__).resolve().parent.parent.parent / "data-persistence" / "data" / "documents"
+        )
         self.logger = logger or logging.getLogger(__name__)
         self.latest_results = []
         self.min_score = min_score
