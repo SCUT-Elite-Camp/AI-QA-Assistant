@@ -1,18 +1,15 @@
 import json
-import time
 from typing import List, Dict, Any, Optional
 
 from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
-from agent.logger.app_logger import log_chat_result
 from agent.formatter.answer_formatter import AnswerFormatter
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from agent.trace.trace_id import generate_trace_id, set_trace_id, clear_trace_id
-from storage.chat_history_store import ChatHistoryStore
 from toolset.tool_layer import get_tools, SearchTool, BaseTool
+from agent.service import TraceService, AuditService
 
 
 class Agent:
@@ -27,6 +24,10 @@ class Agent:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
 
+        # Load auxiliary services
+        self.trace_service = TraceService()
+        self.audit_service = AuditService()
+
         # Load tools from Toolset layer if not passed
         self.tools = {t.name: t for t in (tools or get_tools())}
 
@@ -40,31 +41,26 @@ class Agent:
 
     def chat(self, request: ChatRequest) -> ChatResponse:
         """Main entry point. Handles trace_id binding, latency profiling, and SQLite history saving."""
-        start_time = time.perf_counter()
-        trace_id = generate_trace_id()
-        set_trace_id(trace_id)
+        start_time = self.audit_service.start_timer()
+        trace_id = self.trace_service.start_trace()
 
         try:
             response = self._chat_internal(request, trace_id)
 
             # Record latency and write to SQLite history database
-            latency_ms = int((time.perf_counter() - start_time) * 1000)
-            try:
-                store = ChatHistoryStore()
-                store.add_record(
-                    trace_id=trace_id,
-                    user_query=request.query,
-                    assistant_answer=response.answer,
-                    status=response.status,
-                    latency_ms=latency_ms,
-                    session_id=request.session_id,
-                )
-            except Exception:
-                pass
+            latency_ms = self.audit_service.stop_timer(start_time)
+            self.audit_service.record(
+                trace_id=trace_id,
+                query=request.query,
+                answer=response.answer,
+                status=response.status,
+                latency_ms=latency_ms,
+                session_id=request.session_id,
+            )
 
             return response
         finally:
-            clear_trace_id()
+            self.trace_service.clear_trace()
 
     def _chat_internal(self, request: ChatRequest, trace_id: str) -> ChatResponse:
         """Runs the ReAct loop and maps the outcome to ChatResponse."""
@@ -160,7 +156,7 @@ class Agent:
             answer=answer,
             retrieval_results=retrieval_results,
         )
-        log_chat_result(
+        self.audit_service.log_result(
             trace_id=trace_id,
             query=query,
             retrieval_count=len(retrieval_results),
@@ -180,7 +176,10 @@ class Agent:
 
         openai_tools = [t.to_openai_schema() for t in self.tools.values()]
 
-        for _ in range(max_iterations):
+        for i in range(max_iterations):
+            # Call audit service to log step
+            self.audit_service.log_step(i, query)
+
             response = self.llm.chat(messages, tools=openai_tools if openai_tools else None)
 
             tool_calls = response.get("tool_calls")
@@ -198,6 +197,7 @@ class Agent:
 
                     tool = self.tools.get(name)
                     if tool:
+                        self.audit_service.log_tool_call(name, args)
                         result = tool.execute(**args)
                     else:
                         result = f"Error: Tool {name} not found."
@@ -235,7 +235,7 @@ class Agent:
             message=message,
             citations=[],
         )
-        log_chat_result(
+        self.audit_service.log_result(
             trace_id=trace_id,
             query=query,
             retrieval_count=retrieval_count,
@@ -249,8 +249,4 @@ class Agent:
 
     def get_history(self, limit: int = 50) -> list[dict]:
         """Retrieves audit logging history from SQLite store."""
-        try:
-            store = ChatHistoryStore()
-            return store.get_records(limit)
-        except Exception:
-            return []
+        return self.audit_service.store.get_records(limit)
