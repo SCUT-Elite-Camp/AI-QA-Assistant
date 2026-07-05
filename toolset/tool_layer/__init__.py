@@ -1,4 +1,3 @@
-from .evaluation import evaluate_retrieval
 from .search_tool import RetrievalError, RetrievalParameterError, SearchTool
 from .base_tool import BaseTool
 
@@ -12,7 +11,6 @@ __all__ = [
     "RetrievalError",
     "RetrievalParameterError",
     "SearchTool",
-    "evaluate_retrieval",
     "BaseTool",
     "get_tools",
 ]

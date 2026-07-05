@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tool_layer import RetrievalError, RetrievalParameterError, SearchTool, evaluate_retrieval
+from tool_layer import RetrievalError, RetrievalParameterError, SearchTool
 
 
 class FakeBackend:
@@ -114,32 +114,6 @@ class SearchToolTest(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["doc_id"], "doc_001")
-
-
-
-    def test_evaluate_retrieval_exports_hit_rate_and_mrr(self):
-        eval_cases = [
-            {"query": "first", "expected_doc_ids": ["doc_001"]},
-            {"query": "second", "expected_doc_ids": ["doc_002"]},
-            {"query": "missing", "expected_doc_ids": ["doc_003"]},
-        ]
-
-        with tempfile.TemporaryDirectory() as tmp:
-            output_path = Path(tmp) / "eval_results.json"
-            report = evaluate_retrieval(
-                SearchTool(backend=FakeBackend()),
-                eval_cases,
-                output_path=output_path,
-            )
-            exported = json.loads(output_path.read_text(encoding="utf-8"))
-
-        self.assertEqual(report["case_count"], 3)
-        self.assertEqual(report["metrics"]["hit_rate@1"], 0.333333)
-        self.assertEqual(report["metrics"]["hit_rate@3"], 0.666667)
-        self.assertEqual(report["metrics"]["hit_rate@5"], 0.666667)
-        self.assertEqual(report["metrics"]["mrr"], 0.5)
-        self.assertEqual(exported["metrics"], report["metrics"])
-
 
 if __name__ == "__main__":
     unittest.main()
