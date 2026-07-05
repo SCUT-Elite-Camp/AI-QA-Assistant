@@ -3,17 +3,15 @@ import pytest
 from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from agent.service.chat_service import ChatService
+from agent.agent import Agent
 from agent.llm.llm_client import LLMClient
 from toolset.tool_layer.search_tool import SearchTool
-
-
 from agent.errors.exceptions import LLMError
 
 
 def test_normal_query_returns_success() -> None:
     # LLMClient.chat is mocked by conftest fixture autouse
-    response = ChatService().chat(ChatRequest(query="项目 Q1 阶段需要完成哪些功能？"))
+    response = Agent().chat(ChatRequest(query="项目 Q1 阶段需要完成哪些功能？"))
 
     assert response.status == StatusCode.SUCCESS
     assert response.answer
@@ -22,7 +20,7 @@ def test_normal_query_returns_success() -> None:
 
 
 def test_empty_query_returns_invalid_query() -> None:
-    response = ChatService().chat(ChatRequest(query="   "))
+    response = Agent().chat(ChatRequest(query="   "))
 
     assert response.status == StatusCode.INVALID_QUERY
     assert response.answer == ""
@@ -34,7 +32,7 @@ def test_empty_retrieval_returns_no_relevant_context(monkeypatch) -> None:
     # Mock SearchTool.search to return empty list
     monkeypatch.setattr(SearchTool, "search", lambda *args, **kwargs: [])
 
-    response = ChatService().chat(ChatRequest(query="知识库外问题"))
+    response = Agent().chat(ChatRequest(query="知识库外问题"))
 
     assert response.status == StatusCode.NO_RELEVANT_CONTEXT
     assert response.answer == ""
@@ -47,7 +45,7 @@ def test_retrieval_error_returns_retrieval_error(monkeypatch) -> None:
         raise RuntimeError("milvus down")
     monkeypatch.setattr(SearchTool, "search", mock_raise)
 
-    response = ChatService().chat(ChatRequest(query="触发检索异常"))
+    response = Agent().chat(ChatRequest(query="触发检索异常"))
 
     assert response.status in (StatusCode.LLM_ERROR, StatusCode.RETRIEVAL_ERROR)
     assert response.answer == ""
@@ -59,7 +57,7 @@ def test_llm_error_returns_llm_error(monkeypatch) -> None:
         raise LLMError("LLM disconnect")
     monkeypatch.setattr(LLMClient, "chat", mock_chat_raise)
 
-    response = ChatService().chat(ChatRequest(query="触发模型异常"))
+    response = Agent().chat(ChatRequest(query="触发模型异常"))
 
     assert response.status == StatusCode.LLM_ERROR
     assert response.message == "服务异常，请稍后重试。"
@@ -85,7 +83,7 @@ def test_chat_service_passes_week2_retrieval_parameters(monkeypatch) -> None:
 
     monkeypatch.setattr(SearchTool, "search", mock_search)
 
-    response = ChatService().chat(
+    response = Agent().chat(
         ChatRequest(
             query="  第二周做什么？ ",
             top_k=3,
@@ -99,7 +97,7 @@ def test_chat_service_passes_week2_retrieval_parameters(monkeypatch) -> None:
 
 
 def test_low_score_retrieval_returns_no_relevant_context(monkeypatch) -> None:
-    monkeypatch.setattr("agent.service.chat_service.settings.MIN_RETRIEVAL_SCORE", 0.8)
+    monkeypatch.setattr("agent.config.settings.settings.MIN_RETRIEVAL_SCORE", 0.8)
 
     # Mock search to return low-score chunk
     def mock_search(*args, **kwargs):
@@ -114,7 +112,7 @@ def test_low_score_retrieval_returns_no_relevant_context(monkeypatch) -> None:
         }]
     monkeypatch.setattr(SearchTool, "search", mock_search)
 
-    response = ChatService().chat(ChatRequest(query="知识库外问题"))
+    response = Agent().chat(ChatRequest(query="知识库外问题"))
 
     assert response.status == StatusCode.NO_RELEVANT_CONTEXT
     assert response.answer == ""
@@ -125,7 +123,7 @@ def test_empty_llm_answer_returns_llm_error(monkeypatch) -> None:
     # Mock LLMClient.chat to return empty content
     monkeypatch.setattr(LLMClient, "chat", lambda *args, **kwargs: {"role": "assistant", "content": "   "})
 
-    response = ChatService().chat(ChatRequest(query="触发空模型答案"))
+    response = Agent().chat(ChatRequest(query="触发空模型答案"))
 
     assert response.status == StatusCode.LLM_ERROR
     assert response.answer == ""

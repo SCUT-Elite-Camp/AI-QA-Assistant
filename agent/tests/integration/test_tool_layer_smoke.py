@@ -1,7 +1,7 @@
 from agent.config.settings import settings
 from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
-from agent.service.chat_service import ChatService
+from agent.agent import Agent
 
 
 def test_real_tool_layer_smoke_path(monkeypatch) -> None:
@@ -26,7 +26,7 @@ def test_real_tool_layer_smoke_path(monkeypatch) -> None:
         ]
     monkeypatch.setattr(SearchTool, "search", mock_search)
 
-    response = ChatService().chat(
+    response = Agent().chat(
         ChatRequest(
             query="What does the Tool Layer CP1 interface return?",
             top_k=2,
