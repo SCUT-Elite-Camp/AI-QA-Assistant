@@ -12,6 +12,7 @@ from agent.trace.trace_id import get_trace_id
 
 logger = get_logger(__name__)
 
+
 SUPPORTED_RETRIEVAL_MODES = {"vector", "bm25", "hybrid"}
 
 
@@ -57,10 +58,8 @@ class RetrievalAdapter(BaseRetriever):
 
             if top_k < 1 or top_k > 20:
                 raise RetrievalError("top_k must be between 1 and 20")
-
             if mode not in SUPPORTED_RETRIEVAL_MODES:
                 raise RetrievalError(f"Unsupported retrieval mode: {mode}")
-
             if min_score < 0.0 or min_score > 1.0:
                 raise RetrievalError("min_score must be between 0.0 and 1.0")
 

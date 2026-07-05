@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from agent.schemas.chat import ChatRequest, ChatResponse
@@ -6,16 +6,26 @@ from agent.service.chat_service import ChatService
 from agent.streaming.sse import build_sse_event
 
 router = APIRouter()
-chat_service = ChatService()
+
+
+def get_chat_service() -> ChatService:
+    """Dependency provider for ChatService."""
+    return ChatService()
 
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
+def chat(
+    request: ChatRequest,
+    chat_service: ChatService = Depends(get_chat_service),
+) -> ChatResponse:
     return chat_service.chat(request)
 
 
 @router.post("/chat/stream")
-def chat_stream(request: ChatRequest) -> StreamingResponse:
+def chat_stream(
+    request: ChatRequest,
+    chat_service: ChatService = Depends(get_chat_service),
+) -> StreamingResponse:
     response = chat_service.chat(request)
 
     def event_stream():

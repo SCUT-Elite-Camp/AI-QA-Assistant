@@ -7,20 +7,6 @@ BM25 关键词检索索引。
 """
 
 import os
-import sys
-from pathlib import Path
-
-# Add data-pipeline and data-persistence containers to sys.path to allow top-level module resolution
-_current_dir = Path(__file__).resolve().parent
-_project_root = _current_dir.parent.parent
-_data_pipeline_dir = _project_root / "data-pipeline"
-_data_persistence_dir = _project_root / "data-persistence"
-
-if str(_data_pipeline_dir) not in sys.path:
-    sys.path.insert(0, str(_data_pipeline_dir))
-if str(_data_persistence_dir) not in sys.path:
-    sys.path.insert(0, str(_data_persistence_dir))
-
 import pickle
 import jieba
 from rank_bm25 import BM25Okapi

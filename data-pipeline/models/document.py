@@ -58,7 +58,7 @@ def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
     )
     if col_count == 0:
         return ""
-    # 补齐不足 of 的列
+    # 补齐不足的列
     padded_rows = [r + [""] * (col_count - len(r)) for r in rows]
     if headers:
         padded_headers = list(headers) + [""] * (col_count - len(headers))

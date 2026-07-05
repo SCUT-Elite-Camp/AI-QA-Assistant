@@ -12,8 +12,6 @@
 import os
 from functools import lru_cache
 
-from openai import OpenAI
-
 # ─── 本地模型常量 ───────────────────────────────────────
 
 _LOCAL_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
@@ -23,8 +21,9 @@ _MODELSCOPE_MODEL_ID = "BAAI/bge-small-zh-v1.5"
 
 # ─── 客户端构建 ──────────────────────────────────────────
 
-def _build_openai_client() -> OpenAI:
+def _build_openai_client():
     """根据环境变量构建 OpenAI 兼容客户端"""
+    from openai import OpenAI
     api_key = os.environ.get("OPENAI_API_KEY")
     base_url = os.environ.get("OPENAI_BASE_URL")
     if not api_key:
@@ -104,9 +103,4 @@ def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> list
         )
         return [vec.tolist() for vec in result]
 
-def embedding_dim() -> int:
-    """返回当前使用的向量维度"""
-    if _use_api():
-        return 1536
-    else:
-        return _LOCAL_MODEL_DIM
+

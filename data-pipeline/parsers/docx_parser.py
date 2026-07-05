@@ -8,13 +8,6 @@ DOCX 解析器：使用 python-docx 提取文本、表格和结构信息。
 """
 
 import re
-import sys
-from pathlib import Path
-
-# 确保项目根目录在 sys.path 中，支持直接运行此文件
-_project_root = Path(__file__).resolve().parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
 
 from docx import Document as DocxDocument
 from models.document import Document, ContentBlock, BlockType
@@ -56,8 +49,6 @@ class DocxParser(BaseParser):
         content = "\n\n".join(
             cb.to_markdown() for cb in all_blocks if not cb.is_empty
         )
-        if not content:
-            content = ""
 
         return Document.from_file_path(file_path, content, content_blocks=all_blocks)
 
@@ -173,21 +164,3 @@ def _is_page_number(text: str) -> bool:
             return True
     return False
 
-# ── 直接运行入口 ──
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("用法: python parsers/docx_parser.py <docx_file_path>")
-        sys.exit(1)
-
-    parser = DocxParser()
-    doc = parser.parse(sys.argv[1])
-    print(f"=== 文档: {doc.title} ===")
-    print(f"doc_id: {doc.doc_id}")
-    print(f"content_blocks 数量: {len(doc.content_blocks)}")
-    for cb in doc.content_blocks:
-        md = cb.to_markdown()
-        if md:
-            preview = md[:120].replace("\n", "\\n")
-            print(f"  [{cb.block_type.value}] {preview}...")
-    print(f"\n=== 全文 ({len(doc.content)} 字符) ===")
-    print(doc.content[:2000])

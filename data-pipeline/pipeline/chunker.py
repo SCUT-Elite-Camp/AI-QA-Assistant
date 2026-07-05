@@ -6,7 +6,7 @@
 - chunk_from_blocks():   块感知切片（保证不切割表格和标题边界）
 """
 
-from models.document import Chunk, ContentBlock, BlockType
+from models.document import Chunk, ContentBlock
 
 def chunk_text(
     text: str,

@@ -9,13 +9,6 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 """
 
 import re
-import sys
-from pathlib import Path
-
-# 确保项目根目录在 sys.path 中，支持直接运行此文件
-_project_root = Path(__file__).resolve().parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
 
 import fitz  # pymupdf
 from models.document import Document, ContentBlock, BlockType
@@ -42,8 +35,8 @@ class PDFParser(BaseParser):
             footer_y = page_height * (1 - HEADER_FOOTER_RATIO)
 
             # 1. 提取表格区域（用于后续排除文本块中的表格文字）
-            table_regions = self._extract_table_regions(page)
             tables = page.find_tables()
+            table_regions = self._extract_table_regions(tables)
 
             # 2. 提取结构化文本块
             text_dict = page.get_text("dict")
@@ -107,26 +100,20 @@ class PDFParser(BaseParser):
             cb.to_markdown() for cb in all_blocks if not cb.is_empty
         )
         content = self._clean_text(content)
-        if not content:
-            content = ""
 
         return Document.from_file_path(file_path, content, content_blocks=all_blocks)
 
     # ── 区域与重叠判断 ──
 
     @staticmethod
-    def _extract_table_regions(page) -> list[tuple[float, float, float, float]]:
+    def _extract_table_regions(tables) -> list[tuple[float, float, float, float]]:
         """获取页面上所有表格的边界框"""
         regions: list[tuple[float, float, float, float]] = []
-        try:
-            tables = page.find_tables()
-            for t in tables:
-                try:
-                    regions.append(tuple(t.bbox))
-                except Exception:
-                    pass
-        except Exception:
-            pass
+        for t in tables:
+            try:
+                regions.append(tuple(t.bbox))
+            except Exception:
+                pass
         return regions
 
     @staticmethod
@@ -243,21 +230,3 @@ class PDFParser(BaseParser):
         text = re.sub(r"[ \t]{2,}", " ", text)
         return text.strip()
 
-# ── 直接运行入口 ──
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("用法: python parsers/pdf_parser.py <pdf_file_path>")
-        sys.exit(1)
-
-    parser = PDFParser()
-    doc = parser.parse(sys.argv[1])
-    print(f"=== 文档: {doc.title} ===")
-    print(f"doc_id: {doc.doc_id}")
-    print(f"content_blocks 数量: {len(doc.content_blocks)}")
-    for cb in doc.content_blocks:
-        md = cb.to_markdown()
-        if md:
-            preview = md[:120].replace("\n", "\\n")
-            print(f"  [{cb.block_type.value}] {preview}...")
-    print(f"\n=== 全文 ({len(doc.content)} 字符) ===")
-    print(doc.content[:2000])
