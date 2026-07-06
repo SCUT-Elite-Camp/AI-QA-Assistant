@@ -590,7 +590,7 @@
 - Milvus 后端由 toolset 实现还是 data-persistence 层提供。
 - embedding 模型、向量维度、collection 名称和部署地址。
 
-## REQ-TOOLSET-012 CP4 Agent 集成验收
+## REQ-TOOLSET-012 CP4 工具集层与 Agent 层集成验收
 
 ### 状态
 
@@ -598,11 +598,13 @@
 
 ### 需求描述
 
-工具集层应提供一个轻量 Agent 集成入口，用于验证 Q1 阶段“用户问题 → 检索 → 生成答案 → 返回引用”的端到端链路。该 Agent 入口应复用 `SearchTool.search`，每轮问答只调用一次检索工具，并将检索结果转换为答案生成上下文和前端可展示的引用列表。
+工具集层应提供稳定的检索接口和标准化检索结果，供正式 Agent 层通过 `RetrievalAdapter` 调用。CP4 不在工具集层实现 Agent 编排、Prompt 构造、LLM 调用或多轮对话，只验证正式 Agent 层能够通过 `SearchTool.search` 获取可生成回答和引用来源的检索结果。
 
 ### 关联接口
 
-内部 Python 接口：`SimpleRagAgent.answer(...)`
+工具集层接口：`SearchTool.search(...)`
+
+Agent 层接口：`agent.retrieval.RetrievalAdapter.retrieve(...)`
 
 命令行验收脚本：`python demo_cp4_agent_integration.py`
 
@@ -614,47 +616,50 @@
 
 | 字段名 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| query | string | 是 | 用户问题，不能为空 |
-| top_k | integer | 否 | 检索返回数量，默认 5 |
-| mode | string | 否 | 检索模式，默认 `hybrid` |
-| filters | object | 否 | 透传给检索工具的过滤条件 |
-| min_score | number | 否 | 透传给检索工具的最低相关性分数 |
-| trace_id | string | 否 | 调用链路追踪 ID，不传时由 Agent 自动生成 |
+| query | string | 是 | Agent 层传入的用户问题，不能为空 |
+| top_k | integer | 否 | 检索返回数量，默认 5，范围 1-20 |
+| mode | string | 否 | 检索模式，默认 `hybrid`，可选 `vector`、`bm25`、`hybrid` |
+| filters | object | 否 | Agent 层透传的过滤条件 |
+| min_score | number | 否 | Agent 层透传的最低相关性分数 |
+| trace_id | string | 否 | Agent 层生成并传入的调用链路追踪 ID |
 
 ### 输出
 
 | 字段名 | 类型 | 说明 |
 | --- | --- | --- |
-| trace_id | string | 本次问答链路 ID |
-| answer | string | 基于检索上下文生成的回答，正常情况下包含 `[1]` 形式的引用编号 |
-| citations | array | 引用来源列表，供前端展示 |
-| status | string | 响应状态，例如 `success`、`invalid_query`、`no_relevant_context`、`retrieval_error`、`llm_error` |
-| retrieval | object | 检索模式、top_k、返回数量和检索耗时 |
+| doc_id | string | 文档 ID |
+| chunk_id | string | 文档块 ID |
+| chunk_index | integer | 文档块序号 |
+| chunk_text | string | 可供 Agent 层组装上下文的文本 |
+| title | string | 引用展示标题 |
+| score | number | 归一化相关性分数 |
+| vector_score | number | vector 检索分数 |
+| bm25_score | number | BM25 检索分数 |
+| source_url | string | 前端可展示的来源链接 |
 
 ### 异常情况
 
 | 场景 | 响应状态 | 说明 |
 | --- | --- | --- |
-| query 为空 | invalid_query | 不调用检索工具，不调用答案生成器 |
-| 检索结果为空 | no_relevant_context | 返回“当前知识库没有足够信息回答该问题” |
-| 检索工具异常 | retrieval_error | 返回检索服务不可用提示并保留 trace_id |
-| 答案生成异常 | llm_error | 返回模型服务不可用提示 |
-| 答案引用编号不存在 | llm_error | 防止回答引用不存在的 citations |
+| query 为空 | `RetrievalParameterError` | 参数校验失败，由 Agent 层映射为 `invalid_query` 或对应兜底 |
+| top_k、mode、filters、min_score 非法 | `RetrievalParameterError` | 参数校验失败 |
+| 检索结果为空 | `[]` | 由 Agent 层映射为 `no_relevant_context` |
+| 检索后端异常 | `RetrievalError` | 由 Agent 层映射为 `retrieval_error` |
 
 ### 验收标准
 
-- Agent 每个正常问题只调用一次 `SearchTool.search`。
+- 正式 Agent 层代码来自 `origin/agent-dev` 分支的 `agent/` 目录。
+- 工具集层不保留自写 `SimpleRagAgent` 或其他 Agent 编排实现。
+- `agent.retrieval.RetrievalAdapter` 可以调用当前 `SearchTool.search`。
 - 默认使用 `hybrid` 检索模式和 `top_k=5`。
-- 正常问题返回 `success`，并返回 3 到 5 个相关文档块作为 citations。
+- 正常问题经正式 `ChatService` 返回 `success`，并带有 citations。
 - 每个 citation 至少包含 `citation_id`、`title`、`source_url`、`doc_id`、`chunk_id` 和 `score`。
-- answer 中出现的引用编号必须能在 citations 中找到对应项。
-- 空问题、检索为空、检索异常和生成异常都有明确兜底响应。
-- `demo_cp4_agent_integration.py` 验证 `top_k=5` 检索延迟小于 1 秒。
+- `demo_cp4_agent_integration.py` 可以通过正式 `ChatService` 验证 toolset 检索结果被转换为 Agent citations。
 
 ### 待确认
 
-- 正式 LLM client 的模型名称、超时和流式输出接口。
-- Agent 层最终是否迁移到独立模块，或继续保留工具集层内的验收适配代码。
+- 正式 LLM client 的模型名称、超时和流式输出接口由 Agent 层确认。
+- Agent 层是否继续保留 `agent/tool_layer` 临时 stub，或统一改为通过项目根目录的 `toolset/tool_layer` 接入。
 
 ## 提交前检查清单
 

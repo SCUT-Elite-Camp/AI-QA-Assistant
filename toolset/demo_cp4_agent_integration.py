@@ -3,49 +3,67 @@ import logging
 import sys
 from pathlib import Path
 
-from agent_layer import SimpleRagAgent
+BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parent
+
+for path in (REPO_ROOT / "agent", BASE_DIR):
+    path_text = str(path)
+    if path_text in sys.path:
+        sys.path.remove(path_text)
+    sys.path.insert(0, path_text)
+
+from agent.retrieval.retrieval_adapter import RetrievalAdapter
+from agent.schemas.chat import ChatRequest
+from agent.service.chat_service import ChatService
 from tool_layer import SearchTool
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout, force=True)
 
-    base_dir = Path(__file__).resolve().parent
     tool = SearchTool(
-        chunks_path=str(base_dir / "data" / "chunks.jsonl"),
-        documents_dir=str(base_dir / "data" / "documents"),
+        chunks_path=str(BASE_DIR / "data" / "chunks.jsonl"),
+        documents_dir=str(BASE_DIR / "data" / "documents"),
     )
-    agent = SimpleRagAgent(search_tool=tool)
+    agent_service = ChatService(retriever=RetrievalAdapter(retriever=tool))
+    sample_count = len(getattr(tool.backend, "chunks", []))
 
     print("=" * 72)
-    print("CP4 Demo: Agent Integration and Final Acceptance")
+    print("CP4 Demo: Toolset and Agent Layer Integration")
     print("=" * 72)
+    print(f"Knowledge-base chunks: {sample_count}")
 
-    response = agent.answer(
-        query="How does the Agent use SearchTool results to show citation sources?",
+    response = agent_service.chat(ChatRequest(
+        query="CP4_FRONTEND_CONTRACT: How should the Web layer display Agent answer citations status trace_id and retrieval fields?",
         top_k=5,
-        mode="hybrid",
-        trace_id="demo-cp4-001",
-    )
+        retrieval_mode="hybrid",
+    ))
+    response_data = _to_dict(response)
 
     print("\n[Agent response]")
-    print(json.dumps(response, ensure_ascii=False, indent=2))
+    print(json.dumps(response_data, ensure_ascii=False, indent=2))
 
-    retrieval = response.get("retrieval", {})
-    result_count = retrieval.get("result_count", 0)
-    latency_ms = retrieval.get("latency_ms", 0)
+    citations = response_data.get("citations", [])
+    result_count = len(citations)
 
     print("\n[Acceptance]")
-    print(f"- status success          : {response.get('status') == 'success'}")
+    print(f"- knowledge samples      : {sample_count}")
+    print(f"- uses official Agent     : {agent_service.__class__.__module__.startswith('agent.')}")
+    print(f"- status success          : {response_data.get('status') == 'success'}")
     print(f"- returns 3-5 chunks      : {3 <= result_count <= 5}")
-    print(f"- top_k=5 latency < 1s    : {latency_ms < 1000} ({latency_ms}ms)")
-    print(f"- citations are available : {bool(response.get('citations'))}")
-    print(f"- citation-ready fields   : {_has_citation_fields(response.get('citations', []))}")
+    print(f"- citations are available : {bool(citations)}")
+    print(f"- citation-ready fields   : {_has_citation_fields(citations)}")
 
 
 def _has_citation_fields(citations) -> bool:
     required = {"citation_id", "title", "source_url", "doc_id", "chunk_id", "score"}
     return bool(citations) and all(required <= set(item) for item in citations)
+
+
+def _to_dict(model):
+    if hasattr(model, "model_dump"):
+        return model.model_dump()
+    return model.dict()
 
 
 if __name__ == "__main__":

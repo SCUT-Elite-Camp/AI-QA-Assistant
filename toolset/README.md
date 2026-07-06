@@ -1,6 +1,6 @@
 # 工具集层 CP4
 
-本目录用于放置项目代码中的工具集层实现。CP4 在 CP1/CP2/CP3 统一检索、hybrid RRF 融合、日志、错误处理和检索评估能力基础上，补充一个单步 RAG Agent 集成层，用于验证“用户问题 -> 检索 -> 生成答案 -> 返回引用”的端到端链路。
+本目录用于放置项目代码中的工具集层实现。CP4 在 CP1/CP2/CP3 统一检索、hybrid RRF 融合、日志、错误处理和检索评估能力基础上，完成与正式 Agent 层的集成验收。工具集层只提供检索能力、标准化结果、引用字段和评估数据，不实现 Agent 编排逻辑。
 
 ## 开发规则
 
@@ -85,12 +85,12 @@ results = tool.search(
 
 ## CP4 说明
 
-- `agent_layer.SimpleRagAgent` 提供 Agent 入口，接收 `query`、生成 `trace_id`，并且每轮只调用一次 `SearchTool.search`。
-- Agent 默认使用 `hybrid` 模式和 `top_k=5`，检索结果会转换为前端可直接展示的 `citations`。
-- `build_prompt` 会把用户问题、检索上下文、来源字段和“仅基于上下文回答、不得编造”的约束组装成稳定 Prompt。
-- 默认 `ExtractiveAnswerGenerator` 是离线验收用生成器，接口与 LLM client 一致，后续可替换为真实模型。
-- Agent 会处理空问题、检索为空、检索异常、生成异常和引用编号异常，并返回明确 `status`。
-- `demo_cp4_agent_integration.py` 会输出端到端响应，并检查 3-5 个 chunk、citation-ready 字段和 `top_k=5` 检索延迟小于 1 秒。
+- 正式 Agent 层代码来自 `origin/agent-dev` 分支的 `agent/` 目录。
+- 工具集层通过 `SearchTool.search` 向 Agent 层提供检索能力。
+- `SearchTool.search` 接收 `query`、`top_k`、`mode`、`filters`、`min_score` 和 `trace_id`。
+- Agent 层通过 `agent.retrieval.RetrievalAdapter` 调用工具集层，不直接关心本地 JSONL、BM25、vector、hybrid 或后续 Milvus 实现。
+- 检索结果保留 `doc_id`、`chunk_id`、`chunk_index`、`chunk_text`、`title`、`score`、`vector_score`、`bm25_score` 和 `source_url`，供 Agent 层生成引用。
+- `demo_cp4_agent_integration.py` 使用正式 `agent.service.ChatService` 进行联调验收，不再使用工具集层自写 Agent。
 
 ## 验证
 
@@ -109,7 +109,7 @@ data/chunks.jsonl
 data/documents/*.json
 ```
 
-这份数据只用于 CP2 本地演示和接口联调，不代表真实业务数据。真实 `chunks.jsonl` 后续应由数据处理 Pipeline 模块从 Confluence、PDF 或 Office 文档解析分块后生成。
+这份数据只用于本地演示、接口联调和 CP4 验收，不代表真实业务数据。真实 `chunks.jsonl` 后续应由数据处理 Pipeline 模块从 Confluence、PDF 或 Office 文档解析分块后生成。
 
 可通过 `evaluate_retrieval` 导出 CP3 评估结果：
 
@@ -117,7 +117,7 @@ data/documents/*.json
 eval_results.json
 ```
 
-CP4 Agent 集成验收演示：
+CP4 与正式 Agent 层集成验收演示：
 
 ```powershell
 python demo_cp4_agent_integration.py
