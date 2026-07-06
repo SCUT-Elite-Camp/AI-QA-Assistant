@@ -1,0 +1,26 @@
+# Unified dependencies for AI-QA-Assistant Python backend layers
+
+# System / Compatibility
+setuptools<70
+marshmallow<4.0.0
+
+# FastAPI / Web Server (Agent Layer)
+fastapi
+uvicorn
+pydantic
+httpx
+openai
+
+# Database & Vector DB (Data Persistence Layer)
+pymilvus==2.3.7
+
+# RAG & Document Pipeline (Data Pipeline Layer)
+rank-bm25
+jieba
+PyMuPDF
+python-docx
+sentence-transformers
+modelscope
+
+# Testing
+pytest

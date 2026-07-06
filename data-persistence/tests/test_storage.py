@@ -76,8 +76,10 @@ def test_milvus_store():
         doc_ids = [TEST_DOC_ID, TEST_DOC_ID]
         chunk_indices = [0, 1]
         
+        chunk_ids = [f"{TEST_DOC_ID}::chunk_{i}" for i in chunk_indices]
         mr = store.insert_chunks(
             embeddings=embeddings,
+            chunk_ids=chunk_ids,
             chunk_texts=chunk_texts,
             doc_ids=doc_ids,
             chunk_indices=chunk_indices,
@@ -143,8 +145,10 @@ def test_storage_integration():
         doc_ids = [TEST_DOC_ID, TEST_DOC_ID]
         chunk_indices = [0, 1]
         
+        chunk_ids = [f"{TEST_DOC_ID}::chunk_{i}" for i in chunk_indices]
         store.insert_chunks(
             embeddings=embeddings,
+            chunk_ids=chunk_ids,
             chunk_texts=chunk_texts,
             doc_ids=doc_ids,
             chunk_indices=chunk_indices,

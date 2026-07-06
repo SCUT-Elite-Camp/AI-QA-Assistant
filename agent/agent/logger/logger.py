@@ -2,7 +2,6 @@
 import logging
 import sys
 from typing import Optional
-from functools import wraps
 
 from agent.trace.trace_id import get_trace_id
 from agent.config.settings import settings
@@ -60,19 +59,3 @@ def setup_logger(level: Optional[str] = None, log_file: Optional[str] = None) ->
 def get_logger(name: str) -> logging.Logger:
     """获取 logger 实例"""
     return logging.getLogger(name)
-
-
-def log_request(func):
-    """装饰器：自动记录请求日志"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        logger = get_logger(func.__module__)
-        logger.info(f"Calling {func.__name__}")
-        try:
-            result = func(*args, **kwargs)
-            logger.info(f"{func.__name__} completed successfully")
-            return result
-        except Exception as e:
-            logger.error(f"{func.__name__} failed: {str(e)}", exc_info=True)
-            raise
-    return wrapper

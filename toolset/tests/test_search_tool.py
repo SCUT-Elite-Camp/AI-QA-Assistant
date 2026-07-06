@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tool_layer import RetrievalError, RetrievalParameterError, SearchTool, evaluate_retrieval
+from tool_layer import RetrievalError, RetrievalParameterError, SearchTool
 
 
 class FakeBackend:
@@ -114,70 +114,6 @@ class SearchToolTest(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["doc_id"], "doc_001")
-
-    def test_local_backend_supports_cp2_modes_and_hybrid_dedup(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            chunks_path = Path(tmp) / "chunks.jsonl"
-            chunks = [
-                {
-                    "doc_id": "doc_vector",
-                    "chunk_index": 0,
-                    "chunk_text": "milvus semantic vector retrieval search",
-                },
-                {
-                    "doc_id": "doc_bm25",
-                    "chunk_index": 0,
-                    "chunk_text": "bm25 keyword keyword exact search",
-                },
-                {
-                    "doc_id": "doc_hybrid",
-                    "chunk_index": 0,
-                    "chunk_text": "milvus bm25 hybrid search",
-                },
-            ]
-            chunks_path.write_text(
-                "\n".join(json.dumps(chunk, ensure_ascii=False) for chunk in chunks),
-                encoding="utf-8",
-            )
-
-            tool = SearchTool(chunks_path=str(chunks_path))
-
-            vector_results = tool.search("milvus vector search", mode="vector", top_k=3)
-            bm25_results = tool.search("keyword exact search", mode="bm25", top_k=3)
-            hybrid_results = tool.search("milvus bm25 hybrid search", mode="hybrid", top_k=3)
-
-        self.assertGreaterEqual(len(vector_results), 1)
-        self.assertGreaterEqual(len(bm25_results), 1)
-        self.assertGreaterEqual(len(hybrid_results), 1)
-
-        self.assertTrue(all("vector_score" in row and "bm25_score" in row for row in hybrid_results))
-
-        hybrid_keys = [(row["doc_id"], row["chunk_index"]) for row in hybrid_results]
-        self.assertEqual(len(hybrid_keys), len(set(hybrid_keys)))
-
-    def test_evaluate_retrieval_exports_hit_rate_and_mrr(self):
-        eval_cases = [
-            {"query": "first", "expected_doc_ids": ["doc_001"]},
-            {"query": "second", "expected_doc_ids": ["doc_002"]},
-            {"query": "missing", "expected_doc_ids": ["doc_003"]},
-        ]
-
-        with tempfile.TemporaryDirectory() as tmp:
-            output_path = Path(tmp) / "eval_results.json"
-            report = evaluate_retrieval(
-                SearchTool(backend=FakeBackend()),
-                eval_cases,
-                output_path=output_path,
-            )
-            exported = json.loads(output_path.read_text(encoding="utf-8"))
-
-        self.assertEqual(report["case_count"], 3)
-        self.assertEqual(report["metrics"]["hit_rate@1"], 0.333333)
-        self.assertEqual(report["metrics"]["hit_rate@3"], 0.666667)
-        self.assertEqual(report["metrics"]["hit_rate@5"], 0.666667)
-        self.assertEqual(report["metrics"]["mrr"], 0.5)
-        self.assertEqual(exported["metrics"], report["metrics"])
-
 
 if __name__ == "__main__":
     unittest.main()

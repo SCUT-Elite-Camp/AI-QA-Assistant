@@ -1,4 +1,6 @@
-class StatusCode:
+from enum import StrEnum
+
+class StatusCode(StrEnum):
     SUCCESS = "success"
     INVALID_QUERY = "invalid_query"
     NO_RELEVANT_CONTEXT = "no_relevant_context"
