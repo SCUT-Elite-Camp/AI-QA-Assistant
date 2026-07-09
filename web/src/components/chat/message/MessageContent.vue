@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, provide } from 'vue'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
 import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
@@ -13,7 +14,7 @@ import { getSearchQuery } from '../../../utils/tool'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
 
-defineProps<{
+const props = defineProps<{
   message: UIMessage
   editing: boolean
 }>()
@@ -23,21 +24,34 @@ const emit = defineEmits<{
   cancelEdit: []
 }>()
 
-/**
- * Extract chunk citations from the tool-invocation output.
- * The server writes an array of ChunkCitation objects as the tool output.
- */
+/** Extract ChunkCitation[] from the rag_search tool output */
 function getChunkCitations(part: Parameters<typeof getToolName>[0]): ChunkCitation[] {
   const output = part.output
   if (!output) return []
-  if (Array.isArray(output)) {
-    // Our custom format: array of ChunkCitation
-    if (output.length > 0 && 'doc_id' in output[0]) {
-      return output as ChunkCitation[]
-    }
+  if (Array.isArray(output) && output.length > 0 && 'doc_id' in output[0]) {
+    return output as ChunkCitation[]
   }
   return []
 }
+
+/**
+ * Build a Map<index, ChunkCitation> from all rag_search tool parts.
+ * CiteMark components inject this to get tooltip data by index.
+ */
+const citationMap = computed(() => {
+  const map = new Map<number, ChunkCitation>()
+  for (const part of props.message.parts ?? []) {
+    if (isToolUIPart(part) && getToolName(part) === 'rag_search') {
+      for (const cit of getChunkCitations(part)) {
+        map.set(Number(cit.index), cit)
+      }
+    }
+  }
+  return map
+})
+
+// Make citations available to all CiteMark children via inject
+provide('ragCitationMap', citationMap)
 </script>
 
 <template>
@@ -67,7 +81,7 @@ function getChunkCitations(part: Parameters<typeof getToolName>[0]): ChunkCitati
         :invocation="{ ...(part as WeatherUIToolInvocation) }"
       />
       <UChatTool
-        v-else-if="getToolName(part) === 'web_search' || getToolName(part) === 'google_search' || getToolName(part) === 'rag_search'"
+        v-else-if="getToolName(part) === 'rag_search' || getToolName(part) === 'web_search' || getToolName(part) === 'google_search'"
         :text="isToolStreaming(part) ? '正在检索知识库...' : '已检索知识库'"
         :suffix="getSearchQuery(part)"
         :streaming="isToolStreaming(part)"

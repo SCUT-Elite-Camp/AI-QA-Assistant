@@ -115,22 +115,18 @@ export default defineHandler(async (event) => {
         const rawAnswer = agentData.answer || ""
         const citationsList: any[] = agentData.citations || []
 
-        // 2. Replace [N] markers in answer with :cite-mark{} MDC components
-        //    so the Comark renderer renders them as hoverable superscript badges.
+        // 2. Replace [N] markers with :cite-mark{index="N"} — only pass index.
+        //    Complex attribute values (chunk text) break MDC {…} parsing when
+        //    they contain }, ", or other special characters. Chunk details are
+        //    delivered via tool-output and picked up by provide/inject instead.
         let processedAnswer = rawAnswer
         for (let i = 0; i < citationsList.length; i++) {
-          const cit = citationsList[i]
           const idx = i + 1
-          const title = (cit.title || cit.doc_id || `Doc ${idx}`).replace(/"/g, '&quot;')
-          // snippet: prefer snippet field, fall back to empty
-          const chunkText = (cit.snippet || cit.chunk_text || '').replace(/"/g, '&quot;').replace(/\n/g, ' ')
-          const replacement = `:cite-mark{index="${idx}" chunk-text="${chunkText}" title="${title}"}`
-          processedAnswer = processedAnswer.split(`[${idx}]`).join(replacement)
+          processedAnswer = processedAnswer.split(`[${idx}]`).join(`:cite-mark{index="${idx}"}`)
         }
 
-        // 3. Write RAG search tool invocation to trigger the Sources UI component.
-        //    Output: array of ChunkCitation objects (one per chunk, NOT deduplicated here;
-        //    dedup happens in Sources.vue by doc_id).
+        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
+        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
         const toolCallId = `call_${Date.now()}`
         writer.write({
           type: 'tool-input-available',
@@ -152,6 +148,7 @@ export default defineHandler(async (event) => {
             score: cit.score ?? null,
           }))
         })
+
 
         // 4. Stream answer text chunk-by-chunk to simulate real-time typing
         const responseId = `assistant-msg-${Date.now()}`
