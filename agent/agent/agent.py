@@ -174,61 +174,44 @@ class Agent:
         return response
 
     def run(self, query: str, max_iterations: int = 5) -> str:
-        """Executes the core ReAct loop steps."""
+        """Executes the core ReAct loop steps.
+
+        bypass_llm=True : 直接返回检索结果原文（Mock 模式）
+        bypass_llm=False: 标准 RAG 流程 ——
+            1. 先调用 search_documents 工具完成检索
+            2. 将检索上下文注入 prompt
+            3. 调用 LLM 生成最终答案
+        """
+        tool = self.tools.get("search_documents")
+
         if self.bypass_llm:
-            tool = self.tools.get("search_documents")
             if tool:
                 self.audit_service.log_step(0, query)
                 self.audit_service.log_tool_call(tool.name, {"query": query})
                 return tool.execute(query=query)
             return "Simulated search tool not found."
 
-        messages = []
-        if self.system_prompt:
-            messages.append({"role": "system", "content": self.system_prompt})
-        messages.append({"role": "user", "content": query})
+        # --- RAG 流程：先检索，再生成 ---
+        # Step 1: 强制执行检索，保证 latest_results 一定被填充
+        self.audit_service.log_step(0, query)
+        if tool:
+            self.audit_service.log_tool_call(tool.name, {"query": query})
+            context_text = tool.execute(query=query)
+        else:
+            context_text = ""
 
-        openai_tools = [t.to_openai_schema() for t in self.tools.values()]
+        # Step 2: 将检索上下文注入 prompt，调用 LLM 生成答案
+        from agent.prompt.prompt_builder import PromptBuilder
+        prompt = PromptBuilder().build(query=query, context=context_text)
 
-        for i in range(max_iterations):
-            # Call audit service to log step
-            self.audit_service.log_step(i, query)
+        messages = [
+            {"role": "user", "content": prompt},
+        ]
 
-            response = self.llm.chat(messages, tools=openai_tools if openai_tools else None)
+        self.audit_service.log_step(1, query)
+        response = self.llm.chat(messages)
+        return (response.get("content") or "").strip()
 
-            tool_calls = response.get("tool_calls")
-            if tool_calls:
-                messages.append(response)
-                for tc in tool_calls:
-                    function_info = tc.get("function", {})
-                    name = function_info.get("name")
-                    arguments_str = function_info.get("arguments", "{}")
-
-                    try:
-                        args = json.loads(arguments_str) if arguments_str else {}
-                    except Exception:
-                        args = {}
-
-                    tool = self.tools.get(name)
-                    if tool:
-                        self.audit_service.log_tool_call(name, args)
-                        result = tool.execute(**args)
-                    else:
-                        result = f"Error: Tool {name} not found."
-
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc.get("id"),
-                        "name": name,
-                        "content": str(result)
-                    })
-            else:
-                return response.get("content") or ""
-
-        for msg in reversed(messages):
-            if msg.get("role") == "assistant" and msg.get("content"):
-                return msg.get("content")
-        return "Agent execution exceeded maximum iterations without a final answer."
 
     def _error_response(
         self,
