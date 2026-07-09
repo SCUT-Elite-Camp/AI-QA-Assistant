@@ -20,11 +20,11 @@ class Agent:
         llm: BaseLLM | None = None,
         tools: List[BaseTool] | None = None,
         answer_formatter: AnswerFormatter | None = None,
-        bypass_llm: bool = True,
+        bypass_llm: bool | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
-        self.bypass_llm = bypass_llm
+        self.bypass_llm = bypass_llm if bypass_llm is not None else settings.USE_MOCK_LLM
 
         # Load auxiliary services
         self.trace_service = TraceService()
@@ -173,7 +173,7 @@ class Agent:
         )
         return response
 
-    def run(self, query: str, max_iterations: int = 1) -> str:
+    def run(self, query: str, max_iterations: int = 5) -> str:
         """Executes the core ReAct loop steps."""
         if self.bypass_llm:
             tool = self.tools.get("search_documents")

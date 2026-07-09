@@ -3,13 +3,19 @@ from fastapi.responses import StreamingResponse
 
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.agent import Agent
+from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
 
 router = APIRouter()
 
 
 def get_agent() -> Agent:
-    """Dependency provider for Agent."""
+    """Dependency provider for Agent.
+
+    bypass_llm 由 settings.USE_MOCK_LLM 自动决定：
+      True  -> 直接调用 SearchTool，不经过 LLM（Mock 模式）
+      False -> 走完整 ReAct Loop，调用本地 Ollama qwen2.5:14b
+    """
     return Agent()
 
 
