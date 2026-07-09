@@ -113,35 +113,43 @@ export default defineHandler(async (event) => {
         }
 
         const rawAnswer = agentData.answer || ""
-        const citationsList = agentData.citations || []
+        const citationsList: any[] = agentData.citations || []
 
-        // 2. Format citations as inline markdown source-links for comark with proper spacing
+        // 2. Replace [N] markers in answer with :cite-mark{} MDC components
+        //    so the Comark renderer renders them as hoverable superscript badges.
         let processedAnswer = rawAnswer
         for (let i = 0; i < citationsList.length; i++) {
           const cit = citationsList[i]
-          const index = i + 1
-          const url = cit.source_url || `https://local-document/${cit.doc_id}`
-          const label = cit.title || cit.doc_id || `Doc ${index}`
-          const favicon = `https://www.google.com/s2/favicons?sz=32&domain=example.com`
-          const replacement = `[${index}] :source-link{url="${url.replace(/"/g, '&quot;')}" favicon="${favicon}" label="${label.replace(/"/g, '&quot;')}"}`
-          processedAnswer = processedAnswer.split(`[${index}]`).join(replacement)
+          const idx = i + 1
+          const title = (cit.title || cit.doc_id || `Doc ${idx}`).replace(/"/g, '&quot;')
+          // snippet: prefer snippet field, fall back to empty
+          const chunkText = (cit.snippet || cit.chunk_text || '').replace(/"/g, '&quot;').replace(/\n/g, ' ')
+          const replacement = `:cite-mark{index="${idx}" chunk-text="${chunkText}" title="${title}"}`
+          processedAnswer = processedAnswer.split(`[${idx}]`).join(replacement)
         }
 
-        // 3. Write search tool invocation & results to trigger the Sources UI component
+        // 3. Write RAG search tool invocation to trigger the Sources UI component.
+        //    Output: array of ChunkCitation objects (one per chunk, NOT deduplicated here;
+        //    dedup happens in Sources.vue by doc_id).
         const toolCallId = `call_${Date.now()}`
         writer.write({
           type: 'tool-input-available',
           toolCallId,
-          toolName: 'web_search',
+          toolName: 'rag_search',
           input: { query: queryText }
         })
 
         writer.write({
           type: 'tool-output-available',
           toolCallId,
-          output: citationsList.map((cit: any, idx: number) => ({
-            url: cit.source_url || `https://local-document/${cit.doc_id}`,
-            title: cit.title || cit.doc_id || `Document ${idx + 1}`
+          output: citationsList.map((cit: any, i: number) => ({
+            index: i + 1,
+            doc_id: cit.doc_id || `doc_${i}`,
+            chunk_id: cit.chunk_id || `chunk_${i}`,
+            title: cit.title || cit.doc_id || `Document ${i + 1}`,
+            source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+            chunk_text: cit.snippet || '',
+            score: cit.score ?? null,
           }))
         })
 
