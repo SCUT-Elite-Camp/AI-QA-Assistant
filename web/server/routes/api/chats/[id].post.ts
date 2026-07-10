@@ -122,8 +122,9 @@ export default defineHandler(async (event) => {
         let processedAnswer = rawAnswer
         for (let i = 0; i < citationsList.length; i++) {
           const idx = i + 1
-          processedAnswer = processedAnswer.split(`[${idx}]`).join(`:cite-mark{index="${idx}"}`)
+          processedAnswer = processedAnswer.split(`[${idx}]`).join(` :cite-mark{index="${idx}"}`)
         }
+
 
         // 3. Write RAG search tool invocation — full ChunkCitation array in output.
         //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
