@@ -26,18 +26,18 @@ function calculatePosition() {
   const tipRect = tooltipRef.value.getBoundingClientRect()
 
   const tipWidth = tipRect.width || 288
-  const tipHeight = tipRect.height || 160
+  const tipHeight = tipRect.height || 200
 
-  // Center horizontally above the badge
+  // Center horizontally under the badge
   let left = rect.left + rect.width / 2 - tipWidth / 2
   // Clamp to screen bounds
   left = Math.max(8, Math.min(left, window.innerWidth - tipWidth - 8))
 
-  // Try placing it above the badge
-  let top = rect.top - tipHeight - 6
-  // If it overflows the top of the viewport, place it below the badge
-  if (top < 8) {
-    top = rect.bottom + 6
+  // Try placing it below the badge by default
+  let top = rect.bottom + 6
+  // If it overflows the bottom of the viewport, place it above the badge
+  if (top + tipHeight > window.innerHeight - 8) {
+    top = rect.top - tipHeight - 6
   }
 
   tooltipStyle.value = {
@@ -93,14 +93,14 @@ function keepOpen() {
       <div
         v-if="visible && citation"
         ref="tooltipRef"
-        class="absolute z-50 w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg overflow-hidden"
+        class="absolute z-50 w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg overflow-hidden"
         :style="tooltipStyle"
         @mouseenter="keepOpen"
         @mouseleave="hide"
       >
         <!-- Header -->
-        <div class="flex items-center gap-2 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
-          <span class="inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-850">
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
+          <span class="inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800">
             {{ index }}
           </span>
           <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-300 truncate flex-1">
@@ -108,7 +108,7 @@ function keepOpen() {
           </span>
         </div>
         <!-- Scrollable content -->
-        <div class="p-3 text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap select-text cite-scroll-container">
+        <div class="p-3 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed max-h-72 overflow-y-auto whitespace-pre-wrap select-text cite-scroll-container">
           {{ citation.chunk_text || '（暂无摘要）' }}
         </div>
       </div>
