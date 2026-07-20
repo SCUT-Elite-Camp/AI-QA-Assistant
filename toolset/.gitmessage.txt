@@ -1,0 +1,9 @@
+# <type>: <short English summary>
+#
+# Examples:
+# feat: add unified search tool
+# fix: handle empty retrieval results
+# docs: update tool layer interface spec
+#
+# Types:
+# feat, fix, docs, test, refactor, chore

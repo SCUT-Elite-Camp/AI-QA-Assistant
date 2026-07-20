@@ -1,0 +1,144 @@
+import { isToday, isYesterday, subMonths } from 'date-fns'
+import { computed, ref } from 'vue'
+import { createSharedComposable } from '@vueuse/core'
+import { $fetch } from 'ofetch'
+import type { Chat as ChatData } from '~/server/utils/drizzle'
+
+interface Chat {
+  id: string
+  label: string
+  to: string
+  icon: string
+  createdAt: string
+}
+
+export const useChats = createSharedComposable(() => {
+  const chats = ref<Chat[]>([])
+
+  const fetchChats = async () => {
+    chats.value = await $fetch('/api/chats').then((data: ChatData[]) => data.map(chat => ({
+      id: chat.id,
+      label: chat.title || 'Untitled',
+      to: `/chat/${chat.id}`,
+      icon: 'i-lucide-message-circle',
+      createdAt: String(chat.createdAt)
+    }) as Chat)).catch(error => {
+      console.error(error)
+      return []
+    })
+  }
+
+  const updateChat = (id: string, partial: Partial<Chat>) => {
+    chats.value = chats.value.map(c => c.id === id ? { ...c, ...partial } : c)
+  }
+
+  const removeChat = (id: string) => {
+    chats.value = chats.value.filter(c => c.id !== id)
+  }
+
+  const groups = computed(() => {
+    // Group chats by date
+    const today: Chat[] = []
+    const yesterday: Chat[] = []
+    const lastWeek: Chat[] = []
+    const lastMonth: Chat[] = []
+    const older: Record<string, Chat[]> = {}
+
+    const oneWeekAgo = subMonths(new Date(), 0.25) // ~7 days ago
+    const oneMonthAgo = subMonths(new Date(), 1)
+
+    chats.value?.forEach((chat) => {
+      const chatDate = new Date(chat.createdAt)
+
+      if (isToday(chatDate)) {
+        today.push(chat)
+      } else if (isYesterday(chatDate)) {
+        yesterday.push(chat)
+      } else if (chatDate >= oneWeekAgo) {
+        lastWeek.push(chat)
+      } else if (chatDate >= oneMonthAgo) {
+        lastMonth.push(chat)
+      } else {
+        // Format: "January 2023", "February 2023", etc.
+        const monthYear = chatDate.toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric'
+        })
+
+        if (!older[monthYear]) {
+          older[monthYear] = []
+        }
+
+        older[monthYear].push(chat)
+      }
+    })
+
+    // Sort older chats by month-year in descending order (newest first)
+    const sortedMonthYears = Object.keys(older).sort((a, b) => {
+      const dateA = new Date(a)
+      const dateB = new Date(b)
+      return dateB.getTime() - dateA.getTime()
+    })
+
+    // Create formatted groups for navigation
+    const formattedGroups = [] as Array<{
+      id: string
+      label: string
+      items: Array<Chat>
+    }>
+
+    // Add groups that have chats
+    if (today.length) {
+      formattedGroups.push({
+        id: 'today',
+        label: 'Today',
+        items: today
+      })
+    }
+
+    if (yesterday.length) {
+      formattedGroups.push({
+        id: 'yesterday',
+        label: 'Yesterday',
+        items: yesterday
+      })
+    }
+
+    if (lastWeek.length) {
+      formattedGroups.push({
+        id: 'last-week',
+        label: 'Last 7 days',
+        items: lastWeek
+      })
+    }
+
+    if (lastMonth.length) {
+      formattedGroups.push({
+        id: 'last-month',
+        label: 'Last 30 days',
+        items: lastMonth
+      })
+    }
+
+    // Add each month-year group
+    sortedMonthYears.forEach((monthYear) => {
+      if (older[monthYear]?.length) {
+        formattedGroups.push({
+          id: monthYear,
+          label: monthYear,
+          items: older[monthYear]
+        })
+      }
+    })
+
+    return formattedGroups
+  })
+
+  return {
+    groups,
+    chats,
+    fetchChats,
+    updateChat,
+    removeChat
+  }
+})

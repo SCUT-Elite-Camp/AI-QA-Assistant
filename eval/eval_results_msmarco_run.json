@@ -1,0 +1,3237 @@
+{
+  "retrieval": {
+    "summary": {
+      "mode": "hybrid",
+      "top_k": 5,
+      "total_questions": 100,
+      "successful_runs": 100,
+      "avg_latency_ms": 471.3842570000361,
+      "hit_rate_1": 0.54,
+      "hit_rate_3": 0.73,
+      "hit_rate_5": 0.84,
+      "mrr": 0.6488333333333336,
+      "map": 0.6488333333333336
+    },
+    "results": [
+      {
+        "id": 1,
+        "query": "how many years did william bradford serve as governor of plymouth colony?",
+        "expected": [
+          "dc3752eca8d4b2c18030c206dc8c0e14"
+        ],
+        "retrieved": [
+          "dc3752eca8d4b2c18030c206dc8c0e14",
+          "9d37d4e5056ac9ebdca9dbdc0540fbe2",
+          "ff3dd3a0c284b8d26890c423eb4fe4fa"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 9811.864199999945,
+        "success": true
+      },
+      {
+        "id": 2,
+        "query": "define preventive",
+        "expected": [
+          "d7160d78a9c541b6a25f0af3c965796f"
+        ],
+        "retrieved": [
+          "d7160d78a9c541b6a25f0af3c965796f",
+          "f5adec3765f19045e5b22daae661b0a9",
+          "85c1a1365ca9aef08e51f49f453d99fa",
+          "7120cc994aae0089a88c7c9c294ab144",
+          "1b24dfaa4dbc90ab7a9b649b98052fcd"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 184.68080000002374,
+        "success": true
+      },
+      {
+        "id": 3,
+        "query": "color overlay photoshop",
+        "expected": [
+          "ec55d648ad84b9c5d5a19c1637fa7201"
+        ],
+        "retrieved": [
+          "ec55d648ad84b9c5d5a19c1637fa7201",
+          "9e7d7b7bbd881bdf6fcbc678ca755cec",
+          "0b8659f933a21bcb3a0292ff0d34e018",
+          "50a8ceed6eb827ab63164ff1fbe51b0e",
+          "e059b056c96a8494e2256efffbf7202f"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 218.02089999982854,
+        "success": true
+      },
+      {
+        "id": 4,
+        "query": "____________________ is considered the father of modern medicine.",
+        "expected": [
+          "2df54ea0f1c6c37f253deac47df61ea7"
+        ],
+        "retrieved": [
+          "2df54ea0f1c6c37f253deac47df61ea7",
+          "f5109bcb14c6a27d4bd111ede6fac653",
+          "da9a0b36b03c8c5f1972e70ce034940b",
+          "6cc9acecefd4876d749075ab780927b4"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 497.1520999997665,
+        "success": true
+      },
+      {
+        "id": 5,
+        "query": "does xpress bet charge to deposit money in your account",
+        "expected": [
+          "284c91231d586c9833d83f5dac4743ee"
+        ],
+        "retrieved": [
+          "fa1811a721a615508ea5945389f43b06",
+          "36cbd424e3f83a4837bb66796eacd4d1",
+          "6cc9acecefd4876d749075ab780927b4"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 472.5820000003296,
+        "success": true
+      },
+      {
+        "id": 6,
+        "query": "how much is a cost to run disneyland",
+        "expected": [
+          "25420fc6dbcfe7baea23f6d9de344b8c"
+        ],
+        "retrieved": [
+          "25420fc6dbcfe7baea23f6d9de344b8c",
+          "22f264aaddd079f01dcb82f51da2f098",
+          "319034ecbedf15a313981c4b55714c44",
+          "b632c408581eaad949ab6200ed9cf45d"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 392.3107999999047,
+        "success": true
+      },
+      {
+        "id": 7,
+        "query": "botulinum definition",
+        "expected": [
+          "161ef8247b92ac2eb5760e5881cfa6fb"
+        ],
+        "retrieved": [
+          "161ef8247b92ac2eb5760e5881cfa6fb",
+          "d8ea62dd8aef5a7eb7f38d3335cabf70",
+          "be279e489157a2691ea1dfb362351853",
+          "3073e224f5347a1a5dc4c24e1d9f0530"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 173.91350000070815,
+        "success": true
+      },
+      {
+        "id": 8,
+        "query": "do physicians pay for insurance from their salaries?",
+        "expected": [
+          "0f52356a3ec2190b975aa939f8ed9eff"
+        ],
+        "retrieved": [
+          "0f52356a3ec2190b975aa939f8ed9eff",
+          "92caa5d5f2c9055bc62ef1390d328b36",
+          "a6edc93426cf67bb712e9e449c6876a3",
+          "f833a772e8e00735885665d76e8771f4",
+          "f0cbfc60b4367604a772ce0eb410f954"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 464.1931999994995,
+        "success": true
+      },
+      {
+        "id": 9,
+        "query": "here there be dragons comic",
+        "expected": [
+          "f32c5a698ad772fc4ad14785052adfb3"
+        ],
+        "retrieved": [
+          "f32c5a698ad772fc4ad14785052adfb3",
+          "d7be42c6fc45c266f817909db083b932",
+          "a8ac0e83f7862331095f6ed0da03bdce",
+          "b016c55a80aa855dc07028c6c74ae9a7"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 319.60030000027473,
+        "success": true
+      },
+      {
+        "id": 10,
+        "query": "blood diseases that are sexually transmitted",
+        "expected": [
+          "a4f0ff737d24d88c26ffc20fdfd57bf2"
+        ],
+        "retrieved": [
+          "a4f0ff737d24d88c26ffc20fdfd57bf2",
+          "e588b247c796fdc3d016930b7a18bdc5",
+          "2e577535113e6eb2ae322e518b92cf5b",
+          "a64109d18655aac8a42517d45fc8a400",
+          "ce63de94d7e3b7d13fe132f2dc1bb46d"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 325.6746999995812,
+        "success": true
+      },
+      {
+        "id": 11,
+        "query": "define bona fides",
+        "expected": [
+          "89a8626e288b0e9cdb15bb88906c0b57"
+        ],
+        "retrieved": [
+          "89a8626e288b0e9cdb15bb88906c0b57",
+          "5a605ce8678d726b65d6c08a84419c5c",
+          "1b24dfaa4dbc90ab7a9b649b98052fcd",
+          "22705f50b0e0f9c5bb17b12f75546e02",
+          "0b933501366f63cd7409b7b89ef40264"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 219.5408999996289,
+        "success": true
+      },
+      {
+        "id": 12,
+        "query": "effects of detox juice cleanse",
+        "expected": [
+          "dc8b70ca8a6b2f812c30cdd19ef2db7e"
+        ],
+        "retrieved": [
+          "dc8b70ca8a6b2f812c30cdd19ef2db7e",
+          "9f98df8733de5e69cfc55990d538be34",
+          "fe702c749aef4f4fb3ab3d5ed492429c",
+          "be279e489157a2691ea1dfb362351853"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 293.95019999992655,
+        "success": true
+      },
+      {
+        "id": 13,
+        "query": "effects of detox juice cleanse",
+        "expected": [
+          "9f98df8733de5e69cfc55990d538be34"
+        ],
+        "retrieved": [
+          "dc8b70ca8a6b2f812c30cdd19ef2db7e",
+          "9f98df8733de5e69cfc55990d538be34",
+          "fe702c749aef4f4fb3ab3d5ed492429c",
+          "be279e489157a2691ea1dfb362351853"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 293.9467999995031,
+        "success": true
+      },
+      {
+        "id": 14,
+        "query": "do prince harry and william have last names",
+        "expected": [
+          "246a352fde6a8e23d9028b2b49bdc832"
+        ],
+        "retrieved": [
+          "246a352fde6a8e23d9028b2b49bdc832",
+          "a3847c83cc32705db74169d5f984c562",
+          "327c049022017815345e383f0c02f300"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 409.5373999998628,
+        "success": true
+      },
+      {
+        "id": 15,
+        "query": "can hives be a sign of pregnancy",
+        "expected": [
+          "b0c64b28ea00f1c272840e4c9d9c1239"
+        ],
+        "retrieved": [
+          "b0c64b28ea00f1c272840e4c9d9c1239",
+          "1c5dc5c0da05b08b1afcfc61044435ed",
+          "bf72220397e0594bb1de90aba3a3a615",
+          "a44538f49c56ee18da4847da760d2fc8"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 386.34969999930036,
+        "success": true
+      },
+      {
+        "id": 16,
+        "query": "causes of petechial hemorrhage",
+        "expected": [
+          "d7be42c6fc45c266f817909db083b932"
+        ],
+        "retrieved": [
+          "d7be42c6fc45c266f817909db083b932",
+          "89cedb4b0550f195d3f8e98bc0315f57",
+          "f737855dc6704e74f1b3ce6da5427a79",
+          "9aa066db0f4e6e5e8898c88c33518340",
+          "c6df105ae0383bf7762cc15f723962c0"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 255.0409999994372,
+        "success": true
+      },
+      {
+        "id": 17,
+        "query": "how long does it take to get your bsrn if you already have a bachelors degree",
+        "expected": [
+          "2a595c0e49503c498e277b1d3a919816"
+        ],
+        "retrieved": [
+          "44e5661416f0442f20dba283b7dbece4",
+          "2a595c0e49503c498e277b1d3a919816",
+          "c53b785bbecd20c4a61c8860889c5f3a",
+          "176f94ab77defce151d857a3296268ce"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 703.9673000008406,
+        "success": true
+      },
+      {
+        "id": 18,
+        "query": "symptoms of ptsd in vietnam veterans",
+        "expected": [
+          "48ad8c6aefa25dc96a553a406b0b09f3"
+        ],
+        "retrieved": [
+          "c73211b61447b5856d503b6869437f0e",
+          "3a6875015be27e941817c511c480538d",
+          "9c84104f6de3252e372fe7071ac2d680",
+          "8d12991b967085f7a572db424201feb5"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 336.5383999998812,
+        "success": true
+      },
+      {
+        "id": 19,
+        "query": "how coffee works quote",
+        "expected": [
+          "100541e995434e56755327d65be965f8"
+        ],
+        "retrieved": [
+          "fe702c749aef4f4fb3ab3d5ed492429c",
+          "07518d0c43682f3237aa739bcef55564",
+          "923fe8a879c1b1673c6bb6cb62c8307f",
+          "100541e995434e56755327d65be965f8",
+          "0b5f2237db1837d21dad0b61349f8e26"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 254.49099999968894,
+        "success": true
+      },
+      {
+        "id": 20,
+        "query": "does contraction of the ciliary muscles shorten the lens",
+        "expected": [
+          "ecdf7f135f67047b040c534f0a55f0e2"
+        ],
+        "retrieved": [
+          "ecdf7f135f67047b040c534f0a55f0e2",
+          "e074a74e681404549df578841feb242a",
+          "17eab96060e31da2b69b3a238fb78fe1",
+          "89cedb4b0550f195d3f8e98bc0315f57"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 460.152200000266,
+        "success": true
+      },
+      {
+        "id": 21,
+        "query": "do spiders eat other animals",
+        "expected": [
+          "1268744887de2a3135555c3a4117a9e3"
+        ],
+        "retrieved": [
+          "1268744887de2a3135555c3a4117a9e3",
+          "e9ac847e8e590d6fae7ede3cb4917d34",
+          "07518d0c43682f3237aa739bcef55564"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 306.7758999995931,
+        "success": true
+      },
+      {
+        "id": 22,
+        "query": "how long is the flight from chicago to cairo",
+        "expected": [
+          "0c1a4bdef29f2f75861e0f7ee379e44c"
+        ],
+        "retrieved": [
+          "be00476417bcaa28f50ab6bbbe4ced71",
+          "a4da1aa80fe2e1c2b464bac266fcaf4b",
+          "0c1a4bdef29f2f75861e0f7ee379e44c"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 729.5672000000195,
+        "success": true
+      },
+      {
+        "id": 23,
+        "query": "how titanic facts",
+        "expected": [
+          "36c5ae44e70b26dc6200f3b903e10b2c"
+        ],
+        "retrieved": [
+          "67641f28c7357c93e7d2461e978d38d8",
+          "89a8626e288b0e9cdb15bb88906c0b57",
+          "c7911b22afc958e4f200adef90bccb48",
+          "5df36d9f426341f480e6f565be96c1eb"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 218.35400000054506,
+        "success": true
+      },
+      {
+        "id": 24,
+        "query": "how to play blu ray discs",
+        "expected": [
+          "a9a663d4c1e533dd61827901bdebc33a"
+        ],
+        "retrieved": [
+          "a9a663d4c1e533dd61827901bdebc33a",
+          "6dbb509dd6afed740716ee4905e27030"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 666.784899999584,
+        "success": true
+      },
+      {
+        "id": 25,
+        "query": "central city definition",
+        "expected": [
+          "b983df40780ff6201a5b223565baab11"
+        ],
+        "retrieved": [
+          "b983df40780ff6201a5b223565baab11",
+          "0b5bd74ca39704cc21b3e29f2850f067",
+          "f11ffa2ac011b73a7ca13a573df19f17",
+          "a9eaf9790108a6668102a366fa6d6d50",
+          "b0d797ef99f2786973d427e2db5ff327"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 212.05860000009125,
+        "success": true
+      },
+      {
+        "id": 26,
+        "query": "define body muscular endurance",
+        "expected": [
+          "cf1df30dccfd19c2e2f74fd9e0b9ef44"
+        ],
+        "retrieved": [
+          "c59489c740eddb812b3abbd79e42692b",
+          "327c049022017815345e383f0c02f300",
+          "187193df345733d38f80e582f992c8d4",
+          "d4159156f95f5a2ec188d434078befa6"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 575.3751000002012,
+        "success": true
+      },
+      {
+        "id": 27,
+        "query": "circulation money definition",
+        "expected": [
+          "64d79f994d6a3b4b59ff40d73342dfe6"
+        ],
+        "retrieved": [
+          "64d79f994d6a3b4b59ff40d73342dfe6",
+          "c5dc5a08c269455ff1c61d1ec5f3d9af",
+          "44e5661416f0442f20dba283b7dbece4",
+          "4a0ee6f79c748e959bd655558c918d62",
+          "91bafeb259b5f328a1ef0943bad10de0"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 198.52189999983239,
+        "success": true
+      },
+      {
+        "id": 28,
+        "query": "hotels in thornton co",
+        "expected": [
+          "5df36d9f426341f480e6f565be96c1eb"
+        ],
+        "retrieved": [
+          "1ae769f3d6f0946c4e25f2aae51e68f5",
+          "c00fea4401a9c73763f90917644e3396",
+          "7357f9f9f87d58c06ba6a47b2b23613c",
+          "5773fc1c5c48c8f12d775c7a1591c271",
+          "5df36d9f426341f480e6f565be96c1eb"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.2,
+        "map": 0.2,
+        "latency_ms": 590.8130000007077,
+        "success": true
+      },
+      {
+        "id": 29,
+        "query": "hotels in thornton co",
+        "expected": [
+          "7357f9f9f87d58c06ba6a47b2b23613c"
+        ],
+        "retrieved": [
+          "1ae769f3d6f0946c4e25f2aae51e68f5",
+          "c00fea4401a9c73763f90917644e3396",
+          "7357f9f9f87d58c06ba6a47b2b23613c",
+          "5773fc1c5c48c8f12d775c7a1591c271",
+          "5df36d9f426341f480e6f565be96c1eb"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 246.1622000000716,
+        "success": true
+      },
+      {
+        "id": 30,
+        "query": "hotels in thornton co",
+        "expected": [
+          "e1708577726724c6b0c7c9a5956c0bdd"
+        ],
+        "retrieved": [
+          "1ae769f3d6f0946c4e25f2aae51e68f5",
+          "c00fea4401a9c73763f90917644e3396",
+          "7357f9f9f87d58c06ba6a47b2b23613c",
+          "5773fc1c5c48c8f12d775c7a1591c271",
+          "5df36d9f426341f480e6f565be96c1eb"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 249.68759999956092,
+        "success": true
+      },
+      {
+        "id": 31,
+        "query": "derriere definition",
+        "expected": [
+          "aa809819c6eed544af4d34d8056f63c3"
+        ],
+        "retrieved": [
+          "aa809819c6eed544af4d34d8056f63c3",
+          "e7a47247661638b845496651baada7e1",
+          "a9a663d4c1e533dd61827901bdebc33a",
+          "128734520100f56ac19b1f65cc65240a"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 161.49359999963053,
+        "success": true
+      },
+      {
+        "id": 32,
+        "query": "how many product lines does coca cola have",
+        "expected": [
+          "0a66b0b42a23aeffda720f412670c916"
+        ],
+        "retrieved": [
+          "d2943181aeea421ef6ace5c80c2dd333",
+          "7edf3921a10df5a70d6b9ca83ffefb16",
+          "f5adec3765f19045e5b22daae661b0a9"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 623.2298999993873,
+        "success": true
+      },
+      {
+        "id": 33,
+        "query": "government does do",
+        "expected": [
+          "80d06eae632666e19e10191ca2e4384c"
+        ],
+        "retrieved": [
+          "f8cbd2065538dcb2a6d3300c1814f72f",
+          "0be4cf190bd60dbb10b23ba2545aed5e",
+          "ed5ce51001fb8a58e2b247f020c7fe79",
+          "cc4619032915d4d31f9911ebeddab971",
+          "80d06eae632666e19e10191ca2e4384c"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.2,
+        "map": 0.2,
+        "latency_ms": 210.56690000023082,
+        "success": true
+      },
+      {
+        "id": 34,
+        "query": "how to cook string beans",
+        "expected": [
+          "7616c3342c7edba0dea25affe2951ce7"
+        ],
+        "retrieved": [
+          "7616c3342c7edba0dea25affe2951ce7",
+          "411062f9ec515b2efaae90997efb8297",
+          "acde14af0d4fafbd169a51acea22b125"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 447.5166000001991,
+        "success": true
+      },
+      {
+        "id": 35,
+        "query": "average temperatures las vegas by month",
+        "expected": [
+          "5eba26f94f5572f50d193fe9feb1103d"
+        ],
+        "retrieved": [
+          "83d6889f83ff96d62d73e6c580991abe",
+          "92061f797e37d34e95cb50b7378275e7",
+          "17e1d34b2528a6ad57208851e55d4e47",
+          "5eba26f94f5572f50d193fe9feb1103d"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 457.7681999999186,
+        "success": true
+      },
+      {
+        "id": 36,
+        "query": "average temperatures las vegas by month",
+        "expected": [
+          "92061f797e37d34e95cb50b7378275e7"
+        ],
+        "retrieved": [
+          "83d6889f83ff96d62d73e6c580991abe",
+          "92061f797e37d34e95cb50b7378275e7",
+          "17e1d34b2528a6ad57208851e55d4e47",
+          "5eba26f94f5572f50d193fe9feb1103d"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 316.391699999258,
+        "success": true
+      },
+      {
+        "id": 37,
+        "query": "how bicycle tire tubes are sized",
+        "expected": [
+          "d3e23f2b2850e2dfe342f8c81335c8d2"
+        ],
+        "retrieved": [
+          "d3e23f2b2850e2dfe342f8c81335c8d2",
+          "5c6ba29d58bbc8f1647aa2e8ec4c4c90",
+          "2ec80d30dbdae7a16137d5d3801dd3b5"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 317.1313000002556,
+        "success": true
+      },
+      {
+        "id": 38,
+        "query": "how bicycle tire tubes are sized",
+        "expected": [
+          "a8ac0e83f7862331095f6ed0da03bdce"
+        ],
+        "retrieved": [
+          "d3e23f2b2850e2dfe342f8c81335c8d2",
+          "5c6ba29d58bbc8f1647aa2e8ec4c4c90",
+          "2ec80d30dbdae7a16137d5d3801dd3b5"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 324.4215999993685,
+        "success": true
+      },
+      {
+        "id": 39,
+        "query": "can you substitute chocolate chips for semi-sweet",
+        "expected": [
+          "f5adec3765f19045e5b22daae661b0a9"
+        ],
+        "retrieved": [
+          "f5adec3765f19045e5b22daae661b0a9",
+          "ad05b66c49b89d07fd3f2709e1f524fe",
+          "9d37d4e5056ac9ebdca9dbdc0540fbe2",
+          "6c3ce8da15e9f243026d6e6df5bdaa80"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 430.643599999712,
+        "success": true
+      },
+      {
+        "id": 40,
+        "query": "how big do newfypoo's get",
+        "expected": [
+          "f20faaf7dccf0be8b569d4abfa96ddcc"
+        ],
+        "retrieved": [
+          "f20faaf7dccf0be8b569d4abfa96ddcc",
+          "93f45a125e5bab1c3593c87c083e6037",
+          "3c472527b0b884c561926f82c455e2ee",
+          "2ae24eeddafd873c20ca2e48e7eab59d"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 354.21210000004066,
+        "success": true
+      },
+      {
+        "id": 41,
+        "query": "how much fiber is in carrots",
+        "expected": [
+          "a64109d18655aac8a42517d45fc8a400"
+        ],
+        "retrieved": [
+          "a64109d18655aac8a42517d45fc8a400",
+          "3d24149a15fa35500cad254ae5f5f141",
+          "cb082f1968b7f5432c65cf6e1edb2003"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 345.3365000004851,
+        "success": true
+      },
+      {
+        "id": 42,
+        "query": "do bigger tires affect gas mileage",
+        "expected": [
+          "a303850b0fab467e124c206a3cf2c37b"
+        ],
+        "retrieved": [
+          "a303850b0fab467e124c206a3cf2c37b",
+          "5c6ba29d58bbc8f1647aa2e8ec4c4c90",
+          "ea5950591781811e6f74d80cec66cead",
+          "b7dc1fa1091be8ab14e8e8ffa252885a"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 331.43509999990783,
+        "success": true
+      },
+      {
+        "id": 43,
+        "query": "age requirements for name change",
+        "expected": [
+          "fe702c749aef4f4fb3ab3d5ed492429c"
+        ],
+        "retrieved": [
+          "fe702c749aef4f4fb3ab3d5ed492429c",
+          "7f9094e0a2ebbc80c827690df681a156",
+          "92caa5d5f2c9055bc62ef1390d328b36"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 312.97429999995074,
+        "success": true
+      },
+      {
+        "id": 44,
+        "query": "can green tea cause stomach problems",
+        "expected": [
+          "f8ea80053e91276d2909911f10651269"
+        ],
+        "retrieved": [
+          "f8ea80053e91276d2909911f10651269",
+          "9a4ef35db3546f95f678058c80c781f1",
+          "3073e224f5347a1a5dc4c24e1d9f0530"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 354.12710000036896,
+        "success": true
+      },
+      {
+        "id": 45,
+        "query": "synonym of subordinate",
+        "expected": [
+          "f833a772e8e00735885665d76e8771f4"
+        ],
+        "retrieved": [
+          "d8817555828fe50ae6fb17a24eb632b2",
+          "f833a772e8e00735885665d76e8771f4"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 247.20820000038657,
+        "success": true
+      },
+      {
+        "id": 46,
+        "query": "how much is the stamp to send a card",
+        "expected": [
+          "6aba06262bb9e59ce3e6a0022ff856c6"
+        ],
+        "retrieved": [
+          "f184838f39186266423ffd96b31596e6",
+          "c53b785bbecd20c4a61c8860889c5f3a",
+          "b983df40780ff6201a5b223565baab11"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 483.1720000001951,
+        "success": true
+      },
+      {
+        "id": 47,
+        "query": "how much magnesium in kidney beans",
+        "expected": [
+          "a26c8fe27c2b1b745f0e6cdf248dd04d"
+        ],
+        "retrieved": [
+          "9768f2bdfce71862e3e176ca8cd8af5a",
+          "b632c408581eaad949ab6200ed9cf45d",
+          "cc4619032915d4d31f9911ebeddab971",
+          "a26c8fe27c2b1b745f0e6cdf248dd04d",
+          "688cd9f9b900093b8df7045e78ffec24"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 339.02190000026167,
+        "success": true
+      },
+      {
+        "id": 48,
+        "query": "child psychiatrist salary 2016",
+        "expected": [
+          "2eb6fd876e5db96bb352a2c5167345a4"
+        ],
+        "retrieved": [
+          "7120cc994aae0089a88c7c9c294ab144",
+          "e41abf442135088ab5822ea8c0ef92e1",
+          "332ee2c9b1009bff806c9b38f73657df",
+          "2eb6fd876e5db96bb352a2c5167345a4"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 255.6322000000364,
+        "success": true
+      },
+      {
+        "id": 49,
+        "query": "define prosthetic device",
+        "expected": [
+          "07518d0c43682f3237aa739bcef55564"
+        ],
+        "retrieved": [
+          "a0dd3c9a9a266e9c0aa8ca19665ef709",
+          "c1a24a5e4e5801715fe7e571dce4235a",
+          "07518d0c43682f3237aa739bcef55564",
+          "f008a8628b8a405516efa22780be3a3e"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 218.73610000056942,
+        "success": true
+      },
+      {
+        "id": 50,
+        "query": "how many mm is a nickel coin",
+        "expected": [
+          "cbb0ade8c6b91dbb6805a3971501820e"
+        ],
+        "retrieved": [
+          "cbb0ade8c6b91dbb6805a3971501820e",
+          "93b6893ae7897b1ab7c31b6e21b3227e",
+          "0be4cf190bd60dbb10b23ba2545aed5e"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 387.5108000002001,
+        "success": true
+      },
+      {
+        "id": 51,
+        "query": "how old do you have to be to get a job in idaho",
+        "expected": [
+          "8bc820ebfbd4fd055419711a28cc6d6c"
+        ],
+        "retrieved": [
+          "5b0c8f461f37103d7f54197962e51a5d",
+          "3245c690b5b68227a05c217a479257f7",
+          "8bc820ebfbd4fd055419711a28cc6d6c",
+          "7175829112874423bd94bf6691e1f045"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 678.1975000003513,
+        "success": true
+      },
+      {
+        "id": 52,
+        "query": "synonyms for the word discipline",
+        "expected": [
+          "ae5c735ca17bca6dab9a510304ea1381"
+        ],
+        "retrieved": [
+          "f8cbd2065538dcb2a6d3300c1814f72f",
+          "e8566ff805f18512f0034b0812ff3a9f",
+          "d9bad3a5510eb759be5a40e85e9ce9ab",
+          "ae5c735ca17bca6dab9a510304ea1381",
+          "578ba08cd273ae5cf7d526a656a9aa5d"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 356.9186000004265,
+        "success": true
+      },
+      {
+        "id": 53,
+        "query": "can seizure meds cause low sodium?",
+        "expected": [
+          "49ca31f402f7500b35199664e81c9b0b"
+        ],
+        "retrieved": [
+          "49ca31f402f7500b35199664e81c9b0b",
+          "b0c4ce64ad01512c867ddbf769bccf2f",
+          "c59489c740eddb812b3abbd79e42692b",
+          "84a56b1477d8b17828036c70111fa01f"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 399.20580000034533,
+        "success": true
+      },
+      {
+        "id": 54,
+        "query": "synonyms for the word, decline",
+        "expected": [
+          "645bdb76e946418e6fa4802cd15f2a21"
+        ],
+        "retrieved": [
+          "645bdb76e946418e6fa4802cd15f2a21",
+          "578ba08cd273ae5cf7d526a656a9aa5d",
+          "8f3632dee769daac66fa799226be9c57",
+          "ce1ae0d3e223d78eaf6366aa14f6eb50",
+          "ffba13b2aa7fc2fe58db9be8dda0b02e"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 364.29039999984525,
+        "success": true
+      },
+      {
+        "id": 55,
+        "query": "how is soil created from rocks",
+        "expected": [
+          "3d24149a15fa35500cad254ae5f5f141"
+        ],
+        "retrieved": [
+          "83d6889f83ff96d62d73e6c580991abe",
+          "f64edbf9f8da90d3e8e819bf1906f521"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 354.23379999974713,
+        "success": true
+      },
+      {
+        "id": 56,
+        "query": "define tapestry",
+        "expected": [
+          "ad8f31848f3199add2e99578dae0f539"
+        ],
+        "retrieved": [
+          "ad8f31848f3199add2e99578dae0f539",
+          "fc87760bf00a62a15d8334d903ebfcd6",
+          "d20016f9b96b817ee97786fa59b37c77",
+          "75215577d075e2c1f9ed63c12e4860a8",
+          "f32c3d03115b743560d717aafb6b12ce"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 173.63579999982903,
+        "success": true
+      },
+      {
+        "id": 57,
+        "query": "causes for uti in women",
+        "expected": [
+          "da9a0b36b03c8c5f1972e70ce034940b"
+        ],
+        "retrieved": [
+          "89e68cea96e5c776a65668e23227dc73",
+          "cb082f1968b7f5432c65cf6e1edb2003",
+          "da9a0b36b03c8c5f1972e70ce034940b",
+          "ba49c2bb11cdf61d8907097d70eb531b",
+          "efb30907a21b709c0ceb64eee0f677a3"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 293.06389999965177,
+        "success": true
+      },
+      {
+        "id": 58,
+        "query": "synonyms of ignorant",
+        "expected": [
+          "5b0c8f461f37103d7f54197962e51a5d"
+        ],
+        "retrieved": [
+          "784aa4a726758194b23337c8d4fe4172",
+          "e8566ff805f18512f0034b0812ff3a9f",
+          "75951cb3a1a6b2d0ee55712b5849ddb0",
+          "5b0c8f461f37103d7f54197962e51a5d",
+          "d72ffabed842b2d3fb6a69993bf2b668"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 342.25549999973737,
+        "success": true
+      },
+      {
+        "id": 59,
+        "query": "how long does respite last",
+        "expected": [
+          "50a8ceed6eb827ab63164ff1fbe51b0e"
+        ],
+        "retrieved": [
+          "50a8ceed6eb827ab63164ff1fbe51b0e",
+          "a6edc93426cf67bb712e9e449c6876a3",
+          "38dadf681bd356eb03491b82bc92fe59",
+          "ac15730eb49c7acf99d47e65d0b01509",
+          "8dca07b02a1f27908b751b4a7b53334d"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 299.9073999999382,
+        "success": true
+      },
+      {
+        "id": 60,
+        "query": "do vhi swiftcare do blood tests?",
+        "expected": [
+          "6e08f0d2878a172a62be42352c3659f7"
+        ],
+        "retrieved": [
+          "80eef2c0d70fc943e22ba0012419c83a",
+          "7a15cb66ce1a248b2579e900ce86fd20",
+          "a81d1038fe0e41f71a6ea0bae03234e9"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 497.1093000003748,
+        "success": true
+      },
+      {
+        "id": 61,
+        "query": "how many dead bodies on everest",
+        "expected": [
+          "68ae7ee99883104b858c259ab88949b5"
+        ],
+        "retrieved": [
+          "849ee0a213412a1a79a19ed4393ac8ab",
+          "68ae7ee99883104b858c259ab88949b5",
+          "b200a91c278914a80b640148469399f6",
+          "f64edbf9f8da90d3e8e819bf1906f521"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 386.8411000003107,
+        "success": true
+      },
+      {
+        "id": 62,
+        "query": "honesty or integrity definition",
+        "expected": [
+          "9aa066db0f4e6e5e8898c88c33518340"
+        ],
+        "retrieved": [
+          "cac8b0c936aa921898fa5785bb1bb24c",
+          "9aa066db0f4e6e5e8898c88c33518340",
+          "d72ffabed842b2d3fb6a69993bf2b668",
+          "7b21e22c8c5e16292ec273a352c84aa8"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 265.45309999983147,
+        "success": true
+      },
+      {
+        "id": 63,
+        "query": "honesty or integrity definition",
+        "expected": [
+          "cac8b0c936aa921898fa5785bb1bb24c"
+        ],
+        "retrieved": [
+          "cac8b0c936aa921898fa5785bb1bb24c",
+          "9aa066db0f4e6e5e8898c88c33518340",
+          "d72ffabed842b2d3fb6a69993bf2b668",
+          "7b21e22c8c5e16292ec273a352c84aa8"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 249.20920000022306,
+        "success": true
+      },
+      {
+        "id": 64,
+        "query": "how much do rear brakes and rotors cost",
+        "expected": [
+          "3c2f35c7e48dcbbc537f33fd322d38a6"
+        ],
+        "retrieved": [
+          "18f51110312f8cf81e45675c14e1f014",
+          "3c2f35c7e48dcbbc537f33fd322d38a6"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 442.35570000000735,
+        "success": true
+      },
+      {
+        "id": 65,
+        "query": "causes of insomnia in women",
+        "expected": [
+          "ba49c2bb11cdf61d8907097d70eb531b"
+        ],
+        "retrieved": [
+          "ba49c2bb11cdf61d8907097d70eb531b",
+          "91bafeb259b5f328a1ef0943bad10de0",
+          "75215577d075e2c1f9ed63c12e4860a8",
+          "f737855dc6704e74f1b3ce6da5427a79"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 345.3018999998676,
+        "success": true
+      },
+      {
+        "id": 66,
+        "query": "how old is lil moco",
+        "expected": [
+          "15bded218d92dbd5bf86d9051ab57e87"
+        ],
+        "retrieved": [
+          "15bded218d92dbd5bf86d9051ab57e87",
+          "9a4ef35db3546f95f678058c80c781f1",
+          "b00b537a3723e030746897603c368d8a",
+          "2a595c0e49503c498e277b1d3a919816",
+          "d21f01c9f6ff97a252026551315d82e9"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 593.8546000006681,
+        "success": true
+      },
+      {
+        "id": 67,
+        "query": "define tension stress",
+        "expected": [
+          "db20bf2de4816d234ef12525b54a36ed"
+        ],
+        "retrieved": [
+          "db20bf2de4816d234ef12525b54a36ed",
+          "89cedb4b0550f195d3f8e98bc0315f57",
+          "f3e362fa4ba8f5c09d488de3da82b32b",
+          "5059f91a2ba1bf66dd9578e1fade93ca"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 215.51550000003772,
+        "success": true
+      },
+      {
+        "id": 68,
+        "query": "systemic response definition",
+        "expected": [
+          "048f76171cea4fbc154677b7df94a353"
+        ],
+        "retrieved": [
+          "048f76171cea4fbc154677b7df94a353",
+          "44584072c11f1dfa800918774f6e3f23",
+          "dd888fe47b782797ed78e47fd8c2298f",
+          "38256f51905866d17508808ac60570dd"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 223.29699999954755,
+        "success": true
+      },
+      {
+        "id": 69,
+        "query": "average wage gilded age",
+        "expected": [
+          "b7dc1fa1091be8ab14e8e8ffa252885a"
+        ],
+        "retrieved": [
+          "c95c02e66317c31e79b08fe01f30af5a",
+          "f46d01d766d9c0f706141f28db91e7c9",
+          "327c049022017815345e383f0c02f300",
+          "41017d97099b3c626892bd2f6517b8a0"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 254.16430000041146,
+        "success": true
+      },
+      {
+        "id": 70,
+        "query": "tachycardia effects on cardiac output",
+        "expected": [
+          "4de4e1113a548ea7e9ebad2488545b0e"
+        ],
+        "retrieved": [
+          "4de4e1113a548ea7e9ebad2488545b0e",
+          "284c91231d586c9833d83f5dac4743ee",
+          "b00b537a3723e030746897603c368d8a",
+          "8c1ae7d51089673fe00e2f3ae86a91d6"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 310.6894000002285,
+        "success": true
+      },
+      {
+        "id": 71,
+        "query": "tangle definition",
+        "expected": [
+          "75215577d075e2c1f9ed63c12e4860a8"
+        ],
+        "retrieved": [
+          "75215577d075e2c1f9ed63c12e4860a8",
+          "ad8f31848f3199add2e99578dae0f539",
+          "4de4e1113a548ea7e9ebad2488545b0e",
+          "d8da9eb3ce836f6625a4a7406715add8",
+          "c257531d00aa4f1032cd803203ebb96c"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 150.09620000000723,
+        "success": true
+      },
+      {
+        "id": 72,
+        "query": "task definition",
+        "expected": [
+          "96b595d25b8c4c79b4b083709dacff05"
+        ],
+        "retrieved": [
+          "ffba13b2aa7fc2fe58db9be8dda0b02e",
+          "c8daae0ac54294bb6e6c1813ca8c0e6f",
+          "a52d5bf5905e849ad53e4108661a2f65",
+          "96b595d25b8c4c79b4b083709dacff05",
+          "a5a9474af25398c3329f018e95ac8b2b"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.25,
+        "map": 0.25,
+        "latency_ms": 163.03200000038487,
+        "success": true
+      },
+      {
+        "id": 73,
+        "query": "tax planning defined",
+        "expected": [
+          "83d6889f83ff96d62d73e6c580991abe"
+        ],
+        "retrieved": [
+          "61f69835bb749752a22d8b2b7b223062",
+          "f3eb0ebd20cbab56f775bd3364b68448",
+          "b794c1014822da8e85ee8e3309d49dc5",
+          "a64109d18655aac8a42517d45fc8a400",
+          "83d6889f83ff96d62d73e6c580991abe"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.2,
+        "map": 0.2,
+        "latency_ms": 223.79799999998795,
+        "success": true
+      },
+      {
+        "id": 74,
+        "query": "taxes what does donation go under",
+        "expected": [
+          "5c6ba29d58bbc8f1647aa2e8ec4c4c90"
+        ],
+        "retrieved": [
+          "5c6ba29d58bbc8f1647aa2e8ec4c4c90",
+          "41017d97099b3c626892bd2f6517b8a0",
+          "0be4cf190bd60dbb10b23ba2545aed5e",
+          "fc87760bf00a62a15d8334d903ebfcd6",
+          "ac3072f269679e63967dc50bf3de9c01"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 353.10410000056436,
+        "success": true
+      },
+      {
+        "id": 75,
+        "query": "tcm meaning case management",
+        "expected": [
+          "e7a47247661638b845496651baada7e1"
+        ],
+        "retrieved": [
+          "e4e0d35b547e3bc62c5326eb8f756638",
+          "1d6ad40a247212ec6fe10fb82253ea2a"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 247.06779999996797,
+        "success": true
+      },
+      {
+        "id": 76,
+        "query": "braidy industries charles price",
+        "expected": [
+          "923fe8a879c1b1673c6bb6cb62c8307f"
+        ],
+        "retrieved": [
+          "923fe8a879c1b1673c6bb6cb62c8307f",
+          "a81d1038fe0e41f71a6ea0bae03234e9",
+          "b7dc1fa1091be8ab14e8e8ffa252885a",
+          "212e5a4d317cbab9ec4231ddcd227507"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 249.07299999995303,
+        "success": true
+      },
+      {
+        "id": 77,
+        "query": "technology working group definition",
+        "expected": [
+          "f32c3d03115b743560d717aafb6b12ce"
+        ],
+        "retrieved": [
+          "e04238c520314e88b575874a32bcb70c",
+          "aa72a8252585b259f6d03bcc723f7cb7",
+          "176f94ab77defce151d857a3296268ce",
+          "2001a4745e0497f2191ee3277d8eaee8",
+          "8d12991b967085f7a572db424201feb5"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 262.00059999973746,
+        "success": true
+      },
+      {
+        "id": 78,
+        "query": "telephone number for amazon fire stick customer service",
+        "expected": [
+          "a4f25484ce429c057eb3b44613e93853"
+        ],
+        "retrieved": [
+          "a4f25484ce429c057eb3b44613e93853",
+          "91bafeb259b5f328a1ef0943bad10de0",
+          "590c5c9525264012319150d0f452666e",
+          "6c3ce8da15e9f243026d6e6df5bdaa80",
+          "c7911b22afc958e4f200adef90bccb48"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 467.0586000002004,
+        "success": true
+      },
+      {
+        "id": 79,
+        "query": "telephone number for travel house sky mall barbados",
+        "expected": [
+          "74da4289a65d2ec1b38d9c635a1751ce"
+        ],
+        "retrieved": [
+          "ce1ae0d3e223d78eaf6366aa14f6eb50",
+          "74da4289a65d2ec1b38d9c635a1751ce",
+          "c132c679be0f4336df74945f15801fb0",
+          "bf72220397e0594bb1de90aba3a3a615",
+          "ae9de5d64aecb7da8d8d87d81829d870"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 486.48010000033537,
+        "success": true
+      },
+      {
+        "id": 80,
+        "query": "temperature at searcy ark",
+        "expected": [
+          "766e2be177c103fdd91292dbe64f7478"
+        ],
+        "retrieved": [
+          "cb082f1968b7f5432c65cf6e1edb2003",
+          "3c202ff6e18fd3479b84fe2de59bf641",
+          "766e2be177c103fdd91292dbe64f7478",
+          "7aa1998cdd94f6675c301d2da3009cfc",
+          "ea5950591781811e6f74d80cec66cead"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 267.58239999981015,
+        "success": true
+      },
+      {
+        "id": 81,
+        "query": "temperature diode",
+        "expected": [
+          "dd12405c4973dfebf4e3609c5c8819be"
+        ],
+        "retrieved": [
+          "dd12405c4973dfebf4e3609c5c8819be",
+          "38523b2826d65325084bf3ca248e3316",
+          "a4da1aa80fe2e1c2b464bac266fcaf4b",
+          "f03dacb7a5c964dbc2876a62dc3d6aa1"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 170.4953000007663,
+        "success": true
+      },
+      {
+        "id": 82,
+        "query": "temperature in april in bali",
+        "expected": [
+          "9c065ccb995d163df556594a8d5e90d1"
+        ],
+        "retrieved": [
+          "6e08f0d2878a172a62be42352c3659f7",
+          "7d5bc69ab15bdf9293148e1a170288ec",
+          "3faf2f7a2624e66acaf63ed4ddd2cc2f",
+          "ad05b66c49b89d07fd3f2709e1f524fe"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 323.6434000000372,
+        "success": true
+      },
+      {
+        "id": 83,
+        "query": "docetaxel is also known as",
+        "expected": [
+          "e074a74e681404549df578841feb242a"
+        ],
+        "retrieved": [
+          "e074a74e681404549df578841feb242a",
+          "9525f3fda3ca72f901bc1bab1b69ab55",
+          "d6826d72f2f4a7940291be61b96b3371",
+          "fdd822b190269a0c096ad5b6f4ea7e46",
+          "4b3e6b78fb923fee8ee72bad81345650"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 307.0124999994732,
+        "success": true
+      },
+      {
+        "id": 84,
+        "query": "temperature in clearwater florida per month",
+        "expected": [
+          "3c202ff6e18fd3479b84fe2de59bf641"
+        ],
+        "retrieved": [
+          "3faf2f7a2624e66acaf63ed4ddd2cc2f",
+          "3672a3593ddf442826b6bf6d86f8fb8a",
+          "22705f50b0e0f9c5bb17b12f75546e02"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 368.2731999997486,
+        "success": true
+      },
+      {
+        "id": 85,
+        "query": "temperature in clearwater florida per month",
+        "expected": [
+          "f7c4acf6e573990c6bbd8d8a7ace5577"
+        ],
+        "retrieved": [
+          "3faf2f7a2624e66acaf63ed4ddd2cc2f",
+          "3672a3593ddf442826b6bf6d86f8fb8a"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "latency_ms": 331.88979999977164,
+        "success": true
+      },
+      {
+        "id": 86,
+        "query": "brass is composed of copper and what",
+        "expected": [
+          "b03310461e49261b36861dc8630d3c82"
+        ],
+        "retrieved": [
+          "3672a3593ddf442826b6bf6d86f8fb8a",
+          "b03310461e49261b36861dc8630d3c82",
+          "cf1df30dccfd19c2e2f74fd9e0b9ef44"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 479.98290000032284,
+        "success": true
+      },
+      {
+        "id": 87,
+        "query": "texas child support phone number",
+        "expected": [
+          "72125496092727bed2f9a4fb865a742c"
+        ],
+        "retrieved": [
+          "688cd9f9b900093b8df7045e78ffec24",
+          "72125496092727bed2f9a4fb865a742c",
+          "ea5950591781811e6f74d80cec66cead",
+          "639b347458dc340e5b9c436d9c29407d",
+          "cd7560a9c30fd8edf333376773960993"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 297.1471000000747,
+        "success": true
+      },
+      {
+        "id": 88,
+        "query": "texas roadhouse glen mills pa phone number",
+        "expected": [
+          "c53b785bbecd20c4a61c8860889c5f3a"
+        ],
+        "retrieved": [
+          "c53b785bbecd20c4a61c8860889c5f3a",
+          "5ab010f337a3f109fa82e73922b84e07",
+          "e059b056c96a8494e2256efffbf7202f",
+          "eeca6270d69987aeef96ab4bc2a1ac50",
+          "93b6893ae7897b1ab7c31b6e21b3227e"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 381.65639999988343,
+        "success": true
+      },
+      {
+        "id": 89,
+        "query": "the __________ test is a quick and dirty test for deciding if something is an ethical issue and useful because brand name and a person's reputation are important in business.",
+        "expected": [
+          "374713b3fe9e1a6d860e7ea370ae09a6"
+        ],
+        "retrieved": [
+          "374713b3fe9e1a6d860e7ea370ae09a6",
+          "2bc07e092a01425403502a1d337130a4",
+          "ae5c735ca17bca6dab9a510304ea1381",
+          "f8ea80053e91276d2909911f10651269"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 1765.3207000003022,
+        "success": true
+      },
+      {
+        "id": 90,
+        "query": "the amendment that ensures the defendant has the right to an attorney is the ____________ amendment.",
+        "expected": [
+          "c3d5a1f9b0bf8bc39d5cc0cfde2ba940"
+        ],
+        "retrieved": [
+          "c3d5a1f9b0bf8bc39d5cc0cfde2ba940",
+          "a0dd3c9a9a266e9c0aa8ca19665ef709",
+          "aa72a8252585b259f6d03bcc723f7cb7",
+          "c5dc5a08c269455ff1c61d1ec5f3d9af"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 1003.4823000005417,
+        "success": true
+      },
+      {
+        "id": 91,
+        "query": "the bancorp routing number",
+        "expected": [
+          "da8ebafd5362b4bb6f3fa59a30c302dc"
+        ],
+        "retrieved": [
+          "eca9e7551cf8cf971e63958646e54ddc",
+          "ea5950591781811e6f74d80cec66cead",
+          "b0c4ce64ad01512c867ddbf769bccf2f",
+          "750329f5e36b0582c3efdcbb8ff880f8",
+          "da8ebafd5362b4bb6f3fa59a30c302dc"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 0.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.2,
+        "map": 0.2,
+        "latency_ms": 503.1951000000845,
+        "success": true
+      },
+      {
+        "id": 92,
+        "query": "the cast of emoji movie",
+        "expected": [
+          "fd68824976cbe1964146ec2d7f348207"
+        ],
+        "retrieved": [
+          "bccbe011675b90248a158751ef745bc1",
+          "fd68824976cbe1964146ec2d7f348207",
+          "4de4e1113a548ea7e9ebad2488545b0e",
+          "9142f642a8cea72dcb6bb07df79dd4bb",
+          "7e135f305efce002fcf93d109e1df32e"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 343.7925999996878,
+        "success": true
+      },
+      {
+        "id": 93,
+        "query": "the collection film cast",
+        "expected": [
+          "6e28de95cd000991380a3d2b211a6b8a"
+        ],
+        "retrieved": [
+          "cb082f1968b7f5432c65cf6e1edb2003",
+          "a20a2c2960def7379b6f82f47534ee13",
+          "6e28de95cd000991380a3d2b211a6b8a",
+          "d8817555828fe50ae6fb17a24eb632b2",
+          "337dbf0213575b66d5ee1d39684f7dee"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.3333333333333333,
+        "map": 0.3333333333333333,
+        "latency_ms": 715.4488000005585,
+        "success": true
+      },
+      {
+        "id": 94,
+        "query": "does azusa pacific university negotiate salary",
+        "expected": [
+          "3cdc9851f4c4fe64d9a04362f669ba5e"
+        ],
+        "retrieved": [
+          "85c1a1365ca9aef08e51f49f453d99fa",
+          "3cdc9851f4c4fe64d9a04362f669ba5e"
+        ],
+        "hit_rate_1": 0.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 0.5,
+        "map": 0.5,
+        "latency_ms": 319.68219999998837,
+        "success": true
+      },
+      {
+        "id": 95,
+        "query": "the definition of lend",
+        "expected": [
+          "9c84104f6de3252e372fe7071ac2d680"
+        ],
+        "retrieved": [
+          "9c84104f6de3252e372fe7071ac2d680",
+          "816a286450b8c4d37f751137fcf43077",
+          "246a352fde6a8e23d9028b2b49bdc832",
+          "5fb20c20635dcd6cacb9ca4fd491cf8f",
+          "3a66e55f871faa5469b7591dcc6450d1"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 287.6265000004423,
+        "success": true
+      },
+      {
+        "id": 96,
+        "query": "the economics is or are",
+        "expected": [
+          "1f46237f213a09a31cdfa6f6a640e4a4"
+        ],
+        "retrieved": [
+          "1f46237f213a09a31cdfa6f6a640e4a4",
+          "5eb581e7fafa9bfa883fa6c3398c56bc",
+          "22705f50b0e0f9c5bb17b12f75546e02",
+          "e41abf442135088ab5822ea8c0ef92e1"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 320.2024000001984,
+        "success": true
+      },
+      {
+        "id": 97,
+        "query": "the function of the olfactory nerve concerns",
+        "expected": [
+          "1ea88bdf3ed30d1fa207bce96c2c6997"
+        ],
+        "retrieved": [
+          "1ea88bdf3ed30d1fa207bce96c2c6997",
+          "8b4a62b1957a8d9046e07b18c8ca2afe",
+          "2e96ab3efcc97c80e130e14ecd3ec0f8",
+          "590c5c9525264012319150d0f452666e",
+          "17eab96060e31da2b69b3a238fb78fe1"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 479.32810000020254,
+        "success": true
+      },
+      {
+        "id": 98,
+        "query": "the largest company in each state",
+        "expected": [
+          "90224cf732d14fe72676ee9fefd8c115"
+        ],
+        "retrieved": [
+          "90224cf732d14fe72676ee9fefd8c115",
+          "f839d0c60a54ee9d510cf9b69f50137c",
+          "c8daae0ac54294bb6e6c1813ca8c0e6f",
+          "37f20c4e1001b72cea136de41654c82e"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 434.76250000003347,
+        "success": true
+      },
+      {
+        "id": 99,
+        "query": "does bromelain help with weight loss",
+        "expected": [
+          "cc4619032915d4d31f9911ebeddab971"
+        ],
+        "retrieved": [
+          "cc4619032915d4d31f9911ebeddab971",
+          "87ad480d07e85c9ebf3a2278fef7c444",
+          "c9b7ac35ac4fee67e4cffcd481937373",
+          "923fe8a879c1b1673c6bb6cb62c8307f"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 318.8605000004827,
+        "success": true
+      },
+      {
+        "id": 100,
+        "query": "the largest unit within which gene flow can readily occur is _____.",
+        "expected": [
+          "e059b056c96a8494e2256efffbf7202f"
+        ],
+        "retrieved": [
+          "e059b056c96a8494e2256efffbf7202f",
+          "a5a9474af25398c3329f018e95ac8b2b",
+          "d9f33aeb82d69ae87898f2d24369a616",
+          "b016c55a80aa855dc07028c6c74ae9a7",
+          "3c202ff6e18fd3479b84fe2de59bf641"
+        ],
+        "hit_rate_1": 1.0,
+        "hit_rate_3": 1.0,
+        "hit_rate_5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "latency_ms": 685.6932999999117,
+        "success": true
+      }
+    ]
+  },
+  "generation": {
+    "summary": {
+      "total_questions": 100,
+      "successful_runs": 100,
+      "avg_latency_ms": 2772.880916000022,
+      "avg_bleu": 0.035190050616860334,
+      "avg_rouge_l": 0.11791685757409803,
+      "avg_semantic_similarity": 0.652647405585184
+    },
+    "results": [
+      {
+        "id": 1,
+        "query": "how many years did william bradford serve as governor of plymouth colony?",
+        "ground_truth": "http://en.wikipedia.org/wiki/William_Bradford_(Plymouth_Colony_governor) William Bradford (c.1590 â 1657) was an English Separatist leader in Leiden, Holland and in Plymouth Colony was a signatory to the Mayflower Compact. He served as Plymouth Colony Governor five times covering about thirty years between 1621 and 1657.",
+        "generated_answer": "根据检索上下文，William Bradford作为普利茅斯殖民地的总督，共担任五次，总共约30年，时间跨度为1621年至1657年。[1]",
+        "status": "success",
+        "bleu": 7.209245348349671e-05,
+        "rouge_l": 0.06993006993006994,
+        "semantic_similarity": 0.7574789703975883,
+        "latency_ms": 16686.29990000045,
+        "success": true
+      },
+      {
+        "id": 2,
+        "query": "define preventive",
+        "ground_truth": "Adjective[edit] preventive â(comparative more preventive, superlative most preventive) 1  Preventing, hindering, or acting as an obstacle to.  Carried out to deter military aggression.",
+        "generated_answer": "根据检索上下文，preventive 的定义是： 1. Preventing, hindering, or acting as an obstacle to。[1]\n2. Consists of public health services and related programs such as school health education。[2]\n3. A contrivance or device to prevent injury or avert danger。[3]\n4. A set of care that includes routine outpatient care and public health services。[2]\n5. A category of dental care that includes annual or semi-annual office visits for cleaning, X-rays and sealants。[4] 总之，preventive 的定义是指预防、阻止或防止某些事情发生的措施或服务。[1][2][3][4]",
+        "status": "success",
+        "bleu": 0.10968349460353678,
+        "rouge_l": 0.23880597014925373,
+        "semantic_similarity": 0.7609770878046065,
+        "latency_ms": 7130.71889999992,
+        "success": true
+      },
+      {
+        "id": 3,
+        "query": "color overlay photoshop",
+        "ground_truth": "Photoshop: color overlay. In my sunlight touch up tutorial, I showed you how to add a hint of color to your photo while giving it an extra boost at the same time. However, sometimes a photo can benefit from a little color, but just doesnât need that extra boost. Or even a minor light tweak. This simple color overlay is a great way to add a touch of color without making your photo look like youâve edited the heck out of it. Or to add a little life to B&W photos. Note: this works the exact same way in Elements as it does in Photoshop.",
+        "generated_answer": "无法从当前资料确认如何在Photoshop中添加颜色覆盖。 [1]",
+        "status": "success",
+        "bleu": 3.5534003716906444e-13,
+        "rouge_l": 0.016129032258064512,
+        "semantic_similarity": 0.6547655845071252,
+        "latency_ms": 3152.7295000005324,
+        "success": true
+      },
+      {
+        "id": 4,
+        "query": "____________________ is considered the father of modern medicine.",
+        "ground_truth": "TRUE. Hippocrates is considered the father of modern medicine because he did not believe that illness was a punishment inflicted by the gods. True False. Weegy: TRUE. [",
+        "generated_answer": "无法从当前资料确认。 [1]",
+        "status": "success",
+        "bleu": 8.226677301018201e-08,
+        "rouge_l": 0.05714285714285715,
+        "semantic_similarity": 0.5353852834598763,
+        "latency_ms": 3907.581499999651,
+        "success": true
+      },
+      {
+        "id": 5,
+        "query": "does xpress bet charge to deposit money in your account",
+        "ground_truth": "How to create a PaySlip using a printer: 1  Log In to your Xpressbet Account and click Deposit.. 2  Choose PayNearMe as your Deposit method. 3  Enter your email address and click Continue.. 4  Check your inbox for an email with additional instructions from PayNearMe.5  Click on the link in the email to access your PayCode. 6  Click Print to print your 7  ... Takow to create a PaySlip using a printer: 1  Log In to your Xpressbet Account and click Deposit.. 2  Choose PayNearMe as your Deposit method. 3  Enter your email address and click Continue.. 4  Check your inbox for an email with additional instructions from PayNearMe.",
+        "generated_answer": "无法从当前资料确认Xpress Bet是否会对存款到账户收取费用。 [1]",
+        "status": "success",
+        "bleu": 3.5564429272757445e-12,
+        "rouge_l": 0.023166023166023165,
+        "semantic_similarity": 0.6352193181535009,
+        "latency_ms": 5867.934799999603,
+        "success": true
+      },
+      {
+        "id": 6,
+        "query": "how much is a cost to run disneyland",
+        "ground_truth": "Disney's Theme Parks had an operating cost of 571 million dollars divided by their 11 parks and being open 365 days a year, on average their operating cost per day is around $355,000.",
+        "generated_answer": "无法从当前资料确认 Disneyland 的运营成本。 [1]",
+        "status": "success",
+        "bleu": 3.5336182671461524e-09,
+        "rouge_l": 0.06818181818181819,
+        "semantic_similarity": 0.6496022776268517,
+        "latency_ms": 3814.135499999793,
+        "success": true
+      },
+      {
+        "id": 7,
+        "query": "botulinum definition",
+        "ground_truth": "medical Definition of botulinum toxin : a very powerful neurotoxin that causes botulism and is produced by the botulinum bacterium (Clostridium botulinum); also: botulinum toxin type a Note: Botulinum toxin acts primarily on the parasympathetic nervous system.",
+        "generated_answer": "根据检索上下文，Botulinum toxin 的定义是：一种非常强大的神经毒素，引起肉毒中毒，产生于肉毒杆菌（Clostridium botulinum）。它主要作用于副交感神经系统。[1]",
+        "status": "success",
+        "bleu": 0.03276537407259989,
+        "rouge_l": 0.09917355371900827,
+        "semantic_similarity": 0.7842584396314172,
+        "latency_ms": 6182.975499999884,
+        "success": true
+      },
+      {
+        "id": 8,
+        "query": "do physicians pay for insurance from their salaries?",
+        "ground_truth": "Active-duty physicians and their dependents will receive free or discounted health care coverage and dental coverage. Physicians in the Reserve and Guard can also participate in TRICARE Reserve Select, which is part of the Military's health care plan. Finally, physicians can receive up to $400,000 in term life insurance coverage for only $29 a month.",
+        "generated_answer": "无法从当前资料确认医生是否从他们的薪水中支付保险费。 [1]",
+        "status": "success",
+        "bleu": 3.766850253991182e-10,
+        "rouge_l": 0.014184397163120569,
+        "semantic_similarity": 0.553242268326435,
+        "latency_ms": 1943.4109000003446,
+        "success": true
+      },
+      {
+        "id": 9,
+        "query": "here there be dragons comic",
+        "ground_truth": "James A. Owen is an American comic book illustrator, publisher and writer. He is known for his creator-owned comic book series Starchild and as the author of The Chronicles of the Imaginarium Geographica novel series, that began with Here, There Be Dragons in 2006. 1 Career.",
+        "generated_answer": "根据检索上下文，我可以确认： \"Here, There Be Dragons\" 是一部小说系列，由 James A. Owen 创作，首部小说于 2006 年出版。[1] 这部小说系列是 \"The Chronicles of the Imaginarium Geographica\" 的一部分。[1] 无法从当前资料确认更多关于这部小说的信息。",
+        "status": "success",
+        "bleu": 0.23646734240152514,
+        "rouge_l": 0.29787234042553196,
+        "semantic_similarity": 0.7300688213089597,
+        "latency_ms": 2727.560100000119,
+        "success": true
+      },
+      {
+        "id": 10,
+        "query": "blood diseases that are sexually transmitted",
+        "ground_truth": "A sexually transmitted infection (STI) is an infection that can be transmitted from one person to another through sexual contact (exchange of semen, vaginal fluid, blood or other fluids).A blood borne infection is transmitted through contact with infected blood.Blood borne infections (BBI) are transmitted by contact with contaminated blood. Some infections (for example HIV, hepatitis B and hepatitis C) may be transmitted through both sexual and blood borne transmission routes.lood borne infections (BBI) are transmitted by contact with contaminated blood. Some infections (for example HIV, hepatitis B and hepatitis C) may be transmitted through both sexual and blood borne transmission routes.",
+        "generated_answer": "无法从当前资料确认血液疾病中哪些是通过性传播的。 [1]",
+        "status": "success",
+        "bleu": 8.273092128435339e-13,
+        "rouge_l": 0.008196721311475409,
+        "semantic_similarity": 0.5778205667903054,
+        "latency_ms": 1767.8728999999294,
+        "success": true
+      },
+      {
+        "id": 11,
+        "query": "define bona fides",
+        "ground_truth": "For other uses, see Bona fide (disambiguation). Good faith (Latin: bona fides), in human interactions, is a sincere intention to be fair, open, and honest, regardless of the outcome of the interaction.",
+        "generated_answer": "根据检索上下文，Bona fides 的定义是指在人际交往中，真诚的意愿，致力于公平、开放和诚实，独立于交往结果。 [1]",
+        "status": "success",
+        "bleu": 3.1071193770585623e-06,
+        "rouge_l": 0.08928571428571429,
+        "semantic_similarity": 0.7126552496319625,
+        "latency_ms": 1926.9264999993538,
+        "success": true
+      },
+      {
+        "id": 12,
+        "query": "effects of detox juice cleanse",
+        "ground_truth": "Unhealthy Weight Loss. One of the positive side effects of a detox cleanse is weight loss. However, according to the same review article in Obesity Reviews, you're not losing fat weight on such a severe diet, but precious muscle mass.",
+        "generated_answer": "基于检索上下文，以下是对“detox juice cleanse”的影响的分析： 1. **不健康的体重减轻**：严重的脱毒清洁可能导致肌肉质量的丧失，而不是脂肪质量的丧失。[1]\n2. **腹泻**：脱毒清洁的常见副作用是腹泻。[2]\n3. **低热量**：脱毒水由于是通过浸泡味道而不是榨汁或混合而制作，含有非常低的热量。[3][5]\n4. **可能与药物相互作用**：某些药物，例如镇静药，可能会增加某些药物的效果和副作用。[4] 请注意，这些信息基于检索上下文，可能不代表脱毒清洁的全部影响。",
+        "status": "success",
+        "bleu": 6.70292517285819e-06,
+        "rouge_l": 0.08064516129032258,
+        "semantic_similarity": 0.7027435625184657,
+        "latency_ms": 16214.168400000744,
+        "success": true
+      },
+      {
+        "id": 13,
+        "query": "effects of detox juice cleanse",
+        "ground_truth": "Diarrhea is a common side effect of a detox cleanse. In fact, proponents of these types of diet plans claim that the diarrhea is a sign your body is ridding itself of toxic substances.",
+        "generated_answer": "",
+        "status": "llm_error",
+        "bleu": 0.0,
+        "rouge_l": 0.0,
+        "semantic_similarity": 0.0,
+        "latency_ms": 60380.13179999962,
+        "success": true
+      },
+      {
+        "id": 14,
+        "query": "do prince harry and william have last names",
+        "ground_truth": "Asker's rating. 1  Prince Harry Full Name. 2  This Site Might Help You. 3  For the best answers, search on this site https://shorturl.im/axUwN. 4  prince william prince harry names. 5  Commonly known as Prince William of Wales. 6  Willam and Harry do have a last name; they are known as William Windsor and Henry Windsor. 7  Their last name is Windsor.",
+        "generated_answer": "Prince William 和 Prince Harry 的最后一个名字是 Windsor [1]。",
+        "status": "success",
+        "bleu": 0.0010775446050448937,
+        "rouge_l": 0.12941176470588237,
+        "semantic_similarity": 0.6927667634166335,
+        "latency_ms": 8163.975699999355,
+        "success": true
+      },
+      {
+        "id": 15,
+        "query": "can hives be a sign of pregnancy",
+        "ground_truth": "Hives are caused by allergic reactions. The dryness and stretching of your skin along with other changes can make you more susceptible to experiencing hives during pregnancy. Hives can be caused by an allergic reaction to almost anything. Some common causes of hives during pregnancy are noted below: Medicine.",
+        "generated_answer": "根据检索上下文，无法确认是否可以通过hive来判断是否怀孕。检索上下文中提到了hive可能与妊娠有关，但没有明确指出hive是否可以作为妊娠的迹象。 [1]",
+        "status": "success",
+        "bleu": 1.587298431623999e-08,
+        "rouge_l": 0.013986013986013986,
+        "semantic_similarity": 0.5731162439451685,
+        "latency_ms": 2318.5739000000467,
+        "success": true
+      },
+      {
+        "id": 16,
+        "query": "causes of petechial hemorrhage",
+        "ground_truth": "Causes and Symptoms. The causes of petechial hemorrhages are injury to the brain and trauma. This type of multiple petechial hemorrhage is not often visible in imaging techniques such as CT and MRI scans. It is visible in case the injury is very severe, and it generally shows up only after few days.",
+        "generated_answer": "根据检索上下文，petechial hemorrhage 的原因包括： * 脑损伤和创伤 [1]\n* 严重创伤，导致在 CT 和 MRI 扫描中不可见 [1]\n* 药物滥用 [2]\n* 未知原因的低血压 [2]\n* 伤害或疾病导致的出血 [3]\n* 血管扩张和炎症 [4]\n* 严重疾病如马堡病毒感染 [5] 请注意，以上答案仅基于给定的检索上下文。",
+        "status": "success",
+        "bleu": 0.04658861634062189,
+        "rouge_l": 0.23318385650224216,
+        "semantic_similarity": 0.7916321291389066,
+        "latency_ms": 2369.415399999525,
+        "success": true
+      },
+      {
+        "id": 17,
+        "query": "how long does it take to get your bsrn if you already have a bachelors degree",
+        "ground_truth": "A: It takes 4 years to complete the RN to BSN programs. However, if you have completed your Associate's Degree in Nursing already, your credits for the two year education already achieved will be transferred and you will only have to invest two more years and receive your RN to BSN Degree.: RN is the abbreviation for Registered Nurse and BSN means Bachelor of Science in nursing. At the moment these are the two types of registered nursing degrees offered by colleges in the US. You become an RN by earning associate's degree which roughly takes about two years for completion.",
+        "generated_answer": "无法从当前资料确认。 [1]",
+        "status": "success",
+        "bleu": 1.3816325910795398e-16,
+        "rouge_l": 0.008928571428571428,
+        "semantic_similarity": 0.47483943650610755,
+        "latency_ms": 1365.8919999998034,
+        "success": true
+      },
+      {
+        "id": 18,
+        "query": "symptoms of ptsd in vietnam veterans",
+        "ground_truth": "But it's never too late to get treatment.. Even for veterans in their 70s and 80s, a combination of psychotherapy, medication, and marital and family therapy can reduce PTSD symptoms, including insomnia, anxiety and irritability, he said. The Vietnam War ended in 1975.",
+        "generated_answer": "无法从当前资料确认 Vietnam 战争退伍军人 PTSD 的典型症状。 [1]",
+        "status": "success",
+        "bleu": 4.576090057940726e-05,
+        "rouge_l": 0.10256410256410256,
+        "semantic_similarity": 0.7331473798721696,
+        "latency_ms": 1008.5887000004732,
+        "success": true
+      },
+      {
+        "id": 19,
+        "query": "how coffee works quote",
+        "ground_truth": "Coffee Sayings and Quotes About Coffee. 100+ coffee sayings , quotes , and expressions: I orchestrate my mornings to the tune of coffee. ~Harry Mahtar. The morning cup of coffee has an exhilaration about it which the cheering influence of the afternoon or evening cup of tea cannot be expected to reproduce. ~Oliver Wendell Holmes.",
+        "generated_answer": "无法从当前资料确认如何工作的咖啡的具体过程。 [1]",
+        "status": "success",
+        "bleu": 2.302330211808047e-10,
+        "rouge_l": 0.014814814814814812,
+        "semantic_similarity": 0.44889866560882624,
+        "latency_ms": 857.770999999957,
+        "success": true
+      },
+      {
+        "id": 20,
+        "query": "does contraction of the ciliary muscles shorten the lens",
+        "ground_truth": "The ciliary body controls the shape of the lens. The ciliary body is composed mainly of smooth muscle and is connected to the lens by suspensory ligaments which are not visible in this image. Contraction of smooth muscle in the ciliary body makes the lens rounder focusing vision on objects which are closer to the eye.",
+        "generated_answer": "无法从当前资料确认。 [1]",
+        "status": "success",
+        "bleu": 3.0432483008403608e-12,
+        "rouge_l": 0.016129032258064516,
+        "semantic_similarity": 0.490079569179937,
+        "latency_ms": 1002.4957000005088,
+        "success": true
+      },
+      {
+        "id": 21,
+        "query": "do spiders eat other animals",
+        "ground_truth": "Spiders are animals that have 8 legs and use their fangs to inject venom into other animals and sometimes humans. But what do spiders eat? This post will answer that question, and also look at some interesting facts about spiders. What do spiders eat? Different species of spiders eat different things. Most species trap small insects and other spiders in their webs and eat them. A few large species of spiders prey on small birds and lizards. One species is vegetarian, feeding on acacia trees. Some baby spiders eat plant nectar. In captivity, spiders have been known to eat egg yoke, bananas, marmalade, milk and sausages. Interesting Facts About Spiders",
+        "generated_answer": "根据检索上下文，答案是： 有些蜘蛛会吃其他动物，包括小昆虫、鸟类和蜥蜴等。 [1] 但是，也有蜘蛛会吃植物或植物的产物，如某些蜘蛛会吃树叶或植物的汁液。 [1] 另外，某些大型蜘蛛会吃小鸟和蜥蜴。 [1] 总之，蜘蛛的食物来源多样，取决于蜘蛛的种类和环境。 [1] 无法从当前资料确认蜘蛛是否会吃其他动物的具体例子。",
+        "status": "success",
+        "bleu": 3.000374869215974e-08,
+        "rouge_l": 0.05232558139534883,
+        "semantic_similarity": 0.5403147474406947,
+        "latency_ms": 2179.0484000002834,
+        "success": true
+      },
+      {
+        "id": 22,
+        "query": "how long is the flight from chicago to cairo",
+        "ground_truth": "Flying time from Chicago, IL to Cairo, Egypt. The total flight duration from Chicago, IL to Cairo, Egypt is 12 hours, 47 minutes. This assumes an average flight speed for a commercial airliner of 500 mph, which is equivalent to 805 km/h or 434 knots. It also adds an extra 30 minutes for take-off and landing. Your exact time may vary depending on wind speeds.",
+        "generated_answer": "无法从当前资料确认从芝加哥到开罗的飞行时间。 [1]",
+        "status": "success",
+        "bleu": 4.988299518932858e-11,
+        "rouge_l": 0.012422360248447204,
+        "semantic_similarity": 0.43879221486465064,
+        "latency_ms": 1198.9017999994758,
+        "success": true
+      },
+      {
+        "id": 23,
+        "query": "how titanic facts",
+        "ground_truth": "1 The time interval from first sighting of the iceberg to impact was a little over 30 seconds. 2  The Titanic sank 2 hours and 40 minutes after hitting the iceberg.  It probably took Titanic about 15 minutes to sink to her final resting place on the ocean floor.",
+        "generated_answer": "无法从当前资料确认有关泰坦尼克号的事实。 [1]",
+        "status": "success",
+        "bleu": 2.0364533262890977e-10,
+        "rouge_l": 0.017241379310344827,
+        "semantic_similarity": 0.5209407170536576,
+        "latency_ms": 827.3920999999973,
+        "success": true
+      },
+      {
+        "id": 24,
+        "query": "how to play blu ray discs",
+        "ground_truth": "Step 3: Get Windows 10 play Blu-ray. 1) Run the Blu-ray Player for Windows 10; 2) Insert your Blu-ray disc into the Blu-ray drive; 3) The blu-ray player software can automatically play the Blu-ray movie when the disc is inserted. You can also click the right bottom icon and select Open Disc to open the disc manually. You can also choose Open File to play Blu-ray folders or ISO files.",
+        "generated_answer": "要播放蓝光盘（Blu-ray discs），您可以按照以下步骤操作： 1. 在Windows 10中运行蓝光播放器（Blu-ray Player for Windows 10）；\n2. 将蓝光盘插入蓝光驱中；\n3. 蓝光播放器软件可以自动播放蓝光电影，当盘片被插入时会自动播放。您也可以点击右下角的图标，选择“Open Disc”（打开盘片）或“Open File”（打开文件）来手动打开盘片或播放蓝光文件夹或ISO文件。 注意：您需要确保您的计算机具备蓝光驱和支持蓝光播放的硬件和软件配置。 [1]",
+        "status": "success",
+        "bleu": 0.11098199003933427,
+        "rouge_l": 0.20394736842105265,
+        "semantic_similarity": 0.7318445091303156,
+        "latency_ms": 2562.7686999996513,
+        "success": true
+      },
+      {
+        "id": 25,
+        "query": "central city definition",
+        "ground_truth": "Definition of central city. : a city that constitutes the densely populated center of a metropolitan area.",
+        "generated_answer": "根据检索上下文，中央城市（Central City）的定义是：一个城市是该城市的核心区域，通常是该城市的核心区域。 [1]",
+        "status": "success",
+        "bleu": 8.633400213704516e-08,
+        "rouge_l": 0.056338028169014086,
+        "semantic_similarity": 0.6897667484895565,
+        "latency_ms": 1057.6541000000361,
+        "success": true
+      },
+      {
+        "id": 26,
+        "query": "define body muscular endurance",
+        "ground_truth": "Morbidity is any departure, subjective or objective, from a state of physical or psychological well-being, short of death. Muscular endurance is a health-related fitness component that relates to the amount of external force that a muscle can exert over an extended period of time.",
+        "generated_answer": "根据检索上下文，肌肉耐久力（Muscular Endurance）是指身体能够进行特定肌肉动作的时间。例如，跑马拉松或完成100个无重量的深蹲动作都是由于肌肉耐久力。[1]",
+        "status": "success",
+        "bleu": 1.8150591747902757e-06,
+        "rouge_l": 0.028368794326241134,
+        "semantic_similarity": 0.6943736990015544,
+        "latency_ms": 1391.720599999644,
+        "success": true
+      },
+      {
+        "id": 27,
+        "query": "circulation money definition",
+        "ground_truth": "circulation of money meaning, circulation of money definition | English Cobuild dictionary. circulate. 1 verb If a piece of writing circulates or is circulated, copies of it are passed round among a group of people.",
+        "generated_answer": "根据检索上下文，无法确定“circulation money”的定义。检索结果中没有相关的定义或解释。 [1]",
+        "status": "success",
+        "bleu": 2.074367786052891e-06,
+        "rouge_l": 0.09803921568627451,
+        "semantic_similarity": 0.713262900836353,
+        "latency_ms": 988.0493999999089,
+        "success": true
+      },
+      {
+        "id": 28,
+        "query": "hotels in thornton co",
+        "ground_truth": "Thornton Hotels. Candlewood Suites Denver North - Thornton. Welcome to the Candlewood Suites Thornton serving Northglenn, Westminster, Brighton, Commerce City, Broomfield, and Thornton. We are minutes from downtown Denver, many RTD stations, Water World, downtown Louisville, and the Broomfield event center.",
+        "generated_answer": "根据检索上下文，Thornton县有以下酒店： * Hampton Inn Denver-North/Thornton [3]\n* Candlewood Suites Denver North - Thornton [5] 无法从当前资料确认Thornton县其他酒店的信息。",
+        "status": "success",
+        "bleu": 0.12441359890777903,
+        "rouge_l": 0.26666666666666666,
+        "semantic_similarity": 0.8068307784391969,
+        "latency_ms": 1244.1165000000183,
+        "success": true
+      },
+      {
+        "id": 29,
+        "query": "hotels in thornton co",
+        "ground_truth": "4. Hampton Inn Denver-North/Thornton. From Business: Property Location With a stay at Hampton Inn Denver Thornton in Thornton, you'll be close to Boondocks Food and Fun and Thorncreek Golf Course. This hotel is withâ¦. Add to mybookRemove from mybook.",
+        "generated_answer": "根据检索上下文，我只能找到与 Thornton 相关的信息。根据文档 [3] 和 [5]，以下是关于 Thornton 的酒店信息： * Hampton Inn Denver-North/Thornton [3]\n* Candlewood Suites Denver North - Thornton [5] 无法从当前资料确认其他酒店信息。",
+        "status": "success",
+        "bleu": 0.1422570601244311,
+        "rouge_l": 0.2857142857142857,
+        "semantic_similarity": 0.7690182623886754,
+        "latency_ms": 1187.1113999995941,
+        "success": true
+      },
+      {
+        "id": 30,
+        "query": "hotels in thornton co",
+        "ground_truth": "Econo Lodge Thornton -Denver North, a Thornton hotel near Downtown Denver. 1  For everything you need while on the road, book with our Econo LodgeÂ® Thornton-Denver North hotel in Thornton, CO near Downtown Denver to explore Colorado with ease. Visit these popular attractions near this pet-friendly discount hotel in Thornton during your stay in Colorado: Denver Botanic Gardens.",
+        "generated_answer": "根据检索上下文，Thornton CO 有以下酒店： * Hampton Inn Denver-North/Thornton [3]\n* Candlewood Suites Denver North - Thornton [5] 无法从当前资料确认其他酒店信息。",
+        "status": "success",
+        "bleu": 0.03046692275571001,
+        "rouge_l": 0.24731182795698925,
+        "semantic_similarity": 0.7563299228393223,
+        "latency_ms": 979.6492000004946,
+        "success": true
+      },
+      {
+        "id": 31,
+        "query": "derriere definition",
+        "ground_truth": "Princeton's WordNet(0.00 / 0 votes)Rate this definition: buttocks, nates, arse, butt, backside, bum, buns, can, fundament, hindquarters, hind end, keister, posterior, prat, rear, rear end, rump, stern, seat, tail, tail end, tooshie, tush, bottom, behind, derriere, fanny, ass(noun) the fleshy part of the human body that you sit on.",
+        "generated_answer": "根据检索上下文，derriere的定义是指人体的臀部或臀部区域。 [1]",
+        "status": "success",
+        "bleu": 3.1827807965096653e-10,
+        "rouge_l": 0.02580645161290323,
+        "semantic_similarity": 0.5036001410934219,
+        "latency_ms": 892.1925000004194,
+        "success": true
+      },
+      {
+        "id": 32,
+        "query": "how many product lines does coca cola have",
+        "ground_truth": "COCA-COLA ON SOCIAL. Coca-Cola Great Britain is responsible for marketing 20 brands and more than 80 drinks to consumers across Great Britain including the Coca-Cola portfolio â Coca-Cola Classic, Coca-Cola Life, Coca-Cola Zero Sugar and Diet Coke.",
+        "generated_answer": "无法从当前资料确认。 [1]",
+        "status": "success",
+        "bleu": 3.035391380788666e-11,
+        "rouge_l": 0.019801980198019806,
+        "semantic_similarity": 0.42250317755969347,
+        "latency_ms": 1049.226400000407,
+        "success": true
+      },
+      {
+        "id": 33,
+        "query": "government does do",
+        "ground_truth": "Depending on the particular form, the government generally carries out the desires of the people. Popular forms of government, including democracies and republics, come from the governments of the Romans and the Greeks. The government's job is to determine and implement policy or principles to get a positive outcome.",
+        "generated_answer": "政府不一定是民主的，但它们必须遵循某些规则，这些规则可以是法律或习俗，但必须被公布，并且必须基于比恐惧更高的原则。 [1]",
+        "status": "success",
+        "bleu": 1.4753020371974429e-08,
+        "rouge_l": 0.013698630136986302,
+        "semantic_similarity": 0.581199637110264,
+        "latency_ms": 1170.4664999997476,
+        "success": true
+      },
+      {
+        "id": 34,
+        "query": "how to cook string beans",
+        "ground_truth": "Use the paring knife to cut the ends off of the string beans. Cut the beans in half or 1-inch slices, if desired. Bring the salt and water to a boil in the saucepan over high heat. With a vegetable steamer: place the steamer above the boiling water so that the water does not enter the steamer. Fill the steamer with the prepared string beans.",
+        "generated_answer": "根据检索上下文，如何烹饪青豆的具体步骤如下： 1. 使用削皮刀将青豆的两端削去。\n2. 如果需要，可以将青豆切成半截或一英寸的片状。\n3. 在锅中将盐和水烧开。\n4. 使用蔬菜蒸锅：将蒸锅放置在沸水上方，确保水不进入蒸锅。\n5. 将准备好的青豆放入蒸锅中。 注意：这些步骤基于检索上下文中的第一个文档 [1]，因此可能不适用于所有类型的青豆或烹饪方法。",
+        "status": "success",
+        "bleu": 6.998660725445258e-06,
+        "rouge_l": 0.09486166007905138,
+        "semantic_similarity": 0.5140154297668252,
+        "latency_ms": 2520.300700000007,
+        "success": true
+      },
+      {
+        "id": 35,
+        "query": "average temperatures las vegas by month",
+        "ground_truth": "1 Average High Temperature in November in Las Vegas: 67 F (19.4 C). 2  Average Low Temperature in November in Las Vegas: 42 F (5.5 C). 3  Average Rainfall in November in Las Vegas: .43â. 4  Average Humidity in November in Las Vegas: 31%.",
+        "generated_answer": "根据检索上下文，无法直接找到关于Las Vegas平均温度的信息。然而，根据文档[2]，我们可以知道： * 最高平均温度在Las Vegas是7月，93.6度（Fahrenheit）。\n* 最低平均温度在Las Vegas是12月，45.4度（Fahrenheit）。 但是，关于每个月的平均温度的具体信息，我们无法从当前检索上下文中找到。",
+        "status": "success",
+        "bleu": 0.0006343110144195505,
+        "rouge_l": 0.14583333333333331,
+        "semantic_similarity": 0.6842766830455401,
+        "latency_ms": 1799.8034000002008,
+        "success": true
+      },
+      {
+        "id": 36,
+        "query": "average temperatures las vegas by month",
+        "ground_truth": "45Â°F. 0.5. The highest average temperature in Las Vegas is July at 93.6 degrees. The coldest average temperature in Las Vegas is December at 45.4 degrees. The most monthly precipitation in Las Vegas occurs in February with 0.8 inches. The Las Vegas weather information is based on the average of the previous 3-7 years of data. Loading...",
+        "generated_answer": "根据检索上下文，无法直接找到关于Las Vegas平均温度的信息。然而，根据文档[2]，我们可以知道： * 最高平均温度在Las Vegas是7月的93.6度（[2]）。\n* 最低平均温度在Las Vegas是12月的45.4度（[2]）。 但是，关于每个月的平均温度，我们找不到相关信息。",
+        "status": "success",
+        "bleu": 0.0005171044149091264,
+        "rouge_l": 0.1244019138755981,
+        "semantic_similarity": 0.6574309409441514,
+        "latency_ms": 1458.8517000001957,
+        "success": true
+      },
+      {
+        "id": 37,
+        "query": "how bicycle tire tubes are sized",
+        "ground_truth": "Inspect the sidewall of the bicycle tire that needs a new tube. The sidewall is the area of the tire next to the rim on either side that does not touch the ground when the bike is in motion. The tire size will be printed there in raised numbers along with the recommended tire pressure and possibly other information.",
+        "generated_answer": "根据检索上下文，无法确定如何大小的自行车胎管（tire tubes）。检索上下文主要讨论了轮胎大小的定义和选择，但没有提及胎管的大小问题。 [1]",
+        "status": "success",
+        "bleu": 9.522654616033488e-07,
+        "rouge_l": 0.03726708074534161,
+        "semantic_similarity": 0.7085118556724788,
+        "latency_ms": 1343.2173999999577,
+        "success": true
+      },
+      {
+        "id": 38,
+        "query": "how bicycle tire tubes are sized",
+        "ground_truth": "The numbers on the sidewall of you tyre are the best place to look for your tyre and tube size information. Most tyres will show both an ETRTO size and a Metric or Imperial size. See below images for examples of two of the most common tyre sizes. Mountain Bike 54-559 ETRTO or 26 x 2.1. Road Bike 23-622 ETRTO or 700 x 23c.",
+        "generated_answer": "根据检索上下文，无法直接确定如何大小 bicycle tire tubes。检索上下文主要讨论了轮胎大小的定义、轮胎宽度、轮胎高度比、轮胎构造等方面，但没有直接提及轮胎管的大小。 [1]",
+        "status": "success",
+        "bleu": 1.7774537837869414e-08,
+        "rouge_l": 0.0427807486631016,
+        "semantic_similarity": 0.7189311912617241,
+        "latency_ms": 1195.3739999999016,
+        "success": true
+      },
+      {
+        "id": 39,
+        "query": "can you substitute chocolate chips for semi-sweet",
+        "ground_truth": "February 2, 2012 in Baking, Sweet Stuff 6 Comments. Semisweet chocolate chips are the default mix-in for most chocolate chip cookie recipes. Over the past several years, consumers have seen a huge increase in the variety of chocolate chips (and chocolate chunks) available at the grocery store as options for baking.",
+        "generated_answer": "无法从当前资料确认是否可以替换巧克力片为半甜巧克力片。 [1]",
+        "status": "success",
+        "bleu": 4.924102113827128e-10,
+        "rouge_l": 0.015503875968992248,
+        "semantic_similarity": 0.48633084791357656,
+        "latency_ms": 1155.18769999926,
+        "success": true
+      },
+      {
+        "id": 40,
+        "query": "how big do newfypoo's get",
+        "ground_truth": "The newfypoo is generally a large dog breed, but the adult size of the newfypoo is generally dependent upon the type poodle used in breeding. Since most newfypoos are bred with standard poodles, the offspring is almost always a large dog that weighs between 60-130 pounds and is 21-30 inches tall from ground to shoulder. The breed is considered loyal, calm, and highly intelligent.",
+        "generated_answer": "根据检索上下文，无法从当前资料确认Newfypoo的大小。 [1]",
+        "status": "success",
+        "bleu": 7.099584423175607e-11,
+        "rouge_l": 0.012903225806451613,
+        "semantic_similarity": 0.6528955959894882,
+        "latency_ms": 1136.962599999606,
+        "success": true
+      },
+      {
+        "id": 41,
+        "query": "how much fiber is in carrots",
+        "ground_truth": "5. Cooked Carrots. Adding cooked carrots to your meals is a great way to increase fiber in your diet. One cup of cooked carrots will yield approximately 5.22 grams of fiber, and a touch of brown sugar makes them delicious. 6. Broccoli. Broccoli is another vegetable that will give you a good amount of fiber.",
+        "generated_answer": "根据检索上下文，一个杯子的煮熟的胡萝卜中含有约5.22克的纤维。 [1]",
+        "status": "success",
+        "bleu": 1.3010359384419652e-09,
+        "rouge_l": 0.028776978417266192,
+        "semantic_similarity": 0.5155206023255596,
+        "latency_ms": 1190.846700000293,
+        "success": true
+      },
+      {
+        "id": 42,
+        "query": "do bigger tires affect gas mileage",
+        "ground_truth": "Tire Width versus Gas Mileage. Tire width is one of the only tire size factors that can influence gas mileage in a positive way. For example, a narrow tire will have less wind resistance, rolling resistance, and weight; thus increasing gas mileage.",
+        "generated_answer": "根据检索上下文，答案是： 更大的轮胎可能会影响油耗，但具体影响取决于轮胎的宽度。较窄的轮胎会有更少的空气阻力和滚动阻力，从而提高油耗。然而，如果更换更大的轮胎，可能会导致车辆的行驶质量下降，并且更大的轮胎可能需要更大的轮辋和更大的轮胎尺寸。因此，决定更换更大的轮胎之前，需要考虑到这些因素。 参考：[1]",
+        "status": "success",
+        "bleu": 6.773709971213154e-08,
+        "rouge_l": 0.021621621621621623,
+        "semantic_similarity": 0.46307935736773737,
+        "latency_ms": 2175.853599999755,
+        "success": true
+      },
+      {
+        "id": 43,
+        "query": "age requirements for name change",
+        "ground_truth": "These requirements include: 1  You must currently reside in California. 2  You must currently live in the County where the name change action will be filed. 3  You must be an adult, 18 years of age or older. 4  You must not be under the jurisdiction of the California Department of Corrections (in state prison or on parole).",
+        "generated_answer": "根据检索上下文，18岁或以上的成年人可以进行姓名变更。[1]",
+        "status": "success",
+        "bleu": 2.4073820056611464e-10,
+        "rouge_l": 0.013793103448275862,
+        "semantic_similarity": 0.5306401668091572,
+        "latency_ms": 1032.6383999999962,
+        "success": true
+      },
+      {
+        "id": 44,
+        "query": "can green tea cause stomach problems",
+        "ground_truth": "Green tea is safe for most adults. Green tea extract seems to be safe for most people for short-term use. In some people, green tea can cause stomach upset and constipation. Green tea extracts have been reported to cause liver problems. Too much green tea, such as more than five cups per day, can cause side effects because of the caffeine.",
+        "generated_answer": "根据检索上下文，绿茶可能会导致胃部不适和便秘。同时，过量摄入绿茶（超过五杯）可能会导致 caffeine 的副作用。[1]",
+        "status": "success",
+        "bleu": 3.746634494519767e-07,
+        "rouge_l": 0.024390243902439025,
+        "semantic_similarity": 0.6752987854167718,
+        "latency_ms": 1750.409999999647,
+        "success": true
+      },
+      {
+        "id": 45,
+        "query": "synonym of subordinate",
+        "ground_truth": "subordinate (plural subordinates) One who is subordinate. Synonyms (one who is subordinate): inferior, junior, report, underling, understrapper; Antonyms (one who is subordinate): boss, commander, leader, manager, superior, supervisor; Translations",
+        "generated_answer": "根据检索上下文，一个子句（subordinate）的同义词是： * 依从者（inferior）\n* 少年（junior）\n* 报告（report）\n* 下属（underling）\n* 下属（understrapper） 这些同义词出自文档 [2]：msmarco_doc_045，chunk_id：f833a772e8e00735885665d76e8771f4::chunk_0。",
+        "status": "success",
+        "bleu": 1.1888093071738321e-07,
+        "rouge_l": 0.19607843137254902,
+        "semantic_similarity": 0.6763307303632589,
+        "latency_ms": 1761.1473999995724,
+        "success": true
+      },
+      {
+        "id": 46,
+        "query": "how much is the stamp to send a card",
+        "ground_truth": "As of June 2014, the United States Postal Service states that the cost to send a standard sized postcard is 34 cents. At this rate, the postcard can be 6 inches long, 4 1/4 inches high and 0.16 inches thick.",
+        "generated_answer": "根据检索上下文，一个邮票（stamp）的价格为 0.44 美元 [2]。",
+        "status": "success",
+        "bleu": 4.9485807917512885e-09,
+        "rouge_l": 0.056074766355140186,
+        "semantic_similarity": 0.6314236600072178,
+        "latency_ms": 1295.2714000002743,
+        "success": true
+      },
+      {
+        "id": 47,
+        "query": "how much magnesium in kidney beans",
+        "ground_truth": "Kidney Beans. A cup of kidney beans contains 70 mg of magnesium and is a great source of protein and fiber. More: How to Bake With Beans.",
+        "generated_answer": "根据检索上下文，1 杯 kidney beans 中含有 70 mg 的镁（Magnesium）[4]。",
+        "status": "success",
+        "bleu": 0.090888658071446,
+        "rouge_l": 0.2588235294117647,
+        "semantic_similarity": 0.8541329052002278,
+        "latency_ms": 1167.1566000004532,
+        "success": true
+      },
+      {
+        "id": 48,
+        "query": "child psychiatrist salary 2016",
+        "ground_truth": "Physician, Child Psychiatrist Salary. (United States). Generous salaries abound for Child Psychiatrists in the United States, with average pay above six figures ($193K) per year. Location and years of experience each impact pay for this group, with the former having the largest influence.fter working for 10 to 20 years, Child Psychiatrists make a median salary of $223K. Survey participants with more than twenty years of experience only make around $216K on average, though; this group reports a lower median than the one claimed by mid-career individuals.",
+        "generated_answer": "根据检索上下文，2016年儿童精神病学家的平均工资为$189,301 [2]。",
+        "status": "success",
+        "bleu": 3.0314253379695924e-11,
+        "rouge_l": 0.028037383177570093,
+        "semantic_similarity": 0.5020068395607192,
+        "latency_ms": 1024.0064000008715,
+        "success": true
+      },
+      {
+        "id": 49,
+        "query": "define prosthetic device",
+        "ground_truth": "prosthesis (prÃ¤sÂ·thÄËÂ·sis), n 1. an artificial device that is used to replace a part of the body that is missing, such as an arm, leg, or joint. 2. an artificial device used to improve the function of a part of the body, such as a hearing aid. Prosthesis.",
+        "generated_answer": "根据检索上下文，定义为：一个人工制品，用来取代身体的一部分，例如手臂、腿或关节。[3]",
+        "status": "success",
+        "bleu": 2.6906574544324674e-11,
+        "rouge_l": 0.0,
+        "semantic_similarity": 0.4715813555900067,
+        "latency_ms": 1084.349600000678,
+        "success": true
+      },
+      {
+        "id": 50,
+        "query": "how many mm is a nickel coin",
+        "ground_truth": "A nickel, in American usage, is a five-cent coin struck by the United States Mint. Composed of 75% copper and 25% nickel, the piece has been issued since 1866. Its diameter is .835 inches (21.21mm) and its thickness is .077 inches (1.95 mm). The silver half dime, equal to five cents, had been issued since the 1790s.",
+        "generated_answer": "根据检索上下文，一个镍币（nickel）的直径是 21.21mm [1]。",
+        "status": "success",
+        "bleu": 4.163535072280297e-08,
+        "rouge_l": 0.06622516556291391,
+        "semantic_similarity": 0.6961980281200713,
+        "latency_ms": 1221.056200000021,
+        "success": true
+      },
+      {
+        "id": 51,
+        "query": "how old do you have to be to get a job in idaho",
+        "ground_truth": "Updated March 25, 2017. Federal child labor laws state that the minimum age to work is 14 (with some exceptions). State laws, however, may vary. In Idaho, 14-year-olds may work and do not need a special certificate.",
+        "generated_answer": "根据检索上下文，为了在爱达荷州找到工作，你必须至少 14 岁 [3]。",
+        "status": "success",
+        "bleu": 5.0258753885483065e-05,
+        "rouge_l": 0.07339449541284404,
+        "semantic_similarity": 0.46953744852600376,
+        "latency_ms": 1500.2385999996477,
+        "success": true
+      },
+      {
+        "id": 52,
+        "query": "synonyms for the word discipline",
+        "ground_truth": "Synonyms for Discipline: command (noun) authority, charge, command, commission, control, coordination, direction, domination,",
+        "generated_answer": "根据检索上下文，以下是与“discipline”相关的同义词： * Command [4]\n* Authority [4]\n* Charge [4]\n* Commission [4]\n* Control [4]\n* Coordination [4]\n* Direction [4]\n* Domination [4] 请注意，这些同义词出自文档 [4]，其中列出了“discipline”的一些同义词。",
+        "status": "success",
+        "bleu": 1.0440347835532787e-07,
+        "rouge_l": 0.1751824817518248,
+        "semantic_similarity": 0.73938652238061,
+        "latency_ms": 1923.9078000000518,
+        "success": true
+      },
+      {
+        "id": 53,
+        "query": "can seizure meds cause low sodium?",
+        "ground_truth": "Low sodium: Low serum sodium concentrations in circulating blood sure can lead to seizures. If serum sodium concentrations drop fast, then brain sweiling happens rapidly with compression of brain matter. Seizure, coma, brain herniation can result. Low serum sodium concentrations are not induced by low sodium diets. Please don't confuse these.",
+        "generated_answer": "无法从当前资料确认是否有证据表明服用癫痫药物会导致低钠血症。 [1]",
+        "status": "success",
+        "bleu": 8.452552644381555e-10,
+        "rouge_l": 0.015151515151515152,
+        "semantic_similarity": 0.4727074050264196,
+        "latency_ms": 1093.2419000000664,
+        "success": true
+      },
+      {
+        "id": 54,
+        "query": "synonyms for the word, decline",
+        "ground_truth": "decline | definition: grow worse | synonyms: retrogress, slip, tumble, deprive, fall away, drop away, degenerate, fail, suffer, come down, sicken, worsen, deteriorate, lose, impoverish, inflame, turn down, drop off, drop, turn, retrograde, regress, devolve, change state| antonyms: better, enrich, recuperate, progress, advisable",
+        "generated_answer": "根据检索上下文，synonyms for the word \"decline\" 是： * retrogress\n* slip\n* tumble\n* deprive\n* fall away\n* drop away\n* degenerate\n* fail\n* suffer\n* come down\n* sicken\n* worsen\n* deteriorate\n* lose\n* impoverish\n* inflame\n* turn down\n* drop off\n* drop\n* turn\n* retrograde\n* regress\n* devolve\n* change state 这些词语都出现在与 \"decline\" 相关的文档中 [1]。",
+        "status": "success",
+        "bleu": 0.1428537686907705,
+        "rouge_l": 0.5323193916349809,
+        "semantic_similarity": 0.8814356776658502,
+        "latency_ms": 2256.3574000005246,
+        "success": true
+      },
+      {
+        "id": 55,
+        "query": "how is soil created from rocks",
+        "ground_truth": "| Filed Under: Universe 3 Comments. There are four basic âingredientsâ that go into the ârecipeâ for making soil: tiny pieces of rock, decayed plants and animals, water, and air. When small pieces of rock break off larger ones, they form the basis of all soil.",
+        "generated_answer": "Soil is created from rocks through a process of weathering, which breaks down huge rocks into smaller particles over a long period of time. This process involves the expansion and contraction of rocks, causing cracks to form, which eventually lead to the breakdown of rocks into smaller pieces. Water plays a crucial role in this process, as it can freeze in the cracks of rocks, widening them and contributing to the formation of soil. [4] Additionally, the weathering of rocks can occur through physical, chemical, or biological means. Physical weathering involves the breakdown of rocks through mechanical forces, such as wind, water, and ice. Chemical weathering involves the breakdown of rocks through chemical reactions, such as the reaction of rocks with acidic water. Biological weathering involves the breakdown of rocks through the actions of living organisms, such as plants and microorganisms. [5] The formation of soil also depends on other factors, including climate, organisms, relief (landscape), parent material, and time (CLORPT). [2] It's worth noting that the formation of soil is a slow process that occurs over a long period of time. It involves the breakdown of rocks into smaller particles, which are then mixed with organic matter and other substances to form a thin layer of soil. [1]",
+        "status": "success",
+        "bleu": 0.04945619993337942,
+        "rouge_l": 0.22027972027972026,
+        "semantic_similarity": 0.726524395674342,
+        "latency_ms": 3686.4855000003445,
+        "success": true
+      },
+      {
+        "id": 56,
+        "query": "define tapestry",
+        "ground_truth": "TAPESTRY Defined for English Language Learners. tapestry. Definition of tapestry for English Language Learners. : a heavy cloth that has designs or pictures woven into it and that is used for wall hangings, curtains, etc. : something made up of different things, people, colors, etc.",
+        "generated_answer": "根据检索上下文，tapestry 的定义是： 1. 一种重量的布料，具有织入的图案或图像，用于壁挂、窗帘等。\n2. 由不同的事物、人、颜色等组成的东西。 引用：[1]",
+        "status": "success",
+        "bleu": 4.26018160276146e-06,
+        "rouge_l": 0.1038961038961039,
+        "semantic_similarity": 0.6956390089378708,
+        "latency_ms": 1311.5348999999696,
+        "success": true
+      },
+      {
+        "id": 57,
+        "query": "causes for uti in women",
+        "ground_truth": "The National Women's Health Information Center lists these common causes of urinary tract infections in women: 1  Wiping from back to front after a bowel movement. 2  Having sex. 3  Holding urine for too long.  Being 1  diabetic. Having a kidney stone or other factor that makes it difficult to urinate.  Producing less estrogen, such as after menopause.",
+        "generated_answer": "根据检索上下文，UTI（尿路感染）在女性中的常见原因包括： 1. 含有细菌的排尿（[5]）。\n2. 性行为（[3]）。\n3. 长时间保持尿液不排出（[3]）。\n4. 糖尿病（[3]）。\n5. 肾结石或其他影响排尿的因素（[3]）。\n6. 低雌激素水平，例如更年期后（[3]）。 注意：上述信息仅基于给定的检索上下文，可能不全面或准确。",
+        "status": "success",
+        "bleu": 8.346384718688389e-06,
+        "rouge_l": 0.128,
+        "semantic_similarity": 0.6403061134445028,
+        "latency_ms": 2266.3382999999158,
+        "success": true
+      },
+      {
+        "id": 58,
+        "query": "synonyms of ignorant",
+        "ground_truth": "ignorant 1 benighted, blind to, inexperienced, innocent, in the dark about, oblivious, unaware, unconscious, unenlightened, uninformed, uninitiated, unknowing, unschooled, unwitting 2 as green as grass, green, illiterate, naive, unaware, uncultivated, uneducated, unknowledgeable, unlearned, unlettered, unread, untaught, untrained, untutored, wet behind the ears (informal)",
+        "generated_answer": "根据检索上下文，以下是“ignorant”的同义词： 1. benighted [4]\n2. blind to [4]\n3. inexperienced [4]\n4. innocent [4]\n5. in the dark about [4]\n6. oblivious [4]\n7. unaware [4]\n8. unconscious [4]\n9. unenlightened [4]\n10. uninformed [4]\n11. uninitiated [4]\n12. unknowing [4]\n13. unschooled [4]\n14. unwitting [4]\n15. uneducated [4]\n16. unknowledgeable [4]\n17. unlearned [4]\n18. unlettered [4]\n19. unread [4]\n20. untaught [4]\n21. untrained [4]\n22. untutored [4] 请注意，这些同义词来自检索上下文中关于“ignorant”的定义和描述。",
+        "status": "success",
+        "bleu": 0.07947206622426942,
+        "rouge_l": 0.3304843304843305,
+        "semantic_similarity": 0.7320770978155928,
+        "latency_ms": 2954.9457000002803,
+        "success": true
+      },
+      {
+        "id": 59,
+        "query": "how long does respite last",
+        "ground_truth": "At assisted living communities, temporary care respite stays are usually less than one month long, and can cost between $75 to $200 per day, according to 2012 Genworth.com data. It's important to keep in mind that the cost of respite care varies with the type of agency and services the person needs.",
+        "generated_answer": "根据检索上下文，无法确定“respite”指的是什么具体的概念或情况。然而，根据第一个检索上下文[1]，提到“temporary care respite stays”通常持续“less than one month long”。",
+        "status": "success",
+        "bleu": 0.07987048771712515,
+        "rouge_l": 0.19161676646706585,
+        "semantic_similarity": 0.7504153349727923,
+        "latency_ms": 1380.061800000476,
+        "success": true
+      },
+      {
+        "id": 60,
+        "query": "do vhi swiftcare do blood tests?",
+        "ground_truth": "The SwiftCare clinics charge an initial consultation fee of 85 euro, with additional charges for tests and procedures. For example, an x-ray at the clinics costs 65 euro, blood tests range from 30 to 50 euro and complex suturing costs 50 euro. The Swiftcare clinics are staffed by doctors with significant experience in general practice and emergency care, according to VHI. The clinics are run as a joint initiative between the VHI and The Well, a primary care care medical company.",
+        "generated_answer": "根据检索上下文，VHI SwiftCare可能会进行血液测试，但具体内容无法从当前资料确认。根据文档[5]，Life Insurance Blood Test可能会测试健康相关指标，包括血糖、肝酶、疾病、HIV和药物和烟草使用。[5]",
+        "status": "success",
+        "bleu": 1.087317322938475e-06,
+        "rouge_l": 0.043478260869565216,
+        "semantic_similarity": 0.7131231852129142,
+        "latency_ms": 1607.7927999995154,
+        "success": true
+      },
+      {
+        "id": 61,
+        "query": "how many dead bodies on everest",
+        "ground_truth": "Dead bodies on Mount Everest. // December 25th, 2012 // Odd Happenings. It is estimated that over 200 people have died in their attempt to reach the summit of Mount Everest. The causes of their death vary as widely as the weather at Mount Everestâs peak.",
+        "generated_answer": "根据检索上下文，无法确定有多少尸体在珠穆朗玛峰上。然而，根据文档 [2]，有超过 200 人在尝试登顶珠穆朗玛峰时死亡。",
+        "status": "success",
+        "bleu": 9.90589109214076e-05,
+        "rouge_l": 0.0583941605839416,
+        "semantic_similarity": 0.5980579720852537,
+        "latency_ms": 1357.978699999876,
+        "success": true
+      },
+      {
+        "id": 62,
+        "query": "honesty or integrity definition",
+        "ground_truth": "honesty. n, pl-ties. 1. the condition of being honest. 2. sincerity or fairness. 3. virtue or respect.",
+        "generated_answer": "基于给定的检索上下文，我可以给出以下答案： **诚实（Honesty）和完整性（Integrity）的定义** 诚实（Honesty）是指 frankness 和事实的准确性 [1]。它是指个人的行为和言语都遵循真实和准确的原则。 完整性（Integrity）是指个人的价值观和道德原则 [1]。它是指个人的行为和决定都遵循道德和正义的原则。 因此，诚实和完整性虽然相关，但并不是完全相同的概念。诚实更多地关注个人的行为和言语的准确性，而完整性则更广泛地关注个人的价值观和道德原则。 **无法从当前资料确认** 无法从当前资料确认诚实和完整性的具体区别或更详细的定义。",
+        "status": "success",
+        "bleu": 9.02238072169821e-08,
+        "rouge_l": 0.09523809523809523,
+        "semantic_similarity": 0.6396005978364806,
+        "latency_ms": 2902.8731999997035,
+        "success": true
+      },
+      {
+        "id": 63,
+        "query": "honesty or integrity definition",
+        "ground_truth": "hence, a white lie in some cases, is a result of integrity. integrity is the value and morals of a individual in relation or in addition to honesty. honestly is frankness and as the other guy said, adherence to facts.",
+        "generated_answer": "基于给定的检索上下文，我可以给出以下答案： **诚实（Honesty）和完整性（Integrity）的定义** 诚实（Honesty）是指 frankness 和事实的准确性 [1]。它是指个人的行为和言语都遵循真实和准确的原则。 完整性（Integrity）是指个人的价值观和道德原则 [1]。它是指个人的行为和决定都遵循道德和伦理原则，包括诚实、公平和责任感。 因此，诚实和完整性是相关但不同的概念。诚实关注个人的行为和言语的准确性，而完整性关注个人的价值观和道德原则。 引用：[1]",
+        "status": "success",
+        "bleu": 0.0002906354766758463,
+        "rouge_l": 0.0881057268722467,
+        "semantic_similarity": 0.7393778943893599,
+        "latency_ms": 2391.464499999529,
+        "success": true
+      },
+      {
+        "id": 64,
+        "query": "how much do rear brakes and rotors cost",
+        "ground_truth": "$105 for brake pads (front and rear) and $170 for labor. I was quoted $932 for front and rear breaks and rotors. It was steep, but I needed it done and didn't want to shop it around. When I drove out, my breaks were squeeking worse than when I went in.",
+        "generated_answer": "根据检索上下文，无法确定具体的价格范围，因为不同的文档提到了不同的价格。然而，根据文档 [4]，前轮刹车片的价格约为 $22，而后轮刹车片和刹车鞋的价格约为 $25。同时，文档 [4] 还提到，如果需要更换所有四个轮子的刹车片，价格将达到 $131。",
+        "status": "success",
+        "bleu": 4.830472187247896e-06,
+        "rouge_l": 0.08205128205128205,
+        "semantic_similarity": 0.5654570300289109,
+        "latency_ms": 1939.7623000004387,
+        "success": true
+      },
+      {
+        "id": 65,
+        "query": "causes of insomnia in women",
+        "ground_truth": "Causes of insomnia in women: Most causes of insomnia in men and women are same but some common causes of insomnia in women include: Stress: The demanding lifestyle in todayâs world (responsibility of the family and at work) can cause fatigue and stress. Stress is one of the commonest causes of insomnia.",
+        "generated_answer": "根据检索上下文，女性失眠的常见原因包括： * 应激：压力和疲劳是失眠的常见原因之一，尤其是在女性中。[1]\n* 生理变化：女性在月经期、怀孕、分娩和更年期等生理变化期间可能会经历失眠。[4]\n* 其他健康问题：如抑郁症、心脏病、睡眠呼吸暂停、肺病、潮热、糖尿病等。[5] 注意：上述信息仅基于给定的检索上下文，可能不全面或准确。",
+        "status": "success",
+        "bleu": 7.684915432568129e-08,
+        "rouge_l": 0.045454545454545456,
+        "semantic_similarity": 0.5969271912140038,
+        "latency_ms": 2374.2464000006294,
+        "success": true
+      },
+      {
+        "id": 66,
+        "query": "how old is lil moco",
+        "ground_truth": "web video star Lil Moco born on 02 11 1994 in . Until now, Lil Moco's age is 22 year old and have Scorpio constellation. Count down 361 days will come next birthday of Lil Moco !",
+        "generated_answer": "无法从当前资料确认 Lil Moco 的年龄。 [1]",
+        "status": "success",
+        "bleu": 0.006570365350909843,
+        "rouge_l": 0.1276595744680851,
+        "semantic_similarity": 0.6771657644324486,
+        "latency_ms": 915.8760999998776,
+        "success": true
+      },
+      {
+        "id": 67,
+        "query": "define tension stress",
+        "ground_truth": "Tensile stress is the stress state caused by an applied load that tends to elongate the material in the axis of the applied load, or in other words, the stress caused by pulling the material. The strength of structures of equal cross-sectional area loaded in tension is independent of the shape of the cross section.",
+        "generated_answer": "根据检索上下文，以下是关于“tension”和“stress”的定义： * Tension：是指材料在拉伸方向上的应力状态，或者说是拉伸材料时产生的应力。[1]\n* Stress：在上下文中没有直接定义stress，但可以根据相关信息推断stress可能与应力有关，特别是在医学或工程领域。 注意：上下文中没有直接定义stress，但根据相关信息可以推断stress可能与应力有关。 无法从当前资料确认stress的具体定义。",
+        "status": "success",
+        "bleu": 9.15334077079293e-08,
+        "rouge_l": 0.07079646017699115,
+        "semantic_similarity": 0.7121058830600107,
+        "latency_ms": 1965.7840000008946,
+        "success": true
+      },
+      {
+        "id": 68,
+        "query": "systemic response definition",
+        "ground_truth": "Systemic inflammatory response syndrome (SIRS) is an inflammatory state affecting the whole body. It is the body's response to an infectious or noninfectious insult. Although the definition of SIRS refers to it as an inflammatory response, it actually has pro- and anti-inflammatory components.",
+        "generated_answer": "根据检索上下文，系统性反应（Systemic response）的定义是指身体对感染或非感染性刺激的全面炎症反应。具体来说，它是身体对某种刺激的全面反应，包括炎症反应的不同组成部分。 [1] 注意：检索上下文中没有提供更详细的定义或描述。",
+        "status": "success",
+        "bleu": 4.2802844184803595e-06,
+        "rouge_l": 0.0625,
+        "semantic_similarity": 0.6646244077089875,
+        "latency_ms": 1524.9849000001632,
+        "success": true
+      },
+      {
+        "id": 69,
+        "query": "average wage gilded age",
+        "ground_truth": "Living with the Minimum Wage in a Gilded Age. Californiaâs decision last month to raise the minimum wage from $8 to $9 an hour on July 1, 2014 and then to $10 an hour on Jan. 1, 2016 may sound like a very good idea at first. But itâs not exactly cause for celebration for an estimated 2.4 million low-wage workers.",
+        "generated_answer": "无法从当前资料确认Gilded Age期间的平均工资。 [1]",
+        "status": "success",
+        "bleu": 5.657609208938366e-07,
+        "rouge_l": 0.0641025641025641,
+        "semantic_similarity": 0.4963348372976285,
+        "latency_ms": 858.4323999994012,
+        "success": true
+      },
+      {
+        "id": 70,
+        "query": "tachycardia effects on cardiac output",
+        "ground_truth": "Tachycardia of atrial or ventricular origin reduces stroke volume and cardiac output particularly when the ventricular rate is greater than 160 beats/min. The stroke volume becomes reduced because of decreased ventricular filling time and decreased ventricular filling at high rates of contraction.",
+        "generated_answer": "基于给定的检索上下文，我可以得出以下结论： 当心率超过160次/分钟时，心动过速（tachycardia）会显著降低心输出量（cardiac output）。这主要是因为心室充盈时间减少和心室充盈减少导致的。[1] 此外，心动过速还会降低心脏的血液输出量，进而影响到血压。[2] 但是，需要注意的是，当前资料不足以全面回答所有可能的影响。",
+        "status": "success",
+        "bleu": 0.0003849120600116426,
+        "rouge_l": 0.06741573033707865,
+        "semantic_similarity": 0.7175940207940074,
+        "latency_ms": 2113.751100000627,
+        "success": true
+      },
+      {
+        "id": 71,
+        "query": "tangle definition",
+        "ground_truth": "tangle (third-person singular simple present tangles, present participle tangling, simple past and past participle tangled) (intransitive) to become mixed together or intertwined Her hair was tangled from a day in the wind. (intransitive) to be forced into some kind of situation. (intransitive) to enter into an argument, conflict, dispute, or fight Don't tangle with someone three times your size. He tangled with the law.",
+        "generated_answer": "根据检索上下文，tangle的定义是： * 变得混乱或纠缠在一起（例如，Her hair was tangled from a day in the wind。[1])\n* 被迫进入某种情况（例如，Don't tangle with someone three times your size。[1])\n* 进入争论、冲突、纠纷或斗争（例如，He tangled with the law。[1]) 还有一种特殊的tangle定义，指的是一种图形结构，即Tangle（例如，IOTA是唯一使用Tangle的加密货币，Tangle是一种无向有环图。[3]） 无法从当前资料确认tangle的其他定义。",
+        "status": "success",
+        "bleu": 0.2763009964603404,
+        "rouge_l": 0.3355263157894737,
+        "semantic_similarity": 0.7160404792893811,
+        "latency_ms": 2329.009899999619,
+        "success": true
+      },
+      {
+        "id": 72,
+        "query": "task definition",
+        "ground_truth": "Definition of task: The smallest identifiable and essential piece of a job that serves as a unit of work, and as a means of differentiating between the various components of a project. Dictionary Term of Day Articles Subjects Sign Up",
+        "generated_answer": "根据检索上下文，task definition 的定义有以下几种： 1. 一个被分配给某人的任务或工作。[1]\n2. 一项军事或海军任务。[1]\n3. 一架飞机或航天器飞行以执行特定任务。[1]\n4. 一个项目的最小可识别和必不可少的工作单元，作为区分项目组成部分的单位。[4]\n5. 一项任务或工作，可能是军事或海军任务，也可能是飞行任务。[1] 无法从当前资料确认task definition 的具体定义或范围。",
+        "status": "success",
+        "bleu": 5.317805090581508e-06,
+        "rouge_l": 0.1238095238095238,
+        "semantic_similarity": 0.7125866840999973,
+        "latency_ms": 2135.428900000079,
+        "success": true
+      },
+      {
+        "id": 73,
+        "query": "tax planning defined",
+        "ground_truth": "Definition of TAX PLANNING: Exercise minimizing liability using all deductions available. The Law Dictionary Featuring Black's Law Dictionary Free Online Legal Dictionary 2nd Ed. Navigation",
+        "generated_answer": "根据检索上下文，Tax Planning定义为： Exercise minimizing liability using all deductions available.[5] 这意味着税务规划是通过利用所有可用的扣除额来降低税务义务的过程。 引用编号：[5]",
+        "status": "success",
+        "bleu": 0.26826900439000206,
+        "rouge_l": 0.3333333333333333,
+        "semantic_similarity": 0.8331470985931754,
+        "latency_ms": 1229.0038999999524,
+        "success": true
+      },
+      {
+        "id": 74,
+        "query": "taxes what does donation go under",
+        "ground_truth": "In general, charitable contributions are not allowed as a business expense on the Schedule C. However, if you made a payment to a charitable organization that was not for charity nor a gift, you may deduct the payment as an expense to the business. You may want to clarify or consider the terms of your donation. If your business received any benefit for the donation (ad space or marketing, for example) you may deduct the payment as an expense. Otherwise, your charitable gift/donation is not deductible under your business, but may be deducted on the Schedule A if you itemize your deductions for your personal tax return. You may want to review the IRS link below for clarification on this rule.",
+        "generated_answer": "根据检索上下文，无法确定“donation”在税务中的具体分类。然而，根据文档 [1]，如果您的企业捐赠给慈善组织并且没有从中获得任何利益，那么您可能无法在商业税表中扣除这笔捐赠。然而，您可以在个人税表中扣除这笔捐赠，如果您选择列出个人扣除。",
+        "status": "success",
+        "bleu": 4.8111635014886646e-09,
+        "rouge_l": 0.012269938650306749,
+        "semantic_similarity": 0.6310813160639402,
+        "latency_ms": 1910.9131999994133,
+        "success": true
+      },
+      {
+        "id": 75,
+        "query": "tcm meaning case management",
+        "ground_truth": "Definition The purpose of Targeted Case Management (TCM) is to assist adults and children who qualify for this service in maintaining access to needed medical, social, educational and other services. Components 1. Assessment of an individual to determine the need for any medical, educational, social or other services.",
+        "generated_answer": "根据检索上下文，TCM（Case Management）指的是一种管理过程，旨在帮助家庭实现自给自足和稳定。它涉及团队合作，包括客户、案件管理人员、分支机构人员和社区合作伙伴。案件管理的结果是增加家庭稳定和自给自足的能力。案件管理的团队合作包括客户、案件管理人员、分支机构人员和社区合作伙伴。[1] 案件管理的目标是帮助家庭成为自给自足的家庭，同时帮助他们解决基本需求。案件管理的团队合作包括客户、案件管理人员、分支机构人员和社区合作伙伴。[5] 案件管理的结果是增加家庭稳定和自给自足的能力。案件管理的团队合作包括客户、案件管理人员、分支机构人员和社区合作伙伴。[1] 无法从当前资料确认TCM的具体定义或流程。",
+        "status": "success",
+        "bleu": 0.0002488368971781747,
+        "rouge_l": 0.05263157894736842,
+        "semantic_similarity": 0.7131429906778973,
+        "latency_ms": 3143.311900000299,
+        "success": true
+      },
+      {
+        "id": 76,
+        "query": "braidy industries charles price",
+        "ground_truth": "Bouchard said there are eight shareholders of Braidy Industries, with founding employees also participating in a stock incentive program. Commonwealth Seed Capital and Charles Price, a member of the companyâs board of directors and an industrialist from Louisville, are the only shareholders in Kentucky. All other Braidy shareholders are in other states or countries, he said. Read the Full Article",
+        "generated_answer": "根据检索上下文，我只能找到与 Charles Price 相关的信息： Charles Price 是 Braidy Industries 的董事会成员和路易斯维尔的工业家，他是 Commonwealth Seed Capital 和 Braidy Industries 的股东之一。[1] 无法从当前资料确认 Charles Price 的更多信息或背景。",
+        "status": "success",
+        "bleu": 0.08169101878670486,
+        "rouge_l": 0.2524271844660194,
+        "semantic_similarity": 0.719339302742173,
+        "latency_ms": 1465.9195999993244,
+        "success": true
+      },
+      {
+        "id": 77,
+        "query": "technology working group definition",
+        "ground_truth": "Biofloc Working Group. Biofloc technology (BFT) is gaining popularity as an aquaculture strategy. The technology is applied to a variety of system types and is currently most commonly used for the culture of shrimp and tilapia, although other taxa such as catfish are being explored.",
+        "generated_answer": "无法从当前资料确认“technology working group definition”的具体定义。 [1]",
+        "status": "success",
+        "bleu": 3.6941451322218144e-07,
+        "rouge_l": 0.08547008547008547,
+        "semantic_similarity": 0.6269014892100514,
+        "latency_ms": 849.8126999993474,
+        "success": true
+      },
+      {
+        "id": 78,
+        "query": "telephone number for amazon fire stick customer service",
+        "ground_truth": "They will resolve the issues instantly but in case the problem is complicated it will take 1-2 days minimum to solve for more information contact our amazon fire stick support number-1-844-745-1521",
+        "generated_answer": "无法从当前资料确认Amazon Fire Stick的客户服务电话号码。 [1]",
+        "status": "success",
+        "bleu": 6.426002601916351e-09,
+        "rouge_l": 0.08988764044943821,
+        "semantic_similarity": 0.76335589397223,
+        "latency_ms": 1232.630199999221,
+        "success": true
+      },
+      {
+        "id": 79,
+        "query": "telephone number for travel house sky mall barbados",
+        "ground_truth": "Contact Info. Address: Sky Mall, Haggatt Hall, St. Michael, Barbados. Phone: 246-429-8850. Fax: 246-429-2274. Email: info@travelhouse-bgi.com, thetravelhouse@caribsurf.com. Home.",
+        "generated_answer": "无法从当前资料确认电话号码。 [1]",
+        "status": "success",
+        "bleu": 5.485507158239148e-10,
+        "rouge_l": 0.025316455696202528,
+        "semantic_similarity": 0.4595890031252345,
+        "latency_ms": 1118.703699999969,
+        "success": true
+      },
+      {
+        "id": 80,
+        "query": "temperature at searcy ark",
+        "ground_truth": "In Searcy, the summers are hot and muggy, the winters are very cold and wet, and it is partly cloudy year round. Over the course of the year, the temperature typically varies from 31Â°F to 92Â°F and is rarely below 18Â°F or above 100Â°F.",
+        "generated_answer": "根据检索上下文，无法确认Searcy, Arkansas的当前温度。然而，根据文档[3]，Searcy的温度通常在31°F至92°F之间变化。",
+        "status": "success",
+        "bleu": 0.00014920031027466782,
+        "rouge_l": 0.1267605633802817,
+        "semantic_similarity": 0.7578527654574472,
+        "latency_ms": 1197.0413999997618,
+        "success": true
+      },
+      {
+        "id": 81,
+        "query": "temperature diode",
+        "ground_truth": "5. Diode Temperature Sensors . The ordinary semiconductor diode may be used as a temperature sensor. Cheap and nasty! The diode is the lowest cost temperature sensor and can produce more than satisfactory results if you are prepared to undertake a two point calibration and provide a stable excitation current. Almost any silicon diode is ok.",
+        "generated_answer": "基于检索上下文，我可以回答以下问题： 一个普通的半导体二极管可以用作温度传感器。它是最便宜的温度传感器之一，可以通过两点校准和稳定的激励电流来产生满意的结果。几乎任何硅二极管都可以使用。 [1] 请注意：上述答案仅基于给定的检索上下文，并且没有超出检索上下文的范围。",
+        "status": "success",
+        "bleu": 4.6827489214244384e-08,
+        "rouge_l": 0.03125,
+        "semantic_similarity": 0.5026000687875505,
+        "latency_ms": 1796.6151000000536,
+        "success": true
+      },
+      {
+        "id": 82,
+        "query": "temperature in april in bali",
+        "ground_truth": "Weather in Bali in April With greatly reduced humidity levels (around 65%), April heralds the end of Baliâs wet season. Monthly rainfall is reduced to 70 millilitres on average, the days are clearer and that classic Bali heat is on the rise with some days reaching 33ÂºC.",
+        "generated_answer": "无法从当前资料确认巴厘岛的温度。 [1]",
+        "status": "success",
+        "bleu": 7.322143785833049e-11,
+        "rouge_l": 0.01680672268907563,
+        "semantic_similarity": 0.5122770556590187,
+        "latency_ms": 956.0738999998648,
+        "success": true
+      },
+      {
+        "id": 83,
+        "query": "docetaxel is also known as",
+        "ground_truth": "Docetaxel (Taxotere) Find out what docetaxel is, how you have it, and other important information about having docetaxel. Docetaxel is also known by its brand name, Taxotere. It is a treatment for: breast cancer; lung cancer; head and neck cancer; prostate cancer; stomach cancer",
+        "generated_answer": "根据检索上下文，Docetaxel 也被称为 Taxotere。 [1]",
+        "status": "success",
+        "bleu": 7.980765769054681e-08,
+        "rouge_l": 0.08695652173913045,
+        "semantic_similarity": 0.7523000864425294,
+        "latency_ms": 1142.3841000005268,
+        "success": true
+      },
+      {
+        "id": 84,
+        "query": "temperature in clearwater florida per month",
+        "ground_truth": "Clearwater Beach: Annual Weather Averages. January is the hottest month in Clearwater Beach with an average temperature of 59 Â°F (15 Â°C) and the coldest is January at 59 Â°F (15 Â°C). Average Temperature: Clearwater Beach Loading weather data.",
+        "generated_answer": "根据检索上下文，以下是有关清水（Clearwater）佛罗里达州（Florida）每月温度的信息： * 五月（May）的平均高温为86度（86°F），平均低温为71度（71°F）。[1]\n* 佛罗里达州的气候类型为温带湿润，南佛罗里达有热带 savanna 气候。[3]\n* 佛罗里达州的平均海洋温度在9月份最高。[5] 请注意，检索上下文中没有提供清水（Clearwater）的具体温度数据。因此，无法提供清水（Clearwater）的每月温度信息。",
+        "status": "success",
+        "bleu": 6.572389184552329e-06,
+        "rouge_l": 0.11981566820276499,
+        "semantic_similarity": 0.6986900167226786,
+        "latency_ms": 2545.6819000000905,
+        "success": true
+      },
+      {
+        "id": 85,
+        "query": "temperature in clearwater florida per month",
+        "ground_truth": "Clearwater enjoys moderately hot temperatures in summer with highs in the 80s or 90s Fahrenheit. The 90-degree weather can show up anytime from May to October. But it normally doesn't get any hotter than 100 Â°F (38 Â°C) at this vacation destination. Days per month in Clearwater of at least 70, 80 or 90 Â°F.",
+        "generated_answer": "根据检索上下文，以下是有关Clearwater, Florida的温度情况的答案： * 每月温度：无法从当前资料确认每月温度的具体数据，但可以知道： + 5月的平均高温为86度（[1]、[2]） + 5月的平均低温为71度（[1]、[2]） + 年平均温度为72度（[4]）\n* 最高温度：在某些位置，最高温度曾达到90度以上（[4]）\n* 气候：清水的气候是温暖的，年平均温度为72度，气候干燥（[4]） 请注意，检索上下文主要提供了有关5月的温度数据和气候特征的信息。",
+        "status": "success",
+        "bleu": 4.9432122897506215e-06,
+        "rouge_l": 0.09824561403508772,
+        "semantic_similarity": 0.6730759110930499,
+        "latency_ms": 2678.6081999998714,
+        "success": true
+      },
+      {
+        "id": 86,
+        "query": "brass is composed of copper and what",
+        "ground_truth": "Brass is a general term for a set of copper-zinc alloys that may include additional metals such as lead. Different types of brass have different properties, but all brass is strong, machinable, tough, conductive, and corrosion resistant. This along with beauty and ease of production make brass one of the most widely used alloys.",
+        "generated_answer": "根据检索上下文，brass 是由铜和锌组成的。 [2]",
+        "status": "success",
+        "bleu": 4.066589234357622e-08,
+        "rouge_l": 0.044444444444444446,
+        "semantic_similarity": 0.7029108548045824,
+        "latency_ms": 1222.0312000008562,
+        "success": true
+      },
+      {
+        "id": 87,
+        "query": "texas child support phone number",
+        "ground_truth": "CLERKS PHONE NUMBERS (956) 523-4242 (956) 523-4268 (956) 523-5208 To apply for Child Support Services, please contact the local field office at: Office Of The Attorney General Child Support Division 1401 Calle Del Norte Suite 6 Laredo, Texas 78041-3849 Telephone Numbers: (956) 724-1602 Fax Number: (956) 724-4915 or you can also visit the Texas Attorney General website at: https://www.texasattorneygeneral.gov/cs/",
+        "generated_answer": "无法从当前资料确认 Texas child support phone number。 [1]",
+        "status": "success",
+        "bleu": 1.3321879669317266e-06,
+        "rouge_l": 0.07954545454545454,
+        "semantic_similarity": 0.8068647075499167,
+        "latency_ms": 892.441100000724,
+        "success": true
+      },
+      {
+        "id": 88,
+        "query": "texas roadhouse glen mills pa phone number",
+        "ground_truth": "Texas Roadhouse Address: 1051 Baltimore Pike, Glen Mills, PA 19342, United States Phone: +1 610-459-1720",
+        "generated_answer": "根据检索上下文，Texas Roadhouse在Glen Mills, PA的电话号码是+1 610-459-1720。[1]",
+        "status": "success",
+        "bleu": 0.3101236623574143,
+        "rouge_l": 0.5,
+        "semantic_similarity": 0.9069442842262121,
+        "latency_ms": 1324.2875999994794,
+        "success": true
+      },
+      {
+        "id": 89,
+        "query": "the __________ test is a quick and dirty test for deciding if something is an ethical issue and useful because brand name and a person's reputation are important in business.",
+        "ground_truth": "â¢ The Smell Test is familiar ground in most businesses and is a good place to begin. . It is a âquick and dirtyâ test for deciding if something is an ethical issue and useful because brand name and a personâs reputation are important in business. â¢ It enlists the emotion of shame.",
+        "generated_answer": "根据检索上下文，答案是： the Smell Test [1] 这是因为检索上下文中提到\"The Smell Test is familiar ground in most businesses and is a good place to begin. . It is a âquick and dirtyâ test for deciding if something is an ethical issue and useful because brand name and a personâs reputation are important in business.\" [1]",
+        "status": "success",
+        "bleu": 0.7871525718623734,
+        "rouge_l": 0.8142292490118578,
+        "semantic_similarity": 0.9541658749253016,
+        "latency_ms": 3248.0937000000267,
+        "success": true
+      },
+      {
+        "id": 90,
+        "query": "the amendment that ensures the defendant has the right to an attorney is the ____________ amendment.",
+        "ground_truth": "The fourth clause directs that the defendant has the right to confront and cross-examine, or challenge the witnesses against him or her. This is to ensure that the judge, jury, and public at large may evaluate the accuracy of the testimony made in open court. The final clause of the Sixth Amendment states that the accused has the right to be represented by an attorney. In essence, the Sixth Amendment ensures the accused is presumed to be innocent, and that the prosecution cannot establish guilt without being challenged.",
+        "generated_answer": "无法从当前资料确认答案。 [1]",
+        "status": "success",
+        "bleu": 1.2034316656158494e-14,
+        "rouge_l": 0.010152284263959392,
+        "semantic_similarity": 0.5840362085657066,
+        "latency_ms": 1554.2000999994343,
+        "success": true
+      },
+      {
+        "id": 91,
+        "query": "the bancorp routing number",
+        "ground_truth": "114924742 routing number is assigned to THE BANCORP BANK, SD by ABA. Routing number 114924742 is used for ACH, check deposit and bank wire transfers.",
+        "generated_answer": "无法从当前资料确认 THE BANCORP BANK 的 routing number。 [1]",
+        "status": "success",
+        "bleu": 0.08270919984175785,
+        "rouge_l": 0.2933333333333334,
+        "semantic_similarity": 0.80698450572063,
+        "latency_ms": 936.5581000001839,
+        "success": true
+      },
+      {
+        "id": 92,
+        "query": "the cast of emoji movie",
+        "ground_truth": "The Emoji Movie is a 2017 American 3D computer-animated comedy film directed by Tony Leondis, and written by Leondis, Eric Siegel and Mike White, based on the trend of emojis. It stars the voices of T. J. Miller, James Corden, Anna Faris, Maya Rudolph, Steven Wright, Rob Riggle, Jennifer Coolidge, Christina Aguilera, SofÃ­a Vergara, Sean Hayes and Patrick Stewart. The film centers on Gene, a multi-expressional emoji who lives in a teenager's phone, and who sets out on a journey to become a ...",
+        "generated_answer": "根据检索上下文，Emoji Movie 的演员阵容包括： * T. J. Miller\n* James Corden\n* Anna Faris\n* Maya Rudolph\n* Steven Wright\n* Rob Riggle\n* Jennifer Coolidge\n* Christina Aguilera\n* Sofía Vergara\n* Sean Hayes\n* Patrick Stewart 引用：[2]",
+        "status": "success",
+        "bleu": 0.10932246472164786,
+        "rouge_l": 0.38732394366197187,
+        "semantic_similarity": 0.8500038893988188,
+        "latency_ms": 1662.102799999957,
+        "success": true
+      },
+      {
+        "id": 93,
+        "query": "the collection film cast",
+        "ground_truth": "The Collection (film) The Collection is a 2012 American horror film and sequel to the 2009 film, The Collector. The film stars Randall Archer, Emma Fitzpatrick, Christopher McDonald, Lee Tergesen, and Josh Stewart, who reprises his role from the first film as Arkin. It is written by Marcus Dunstan and Patrick Melton, directed by Dunstan, and was released on November 30, 2012.",
+        "generated_answer": "根据检索上下文，无法确定“The Collection”电影的完整演员表。 [1]",
+        "status": "success",
+        "bleu": 2.994923628252324e-06,
+        "rouge_l": 0.050955414012738856,
+        "semantic_similarity": 0.6177021760845822,
+        "latency_ms": 942.8230000003168,
+        "success": true
+      },
+      {
+        "id": 94,
+        "query": "does azusa pacific university negotiate salary",
+        "ground_truth": "In 2015 female assistant professors at Azusa Pacific University had an effective annual salary of $99,934 USD. This is $1,071 less than female assistant professors earned in 2014, the most recently reported prior year, and a 1.1 percent decrease in effective annual salary in comparison to the previous year's average annual salary ($101,005 USD).",
+        "generated_answer": "无法从当前资料确认 Azusa Pacific University 是否会对工资进行谈判。 [1]",
+        "status": "success",
+        "bleu": 0.002714578483665633,
+        "rouge_l": 0.12328767123287673,
+        "semantic_similarity": 0.7235902038705142,
+        "latency_ms": 1007.7300000002651,
+        "success": true
+      },
+      {
+        "id": 95,
+        "query": "the definition of lend",
+        "ground_truth": "Definition of lend - grant to (someone) the use of (something) on the understanding that it will be returned, contribute or add (a quality) to, accommo Definition of lend - grant to (someone) the use of (something) on the understanding that it will be returned, contribute or add (a quality) to, accommo dictionary thesaurus",
+        "generated_answer": "根据检索上下文，lend 的定义是：grant to (someone) the use of (something) on the understanding that it will be returned, contribute or add (a quality) to。[1]",
+        "status": "success",
+        "bleu": 0.29179273046659715,
+        "rouge_l": 0.5405405405405406,
+        "semantic_similarity": 0.8528750782380218,
+        "latency_ms": 1286.28370000024,
+        "success": true
+      },
+      {
+        "id": 96,
+        "query": "the economics is or are",
+        "ground_truth": "The ceteris paribus rule. Economics is a social science, and, unlike the physical sciences, cannot engage in controlled experimentation to demonstrate how variables are connected. In the real world, economic variables such as price and income, are constantly changing, and this creates a problem in demonstrating the relationship between variables.",
+        "generated_answer": "根据检索上下文，答案是： the economics is Economics 是一种社会科学，它不能像物理科学那样通过控制实验来展示变量之间的关系。 [1] Economics 是一个社会科学，它不能像物理科学那样通过控制实验来展示变量之间的关系。 [1] Economics 是一个社会科学，它不能像物理科学那样通过控制实验来展示变量之间的关系。 [1] Economics 是一个社会科学，它不能像物理科学那样通过控制实验来展示变量之间的关系。 [1] Economics 是一个社会科学，它不能像物理科学那样通过控制实验来展示变量之间的关系。 [1] 引用：[1]",
+        "status": "success",
+        "bleu": 0.0005766467671397759,
+        "rouge_l": 0.15267175572519084,
+        "semantic_similarity": 0.7375882948227238,
+        "latency_ms": 2483.035700000073,
+        "success": true
+      },
+      {
+        "id": 97,
+        "query": "the function of the olfactory nerve concerns",
+        "ground_truth": "Function of the Olfactory Nerve. The olfactory nerve is responsible for your sense of smell and partially responsible for your sense of taste. It is also known as cranial nerve 1 because it is the shortest of the cranial nerves and one of only two nerves (the other is the optic nerve) that bypass the brain stem and connect directly to your brain.",
+        "generated_answer": "根据检索上下文，olfactory nerve 的功能主要涉及以下方面： 1. 感觉嗅觉：负责传递嗅觉信息到大脑 [1]。\n2. 部分负责味觉：虽然主要负责嗅觉，但也有一定程度地参与味觉 [1]。 无法从当前资料确认更多详细信息。",
+        "status": "success",
+        "bleu": 0.021631939800862234,
+        "rouge_l": 0.1206030150753769,
+        "semantic_similarity": 0.7674065807203112,
+        "latency_ms": 1909.3915000003108,
+        "success": true
+      },
+      {
+        "id": 98,
+        "query": "the largest company in each state",
+        "ground_truth": "For this reason, the vast majority of the largest companies in each state are public. The largest company in all but 13 states is publicly traded. Still, there are dozens of very large corporations that never opted to make a public offering, and in many cases, these companies generate the most revenue of any enterprise in a state.",
+        "generated_answer": "根据检索上下文，我只能提供以下信息： * 大多数州的最大公司都是公开交易的。只有 13 个州的最大公司不是公开交易的。[1]\n* 例如，State Farm 是美国最大的汽车保险公司，占据了超过 18% 的市场份额。[2]\n* AIG 是一家大型保险公司，排名 2014 年福布斯全球 2000 名公司中的第 42 位。[3]\n* Kraft Heinz 是北美第三大食品和饮料公司，全球第五大食品和饮料公司。[4] 请注意，检索上下文并没有提供每个州的最大公司的具体信息。",
+        "status": "success",
+        "bleu": 0.0003466109922465309,
+        "rouge_l": 0.16417910447761194,
+        "semantic_similarity": 0.5530483798994962,
+        "latency_ms": 2656.533800000034,
+        "success": true
+      },
+      {
+        "id": 99,
+        "query": "does bromelain help with weight loss",
+        "ground_truth": "However, bromelain does not affect those white blood cells. There is pressure on blood vessels in belly fat, and bromelain might help prevent clotting that makes that pressure even worse. However, that action does not remove fat. Only you can get rid of your excess fat. And you almost certainly have to do that by eating less. Think about it. You lose fat by burning fat. Where do you burn fat?",
+        "generated_answer": "无法从当前资料确认是否Bromelain有助于减肥。 [1]",
+        "status": "success",
+        "bleu": 4.814655756283105e-12,
+        "rouge_l": 0.012048192771084338,
+        "semantic_similarity": 0.7238678904964708,
+        "latency_ms": 1050.5864000006113,
+        "success": true
+      },
+      {
+        "id": 100,
+        "query": "the largest unit within which gene flow can readily occur is _____.",
+        "ground_truth": "The largest unit within which gene flow can readily occur is a species.",
+        "generated_answer": "无法从当前资料确认。 [1]",
+        "status": "success",
+        "bleu": 2.0189651799465528e-08,
+        "rouge_l": 0.05555555555555555,
+        "semantic_similarity": 0.5102936293280479,
+        "latency_ms": 1224.9060000003738,
+        "success": true
+      }
+    ]
+  }
+}

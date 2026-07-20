@@ -1,0 +1,32 @@
+[
+  {
+    "id": "demo-success-q1",
+    "query": "项目 Q1 阶段需要完成哪些功能？",
+    "expected_status": "success",
+    "note": "正常问答，验证 answer 和 citations 展示。"
+  },
+  {
+    "id": "demo-success-interface",
+    "query": "Tool Layer CP1 接口需要返回哪些字段？",
+    "expected_status": "success",
+    "note": "验证 Tool Layer 检索结果字段和引用展示。"
+  },
+  {
+    "id": "demo-invalid-query",
+    "query": "   ",
+    "expected_status": "invalid_query",
+    "note": "验证 Web 展示 message，不展示空 answer。"
+  },
+  {
+    "id": "demo-out-of-scope",
+    "query": "知识库没有覆盖的问题应该怎么处理？",
+    "expected_status": "success_or_no_relevant_context",
+    "note": "当前 Mock 数据可能返回 success；真实检索低相关时应返回 no_relevant_context。"
+  },
+  {
+    "id": "demo-stream",
+    "query": "请用流式方式回答 Q1 Agent 链路。",
+    "expected_status": "success",
+    "note": "调用 /api/chat/stream，验证 token、citations、done 事件。"
+  }
+]

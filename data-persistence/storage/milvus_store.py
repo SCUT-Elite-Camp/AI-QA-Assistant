@@ -3,16 +3,17 @@ from pymilvus import connections, utility, Collection, CollectionSchema, FieldSc
 class MilvusStore:
     
     def __init__(self, host: str = "localhost", port: str = "19530"):
-       
         self.host = host
         self.port = port
-        self.connect()
+        self._connected = False
 
     def connect(self) -> None:
-        
-        connections.connect("default", host=self.host, port=self.port)
+        if not self._connected:
+            connections.connect("default", host=self.host, port=self.port)
+            self._connected = True
 
-    def init_collection(self, collection_name: str = "doc_chunks", dim: int = 1536) -> Collection:
+    def init_collection(self, collection_name: str = "doc_chunks", dim: int = 384) -> Collection:
+        self.connect()
        
         if utility.has_collection(collection_name):
             self.collection = Collection(collection_name)
@@ -43,7 +44,7 @@ class MilvusStore:
         return self.collection
 
     def insert_chunks(self, embeddings: list, chunk_ids: list, chunk_texts: list, doc_ids: list, chunk_indices: list, source_urls: list = None, collection_name: str = "doc_chunks"):
-     
+        self.connect()
         if not embeddings:
             return None
 
@@ -68,6 +69,7 @@ class MilvusStore:
         return insert_result
 
     def search_similar(self, query_vector: list, top_k: int = 5, doc_ids_filter: list = None, collection_name: str = "doc_chunks"):
+        self.connect()
   
         dim = len(query_vector)
         self.init_collection(collection_name, dim=dim)
@@ -88,6 +90,7 @@ class MilvusStore:
         return results[0] if results else []
 
     def delete_collection(self, collection_name: str = "doc_chunks") -> None:
+        self.connect()
  
         if utility.has_collection(collection_name):
             utility.drop_collection(collection_name)
