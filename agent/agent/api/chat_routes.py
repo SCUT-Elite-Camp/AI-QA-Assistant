@@ -10,12 +10,7 @@ router = APIRouter()
 
 
 def get_agent() -> Agent:
-    """Dependency provider for Agent.
-
-    bypass_llm 由 settings.USE_MOCK_LLM 自动决定：
-      True  -> 直接调用 SearchTool，不经过 LLM（Mock 模式）
-      False -> 走完整 ReAct Loop，调用本地 Ollama qwen2.5:14b
-    """
+    """Dependency provider for Agent."""
     return Agent()
 
 
@@ -40,8 +35,7 @@ def list_available_tools(
     agent: Agent = Depends(get_agent),
 ) -> list[dict]:
     """Returns schemas of all available tools for the Agent."""
-    return [t.to_openai_schema() for t in agent.tools.values()]
-
+    return agent.registry.get_tool_schemas()
 
 @router.post("/chat/stream")
 def chat_stream(

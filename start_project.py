@@ -89,8 +89,6 @@ else:
 print("\n=== [4/5] Configuring Agent Layer ===")
 agent_env_path = project_root / "agent" / ".env"
 env_content = (
-    "USE_MOCK_RETRIEVAL=false\n"
-    "USE_MOCK_LLM=false\n"
     "DEFAULT_TOP_K=5\n"
     "MIN_RETRIEVAL_SCORE=0.0\n"
     "DEFAULT_RETRIEVAL_MODE=hybrid\n"
@@ -99,9 +97,9 @@ env_content = (
     "RETRIEVAL_BACKEND=milvus\n"
     "LOG_LEVEL=INFO\n"
     "\n"
-    "# Ollama 本地 qwen2.5:14b 配置\n"
+    "# Ollama 本地 llama3.1 配置\n"
     "LLM_API_BASE=http://127.0.0.1:11434/v1\n"
-    "LLM_MODEL=qwen2.5:14b\n"
+    "LLM_MODEL=llama3.1\n"
     "LLM_API_KEY=ollama\n"
     "LLM_TEMPERATURE=0.1\n"
     "LLM_MAX_TOKENS=2000\n"
@@ -109,7 +107,7 @@ env_content = (
 )
 with open(agent_env_path, "w", encoding="utf-8") as f:
     f.write(env_content)
-print("Configured agent/.env: USE_MOCK_LLM=false, LLM=qwen2.5:14b via Ollama.")
+print("Configured agent/.env: LLM=llama3.1 via Ollama.")
 
 # 5. Start Servers (Agent Backend & Web Frontend)
 print("\n=== [5/5] Launching Servers ===")

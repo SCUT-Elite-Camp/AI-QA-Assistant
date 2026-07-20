@@ -12,7 +12,7 @@ class MilvusStore:
             connections.connect("default", host=self.host, port=self.port)
             self._connected = True
 
-    def init_collection(self, collection_name: str = "doc_chunks", dim: int = 1536) -> Collection:
+    def init_collection(self, collection_name: str = "doc_chunks", dim: int = 384) -> Collection:
         self.connect()
        
         if utility.has_collection(collection_name):

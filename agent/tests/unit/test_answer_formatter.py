@@ -19,7 +19,8 @@ def test_answer_formatter_generates_citations() -> None:
     assert response.message == ""
     assert response.citations[0].citation_id == 1
     assert response.citations[0].doc_id == "doc-1"
-    assert response.citations[0].snippet == result.chunk_text[:120]
+    assert response.citations[0].snippet == result.chunk_text
+
 
 
 def test_answer_formatter_adds_reference_when_missing() -> None:

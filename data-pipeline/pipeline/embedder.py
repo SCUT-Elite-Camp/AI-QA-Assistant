@@ -14,10 +14,19 @@ from functools import lru_cache
 
 # ─── 本地模型常量 ───────────────────────────────────────
 
-_LOCAL_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
-_LOCAL_MODEL_DIM = 512
+_LOCAL_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+_LOCAL_MODEL_DIM = 384
 # ModelScope 上对应的模型 ID
-_MODELSCOPE_MODEL_ID = "BAAI/bge-small-zh-v1.5"
+_MODELSCOPE_MODEL_ID = "BAAI/bge-small-en-v1.5"
+
+
+def _is_offline_mode() -> bool:
+    """Whether to force offline model loading."""
+    flags = (
+        os.environ.get("TRANSFORMERS_OFFLINE", ""),
+        os.environ.get("HF_HUB_OFFLINE", ""),
+    )
+    return any(v.strip().lower() in {"1", "true", "yes"} for v in flags)
 
 # ─── 客户端构建 ──────────────────────────────────────────
 
@@ -59,10 +68,26 @@ def _get_local_model():
     """
     from sentence_transformers import SentenceTransformer
 
+    local_model_path = os.environ.get("LOCAL_EMBEDDING_MODEL_PATH", "").strip()
+    offline = _is_offline_mode()
+
+    if local_model_path:
+        if not os.path.exists(local_model_path):
+            raise RuntimeError(f"LOCAL_EMBEDDING_MODEL_PATH 不存在: {local_model_path}")
+        model = SentenceTransformer(local_model_path, local_files_only=True)
+        dim = model.get_sentence_embedding_dimension()
+        print(f"本地模型已加载: {local_model_path}（{dim} 维）")
+        return model
+
     # 先尝试直接加载（走 HF / HF_ENDPOINT 镜像）
     try:
-        model = SentenceTransformer(_LOCAL_MODEL_NAME)
+        model = SentenceTransformer(_LOCAL_MODEL_NAME, local_files_only=offline)
     except Exception as e:
+        if offline:
+            raise RuntimeError(
+                f"离线模式下未能从本地缓存加载模型 {_LOCAL_MODEL_NAME}，"
+                "请设置 LOCAL_EMBEDDING_MODEL_PATH 到本地模型目录"
+            ) from e
         print(f"HuggingFace 加载失败 ({e})，切换到 ModelScope 下载...")
         local_path = _download_via_modelscope()
         model = SentenceTransformer(local_path)
@@ -78,14 +103,14 @@ def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> list
     批量文本向量化。
 
     当 OPENAI_API_KEY 已设置时使用 OpenAI 兼容接口；
-    否则自动 fallback 到本地 BGE 模型（BAAI/bge-small-zh-v1.5, 512 维）。
+    否则自动 fallback 到本地 BGE 模型（BAAI/bge-small-en-v1.5, 384 维）。
 
     Args:
         texts: 待向量化的文本列表
         model: 嵌入模型名称（仅 API 模式使用，本地模式忽略）
 
     Returns:
-        向量列表，API 模式 1536 维，本地模式 512 维
+        向量列表，API 模式 1536 维，本地模式 384 维
     """
     if not texts:
         return []

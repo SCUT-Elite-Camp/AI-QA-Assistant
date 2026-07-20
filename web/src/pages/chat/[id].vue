@@ -7,7 +7,6 @@ import type { UIMessage } from 'ai'
 import { useModels } from '../../composables/useModels'
 import { useChats } from '../../composables/useChats'
 import { useCsrf } from '../../composables/useCsrf'
-import { useMockChat } from '../../composables/useMockChat'
 import { useRoute } from 'vue-router'
 import ChatMessageContent from '../../components/chat/message/MessageContent.vue'
 import ChatMessageActions from '../../components/chat/message/MessageActions.vue'
@@ -47,41 +46,37 @@ if (isOwner.value) {
 
 const input = ref('')
 
-// Mock/Real switch
-const isMock = import.meta.env.VITE_USE_MOCK !== 'false'
-
-const chat = isMock
-  ? useMockChat({ id: data?.id, messages: data?.messages ?? [], isOwner: isOwner.value })
-  : new Chat({
-      id: data?.id,
-      messages: data?.messages,
-      transport: new DefaultChatTransport({
-        api: `/api/chats/${data?.id}`,
-        headers: { [headerName]: csrf() },
-        body: { model: model.value },
-      }),
-      onData: (dataPart) => {
-        if (dataPart.type === 'data-chat-title') {
-          fetchChats()
-        }
-      },
-      onError(error) {
-        let message = error.message
-        if (typeof message === 'string' && message[0] === '{') {
-          try {
-            message = JSON.parse(message).message || message
-          } catch {
-            // keep original message on malformed JSON
-          }
-        }
-        toast.add({
-          description: message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 0,
-        })
-      },
+const chat = new Chat({
+  id: data?.id,
+  messages: data?.messages,
+  transport: new DefaultChatTransport({
+    api: `/api/chats/${data?.id}`,
+    headers: { [headerName]: csrf() },
+    body: { model: model.value },
+  }),
+  onData: (dataPart) => {
+    if (dataPart.type === 'data-chat-title') {
+      fetchChats()
+    }
+  },
+  onError(error) {
+    let message = error.message
+    if (typeof message === 'string' && message[0] === '{') {
+      try {
+        message = JSON.parse(message).message || message
+      } catch {
+        // keep original message on malformed JSON
+      }
+    }
+    toast.add({
+      description: message,
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+      duration: 0,
     })
+  },
+})
+
 
 function handleSubmit(e: Event) {
   e.preventDefault()
@@ -103,21 +98,19 @@ function cancelEdit() {
 }
 
 async function saveEdit(message: UIMessage, text: string) {
-  if (!isMock) {
-    try {
-      await $fetch(`/api/chats/messages/${data!.id}`, {
-        method: 'DELETE',
-        headers: { [headerName]: csrf() },
-        body: { messageId: message.id, type: 'edit' },
-      })
-    } catch {
-      toast.add({
-        description: 'Failed to update message',
-        icon: 'i-lucide-alert-circle',
-        color: 'error',
-      })
-      return
-    }
+  try {
+    await $fetch(`/api/chats/messages/${data!.id}`, {
+      method: 'DELETE',
+      headers: { [headerName]: csrf() },
+      body: { messageId: message.id, type: 'edit' },
+    })
+  } catch {
+    toast.add({
+      description: 'Failed to update message',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+    return
   }
 
   editingMessageId.value = null
@@ -125,25 +118,24 @@ async function saveEdit(message: UIMessage, text: string) {
 }
 
 async function regenerateMessage(message: UIMessage) {
-  if (!isMock) {
-    try {
-      await $fetch(`/api/chats/messages/${data!.id}`, {
-        method: 'DELETE',
-        headers: { [headerName]: csrf() },
-        body: { messageId: message.id, type: 'regenerate' },
-      })
-    } catch {
-      toast.add({
-        description: 'Failed to regenerate message',
-        icon: 'i-lucide-alert-circle',
-        color: 'error',
-      })
-      return
-    }
+  try {
+    await $fetch(`/api/chats/messages/${data!.id}`, {
+      method: 'DELETE',
+      headers: { [headerName]: csrf() },
+      body: { messageId: message.id, type: 'regenerate' },
+    })
+  } catch {
+    toast.add({
+      description: 'Failed to regenerate message',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+    return
   }
 
   chat.regenerate({ messageId: message.id })
 }
+
 
 function getVote(messageId: string) {
   const vote = votes.value.find(v => v.messageId === messageId)
@@ -260,16 +252,16 @@ onMounted(() => {
           v-model="input"
           :error="chat.error"
           variant="subtle"
-          class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
+          class="sticky bottom-6 mb-6 [view-transition-name:chat-prompt] rounded-2xl shadow-lg z-10"
           :ui="{ base: 'px-1.5' }"
           @submit="handleSubmit"
         >
           <template #footer>
-            <ModelSelect v-model="model" />
             <UChatPromptSubmit
               :status="chat.status"
               color="neutral"
               size="sm"
+              class="ms-auto"
               @stop="chat.stop()"
               @reload="chat.regenerate()"
             />

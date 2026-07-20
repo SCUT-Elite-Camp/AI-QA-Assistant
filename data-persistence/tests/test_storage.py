@@ -58,7 +58,7 @@ def test_milvus_store():
     """
     store = MilvusStore()
     collection_name = "test_doc_chunks"
-    dim = 1536
+    dim = 384
     
     # 清理历史可能残留的 Collection
     store.delete_collection(collection_name)
@@ -70,7 +70,7 @@ def test_milvus_store():
         
         # 2. 插入测试向量与文本
         random.seed(42)
-        # 生成 2 个 1536 维的随机向量（对应 2 个 chunk）
+        # 生成 2 个 384 维的随机向量（对应 2 个 chunk）
         embeddings = [[random.uniform(-1, 1) for _ in range(dim)] for _ in range(2)]
         chunk_texts = [TEST_DOC_DATA["chunks"][0]["text"], TEST_DOC_DATA["chunks"][1]["text"]]
         doc_ids = [TEST_DOC_ID, TEST_DOC_ID]
@@ -130,7 +130,7 @@ def test_storage_integration():
     """
     store = MilvusStore()
     collection_name = "test_integration_chunks"
-    dim = 1536
+    dim = 384
     
     store.delete_collection(collection_name)
     

@@ -8,7 +8,7 @@ from agent.formatter.answer_formatter import AnswerFormatter
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from toolset.tool_layer import get_tools, SearchTool, BaseTool
+from toolset.tool_layer import ToolRegistry, SearchTool, BaseTool
 from agent.service import TraceService, AuditService
 
 
@@ -20,28 +20,34 @@ class Agent:
         llm: BaseLLM | None = None,
         tools: List[BaseTool] | None = None,
         answer_formatter: AnswerFormatter | None = None,
-        bypass_llm: bool | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
-        self.bypass_llm = bypass_llm if bypass_llm is not None else settings.USE_MOCK_LLM
 
         # Load auxiliary services
         self.trace_service = TraceService()
         self.audit_service = AuditService()
 
-        # Load tools from Toolset layer if not passed
-        self.tools = {t.name: t for t in (tools or get_tools())}
+        # Load tools using ToolRegistry
+        self.registry = ToolRegistry(tools=tools)
 
         # Inject min_score config into SearchTool
-        search_tool = self.tools.get("search_documents")
+        search_tool = self.registry.get_tool("search_documents")
         if search_tool and isinstance(search_tool, SearchTool):
             search_tool.min_score = settings.MIN_RETRIEVAL_SCORE
+
 
         from agent.prompt.templates import SYSTEM_ROLE
         self.system_prompt = SYSTEM_ROLE
 
+
+    @property
+    def tools(self) -> Dict[str, BaseTool]:
+        """Provides backward compatibility for callers accessing the tools dictionary."""
+        return {t.name: t for t in self.registry.get_all_tools()}
+
     def chat(self, request: ChatRequest) -> ChatResponse:
+
         """Main entry point. Handles trace_id binding, latency profiling, and SQLite history saving."""
         start_time = self.audit_service.start_timer()
         trace_id = self.trace_service.start_trace()
@@ -83,12 +89,13 @@ class Agent:
 
         try:
             # Clear previous tool results
-            search_tool = self.tools.get("search_documents")
+            search_tool = self.registry.get_tool("search_documents")
             if search_tool and hasattr(search_tool, "latest_results"):
                 search_tool.latest_results = []
 
+
             # Execute the ReAct loop
-            answer = self.run(query)
+            answer = self.run(query, mode=retrieval_mode, top_k=request.top_k)
 
             # Extract retrieved chunks for citation mapping
             latest_results = []
@@ -173,32 +180,23 @@ class Agent:
         )
         return response
 
-    def run(self, query: str, max_iterations: int = 5) -> str:
-        """Executes the core ReAct loop steps.
+    def run(self, query: str, max_iterations: int = 5, mode: str = "hybrid", top_k: int = 5) -> str:
+        """Executes the core RAG pipeline.
 
-        bypass_llm=True : 直接返回检索结果原文（Mock 模式）
-        bypass_llm=False: 标准 RAG 流程 ——
-            1. 先调用 search_documents 工具完成检索
-            2. 将检索上下文注入 prompt
-            3. 调用 LLM 生成最终答案
+        1. Retrieve context using search_documents tool.
+        2. Inject retrieved context into the prompt.
+        3. Invoke the LLM to generate the final answer.
         """
-        tool = self.tools.get("search_documents")
+        tool = self.registry.get_tool("search_documents")
 
-        if self.bypass_llm:
-            if tool:
-                self.audit_service.log_step(0, query)
-                self.audit_service.log_tool_call(tool.name, {"query": query})
-                return tool.execute(query=query)
-            return "Simulated search tool not found."
-
-        # --- RAG 流程：先检索，再生成 ---
-        # Step 1: 强制执行检索，保证 latest_results 一定被填充
+        # Step 1: Execute retrieval to populate search results
         self.audit_service.log_step(0, query)
         if tool:
-            self.audit_service.log_tool_call(tool.name, {"query": query})
-            context_text = tool.execute(query=query)
+            self.audit_service.log_tool_call(tool.name, {"query": query, "mode": mode, "top_k": top_k})
+            context_text = tool.execute(query=query, mode=mode, top_k=top_k)
         else:
             context_text = ""
+
 
         # Step 2: 将检索上下文注入 prompt，调用 LLM 生成答案
         from agent.prompt.prompt_builder import PromptBuilder

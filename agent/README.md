@@ -116,10 +116,10 @@ TOOL_LAYER_CLASS=SearchTool
 USE_MOCK_LLM=false
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
-LLM_MODEL=qwen2.5:14b
+LLM_MODEL=llama3.1
 ```
 
-本地 Ollama 启动后，默认会走兼容 OpenAI Chat Completions 的 `/v1/chat/completions` 接口，因此可以直接接 `qwen2.5:14b`，不需要配置 `LLM_API_KEY`。
+本地 Ollama 启动后，默认会走兼容 OpenAI Chat Completions 的 `/v1/chat/completions` 接口，因此可以直接接 `llama3.1`，不需要配置 `LLM_API_KEY`。
 
 ## 分工建议
 
