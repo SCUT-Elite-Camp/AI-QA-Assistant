@@ -1,1 +1,11 @@
 .DS_Store
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+.output/
+.data/
+web/.env
+web/auto-imports.d.ts
+web/components.d.ts
+data-persistence/volumes/
