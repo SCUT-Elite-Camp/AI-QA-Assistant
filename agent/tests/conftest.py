@@ -69,13 +69,3 @@ def mock_sqlite_db_path(monkeypatch, tmp_path):
         
     monkeypatch.setattr(ChatHistoryStore, "__init__", patched_init)
 
-
-@pytest.fixture(autouse=True)
-def force_agent_disable_bypass(monkeypatch):
-    """Ensures Agent bypass_llm is forced to False during tests so LLM mock is invoked."""
-    from agent.agent import Agent
-    original_init = Agent.__init__
-    def patched_init(self, *args, **kwargs):
-        kwargs["bypass_llm"] = False
-        original_init(self, *args, **kwargs)
-    monkeypatch.setattr(Agent, "__init__", patched_init)

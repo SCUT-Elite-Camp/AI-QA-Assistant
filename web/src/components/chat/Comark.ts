@@ -19,6 +19,7 @@ import xml from '@shikijs/langs/xml'
 import toml from '@shikijs/langs/toml'
 import graphql from '@shikijs/langs/graphql'
 import SourceLink from './SourceLink.vue'
+import CiteMark from './CiteMark.vue'
 
 export default defineComarkComponent({
   name: 'ChatComark',
@@ -28,7 +29,9 @@ export default defineComarkComponent({
     })
   ],
   components: {
-    'source-link': SourceLink
+    'source-link': SourceLink,
+    'cite-mark': CiteMark,
   },
   class: '*:first:mt-0 *:last:mb-0'
 })
+

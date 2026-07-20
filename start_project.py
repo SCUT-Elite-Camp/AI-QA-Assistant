@@ -86,12 +86,9 @@ if not json_docs:
 else:
     print(f"Detected {len(json_docs)} unified documents. Skipping pipeline processing.")
 
-# 4. Configure Agent env
 print("\n=== [4/5] Configuring Agent Layer ===")
 agent_env_path = project_root / "agent" / ".env"
 env_content = (
-    "USE_MOCK_RETRIEVAL=false\n"
-    "USE_MOCK_LLM=true\n"
     "DEFAULT_TOP_K=5\n"
     "MIN_RETRIEVAL_SCORE=0.0\n"
     "DEFAULT_RETRIEVAL_MODE=hybrid\n"
@@ -99,10 +96,18 @@ env_content = (
     "TOOL_LAYER_CLASS=SearchTool\n"
     "RETRIEVAL_BACKEND=milvus\n"
     "LOG_LEVEL=INFO\n"
+    "\n"
+    "# Ollama 本地 llama3.1 配置\n"
+    "LLM_API_BASE=http://127.0.0.1:11434/v1\n"
+    "LLM_MODEL=llama3.1\n"
+    "LLM_API_KEY=ollama\n"
+    "LLM_TEMPERATURE=0.1\n"
+    "LLM_MAX_TOKENS=2000\n"
+    "LLM_TIMEOUT=60\n"
 )
 with open(agent_env_path, "w", encoding="utf-8") as f:
     f.write(env_content)
-print("Configured agent/.env for production retrieval flow (USE_MOCK_RETRIEVAL=false, RETRIEVAL_BACKEND=milvus).")
+print("Configured agent/.env: LLM=llama3.1 via Ollama.")
 
 # 5. Start Servers (Agent Backend & Web Frontend)
 print("\n=== [5/5] Launching Servers ===")

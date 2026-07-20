@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.agent import Agent
+from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
 
 router = APIRouter()
@@ -34,8 +35,7 @@ def list_available_tools(
     agent: Agent = Depends(get_agent),
 ) -> list[dict]:
     """Returns schemas of all available tools for the Agent."""
-    return [t.to_openai_schema() for t in agent.tools.values()]
-
+    return agent.registry.get_tool_schemas()
 
 @router.post("/chat/stream")
 def chat_stream(

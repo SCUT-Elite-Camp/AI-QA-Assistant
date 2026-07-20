@@ -1,10 +1,6 @@
 from .search_tool import RetrievalError, RetrievalParameterError, SearchTool
 from .base_tool import BaseTool
-
-
-def get_tools() -> list[BaseTool]:
-    """Returns instances of all available tools."""
-    return [SearchTool()]
+from .registry import ToolRegistry, get_tools
 
 
 __all__ = [
@@ -12,5 +8,7 @@ __all__ = [
     "RetrievalParameterError",
     "SearchTool",
     "BaseTool",
+    "ToolRegistry",
     "get_tools",
 ]
+

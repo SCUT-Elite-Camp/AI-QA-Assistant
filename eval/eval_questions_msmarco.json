@@ -1,0 +1,802 @@
+[
+  {
+    "id": 1,
+    "query": "how many years did william bradford serve as governor of plymouth colony?",
+    "expected_doc_ids": [
+      "dc3752eca8d4b2c18030c206dc8c0e14"
+    ],
+    "ground_truth_answer": "http://en.wikipedia.org/wiki/William_Bradford_(Plymouth_Colony_governor) William Bradford (c.1590 â 1657) was an English Separatist leader in Leiden, Holland and in Plymouth Colony was a signatory to the Mayflower Compact. He served as Plymouth Colony Governor five times covering about thirty years between 1621 and 1657."
+  },
+  {
+    "id": 2,
+    "query": "define preventive",
+    "expected_doc_ids": [
+      "d7160d78a9c541b6a25f0af3c965796f"
+    ],
+    "ground_truth_answer": "Adjective[edit] preventive â(comparative more preventive, superlative most preventive) 1  Preventing, hindering, or acting as an obstacle to.  Carried out to deter military aggression."
+  },
+  {
+    "id": 3,
+    "query": "color overlay photoshop",
+    "expected_doc_ids": [
+      "ec55d648ad84b9c5d5a19c1637fa7201"
+    ],
+    "ground_truth_answer": "Photoshop: color overlay. In my sunlight touch up tutorial, I showed you how to add a hint of color to your photo while giving it an extra boost at the same time. However, sometimes a photo can benefit from a little color, but just doesnât need that extra boost. Or even a minor light tweak. This simple color overlay is a great way to add a touch of color without making your photo look like youâve edited the heck out of it. Or to add a little life to B&W photos. Note: this works the exact same way in Elements as it does in Photoshop."
+  },
+  {
+    "id": 4,
+    "query": "____________________ is considered the father of modern medicine.",
+    "expected_doc_ids": [
+      "2df54ea0f1c6c37f253deac47df61ea7"
+    ],
+    "ground_truth_answer": "TRUE. Hippocrates is considered the father of modern medicine because he did not believe that illness was a punishment inflicted by the gods. True False. Weegy: TRUE. ["
+  },
+  {
+    "id": 5,
+    "query": "does xpress bet charge to deposit money in your account",
+    "expected_doc_ids": [
+      "284c91231d586c9833d83f5dac4743ee"
+    ],
+    "ground_truth_answer": "How to create a PaySlip using a printer: 1  Log In to your Xpressbet Account and click Deposit.. 2  Choose PayNearMe as your Deposit method. 3  Enter your email address and click Continue.. 4  Check your inbox for an email with additional instructions from PayNearMe.5  Click on the link in the email to access your PayCode. 6  Click Print to print your 7  ... Takow to create a PaySlip using a printer: 1  Log In to your Xpressbet Account and click Deposit.. 2  Choose PayNearMe as your Deposit method. 3  Enter your email address and click Continue.. 4  Check your inbox for an email with additional instructions from PayNearMe."
+  },
+  {
+    "id": 6,
+    "query": "how much is a cost to run disneyland",
+    "expected_doc_ids": [
+      "25420fc6dbcfe7baea23f6d9de344b8c"
+    ],
+    "ground_truth_answer": "Disney's Theme Parks had an operating cost of 571 million dollars divided by their 11 parks and being open 365 days a year, on average their operating cost per day is around $355,000."
+  },
+  {
+    "id": 7,
+    "query": "botulinum definition",
+    "expected_doc_ids": [
+      "161ef8247b92ac2eb5760e5881cfa6fb"
+    ],
+    "ground_truth_answer": "medical Definition of botulinum toxin : a very powerful neurotoxin that causes botulism and is produced by the botulinum bacterium (Clostridium botulinum); also: botulinum toxin type a Note: Botulinum toxin acts primarily on the parasympathetic nervous system."
+  },
+  {
+    "id": 8,
+    "query": "do physicians pay for insurance from their salaries?",
+    "expected_doc_ids": [
+      "0f52356a3ec2190b975aa939f8ed9eff"
+    ],
+    "ground_truth_answer": "Active-duty physicians and their dependents will receive free or discounted health care coverage and dental coverage. Physicians in the Reserve and Guard can also participate in TRICARE Reserve Select, which is part of the Military's health care plan. Finally, physicians can receive up to $400,000 in term life insurance coverage for only $29 a month."
+  },
+  {
+    "id": 9,
+    "query": "here there be dragons comic",
+    "expected_doc_ids": [
+      "f32c5a698ad772fc4ad14785052adfb3"
+    ],
+    "ground_truth_answer": "James A. Owen is an American comic book illustrator, publisher and writer. He is known for his creator-owned comic book series Starchild and as the author of The Chronicles of the Imaginarium Geographica novel series, that began with Here, There Be Dragons in 2006. 1 Career."
+  },
+  {
+    "id": 10,
+    "query": "blood diseases that are sexually transmitted",
+    "expected_doc_ids": [
+      "a4f0ff737d24d88c26ffc20fdfd57bf2"
+    ],
+    "ground_truth_answer": "A sexually transmitted infection (STI) is an infection that can be transmitted from one person to another through sexual contact (exchange of semen, vaginal fluid, blood or other fluids).A blood borne infection is transmitted through contact with infected blood.Blood borne infections (BBI) are transmitted by contact with contaminated blood. Some infections (for example HIV, hepatitis B and hepatitis C) may be transmitted through both sexual and blood borne transmission routes.lood borne infections (BBI) are transmitted by contact with contaminated blood. Some infections (for example HIV, hepatitis B and hepatitis C) may be transmitted through both sexual and blood borne transmission routes."
+  },
+  {
+    "id": 11,
+    "query": "define bona fides",
+    "expected_doc_ids": [
+      "89a8626e288b0e9cdb15bb88906c0b57"
+    ],
+    "ground_truth_answer": "For other uses, see Bona fide (disambiguation). Good faith (Latin: bona fides), in human interactions, is a sincere intention to be fair, open, and honest, regardless of the outcome of the interaction."
+  },
+  {
+    "id": 12,
+    "query": "effects of detox juice cleanse",
+    "expected_doc_ids": [
+      "dc8b70ca8a6b2f812c30cdd19ef2db7e"
+    ],
+    "ground_truth_answer": "Unhealthy Weight Loss. One of the positive side effects of a detox cleanse is weight loss. However, according to the same review article in Obesity Reviews, you're not losing fat weight on such a severe diet, but precious muscle mass."
+  },
+  {
+    "id": 13,
+    "query": "effects of detox juice cleanse",
+    "expected_doc_ids": [
+      "9f98df8733de5e69cfc55990d538be34"
+    ],
+    "ground_truth_answer": "Diarrhea is a common side effect of a detox cleanse. In fact, proponents of these types of diet plans claim that the diarrhea is a sign your body is ridding itself of toxic substances."
+  },
+  {
+    "id": 14,
+    "query": "do prince harry and william have last names",
+    "expected_doc_ids": [
+      "246a352fde6a8e23d9028b2b49bdc832"
+    ],
+    "ground_truth_answer": "Asker's rating. 1  Prince Harry Full Name. 2  This Site Might Help You. 3  For the best answers, search on this site https://shorturl.im/axUwN. 4  prince william prince harry names. 5  Commonly known as Prince William of Wales. 6  Willam and Harry do have a last name; they are known as William Windsor and Henry Windsor. 7  Their last name is Windsor."
+  },
+  {
+    "id": 15,
+    "query": "can hives be a sign of pregnancy",
+    "expected_doc_ids": [
+      "b0c64b28ea00f1c272840e4c9d9c1239"
+    ],
+    "ground_truth_answer": "Hives are caused by allergic reactions. The dryness and stretching of your skin along with other changes can make you more susceptible to experiencing hives during pregnancy. Hives can be caused by an allergic reaction to almost anything. Some common causes of hives during pregnancy are noted below: Medicine."
+  },
+  {
+    "id": 16,
+    "query": "causes of petechial hemorrhage",
+    "expected_doc_ids": [
+      "d7be42c6fc45c266f817909db083b932"
+    ],
+    "ground_truth_answer": "Causes and Symptoms. The causes of petechial hemorrhages are injury to the brain and trauma. This type of multiple petechial hemorrhage is not often visible in imaging techniques such as CT and MRI scans. It is visible in case the injury is very severe, and it generally shows up only after few days."
+  },
+  {
+    "id": 17,
+    "query": "how long does it take to get your bsrn if you already have a bachelors degree",
+    "expected_doc_ids": [
+      "2a595c0e49503c498e277b1d3a919816"
+    ],
+    "ground_truth_answer": "A: It takes 4 years to complete the RN to BSN programs. However, if you have completed your Associate's Degree in Nursing already, your credits for the two year education already achieved will be transferred and you will only have to invest two more years and receive your RN to BSN Degree.: RN is the abbreviation for Registered Nurse and BSN means Bachelor of Science in nursing. At the moment these are the two types of registered nursing degrees offered by colleges in the US. You become an RN by earning associate's degree which roughly takes about two years for completion."
+  },
+  {
+    "id": 18,
+    "query": "symptoms of ptsd in vietnam veterans",
+    "expected_doc_ids": [
+      "48ad8c6aefa25dc96a553a406b0b09f3"
+    ],
+    "ground_truth_answer": "But it's never too late to get treatment.. Even for veterans in their 70s and 80s, a combination of psychotherapy, medication, and marital and family therapy can reduce PTSD symptoms, including insomnia, anxiety and irritability, he said. The Vietnam War ended in 1975."
+  },
+  {
+    "id": 19,
+    "query": "how coffee works quote",
+    "expected_doc_ids": [
+      "100541e995434e56755327d65be965f8"
+    ],
+    "ground_truth_answer": "Coffee Sayings and Quotes About Coffee. 100+ coffee sayings , quotes , and expressions: I orchestrate my mornings to the tune of coffee. ~Harry Mahtar. The morning cup of coffee has an exhilaration about it which the cheering influence of the afternoon or evening cup of tea cannot be expected to reproduce. ~Oliver Wendell Holmes."
+  },
+  {
+    "id": 20,
+    "query": "does contraction of the ciliary muscles shorten the lens",
+    "expected_doc_ids": [
+      "ecdf7f135f67047b040c534f0a55f0e2"
+    ],
+    "ground_truth_answer": "The ciliary body controls the shape of the lens. The ciliary body is composed mainly of smooth muscle and is connected to the lens by suspensory ligaments which are not visible in this image. Contraction of smooth muscle in the ciliary body makes the lens rounder focusing vision on objects which are closer to the eye."
+  },
+  {
+    "id": 21,
+    "query": "do spiders eat other animals",
+    "expected_doc_ids": [
+      "1268744887de2a3135555c3a4117a9e3"
+    ],
+    "ground_truth_answer": "Spiders are animals that have 8 legs and use their fangs to inject venom into other animals and sometimes humans. But what do spiders eat? This post will answer that question, and also look at some interesting facts about spiders. What do spiders eat? Different species of spiders eat different things. Most species trap small insects and other spiders in their webs and eat them. A few large species of spiders prey on small birds and lizards. One species is vegetarian, feeding on acacia trees. Some baby spiders eat plant nectar. In captivity, spiders have been known to eat egg yoke, bananas, marmalade, milk and sausages. Interesting Facts About Spiders"
+  },
+  {
+    "id": 22,
+    "query": "how long is the flight from chicago to cairo",
+    "expected_doc_ids": [
+      "0c1a4bdef29f2f75861e0f7ee379e44c"
+    ],
+    "ground_truth_answer": "Flying time from Chicago, IL to Cairo, Egypt. The total flight duration from Chicago, IL to Cairo, Egypt is 12 hours, 47 minutes. This assumes an average flight speed for a commercial airliner of 500 mph, which is equivalent to 805 km/h or 434 knots. It also adds an extra 30 minutes for take-off and landing. Your exact time may vary depending on wind speeds."
+  },
+  {
+    "id": 23,
+    "query": "how titanic facts",
+    "expected_doc_ids": [
+      "36c5ae44e70b26dc6200f3b903e10b2c"
+    ],
+    "ground_truth_answer": "1 The time interval from first sighting of the iceberg to impact was a little over 30 seconds. 2  The Titanic sank 2 hours and 40 minutes after hitting the iceberg.  It probably took Titanic about 15 minutes to sink to her final resting place on the ocean floor."
+  },
+  {
+    "id": 24,
+    "query": "how to play blu ray discs",
+    "expected_doc_ids": [
+      "a9a663d4c1e533dd61827901bdebc33a"
+    ],
+    "ground_truth_answer": "Step 3: Get Windows 10 play Blu-ray. 1) Run the Blu-ray Player for Windows 10; 2) Insert your Blu-ray disc into the Blu-ray drive; 3) The blu-ray player software can automatically play the Blu-ray movie when the disc is inserted. You can also click the right bottom icon and select Open Disc to open the disc manually. You can also choose Open File to play Blu-ray folders or ISO files."
+  },
+  {
+    "id": 25,
+    "query": "central city definition",
+    "expected_doc_ids": [
+      "b983df40780ff6201a5b223565baab11"
+    ],
+    "ground_truth_answer": "Definition of central city. : a city that constitutes the densely populated center of a metropolitan area."
+  },
+  {
+    "id": 26,
+    "query": "define body muscular endurance",
+    "expected_doc_ids": [
+      "cf1df30dccfd19c2e2f74fd9e0b9ef44"
+    ],
+    "ground_truth_answer": "Morbidity is any departure, subjective or objective, from a state of physical or psychological well-being, short of death. Muscular endurance is a health-related fitness component that relates to the amount of external force that a muscle can exert over an extended period of time."
+  },
+  {
+    "id": 27,
+    "query": "circulation money definition",
+    "expected_doc_ids": [
+      "64d79f994d6a3b4b59ff40d73342dfe6"
+    ],
+    "ground_truth_answer": "circulation of money meaning, circulation of money definition | English Cobuild dictionary. circulate. 1 verb If a piece of writing circulates or is circulated, copies of it are passed round among a group of people."
+  },
+  {
+    "id": 28,
+    "query": "hotels in thornton co",
+    "expected_doc_ids": [
+      "5df36d9f426341f480e6f565be96c1eb"
+    ],
+    "ground_truth_answer": "Thornton Hotels. Candlewood Suites Denver North - Thornton. Welcome to the Candlewood Suites Thornton serving Northglenn, Westminster, Brighton, Commerce City, Broomfield, and Thornton. We are minutes from downtown Denver, many RTD stations, Water World, downtown Louisville, and the Broomfield event center."
+  },
+  {
+    "id": 29,
+    "query": "hotels in thornton co",
+    "expected_doc_ids": [
+      "7357f9f9f87d58c06ba6a47b2b23613c"
+    ],
+    "ground_truth_answer": "4. Hampton Inn Denver-North/Thornton. From Business: Property Location With a stay at Hampton Inn Denver Thornton in Thornton, you'll be close to Boondocks Food and Fun and Thorncreek Golf Course. This hotel is withâ¦. Add to mybookRemove from mybook."
+  },
+  {
+    "id": 30,
+    "query": "hotels in thornton co",
+    "expected_doc_ids": [
+      "e1708577726724c6b0c7c9a5956c0bdd"
+    ],
+    "ground_truth_answer": "Econo Lodge Thornton -Denver North, a Thornton hotel near Downtown Denver. 1  For everything you need while on the road, book with our Econo LodgeÂ® Thornton-Denver North hotel in Thornton, CO near Downtown Denver to explore Colorado with ease. Visit these popular attractions near this pet-friendly discount hotel in Thornton during your stay in Colorado: Denver Botanic Gardens."
+  },
+  {
+    "id": 31,
+    "query": "derriere definition",
+    "expected_doc_ids": [
+      "aa809819c6eed544af4d34d8056f63c3"
+    ],
+    "ground_truth_answer": "Princeton's WordNet(0.00 / 0 votes)Rate this definition: buttocks, nates, arse, butt, backside, bum, buns, can, fundament, hindquarters, hind end, keister, posterior, prat, rear, rear end, rump, stern, seat, tail, tail end, tooshie, tush, bottom, behind, derriere, fanny, ass(noun) the fleshy part of the human body that you sit on."
+  },
+  {
+    "id": 32,
+    "query": "how many product lines does coca cola have",
+    "expected_doc_ids": [
+      "0a66b0b42a23aeffda720f412670c916"
+    ],
+    "ground_truth_answer": "COCA-COLA ON SOCIAL. Coca-Cola Great Britain is responsible for marketing 20 brands and more than 80 drinks to consumers across Great Britain including the Coca-Cola portfolio â Coca-Cola Classic, Coca-Cola Life, Coca-Cola Zero Sugar and Diet Coke."
+  },
+  {
+    "id": 33,
+    "query": "government does do",
+    "expected_doc_ids": [
+      "80d06eae632666e19e10191ca2e4384c"
+    ],
+    "ground_truth_answer": "Depending on the particular form, the government generally carries out the desires of the people. Popular forms of government, including democracies and republics, come from the governments of the Romans and the Greeks. The government's job is to determine and implement policy or principles to get a positive outcome."
+  },
+  {
+    "id": 34,
+    "query": "how to cook string beans",
+    "expected_doc_ids": [
+      "7616c3342c7edba0dea25affe2951ce7"
+    ],
+    "ground_truth_answer": "Use the paring knife to cut the ends off of the string beans. Cut the beans in half or 1-inch slices, if desired. Bring the salt and water to a boil in the saucepan over high heat. With a vegetable steamer: place the steamer above the boiling water so that the water does not enter the steamer. Fill the steamer with the prepared string beans."
+  },
+  {
+    "id": 35,
+    "query": "average temperatures las vegas by month",
+    "expected_doc_ids": [
+      "5eba26f94f5572f50d193fe9feb1103d"
+    ],
+    "ground_truth_answer": "1 Average High Temperature in November in Las Vegas: 67 F (19.4 C). 2  Average Low Temperature in November in Las Vegas: 42 F (5.5 C). 3  Average Rainfall in November in Las Vegas: .43â. 4  Average Humidity in November in Las Vegas: 31%."
+  },
+  {
+    "id": 36,
+    "query": "average temperatures las vegas by month",
+    "expected_doc_ids": [
+      "92061f797e37d34e95cb50b7378275e7"
+    ],
+    "ground_truth_answer": "45Â°F. 0.5. The highest average temperature in Las Vegas is July at 93.6 degrees. The coldest average temperature in Las Vegas is December at 45.4 degrees. The most monthly precipitation in Las Vegas occurs in February with 0.8 inches. The Las Vegas weather information is based on the average of the previous 3-7 years of data. Loading..."
+  },
+  {
+    "id": 37,
+    "query": "how bicycle tire tubes are sized",
+    "expected_doc_ids": [
+      "d3e23f2b2850e2dfe342f8c81335c8d2"
+    ],
+    "ground_truth_answer": "Inspect the sidewall of the bicycle tire that needs a new tube. The sidewall is the area of the tire next to the rim on either side that does not touch the ground when the bike is in motion. The tire size will be printed there in raised numbers along with the recommended tire pressure and possibly other information."
+  },
+  {
+    "id": 38,
+    "query": "how bicycle tire tubes are sized",
+    "expected_doc_ids": [
+      "a8ac0e83f7862331095f6ed0da03bdce"
+    ],
+    "ground_truth_answer": "The numbers on the sidewall of you tyre are the best place to look for your tyre and tube size information. Most tyres will show both an ETRTO size and a Metric or Imperial size. See below images for examples of two of the most common tyre sizes. Mountain Bike 54-559 ETRTO or 26 x 2.1. Road Bike 23-622 ETRTO or 700 x 23c."
+  },
+  {
+    "id": 39,
+    "query": "can you substitute chocolate chips for semi-sweet",
+    "expected_doc_ids": [
+      "f5adec3765f19045e5b22daae661b0a9"
+    ],
+    "ground_truth_answer": "February 2, 2012 in Baking, Sweet Stuff 6 Comments. Semisweet chocolate chips are the default mix-in for most chocolate chip cookie recipes. Over the past several years, consumers have seen a huge increase in the variety of chocolate chips (and chocolate chunks) available at the grocery store as options for baking."
+  },
+  {
+    "id": 40,
+    "query": "how big do newfypoo's get",
+    "expected_doc_ids": [
+      "f20faaf7dccf0be8b569d4abfa96ddcc"
+    ],
+    "ground_truth_answer": "The newfypoo is generally a large dog breed, but the adult size of the newfypoo is generally dependent upon the type poodle used in breeding. Since most newfypoos are bred with standard poodles, the offspring is almost always a large dog that weighs between 60-130 pounds and is 21-30 inches tall from ground to shoulder. The breed is considered loyal, calm, and highly intelligent."
+  },
+  {
+    "id": 41,
+    "query": "how much fiber is in carrots",
+    "expected_doc_ids": [
+      "a64109d18655aac8a42517d45fc8a400"
+    ],
+    "ground_truth_answer": "5. Cooked Carrots. Adding cooked carrots to your meals is a great way to increase fiber in your diet. One cup of cooked carrots will yield approximately 5.22 grams of fiber, and a touch of brown sugar makes them delicious. 6. Broccoli. Broccoli is another vegetable that will give you a good amount of fiber."
+  },
+  {
+    "id": 42,
+    "query": "do bigger tires affect gas mileage",
+    "expected_doc_ids": [
+      "a303850b0fab467e124c206a3cf2c37b"
+    ],
+    "ground_truth_answer": "Tire Width versus Gas Mileage. Tire width is one of the only tire size factors that can influence gas mileage in a positive way. For example, a narrow tire will have less wind resistance, rolling resistance, and weight; thus increasing gas mileage."
+  },
+  {
+    "id": 43,
+    "query": "age requirements for name change",
+    "expected_doc_ids": [
+      "fe702c749aef4f4fb3ab3d5ed492429c"
+    ],
+    "ground_truth_answer": "These requirements include: 1  You must currently reside in California. 2  You must currently live in the County where the name change action will be filed. 3  You must be an adult, 18 years of age or older. 4  You must not be under the jurisdiction of the California Department of Corrections (in state prison or on parole)."
+  },
+  {
+    "id": 44,
+    "query": "can green tea cause stomach problems",
+    "expected_doc_ids": [
+      "f8ea80053e91276d2909911f10651269"
+    ],
+    "ground_truth_answer": "Green tea is safe for most adults. Green tea extract seems to be safe for most people for short-term use. In some people, green tea can cause stomach upset and constipation. Green tea extracts have been reported to cause liver problems. Too much green tea, such as more than five cups per day, can cause side effects because of the caffeine."
+  },
+  {
+    "id": 45,
+    "query": "synonym of subordinate",
+    "expected_doc_ids": [
+      "f833a772e8e00735885665d76e8771f4"
+    ],
+    "ground_truth_answer": "subordinate (plural subordinates) One who is subordinate. Synonyms (one who is subordinate): inferior, junior, report, underling, understrapper; Antonyms (one who is subordinate): boss, commander, leader, manager, superior, supervisor; Translations"
+  },
+  {
+    "id": 46,
+    "query": "how much is the stamp to send a card",
+    "expected_doc_ids": [
+      "6aba06262bb9e59ce3e6a0022ff856c6"
+    ],
+    "ground_truth_answer": "As of June 2014, the United States Postal Service states that the cost to send a standard sized postcard is 34 cents. At this rate, the postcard can be 6 inches long, 4 1/4 inches high and 0.16 inches thick."
+  },
+  {
+    "id": 47,
+    "query": "how much magnesium in kidney beans",
+    "expected_doc_ids": [
+      "a26c8fe27c2b1b745f0e6cdf248dd04d"
+    ],
+    "ground_truth_answer": "Kidney Beans. A cup of kidney beans contains 70 mg of magnesium and is a great source of protein and fiber. More: How to Bake With Beans."
+  },
+  {
+    "id": 48,
+    "query": "child psychiatrist salary 2016",
+    "expected_doc_ids": [
+      "2eb6fd876e5db96bb352a2c5167345a4"
+    ],
+    "ground_truth_answer": "Physician, Child Psychiatrist Salary. (United States). Generous salaries abound for Child Psychiatrists in the United States, with average pay above six figures ($193K) per year. Location and years of experience each impact pay for this group, with the former having the largest influence.fter working for 10 to 20 years, Child Psychiatrists make a median salary of $223K. Survey participants with more than twenty years of experience only make around $216K on average, though; this group reports a lower median than the one claimed by mid-career individuals."
+  },
+  {
+    "id": 49,
+    "query": "define prosthetic device",
+    "expected_doc_ids": [
+      "07518d0c43682f3237aa739bcef55564"
+    ],
+    "ground_truth_answer": "prosthesis (prÃ¤sÂ·thÄËÂ·sis), n 1. an artificial device that is used to replace a part of the body that is missing, such as an arm, leg, or joint. 2. an artificial device used to improve the function of a part of the body, such as a hearing aid. Prosthesis."
+  },
+  {
+    "id": 50,
+    "query": "how many mm is a nickel coin",
+    "expected_doc_ids": [
+      "cbb0ade8c6b91dbb6805a3971501820e"
+    ],
+    "ground_truth_answer": "A nickel, in American usage, is a five-cent coin struck by the United States Mint. Composed of 75% copper and 25% nickel, the piece has been issued since 1866. Its diameter is .835 inches (21.21mm) and its thickness is .077 inches (1.95 mm). The silver half dime, equal to five cents, had been issued since the 1790s."
+  },
+  {
+    "id": 51,
+    "query": "how old do you have to be to get a job in idaho",
+    "expected_doc_ids": [
+      "8bc820ebfbd4fd055419711a28cc6d6c"
+    ],
+    "ground_truth_answer": "Updated March 25, 2017. Federal child labor laws state that the minimum age to work is 14 (with some exceptions). State laws, however, may vary. In Idaho, 14-year-olds may work and do not need a special certificate."
+  },
+  {
+    "id": 52,
+    "query": "synonyms for the word discipline",
+    "expected_doc_ids": [
+      "ae5c735ca17bca6dab9a510304ea1381"
+    ],
+    "ground_truth_answer": "Synonyms for Discipline: command (noun) authority, charge, command, commission, control, coordination, direction, domination,"
+  },
+  {
+    "id": 53,
+    "query": "can seizure meds cause low sodium?",
+    "expected_doc_ids": [
+      "49ca31f402f7500b35199664e81c9b0b"
+    ],
+    "ground_truth_answer": "Low sodium: Low serum sodium concentrations in circulating blood sure can lead to seizures. If serum sodium concentrations drop fast, then brain sweiling happens rapidly with compression of brain matter. Seizure, coma, brain herniation can result. Low serum sodium concentrations are not induced by low sodium diets. Please don't confuse these."
+  },
+  {
+    "id": 54,
+    "query": "synonyms for the word, decline",
+    "expected_doc_ids": [
+      "645bdb76e946418e6fa4802cd15f2a21"
+    ],
+    "ground_truth_answer": "decline | definition: grow worse | synonyms: retrogress, slip, tumble, deprive, fall away, drop away, degenerate, fail, suffer, come down, sicken, worsen, deteriorate, lose, impoverish, inflame, turn down, drop off, drop, turn, retrograde, regress, devolve, change state| antonyms: better, enrich, recuperate, progress, advisable"
+  },
+  {
+    "id": 55,
+    "query": "how is soil created from rocks",
+    "expected_doc_ids": [
+      "3d24149a15fa35500cad254ae5f5f141"
+    ],
+    "ground_truth_answer": "| Filed Under: Universe 3 Comments. There are four basic âingredientsâ that go into the ârecipeâ for making soil: tiny pieces of rock, decayed plants and animals, water, and air. When small pieces of rock break off larger ones, they form the basis of all soil."
+  },
+  {
+    "id": 56,
+    "query": "define tapestry",
+    "expected_doc_ids": [
+      "ad8f31848f3199add2e99578dae0f539"
+    ],
+    "ground_truth_answer": "TAPESTRY Defined for English Language Learners. tapestry. Definition of tapestry for English Language Learners. : a heavy cloth that has designs or pictures woven into it and that is used for wall hangings, curtains, etc. : something made up of different things, people, colors, etc."
+  },
+  {
+    "id": 57,
+    "query": "causes for uti in women",
+    "expected_doc_ids": [
+      "da9a0b36b03c8c5f1972e70ce034940b"
+    ],
+    "ground_truth_answer": "The National Women's Health Information Center lists these common causes of urinary tract infections in women: 1  Wiping from back to front after a bowel movement. 2  Having sex. 3  Holding urine for too long.  Being 1  diabetic. Having a kidney stone or other factor that makes it difficult to urinate.  Producing less estrogen, such as after menopause."
+  },
+  {
+    "id": 58,
+    "query": "synonyms of ignorant",
+    "expected_doc_ids": [
+      "5b0c8f461f37103d7f54197962e51a5d"
+    ],
+    "ground_truth_answer": "ignorant 1 benighted, blind to, inexperienced, innocent, in the dark about, oblivious, unaware, unconscious, unenlightened, uninformed, uninitiated, unknowing, unschooled, unwitting 2 as green as grass, green, illiterate, naive, unaware, uncultivated, uneducated, unknowledgeable, unlearned, unlettered, unread, untaught, untrained, untutored, wet behind the ears (informal)"
+  },
+  {
+    "id": 59,
+    "query": "how long does respite last",
+    "expected_doc_ids": [
+      "50a8ceed6eb827ab63164ff1fbe51b0e"
+    ],
+    "ground_truth_answer": "At assisted living communities, temporary care respite stays are usually less than one month long, and can cost between $75 to $200 per day, according to 2012 Genworth.com data. It's important to keep in mind that the cost of respite care varies with the type of agency and services the person needs."
+  },
+  {
+    "id": 60,
+    "query": "do vhi swiftcare do blood tests?",
+    "expected_doc_ids": [
+      "6e08f0d2878a172a62be42352c3659f7"
+    ],
+    "ground_truth_answer": "The SwiftCare clinics charge an initial consultation fee of 85 euro, with additional charges for tests and procedures. For example, an x-ray at the clinics costs 65 euro, blood tests range from 30 to 50 euro and complex suturing costs 50 euro. The Swiftcare clinics are staffed by doctors with significant experience in general practice and emergency care, according to VHI. The clinics are run as a joint initiative between the VHI and The Well, a primary care care medical company."
+  },
+  {
+    "id": 61,
+    "query": "how many dead bodies on everest",
+    "expected_doc_ids": [
+      "68ae7ee99883104b858c259ab88949b5"
+    ],
+    "ground_truth_answer": "Dead bodies on Mount Everest. // December 25th, 2012 // Odd Happenings. It is estimated that over 200 people have died in their attempt to reach the summit of Mount Everest. The causes of their death vary as widely as the weather at Mount Everestâs peak."
+  },
+  {
+    "id": 62,
+    "query": "honesty or integrity definition",
+    "expected_doc_ids": [
+      "9aa066db0f4e6e5e8898c88c33518340"
+    ],
+    "ground_truth_answer": "honesty. n, pl-ties. 1. the condition of being honest. 2. sincerity or fairness. 3. virtue or respect."
+  },
+  {
+    "id": 63,
+    "query": "honesty or integrity definition",
+    "expected_doc_ids": [
+      "cac8b0c936aa921898fa5785bb1bb24c"
+    ],
+    "ground_truth_answer": "hence, a white lie in some cases, is a result of integrity. integrity is the value and morals of a individual in relation or in addition to honesty. honestly is frankness and as the other guy said, adherence to facts."
+  },
+  {
+    "id": 64,
+    "query": "how much do rear brakes and rotors cost",
+    "expected_doc_ids": [
+      "3c2f35c7e48dcbbc537f33fd322d38a6"
+    ],
+    "ground_truth_answer": "$105 for brake pads (front and rear) and $170 for labor. I was quoted $932 for front and rear breaks and rotors. It was steep, but I needed it done and didn't want to shop it around. When I drove out, my breaks were squeeking worse than when I went in."
+  },
+  {
+    "id": 65,
+    "query": "causes of insomnia in women",
+    "expected_doc_ids": [
+      "ba49c2bb11cdf61d8907097d70eb531b"
+    ],
+    "ground_truth_answer": "Causes of insomnia in women: Most causes of insomnia in men and women are same but some common causes of insomnia in women include: Stress: The demanding lifestyle in todayâs world (responsibility of the family and at work) can cause fatigue and stress. Stress is one of the commonest causes of insomnia."
+  },
+  {
+    "id": 66,
+    "query": "how old is lil moco",
+    "expected_doc_ids": [
+      "15bded218d92dbd5bf86d9051ab57e87"
+    ],
+    "ground_truth_answer": "web video star Lil Moco born on 02 11 1994 in . Until now, Lil Moco's age is 22 year old and have Scorpio constellation. Count down 361 days will come next birthday of Lil Moco !"
+  },
+  {
+    "id": 67,
+    "query": "define tension stress",
+    "expected_doc_ids": [
+      "db20bf2de4816d234ef12525b54a36ed"
+    ],
+    "ground_truth_answer": "Tensile stress is the stress state caused by an applied load that tends to elongate the material in the axis of the applied load, or in other words, the stress caused by pulling the material. The strength of structures of equal cross-sectional area loaded in tension is independent of the shape of the cross section."
+  },
+  {
+    "id": 68,
+    "query": "systemic response definition",
+    "expected_doc_ids": [
+      "048f76171cea4fbc154677b7df94a353"
+    ],
+    "ground_truth_answer": "Systemic inflammatory response syndrome (SIRS) is an inflammatory state affecting the whole body. It is the body's response to an infectious or noninfectious insult. Although the definition of SIRS refers to it as an inflammatory response, it actually has pro- and anti-inflammatory components."
+  },
+  {
+    "id": 69,
+    "query": "average wage gilded age",
+    "expected_doc_ids": [
+      "b7dc1fa1091be8ab14e8e8ffa252885a"
+    ],
+    "ground_truth_answer": "Living with the Minimum Wage in a Gilded Age. Californiaâs decision last month to raise the minimum wage from $8 to $9 an hour on July 1, 2014 and then to $10 an hour on Jan. 1, 2016 may sound like a very good idea at first. But itâs not exactly cause for celebration for an estimated 2.4 million low-wage workers."
+  },
+  {
+    "id": 70,
+    "query": "tachycardia effects on cardiac output",
+    "expected_doc_ids": [
+      "4de4e1113a548ea7e9ebad2488545b0e"
+    ],
+    "ground_truth_answer": "Tachycardia of atrial or ventricular origin reduces stroke volume and cardiac output particularly when the ventricular rate is greater than 160 beats/min. The stroke volume becomes reduced because of decreased ventricular filling time and decreased ventricular filling at high rates of contraction."
+  },
+  {
+    "id": 71,
+    "query": "tangle definition",
+    "expected_doc_ids": [
+      "75215577d075e2c1f9ed63c12e4860a8"
+    ],
+    "ground_truth_answer": "tangle (third-person singular simple present tangles, present participle tangling, simple past and past participle tangled) (intransitive) to become mixed together or intertwined Her hair was tangled from a day in the wind. (intransitive) to be forced into some kind of situation. (intransitive) to enter into an argument, conflict, dispute, or fight Don't tangle with someone three times your size. He tangled with the law."
+  },
+  {
+    "id": 72,
+    "query": "task definition",
+    "expected_doc_ids": [
+      "96b595d25b8c4c79b4b083709dacff05"
+    ],
+    "ground_truth_answer": "Definition of task: The smallest identifiable and essential piece of a job that serves as a unit of work, and as a means of differentiating between the various components of a project. Dictionary Term of Day Articles Subjects Sign Up"
+  },
+  {
+    "id": 73,
+    "query": "tax planning defined",
+    "expected_doc_ids": [
+      "83d6889f83ff96d62d73e6c580991abe"
+    ],
+    "ground_truth_answer": "Definition of TAX PLANNING: Exercise minimizing liability using all deductions available. The Law Dictionary Featuring Black's Law Dictionary Free Online Legal Dictionary 2nd Ed. Navigation"
+  },
+  {
+    "id": 74,
+    "query": "taxes what does donation go under",
+    "expected_doc_ids": [
+      "5c6ba29d58bbc8f1647aa2e8ec4c4c90"
+    ],
+    "ground_truth_answer": "In general, charitable contributions are not allowed as a business expense on the Schedule C. However, if you made a payment to a charitable organization that was not for charity nor a gift, you may deduct the payment as an expense to the business. You may want to clarify or consider the terms of your donation. If your business received any benefit for the donation (ad space or marketing, for example) you may deduct the payment as an expense. Otherwise, your charitable gift/donation is not deductible under your business, but may be deducted on the Schedule A if you itemize your deductions for your personal tax return. You may want to review the IRS link below for clarification on this rule."
+  },
+  {
+    "id": 75,
+    "query": "tcm meaning case management",
+    "expected_doc_ids": [
+      "e7a47247661638b845496651baada7e1"
+    ],
+    "ground_truth_answer": "Definition The purpose of Targeted Case Management (TCM) is to assist adults and children who qualify for this service in maintaining access to needed medical, social, educational and other services. Components 1. Assessment of an individual to determine the need for any medical, educational, social or other services."
+  },
+  {
+    "id": 76,
+    "query": "braidy industries charles price",
+    "expected_doc_ids": [
+      "923fe8a879c1b1673c6bb6cb62c8307f"
+    ],
+    "ground_truth_answer": "Bouchard said there are eight shareholders of Braidy Industries, with founding employees also participating in a stock incentive program. Commonwealth Seed Capital and Charles Price, a member of the companyâs board of directors and an industrialist from Louisville, are the only shareholders in Kentucky. All other Braidy shareholders are in other states or countries, he said. Read the Full Article"
+  },
+  {
+    "id": 77,
+    "query": "technology working group definition",
+    "expected_doc_ids": [
+      "f32c3d03115b743560d717aafb6b12ce"
+    ],
+    "ground_truth_answer": "Biofloc Working Group. Biofloc technology (BFT) is gaining popularity as an aquaculture strategy. The technology is applied to a variety of system types and is currently most commonly used for the culture of shrimp and tilapia, although other taxa such as catfish are being explored."
+  },
+  {
+    "id": 78,
+    "query": "telephone number for amazon fire stick customer service",
+    "expected_doc_ids": [
+      "a4f25484ce429c057eb3b44613e93853"
+    ],
+    "ground_truth_answer": "They will resolve the issues instantly but in case the problem is complicated it will take 1-2 days minimum to solve for more information contact our amazon fire stick support number-1-844-745-1521"
+  },
+  {
+    "id": 79,
+    "query": "telephone number for travel house sky mall barbados",
+    "expected_doc_ids": [
+      "74da4289a65d2ec1b38d9c635a1751ce"
+    ],
+    "ground_truth_answer": "Contact Info. Address: Sky Mall, Haggatt Hall, St. Michael, Barbados. Phone: 246-429-8850. Fax: 246-429-2274. Email: info@travelhouse-bgi.com, thetravelhouse@caribsurf.com. Home."
+  },
+  {
+    "id": 80,
+    "query": "temperature at searcy ark",
+    "expected_doc_ids": [
+      "766e2be177c103fdd91292dbe64f7478"
+    ],
+    "ground_truth_answer": "In Searcy, the summers are hot and muggy, the winters are very cold and wet, and it is partly cloudy year round. Over the course of the year, the temperature typically varies from 31Â°F to 92Â°F and is rarely below 18Â°F or above 100Â°F."
+  },
+  {
+    "id": 81,
+    "query": "temperature diode",
+    "expected_doc_ids": [
+      "dd12405c4973dfebf4e3609c5c8819be"
+    ],
+    "ground_truth_answer": "5. Diode Temperature Sensors . The ordinary semiconductor diode may be used as a temperature sensor. Cheap and nasty! The diode is the lowest cost temperature sensor and can produce more than satisfactory results if you are prepared to undertake a two point calibration and provide a stable excitation current. Almost any silicon diode is ok."
+  },
+  {
+    "id": 82,
+    "query": "temperature in april in bali",
+    "expected_doc_ids": [
+      "9c065ccb995d163df556594a8d5e90d1"
+    ],
+    "ground_truth_answer": "Weather in Bali in April With greatly reduced humidity levels (around 65%), April heralds the end of Baliâs wet season. Monthly rainfall is reduced to 70 millilitres on average, the days are clearer and that classic Bali heat is on the rise with some days reaching 33ÂºC."
+  },
+  {
+    "id": 83,
+    "query": "docetaxel is also known as",
+    "expected_doc_ids": [
+      "e074a74e681404549df578841feb242a"
+    ],
+    "ground_truth_answer": "Docetaxel (Taxotere) Find out what docetaxel is, how you have it, and other important information about having docetaxel. Docetaxel is also known by its brand name, Taxotere. It is a treatment for: breast cancer; lung cancer; head and neck cancer; prostate cancer; stomach cancer"
+  },
+  {
+    "id": 84,
+    "query": "temperature in clearwater florida per month",
+    "expected_doc_ids": [
+      "3c202ff6e18fd3479b84fe2de59bf641"
+    ],
+    "ground_truth_answer": "Clearwater Beach: Annual Weather Averages. January is the hottest month in Clearwater Beach with an average temperature of 59 Â°F (15 Â°C) and the coldest is January at 59 Â°F (15 Â°C). Average Temperature: Clearwater Beach Loading weather data."
+  },
+  {
+    "id": 85,
+    "query": "temperature in clearwater florida per month",
+    "expected_doc_ids": [
+      "f7c4acf6e573990c6bbd8d8a7ace5577"
+    ],
+    "ground_truth_answer": "Clearwater enjoys moderately hot temperatures in summer with highs in the 80s or 90s Fahrenheit. The 90-degree weather can show up anytime from May to October. But it normally doesn't get any hotter than 100 Â°F (38 Â°C) at this vacation destination. Days per month in Clearwater of at least 70, 80 or 90 Â°F."
+  },
+  {
+    "id": 86,
+    "query": "brass is composed of copper and what",
+    "expected_doc_ids": [
+      "b03310461e49261b36861dc8630d3c82"
+    ],
+    "ground_truth_answer": "Brass is a general term for a set of copper-zinc alloys that may include additional metals such as lead. Different types of brass have different properties, but all brass is strong, machinable, tough, conductive, and corrosion resistant. This along with beauty and ease of production make brass one of the most widely used alloys."
+  },
+  {
+    "id": 87,
+    "query": "texas child support phone number",
+    "expected_doc_ids": [
+      "72125496092727bed2f9a4fb865a742c"
+    ],
+    "ground_truth_answer": "CLERKS PHONE NUMBERS (956) 523-4242 (956) 523-4268 (956) 523-5208 To apply for Child Support Services, please contact the local field office at: Office Of The Attorney General Child Support Division 1401 Calle Del Norte Suite 6 Laredo, Texas 78041-3849 Telephone Numbers: (956) 724-1602 Fax Number: (956) 724-4915 or you can also visit the Texas Attorney General website at: https://www.texasattorneygeneral.gov/cs/"
+  },
+  {
+    "id": 88,
+    "query": "texas roadhouse glen mills pa phone number",
+    "expected_doc_ids": [
+      "c53b785bbecd20c4a61c8860889c5f3a"
+    ],
+    "ground_truth_answer": "Texas Roadhouse Address: 1051 Baltimore Pike, Glen Mills, PA 19342, United States Phone: +1 610-459-1720"
+  },
+  {
+    "id": 89,
+    "query": "the __________ test is a quick and dirty test for deciding if something is an ethical issue and useful because brand name and a person's reputation are important in business.",
+    "expected_doc_ids": [
+      "374713b3fe9e1a6d860e7ea370ae09a6"
+    ],
+    "ground_truth_answer": "â¢ The Smell Test is familiar ground in most businesses and is a good place to begin. . It is a âquick and dirtyâ test for deciding if something is an ethical issue and useful because brand name and a personâs reputation are important in business. â¢ It enlists the emotion of shame."
+  },
+  {
+    "id": 90,
+    "query": "the amendment that ensures the defendant has the right to an attorney is the ____________ amendment.",
+    "expected_doc_ids": [
+      "c3d5a1f9b0bf8bc39d5cc0cfde2ba940"
+    ],
+    "ground_truth_answer": "The fourth clause directs that the defendant has the right to confront and cross-examine, or challenge the witnesses against him or her. This is to ensure that the judge, jury, and public at large may evaluate the accuracy of the testimony made in open court. The final clause of the Sixth Amendment states that the accused has the right to be represented by an attorney. In essence, the Sixth Amendment ensures the accused is presumed to be innocent, and that the prosecution cannot establish guilt without being challenged."
+  },
+  {
+    "id": 91,
+    "query": "the bancorp routing number",
+    "expected_doc_ids": [
+      "da8ebafd5362b4bb6f3fa59a30c302dc"
+    ],
+    "ground_truth_answer": "114924742 routing number is assigned to THE BANCORP BANK, SD by ABA. Routing number 114924742 is used for ACH, check deposit and bank wire transfers."
+  },
+  {
+    "id": 92,
+    "query": "the cast of emoji movie",
+    "expected_doc_ids": [
+      "fd68824976cbe1964146ec2d7f348207"
+    ],
+    "ground_truth_answer": "The Emoji Movie is a 2017 American 3D computer-animated comedy film directed by Tony Leondis, and written by Leondis, Eric Siegel and Mike White, based on the trend of emojis. It stars the voices of T. J. Miller, James Corden, Anna Faris, Maya Rudolph, Steven Wright, Rob Riggle, Jennifer Coolidge, Christina Aguilera, SofÃ­a Vergara, Sean Hayes and Patrick Stewart. The film centers on Gene, a multi-expressional emoji who lives in a teenager's phone, and who sets out on a journey to become a ..."
+  },
+  {
+    "id": 93,
+    "query": "the collection film cast",
+    "expected_doc_ids": [
+      "6e28de95cd000991380a3d2b211a6b8a"
+    ],
+    "ground_truth_answer": "The Collection (film) The Collection is a 2012 American horror film and sequel to the 2009 film, The Collector. The film stars Randall Archer, Emma Fitzpatrick, Christopher McDonald, Lee Tergesen, and Josh Stewart, who reprises his role from the first film as Arkin. It is written by Marcus Dunstan and Patrick Melton, directed by Dunstan, and was released on November 30, 2012."
+  },
+  {
+    "id": 94,
+    "query": "does azusa pacific university negotiate salary",
+    "expected_doc_ids": [
+      "3cdc9851f4c4fe64d9a04362f669ba5e"
+    ],
+    "ground_truth_answer": "In 2015 female assistant professors at Azusa Pacific University had an effective annual salary of $99,934 USD. This is $1,071 less than female assistant professors earned in 2014, the most recently reported prior year, and a 1.1 percent decrease in effective annual salary in comparison to the previous year's average annual salary ($101,005 USD)."
+  },
+  {
+    "id": 95,
+    "query": "the definition of lend",
+    "expected_doc_ids": [
+      "9c84104f6de3252e372fe7071ac2d680"
+    ],
+    "ground_truth_answer": "Definition of lend - grant to (someone) the use of (something) on the understanding that it will be returned, contribute or add (a quality) to, accommo Definition of lend - grant to (someone) the use of (something) on the understanding that it will be returned, contribute or add (a quality) to, accommo dictionary thesaurus"
+  },
+  {
+    "id": 96,
+    "query": "the economics is or are",
+    "expected_doc_ids": [
+      "1f46237f213a09a31cdfa6f6a640e4a4"
+    ],
+    "ground_truth_answer": "The ceteris paribus rule. Economics is a social science, and, unlike the physical sciences, cannot engage in controlled experimentation to demonstrate how variables are connected. In the real world, economic variables such as price and income, are constantly changing, and this creates a problem in demonstrating the relationship between variables."
+  },
+  {
+    "id": 97,
+    "query": "the function of the olfactory nerve concerns",
+    "expected_doc_ids": [
+      "1ea88bdf3ed30d1fa207bce96c2c6997"
+    ],
+    "ground_truth_answer": "Function of the Olfactory Nerve. The olfactory nerve is responsible for your sense of smell and partially responsible for your sense of taste. It is also known as cranial nerve 1 because it is the shortest of the cranial nerves and one of only two nerves (the other is the optic nerve) that bypass the brain stem and connect directly to your brain."
+  },
+  {
+    "id": 98,
+    "query": "the largest company in each state",
+    "expected_doc_ids": [
+      "90224cf732d14fe72676ee9fefd8c115"
+    ],
+    "ground_truth_answer": "For this reason, the vast majority of the largest companies in each state are public. The largest company in all but 13 states is publicly traded. Still, there are dozens of very large corporations that never opted to make a public offering, and in many cases, these companies generate the most revenue of any enterprise in a state."
+  },
+  {
+    "id": 99,
+    "query": "does bromelain help with weight loss",
+    "expected_doc_ids": [
+      "cc4619032915d4d31f9911ebeddab971"
+    ],
+    "ground_truth_answer": "However, bromelain does not affect those white blood cells. There is pressure on blood vessels in belly fat, and bromelain might help prevent clotting that makes that pressure even worse. However, that action does not remove fat. Only you can get rid of your excess fat. And you almost certainly have to do that by eating less. Think about it. You lose fat by burning fat. Where do you burn fat?"
+  },
+  {
+    "id": 100,
+    "query": "the largest unit within which gene flow can readily occur is _____.",
+    "expected_doc_ids": [
+      "e059b056c96a8494e2256efffbf7202f"
+    ],
+    "ground_truth_answer": "The largest unit within which gene flow can readily occur is a species."
+  }
+]

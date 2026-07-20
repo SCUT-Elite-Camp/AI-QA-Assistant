@@ -22,7 +22,7 @@ class AnswerFormatter:
                 doc_id=result.doc_id,
                 chunk_id=result.chunk_id,
                 score=result.score,
-                snippet=result.chunk_text[:120],
+                snippet=result.chunk_text,
             )
             for index, result in enumerate(retrieval_results, start=1)
         ]

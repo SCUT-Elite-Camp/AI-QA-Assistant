@@ -1,59 +1,11 @@
-# OS files
 .DS_Store
-Thumbs.db
-
-# Editor/IDEs
-.vscode/
-!.vscode/extensions.json
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Python compilation/caches
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-env/
-venv/
 .venv/
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Testing & Coverage
-.pytest_cache/
-.coverage
-htmlcov/
-*.log
-logs/
-
-# Local configuration / Environment variables
-.env
-.env.*
-.flaskenv
-
-# Database & Local Transient Storage (Data Persistence Layer)
-data-persistence/data/
-data-persistence/volumes/
-
-# Node / Frontend (Web Layer)
-web/node_modules/
-web/dist/
-web/dist-ssr/
-web/*.local
-web/.nuxt/
-web/.data/
-web/.nitro/
-web/.cache/
-web/.output/
-web/.vercel/
-web/.vite/
-web/.playwright-cli/
+__pycache__/
+*.pyc
+node_modules/
+.output/
+.data/
+web/.env
 web/auto-imports.d.ts
 web/components.d.ts
-web/tsconfig.app.tsbuildinfo
-web/tsconfig.node.tsbuildinfo
+data-persistence/volumes/

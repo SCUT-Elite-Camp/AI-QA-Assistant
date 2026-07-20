@@ -16,9 +16,6 @@ class LLMClient(BaseLLM):
 
     def chat(self, messages: list[dict], tools: list[dict] = None) -> dict:
         """Calls the OpenAI-compatible chat/completions endpoint with messages and tools."""
-        if not settings.LLM_API_KEY:
-            raise LLMError("LLM API key is not configured.")
-
         endpoint = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
         payload = {
             "model": settings.LLM_MODEL,
@@ -29,13 +26,16 @@ class LLMClient(BaseLLM):
         if tools:
             payload["tools"] = tools
 
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if settings.LLM_API_KEY:
+            headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
+
         request = Request(
             endpoint,
             data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {settings.LLM_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            headers=headers,
             method="POST",
         )
 

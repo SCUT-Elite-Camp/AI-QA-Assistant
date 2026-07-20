@@ -48,12 +48,12 @@ class Settings(BaseModel):
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
     LLM_API_BASE: str = os.getenv(
         "LLM_API_BASE",
-        os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1"),
+        os.getenv("OPENAI_API_BASE", "http://127.0.0.1:11434/v1"),
     )
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.1")
     LLM_TEMPERATURE: float = _env_float("LLM_TEMPERATURE", 0.1)
     LLM_MAX_TOKENS: int = _env_int("LLM_MAX_TOKENS", 2000)
-    LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 30)
+    LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")

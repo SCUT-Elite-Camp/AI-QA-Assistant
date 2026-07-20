@@ -83,15 +83,14 @@ const quickChats = [
         <UChatPrompt
           v-model="input"
           :status="loading ? 'streaming' : 'ready'"
-          class="[view-transition-name:chat-prompt]"
+          class="[view-transition-name:chat-prompt] rounded-2xl shadow-md"
           variant="subtle"
           :ui="{ base: 'px-1.5' }"
           placeholder="Ask me anything..."
           @submit="onSubmit"
         >
           <template #footer>
-            <ModelSelect />
-            <UChatPromptSubmit color="neutral" size="sm" />
+            <UChatPromptSubmit color="neutral" size="sm" class="ms-auto" />
           </template>
         </UChatPrompt>
 

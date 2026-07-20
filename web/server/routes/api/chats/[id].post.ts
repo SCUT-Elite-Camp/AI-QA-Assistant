@@ -113,37 +113,43 @@ export default defineHandler(async (event) => {
         }
 
         const rawAnswer = agentData.answer || ""
-        const citationsList = agentData.citations || []
+        const citationsList: any[] = agentData.citations || []
 
-        // 2. Format citations as inline markdown source-links for comark with proper spacing
+        // 2. Replace [N] markers with :cite-mark{index="N"} — only pass index.
+        //    Complex attribute values (chunk text) break MDC {…} parsing when
+        //    they contain }, ", or other special characters. Chunk details are
+        //    delivered via tool-output and picked up by provide/inject instead.
         let processedAnswer = rawAnswer
         for (let i = 0; i < citationsList.length; i++) {
-          const cit = citationsList[i]
-          const index = i + 1
-          const url = cit.source_url || `https://local-document/${cit.doc_id}`
-          const label = cit.title || cit.doc_id || `Doc ${index}`
-          const favicon = `https://www.google.com/s2/favicons?sz=32&domain=example.com`
-          const replacement = `[${index}] :source-link{url="${url.replace(/"/g, '&quot;')}" favicon="${favicon}" label="${label.replace(/"/g, '&quot;')}"}`
-          processedAnswer = processedAnswer.split(`[${index}]`).join(replacement)
+          const idx = i + 1
+          processedAnswer = processedAnswer.split(`[${idx}]`).join(` :cite-mark{index="${idx}"}`)
         }
 
-        // 3. Write search tool invocation & results to trigger the Sources UI component
+
+        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
+        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
         const toolCallId = `call_${Date.now()}`
         writer.write({
           type: 'tool-input-available',
           toolCallId,
-          toolName: 'web_search',
+          toolName: 'rag_search',
           input: { query: queryText }
         })
 
         writer.write({
           type: 'tool-output-available',
           toolCallId,
-          output: citationsList.map((cit: any, idx: number) => ({
-            url: cit.source_url || `https://local-document/${cit.doc_id}`,
-            title: cit.title || cit.doc_id || `Document ${idx + 1}`
+          output: citationsList.map((cit: any, i: number) => ({
+            index: i + 1,
+            doc_id: cit.doc_id || `doc_${i}`,
+            chunk_id: cit.chunk_id || `chunk_${i}`,
+            title: cit.title || cit.doc_id || `Document ${i + 1}`,
+            source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+            chunk_text: cit.snippet || '',
+            score: cit.score ?? null,
           }))
         })
+
 
         // 4. Stream answer text chunk-by-chunk to simulate real-time typing
         const responseId = `assistant-msg-${Date.now()}`

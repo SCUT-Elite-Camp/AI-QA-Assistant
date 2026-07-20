@@ -76,10 +76,6 @@ defineShortcuts({
           to="/"
           class="flex items-center gap-0.5"
         >
-          <UIcon
-            name="i-logos-vue"
-            class="h-5 w-auto shrink-0"
-          />
           <span class="text-xl font-bold text-highlighted">Chat</span>
         </ULink>
 
