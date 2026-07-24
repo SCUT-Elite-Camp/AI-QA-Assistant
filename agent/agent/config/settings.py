@@ -44,6 +44,7 @@ class Settings(BaseModel):
         le=1.0,
     )
     DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
+    TOOL_AUTOLOAD_ENABLED: bool = _env_bool("TOOL_AUTOLOAD_ENABLED", True)
 
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
     LLM_API_BASE: str = os.getenv(

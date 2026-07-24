@@ -1,6 +1,7 @@
 import json
 import pytest
 import sys
+from types import ModuleType, SimpleNamespace
 from pathlib import Path
 
 # Add agent and project root folders to sys.path
@@ -11,6 +12,20 @@ if str(agent_dir) not in sys.path:
     sys.path.insert(0, str(agent_dir))
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
+# Persistence is optional for Agent unit tests. Provide an import-only fallback
+# when pymilvus is not installed; retrieval calls remain explicitly mocked.
+try:
+    import pymilvus  # noqa: F401
+except ModuleNotFoundError:
+    pymilvus_stub = ModuleType("pymilvus")
+    pymilvus_stub.connections = SimpleNamespace()
+    pymilvus_stub.utility = SimpleNamespace()
+    pymilvus_stub.Collection = object
+    pymilvus_stub.CollectionSchema = object
+    pymilvus_stub.FieldSchema = object
+    pymilvus_stub.DataType = SimpleNamespace()
+    sys.modules["pymilvus"] = pymilvus_stub
 
 
 @pytest.fixture(autouse=True)
@@ -57,8 +72,11 @@ def mock_llm_client_chat(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def mock_sqlite_db_path(monkeypatch, tmp_path):
+def mock_sqlite_db_path(monkeypatch, tmp_path, request):
     """Redirects the SQLite database to a temporary location for tests to ensure cleanliness."""
+    if request.node.get_closest_marker("no_storage"):
+        return
+
     from storage.chat_history_store import ChatHistoryStore
     db_file = tmp_path / "test_chat_history.db"
     

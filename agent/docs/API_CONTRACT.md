@@ -157,3 +157,26 @@ Full Tool Layer contract is in `docs/tool_layer_interface.md`.
 - `done`
 
 This endpoint reuses the normal chat response and emits demo streaming events. The stable integration contract remains `POST /api/chat`.
+
+## GET /api/tools
+
+Returns metadata from the Agent-owned ToolRegistry:
+
+```json
+[
+  {
+    "name": "search_documents",
+    "description": "Search the document database...",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": ["query"]
+    },
+    "enabled": true
+  }
+]
+```
+
+The OpenAI function-calling representation is available internally through
+`registry.to_openai_schemas()` and is intentionally separate from this public
+metadata response. See `docs/tool_registry.md` for the complete contract.

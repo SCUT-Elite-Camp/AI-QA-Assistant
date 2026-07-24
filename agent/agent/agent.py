@@ -8,7 +8,8 @@ from agent.formatter.answer_formatter import AnswerFormatter
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from toolset.tool_layer import ToolRegistry, SearchTool, BaseTool
+from agent.tools import ToolRegistry
+from toolset.tool_layer import SearchTool, BaseTool
 from agent.service import TraceService, AuditService
 
 

@@ -117,9 +117,13 @@ USE_MOCK_LLM=false
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
+TOOL_AUTOLOAD_ENABLED=true
 ```
 
 本地 Ollama 启动后，默认会走兼容 OpenAI Chat Completions 的 `/v1/chat/completions` 接口，因此可以直接接 `llama3.1`，不需要配置 `LLM_API_KEY`。
+
+CP2 工具注册表接口及 `/api/tools` 返回结构见
+[`docs/tool_registry.md`](docs/tool_registry.md)。
 
 ## 分工建议
 
