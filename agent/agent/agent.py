@@ -8,8 +8,9 @@ from agent.formatter.answer_formatter import AnswerFormatter
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from agent.tools import ToolRegistry
+from agent.tools import ToolRegistryAdapter
 from toolset.tool_layer import SearchTool, BaseTool
+from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
 from agent.service import TraceService, AuditService
 
 
@@ -29,8 +30,9 @@ class Agent:
         self.trace_service = TraceService()
         self.audit_service = AuditService()
 
-        # Load tools using ToolRegistry
-        self.registry = ToolRegistry(tools=tools)
+        # Toolset owns registration; Agent only consumes it through an adapter.
+        toolset_registry = ToolsetRegistry(tools=tools)
+        self.registry = ToolRegistryAdapter(toolset_registry)
 
         # Inject min_score config into SearchTool
         search_tool = self.registry.get_tool("search_documents")

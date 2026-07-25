@@ -160,7 +160,8 @@ This endpoint reuses the normal chat response and emits demo streaming events. T
 
 ## GET /api/tools
 
-Returns metadata from the Agent-owned ToolRegistry:
+Returns metadata from the Toolset-owned ToolRegistry through the Agent's
+read-only adapter:
 
 ```json
 [

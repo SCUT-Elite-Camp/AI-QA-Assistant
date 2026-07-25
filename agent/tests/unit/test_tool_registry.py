@@ -2,8 +2,10 @@ from typing import Any
 
 import pytest
 
-from agent.tools import DuplicateToolError, InvalidToolError, ToolRegistry
+from agent.tools import ToolRegistryAdapter
 from toolset.tool_layer import BaseTool
+from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
+
 
 pytestmark = pytest.mark.no_storage
 
@@ -19,7 +21,7 @@ class FakeTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "A fake tool used by registry tests."
+        return "A fake tool owned by the Toolset registry."
 
     @property
     def parameters(self) -> dict[str, Any]:
@@ -33,59 +35,49 @@ class FakeTool(BaseTool):
         return kwargs["value"]
 
 
-def test_register_get_list_and_unregister_tool() -> None:
-    registry = ToolRegistry(tools=[])
+def test_adapter_get_delegates_to_toolset_registry() -> None:
     tool = FakeTool()
+    owner = ToolsetRegistry(tools=[tool])
+    adapter = ToolRegistryAdapter(owner)
 
-    registry.register(tool)
-
-    assert registry.get("fake_tool") is tool
-    assert registry.list_tools() == [tool]
-
-    registry.unregister("fake_tool")
-
-    assert registry.get("fake_tool") is None
-    assert registry.list_tools() == []
+    assert adapter.get("fake_tool") is tool
+    assert adapter.get("missing_tool") is None
 
 
-def test_register_rejects_duplicate_name_by_default() -> None:
-    registry = ToolRegistry(tools=[FakeTool()])
+def test_adapter_lists_toolset_owned_tools() -> None:
+    first = FakeTool("first_tool")
+    second = FakeTool("second_tool")
+    owner = ToolsetRegistry(tools=[first, second])
+    adapter = ToolRegistryAdapter(owner)
 
-    with pytest.raises(DuplicateToolError, match="already registered"):
-        registry.register(FakeTool())
-
-
-def test_register_can_explicitly_overwrite_duplicate_name() -> None:
-    original = FakeTool()
-    replacement = FakeTool(enabled=False)
-    registry = ToolRegistry(tools=[original])
-
-    registry.register(replacement, overwrite=True)
-
-    assert registry.get("fake_tool") is replacement
+    assert adapter.list_tools() == [first, second]
 
 
-def test_unregister_rejects_unknown_name() -> None:
-    registry = ToolRegistry(tools=[])
+def test_adapter_does_not_keep_a_second_tool_mapping() -> None:
+    adapter = ToolRegistryAdapter(ToolsetRegistry(tools=[FakeTool()]))
 
-    with pytest.raises(KeyError, match="not registered"):
-        registry.unregister("missing_tool")
-
-
-def test_register_rejects_invalid_tool_contract() -> None:
-    registry = ToolRegistry(tools=[])
-
-    with pytest.raises(InvalidToolError, match="name"):
-        registry.register(object())  # type: ignore[arg-type]
+    assert "_tools" not in vars(adapter)
 
 
-def test_to_openai_schemas_uses_tool_contract() -> None:
+def test_toolset_updates_are_immediately_visible_through_adapter() -> None:
+    first = FakeTool("first_tool")
+    second = FakeTool("second_tool")
+    owner = ToolsetRegistry(tools=[first])
+    adapter = ToolRegistryAdapter(owner)
+
+    owner.register_tool(second)
+
+    assert adapter.get("second_tool") is second
+    assert adapter.list_tools() == [first, second]
+
+
+def test_openai_schemas_are_generated_by_toolset_registry() -> None:
     tool = FakeTool()
-    registry = ToolRegistry(tools=[tool])
+    owner = ToolsetRegistry(tools=[tool])
+    adapter = ToolRegistryAdapter(owner)
 
-    schemas = registry.to_openai_schemas()
-
-    assert schemas == [
+    assert adapter.to_openai_schemas() == owner.get_tool_schemas()
+    assert adapter.to_openai_schemas() == [
         {
             "type": "function",
             "function": {
@@ -97,42 +89,25 @@ def test_to_openai_schemas_uses_tool_contract() -> None:
     ]
 
 
-def test_list_tool_metadata_contains_enabled_state() -> None:
-    registry = ToolRegistry(tools=[FakeTool(enabled=False)])
+def test_adapter_exposes_public_tool_metadata() -> None:
+    tool = FakeTool(enabled=False)
+    adapter = ToolRegistryAdapter(ToolsetRegistry(tools=[tool]))
 
-    assert registry.list_tool_metadata() == [
+    assert adapter.list_tool_metadata() == [
         {
             "name": "fake_tool",
-            "description": "A fake tool used by registry tests.",
-            "parameters": FakeTool().parameters,
+            "description": tool.description,
+            "parameters": tool.parameters,
             "enabled": False,
         }
     ]
 
 
-def test_load_tools_isolates_loader_failures() -> None:
-    registry = ToolRegistry(tools=[])
-
-    def broken_loader() -> FakeTool:
-        raise RuntimeError("optional dependency missing")
-
-    def working_loader() -> FakeTool:
-        return FakeTool()
-
-    errors = registry.load_tools([broken_loader, working_loader])
-
-    assert len(errors) == 1
-    assert "broken_loader" in errors[0]
-    assert "optional dependency missing" in errors[0]
-    assert registry.get("fake_tool") is not None
-
-
-def test_legacy_method_aliases_remain_available() -> None:
+def test_cp1_read_aliases_remain_available() -> None:
     tool = FakeTool()
-    registry = ToolRegistry(tools=[])
+    owner = ToolsetRegistry(tools=[tool])
+    adapter = ToolRegistryAdapter(owner)
 
-    registry.register_tool(tool)
-
-    assert registry.get_tool("fake_tool") is tool
-    assert registry.get_all_tools() == [tool]
-    assert registry.get_tool_schemas() == registry.to_openai_schemas()
+    assert adapter.get_tool("fake_tool") is tool
+    assert adapter.get_all_tools() == [tool]
+    assert adapter.get_tool_schemas() == owner.get_tool_schemas()

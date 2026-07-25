@@ -1,7 +1,3 @@
-from agent.tools.registry import DuplicateToolError, InvalidToolError, ToolRegistry
+from agent.tools.registry import ToolRegistryAdapter
 
-__all__ = [
-    "DuplicateToolError",
-    "InvalidToolError",
-    "ToolRegistry",
-]
+__all__ = ["ToolRegistryAdapter"]
