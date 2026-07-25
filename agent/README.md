@@ -132,6 +132,9 @@ CP2 查询重写接口、失败回退和推荐接入顺序见
 CP2 澄清判断场景、失败降级和推荐接入顺序见
 [`docs/clarification.md`](docs/clarification.md)。
 
+CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
+[`docs/query_plan_contract.md`](docs/query_plan_contract.md)。
+
 ## 分工建议
 
 成员 A：Agent 业务主流程负责人，也就是 xdj
