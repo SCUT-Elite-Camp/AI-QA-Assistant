@@ -1,56 +1,59 @@
-# CP2 Clarifier 接口说明
+# CP2 Clarifier Contract
 
-## 目标
+## Purpose
 
-`Clarifier` 在查询重写和检索之前判断用户问题是否缺少必要信息。
-只有无法从会话历史安全确定真实意图时才要求用户澄清。
+`Clarifier` determines whether required information is missing before query
+rewriting or retrieval. It should request clarification only when the user's
+intent cannot be safely resolved from conversation history.
 
-## 接口
+## Interface
 
 ```python
 from agent.query import Clarifier, ClarificationDecision
 
 decision = Clarifier().evaluate(
-    query="它有什么问题？",
+    query="What is wrong with it?",
     history=[],
 )
 ```
 
-返回示例：
+Example result:
 
 ```python
 ClarificationDecision(
     needs_clarification=True,
-    question="请问你指的是 Agent 层、Web 层，还是整个项目？",
-    reason="问题缺少明确的业务对象",
+    question="Do you mean the Agent layer, the Web layer, or the whole project?",
+    reason="The business object is missing.",
 )
 ```
 
-## 应当澄清
+## Clarification Is Required When
 
-- “它”“这个”“那个”无法从历史确定指代。
-- 问题只有“怎么做”“有什么问题”等表述，没有主题。
-- 一个问题可能对应多个明显不同的业务对象。
-- 检索必须依赖缺失的时间、模块、文档或范围条件。
+- a reference such as “it”, “this”, or “that” cannot be resolved from history;
+- the query contains an action but no subject;
+- the query may refer to multiple clearly different business objects;
+- retrieval requires a missing time, module, document, or scope constraint.
 
-## 不应澄清
+## Clarification Is Not Required When
 
-- 问题虽短但含义明确，例如“什么是 RAG？”。
-- 会话历史已经能够确定指代。
-- 查询重写即可把问题变成独立检索查询。
-- 只是措辞不规范，但真实意图明确。
+- the query is short but semantically clear, such as “What is RAG?”;
+- conversation history resolves the reference;
+- query rewriting can safely make the query standalone;
+- wording is informal but intent is unambiguous.
 
-## 配置
+## Configuration
 
 ```env
 CLARIFICATION_ENABLED=true
 ```
 
-设置为 `false` 时不调用模型，直接继续后续流程。
+When disabled, the component does not call the model and allows the request to
+continue.
 
-## 失败降级
+## Failure Fallback
 
-模型异常、非法 JSON、缺少字段，或模型判断需要澄清却没有返回问题时：
+If the model fails, returns invalid JSON, omits required fields, or claims that
+clarification is needed without returning a question, the component returns:
 
 ```python
 ClarificationDecision(
@@ -60,30 +63,31 @@ ClarificationDecision(
 )
 ```
 
-辅助判断失败时默认继续流程，避免阻塞所有问答。
+An auxiliary decision failure must not block all requests.
 
-## 推荐接入顺序
+## Recommended Integration Order
 
 ```text
-请求参数校验
+Validate request
     ↓
-按 session_id 读取会话历史
+Load conversation history
     ↓
 Clarifier.evaluate(query, history)
-    ├─ 需要澄清
+    ├─ clarification required
     │    ↓
-    │  返回 clarification_required
+    │  return clarification_required
     │    ↓
-    │  将澄清问题写入 ConversationMemory
+    │  save the clarification turn
     │
-    └─ 不需要澄清
+    └─ no clarification required
          ↓
-       QueryRewriter.rewrite(query, history)
+       QueryRewriter / Query Understanding
          ↓
-       SearchTool
+       retrieval
 ```
 
-触发澄清时不得调用查询重写或 SearchTool。
+When clarification is required, QueryRewriter and business tools must not be
+called.
 
-当前提交提供 Clarifier、`ClarificationDecision` 和
-`StatusCode.CLARIFICATION_REQUIRED`，暂不修改 `Agent.chat()`。
+The current Clarifier is an internal Query Understanding component. Its result
+will eventually populate the clarification fields of `QueryPlan`.

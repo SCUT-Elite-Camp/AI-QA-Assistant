@@ -1,67 +1,75 @@
-# CP2 QueryRewriter 接口说明
+# CP2 QueryRewriter Contract
 
-## 目标
+## Purpose
 
-`QueryRewriter` 结合当前用户问题和会话历史，生成可以独立理解、适合知识库检索的查询。
-重写只服务于检索，最终回答仍必须针对用户的原始问题。
+`QueryRewriter` combines the current user query with conversation history to
+produce a standalone query suitable for knowledge retrieval.
 
-## 接口
+Rewriting affects retrieval only. The final answer must still address the
+user's original query.
+
+## Interface
 
 ```python
 from agent.query import QueryRewriter, RewriteResult
 
 result = QueryRewriter().rewrite(
-    query="那它有哪些不足？",
+    query="What are its limitations?",
     history=[
-        {"role": "user", "content": "介绍 Agent 层的 Q1 成果"},
-        {"role": "assistant", "content": "Agent 层完成了单轮 RAG 流程。"},
+        {"role": "user", "content": "Describe the Agent Q1 deliverables."},
+        {"role": "assistant", "content": "Q1 implemented a single-turn RAG flow."},
     ],
 )
 ```
 
-返回：
+Result:
 
 ```python
 RewriteResult(
-    original_query="那它有哪些不足？",
-    rewritten_query="Agent 层 Q1 阶段当前实现有哪些不足？",
+    original_query="What are its limitations?",
+    rewritten_query="What are the limitations of the Agent Q1 implementation?",
     changed=True,
-    reason="结合历史补全指代对象",
+    reason="Resolved the pronoun using conversation history.",
 )
 ```
 
-## 行为约定
+## Behavioral Rules
 
-- 不改变用户原始意图。
-- 不添加对话历史中不存在的事实。
-- 保留模块名、接口名、代码标识符和专业术语。
-- 明确的问题可以保持原文。
-- `original_query` 由程序保存，不采用模型返回的原问题。
-- 历史仅接受 `user` 和 `assistant` 的字符串消息。
-- 模型异常、非法 JSON、空结果或结构校验失败时，回退到原始问题。
+- Do not change the user's intent.
+- Do not introduce facts that are absent from the conversation.
+- Preserve module names, interface names, code identifiers, and technical
+  terminology.
+- Keep the original query when it is already clear.
+- `original_query` is populated by application code, not trusted from model
+  output.
+- Only string messages with `user` or `assistant` roles are included in
+  history.
+- Fall back to the original query when the model fails, returns invalid JSON,
+  returns an empty query, or fails schema validation.
 
-## 配置
+## Configuration
 
 ```env
 QUERY_REWRITE_ENABLED=true
 ```
 
-设置为 `false` 时不调用模型，直接返回原始问题。
+When disabled, the component does not call the model and returns the original
+query.
 
-## 推荐接入顺序
+## Recommended Integration Order
 
 ```text
-按 session_id 读取会话历史
+Load conversation history by session_id
     ↓
-判断是否需要澄清
+Evaluate clarification
     ↓
 QueryRewriter.rewrite(query, history)
     ↓
-将 rewritten_query 传给 SearchTool
+Pass rewritten_query to retrieval
     ↓
-使用 original_query 生成最终回答
+Generate the final answer for original_query
 ```
 
-当前提交只提供可独立测试的 QueryRewriter，不在 `Agent.chat()` 中提前接入。
-待 ConversationMemory 和澄清接口就绪后，再按上述顺序完成集成。
-
+The current implementation is an internal Query Understanding component. It
+will eventually populate `QueryPlan.standalone_query`; it is not intended to
+remain a separate input to Agent Runner.
