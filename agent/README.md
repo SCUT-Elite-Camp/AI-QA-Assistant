@@ -124,16 +124,16 @@ CLARIFICATION_ENABLED=true
 本地 Ollama 启动后，默认会走兼容 OpenAI Chat Completions 的 `/v1/chat/completions` 接口，因此可以直接接 `llama3.1`，不需要配置 `LLM_API_KEY`。
 
 CP2 工具注册表接口及 `/api/tools` 返回结构见
-[`docs/tool_registry.md`](docs/tool_registry.md)。
+[`docs/cp2/tool_registry.md`](docs/cp2/tool_registry.md)。
 
 CP2 查询重写接口、失败回退和推荐接入顺序见
-[`docs/query_rewriter.md`](docs/query_rewriter.md)。
+[`docs/cp2/query_rewriter.md`](docs/cp2/query_rewriter.md)。
 
 CP2 澄清判断场景、失败降级和推荐接入顺序见
-[`docs/clarification.md`](docs/clarification.md)。
+[`docs/cp2/clarification.md`](docs/cp2/clarification.md)。
 
 CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
-[`docs/query_plan_contract.md`](docs/query_plan_contract.md)。
+[`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)。
 
 ## 分工建议
 
@@ -163,7 +163,7 @@ CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
 - Web 联调
 - Bug 修复
 - Demo 问题集验证
-- `docs/integration_record.md`
+- `docs/cp1/integration_record.md`
 
 ## Git 协作建议
 
@@ -186,6 +186,6 @@ CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
 
 - 普通问答接口：`POST /api/chat`。
 - SSE 演示接口：`POST /api/chat/stream`。
-- Web 联调说明见 `docs/web_integration_guide.md`。
+- Web 联调说明见 `docs/cp1/web_integration_guide.md`。
 - Demo 问题集见 `mock/demo_questions.json`。
-- 最终交接说明见 `docs/final_handoff.md`。
+- 最终交接说明见 `docs/cp1/final_handoff.md`。

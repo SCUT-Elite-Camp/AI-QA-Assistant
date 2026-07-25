@@ -30,5 +30,5 @@
 - Web 联调
 - Bug 修复
 - Demo 问题集验证
-- `docs/integration_record.md`
+- `docs/cp1/integration_record.md`
 

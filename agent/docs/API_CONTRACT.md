@@ -132,7 +132,7 @@ The adapter converts Tool Layer `dict` results into `RetrievalResult` with:
 - `source_url`
 - `score`
 
-Full Tool Layer contract is in `docs/tool_layer_interface.md`.
+Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
 ## Mode Switches
 
@@ -180,4 +180,4 @@ read-only adapter:
 
 The OpenAI function-calling representation is available internally through
 `registry.to_openai_schemas()` and is intentionally separate from this public
-metadata response. See `docs/tool_registry.md` for the complete contract.
+metadata response. See `docs/cp2/tool_registry.md` for the complete contract.

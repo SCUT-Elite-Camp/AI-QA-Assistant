@@ -87,4 +87,3 @@ Clarifier.evaluate(query, history)
 
 当前提交提供 Clarifier、`ClarificationDecision` 和
 `StatusCode.CLARIFICATION_REQUIRED`，暂不修改 `Agent.chat()`。
-
