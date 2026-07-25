@@ -119,6 +119,7 @@ LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
 TOOL_AUTOLOAD_ENABLED=true
 QUERY_REWRITE_ENABLED=true
+CLARIFICATION_ENABLED=true
 ```
 
 本地 Ollama 启动后，默认会走兼容 OpenAI Chat Completions 的 `/v1/chat/completions` 接口，因此可以直接接 `llama3.1`，不需要配置 `LLM_API_KEY`。
@@ -128,6 +129,9 @@ CP2 工具注册表接口及 `/api/tools` 返回结构见
 
 CP2 查询重写接口、失败回退和推荐接入顺序见
 [`docs/query_rewriter.md`](docs/query_rewriter.md)。
+
+CP2 澄清判断场景、失败降级和推荐接入顺序见
+[`docs/clarification.md`](docs/clarification.md)。
 
 ## 分工建议
 

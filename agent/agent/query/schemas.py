@@ -8,3 +8,11 @@ class RewriteResult(BaseModel):
     rewritten_query: str
     changed: bool
     reason: str = ""
+
+
+class ClarificationDecision(BaseModel):
+    """Decision made before query rewriting and retrieval."""
+
+    needs_clarification: bool
+    question: str = ""
+    reason: str = ""
