@@ -44,6 +44,10 @@ class Settings(BaseModel):
         le=1.0,
     )
     DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
+    QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
+        "QUERY_UNDERSTANDING_ENABLED",
+        True,
+    )
     QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
 

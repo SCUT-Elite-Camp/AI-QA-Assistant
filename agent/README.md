@@ -117,6 +117,7 @@ USE_MOCK_LLM=false
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
+QUERY_UNDERSTANDING_ENABLED=true
 QUERY_REWRITE_ENABLED=true
 CLARIFICATION_ENABLED=true
 ```
@@ -134,6 +135,9 @@ CP2 澄清判断场景、失败降级和推荐接入顺序见
 
 CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
 [`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)。
+
+CP2 意图分类组件、失败回退和 QueryPlan 映射约定见
+[`docs/cp2/intent_classifier.md`](docs/cp2/intent_classifier.md)。
 
 ## 分工建议
 

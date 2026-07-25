@@ -16,6 +16,23 @@ class QueryIntent(StrEnum):
     UNSUPPORTED = "unsupported"
 
 
+class IntentResult(BaseModel):
+    """Internal structured result produced by IntentClassifier."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    intent: QueryIntent
+    confidence: float = Field(ge=0.0, le=1.0)
+    is_follow_up: bool = False
+    is_clarification_reply: bool = False
+    reason: str = ""
+
+    @field_validator("reason")
+    @classmethod
+    def strip_reason(cls, value: str) -> str:
+        return value.strip()
+
+
 class QueryPlan(BaseModel):
     """Shared output contract of CP2 Query Understanding."""
 
