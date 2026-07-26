@@ -6,6 +6,8 @@ import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { MODELS } from '../../../../shared/utils/models'
+import { logger } from '../../../utils/logger'
+import { recordAiCall } from '../../../utils/metrics'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
@@ -74,6 +76,7 @@ export default defineHandler(async (event) => {
 
         // 1. Call real Python Agent API (port 8000)
         const agentUrl = "http://127.0.0.1:8000/api/chat"
+        const aiCallStart = Date.now()
         const agentRes = await fetch(agentUrl, {
           method: "POST",
           headers: { 
@@ -92,6 +95,7 @@ export default defineHandler(async (event) => {
         }
 
         const agentData = await agentRes.json()
+        recordAiCall(Date.now() - aiCallStart)
 
         if (agentData.status !== "success") {
           const errMsg = agentData.message || "RAG retrieval error from Agent layer"

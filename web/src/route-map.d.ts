@@ -38,6 +38,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/__debug/metrics': RouteRecordInfo<
+      '/__debug/metrics',
+      '/__debug/metrics',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/chat/[id]': RouteRecordInfo<
       '/chat/[id]',
       '/chat/:id',
@@ -61,6 +68,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/index.vue': {
       routes:
         | '/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/__debug/metrics.vue': {
+      routes:
+        | '/__debug/metrics'
       views:
         | never
       pathParamNames:
