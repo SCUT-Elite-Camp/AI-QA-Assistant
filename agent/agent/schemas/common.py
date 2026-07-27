@@ -7,4 +7,7 @@ class StatusCode(StrEnum):
     RETRIEVAL_ERROR = "retrieval_error"
     LLM_ERROR = "llm_error"
     CLARIFICATION_REQUIRED = "clarification_required"
+    AGENT_LIMIT_REACHED = "agent_limit_reached"
+    TOOL_ERROR = "tool_error"
+    UNSUPPORTED = "unsupported"
 

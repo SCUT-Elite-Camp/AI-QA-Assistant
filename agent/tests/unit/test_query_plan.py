@@ -1,10 +1,17 @@
 import pytest
 from pydantic import ValidationError
 
-from agent.query import QueryIntent, QueryPlan
+from agent.query import QueryIntent as QueryIntentFromQuery
+from agent.query import QueryPlan as QueryPlanFromQuery
+from agent.schemas.query_plan import QueryIntent, QueryPlan
 
 
 pytestmark = pytest.mark.no_storage
+
+
+def test_query_package_reexports_the_canonical_contract() -> None:
+    assert QueryIntentFromQuery is QueryIntent
+    assert QueryPlanFromQuery is QueryPlan
 
 
 def test_query_intent_contains_cp2_supported_values() -> None:

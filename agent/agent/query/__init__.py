@@ -1,6 +1,7 @@
 from agent.query.clarifier import Clarifier
 from agent.query.intent_classifier import IntentClassifier
 from agent.query.rewriter import QueryRewriter
+from agent.query.understanding import QueryUnderstanding
 from agent.query.schemas import (
     ClarificationDecision,
     IntentResult,
@@ -17,5 +18,6 @@ __all__ = [
     "QueryIntent",
     "QueryPlan",
     "QueryRewriter",
+    "QueryUnderstanding",
     "RewriteResult",
 ]
