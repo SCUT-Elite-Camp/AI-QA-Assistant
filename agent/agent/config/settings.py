@@ -50,6 +50,10 @@ class Settings(BaseModel):
     )
     QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
+    TOOL_TIMEOUT_MS: int = Field(
+        default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 10000),
+        gt=0,
+    )
 
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
     LLM_API_BASE: str = os.getenv(
