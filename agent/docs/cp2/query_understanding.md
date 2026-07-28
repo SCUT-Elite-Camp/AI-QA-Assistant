@@ -23,7 +23,7 @@ IntentClassifier
         ↓
 Clarifier
         ├── clarification required → keep the original query and stop rewriting
-        └── sufficient context → QueryRewriter
+        └── sufficient context → QueryRewriter → QueryPlanner
         ↓
 QueryPlan
 ```
@@ -35,12 +35,17 @@ QueryPlan
 - It returns only `QueryPlan`; internal component result types are not public
   Runner inputs.
 - `original_query` preserves the exact `ChatRequest.query`.
-- Request filters are copied into the plan and are never mutated in place.
-- Sub-query generation and semantic filter extraction are not implemented in
-  this first orchestration version.
+- QueryPlanner generates at most four normalized, unique sub-queries. Comparison
+  queries normally produce one self-contained query per target.
+- Semantic filters are restricted to Toolset-supported keys: `doc_id`,
+  `doc_ids`, `space`, and `doc_type`.
+- Request filters are copied, never mutated in place, and override semantic
+  filters with the same key because caller-provided constraints are authoritative.
+- Clarification short-circuits both rewriting and planning.
 
 ## Failure Behavior
 
 IntentClassifier, Clarifier, and QueryRewriter each provide their own safe
-fallback. QueryUnderstanding validates the combined result through the
+fallback. QueryPlanner falls back to empty sub-queries and filters, so retrieval
+can still use `standalone_query`. QueryUnderstanding validates the combined result through the
 canonical `agent.schemas.query_plan.QueryPlan` model.

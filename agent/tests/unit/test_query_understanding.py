@@ -6,6 +6,7 @@ from agent.query import (
     ClarificationDecision,
     IntentResult,
     QueryIntent,
+    QueryEnrichment,
     QueryUnderstanding,
     RewriteResult,
 )
@@ -17,7 +18,7 @@ pytestmark = pytest.mark.no_storage
 def _components(
     *,
     clarification: ClarificationDecision | None = None,
-) -> tuple[Mock, Mock, Mock]:
+) -> tuple[Mock, Mock, Mock, Mock]:
     classifier = Mock()
     classifier.classify.return_value = IntentResult(
         intent=QueryIntent.KNOWLEDGE_QA,
@@ -39,12 +40,18 @@ def _components(
         changed=True,
         reason="resolved_reference",
     )
-    return classifier, clarifier, rewriter
+    planner = Mock()
+    planner.enrich.return_value = QueryEnrichment(
+        sub_queries=["What is the leave policy for interns?"],
+        filters={"doc_type": "policy"},
+        reason="focused retrieval",
+    )
+    return classifier, clarifier, rewriter, planner
 
 
 def test_analyze_combines_internal_results_into_query_plan() -> None:
-    classifier, clarifier, rewriter = _components()
-    service = QueryUnderstanding(classifier, clarifier, rewriter)
+    classifier, clarifier, rewriter, planner = _components()
+    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
 
     plan = service.analyze(
         "What about interns?",
@@ -58,11 +65,16 @@ def test_analyze_combines_internal_results_into_query_plan() -> None:
     assert plan.intent_confidence == 0.91
     assert plan.is_follow_up is True
     assert plan.needs_clarification is False
-    assert plan.filters == {"space_key": "HR"}
+    assert plan.sub_queries == ["What is the leave policy for interns?"]
+    assert plan.filters == {"doc_type": "policy", "space_key": "HR"}
+    planner.enrich.assert_called_once_with(
+        "What is the leave policy for interns?",
+        QueryIntent.KNOWLEDGE_QA,
+    )
 
 
 def test_clarification_stops_query_rewriting() -> None:
-    classifier, clarifier, rewriter = _components(
+    classifier, clarifier, rewriter, planner = _components(
         clarification=ClarificationDecision(
             needs_clarification=True,
             question="Which two versions should be compared?",
@@ -74,7 +86,7 @@ def test_clarification_stops_query_rewriting() -> None:
         confidence=0.95,
         reason="comparison request",
     )
-    service = QueryUnderstanding(classifier, clarifier, rewriter)
+    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
 
     plan = service.analyze("Compare them.", [])
 
@@ -82,17 +94,18 @@ def test_clarification_stops_query_rewriting() -> None:
     assert plan.clarification_question == "Which two versions should be compared?"
     assert plan.standalone_query == "Compare them."
     rewriter.rewrite.assert_not_called()
+    planner.enrich.assert_not_called()
 
 
 def test_analyze_preserves_exact_original_query() -> None:
-    classifier, clarifier, rewriter = _components()
+    classifier, clarifier, rewriter, planner = _components()
     rewriter.rewrite.return_value = RewriteResult(
         original_query="  What is RAG?  ",
         rewritten_query="What is RAG?",
         changed=False,
         reason="already standalone",
     )
-    service = QueryUnderstanding(classifier, clarifier, rewriter)
+    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
 
     plan = service.analyze("  What is RAG?  ")
 
@@ -101,8 +114,8 @@ def test_analyze_preserves_exact_original_query() -> None:
 
 
 def test_analyze_does_not_mutate_history_or_filters() -> None:
-    classifier, clarifier, rewriter = _components()
-    service = QueryUnderstanding(classifier, clarifier, rewriter)
+    classifier, clarifier, rewriter, planner = _components()
+    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
     history = [{"role": "user", "content": "Previous question"}]
     filters = {"labels": ["cp2"]}
 
@@ -113,10 +126,25 @@ def test_analyze_does_not_mutate_history_or_filters() -> None:
     assert filters == {"labels": ["cp2"]}
 
 
+def test_explicit_filters_override_semantic_filters() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    planner.enrich.return_value = QueryEnrichment(
+        filters={"space": "model-space", "doc_type": "pdf"},
+    )
+    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
+
+    plan = service.analyze(
+        "What about interns?",
+        filters={"space": "request-space"},
+    )
+
+    assert plan.filters == {"space": "request-space", "doc_type": "pdf"}
+
+
 @pytest.mark.parametrize("query", ["", "   ", None])
 def test_analyze_rejects_invalid_query(query: str | None) -> None:
-    classifier, clarifier, rewriter = _components()
-    service = QueryUnderstanding(classifier, clarifier, rewriter)
+    classifier, clarifier, rewriter, planner = _components()
+    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
 
     with pytest.raises(ValueError, match="non-empty"):
         service.analyze(query)  # type: ignore[arg-type]

@@ -3,6 +3,7 @@ from typing import Any
 
 from agent.query.clarifier import Clarifier
 from agent.query.intent_classifier import IntentClassifier
+from agent.query.planner import QueryPlanner
 from agent.query.rewriter import QueryRewriter
 from agent.schemas.query_plan import QueryPlan
 
@@ -15,10 +16,12 @@ class QueryUnderstanding:
         intent_classifier: IntentClassifier | None = None,
         clarifier: Clarifier | None = None,
         query_rewriter: QueryRewriter | None = None,
+        query_planner: QueryPlanner | None = None,
     ) -> None:
         self.intent_classifier = intent_classifier or IntentClassifier()
         self.clarifier = clarifier or Clarifier()
         self.query_rewriter = query_rewriter or QueryRewriter()
+        self.query_planner = query_planner or QueryPlanner()
 
     def analyze(
         self,
@@ -39,9 +42,18 @@ class QueryUnderstanding:
 
         if clarification.needs_clarification:
             standalone_query = query.strip()
+            sub_queries: list[str] = []
         else:
             rewrite = self.query_rewriter.rewrite(query, readonly_history)
             standalone_query = rewrite.rewritten_query
+            enrichment = self.query_planner.enrich(
+                standalone_query,
+                intent.intent,
+            )
+            sub_queries = enrichment.sub_queries
+            semantic_filters = enrichment.filters
+            semantic_filters.update(plan_filters)
+            plan_filters = semantic_filters
 
         return QueryPlan(
             original_query=query,
@@ -53,5 +65,6 @@ class QueryUnderstanding:
             needs_clarification=clarification.needs_clarification,
             clarification_question=clarification.question,
             ambiguity_reason=clarification.reason,
+            sub_queries=sub_queries,
             filters=plan_filters,
         )
