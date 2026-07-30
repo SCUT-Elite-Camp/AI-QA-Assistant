@@ -28,6 +28,10 @@ D:\ix\ai\AI-QA-Assistant\.venv\Scripts\python.exe -m pytest agent/tests/unit age
 Result on 2026-07-30: **196 passed**, with only dependency deprecation
 warnings from `pymilvus` and `environs`.
 
+The complete Agent suite (`pytest agent/tests -q`) also passed **205 tests**.
+The adjacent Toolset suite passed **13 tests**. Data Persistence passed **1
+test** and skipped **2** environment-dependent tests (Milvus/service setup).
+
 The partner branch's historical report (`agent/docs/cp2/local_unit_test_report.xlsx`)
 records its pre-integration 171-test run (168 passed and 3 external embedding
 environment failures). The 196-test command above is the merged baseline and
