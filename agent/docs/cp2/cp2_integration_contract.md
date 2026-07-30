@@ -1,10 +1,10 @@
 # CP2 Agent Integration Contract
 
-> Status: Draft, not frozen.
+> Status: Integrated baseline (2026-07-30).
 >
-> If this document conflicts with a frozen component contract such as
-> `query_plan_contract.md` or `tool_registry.md`, the frozen component contract
-> and the latest CP2 optimization plan take precedence.
+> This document records the CP2 cross-workstream baseline after partner PR #17
+> and Workstream 1 were merged into `agent-dev`. Component contracts remain
+> authoritative for field-level details.
 
 ## 1. Purpose
 
@@ -86,37 +86,35 @@ QueryRewriter.rewrite(query, history) -> RewriteResult
 They are not final cross-module outputs. Query Understanding must combine their
 results into one `QueryPlan`.
 
-## 5. Contracts Still Pending Review
+## 5. Contract and implementation status
 
-The following contracts are not frozen:
+The CP2 implementation now contains the following internal contracts and
+runtime components:
 
-- ConversationMemory
-- clarification state persistence
-- IntentPolicy
-- AgentState
-- Evidence
-- ToolExecutionResult
-- RunSummary
-- extended ChatResponse statuses
+- `ConversationMemory`, `AgentState`, `AgentRunResult`, and stop reasons;
+- `IntentPolicy`, `Evidence`, and `ToolExecutionResult` models;
+- Query Understanding, policy routing, tool execution, evidence gate, and
+  citation validation components;
+- the bounded `AgentRunner` and `Agent.chat(..., query_plan=...)` boundary.
 
-Code should not create incompatible final versions of these schemas before
-team review.
+The five-field `ChatResponse` remains the only public Web response contract.
+Any future public schema change still requires a coordinated review.
 
 ## 6. ConversationMemory Requirements
 
-The final interface still requires team confirmation, but it must support:
+The CP2 interface supports:
 
 - strict isolation by `session_id`;
 - single-turn compatibility when `session_id` is absent;
 - message and token-budget truncation;
-- persistent short-term storage;
-- pending clarification state;
+- process-local short-term storage;
+- clarification state represented by the stored user/question turn;
 - no storage of private chain-of-thought;
 - no storage of raw tool output as normal chat messages;
 - execution metadata such as intent, rewritten query, and stop reason.
 
-The final method signatures must be copied from the latest approved CP2 plan
-before implementation is integrated.
+The method signatures are implemented in `agent/memory/base.py` and covered by
+unit and integration tests.
 
 ## 7. Tool Execution Requirements
 
@@ -176,7 +174,7 @@ understanding, and policy.
 
 Real Toolset and persistence tests must be marked and run separately.
 
-## 11. Current Team Checklist
+## 11. CP2 completion checklist (2026-07-30)
 
 - [x] QueryIntent values are frozen.
 - [x] QueryPlan fields and validation are frozen.
@@ -184,9 +182,9 @@ Real Toolset and persistence tests must be marked and run separately.
 - [x] Agent uses a read-only ToolRegistryAdapter.
 - [x] QueryRewriter has safe fallback behavior.
 - [x] Clarifier has safe fallback behavior.
-- [ ] ConversationMemory contract is reviewed.
-- [ ] IntentPolicy contract is reviewed.
-- [ ] AgentState contract is reviewed.
-- [ ] Evidence and ToolExecutionResult are reviewed.
-- [ ] RunSummary and extended API statuses are reviewed.
-- [ ] Mock integration tests cover the complete CP2 flow.
+- [x] ConversationMemory, AgentState, Evidence, and ToolExecutionResult are implemented.
+- [x] Agent Runner consumes QueryPlan and enforces bounded execution.
+- [x] Mock integration tests cover memory, clarification, filters, and Runner flow.
+- [x] Partner query-understanding and evidence-quality components are merged.
+- [ ] Durable multi-worker memory and a fully policy-aware Web orchestration flow
+  remain post-CP2 hardening work; the current memory is intentionally process-local.

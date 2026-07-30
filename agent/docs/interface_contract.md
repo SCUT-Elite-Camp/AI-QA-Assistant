@@ -53,6 +53,15 @@ separate Web contract revision approves an optional `run` field.
 
 ## Status Values
 
+- `success`：成功。
+- `clarification_required`：问题存在歧义，`message` 中返回 Agent 的澄清问题。
+- `agent_limit_reached`：达到最大迭代数或重复工具调用阈值后安全停止。
+- `tool_error`：非检索工具不存在、参数无效或执行失败。
+- `invalid_query`：问题为空或无效。
+- `no_relevant_context`：知识库没有足够上下文。
+- `retrieval_error`：检索服务异常。
+- `llm_error`：模型服务异常。
+
 - `success`: request completed successfully.
 - `clarification_required`: the query is ambiguous; `message` contains the
   Agent's clarification question.

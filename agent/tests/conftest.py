@@ -8,10 +8,16 @@ from pathlib import Path
 agent_dir = Path(__file__).resolve().parent.parent
 project_root = agent_dir.parent
 
-if str(agent_dir) not in sys.path:
-    sys.path.insert(0, str(agent_dir))
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+dependency_dirs = [
+    agent_dir,
+    project_root,
+    project_root / "data-pipeline",
+    project_root / "data-persistence",
+    project_root / "toolset",
+]
+for dependency_dir in dependency_dirs:
+    if str(dependency_dir) not in sys.path:
+        sys.path.insert(0, str(dependency_dir))
 
 # Persistence is optional for Agent unit tests. Provide an import-only fallback
 # when pymilvus is not installed; retrieval calls remain explicitly mocked.
@@ -69,6 +75,44 @@ def mock_llm_client_chat(monkeypatch):
         }
 
     monkeypatch.setattr(LLMClient, "chat", mock_chat)
+
+
+@pytest.fixture(autouse=True)
+def mock_search_tool(monkeypatch):
+    """Keep Agent tests independent of the optional local embedding runtime."""
+    from toolset.tool_layer.search_tool import SearchTool
+
+    def mock_search(
+        self,
+        query,
+        top_k=5,
+        mode="hybrid",
+        filters=None,
+        min_score=0.0,
+        trace_id=None,
+    ):
+        return [
+            {
+                "doc_id": "doc-001",
+                "chunk_id": "doc-001::chunk_0",
+                "chunk_index": 0,
+                "chunk_text": "这是第一个文档段落。",
+                "title": "测试文档一",
+                "source_url": "https://example.com/doc-001",
+                "score": 0.92,
+            },
+            {
+                "doc_id": "doc-002",
+                "chunk_id": "doc-002::chunk_0",
+                "chunk_index": 0,
+                "chunk_text": "这是第二个测试说明段落。",
+                "title": "测试文档二",
+                "source_url": "https://example.com/doc-002",
+                "score": 0.88,
+            },
+        ][:top_k]
+
+    monkeypatch.setattr(SearchTool, "search", mock_search)
 
 
 @pytest.fixture(autouse=True)

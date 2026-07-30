@@ -1,5 +1,4 @@
 """Frozen public QueryPlan contract shared by CP2 Agent components."""
-
 from enum import StrEnum
 from typing import Any
 
@@ -42,27 +41,26 @@ class QueryPlan(BaseModel):
     @field_validator("original_query")
     @classmethod
     def validate_original_query(cls, value: str) -> str:
-        if not value.strip():
+        if not isinstance(value, str) or not value.strip():
             raise ValueError("original_query must not be empty")
         return value
 
     @field_validator("standalone_query")
     @classmethod
     def normalize_standalone_query(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
+        if not isinstance(value, str) or not value.strip():
             raise ValueError("standalone_query must not be empty")
-        return normalized
-
-    @field_validator("clarification_question", "ambiguity_reason")
-    @classmethod
-    def strip_optional_text(cls, value: str) -> str:
         return value.strip()
 
     @field_validator("sub_queries")
     @classmethod
     def normalize_sub_queries(cls, values: list[str]) -> list[str]:
-        return [value.strip() for value in values if value.strip()]
+        return [value.strip() for value in values if isinstance(value, str) and value.strip()]
+
+    @field_validator("clarification_question", "ambiguity_reason")
+    @classmethod
+    def normalize_optional_text(cls, value: str) -> str:
+        return value.strip()
 
     @model_validator(mode="after")
     def validate_clarification(self) -> "QueryPlan":

@@ -1,6 +1,24 @@
 # agent-layer
 
-`agent-layer` 是 AI 智能问答项目 Q1 阶段的 Agent 层仓库，用于实现简化版单轮 RAG Agent。当前版本默认使用 Mock Retrieval 和 Mock LLM，也支持按配置接入 Tool Layer 检索和 OpenAI-compatible LLM Client。
+`agent-layer` 是 AI 智能问答项目的 Agent 层。当前 CP2 版本在 CP1 单轮 RAG
+链路上增加了会话短期记忆、`QueryPlan` 公共输入契约和有界多轮工具调用循环，
+并继续通过 Tool Layer 与 OpenAI-compatible LLM 接口完成跨层集成。
+
+## CP2 已实现范围
+
+- `ConversationMemory` 稳定接口及线程安全的进程内实现。
+- 基于 `session_id` 的上下文读取、写回、隔离、截断和清理。
+- `QueryIntent` / `QueryPlan` 严格 Pydantic 契约。
+- Agent Runner 动态读取工具 schema，支持连续多轮工具调用。
+- 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
+- 检索统一使用 `standalone_query`，保留 `original_query` 用于对话、记忆和审计。
+- `trace_id` 贯穿 Chat、Runner 与检索工具。
+- CP1 Web `ChatResponse` 字段保持不变。
+
+共享契约：
+
+- [`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)
+- [`docs/cp2/conversation_memory_contract.md`](docs/cp2/conversation_memory_contract.md)
 
 ## 开发准则
 
@@ -27,16 +45,14 @@ Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为�
 - Answer Formatter
 - trace_id、基础 logger、状态码和 pytest
 
-## 不做内容
+## 当前不做内容
 
-- 不实现复杂多步 Agent
 - 不连接真实 HSBC 系统
 - 不读取真实密钥
 - 不接真实客户、员工、权限数据
-- 默认不调用真实 LLM
-- 默认不调用真实检索工具
 - 不在 Agent 层直接连接 Milvus、BM25 或 embedding API；真实检索通过 Tool Layer 接口接入
 - SSE / fetch stream 仅预留，不强制实现真实流式输出
+- 进程重启、多 worker 之间的记忆持久化与共享
 
 ## 目录结构
 
@@ -53,6 +69,8 @@ agent-layer/
 │   ├── retrieval/
 │   ├── trace/
 │   ├── logger/
+│   ├── memory/
+│   ├── runtime/
 │   ├── config/
 │   ├── errors/
 │   └── streaming/
@@ -97,32 +115,31 @@ curl -X POST "http://localhost:8000/api/chat" \
 }
 ```
 
-## Mock 说明
+## 测试隔离说明
 
-- `agent/retrieval/mock_retrieval.py` 默认返回 3 条模拟文档块。
-- `agent/llm/mock_llm.py` 返回带 `[1]` 引用编号的模拟答案。
-- `mock/` 目录提供请求、检索结果和答案样例。
-- `RetrievalAdapter` 默认使用 Mock；设置 `USE_MOCK_RETRIEVAL=false` 后会动态加载 `TOOL_LAYER_IMPORT` / `TOOL_LAYER_CLASS`，默认是 `tool_layer.SearchTool`。
-- `LLMClient` 默认不启用；设置 `USE_MOCK_LLM=false` 后会使用兼容 OpenAI Chat Completions 的 HTTP 接口。
+- pytest 会替换 LLM 与 SearchTool，测试不依赖外部模型、Milvus 或 embedding 包。
+- 运行服务时默认使用 Tool Layer 的 `SearchTool` 和 OpenAI-compatible `LLMClient`。
+- `mock/` 目录仍保留 CP1 请求与答案样例。
 
-## 真实模式配置
+## 运行配置
 
 ```env
-USE_MOCK_RETRIEVAL=false
 DEFAULT_RETRIEVAL_MODE=hybrid
-TOOL_LAYER_IMPORT=tool_layer
-TOOL_LAYER_CLASS=SearchTool
-
-USE_MOCK_LLM=false
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
 QUERY_UNDERSTANDING_ENABLED=true
 QUERY_REWRITE_ENABLED=true
 CLARIFICATION_ENABLED=true
+MEMORY_ENABLED=true
+MAX_MEMORY_MESSAGES=10
+MAX_AGENT_ITERATIONS=5
+MAX_REPEATED_TOOL_CALLS=2
 ```
 
-本地 Ollama 启动后，默认会走兼容 OpenAI Chat Completions 的 `/v1/chat/completions` 接口，因此可以直接接 `llama3.1`，不需要配置 `LLM_API_KEY`。
+本地 Ollama 启动后，可通过兼容 OpenAI Chat Completions 的
+`/v1/chat/completions` 接口接入 `llama3.1`，通常不需要配置
+`LLM_API_KEY`。检索始终从 Tool Layer 的注册表加载，Agent 层不直连检索存储。
 
 CP2 工具注册表接口及 `/api/tools` 返回结构见
 [`docs/cp2/tool_registry.md`](docs/cp2/tool_registry.md)。
