@@ -2,12 +2,14 @@
 
 ## POST /api/chat
 
-Current stage: Week 3 single-turn RAG chain with configurable Mock / Tool Layer retrieval, configurable Mock / real LLM client, quality gates, hallucination suppression, and citation consistency checks.
+Current stage: CP2 bounded Agent runtime with session memory, QueryPlan input,
+dynamic tool schemas, retrieval quality gates, and citation consistency checks.
 
 The endpoint runs the minimal Agent Core flow:
 
 ```text
-request validation -> ChatService -> RetrievalAdapter -> ContextAssembler -> PromptBuilder -> LLM -> AnswerFormatter -> JSON response
+request validation -> QueryPlan -> ConversationMemory -> bounded AgentRunner
+-> tool observation loop -> AnswerFormatter -> memory write-back -> JSON response
 ```
 
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
@@ -28,7 +30,8 @@ request validation -> ChatService -> RetrievalAdapter -> ContextAssembler -> Pro
 Fields:
 
 - `query`: Required user question. After trimming whitespace, it must not be empty.
-- `session_id`: Optional session identifier reserved for Web integration.
+- `session_id`: Optional session identifier. Reusing it enables process-local
+  short-term conversation memory.
 - `top_k`: Optional retrieval count. Default is `5`, valid range is `1-20`.
 - `filters`: Optional retrieval filters. Default is `null`.
 - `stream`: Optional streaming flag. Default is `false`; current version returns JSON.
@@ -81,10 +84,16 @@ Fields:
 ## Supported Status
 
 - `success`
+- `clarification_required`
+- `agent_limit_reached`
+- `tool_error`
 - `invalid_query`
 - `no_relevant_context`
 - `retrieval_error`
 - `llm_error`
+
+`clarification_required` keeps `answer` empty and puts the Agent's clarification
+question in `message`, matching the existing Web error/status rendering path.
 
 ## Week 3 Quality Rules
 
@@ -107,7 +116,10 @@ The prompt requires the LLM to:
 
 ## Tool Layer Integration
 
-Agent uses `RetrievalAdapter` to call Tool Layer when `USE_MOCK_RETRIEVAL=false`.
+Agent Runner obtains tool schemas and tool instances from Tool Layer's
+`ToolRegistry`. It accepts both the current CP1 names (`get_tool`,
+`get_tool_schemas`) and the agreed CP2 names (`get`, `to_openai_schemas`) so the
+two branches can be merged independently.
 
 Expected Tool Layer interface:
 
@@ -122,7 +134,8 @@ SearchTool().search(
 )
 ```
 
-The adapter converts Tool Layer `dict` results into `RetrievalResult` with:
+The Agent trust boundary converts Tool Layer `dict` results into
+`RetrievalResult` with:
 
 - `doc_id`
 - `chunk_id`
@@ -134,16 +147,15 @@ The adapter converts Tool Layer `dict` results into `RetrievalResult` with:
 
 Full Tool Layer contract is in `docs/tool_layer_interface.md`.
 
-## Mode Switches
-
-- `USE_MOCK_RETRIEVAL=true`: use built-in `MockRetrieval`.
-- `USE_MOCK_RETRIEVAL=false`: dynamically load `TOOL_LAYER_IMPORT` / `TOOL_LAYER_CLASS`, defaulting to `tool_layer.SearchTool`.
-- `USE_MOCK_LLM=true`: use built-in `MockLLM`.
-- `USE_MOCK_LLM=false`: use `LLMClient` with OpenAI-compatible Chat Completions settings.
+The retrieval call always receives `standalone_query`, `top_k`,
+`retrieval_mode`, hard `filters`, `MIN_RETRIEVAL_SCORE`, and the request
+`trace_id`. Tests replace the LLM and search method with deterministic fakes;
+production code contains no test-mode switch.
 
 ## Not Implemented In Current Version
 
 - Production-level real LLM streaming.
+- Cross-process or restart-persistent conversation memory.
 - ACL permission filtering.
 - Production-level retrieval quality tuning.
 - Production secret management.

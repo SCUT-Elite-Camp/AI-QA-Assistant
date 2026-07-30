@@ -47,6 +47,9 @@
 ## status 枚举
 
 - `success`：成功。
+- `clarification_required`：问题存在歧义，`message` 中返回 Agent 的澄清问题。
+- `agent_limit_reached`：达到最大迭代数或重复工具调用阈值后安全停止。
+- `tool_error`：非检索工具不存在、参数无效或执行失败。
 - `invalid_query`：问题为空或无效。
 - `no_relevant_context`：知识库没有足够上下文。
 - `retrieval_error`：检索服务异常。
@@ -67,6 +70,15 @@
 ## Web 层解析建议
 
 - `status == success` 时展示 `answer` 和 `citations`。
-- `status != success` 时展示 `message`，不要展示空 `answer`。
+- `status == clarification_required` 时展示 `message`，并允许用户在同一
+  `session_id` 下继续回复。
+- 其他 `status != success` 时展示 `message`，不要展示空 `answer`。
 - 所有日志和问题排查都携带 `trace_id`。
 - `citations` 可按 `citation_id` 与答案中的 `[1]`、`[2]` 对应展示。
+
+## CP2 会话约定
+
+- Web 希望启用多轮上下文时，应在同一段对话中稳定传入同一个 `session_id`。
+- `session_id` 为空时按无记忆单轮请求处理。
+- 当前记忆为 Agent 进程内短期记忆，服务重启或多 worker 不保证共享。
+- Agent 对外响应字段保持不变；迭代次数和工具轨迹仅保留在 Agent 运行摘要及日志中。
