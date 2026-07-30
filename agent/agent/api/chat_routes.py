@@ -1,22 +1,48 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from agent.schemas.chat import ChatRequest, ChatResponse
-from agent.service.chat_service import ChatService
+from agent.agent import Agent
+from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
 
 router = APIRouter()
-chat_service = ChatService()
+
+
+def get_agent() -> Agent:
+    """Dependency provider for Agent."""
+    return Agent()
 
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
-    return chat_service.chat(request)
+def chat(
+    request: ChatRequest,
+    agent: Agent = Depends(get_agent),
+) -> ChatResponse:
+    return agent.chat(request)
 
+
+@router.get("/chat/history")
+def chat_history(
+    limit: int = 50,
+    agent: Agent = Depends(get_agent),
+) -> list[dict]:
+    return agent.get_history(limit)
+
+
+@router.get("/tools")
+def list_available_tools(
+    agent: Agent = Depends(get_agent),
+) -> list[dict]:
+    """Returns public metadata for all tools registered with the Agent."""
+    return agent.registry.list_tool_metadata()
 
 @router.post("/chat/stream")
-def chat_stream(request: ChatRequest) -> StreamingResponse:
-    response = chat_service.chat(request)
+def chat_stream(
+    request: ChatRequest,
+    agent: Agent = Depends(get_agent),
+) -> StreamingResponse:
+    response = agent.chat(request)
 
     def event_stream():
         if response.answer:

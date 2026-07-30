@@ -9,23 +9,33 @@ from agent.llm.base import BaseLLM
 
 class LLMClient(BaseLLM):
     def generate(self, prompt: str) -> str:
-        if not settings.LLM_API_KEY:
-            raise LLMError("LLM API key is not configured.")
+        """Helper to generate a response for a single text prompt."""
+        messages = [{"role": "user", "content": prompt}]
+        msg = self.chat(messages)
+        return (msg.get("content") or "").strip()
 
+    def chat(self, messages: list[dict], tools: list[dict] = None) -> dict:
+        """Calls the OpenAI-compatible chat/completions endpoint with messages and tools."""
         endpoint = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
         payload = {
             "model": settings.LLM_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "temperature": settings.LLM_TEMPERATURE,
             "max_tokens": settings.LLM_MAX_TOKENS,
         }
+        if tools:
+            payload["tools"] = tools
+
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if settings.LLM_API_KEY:
+            headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
+
         request = Request(
             endpoint,
             data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {settings.LLM_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            headers=headers,
             method="POST",
         )
 
@@ -36,11 +46,7 @@ class LLMClient(BaseLLM):
             raise LLMError(f"LLM request failed: {exc}") from exc
 
         try:
-            answer = data["choices"][0]["message"]["content"].strip()
+            message = data["choices"][0]["message"]
+            return message
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMError("LLM response format is invalid.") from exc
-
-        if not answer:
-            raise LLMError("LLM response is empty.")
-
-        return answer
