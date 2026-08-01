@@ -122,6 +122,10 @@ class SearchTool(BaseTool):
         logger: Optional[logging.Logger] = None,
         min_score: float = 0.0,
         rrf_k: int = 60,
+        reranker=None,
+        rerank_top_n: int = 20,
+        rerank_modes: Optional[Iterable[str]] = None,
+        rerank_fail_open: bool = True,
     ):
         self.project_root = Path(__file__).resolve().parent.parent.parent
         self.documents_dir = (
@@ -135,6 +139,12 @@ class SearchTool(BaseTool):
         self.latest_results = []
         self.min_score = min_score
         self.rrf_k = rrf_k
+        self.reranker = reranker
+        self.rerank_top_n = rerank_top_n
+        if isinstance(rerank_modes, str):
+            rerank_modes = {rerank_modes}
+        self.rerank_modes = frozenset(rerank_modes or {"hybrid"})
+        self.rerank_fail_open = rerank_fail_open
 
         self._milvus_store = None
         self._bm25_index = None
@@ -228,8 +238,13 @@ class SearchTool(BaseTool):
         filters = filters or {}
 
         try:
-            raw_results = self._search_internal(query.strip(), top_k, mode, filters)
+            normalized_query = query.strip()
+            use_reranker = self.reranker is not None and mode in self.rerank_modes
+            candidate_k = max(top_k, self.rerank_top_n) if use_reranker else top_k
+            raw_results = self._search_internal(normalized_query, candidate_k, mode, filters)
             results = self._normalize_results(raw_results, filters, float(min_score))
+            if use_reranker and results:
+                results = self._rerank(normalized_query, results, trace)
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
             self._log(trace, mode, top_k, 0, latency_ms, [])
@@ -248,6 +263,20 @@ class SearchTool(BaseTool):
         top_scores = [row["score"] for row in results[:5]]
         self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
         return results
+
+    def _rerank(self, query: str, results: List[Dict], trace_id: str) -> List[Dict]:
+        try:
+            return self.reranker.rerank(query, results, self.rerank_top_n)
+        except Exception as exc:
+            if not self.rerank_fail_open:
+                raise
+            self.logger.warning(
+                "[RERANK_FALLBACK] trace_id=%s model=%s error=%s",
+                trace_id,
+                getattr(self.reranker, "model_id", type(self.reranker).__name__),
+                exc,
+            )
+            return results
 
     def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         if self.backend is not None:
@@ -355,6 +384,18 @@ class SearchTool(BaseTool):
         if mode not in self.VALID_MODES:
             allowed = ", ".join(sorted(self.VALID_MODES))
             raise RetrievalParameterError(f"invalid_mode: mode must be one of {allowed}")
+
+        if not isinstance(self.rerank_top_n, int) or not 1 <= self.rerank_top_n <= 100:
+            raise RetrievalParameterError(
+                "invalid_rerank_top_n: rerank_top_n must be an integer from 1 to 100"
+            )
+
+        invalid_rerank_modes = self.rerank_modes - self.VALID_MODES
+        if invalid_rerank_modes:
+            allowed = ", ".join(sorted(self.VALID_MODES))
+            raise RetrievalParameterError(
+                f"invalid_rerank_modes: rerank modes must be selected from {allowed}"
+            )
 
         if filters is not None and not isinstance(filters, dict):
             raise RetrievalParameterError("invalid_filters: filters must be a dict or None")

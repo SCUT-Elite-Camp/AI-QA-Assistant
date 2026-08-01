@@ -1,6 +1,15 @@
+import os
 from typing import Any, Dict, List, Optional
+from retrieval.reranker import CrossEncoderReranker
 from .base_tool import BaseTool
 from .search_tool import SearchTool
+
+
+def _build_default_search_tool() -> SearchTool:
+    enabled = os.getenv("RERANK_ENABLED", "true").strip().lower()
+    if enabled in {"0", "false", "no", "off"}:
+        return SearchTool()
+    return SearchTool(reranker=CrossEncoderReranker(), rerank_top_n=20)
 
 
 class ToolRegistry:
@@ -14,7 +23,7 @@ class ToolRegistry:
         self._tools: Dict[str, BaseTool] = {}
         if tools is None:
             # Register default tools in the toolset layer
-            default_tools = [SearchTool()]
+            default_tools = [_build_default_search_tool()]
         else:
             default_tools = tools
 
