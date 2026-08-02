@@ -14,10 +14,10 @@ from functools import lru_cache
 
 # ─── 本地模型常量 ───────────────────────────────────────
 
-_LOCAL_MODEL_NAME = "BAAI/bge-small-en-v1.5"
-_LOCAL_MODEL_DIM = 384
+_LOCAL_MODEL_NAME = "BAAI/bge-base-zh-v1.5"
+_LOCAL_MODEL_DIM = 768
 # ModelScope 上对应的模型 ID
-_MODELSCOPE_MODEL_ID = "BAAI/bge-small-en-v1.5"
+_MODELSCOPE_MODEL_ID = "BAAI/bge-base-zh-v1.5"
 
 
 def _is_offline_mode() -> bool:
