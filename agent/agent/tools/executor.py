@@ -105,7 +105,11 @@ class ToolExecutor:
             return self._failure(
                 tool_call_id,
                 tool_name,
-                "tool_execution_failed",
+                (
+                    "retrieval_error"
+                    if tool_name == "search_documents"
+                    else "tool_execution_failed"
+                ),
                 str(exc) or exc.__class__.__name__,
                 started,
             )

@@ -3,20 +3,37 @@ import logging
 from typing import Any
 
 from agent.config.settings import settings
+from agent.evidence.gate import EvidenceGate
 from agent.llm.base import BaseLLM
 from agent.prompt.templates import ANSWER_RULES, SYSTEM_ROLE
+from agent.retrieval.corrective import CorrectiveRetrievalPlanner
 from agent.runtime.state import (
     AgentRunResult,
     AgentState,
     StopReason,
     ToolCallRecord,
 )
+from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
+from agent.schemas.tool_execution import Evidence
 from agent.service.audit_service import AuditService
+from agent.tools.executor import ToolExecutor
 from toolset.tool_layer import SearchTool
 
 
 logger = logging.getLogger("agent-layer")
+
+
+class ToolExecutionFailure(RuntimeError):
+    """Internal exception carrying a structured ToolExecutor failure."""
+
+    def __init__(self, error_code: str, message: str) -> None:
+        super().__init__(message)
+        self.error_code = error_code
+
+
+class NoRelevantContext(RuntimeError):
+    """Internal signal used when EvidenceGate rejects all retrieval attempts."""
 
 
 class AgentRunner:
@@ -53,6 +70,10 @@ class AgentRunner:
         self,
         query_plan: QueryPlan,
         *,
+        policy: IntentPolicy | None = None,
+        tool_executor: ToolExecutor | None = None,
+        evidence_gate: EvidenceGate | None = None,
+        corrective_retrieval: CorrectiveRetrievalPlanner | None = None,
         history: list[dict[str, Any]] | None = None,
         trace_id: str,
         mode: str = "hybrid",
@@ -71,7 +92,22 @@ class AgentRunner:
                 message=query_plan.clarification_question,
             )
 
+        if policy is not None and policy.max_iterations == 0:
+            if query_plan.intent.value == "unsupported":
+                return AgentRunResult(
+                    stop_reason=StopReason.UNSUPPORTED,
+                    message="当前请求超出 Agent 的能力范围。",
+                    error_code="unsupported_intent",
+                )
+            return AgentRunResult(
+                stop_reason=StopReason.POLICY_LIMIT,
+                message="当前请求被执行策略安全拦截。",
+                error_code="policy_limit",
+            )
+
         limit = max_iterations if max_iterations is not None else self.max_iterations
+        if policy is not None:
+            limit = min(limit, policy.max_iterations)
         if limit < 1:
             raise ValueError("max_iterations must be at least 1")
 
@@ -80,7 +116,7 @@ class AgentRunner:
             query_plan=query_plan,
             messages=self._build_messages(query_plan, history or []),
         )
-        schemas = self._tool_schemas()
+        schemas = self._tool_schemas(policy)
         last_fingerprint: str | None = None
         repeated_count = 0
 
@@ -131,6 +167,18 @@ class AgentRunner:
                         message="模型服务暂时不可用，请稍后重试。",
                         error_code="empty_llm_response",
                     )
+                if (
+                    policy is not None
+                    and policy.requires_citations
+                    and not state.evidence
+                    and schemas
+                ):
+                    return self._result(
+                        state,
+                        StopReason.NO_RELEVANT_CONTEXT,
+                        message="回答前未获得满足策略要求的知识库证据。",
+                        error_code="evidence_required",
+                    )
                 state.messages.append(
                     {
                         "role": response.get("role", "assistant"),
@@ -146,6 +194,14 @@ class AgentRunner:
             state.messages.append(self._assistant_tool_call_message(response, tool_calls))
 
             for raw_call in tool_calls:
+                if policy is not None and len(state.tool_calls) >= policy.max_tool_calls:
+                    return self._result(
+                        state,
+                        StopReason.POLICY_LIMIT,
+                        message="Agent 已达到当前意图的工具调用预算。",
+                        error_code="max_tool_calls",
+                    )
+
                 try:
                     call_id, tool_name, arguments = self._parse_tool_call(raw_call)
                     arguments = self._apply_execution_constraints(
@@ -197,7 +253,37 @@ class AgentRunner:
                         error_code="repeated_tool_call",
                     )
 
-                tool = self._get_tool(tool_name)
+                if policy is not None and tool_name not in policy.candidate_tools:
+                    state.tool_calls.append(
+                        ToolCallRecord(
+                            iteration=iteration,
+                            tool_call_id=call_id,
+                            tool_name=tool_name,
+                            arguments=arguments,
+                            success=False,
+                            error_code="tool_not_allowed",
+                        )
+                    )
+                    return self._result(
+                        state,
+                        StopReason.TOOL_ERROR,
+                        message=f"当前意图不允许调用工具：{tool_name}",
+                        error_code="tool_not_allowed",
+                    )
+
+                if (
+                    policy is not None
+                    and tool_name == "search_documents"
+                    and state.retrieval_attempts >= policy.max_retrieval_attempts
+                ):
+                    return self._result(
+                        state,
+                        StopReason.POLICY_LIMIT,
+                        message="Agent 已达到当前意图的检索预算。",
+                        error_code="max_retrieval_attempts",
+                    )
+
+                tool = self._get_tool(tool_name, policy)
                 if tool is None:
                     state.tool_calls.append(
                         ToolCallRecord(
@@ -224,6 +310,9 @@ class AgentRunner:
                         arguments=arguments,
                         query_plan=query_plan,
                         trace_id=trace_id,
+                        tool_call_id=call_id,
+                        tool_executor=tool_executor,
+                        retrieval_attempt=state.retrieval_attempts + 1,
                     )
                 except Exception as exc:
                     logger.exception(
@@ -240,7 +329,11 @@ class AgentRunner:
                             tool_name=tool_name,
                             arguments=arguments,
                             success=False,
-                            error_code=exc.__class__.__name__,
+                            error_code=(
+                                exc.error_code
+                                if isinstance(exc, ToolExecutionFailure)
+                                else exc.__class__.__name__
+                            ),
                         )
                     )
                     return self._result(
@@ -252,9 +345,13 @@ class AgentRunner:
                             else "工具执行失败，请稍后重试。"
                         ),
                         error_code=(
-                            "retrieval_error"
-                            if tool_name == "search_documents"
-                            else exc.__class__.__name__
+                            exc.error_code
+                            if isinstance(exc, ToolExecutionFailure)
+                            else (
+                                "retrieval_error"
+                                if tool_name == "search_documents"
+                                else exc.__class__.__name__
+                            )
                         ),
                     )
 
@@ -271,6 +368,38 @@ class AgentRunner:
                     state.retrieval_attempts += 1
                     state.evidence = self._merge_evidence(state.evidence, evidence)
 
+                    try:
+                        evidence, corrective_observations = self._apply_evidence_policy(
+                            query_plan=query_plan,
+                            policy=policy,
+                            evidence_gate=evidence_gate,
+                            corrective_retrieval=corrective_retrieval,
+                            tool_executor=tool_executor,
+                            trace_id=trace_id,
+                            state=state,
+                            previous_mode=mode,
+                            previous_top_k=top_k,
+                        )
+                    except ToolExecutionFailure as exc:
+                        return self._result(
+                            state,
+                            StopReason.TOOL_ERROR,
+                            message=(
+                                "检索服务暂时不可用。"
+                                if tool_name == "search_documents"
+                                else "工具执行失败，请稍后重试。"
+                            ),
+                            error_code=exc.error_code,
+                        )
+                    except NoRelevantContext as exc:
+                        return self._result(
+                            state,
+                            StopReason.NO_RELEVANT_CONTEXT,
+                            message=str(exc),
+                        )
+
+                    state.evidence = self._merge_evidence([], evidence)
+
                 state.messages.append(
                     {
                         "role": "tool",
@@ -279,13 +408,9 @@ class AgentRunner:
                         "content": observation,
                     }
                 )
-
-                if is_retrieval and not evidence:
-                    return self._result(
-                        state,
-                        StopReason.NO_RELEVANT_CONTEXT,
-                        message="当前知识库没有足够信息回答该问题。",
-                    )
+                if is_retrieval:
+                    for correction in corrective_observations:
+                        state.messages.append(correction)
 
         return self._result(
             state,
@@ -322,14 +447,32 @@ class AgentRunner:
         )
         return messages
 
-    def _tool_schemas(self) -> list[dict[str, Any]]:
+    def _tool_schemas(self, policy: IntentPolicy | None = None) -> list[dict[str, Any]]:
         if hasattr(self.registry, "to_openai_schemas"):
-            return list(self.registry.to_openai_schemas())
-        if hasattr(self.registry, "get_tool_schemas"):
-            return list(self.registry.get_tool_schemas())
-        return []
+            schemas = list(self.registry.to_openai_schemas())
+        elif hasattr(self.registry, "get_tool_schemas"):
+            schemas = list(self.registry.get_tool_schemas())
+        else:
+            schemas = []
 
-    def _get_tool(self, name: str) -> Any | None:
+        if policy is None:
+            return schemas
+        allowed = set(policy.candidate_tools)
+        return [
+            schema
+            for schema in schemas
+            if isinstance(schema, dict)
+            and isinstance(schema.get("function"), dict)
+            and schema["function"].get("name") in allowed
+        ]
+
+    def _get_tool(
+        self,
+        name: str,
+        policy: IntentPolicy | None = None,
+    ) -> Any | None:
+        if policy is not None and name not in policy.candidate_tools:
+            return None
         if hasattr(self.registry, "get"):
             return self.registry.get(name)
         if hasattr(self.registry, "get_tool"):
@@ -389,7 +532,28 @@ class AgentRunner:
         arguments: dict[str, Any],
         query_plan: QueryPlan,
         trace_id: str,
+        tool_call_id: str,
+        tool_executor: ToolExecutor | None = None,
+        retrieval_attempt: int = 1,
     ) -> tuple[str, list[dict[str, Any]], bool]:
+        if tool_executor is not None:
+            result = tool_executor.execute(
+                tool_call_id=tool_call_id,
+                tool_name=tool_name,
+                arguments=arguments,
+                trace_id=trace_id,
+                retrieval_attempt=retrieval_attempt,
+            )
+            if not result.success:
+                raise ToolExecutionFailure(
+                    result.error_code or "tool_execution_failed",
+                    result.error_message or "工具执行失败，请稍后重试。",
+                )
+            evidence = [item.model_dump() for item in result.evidence]
+            if tool_name == "search_documents":
+                return self._format_search_observation(evidence), evidence, True
+            return self._stringify_result(result.data or {}), evidence, False
+
         if isinstance(tool, SearchTool) or tool_name == "search_documents":
             if hasattr(tool, "search"):
                 results = tool.search(
@@ -407,6 +571,111 @@ class AgentRunner:
         evidence = self._extract_evidence(result)
         return self._stringify_result(result), evidence, False
 
+    def _apply_evidence_policy(
+        self,
+        *,
+        query_plan: QueryPlan,
+        policy: IntentPolicy | None,
+        evidence_gate: EvidenceGate | None,
+        corrective_retrieval: CorrectiveRetrievalPlanner | None,
+        tool_executor: ToolExecutor | None,
+        trace_id: str,
+        state: AgentState,
+        previous_mode: str,
+        previous_top_k: int,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Gate retrieval evidence and perform at most one corrective pass."""
+
+        current = self._typed_evidence(state.evidence)
+        if policy is None or evidence_gate is None:
+            if not state.evidence:
+                raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+            return state.evidence, []
+
+        gate_result = evidence_gate.evaluate(
+            query_plan,
+            policy,
+            current,
+            retrieval_attempt=state.retrieval_attempts,
+        )
+        if gate_result.accepted:
+            return [item.model_dump() for item in gate_result.evidence], []
+
+        if (
+            not gate_result.should_retry
+            or corrective_retrieval is None
+            or tool_executor is None
+        ):
+            raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+
+        requests = corrective_retrieval.plan(
+            query_plan,
+            policy,
+            gate_result,
+            previous_mode=previous_mode,
+            previous_top_k=previous_top_k,
+        )
+        if not requests:
+            raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+
+        correction_messages: list[dict[str, Any]] = []
+        corrected = list(current)
+        for index, request in enumerate(requests, start=1):
+            call_id = f"corrective-{state.tool_calls[-1].tool_call_id}-{index}"
+            arguments = {
+                "query": request.query,
+                "top_k": request.top_k,
+                "mode": request.mode,
+                "filters": request.filters,
+            }
+            result = tool_executor.execute(
+                tool_call_id=call_id,
+                tool_name="search_documents",
+                arguments=arguments,
+                trace_id=trace_id,
+                retrieval_attempt=request.retrieval_attempt,
+            )
+            if not result.success:
+                raise ToolExecutionFailure(
+                    result.error_code or "tool_execution_failed",
+                    result.error_message or "纠偏检索失败。",
+                )
+            state.retrieval_attempts = max(
+                state.retrieval_attempts,
+                request.retrieval_attempt,
+            )
+            corrected.extend(result.evidence)
+            correction_messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": call_id,
+                    "name": "search_documents",
+                    "content": self._format_search_observation(
+                        [item.model_dump() for item in result.evidence]
+                    ),
+                }
+            )
+
+        second_gate = evidence_gate.evaluate(
+            query_plan,
+            policy,
+            corrected,
+            retrieval_attempt=state.retrieval_attempts,
+        )
+        if not second_gate.accepted:
+            raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+        return [item.model_dump() for item in second_gate.evidence], correction_messages
+
+    @staticmethod
+    def _typed_evidence(items: list[dict[str, Any]]) -> list[Evidence]:
+        typed: list[Evidence] = []
+        for item in items:
+            try:
+                typed.append(Evidence.model_validate(item))
+            except (TypeError, ValueError):
+                continue
+        return typed
+
     @staticmethod
     def _format_search_observation(results: list[dict[str, Any]]) -> str:
         if not results:
@@ -417,7 +686,7 @@ class AgentRunner:
                 f"[{index}] title: {item.get('title', '')}\n"
                 f"doc_id: {item.get('doc_id', '')}\n"
                 f"chunk_id: {item.get('chunk_id', '')}\n"
-                f"content: {item.get('chunk_text', '')}\n"
+                f"content: {item.get('chunk_text', item.get('content', ''))}\n"
                 f"score: {float(item.get('score', 0.0)):.4f}"
             )
         return "\n\n".join(blocks)

@@ -2,16 +2,28 @@ import logging
 from typing import Any
 
 from agent.config.settings import settings
+from agent.evidence import CitationChecker, EvidenceGate
 from agent.formatter.answer_formatter import AnswerFormatter
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
 from agent.memory import ConversationMemory, get_default_memory
+from agent.orchestration import AgentOrchestrator, OrchestrationResult
+from agent.policy import IntentPolicyRouter
+from agent.query import (
+    Clarifier,
+    IntentClassifier,
+    QueryPlanner,
+    QueryRewriter,
+    QueryUnderstanding,
+)
+from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.schemas.common import StatusCode
+from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
 from agent.schemas.retrieval import RetrievalResult
-from agent.tools import ToolRegistryAdapter
+from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool, SearchTool
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
 from agent.service import AuditService, TraceService
@@ -30,6 +42,13 @@ class Agent:
         answer_formatter: AnswerFormatter | None = None,
         memory: ConversationMemory | None = None,
         runner: AgentRunner | None = None,
+        query_understanding: QueryUnderstanding | None = None,
+        policy_router: IntentPolicyRouter | None = None,
+        tool_executor: ToolExecutor | None = None,
+        evidence_gate: EvidenceGate | None = None,
+        corrective_retrieval: CorrectiveRetrievalPlanner | None = None,
+        citation_checker: CitationChecker | None = None,
+        orchestrator: AgentOrchestrator | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
@@ -49,7 +68,32 @@ class Agent:
             registry=self.registry,
             audit_service=self.audit_service,
         )
+        self.query_understanding = query_understanding or QueryUnderstanding(
+            intent_classifier=IntentClassifier(llm=self.llm),
+            clarifier=Clarifier(llm=self.llm),
+            query_rewriter=QueryRewriter(llm=self.llm),
+            query_planner=QueryPlanner(llm=self.llm),
+        )
+        self.policy_router = policy_router or IntentPolicyRouter()
+        self.tool_executor = tool_executor or ToolExecutor(self.registry)
+        self.evidence_gate = evidence_gate or EvidenceGate()
+        self.corrective_retrieval = (
+            corrective_retrieval or CorrectiveRetrievalPlanner()
+        )
+        self.citation_checker = citation_checker or CitationChecker()
+        self.orchestrator = orchestrator or AgentOrchestrator(
+            memory=self.memory,
+            query_understanding=self.query_understanding,
+            policy_router=self.policy_router,
+            runner=self.runner,
+            tool_executor=self.tool_executor,
+            evidence_gate=self.evidence_gate,
+            corrective_retrieval=self.corrective_retrieval,
+            citation_checker=self.citation_checker,
+        )
         self.last_run_result: AgentRunResult | None = None
+        self.last_orchestration: OrchestrationResult | None = None
+        self.last_citation_check = None
 
     @property
     def tools(self) -> dict[str, BaseTool]:
@@ -100,7 +144,11 @@ class Agent:
             )
 
         try:
-            plan = self._resolve_query_plan(request, query_plan)
+            orchestration = self.orchestrator.run(
+                request,
+                trace_id=trace_id,
+                query_plan=query_plan,
+            )
         except ValueError as exc:
             return self._error_response(
                 trace_id=trace_id,
@@ -113,23 +161,29 @@ class Agent:
                 error=str(exc),
             )
 
-        history = self._get_conversation_history(request.session_id)
-        run_result = self.run_plan(
-            plan,
-            history=history,
-            trace_id=trace_id,
-            mode=request.retrieval_mode,
-            top_k=request.top_k,
-        )
+        self.last_orchestration = orchestration
+        plan = orchestration.query_plan
+        run_result = orchestration.run_result
         self.last_run_result = run_result
 
         response = self._map_run_result(
             run_result=run_result,
             trace_id=trace_id,
             query=request.query,
-            retrieval_mode=request.retrieval_mode,
-            top_k=request.top_k,
+            retrieval_mode=orchestration.retrieval_mode,
+            top_k=orchestration.top_k,
         )
+        self.last_citation_check = self.orchestrator.validate_citations(
+            response.answer,
+            response.citations,
+            run_result.evidence,
+        )
+        if not self.last_citation_check.valid:
+            logger.warning(
+                "[CITATION_CHECK] trace_id=%s errors=%s",
+                trace_id,
+                self.last_citation_check.errors,
+            )
         self._save_conversation_turn(
             session_id=request.session_id,
             query=plan.original_query,
@@ -146,16 +200,26 @@ class Agent:
         mode: str = "hybrid",
         top_k: int = 5,
         max_iterations: int | None = None,
+        policy: IntentPolicy | None = None,
     ) -> AgentRunResult:
         """Public CP2 Runner boundary consumed after Query Understanding."""
-        return self.runner.run(
-            query_plan,
-            history=history,
-            trace_id=trace_id,
-            mode=mode,
-            top_k=top_k,
-            max_iterations=max_iterations,
-        )
+        runner_kwargs: dict[str, Any] = {
+            "history": history,
+            "trace_id": trace_id,
+            "mode": mode,
+            "top_k": top_k,
+            "max_iterations": max_iterations,
+        }
+        if policy is not None:
+            runner_kwargs.update(
+                {
+                    "policy": policy,
+                    "tool_executor": self.tool_executor,
+                    "evidence_gate": self.evidence_gate,
+                    "corrective_retrieval": self.corrective_retrieval,
+                }
+            )
+        return self.runner.run(query_plan, **runner_kwargs)
 
     def run(
         self,
@@ -266,6 +330,18 @@ class Agent:
             )
             return response
 
+        if run_result.stop_reason == StopReason.UNSUPPORTED:
+            return self._error_response(
+                trace_id=trace_id,
+                query=query,
+                status=StatusCode.UNSUPPORTED,
+                message=run_result.message or "当前请求超出 Agent 的能力范围。",
+                stage="policy",
+                retrieval_mode=retrieval_mode,
+                top_k=top_k,
+                error=run_result.error_code,
+            )
+
         retrieval_results = self._to_retrieval_results(run_result.evidence)
         if run_result.stop_reason == StopReason.FINAL_ANSWER:
             if run_result.retrieval_attempts and not retrieval_results:
@@ -330,6 +406,12 @@ class Agent:
                 run_result.message or "工具执行失败，请稍后重试。",
                 "tool",
             )
+        if run_result.stop_reason == StopReason.POLICY_LIMIT:
+            return (
+                StatusCode.AGENT_LIMIT_REACHED,
+                run_result.message or "Agent 已达到当前意图的执行预算。",
+                "policy",
+            )
         return (
             StatusCode.AGENT_LIMIT_REACHED,
             run_result.message or "Agent 已安全停止。",
@@ -347,7 +429,7 @@ class Agent:
                     doc_id=str(item["doc_id"]),
                     chunk_id=str(item["chunk_id"]),
                     chunk_index=int(item.get("chunk_index", 0)),
-                    chunk_text=str(item["chunk_text"]),
+                    chunk_text=str(item.get("chunk_text", item.get("content", ""))),
                     title=str(item.get("title", "")),
                     source_url=item.get("source_url") or "",
                     score=float(item["score"]),

@@ -9,7 +9,9 @@ from agent.schemas.query_plan import QueryPlan
 class StopReason(StrEnum):
     FINAL_ANSWER = "final_answer"
     CLARIFICATION_REQUIRED = "clarification_required"
+    UNSUPPORTED = "unsupported"
     NO_RELEVANT_CONTEXT = "no_relevant_context"
+    POLICY_LIMIT = "policy_limit"
     MAX_ITERATIONS = "max_iterations"
     REPEATED_TOOL_CALL = "repeated_tool_call"
     TOOL_ERROR = "tool_error"

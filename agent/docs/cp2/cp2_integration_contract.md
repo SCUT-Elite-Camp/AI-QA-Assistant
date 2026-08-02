@@ -75,8 +75,7 @@ not maintain a second tool mapping.
 
 ## 4. Implemented Internal Components
 
-These components are implemented and tested, but are internal to future Query
-Understanding:
+These components are implemented and invoked by Query Understanding:
 
 ```python
 Clarifier.evaluate(query, history) -> ClarificationDecision
@@ -118,7 +117,7 @@ unit and integration tests.
 
 ## 7. Tool Execution Requirements
 
-The future ToolExecutor must:
+The orchestrated ToolExecutor:
 
 - resolve tools through `ToolRegistryAdapter`;
 - parse tool arguments as JSON objects;
@@ -133,7 +132,7 @@ returned with the current tool execution result.
 
 ## 8. Evidence Requirements
 
-The future Evidence Gate must:
+The orchestrated Evidence Gate:
 
 - reject empty evidence;
 - remove results below the configured threshold;
@@ -147,7 +146,7 @@ Intent-specific policies may require different evidence coverage.
 
 ## 9. Agent Runner Requirements
 
-Agent Runner must enforce:
+With an `IntentPolicy`, Agent Runner enforces:
 
 - maximum iterations;
 - maximum tool calls;
@@ -185,6 +184,7 @@ Real Toolset and persistence tests must be marked and run separately.
 - [x] ConversationMemory, AgentState, Evidence, and ToolExecutionResult are implemented.
 - [x] Agent Runner consumes QueryPlan and enforces bounded execution.
 - [x] Mock integration tests cover memory, clarification, filters, and Runner flow.
-- [x] Partner query-understanding and evidence-quality components are merged.
-- [ ] Durable multi-worker memory and a fully policy-aware Web orchestration flow
-  remain post-CP2 hardening work; the current memory is intentionally process-local.
+- [x] AgentOrchestrator wires QueryUnderstanding, PolicyRouter, ToolExecutor,
+  EvidenceGate, corrective retrieval, and CitationChecker into Chat.
+- [ ] Durable multi-worker memory remains post-CP2 hardening work; the current
+  memory is intentionally process-local.

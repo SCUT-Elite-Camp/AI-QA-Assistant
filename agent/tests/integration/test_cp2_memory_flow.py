@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from agent.agent import Agent
@@ -16,6 +17,45 @@ class InspectingLLM:
         return prompt
 
     def chat(self, messages: list[dict], tools=None) -> dict:
+        system_prompt = messages[0].get("content", "") if messages else ""
+        if "classify user requests" in system_prompt:
+            return {
+                "role": "assistant",
+                "content": json.dumps(
+                    {
+                        "intent": "knowledge_qa",
+                        "confidence": 1.0,
+                        "is_follow_up": False,
+                        "is_clarification_reply": False,
+                        "reason": "test",
+                    }
+                ),
+            }
+        if "澄清判断器" in system_prompt:
+            return {
+                "role": "assistant",
+                "content": json.dumps(
+                    {
+                        "needs_clarification": False,
+                        "question": "",
+                        "reason": "test",
+                    }
+                ),
+            }
+        if "查询重写器" in system_prompt:
+            return {
+                "role": "assistant",
+                "content": json.dumps(
+                    {"rewritten_query": "测试独立查询", "reason": "test"}
+                ),
+            }
+        if "Plan retrieval" in system_prompt:
+            return {
+                "role": "assistant",
+                "content": json.dumps(
+                    {"sub_queries": [], "filters": {}, "reason": "test"}
+                ),
+            }
         self.messages_seen.append(list(messages))
         return {"role": "assistant", "content": self.answers.pop(0)}
 

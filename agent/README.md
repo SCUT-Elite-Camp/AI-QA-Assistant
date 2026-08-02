@@ -13,6 +13,8 @@
 - 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
 - 检索统一使用 `standalone_query`，保留 `original_query` 用于对话、记忆和审计。
 - `trace_id` 贯穿 Chat、Runner 与检索工具。
+- `AgentOrchestrator` 编排 Memory、Query Understanding、IntentPolicy、工具
+  执行、Evidence Gate、纠偏检索和 Citation 校验。
 - CP1 Web `ChatResponse` 字段保持不变。
 
 共享契约：

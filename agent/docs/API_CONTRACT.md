@@ -5,11 +5,13 @@
 Current stage: CP2 bounded Agent runtime with session memory, QueryPlan input,
 dynamic tool schemas, retrieval quality gates, and citation consistency checks.
 
-The endpoint runs the minimal Agent Core flow:
+The endpoint runs the CP2 orchestration flow:
 
 ```text
-request validation -> QueryPlan -> ConversationMemory -> bounded AgentRunner
--> tool observation loop -> AnswerFormatter -> memory write-back -> JSON response
+request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
+-> IntentPolicyRouter -> AgentRunner -> ToolExecutor -> EvidenceGate
+-> corrective retrieval (at most once) -> AnswerFormatter/CitationChecker
+-> memory write-back -> JSON response
 ```
 
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
@@ -91,6 +93,7 @@ Fields:
 - `no_relevant_context`
 - `retrieval_error`
 - `llm_error`
+- `unsupported`
 
 `clarification_required` keeps `answer` empty and puts the Agent's clarification
 question in `message`, matching the existing Web error/status rendering path.
@@ -100,6 +103,12 @@ question in `message`, matching the existing Web error/status rendering path.
 - Empty or whitespace-only `query` returns `invalid_query` before retrieval or LLM calls.
 - Empty retrieval results return `no_relevant_context` before LLM calls.
 - Retrieval results below `MIN_RETRIEVAL_SCORE` are filtered out; if none remain, Agent returns `no_relevant_context`.
+- Intent policies constrain candidate tools, iteration/tool/retrieval budgets,
+  and retrieval strategy before the Runner executes.
+- Evidence is accepted by `EvidenceGate` before final answer generation; a
+  failed first attempt may trigger one bounded corrective retrieval.
+- `CitationChecker` validates that exposed citations are backed by accepted
+  request-local Evidence.
 - Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
 - LLM exceptions or empty LLM output return `llm_error` with an empty answer and empty citations.
 - Success responses normalize answer references so bracketed citation IDs only point to existing citations.
