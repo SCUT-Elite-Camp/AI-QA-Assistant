@@ -23,6 +23,7 @@ PyMuPDF
 python-docx
 sentence-transformers
 modelscope
+python-dotenv>=1.0,<2
 
 # Testing
 pytest
