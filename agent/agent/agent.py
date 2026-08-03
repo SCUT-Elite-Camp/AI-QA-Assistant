@@ -110,7 +110,10 @@ class Agent:
                     chunk_text=r["chunk_text"],
                     title=r["title"],
                     source_url=r["source_url"],
-                    score=r["score"]
+                    score=r["score"],
+                    source_type=r.get("source_type"),
+                    keywords=r.get("keywords"),
+                    tags=r.get("tags"),
                 )
                 for r in latest_results
             ]
@@ -184,8 +187,9 @@ class Agent:
         """Executes the core RAG pipeline.
 
         1. Retrieve context using search_documents tool.
-        2. Inject retrieved context into the prompt.
-        3. Invoke the LLM to generate the final answer.
+        2. Detect card/segment results → auto-select dual prompt format.
+        3. Inject retrieved context into the prompt.
+        4. Invoke the LLM to generate the final answer.
         """
         tool = self.registry.get_tool("search_documents")
 
@@ -193,14 +197,44 @@ class Agent:
         self.audit_service.log_step(0, query)
         if tool:
             self.audit_service.log_tool_call(tool.name, {"query": query, "mode": mode, "top_k": top_k})
-            context_text = tool.execute(query=query, mode=mode, top_k=top_k)
+
+            # 使用 agentic 模式时启用双路检索
+            use_agentic = (mode == "agentic")
+            context_text = tool.execute(
+                query=query,
+                mode=mode,
+                top_k=top_k,
+                backend="agentic" if use_agentic else "standard",
+            )
         else:
             context_text = ""
 
-
-        # Step 2: 将检索上下文注入 prompt，调用 LLM 生成答案
+        # Step 2: 构建 Prompt（自动检测双格式）
         from agent.prompt.prompt_builder import PromptBuilder
-        prompt = PromptBuilder().build(query=query, context=context_text)
+        builder = PromptBuilder()
+
+        if tool and hasattr(tool, "latest_results"):
+            results = tool.latest_results
+            has_cards = any(
+                r.get("source_type") == "card" for r in results
+            )
+            if has_cards:
+                # ─── 双格式 Prompt：卡片 + 段落 ──────
+                cards_context = self._assemble_context_by_type(
+                    results, "card", builder
+                )
+                segments_context = self._assemble_context_by_type(
+                    results, "segment", builder
+                )
+                prompt = builder.build_dual(
+                    query=query,
+                    cards_context=cards_context,
+                    segments_context=segments_context,
+                )
+            else:
+                prompt = builder.build(query=query, context=context_text)
+        else:
+            prompt = builder.build(query=query, context=context_text)
 
         messages = [
             {"role": "user", "content": prompt},
@@ -209,6 +243,45 @@ class Agent:
         self.audit_service.log_step(1, query)
         response = self.llm.chat(messages)
         return (response.get("content") or "").strip()
+
+    @staticmethod
+    def _assemble_context_by_type(
+        results: list[dict],
+        source_type: str,
+        builder,
+    ) -> str:
+        """按 source_type 筛选结果并组装为上下文"""
+        typed_results = [
+            r for r in results
+            if r.get("source_type") == source_type
+        ]
+        if not typed_results:
+            # 如果指定类型没有结果，返回空（legacy 结果视为 segment）
+            if source_type == "segment":
+                typed_results = [
+                    r for r in results
+                    if r.get("source_type") not in ("card",)
+                ]
+            if not typed_results:
+                return ""
+
+        blocks = []
+        idx = 1
+        for r in typed_results:
+            prefix = "K" if r.get("source_type") == "card" else "S"
+            block = builder.build_context_for_result(
+                index=idx,
+                source_type=r.get("source_type", source_type),
+                content=r.get("chunk_text", ""),
+                doc_id=r.get("doc_id", ""),
+                keywords=r.get("keywords"),
+                tags=r.get("tags"),
+                score=r.get("score", 0.0),
+            )
+            blocks.append(block)
+            idx += 1
+
+        return "\n\n".join(blocks)
 
 
     def _error_response(

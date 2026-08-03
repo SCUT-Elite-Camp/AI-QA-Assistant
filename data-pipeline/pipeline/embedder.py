@@ -14,10 +14,10 @@ from functools import lru_cache
 
 # ─── 本地模型常量 ───────────────────────────────────────
 
-_LOCAL_MODEL_NAME = "BAAI/bge-base-zh-v1.5"
-_LOCAL_MODEL_DIM = 768
+_LOCAL_MODEL_NAME = "BAAI/bge-large-zh-v1.5"
+_LOCAL_MODEL_DIM = 1024
 # ModelScope 上对应的模型 ID
-_MODELSCOPE_MODEL_ID = "BAAI/bge-base-zh-v1.5"
+_MODELSCOPE_MODEL_ID = "BAAI/bge-large-zh-v1.5"
 
 
 def _is_offline_mode() -> bool:
@@ -103,14 +103,14 @@ def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> list
     批量文本向量化。
 
     当 OPENAI_API_KEY 已设置时使用 OpenAI 兼容接口；
-    否则自动 fallback 到本地 BGE 模型（BAAI/bge-small-en-v1.5, 384 维）。
+    否则自动 fallback 到本地 BGE 中文大模型（BAAI/bge-large-zh-v1.5, 1024 维）。
 
     Args:
         texts: 待向量化的文本列表
         model: 嵌入模型名称（仅 API 模式使用，本地模式忽略）
 
     Returns:
-        向量列表，API 模式 1536 维，本地模式 384 维
+        向量列表，API 模式 1536 维，本地模式 1024 维
     """
     if not texts:
         return []

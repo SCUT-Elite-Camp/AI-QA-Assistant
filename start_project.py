@@ -169,9 +169,19 @@ if not preloaded:
 
 print("Starting Web Frontend service...")
 web_dir = project_root / "web"
+# Use portable Node.js with full path
+node_bin = str(project_root.parent / "nodejs" / "node.exe")
+if not os.path.exists(node_bin):
+    node_bin = "node"  # fallback to system node
+web_env = os.environ.copy()
+# Ensure node dir is in PATH for child processes
+node_dir = str(project_root.parent / "nodejs" / "")
+if os.path.exists(node_dir):
+    web_env["PATH"] = node_dir + os.pathsep + web_env.get("PATH", "")
 web_proc = subprocess.Popen(
-    ["node", str(web_dir / "node_modules" / "vite" / "bin" / "vite.js")],
+    [node_bin, str(web_dir / "node_modules" / "vite" / "bin" / "vite.js")],
     cwd=str(web_dir),
+    env=web_env,
     shell=False
 )
 

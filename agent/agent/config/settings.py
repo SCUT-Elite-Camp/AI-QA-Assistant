@@ -58,5 +58,37 @@ class Settings(BaseModel):
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
 
+    # ---- Pre-Compression (LightMem) ----
+    PRE_COMPRESS_ENABLED: bool = _env_bool("PRE_COMPRESS_ENABLED", True)
+    PRE_COMPRESS_METHOD: str = os.getenv("PRE_COMPRESS_METHOD", "entropy_compress")
+    PRE_COMPRESS_RATE: float = _env_float("PRE_COMPRESS_RATE", 0.6)
+
+    # ---- Semantic Segmentation (LightMem B₂) ----
+    SEMANTIC_SEGMENT_ENABLED: bool = _env_bool("SEMANTIC_SEGMENT_ENABLED", True)
+    SEGMENT_SIMILARITY_THRESHOLD: float = _env_float("SEGMENT_SIMILARITY_THRESHOLD", 0.65)
+
+    # ---- Knowledge Cards (A-MEM) ----
+    KNOWLEDGE_CARDS_ENABLED: bool = _env_bool("KNOWLEDGE_CARDS_ENABLED", True)
+    STM_TOKEN_THRESHOLD: int = _env_int("STM_TOKEN_THRESHOLD", 2000)
+    CARD_LINK_TOP_K: int = _env_int("CARD_LINK_TOP_K", 10)
+    CARD_EVOLVE_MAX_NEIGHBORS: int = _env_int("CARD_EVOLVE_MAX_NEIGHBORS", 3)
+    CARD_EVOLVE_COSINE_MIN: float = _env_float("CARD_EVOLVE_COSINE_MIN", 0.72)
+    CARD_EVOLVE_COSINE_MAX: float = _env_float("CARD_EVOLVE_COSINE_MAX", 0.85)
+
+    # ---- Hybrid Retrieval (A-MEM) ----
+    RETRIEVAL_CARD_WEIGHT: float = _env_float("RETRIEVAL_CARD_WEIGHT", 0.6)
+    RETRIEVAL_SEGMENT_WEIGHT: float = _env_float("RETRIEVAL_SEGMENT_WEIGHT", 0.4)
+    GRAPH_EXPANSION_HOPS: int = _env_int("GRAPH_EXPANSION_HOPS", 2)
+    GRAPH_EXPANSION_GATE: float = _env_float("GRAPH_EXPANSION_GATE", 0.25)
+    GRAPH_EXPANSION_CAP: int = _env_int("GRAPH_EXPANSION_CAP", 8)
+
+    # ---- Token Budget ----
+    MAX_CONTEXT_TOKENS: int = _env_int("MAX_CONTEXT_TOKENS", 3000)
+    TOKEN_BUDGET_ENABLED: bool = _env_bool("TOKEN_BUDGET_ENABLED", True)
+
+    # ---- Query Understanding (existing) ----
+    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", False)
+    QUERY_UNDERSTANDING_ENABLED: bool = _env_bool("QUERY_UNDERSTANDING_ENABLED", False)
+
 
 settings = Settings()

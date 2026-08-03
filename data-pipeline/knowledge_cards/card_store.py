@@ -30,7 +30,7 @@ COLLECTION_SEGMENTS = "semantic_segments"
 # SQLite 路径
 DEFAULT_LINK_DB = "data-persistence/data/card_links.db"
 # 默认向量维度
-DEFAULT_DIM = 768  # bge-base-zh-v1.5
+DEFAULT_DIM = 1024  # bge-large-zh-v1.5
 
 
 class CardStore:
