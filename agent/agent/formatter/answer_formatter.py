@@ -14,6 +14,33 @@ class AnswerFormatter:
         answer: str,
         retrieval_results: list[RetrievalResult],
     ) -> ChatResponse:
+        safe_answer = self._normalize_answer_references(
+            answer.strip(), len(retrieval_results)
+        )
+        referenced_ids = sorted(
+            {int(value) for value in REFERENCE_PATTERN.findall(safe_answer)}
+        )
+        selected_results: list[RetrievalResult] = []
+        id_mapping: dict[int, int] = {}
+        for citation_id in referenced_ids:
+            if 1 <= citation_id <= len(retrieval_results):
+                id_mapping[citation_id] = len(selected_results) + 1
+                selected_results.append(retrieval_results[citation_id - 1])
+
+        if not selected_results and retrieval_results:
+            selected_results = [retrieval_results[0]]
+            id_mapping = {1: 1}
+
+        if id_mapping:
+            safe_answer = REFERENCE_PATTERN.sub(
+                lambda match: (
+                    f"[{id_mapping[int(match.group(1))]}]"
+                    if int(match.group(1)) in id_mapping
+                    else ""
+                ),
+                safe_answer,
+            )
+
         citations = [
             Citation(
                 citation_id=index,
@@ -24,9 +51,8 @@ class AnswerFormatter:
                 score=result.score,
                 snippet=result.chunk_text,
             )
-            for index, result in enumerate(retrieval_results, start=1)
+            for index, result in enumerate(selected_results, start=1)
         ]
-        safe_answer = self._normalize_answer_references(answer.strip(), len(citations))
         return ChatResponse(
             trace_id=trace_id,
             status=StatusCode.SUCCESS,
@@ -36,8 +62,10 @@ class AnswerFormatter:
         )
 
     def _normalize_answer_references(self, answer: str, citations_count: int) -> str:
-        if not answer or citations_count == 0:
+        if not answer:
             return answer
+        if citations_count == 0:
+            return REFERENCE_PATTERN.sub("", answer).strip()
 
         valid_ids = {str(index) for index in range(1, citations_count + 1)}
         has_valid_reference = False

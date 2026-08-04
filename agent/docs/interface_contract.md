@@ -1,10 +1,12 @@
-# Web-Agent 接口契约
+# Web-Agent Interface Contract
 
-## POST /api/chat 请求格式
+## POST `/api/chat`
+
+Request:
 
 ```json
 {
-  "query": "项目 Q1 阶段需要完成哪些功能？",
+  "query": "What features are required for project Q1?",
   "session_id": "optional-session-id",
   "top_k": 5,
   "filters": null,
@@ -13,60 +15,94 @@
 }
 ```
 
-字段说明：
+Fields:
 
-- `query`：用户问题，必填。
-- `session_id`：会话 ID，选填。
-- `top_k`：检索数量，默认 5。
-- `filters`：预留过滤条件，选填。
-- `stream`：是否期望流式输出，Q1 仅预留。
-- `retrieval_mode`：检索模式，支持 `vector`、`bm25`、`hybrid`，默认 `hybrid`。
+- `query`: required user query.
+- `session_id`: optional conversation identifier.
+- `top_k`: number of retrieval results; defaults to `5`.
+- `filters`: optional retrieval constraints.
+- `stream`: whether streaming output is requested.
+- `retrieval_mode`: `vector`, `bm25`, or `hybrid`; defaults to `hybrid`.
 
-## ChatResponse 响应格式
+## ChatResponse
 
 ```json
 {
   "trace_id": "trace-xxxxxxxx",
   "status": "success",
-  "answer": "答案内容 [1]",
+  "answer": "Answer content [1]",
   "message": "",
   "citations": []
 }
 ```
 
-## Citation 字段
+The public response remains limited to these five fields in CP2. Iteration
+counts and tool traces stay in Agent logs and internal run summaries until a
+separate Web contract revision approves an optional `run` field.
 
-- `citation_id`：引用编号，从 1 开始。
-- `title`：文档标题。
-- `source_url`：来源链接，选填。
-- `doc_id`：文档 ID。
-- `chunk_id`：分块 ID。
-- `score`：检索分数。
-- `snippet`：文档片段，默认取 `chunk_text` 前 120 字。
+## Citation Fields
 
-## status 枚举
+- `citation_id`: citation number starting from `1`.
+- `title`: document title.
+- `source_url`: optional source link.
+- `doc_id`: document identifier.
+- `chunk_id`: chunk identifier.
+- `score`: retrieval score.
+- `snippet`: document excerpt, defaulting to the first 120 characters of
+  `chunk_text`.
+
+## Status Values
 
 - `success`：成功。
+- `clarification_required`：问题存在歧义，`message` 中返回 Agent 的澄清问题。
+- `agent_limit_reached`：达到最大迭代数或重复工具调用阈值后安全停止。
+- `tool_error`：非检索工具不存在、参数无效或执行失败。
 - `invalid_query`：问题为空或无效。
 - `no_relevant_context`：知识库没有足够上下文。
 - `retrieval_error`：检索服务异常。
 - `llm_error`：模型服务异常。
 
-## 异常响应格式
+- `success`: request completed successfully.
+- `clarification_required`: the query is ambiguous; `message` contains the
+  Agent's clarification question.
+- `agent_limit_reached`: execution stopped safely after reaching an iteration
+  or repeated-call limit.
+- `tool_error`: a non-retrieval tool is missing, receives invalid arguments, or
+  fails during execution.
+- `unsupported`: the request is outside the current capability boundary.
+- `invalid_query`: the query is empty or invalid.
+- `no_relevant_context`: the knowledge base contains insufficient context.
+- `retrieval_error`: the retrieval service failed.
+- `llm_error`: the model service failed.
+
+## Error Response
 
 ```json
 {
   "trace_id": "trace-xxxxxxxx",
   "status": "invalid_query",
   "answer": "",
-  "message": "请输入有效问题。",
+  "message": "Please enter a valid question.",
   "citations": []
 }
 ```
 
-## Web 层解析建议
+## Web Handling
 
-- `status == success` 时展示 `answer` 和 `citations`。
-- `status != success` 时展示 `message`，不要展示空 `answer`。
-- 所有日志和问题排查都携带 `trace_id`。
-- `citations` 可按 `citation_id` 与答案中的 `[1]`、`[2]` 对应展示。
+- For `status == success`, display `answer` and `citations`.
+- For `status == clarification_required`, display `message` and allow the user
+  to reply under the same `session_id`.
+- For other non-success statuses, display `message` and do not display the empty
+  `answer`.
+- Include `trace_id` in logs and issue reports.
+- Match citation markers such as `[1]` and `[2]` by `citation_id`.
+
+## CP2 Conversation Rules
+
+- Web must pass the same `session_id` throughout one conversation when
+  multi-turn context is enabled.
+- An empty `session_id` produces a stateless single-turn request.
+- Current memory is short-term, in-process Agent memory and is not shared across
+  restarts or multiple workers.
+- Agent public response fields remain unchanged. Iteration counts and tool
+  traces stay in internal Agent run summaries and logs.

@@ -44,6 +44,30 @@ class Settings(BaseModel):
         le=1.0,
     )
     DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
+    QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
+        "QUERY_UNDERSTANDING_ENABLED",
+        True,
+    )
+    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
+    CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
+    TOOL_TIMEOUT_MS: int = Field(
+        default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 10000),
+        gt=0,
+    )
+
+    MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
+    MAX_MEMORY_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
+        ge=1,
+    )
+    MAX_AGENT_ITERATIONS: int = Field(
+        default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
+        ge=1,
+    )
+    MAX_REPEATED_TOOL_CALLS: int = Field(
+        default_factory=lambda: _env_int("MAX_REPEATED_TOOL_CALLS", 2),
+        ge=1,
+    )
 
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
     LLM_API_BASE: str = os.getenv(

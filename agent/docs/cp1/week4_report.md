@@ -71,12 +71,12 @@ scripts/run_week4_acceptance.py
 
 新增/更新：
 
-- `docs/web_integration_guide.md`
-- `docs/week4_report.md`
-- `docs/final_handoff.md`
-- `docs/integration_record.md`
-- `docs/test_cases.md`
-- `docs/four_week_plan.md`
+- `docs/cp1/web_integration_guide.md`
+- `docs/cp1/week4_report.md`
+- `docs/cp1/final_handoff.md`
+- `docs/cp1/integration_record.md`
+- `docs/cp1/test_cases.md`
+- `docs/cp1/four_week_plan.md`
 
 ## 验证结果
 
@@ -117,7 +117,7 @@ Agent Layer Q1 已完成可演示版本：
 
 ## 后续建议
 
-- Web 层按 `docs/web_integration_guide.md` 完成最终联调。
+- Web 层按 `docs/cp1/web_integration_guide.md` 完成最终联调。
 - Demo 时优先使用普通 JSON 问答链路。
 - SSE 仅作为 Q1 演示增强，不作为生产级流式能力。
 - Q2 再替换真实 LLM、正式 Tool Layer 和权限过滤。

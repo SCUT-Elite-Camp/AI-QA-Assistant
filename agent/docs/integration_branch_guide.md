@@ -20,7 +20,7 @@
 ## 冲突处理原则
 
 - `/api/chat` 请求和响应格式以 `docs/API_CONTRACT.md` 为准。
-- Tool Layer 检索接口以 `docs/tool_layer_interface.md` 为准。
+- Tool Layer 检索接口以 `docs/cp1/tool_layer_interface.md` 为准。
 - `ChatRequest`、`ChatResponse`、`RetrievalResult` 字段不能在未同步文档和测试的情况下改名或删除。
 - Mock 模式必须始终可运行；真实模式只能通过环境变量显式开启。
 

@@ -1,16 +1,37 @@
 import json
 import pytest
 import sys
+from types import ModuleType, SimpleNamespace
 from pathlib import Path
 
 # Add agent and project root folders to sys.path
 agent_dir = Path(__file__).resolve().parent.parent
 project_root = agent_dir.parent
 
-if str(agent_dir) not in sys.path:
-    sys.path.insert(0, str(agent_dir))
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+dependency_dirs = [
+    agent_dir,
+    project_root,
+    project_root / "data-pipeline",
+    project_root / "data-persistence",
+    project_root / "toolset",
+]
+for dependency_dir in dependency_dirs:
+    if str(dependency_dir) not in sys.path:
+        sys.path.insert(0, str(dependency_dir))
+
+# Persistence is optional for Agent unit tests. Provide an import-only fallback
+# when pymilvus is not installed; retrieval calls remain explicitly mocked.
+try:
+    import pymilvus  # noqa: F401
+except ModuleNotFoundError:
+    pymilvus_stub = ModuleType("pymilvus")
+    pymilvus_stub.connections = SimpleNamespace()
+    pymilvus_stub.utility = SimpleNamespace()
+    pymilvus_stub.Collection = object
+    pymilvus_stub.CollectionSchema = object
+    pymilvus_stub.FieldSchema = object
+    pymilvus_stub.DataType = SimpleNamespace()
+    sys.modules["pymilvus"] = pymilvus_stub
 
 
 @pytest.fixture(autouse=True)
@@ -57,8 +78,49 @@ def mock_llm_client_chat(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def mock_sqlite_db_path(monkeypatch, tmp_path):
+def mock_search_tool(monkeypatch):
+    """Keep Agent tests independent of the optional local embedding runtime."""
+    from toolset.tool_layer.search_tool import SearchTool
+
+    def mock_search(
+        self,
+        query,
+        top_k=5,
+        mode="hybrid",
+        filters=None,
+        min_score=0.0,
+        trace_id=None,
+    ):
+        return [
+            {
+                "doc_id": "doc-001",
+                "chunk_id": "doc-001::chunk_0",
+                "chunk_index": 0,
+                "chunk_text": "这是第一个文档段落。",
+                "title": "测试文档一",
+                "source_url": "https://example.com/doc-001",
+                "score": 0.92,
+            },
+            {
+                "doc_id": "doc-002",
+                "chunk_id": "doc-002::chunk_0",
+                "chunk_index": 0,
+                "chunk_text": "这是第二个测试说明段落。",
+                "title": "测试文档二",
+                "source_url": "https://example.com/doc-002",
+                "score": 0.88,
+            },
+        ][:top_k]
+
+    monkeypatch.setattr(SearchTool, "search", mock_search)
+
+
+@pytest.fixture(autouse=True)
+def mock_sqlite_db_path(monkeypatch, tmp_path, request):
     """Redirects the SQLite database to a temporary location for tests to ensure cleanliness."""
+    if request.node.get_closest_marker("no_storage"):
+        return
+
     from storage.chat_history_store import ChatHistoryStore
     db_file = tmp_path / "test_chat_history.db"
     

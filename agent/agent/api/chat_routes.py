@@ -34,8 +34,8 @@ def chat_history(
 def list_available_tools(
     agent: Agent = Depends(get_agent),
 ) -> list[dict]:
-    """Returns schemas of all available tools for the Agent."""
-    return agent.registry.get_tool_schemas()
+    """Returns public metadata for all tools registered with the Agent."""
+    return agent.registry.list_tool_metadata()
 
 @router.post("/chat/stream")
 def chat_stream(
