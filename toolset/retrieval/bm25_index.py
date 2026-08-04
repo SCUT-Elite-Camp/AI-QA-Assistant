@@ -1,60 +1,54 @@
-"""
-BM25 关键词检索索引。
+"""Production BM25 index with the project English analyzer."""
 
-基于 rank_bm25.BM25Okapi + jieba 中文分词。
-从 data/documents/ 目录加载全部已处理文档的分块，构建 BM25 索引，
-支持检索和持久化（pickle）。
-"""
-
+import json
 import os
 import pickle
-import jieba
+
 from rank_bm25 import BM25Okapi
-from storage.document_store import DOCS_DIR, load_document
+from retrieval.english_analyzer import EnglishAnalyzer
+from storage.document_store import DOCS_DIR
+
 
 class BM25Index:
-    """
-    BM25 关键词索引。
+    """Build, query, and persist the lexical chunk index.
 
     Usage:
         bm25 = BM25Index()
         bm25.build_from_documents()
-        results = bm25.search("如何配置Milvus?", top_k=5)
+        results = bm25.search("How do I configure Milvus?", top_k=5)
         bm25.save("data/bm25_index.pkl")
-
-        # 加载已有索引
         bm25 = BM25Index.load("data/bm25_index.pkl")
     """
 
-    def __init__(self):
+    def __init__(self, analyzer: EnglishAnalyzer | None = None):
+        self._analyzer = analyzer or EnglishAnalyzer()
         self._bm25: BM25Okapi | None = None
-        self._chunk_meta: list[dict] = []       # 每个分块的元数据（doc_id, chunk_id, text...）
-        self._tokenized_corpus: list[list[str]] = []  # 分词后的语料库
-
-    # ─── 构建 ───────────────────────────────────────
+        self._chunk_meta: list[dict] = []
+        self._tokenized_corpus: list[list[str]] = []
 
     def build_from_documents(self, docs_dir: str | None = None):
-        """
-        从 data/documents/ 目录下的全部 JSON 文件加载所有分块，
-        用 jieba 分词后构建 BM25Okapi 索引。
-        """
+        """Build BM25 from all processed document chunks."""
         if docs_dir is None:
             docs_dir = DOCS_DIR
 
+        self._bm25 = None
         self._chunk_meta = []
+        self._tokenized_corpus = []
         corpus_texts: list[str] = []
 
-        # 遍历 docs_dir 下所有 JSON 文件
         if not os.path.isdir(docs_dir):
-            print(f"文档目录不存在: {docs_dir}，BM25 索引将为空")
+            print(f"Document directory does not exist: {docs_dir}; BM25 is empty")
             return
 
         for fname in sorted(os.listdir(docs_dir)):
             if not fname.endswith(".json"):
                 continue
-            doc_id = fname[:-5]  # 去掉 .json 后缀
-            data = load_document(doc_id)
-            if data is None:
+            doc_id = fname[:-5]
+            document_path = os.path.join(docs_dir, fname)
+            try:
+                with open(document_path, "r", encoding="utf-8") as handle:
+                    data = json.load(handle)
+            except (OSError, json.JSONDecodeError):
                 continue
             for ch in data.get("chunks", []):
                 self._chunk_meta.append({
@@ -66,34 +60,28 @@ class BM25Index:
                 corpus_texts.append(ch.get("text", ""))
 
         if not corpus_texts:
-            print("未找到任何分块数据，BM25 索引为空")
+            print("No document chunks found; BM25 is empty")
             return
 
-        # jieba 分词
-        self._tokenized_corpus = [list(jieba.cut(text)) for text in corpus_texts]
+        self._tokenized_corpus = [
+            self._analyzer.analyze(text)
+            for text in corpus_texts
+        ]
         self._bm25 = BM25Okapi(self._tokenized_corpus)
-        print(f"BM25 索引构建完成，共 {len(corpus_texts)} 个分块")
-
-    # ─── 检索 ───────────────────────────────────────
+        print(f"BM25 index built with {len(corpus_texts)} chunks")
 
     def search(self, query: str, top_k: int = 5) -> list[dict]:
-        """
-        关键词检索。
-
-        Args:
-            query: 检索查询
-            top_k: 返回前 K 个结果
-
-        Returns:
-            结果列表，每项包含 chunk_id, doc_id, chunk_index, text, score
-        """
+        """Return the highest-scoring chunks for an English query."""
         if self._bm25 is None:
-            raise RuntimeError("BM25 索引尚未构建或加载，请先调用 build_from_documents() 或 load()")
+            raise RuntimeError(
+                "BM25 index is unavailable; build or load it before searching"
+            )
 
-        tokens = list(jieba.cut(query))
+        tokens = self._analyzer.analyze(query)
+        if not tokens:
+            return []
         scores = self._bm25.get_scores(tokens)
 
-        # 按分数降序排序，取 top_k
         indexed_scores = list(enumerate(scores))
         indexed_scores.sort(key=lambda x: x[1], reverse=True)
         top_indices = [idx for idx, _score in indexed_scores[:top_k]]
@@ -105,17 +93,18 @@ class BM25Index:
             results.append(meta)
         return results
 
-    # ─── 持久化 ─────────────────────────────────────
-
     @staticmethod
     def default_index_path() -> str:
-        """默认 BM25 索引存储路径"""
+        """Return the default persisted-index path."""
         return os.path.join(os.path.dirname(DOCS_DIR), "bm25_index.pkl")
 
     def save(self, path: str):
-        """将 BM25 索引持久化到磁盘（pickle）"""
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        """Persist the tokenized index with its analyzer identity."""
+        parent_dir = os.path.dirname(path)
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
         data = {
+            "analyzer_id": self._analyzer.analyzer_id,
             "tokenized_corpus": self._tokenized_corpus,
             "chunk_meta": self._chunk_meta,
         }
@@ -123,27 +112,40 @@ class BM25Index:
             pickle.dump(data, f)
 
     def load(self, path: str):
-        """从磁盘加载 BM25 索引到当前实例"""
+        """Load an index only when it matches the active analyzer."""
         with open(path, "rb") as f:
             data = pickle.load(f)
+        stored_analyzer_id = data.get("analyzer_id")
+        if stored_analyzer_id != self._analyzer.analyzer_id:
+            raise ValueError(
+                "BM25 index analyzer mismatch: "
+                f"expected {self._analyzer.analyzer_id}, "
+                f"got {stored_analyzer_id or 'legacy_jieba_or_unknown'}; "
+                "rebuild the BM25 index"
+            )
         self._tokenized_corpus = data["tokenized_corpus"]
         self._chunk_meta = data["chunk_meta"]
         if self._tokenized_corpus:
             self._bm25 = BM25Okapi(self._tokenized_corpus)
+        else:
+            self._bm25 = None
         return self
 
     @classmethod
     def load_from_file(cls, path: str) -> "BM25Index":
-        """工厂方法：从磁盘加载并返回新的 BM25Index 实例"""
+        """Create an instance from a compatible persisted index."""
         instance = cls()
         instance.load(path)
         return instance
 
-    # ─── 属性 ───────────────────────────────────────
-
     @property
     def chunk_count(self) -> int:
         return len(self._chunk_meta)
+
+    @property
+    def analyzer_id(self) -> str:
+        """Return the analyzer identity used for indexing and querying."""
+        return self._analyzer.analyzer_id
 
     @property
     def is_empty(self) -> bool:
