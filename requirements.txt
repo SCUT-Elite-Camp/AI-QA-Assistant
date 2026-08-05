@@ -21,6 +21,8 @@ nltk
 scikit-learn
 PyMuPDF
 python-docx
+pywin32
+olefile
 sentence-transformers
 modelscope
 python-dotenv>=1.0,<2

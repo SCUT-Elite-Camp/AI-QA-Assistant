@@ -1,0 +1,6044 @@
+{
+  "doc_id": "603704b853f1eb9373e6e24b8a8316eb",
+  "title": "Meeting+Minutes+of+2026_07_20+-+Q2+discussion",
+  "content": "Date\n\nWed, 5 Aug 2026 03\n\n0000\n\nMessage-ID\n\n560980197.15.1785900659101\n\n483068d4924b\n\nSubject\n\nExported From Confluence\n\nMIME-Version\n\n1.0\n\nContent-Type\n\nmultipart\n\nrelated\n\nboundary\n\n----\n\nPart\n\n341004224.1785900659101\n\n------\n\nPart\n\n341004224.1785900659101\n\nContent-Type\n\ntext\n\nhtml\n\ncharset\n\nUTF-8\n\nContent-Transfer-Encoding\n\nquoted-printable\n\nContent-Location\n\nfile\n\nexported.html\n\nhtml xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns\n\nschemas-microsoft-com\n\nxmlns\n\nw3-org-ns\n\nHTML\n\nhead\n\nmeta http-equiv\n\nContent-Type\n\ncontent\n\ntext\n\nhtml\n\ncharset\n\n3Dutf-8\n\ntitle\n\nMeeting Minutes of 2026\n\n20 - Q2 discussion\n\ntitle\n\nif gte mso 9\n\nOfficeDocumentSettings\n\nTargetScreenSize\n\n1024x640\n\nTargetScreenSize\n\nPixelsPerInch\n\nPixelsPerInch\n\nAllowPNG\n\nOfficeDocumentSettings\n\nWordDocument\n\nView\n\nPrint\n\nView\n\nZoom\n\nZoom\n\nDoNotOptimizeForBrowser\n\nWordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin\n\n.5in\n\nmso-footer-margin\n\n.5in\n\nmso-paper-source\n\ntable\n\nborder\n\nsolid 1px\n\nborder-collapse\n\ncollapse\n\ntable td, table th\n\nborder\n\nsolid 1px\n\npadding\n\n5px\n\ntd\n\npage-break-inside\n\navoid\n\ntr\n\npage-break-after\n\navoid\n\ndiv.Section1\n\npage\n\nSection1\n\nConfluence print stylesheet. Common to all themes for print medi\n\na\n\nFull of !important until we improve batching for print CSS\n\nmedia print\n\nmain\n\npadding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar\n\n--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se\n\nrif\n\nbody,\n\nfull-height-container,\n\nmain,\n\npage,\n\ncontent, .has-personal-sid\n\nebar\n\ncontent\n\nbackground\n\nvar\n\n--ds-surface,\n\n!important\n\ncolor\n\nvar\n\n--ds-text,\n\n!important\n\nborder\n\n0 !important\n\nwidth\n\n100\n\n!important\n\nheight\n\nauto !important\n\nmin-height\n\nauto !important\n\nmargin\n\n0 !important\n\npadding\n\n0 !important\n\ndisplay\n\nblock !important\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,\n\ncontent h2,\n\ncontent h3,\n\ncontent h4,\n\ncontent h5,\n\ncontent h6\n\npage-break-after\n\navoid\n\npre\n\nfont\n\nvar\n\n--ds-font-code, Monaco,\n\nCourier New\n\n, monospace\n\nheader,\n\n.aui-header-inner,\n\nnavigation,\n\nsidebar,\n\n.sidebar,\n\npersonal-info-sidebar,\n\n.ia-fixed-sidebar,\n\n.page-actions,\n\n.navmenu,\n\n.ajs-menu-bar,\n\n.noprint,\n\n.inline-control-link,\n\n.inline-control-link a,\n\na.show-labels-editor,\n\n.global-comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important\n\nCONF-28544 cannot print multiple pages in IE\n\nsplitter-content\n\nposition\n\nrelative !important\n\n.comment .date\n\nbefore\n\ncontent\n\nnone !important\n\nremove middot for print view\n\nh1.pagetitle img\n\nheight\n\nauto\n\nwidth\n\nauto\n\n.print-only\n\ndisplay\n\nblock\n\nfooter\n\nposition\n\nrelative !important\n\nCONF-17506 Place the footer at en\n\nd of the content\n\nmargin\n\npadding\n\nbackground\n\nnone\n\nclear\n\nboth\n\npoweredby\n\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic\n\npoweredby li.noprint\n\ndisplay\n\nnone\n\nno width controls in print\n\n.wiki-content .table-wrap,\n\n.wiki-content p,\n\n.panel .codeContent,\n\n.panel .codeContent pre,\n\n.image-wrap\n\noverflow\n\nvisible !important\n\nTODO - should this work?\n\nchildren-section,\n\ncomments-section .comment,\n\ncomments-section .comment .comment-body,\n\ncomments-section .comment .comment-content,\n\ncomments-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies\n\nthe specificity here is a hack because print styles\n\nare getting loaded before the base styles.\n\ncomments-section.pageSection .section-header,\n\ncomments-section.pageSection .section-title,\n\nchildren-section.pageSection .section-header,\n\nchildren-section.pageSection .section-title,\n\n.children-show-hide\n\npadding-left\n\nmargin-left\n\n.children-show-hide.icon\n\ndisplay\n\nnone\n\npersonal sidebar\n\n.has-personal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right\n\n0px\n\n.no-print, .no-print\n\ndisplay\n\nnone !important\n\n--\n\nstyle\n\nhead\n\nbody\n\nMeeting Minutes of 2026\n\n20 - Q2 discussion\n\ndiv class\n\nSection1\n\np local-id\n\nfa9b7025fa60\n\nHi all,\n\np local-id\n\nb42a907d5534\n\nnbsp\n\np local-id\n\n8e0f6d151534\n\nThank you so much for your attendance. Please\n\nkindly check the meeting minutes below for the meeting.\n\np local-id\n\ndcfee8a8854e\n\nnbsp\n\np local-id\n\n8f5ad109fc21\n\nDate\n\nMonday, 20th July, 2026\n\np local-id\n\n9190c201b7af\n\nTime\n\n30 HK time\n\np local-id\n\n1e0b8312f82f\n\nAttendees\n\nTao Huang, Loura Guo, Jiajin Zhong,\n\nDaijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Da\n\np local-id\n\n4bf2edd9e16a\n\nstrong\n\nQuick Recap\n\nstrong\n\nThis meeting primarily focused on AI knowledge sharing and goal planning fo\n\nr Project Checkpoint 2. Zhong Jiajin shared the differences between LNWiki\n\nand LNWT, explaining how LNWiki analyzes documents, extracts entities, and\n\nuses graph expansion to answer questions. Wang Yixi presented system evalua\n\ntion results, noting that while the system returns relevant results, rankin\n\ng needs improvement. The team discussed next-phase priorities, including mu\n\nlti-data-source integration, PDF processing\n\nespecially images, tables, and\n\nformulas\n\n, toolset expansion, and Confluence integration. Tao emphasized t\n\nhe importance of creating Confluence documentation, suggesting that each mo\n\ndule lead record their progress and ideas, and recommended standardized for\n\nmats for tracking feature development and performance improvements. The mee\n\nting concluded with next-week action items, including Confluence page setup\n\n, infrastructure building, and performance monitoring.\n\np local-id\n\n5e002aef4f29\n\nstrong\n\nFollow-up Actions\n\nstrong\n\nul local-id\n\n24938363-0042-4136-b811-8cfa789c932f\n\nli local-id\n\n3f3697e4-ea68-4046-b3c4-f6cff5548907\n\np local-id\n\n06df2942ad73\n\nstrong\n\nDai Jiaxing\n\nstrong\n\nul local-id\n\nbfebf906-3e54-41da-80a9-47dc3840a3e0\n\nli local-id\n\n85ecffe7-13fc-49c9-b69e-4eba2d77d702\n\np local-id\n\n1e7465fce3e8\n\nResearch and experiment with solutions for han\n\ndling complex PDF content\n\nimages, tables, formulas\n\n, including OCR and mul\n\nti-module understanding layer design.\n\nli local-id\n\nac25be6d-b6da-4679-9669-191c61559733\n\np local-id\n\n1ff2b319fdd1\n\nContinue identifying and evaluating suitable E\n\nnglish datasets for future functional testing and performance assessment.\n\nli local-id\n\nfc2189fd-f93b-4619-a87a-d932e1cf8a03\n\np local-id\n\n0359ae05d517\n\nstrong\n\nWang Yixi\n\nstrong\n\nul local-id\n\n527d06c3-c650-433c-a2aa-cb23284f7e34\n\nli local-id\n\nddbc5d6c-fb95-4c4a-b7bc-e9e26bd1a00e\n\np local-id\n\naba6e2cee83d\n\nComplete the Confluence page for data layer pr\n\nocessing within the next week.\n\nli local-id\n\na163d18b-76d0-4428-9630-f7adab19e63e\n\np local-id\n\n546d09c7ccb2\n\nstrong\n\nMu Guangyuan\n\nstrong\n\nul local-id\n\n2a66ee8e-c78f-4b26-83ff-f62c6bfaa729\n\nli local-id\n\na210830f-8b34-4e98-815b-f234ec0ade17\n\np local-id\n\ne7c7a3846958\n\nManage and maintain Confluence pages, organizi\n\nng and documenting progress, feature ideas, and contributions for each modu\n\nle.\n\nli local-id\n\n636f3072-94f5-41a2-b922-3706673c513a\n\np local-id\n\n3f605d0f8144\n\nstrong\n\nDai Jiaxing\n\nstrong\n\nul local-id\n\ne3e104ac-2b26-44d7-af32-4ddc83288437\n\nli local-id\n\nc59b4721-54c8-49c1-acac-80422f8684c0\n\np local-id\n\nb04a4ba27bc9\n\nResponsible for taking and compiling these mee\n\nting minutes.\n\nli local-id\n\nfc621a83-ea67-4067-9b74-2f54b8e6ab13\n\np local-id\n\n97d1460b4580\n\nstrong\n\nCollaboration\n\nstrong\n\nul local-id\n\nd96f4b7d-5363-4e69-a71b-a0b9a0a32980\n\nli local-id\n\n1ea3bdaa-bed5-42df-865d-07a9b1c02b5e\n\np local-id\n\n52d1bdfe4f97\n\nstrong\n\nAll members\n\nstrong\n\nnbsp\n\nCreate Conf\n\nluence pages for their respective modules by next Monday, summarizing imple\n\nmented features during the CPU phase, planned features for the CPR phase, a\n\nnd encountered issues, while documenting progress in writing.\n\nli local-id\n\n79b35399-9baf-4cb5-b856-187e7556fae3\n\np local-id\n\nec76ed4dc97a\n\nstrong\n\nAll members\n\nstrong\n\nnbsp\n\nWhen develo\n\nping new features or optimizations, ensure clear interface definitions\n\nut\n\noutput specifications\n\nare provided and recorded in Confluence.\n\nli local-id\n\nfaf55da7-dbea-478a-be04-94dddcf078b1\n\np local-id\n\n1ec77a7dae1d\n\nstrong\n\nWeb layer lead\n\nstrong\n\nnbsp\n\nSet up b\n\nasic system observability infrastructure, including query performance\n\ne.g.\n\n, response time\n\nmonitoring.\n\nli local-id\n\nb000176b-9df6-46c8-b8ac-b6c903b3a8cb\n\np local-id\n\na43bd9fc1bae\n\nstrong\n\nIntegration layer lead\n\nstrong\n\nnbsp\n\nOptimize the re-ranking algorithm, considering better ranking models.\n\nli\n\nli local-id\n\n08a4b6bb-4ad9-4047-b92e-9a1303d9c2fb\n\np local-id\n\n7a4d1ac1ec83\n\nstrong\n\nAll members\n\nstrong\n\nnbsp\n\nStarting ne\n\nxt week, each team meeting should include 1\n\n933 slides summarizing la\n\nst week\n\ns accomplishments, challenges faced, and next week\n\ns goals, to be s\n\nhared during the session.\n\np local-id\n\n88320b249c2f\n\nstrong\n\nSummary\n\nstrong\n\np local-id\n\nd992e99d76e6\n\nstrong\n\n82LL\n\nMWiki vs. RAG Technology Comparison\n\nstrong\n\nZhong Jiajin shared AI knowledge on LLMWiki , distinguishing how these tech\n\nnologies process documents and answer questions. LLMWiki organizes knowledg\n\ne by analyzing key entities in documents and generating structured wiki pag\n\nes, while LLMWiki employs graph expansion techniques to discover inter\n\n91document connections and uses a four\n\n91signal model to assess r\n\nelevance. Zhong summarized the differences between LNWiki and traditional R\n\nAG systems in terms of processing approach, knowledge state, retrieval meth\n\nods, and efficiency.\n\np local-id\n\nc5eacba3b309\n\nstrong\n\nKnowledge Graph Construction\n\nDoc\n\nument Processing\n\nstrong\n\n82The team discussed technical aspects of\n\nknowledge graph construction and document handling. Zhong explained how LN\n\nWiki parses documents to generate metadata, including entity extraction and\n\ntext structuring. Wang Yixi reported evaluation results, showing the syste\n\nm effectively retrieves relevant documents but requires ranking improvement\n\ns. Dai Jiaxing outlined next-phase priorities\n\nmulti\n\n91data\n\nource support, integration with different platforms, PDF processing enhance\n\nments\n\nespecially OCR and handling images\n\ntables\n\n, and toolset expansion.\n\np local-id\n\n36dfcde51a9d\n\nstrong\n\nFinancial Dataset Handling\n\nstrong\n\n82Dai Jiaxing shared a financial dataset\n\ncomprising multiple PDFs, some containing flowcharts that OCR could not eff\n\nectively extract. Wang Yixi noted that due to budget constraints, an end\n\n91to\n\n91end model might be more suitable. Tao suggested temporaril\n\ny deprioritizing image processing in favor of text handling and recommended\n\nintegrating with Confluence first to read article contents.\n\np local-id\n\n83cba413939b\n\nstrong\n\nPlatform Data Extraction\n\nOptimiz\n\nation\n\nstrong\n\n82Wang Yixi emphasized the importance of\n\nplatform data extraction and encouraged team members to independently explo\n\nre optimization and enhancement directions for their modules. Tao proposed\n\ncreating dedicated Confluence pages to track progress and record implemente\n\nd features, with Mu Guangyuan volunteering to manage these pages. The team\n\nagreed that future meetings should focus more on each member sharing functi\n\nonal updates and work demonstrations for their modules, rather than having\n\nWang Yixi unilaterally set plans.\n\np local-id\n\n5ddbb0f248d3\n\nstrong\n\nFeature Development Progress\n\nstrong\n\nbr\n\n82Tao and Wang Yixi discussed progress on\n\nfeature development. Tao suggested that each sub\n\n91team summarize cu\n\nrrently implemented features at their layer and propose new feasible additi\n\nons, with a goal of completing open discussion and feature planning by next\n\nweek. Tao also proposed standardizing team meeting agendas, including proj\n\nect updates, knowledge sharing, and progress reports from each group, recom\n\nmending each group prepare 1\n\n933 concise slides to facilitate present\n\nations. Zhong Jiajin confirmed the target of conducting feature discussions\n\nand planning by next Monday.\n\np local-id\n\n1c63e5e69371\n\nstrong\n\nConfluence Page Tracking System\n\nstron\n\n82Tao proposed creating a shared Confluen\n\nce page to track team progress and resolve issues. Mu Guangyuan and Dai Jia\n\nxing agreed, and the group discussed page organization, including module\n\n91based sections, status tracking, and contributor information. Wang Yi\n\nxi mentioned the need for usage guidelines and suggested using English rath\n\ner than Chinese for documentation. The discussion also touched on performan\n\nce test dataset selection, with Wang noting that existing datasets include\n\nvarious test scenarios useful for evaluating system improvements.\n\np local-id\n\ncc4b83f83d1d\n\nstrong\n\nSystem Architecture\n\nInterface De\n\nsign\n\nstrong\n\n82The team discussed system architecture\n\ninterfaces and tool integration. Wang Yixi advised everyone to expose stand\n\nardized interfaces when implementing new features and register tools in the\n\ntool table, rather than using overly complex implementations. Tao stressed\n\nthe need to clearly define input\n\noutput requirements, similar to API contr\n\nact design. Wang Yixi also outlined next week\n\ns work plan, including buildi\n\nng the memory module, finalizing Confluence page processing, infrastructure\n\nsetup, and tool integration optimization. Mu Guangyuan requested that meet\n\ning minutes be placed on Confluence, and Zhong Jiajin confirmed that Mu wou\n\nld first set up the roadmap configuration on Confluence.\n\np local-id\n\n01fa3d82582b\n\np local-id\n\nc4907af598bf\n\np local-id\n\n9b2cd2d62398\n\nstrong\n\nDaijiang\n\nstrong\n\nnbsp\n\nand\n\nstrong\n\nHuijie\n\nstrong\n\np local-id\n\ned3586efd2e4\n\nnbsp\n\np local-id\n\n044eebac0596\n\nKindly remind you that\n\nstrong\n\nDaijiang\n\nstro\n\nng\n\nwill be the\n\nstrong\n\nhost\n\nstrong\n\nnbsp\n\nand\n\nstrong\n\nHuijie\n\nstrong\n\nwill\n\nbe the\n\nstrong\n\nMoM Noter\n\nstrong\n\nnbsp\n\nof next weekly meeting. Please read\n\nabove Notes and get prepared.\n\np local-id\n\n4d753ddc69be\n\nnbsp\n\np local-id\n\nc80b88e36a8d\n\nKind regards,\n\np local-id\n\n19042ea92558\n\np local-id\n\n40a2806914f3\n\nstrong\n\nJiaxing\n\nstrong\n\nbody\n\nhtml\n\n------\n\nPart\n\n341004224.1785900659101--",
+  "space": "raws",
+  "address": "C:\\Users\\Hola\\Desktop\\Q&A\\AI-QA-Assistant\\data-persistence\\data\\raws\\Meeting+Minutes+of+2026_07_20+-+Q2+discussion.doc",
+  "last_updated": "2026-08-05T03:30:59.339662+00:00",
+  "chunks": [
+    {
+      "index": 0,
+      "text": "Date\n\nWed, 5 Aug 2026 03\n\n0000\n\nMessage-ID\n\n560980197.15.1785900659101\n\n483068d4924b\n\nSubject\n\nExported From Confluence\n\nMIME-Version\n\n1.0\n\nContent-Type\n\nmultipart\n\nrelated\n\nboundary\n\n----\n\nPart\n\n341004224.1785900659101\n\n------\n\nPart\n\n341004224.1785900659101\n\nContent-Type\n\ntext\n\nhtml\n\ncharset\n\nUTF-8\n\nContent-Transfer-Encoding\n\nquoted-printable\n\nContent-Location\n\nfile\n\nexported.html\n\nhtml xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_0"
+    },
+    {
+      "index": 1,
+      "text": "html xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns\n\nschemas-microsoft-com\n\nxmlns\n\nw3-org-ns\n\nHTML\n\nhead\n\nmeta http-equiv\n\nContent-Type\n\ncontent\n\ntext\n\nhtml\n\ncharset\n\n3Dutf-8\n\ntitle\n\nMeeting Minutes of 2026\n\n20 - Q2 discussion\n\ntitle\n\nif gte mso 9\n\nOfficeDocumentSettings\n\nTargetScreenSize\n\n1024x640\n\nTargetScreenSize\n\nPixelsPerInch\n\nPixelsPerInch\n\nAllowPNG\n\nOfficeDocumentSettings\n\nWordDocument\n\nView\n\nPrint\n\nView\n\nZoom\n\nZoom\n\nDoNotOptimizeForBrowser\n\nWordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_1"
+    },
+    {
+      "index": 2,
+      "text": "WordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin\n\n.5in\n\nmso-footer-margin\n\n.5in\n\nmso-paper-source\n\ntable\n\nborder\n\nsolid 1px\n\nborder-collapse\n\ncollapse\n\ntable td, table th\n\nborder\n\nsolid 1px\n\npadding\n\n5px\n\ntd\n\npage-break-inside\n\navoid\n\ntr\n\npage-break-after\n\navoid\n\ndiv.Section1\n\npage\n\nSection1\n\nConfluence print stylesheet. Common to all themes for print medi\n\na\n\nFull of !important until we improve batching for print CSS\n\nmedia print\n\nmain\n\npadding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_2"
+    },
+    {
+      "index": 3,
+      "text": "ding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar\n\n--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se\n\nrif\n\nbody,\n\nfull-height-container,\n\nmain,\n\npage,\n\ncontent, .has-personal-sid\n\nebar\n\ncontent\n\nbackground\n\nvar\n\n--ds-surface,\n\n!important\n\ncolor\n\nvar\n\n--ds-text,\n\n!important\n\nborder\n\n0 !important\n\nwidth\n\n100\n\n!important\n\nheight\n\nauto !important\n\nmin-height\n\nauto !important\n\nmargin\n\n0 !important\n\npadding\n\n0 !important\n\ndisplay\n\nblock !important\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_3"
+    },
+    {
+      "index": 4,
+      "text": "mportant\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,\n\ncontent h2,\n\ncontent h3,\n\ncontent h4,\n\ncontent h5,\n\ncontent h6\n\npage-break-after\n\navoid\n\npre\n\nfont\n\nvar\n\n--ds-font-code, Monaco,\n\nCourier New\n\n, monospace\n\nheader,\n\n.aui-header-inner,\n\nnavigation,\n\nsidebar,\n\n.sidebar,\n\npersonal-info-sidebar,\n\n.ia-fixed-sidebar,\n\n.page-actions,\n\n.navmenu,\n\n.ajs-menu-bar,\n\n.noprint,\n\n.inline-control-link,\n\n.inline-control-link a,\n\na.show-labels-editor,\n\n.global-comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_4"
+    },
+    {
+      "index": 5,
+      "text": "comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important\n\nCONF-28544 cannot print multiple pages in IE\n\nsplitter-content\n\nposition\n\nrelative !important\n\n.comment .date\n\nbefore\n\ncontent\n\nnone !important\n\nremove middot for print view\n\nh1.pagetitle img\n\nheight\n\nauto\n\nwidth\n\nauto\n\n.print-only\n\ndisplay\n\nblock\n\nfooter\n\nposition\n\nrelative !important\n\nCONF-17506 Place the footer at en\n\nd of the content\n\nmargin\n\npadding\n\nbackground\n\nnone\n\nclear\n\nboth\n\npoweredby\n\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_5"
+    },
+    {
+      "index": 6,
+      "text": "\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic\n\npoweredby li.noprint\n\ndisplay\n\nnone\n\nno width controls in print\n\n.wiki-content .table-wrap,\n\n.wiki-content p,\n\n.panel .codeContent,\n\n.panel .codeContent pre,\n\n.image-wrap\n\noverflow\n\nvisible !important\n\nTODO - should this work?\n\nchildren-section,\n\ncomments-section .comment,\n\ncomments-section .comment .comment-body,\n\ncomments-section .comment .comment-content,\n\ncomments-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_6"
+    },
+    {
+      "index": 7,
+      "text": "s-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies\n\nthe specificity here is a hack because print styles\n\nare getting loaded before the base styles.\n\ncomments-section.pageSection .section-header,\n\ncomments-section.pageSection .section-title,\n\nchildren-section.pageSection .section-header,\n\nchildren-section.pageSection .section-title,\n\n.children-show-hide\n\npadding-left\n\nmargin-left\n\n.children-show-hide.icon\n\ndisplay\n\nnone\n\npersonal sidebar\n\n.has-personal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_7"
+    },
+    {
+      "index": 8,
+      "text": "sonal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right\n\n0px\n\n.no-print, .no-print\n\ndisplay\n\nnone !important\n\n--\n\nstyle\n\nhead\n\nbody\n\nMeeting Minutes of 2026\n\n20 - Q2 discussion\n\ndiv class\n\nSection1\n\np local-id\n\nfa9b7025fa60\n\nHi all,\n\np local-id\n\nb42a907d5534\n\nnbsp\n\np local-id\n\n8e0f6d151534\n\nThank you so much for your attendance. Please\n\nkindly check the meeting minutes below for the meeting.\n\np local-id\n\ndcfee8a8854e\n\nnbsp\n\np local-id\n\n8f5ad109fc21\n\nDate\n\nMonday, 20th July, 2026\n\np local-id\n\n9190c201b7af\n\nTime\n\n30 HK time\n\np local-id\n\n1e0b8312f82f",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_8"
+    },
+    {
+      "index": 9,
+      "text": "\nDate\n\nMonday, 20th July, 2026\n\np local-id\n\n9190c201b7af\n\nTime\n\n30 HK time\n\np local-id\n\n1e0b8312f82f\n\nAttendees\n\nTao Huang, Loura Guo, Jiajin Zhong,\n\nDaijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Da\n\np local-id\n\n4bf2edd9e16a\n\nstrong\n\nQuick Recap\n\nstrong\n\nThis meeting primarily focused on AI knowledge sharing and goal planning fo\n\nr Project Checkpoint 2. Zhong Jiajin shared the differences between LNWiki\n\nand LNWT, explaining how LNWiki analyzes documents, extracts entities, and\n\nuses graph expansion to answer questions. Wang Yixi presented system evalua",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_9"
+    },
+    {
+      "index": 10,
+      "text": " extracts entities, and\n\nuses graph expansion to answer questions. Wang Yixi presented system evalua\n\ntion results, noting that while the system returns relevant results, rankin\n\ng needs improvement. The team discussed next-phase priorities, including mu\n\nlti-data-source integration, PDF processing\n\nespecially images, tables, and\n\nformulas\n\n, toolset expansion, and Confluence integration. Tao emphasized t\n\nhe importance of creating Confluence documentation, suggesting that each mo\n\ndule lead record their progress and ideas, and recommended standardized for",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_10"
+    },
+    {
+      "index": 11,
+      "text": "suggesting that each mo\n\ndule lead record their progress and ideas, and recommended standardized for\n\nmats for tracking feature development and performance improvements. The mee\n\nting concluded with next-week action items, including Confluence page setup\n\n, infrastructure building, and performance monitoring.\n\np local-id\n\n5e002aef4f29\n\nstrong\n\nFollow-up Actions\n\nstrong\n\nul local-id\n\n24938363-0042-4136-b811-8cfa789c932f\n\nli local-id\n\n3f3697e4-ea68-4046-b3c4-f6cff5548907\n\np local-id\n\n06df2942ad73\n\nstrong\n\nDai Jiaxing\n\nstrong\n\nul local-id\n\nbfebf906-3e54-41da-80a9-47dc3840a3e0\n\nli local-id",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_11"
+    },
+    {
+      "index": 12,
+      "text": "942ad73\n\nstrong\n\nDai Jiaxing\n\nstrong\n\nul local-id\n\nbfebf906-3e54-41da-80a9-47dc3840a3e0\n\nli local-id\n\n85ecffe7-13fc-49c9-b69e-4eba2d77d702\n\np local-id\n\n1e7465fce3e8\n\nResearch and experiment with solutions for han\n\ndling complex PDF content\n\nimages, tables, formulas\n\n, including OCR and mul\n\nti-module understanding layer design.\n\nli local-id\n\nac25be6d-b6da-4679-9669-191c61559733\n\np local-id\n\n1ff2b319fdd1\n\nContinue identifying and evaluating suitable E\n\nnglish datasets for future functional testing and performance assessment.\n\nli local-id\n\nfc2189fd-f93b-4619-a87a-d932e1cf8a03\n\np local-id",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_12"
+    },
+    {
+      "index": 13,
+      "text": "l testing and performance assessment.\n\nli local-id\n\nfc2189fd-f93b-4619-a87a-d932e1cf8a03\n\np local-id\n\n0359ae05d517\n\nstrong\n\nWang Yixi\n\nstrong\n\nul local-id\n\n527d06c3-c650-433c-a2aa-cb23284f7e34\n\nli local-id\n\nddbc5d6c-fb95-4c4a-b7bc-e9e26bd1a00e\n\np local-id\n\naba6e2cee83d\n\nComplete the Confluence page for data layer pr\n\nocessing within the next week.\n\nli local-id\n\na163d18b-76d0-4428-9630-f7adab19e63e\n\np local-id\n\n546d09c7ccb2\n\nstrong\n\nMu Guangyuan\n\nstrong\n\nul local-id\n\n2a66ee8e-c78f-4b26-83ff-f62c6bfaa729\n\nli local-id\n\na210830f-8b34-4e98-815b-f234ec0ade17\n\np local-id\n\ne7c7a3846958",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_13"
+    },
+    {
+      "index": 14,
+      "text": "-4b26-83ff-f62c6bfaa729\n\nli local-id\n\na210830f-8b34-4e98-815b-f234ec0ade17\n\np local-id\n\ne7c7a3846958\n\nManage and maintain Confluence pages, organizi\n\nng and documenting progress, feature ideas, and contributions for each modu\n\nle.\n\nli local-id\n\n636f3072-94f5-41a2-b922-3706673c513a\n\np local-id\n\n3f605d0f8144\n\nstrong\n\nDai Jiaxing\n\nstrong\n\nul local-id\n\ne3e104ac-2b26-44d7-af32-4ddc83288437\n\nli local-id\n\nc59b4721-54c8-49c1-acac-80422f8684c0\n\np local-id\n\nb04a4ba27bc9\n\nResponsible for taking and compiling these mee\n\nting minutes.\n\nli local-id\n\nfc621a83-ea67-4067-9b74-2f54b8e6ab13\n\np local-id",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_14"
+    },
+    {
+      "index": 15,
+      "text": "nd compiling these mee\n\nting minutes.\n\nli local-id\n\nfc621a83-ea67-4067-9b74-2f54b8e6ab13\n\np local-id\n\n97d1460b4580\n\nstrong\n\nCollaboration\n\nstrong\n\nul local-id\n\nd96f4b7d-5363-4e69-a71b-a0b9a0a32980\n\nli local-id\n\n1ea3bdaa-bed5-42df-865d-07a9b1c02b5e\n\np local-id\n\n52d1bdfe4f97\n\nstrong\n\nAll members\n\nstrong\n\nnbsp\n\nCreate Conf\n\nluence pages for their respective modules by next Monday, summarizing imple\n\nmented features during the CPU phase, planned features for the CPR phase, a\n\nnd encountered issues, while documenting progress in writing.\n\nli local-id\n\n79b35399-9baf-4cb5-b856-187e7556fae3\n\np local-id",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_15"
+    },
+    {
+      "index": 16,
+      "text": "hile documenting progress in writing.\n\nli local-id\n\n79b35399-9baf-4cb5-b856-187e7556fae3\n\np local-id\n\nec76ed4dc97a\n\nstrong\n\nAll members\n\nstrong\n\nnbsp\n\nWhen develo\n\nping new features or optimizations, ensure clear interface definitions\n\nut\n\noutput specifications\n\nare provided and recorded in Confluence.\n\nli local-id\n\nfaf55da7-dbea-478a-be04-94dddcf078b1\n\np local-id\n\n1ec77a7dae1d\n\nstrong\n\nWeb layer lead\n\nstrong\n\nnbsp\n\nSet up b\n\nasic system observability infrastructure, including query performance\n\ne.g.\n\n, response time\n\nmonitoring.\n\nli local-id\n\nb000176b-9df6-46c8-b8ac-b6c903b3a8cb\n\np local-id",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_16"
+    },
+    {
+      "index": 17,
+      "text": "e\n\ne.g.\n\n, response time\n\nmonitoring.\n\nli local-id\n\nb000176b-9df6-46c8-b8ac-b6c903b3a8cb\n\np local-id\n\na43bd9fc1bae\n\nstrong\n\nIntegration layer lead\n\nstrong\n\nnbsp\n\nOptimize the re-ranking algorithm, considering better ranking models.\n\nli\n\nli local-id\n\n08a4b6bb-4ad9-4047-b92e-9a1303d9c2fb\n\np local-id\n\n7a4d1ac1ec83\n\nstrong\n\nAll members\n\nstrong\n\nnbsp\n\nStarting ne\n\nxt week, each team meeting should include 1\n\n933 slides summarizing la\n\nst week\n\ns accomplishments, challenges faced, and next week\n\ns goals, to be s\n\nhared during the session.\n\np local-id\n\n88320b249c2f\n\nstrong\n\nSummary\n\nstrong\n\np local-id",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_17"
+    },
+    {
+      "index": 18,
+      "text": "s, to be s\n\nhared during the session.\n\np local-id\n\n88320b249c2f\n\nstrong\n\nSummary\n\nstrong\n\np local-id\n\nd992e99d76e6\n\nstrong\n\n82LL\n\nMWiki vs. RAG Technology Comparison\n\nstrong\n\nZhong Jiajin shared AI knowledge on LLMWiki , distinguishing how these tech\n\nnologies process documents and answer questions. LLMWiki organizes knowledg\n\ne by analyzing key entities in documents and generating structured wiki pag\n\nes, while LLMWiki employs graph expansion techniques to discover inter\n\n91document connections and uses a four\n\n91signal model to assess r",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_18"
+    },
+    {
+      "index": 19,
+      "text": "ion techniques to discover inter\n\n91document connections and uses a four\n\n91signal model to assess r\n\nelevance. Zhong summarized the differences between LNWiki and traditional R\n\nAG systems in terms of processing approach, knowledge state, retrieval meth\n\nods, and efficiency.\n\np local-id\n\nc5eacba3b309\n\nstrong\n\nKnowledge Graph Construction\n\nDoc\n\nument Processing\n\nstrong\n\n82The team discussed technical aspects of\n\nknowledge graph construction and document handling. Zhong explained how LN\n\nWiki parses documents to generate metadata, including entity extraction and",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_19"
+    },
+    {
+      "index": 20,
+      "text": " Zhong explained how LN\n\nWiki parses documents to generate metadata, including entity extraction and\n\ntext structuring. Wang Yixi reported evaluation results, showing the syste\n\nm effectively retrieves relevant documents but requires ranking improvement\n\ns. Dai Jiaxing outlined next-phase priorities\n\nmulti\n\n91data\n\nource support, integration with different platforms, PDF processing enhance\n\nments\n\nespecially OCR and handling images\n\ntables\n\n, and toolset expansion.\n\np local-id\n\n36dfcde51a9d\n\nstrong\n\nFinancial Dataset Handling\n\nstrong\n\n82Dai Jiaxing shared a financial dataset",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_20"
+    },
+    {
+      "index": 21,
+      "text": "\n\n36dfcde51a9d\n\nstrong\n\nFinancial Dataset Handling\n\nstrong\n\n82Dai Jiaxing shared a financial dataset\n\ncomprising multiple PDFs, some containing flowcharts that OCR could not eff\n\nectively extract. Wang Yixi noted that due to budget constraints, an end\n\n91to\n\n91end model might be more suitable. Tao suggested temporaril\n\ny deprioritizing image processing in favor of text handling and recommended\n\nintegrating with Confluence first to read article contents.\n\np local-id\n\n83cba413939b\n\nstrong\n\nPlatform Data Extraction\n\nOptimiz\n\nation\n\nstrong\n\n82Wang Yixi emphasized the importance of",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_21"
+    },
+    {
+      "index": 22,
+      "text": "\n\nstrong\n\nPlatform Data Extraction\n\nOptimiz\n\nation\n\nstrong\n\n82Wang Yixi emphasized the importance of\n\nplatform data extraction and encouraged team members to independently explo\n\nre optimization and enhancement directions for their modules. Tao proposed\n\ncreating dedicated Confluence pages to track progress and record implemente\n\nd features, with Mu Guangyuan volunteering to manage these pages. The team\n\nagreed that future meetings should focus more on each member sharing functi\n\nonal updates and work demonstrations for their modules, rather than having\n\nWang Yixi unilaterally set plans.",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_22"
+    },
+    {
+      "index": 23,
+      "text": "tes and work demonstrations for their modules, rather than having\n\nWang Yixi unilaterally set plans.\n\np local-id\n\n5ddbb0f248d3\n\nstrong\n\nFeature Development Progress\n\nstrong\n\nbr\n\n82Tao and Wang Yixi discussed progress on\n\nfeature development. Tao suggested that each sub\n\n91team summarize cu\n\nrrently implemented features at their layer and propose new feasible additi\n\nons, with a goal of completing open discussion and feature planning by next\n\nweek. Tao also proposed standardizing team meeting agendas, including proj\n\nect updates, knowledge sharing, and progress reports from each group, recom",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_23"
+    },
+    {
+      "index": 24,
+      "text": "agendas, including proj\n\nect updates, knowledge sharing, and progress reports from each group, recom\n\nmending each group prepare 1\n\n933 concise slides to facilitate present\n\nations. Zhong Jiajin confirmed the target of conducting feature discussions\n\nand planning by next Monday.\n\np local-id\n\n1c63e5e69371\n\nstrong\n\nConfluence Page Tracking System\n\nstron\n\n82Tao proposed creating a shared Confluen\n\nce page to track team progress and resolve issues. Mu Guangyuan and Dai Jia\n\nxing agreed, and the group discussed page organization, including module",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_24"
+    },
+    {
+      "index": 25,
+      "text": ". Mu Guangyuan and Dai Jia\n\nxing agreed, and the group discussed page organization, including module\n\n91based sections, status tracking, and contributor information. Wang Yi\n\nxi mentioned the need for usage guidelines and suggested using English rath\n\ner than Chinese for documentation. The discussion also touched on performan\n\nce test dataset selection, with Wang noting that existing datasets include\n\nvarious test scenarios useful for evaluating system improvements.\n\np local-id\n\ncc4b83f83d1d\n\nstrong\n\nSystem Architecture\n\nInterface De\n\nsign\n\nstrong\n\n82The team discussed system architecture",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_25"
+    },
+    {
+      "index": 26,
+      "text": "d\n\nstrong\n\nSystem Architecture\n\nInterface De\n\nsign\n\nstrong\n\n82The team discussed system architecture\n\ninterfaces and tool integration. Wang Yixi advised everyone to expose stand\n\nardized interfaces when implementing new features and register tools in the\n\ntool table, rather than using overly complex implementations. Tao stressed\n\nthe need to clearly define input\n\noutput requirements, similar to API contr\n\nact design. Wang Yixi also outlined next week\n\ns work plan, including buildi\n\nng the memory module, finalizing Confluence page processing, infrastructure",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_26"
+    },
+    {
+      "index": 27,
+      "text": " plan, including buildi\n\nng the memory module, finalizing Confluence page processing, infrastructure\n\nsetup, and tool integration optimization. Mu Guangyuan requested that meet\n\ning minutes be placed on Confluence, and Zhong Jiajin confirmed that Mu wou\n\nld first set up the roadmap configuration on Confluence.\n\np local-id\n\n01fa3d82582b\n\np local-id\n\nc4907af598bf\n\np local-id\n\n9b2cd2d62398\n\nstrong\n\nDaijiang\n\nstrong\n\nnbsp\n\nand\n\nstrong\n\nHuijie\n\nstrong\n\np local-id\n\ned3586efd2e4\n\nnbsp\n\np local-id\n\n044eebac0596\n\nKindly remind you that\n\nstrong\n\nDaijiang\n\nstro\n\nng\n\nwill be the\n\nstrong\n\nhost\n\nstrong\n\nnbsp",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_27"
+    },
+    {
+      "index": 28,
+      "text": "bac0596\n\nKindly remind you that\n\nstrong\n\nDaijiang\n\nstro\n\nng\n\nwill be the\n\nstrong\n\nhost\n\nstrong\n\nnbsp\n\nand\n\nstrong\n\nHuijie\n\nstrong\n\nwill\n\nbe the\n\nstrong\n\nMoM Noter\n\nstrong\n\nnbsp\n\nof next weekly meeting. Please read\n\nabove Notes and get prepared.\n\np local-id\n\n4d753ddc69be\n\nnbsp\n\np local-id\n\nc80b88e36a8d\n\nKind regards,\n\np local-id\n\n19042ea92558\n\np local-id\n\n40a2806914f3\n\nstrong\n\nJiaxing\n\nstrong\n\nbody\n\nhtml\n\n------\n\nPart\n\n341004224.1785900659101--",
+      "chunk_id": "603704b853f1eb9373e6e24b8a8316eb_chunk_28"
+    }
+  ],
+  "source_url": "",
+  "content_blocks": [
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Wed, 5 Aug 2026 03",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0000",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Message-ID",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "560980197.15.1785900659101",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "483068d4924b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Subject",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Exported From Confluence",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "MIME-Version",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1.0",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "multipart",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "related",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "boundary",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "----",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "341004224.1785900659101",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "------",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "341004224.1785900659101",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "charset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "UTF-8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Transfer-Encoding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "quoted-printable",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Location",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "file",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "exported.html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "word",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "w3-org-ns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "HTML",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "head",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "meta http-equiv",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "charset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3Dutf-8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "title",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Meeting Minutes of 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "20 - Q2 discussion",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "title",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "if gte mso 9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "OfficeDocumentSettings",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TargetScreenSize",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1024x640",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TargetScreenSize",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "PixelsPerInch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "PixelsPerInch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "AllowPNG",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "OfficeDocumentSettings",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "WordDocument",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "View",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "View",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zoom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zoom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "DoNotOptimizeForBrowser",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "WordDocument",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "endif",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "size",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8.5in 11.0in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1.0in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-header-margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".5in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-footer-margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".5in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-paper-source",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "table",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "solid 1px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border-collapse",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "collapse",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "table td, table th",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "solid 1px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "td",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-inside",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "tr",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-after",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "div.Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Confluence print stylesheet. Common to all themes for print medi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Full of !important until we improve batching for print CSS",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "media print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "main",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding-bottom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1em !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "The default padding of 6em is to",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "o much for printouts",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "rif",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "full-height-container,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "main,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content, .has-personal-sid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-surface,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "color",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-text,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "width",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "100",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "min-height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "block !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "link, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "visited, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "focus, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hover, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "active",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "color",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-text,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h1,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h2,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h3,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h4,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h5,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h6",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-after",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "pre",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-font-code, Monaco,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Courier New",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", monospace",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".aui-header-inner,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "navigation,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "personal-info-sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".ia-fixed-sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".page-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".navmenu,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".ajs-menu-bar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".noprint,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".inline-control-link,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".inline-control-link a,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a.show-labels-editor,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".global-comment-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".comment-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".quick-comment-container,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "addcomment",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "CONF-28544 cannot print multiple pages in IE",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "splitter-content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "position",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "relative !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".comment .date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "before",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "remove middot for print view",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "h1.pagetitle img",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "width",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".print-only",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "block",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "footer",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "position",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "relative !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "CONF-17506 Place the footer at en",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d of the content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "clear",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "both",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border-top",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby li.print-only",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "list-item",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font-style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "italic",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby li.noprint",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "no width controls in print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".wiki-content .table-wrap,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".wiki-content p,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".panel .codeContent,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".panel .codeContent pre,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".image-wrap",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "overflow",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "visible !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TODO - should this work?",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment .comment-body,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment .comment-content,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment p",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-inside",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-children a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text-decoration",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hide twixies",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "the specificity here is a hack because print styles",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "are getting loaded before the base styles.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section.pageSection .section-header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section.pageSection .section-title,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section.pageSection .section-header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section.pageSection .section-title,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".children-show-hide",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding-left",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-left",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".children-show-hide.icon",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "personal sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".has-personal-sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-right",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".has-personal-sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content .pageSection",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-right",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".no-print, .no-print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "head",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Meeting Minutes of 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "20 - Q2 discussion",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "div class",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "fa9b7025fa60",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Hi all,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "b42a907d5534",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8e0f6d151534",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Thank you so much for your attendance. Please",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "kindly check the meeting minutes below for the meeting.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "dcfee8a8854e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8f5ad109fc21",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Monday, 20th July, 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9190c201b7af",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Time",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "30 HK time",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1e0b8312f82f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Attendees",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Tao Huang, Loura Guo, Jiajin Zhong,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Da",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "4bf2edd9e16a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Quick Recap",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "This meeting primarily focused on AI knowledge sharing and goal planning fo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "r Project Checkpoint 2. Zhong Jiajin shared the differences between LNWiki",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "and LNWT, explaining how LNWiki analyzes documents, extracts entities, and",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "uses graph expansion to answer questions. Wang Yixi presented system evalua",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "tion results, noting that while the system returns relevant results, rankin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "g needs improvement. The team discussed next-phase priorities, including mu",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "lti-data-source integration, PDF processing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "especially images, tables, and",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "formulas",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", toolset expansion, and Confluence integration. Tao emphasized t",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "he importance of creating Confluence documentation, suggesting that each mo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "dule lead record their progress and ideas, and recommended standardized for",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mats for tracking feature development and performance improvements. The mee",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ting concluded with next-week action items, including Confluence page setup",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", infrastructure building, and performance monitoring.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5e002aef4f29",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Follow-up Actions",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "24938363-0042-4136-b811-8cfa789c932f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3f3697e4-ea68-4046-b3c4-f6cff5548907",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "06df2942ad73",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Dai Jiaxing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "bfebf906-3e54-41da-80a9-47dc3840a3e0",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "85ecffe7-13fc-49c9-b69e-4eba2d77d702",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1e7465fce3e8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Research and experiment with solutions for han",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "dling complex PDF content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "images, tables, formulas",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", including OCR and mul",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ti-module understanding layer design.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ac25be6d-b6da-4679-9669-191c61559733",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1ff2b319fdd1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Continue identifying and evaluating suitable E",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nglish datasets for future functional testing and performance assessment.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "fc2189fd-f93b-4619-a87a-d932e1cf8a03",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0359ae05d517",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Wang Yixi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "527d06c3-c650-433c-a2aa-cb23284f7e34",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ddbc5d6c-fb95-4c4a-b7bc-e9e26bd1a00e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "aba6e2cee83d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Complete the Confluence page for data layer pr",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ocessing within the next week.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a163d18b-76d0-4428-9630-f7adab19e63e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "546d09c7ccb2",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Mu Guangyuan",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "2a66ee8e-c78f-4b26-83ff-f62c6bfaa729",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a210830f-8b34-4e98-815b-f234ec0ade17",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e7c7a3846958",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Manage and maintain Confluence pages, organizi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ng and documenting progress, feature ideas, and contributions for each modu",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "le.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "636f3072-94f5-41a2-b922-3706673c513a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3f605d0f8144",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Dai Jiaxing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e3e104ac-2b26-44d7-af32-4ddc83288437",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "c59b4721-54c8-49c1-acac-80422f8684c0",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "b04a4ba27bc9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Responsible for taking and compiling these mee",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ting minutes.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "fc621a83-ea67-4067-9b74-2f54b8e6ab13",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "97d1460b4580",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Collaboration",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d96f4b7d-5363-4e69-a71b-a0b9a0a32980",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1ea3bdaa-bed5-42df-865d-07a9b1c02b5e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "52d1bdfe4f97",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Create Conf",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "luence pages for their respective modules by next Monday, summarizing imple",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mented features during the CPU phase, planned features for the CPR phase, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nd encountered issues, while documenting progress in writing.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "79b35399-9baf-4cb5-b856-187e7556fae3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ec76ed4dc97a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "When develo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ping new features or optimizations, ensure clear interface definitions",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ut",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "output specifications",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "are provided and recorded in Confluence.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "faf55da7-dbea-478a-be04-94dddcf078b1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1ec77a7dae1d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Web layer lead",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Set up b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "asic system observability infrastructure, including query performance",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e.g.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", response time",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "monitoring.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "b000176b-9df6-46c8-b8ac-b6c903b3a8cb",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a43bd9fc1bae",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Integration layer lead",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Optimize the re-ranking algorithm, considering better ranking models.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "08a4b6bb-4ad9-4047-b92e-9a1303d9c2fb",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "7a4d1ac1ec83",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Starting ne",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xt week, each team meeting should include 1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "933 slides summarizing la",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "st week",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "s accomplishments, challenges faced, and next week",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "s goals, to be s",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hared during the session.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "88320b249c2f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Summary",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d992e99d76e6",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82LL",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "MWiki vs. RAG Technology Comparison",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zhong Jiajin shared AI knowledge on LLMWiki , distinguishing how these tech",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nologies process documents and answer questions. LLMWiki organizes knowledg",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e by analyzing key entities in documents and generating structured wiki pag",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "es, while LLMWiki employs graph expansion techniques to discover inter",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91document connections and uses a four",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91signal model to assess r",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "elevance. Zhong summarized the differences between LNWiki and traditional R",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "AG systems in terms of processing approach, knowledge state, retrieval meth",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ods, and efficiency.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "c5eacba3b309",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Knowledge Graph Construction",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Doc",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ument Processing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82The team discussed technical aspects of",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "knowledge graph construction and document handling. Zhong explained how LN",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Wiki parses documents to generate metadata, including entity extraction and",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text structuring. Wang Yixi reported evaluation results, showing the syste",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "m effectively retrieves relevant documents but requires ranking improvement",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "s. Dai Jiaxing outlined next-phase priorities",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "multi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91data",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ource support, integration with different platforms, PDF processing enhance",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ments",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "especially OCR and handling images",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "tables",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", and toolset expansion.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "36dfcde51a9d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Financial Dataset Handling",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82Dai Jiaxing shared a financial dataset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comprising multiple PDFs, some containing flowcharts that OCR could not eff",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ectively extract. Wang Yixi noted that due to budget constraints, an end",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91to",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91end model might be more suitable. Tao suggested temporaril",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "y deprioritizing image processing in favor of text handling and recommended",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "integrating with Confluence first to read article contents.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "83cba413939b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Platform Data Extraction",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Optimiz",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ation",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82Wang Yixi emphasized the importance of",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "platform data extraction and encouraged team members to independently explo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "re optimization and enhancement directions for their modules. Tao proposed",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "creating dedicated Confluence pages to track progress and record implemente",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d features, with Mu Guangyuan volunteering to manage these pages. The team",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "agreed that future meetings should focus more on each member sharing functi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "onal updates and work demonstrations for their modules, rather than having",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Wang Yixi unilaterally set plans.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5ddbb0f248d3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Feature Development Progress",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "br",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82Tao and Wang Yixi discussed progress on",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "feature development. Tao suggested that each sub",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91team summarize cu",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "rrently implemented features at their layer and propose new feasible additi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ons, with a goal of completing open discussion and feature planning by next",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "week. Tao also proposed standardizing team meeting agendas, including proj",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ect updates, knowledge sharing, and progress reports from each group, recom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mending each group prepare 1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "933 concise slides to facilitate present",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ations. Zhong Jiajin confirmed the target of conducting feature discussions",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "and planning by next Monday.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1c63e5e69371",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Confluence Page Tracking System",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "stron",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82Tao proposed creating a shared Confluen",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ce page to track team progress and resolve issues. Mu Guangyuan and Dai Jia",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xing agreed, and the group discussed page organization, including module",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "91based sections, status tracking, and contributor information. Wang Yi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xi mentioned the need for usage guidelines and suggested using English rath",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "er than Chinese for documentation. The discussion also touched on performan",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ce test dataset selection, with Wang noting that existing datasets include",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "various test scenarios useful for evaluating system improvements.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "cc4b83f83d1d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "System Architecture",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Interface De",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "sign",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "82The team discussed system architecture",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "interfaces and tool integration. Wang Yixi advised everyone to expose stand",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ardized interfaces when implementing new features and register tools in the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "tool table, rather than using overly complex implementations. Tao stressed",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "the need to clearly define input",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "output requirements, similar to API contr",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "act design. Wang Yixi also outlined next week",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "s work plan, including buildi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ng the memory module, finalizing Confluence page processing, infrastructure",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "setup, and tool integration optimization. Mu Guangyuan requested that meet",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ing minutes be placed on Confluence, and Zhong Jiajin confirmed that Mu wou",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ld first set up the roadmap configuration on Confluence.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "01fa3d82582b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "c4907af598bf",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9b2cd2d62398",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Daijiang",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "and",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Huijie",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ed3586efd2e4",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "044eebac0596",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Kindly remind you that",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Daijiang",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "stro",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ng",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "will be the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "host",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "and",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Huijie",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "will",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "be the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "MoM Noter",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "of next weekly meeting. Please read",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "above Notes and get prepared.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "4d753ddc69be",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "c80b88e36a8d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Kind regards,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "19042ea92558",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "40a2806914f3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Jiaxing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "------",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "341004224.1785900659101--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    }
+  ]
+}

@@ -1,0 +1,4017 @@
+{
+  "doc_id": "1adf12522505d6e1c1d6c5b5229efebb",
+  "title": "Meeting+Minutes+of+2026_07_13+-+Rehearsal",
+  "content": "Date\n\nWed, 5 Aug 2026 03\n\n0000\n\nMessage-ID\n\n993022917.27.1785900652208\n\nb819bc306df8\n\nSubject\n\nExported From Confluence\n\nMIME-Version\n\n1.0\n\nContent-Type\n\nmultipart\n\nrelated\n\nboundary\n\n----\n\nPart\n\n1863225294.1785900652207\n\n------\n\nPart\n\n1863225294.1785900652207\n\nContent-Type\n\ntext\n\nhtml\n\ncharset\n\nUTF-8\n\nContent-Transfer-Encoding\n\nquoted-printable\n\nContent-Location\n\nfile\n\nexported.html\n\nhtml xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns\n\nschemas-microsoft-com\n\nxmlns\n\nw3-org-ns\n\nHTML\n\nhead\n\nmeta http-equiv\n\nContent-Type\n\ncontent\n\ntext\n\nhtml\n\ncharset\n\n3Dutf-8\n\ntitle\n\nMeeting Minutes of 2026\n\n13 - Rehearsal\n\ntitle\n\nif gte mso 9\n\nOfficeDocumentSettings\n\nTargetScreenSize\n\n1024x640\n\nTargetScreenSize\n\nPixelsPerInch\n\nPixelsPerInch\n\nAllowPNG\n\nOfficeDocumentSettings\n\nWordDocument\n\nView\n\nPrint\n\nView\n\nZoom\n\nZoom\n\nDoNotOptimizeForBrowser\n\nWordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin\n\n.5in\n\nmso-footer-margin\n\n.5in\n\nmso-paper-source\n\ntable\n\nborder\n\nsolid 1px\n\nborder-collapse\n\ncollapse\n\ntable td, table th\n\nborder\n\nsolid 1px\n\npadding\n\n5px\n\ntd\n\npage-break-inside\n\navoid\n\ntr\n\npage-break-after\n\navoid\n\ndiv.Section1\n\npage\n\nSection1\n\nConfluence print stylesheet. Common to all themes for print medi\n\na\n\nFull of !important until we improve batching for print CSS\n\nmedia print\n\nmain\n\npadding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar\n\n--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se\n\nrif\n\nbody,\n\nfull-height-container,\n\nmain,\n\npage,\n\ncontent, .has-personal-sid\n\nebar\n\ncontent\n\nbackground\n\nvar\n\n--ds-surface,\n\n!important\n\ncolor\n\nvar\n\n--ds-text,\n\n!important\n\nborder\n\n0 !important\n\nwidth\n\n100\n\n!important\n\nheight\n\nauto !important\n\nmin-height\n\nauto !important\n\nmargin\n\n0 !important\n\npadding\n\n0 !important\n\ndisplay\n\nblock !important\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,\n\ncontent h2,\n\ncontent h3,\n\ncontent h4,\n\ncontent h5,\n\ncontent h6\n\npage-break-after\n\navoid\n\npre\n\nfont\n\nvar\n\n--ds-font-code, Monaco,\n\nCourier New\n\n, monospace\n\nheader,\n\n.aui-header-inner,\n\nnavigation,\n\nsidebar,\n\n.sidebar,\n\npersonal-info-sidebar,\n\n.ia-fixed-sidebar,\n\n.page-actions,\n\n.navmenu,\n\n.ajs-menu-bar,\n\n.noprint,\n\n.inline-control-link,\n\n.inline-control-link a,\n\na.show-labels-editor,\n\n.global-comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important\n\nCONF-28544 cannot print multiple pages in IE\n\nsplitter-content\n\nposition\n\nrelative !important\n\n.comment .date\n\nbefore\n\ncontent\n\nnone !important\n\nremove middot for print view\n\nh1.pagetitle img\n\nheight\n\nauto\n\nwidth\n\nauto\n\n.print-only\n\ndisplay\n\nblock\n\nfooter\n\nposition\n\nrelative !important\n\nCONF-17506 Place the footer at en\n\nd of the content\n\nmargin\n\npadding\n\nbackground\n\nnone\n\nclear\n\nboth\n\npoweredby\n\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic\n\npoweredby li.noprint\n\ndisplay\n\nnone\n\nno width controls in print\n\n.wiki-content .table-wrap,\n\n.wiki-content p,\n\n.panel .codeContent,\n\n.panel .codeContent pre,\n\n.image-wrap\n\noverflow\n\nvisible !important\n\nTODO - should this work?\n\nchildren-section,\n\ncomments-section .comment,\n\ncomments-section .comment .comment-body,\n\ncomments-section .comment .comment-content,\n\ncomments-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies\n\nthe specificity here is a hack because print styles\n\nare getting loaded before the base styles.\n\ncomments-section.pageSection .section-header,\n\ncomments-section.pageSection .section-title,\n\nchildren-section.pageSection .section-header,\n\nchildren-section.pageSection .section-title,\n\n.children-show-hide\n\npadding-left\n\nmargin-left\n\n.children-show-hide.icon\n\ndisplay\n\nnone\n\npersonal sidebar\n\n.has-personal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right\n\n0px\n\n.no-print, .no-print\n\ndisplay\n\nnone !important\n\n--\n\nstyle\n\nhead\n\nbody\n\nMeeting Minutes of 2026\n\n13 - Rehearsal\n\ndiv class\n\nSection1\n\np local-id\n\n71f297359728\n\nHi all,\n\np local-id\n\n0f6d1958e9b9\n\nnbsp\n\np local-id\n\n6de46868f894\n\nThank you so much for your attendance. Please\n\nkindly check the meeting minutes below for the meeting.\n\np local-id\n\n6021df0496e1\n\nnbsp\n\np local-id\n\n2ea80d1b11f8\n\nDate\n\nMonday, 13\n\nnbsp\n\nJuly, 2026\n\np local-id\n\nfeba9607426a\n\nTime\n\n30 HK time\n\np local-id\n\n4495626bdc99\n\nAttendees\n\nLark Jiang, Suker, Loura Guo, Tao H\n\nuang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Hui\n\nfang Liu, Jiaxing Dai, Shu Cheng\n\np local-id\n\n9009ba6199b0\n\nstrong\n\nQuick Recap\n\nstrong\n\np local-id\n\nea48593f3506\n\nToday, team held a rehearsal for Checkpoint 1.\n\nAfter presentation, the mentors provided constructive feedback. We then ha\n\nd a productive discussion about the project\n\ns ambition and its unique value\n\nproposition.\n\np local-id\n\nbe94d6d1f85e\n\np local-id\n\n66efd68e675b\n\nstrong\n\nDiscussion Summary\n\nstrong\n\nul local-id\n\nb1d51d0f-fa2d-4e65-ab0a-c2dbb6d1f677\n\nli local-id\n\nb616415c-83d6-4356-9e14-190ae15da15e\n\np local-id\n\n572735ea06bf\n\nThe presentation duration still needs to be cu\n\nt to 9 minutes or less.\n\nli local-id\n\n61c14cab-e180-43f0-8537-f1a9353229a9\n\np local-id\n\n358692638d8f\n\nnbsp\n\noverall visual should be clear for ev\n\neryone in the room. Font styles and colors need to be more distinguishable.\n\nli local-id\n\n6de9711a-0bf3-4014-8555-0235017b3301\n\np local-id\n\nd776fabbb42e\n\nDifferent points should be clearly separated\n\n94 for example, by using bold text for key takeaways.\n\nli local-id\n\neaaf46b0-9929-4bc2-b2c8-9f077b0740dd\n\np local-id\n\n4f7d7c8fad4f\n\nThe demo use case should be replaced with one\n\nthat is more relevant to banking scenarios. Additionally, a pre-recorded de\n\nmo video would be more reliable than running it live on site.\n\nli local-id\n\n14a24f96-cb91-4e73-aa1f-d8955f75d607\n\np local-id\n\na53a04e2afbd\n\nThe unique value proposition of our project sh\n\nould be clearly highlighted throughout the presentation. We should also und\n\nerscore our future ambition and long-term vision.\n\nli local-id\n\nd3b7f6f5-12b6-4021-bd61-d54fff06a27c\n\np local-id\n\nf7e43701af28\n\nFor future improvements, we can explore both r\n\nesearch-oriented and product-oriented directions. Update your thought on Co\n\nnfluence.\n\np local-id\n\nf9f20b2c8a85\n\nstrong\n\nAction Items\n\nstrong\n\nol start\n\nlocal-id\n\n6636c205-5348-4aa4-80a0-7660e68006b9\n\nli local-id\n\n127a53f3-4717-439d-9205-a09a9fb1f3fc\n\np local-id\n\n8ddc23344c9c\n\nstrong\n\nAll team members\n\nstrong\n\nArri\n\nve at Taikoo Hui first floor this friday at 1\n\n30 pm.\n\nli local-id\n\n963b26f0-cef4-43a0-a8eb-c390e1831561\n\np local-id\n\nf0cf6263f1e7\n\nstrong\n\nAll team members\n\nstrong\n\nUpda\n\nte your thought about improving the chatbot in multiple directions.\n\nli local-id\n\n5edf66e9-af6d-490e-a294-2dafafdfa0f9\n\np local-id\n\ne0863246c51f\n\nstrong\n\nYixi Wang\n\nstrong\n\nPolish up the pres\n\nentation and find a time to present to Tao.\n\np local-id\n\nd5598cea0ecf\n\nHi Jiajin and Daijiang,\n\np local-id\n\naa2326369741\n\nnbsp\n\np local-id\n\n0844ef1d070b\n\nKindly remind you that Jiajin will be the host\n\nand Daijiang will be the MoM Noter of next weekly meeting. Please read abo\n\nve Notes and get prepard.\n\np local-id\n\ne10ebe04cfef\n\np local-id\n\ndb0857d7b81e\n\nKind regards,\n\np local-id\n\n7f783ddfa150\n\np local-id\n\n189986e47861\n\nJiajin Zhong\n\nbody\n\nhtml\n\n------\n\nPart\n\n1863225294.1785900652207--",
+  "space": "raws",
+  "address": "C:\\Users\\Hola\\Desktop\\Q&A\\AI-QA-Assistant\\data-persistence\\data\\raws\\Meeting+Minutes+of+2026_07_13+-+Rehearsal.doc",
+  "last_updated": "2026-08-05T03:30:52.430798+00:00",
+  "chunks": [
+    {
+      "index": 0,
+      "text": "Date\n\nWed, 5 Aug 2026 03\n\n0000\n\nMessage-ID\n\n993022917.27.1785900652208\n\nb819bc306df8\n\nSubject\n\nExported From Confluence\n\nMIME-Version\n\n1.0\n\nContent-Type\n\nmultipart\n\nrelated\n\nboundary\n\n----\n\nPart\n\n1863225294.1785900652207\n\n------\n\nPart\n\n1863225294.1785900652207\n\nContent-Type\n\ntext\n\nhtml\n\ncharset\n\nUTF-8\n\nContent-Transfer-Encoding\n\nquoted-printable\n\nContent-Location\n\nfile\n\nexported.html\n\nhtml xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_0"
+    },
+    {
+      "index": 1,
+      "text": "html xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns\n\nschemas-microsoft-com\n\nxmlns\n\nw3-org-ns\n\nHTML\n\nhead\n\nmeta http-equiv\n\nContent-Type\n\ncontent\n\ntext\n\nhtml\n\ncharset\n\n3Dutf-8\n\ntitle\n\nMeeting Minutes of 2026\n\n13 - Rehearsal\n\ntitle\n\nif gte mso 9\n\nOfficeDocumentSettings\n\nTargetScreenSize\n\n1024x640\n\nTargetScreenSize\n\nPixelsPerInch\n\nPixelsPerInch\n\nAllowPNG\n\nOfficeDocumentSettings\n\nWordDocument\n\nView\n\nPrint\n\nView\n\nZoom\n\nZoom\n\nDoNotOptimizeForBrowser\n\nWordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_1"
+    },
+    {
+      "index": 2,
+      "text": "WordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin\n\n.5in\n\nmso-footer-margin\n\n.5in\n\nmso-paper-source\n\ntable\n\nborder\n\nsolid 1px\n\nborder-collapse\n\ncollapse\n\ntable td, table th\n\nborder\n\nsolid 1px\n\npadding\n\n5px\n\ntd\n\npage-break-inside\n\navoid\n\ntr\n\npage-break-after\n\navoid\n\ndiv.Section1\n\npage\n\nSection1\n\nConfluence print stylesheet. Common to all themes for print medi\n\na\n\nFull of !important until we improve batching for print CSS\n\nmedia print\n\nmain\n\npadding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_2"
+    },
+    {
+      "index": 3,
+      "text": "ding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar\n\n--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se\n\nrif\n\nbody,\n\nfull-height-container,\n\nmain,\n\npage,\n\ncontent, .has-personal-sid\n\nebar\n\ncontent\n\nbackground\n\nvar\n\n--ds-surface,\n\n!important\n\ncolor\n\nvar\n\n--ds-text,\n\n!important\n\nborder\n\n0 !important\n\nwidth\n\n100\n\n!important\n\nheight\n\nauto !important\n\nmin-height\n\nauto !important\n\nmargin\n\n0 !important\n\npadding\n\n0 !important\n\ndisplay\n\nblock !important\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_3"
+    },
+    {
+      "index": 4,
+      "text": "mportant\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,\n\ncontent h2,\n\ncontent h3,\n\ncontent h4,\n\ncontent h5,\n\ncontent h6\n\npage-break-after\n\navoid\n\npre\n\nfont\n\nvar\n\n--ds-font-code, Monaco,\n\nCourier New\n\n, monospace\n\nheader,\n\n.aui-header-inner,\n\nnavigation,\n\nsidebar,\n\n.sidebar,\n\npersonal-info-sidebar,\n\n.ia-fixed-sidebar,\n\n.page-actions,\n\n.navmenu,\n\n.ajs-menu-bar,\n\n.noprint,\n\n.inline-control-link,\n\n.inline-control-link a,\n\na.show-labels-editor,\n\n.global-comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_4"
+    },
+    {
+      "index": 5,
+      "text": "comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important\n\nCONF-28544 cannot print multiple pages in IE\n\nsplitter-content\n\nposition\n\nrelative !important\n\n.comment .date\n\nbefore\n\ncontent\n\nnone !important\n\nremove middot for print view\n\nh1.pagetitle img\n\nheight\n\nauto\n\nwidth\n\nauto\n\n.print-only\n\ndisplay\n\nblock\n\nfooter\n\nposition\n\nrelative !important\n\nCONF-17506 Place the footer at en\n\nd of the content\n\nmargin\n\npadding\n\nbackground\n\nnone\n\nclear\n\nboth\n\npoweredby\n\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_5"
+    },
+    {
+      "index": 6,
+      "text": "\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic\n\npoweredby li.noprint\n\ndisplay\n\nnone\n\nno width controls in print\n\n.wiki-content .table-wrap,\n\n.wiki-content p,\n\n.panel .codeContent,\n\n.panel .codeContent pre,\n\n.image-wrap\n\noverflow\n\nvisible !important\n\nTODO - should this work?\n\nchildren-section,\n\ncomments-section .comment,\n\ncomments-section .comment .comment-body,\n\ncomments-section .comment .comment-content,\n\ncomments-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_6"
+    },
+    {
+      "index": 7,
+      "text": "s-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies\n\nthe specificity here is a hack because print styles\n\nare getting loaded before the base styles.\n\ncomments-section.pageSection .section-header,\n\ncomments-section.pageSection .section-title,\n\nchildren-section.pageSection .section-header,\n\nchildren-section.pageSection .section-title,\n\n.children-show-hide\n\npadding-left\n\nmargin-left\n\n.children-show-hide.icon\n\ndisplay\n\nnone\n\npersonal sidebar\n\n.has-personal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_7"
+    },
+    {
+      "index": 8,
+      "text": "sonal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right\n\n0px\n\n.no-print, .no-print\n\ndisplay\n\nnone !important\n\n--\n\nstyle\n\nhead\n\nbody\n\nMeeting Minutes of 2026\n\n13 - Rehearsal\n\ndiv class\n\nSection1\n\np local-id\n\n71f297359728\n\nHi all,\n\np local-id\n\n0f6d1958e9b9\n\nnbsp\n\np local-id\n\n6de46868f894\n\nThank you so much for your attendance. Please\n\nkindly check the meeting minutes below for the meeting.\n\np local-id\n\n6021df0496e1\n\nnbsp\n\np local-id\n\n2ea80d1b11f8\n\nDate\n\nMonday, 13\n\nnbsp\n\nJuly, 2026\n\np local-id\n\nfeba9607426a\n\nTime\n\n30 HK time\n\np local-id\n\n4495626bdc99",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_8"
+    },
+    {
+      "index": 9,
+      "text": "\n\nMonday, 13\n\nnbsp\n\nJuly, 2026\n\np local-id\n\nfeba9607426a\n\nTime\n\n30 HK time\n\np local-id\n\n4495626bdc99\n\nAttendees\n\nLark Jiang, Suker, Loura Guo, Tao H\n\nuang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Hui\n\nfang Liu, Jiaxing Dai, Shu Cheng\n\np local-id\n\n9009ba6199b0\n\nstrong\n\nQuick Recap\n\nstrong\n\np local-id\n\nea48593f3506\n\nToday, team held a rehearsal for Checkpoint 1.\n\nAfter presentation, the mentors provided constructive feedback. We then ha\n\nd a productive discussion about the project\n\ns ambition and its unique value\n\nproposition.\n\np local-id\n\nbe94d6d1f85e\n\np local-id",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_9"
+    },
+    {
+      "index": 10,
+      "text": "out the project\n\ns ambition and its unique value\n\nproposition.\n\np local-id\n\nbe94d6d1f85e\n\np local-id\n\n66efd68e675b\n\nstrong\n\nDiscussion Summary\n\nstrong\n\nul local-id\n\nb1d51d0f-fa2d-4e65-ab0a-c2dbb6d1f677\n\nli local-id\n\nb616415c-83d6-4356-9e14-190ae15da15e\n\np local-id\n\n572735ea06bf\n\nThe presentation duration still needs to be cu\n\nt to 9 minutes or less.\n\nli local-id\n\n61c14cab-e180-43f0-8537-f1a9353229a9\n\np local-id\n\n358692638d8f\n\nnbsp\n\noverall visual should be clear for ev\n\neryone in the room. Font styles and colors need to be more distinguishable.\n\nli local-id\n\n6de9711a-0bf3-4014-8555-0235017b3301",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_10"
+    },
+    {
+      "index": 11,
+      "text": "tyles and colors need to be more distinguishable.\n\nli local-id\n\n6de9711a-0bf3-4014-8555-0235017b3301\n\np local-id\n\nd776fabbb42e\n\nDifferent points should be clearly separated\n\n94 for example, by using bold text for key takeaways.\n\nli local-id\n\neaaf46b0-9929-4bc2-b2c8-9f077b0740dd\n\np local-id\n\n4f7d7c8fad4f\n\nThe demo use case should be replaced with one\n\nthat is more relevant to banking scenarios. Additionally, a pre-recorded de\n\nmo video would be more reliable than running it live on site.\n\nli local-id\n\n14a24f96-cb91-4e73-aa1f-d8955f75d607\n\np local-id\n\na53a04e2afbd",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_11"
+    },
+    {
+      "index": 12,
+      "text": "unning it live on site.\n\nli local-id\n\n14a24f96-cb91-4e73-aa1f-d8955f75d607\n\np local-id\n\na53a04e2afbd\n\nThe unique value proposition of our project sh\n\nould be clearly highlighted throughout the presentation. We should also und\n\nerscore our future ambition and long-term vision.\n\nli local-id\n\nd3b7f6f5-12b6-4021-bd61-d54fff06a27c\n\np local-id\n\nf7e43701af28\n\nFor future improvements, we can explore both r\n\nesearch-oriented and product-oriented directions. Update your thought on Co\n\nnfluence.\n\np local-id\n\nf9f20b2c8a85\n\nstrong\n\nAction Items\n\nstrong\n\nol start\n\nlocal-id",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_12"
+    },
+    {
+      "index": 13,
+      "text": "thought on Co\n\nnfluence.\n\np local-id\n\nf9f20b2c8a85\n\nstrong\n\nAction Items\n\nstrong\n\nol start\n\nlocal-id\n\n6636c205-5348-4aa4-80a0-7660e68006b9\n\nli local-id\n\n127a53f3-4717-439d-9205-a09a9fb1f3fc\n\np local-id\n\n8ddc23344c9c\n\nstrong\n\nAll team members\n\nstrong\n\nArri\n\nve at Taikoo Hui first floor this friday at 1\n\n30 pm.\n\nli local-id\n\n963b26f0-cef4-43a0-a8eb-c390e1831561\n\np local-id\n\nf0cf6263f1e7\n\nstrong\n\nAll team members\n\nstrong\n\nUpda\n\nte your thought about improving the chatbot in multiple directions.\n\nli local-id\n\n5edf66e9-af6d-490e-a294-2dafafdfa0f9\n\np local-id\n\ne0863246c51f\n\nstrong\n\nYixi Wang\n\nstrong",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_13"
+    },
+    {
+      "index": 14,
+      "text": " local-id\n\n5edf66e9-af6d-490e-a294-2dafafdfa0f9\n\np local-id\n\ne0863246c51f\n\nstrong\n\nYixi Wang\n\nstrong\n\nPolish up the pres\n\nentation and find a time to present to Tao.\n\np local-id\n\nd5598cea0ecf\n\nHi Jiajin and Daijiang,\n\np local-id\n\naa2326369741\n\nnbsp\n\np local-id\n\n0844ef1d070b\n\nKindly remind you that Jiajin will be the host\n\nand Daijiang will be the MoM Noter of next weekly meeting. Please read abo\n\nve Notes and get prepard.\n\np local-id\n\ne10ebe04cfef\n\np local-id\n\ndb0857d7b81e\n\nKind regards,\n\np local-id\n\n7f783ddfa150\n\np local-id\n\n189986e47861\n\nJiajin Zhong\n\nbody\n\nhtml\n\n------\n\nPart",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_14"
+    },
+    {
+      "index": 15,
+      "text": "regards,\n\np local-id\n\n7f783ddfa150\n\np local-id\n\n189986e47861\n\nJiajin Zhong\n\nbody\n\nhtml\n\n------\n\nPart\n\n1863225294.1785900652207--",
+      "chunk_id": "1adf12522505d6e1c1d6c5b5229efebb_chunk_15"
+    }
+  ],
+  "source_url": "",
+  "content_blocks": [
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Wed, 5 Aug 2026 03",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0000",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Message-ID",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "993022917.27.1785900652208",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "b819bc306df8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Subject",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Exported From Confluence",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "MIME-Version",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1.0",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "multipart",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "related",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "boundary",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "----",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1863225294.1785900652207",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "------",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1863225294.1785900652207",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "charset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "UTF-8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Transfer-Encoding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "quoted-printable",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Location",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "file",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "exported.html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "word",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "w3-org-ns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "HTML",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "head",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "meta http-equiv",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "charset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3Dutf-8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "title",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Meeting Minutes of 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "13 - Rehearsal",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "title",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "if gte mso 9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "OfficeDocumentSettings",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TargetScreenSize",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1024x640",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TargetScreenSize",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "PixelsPerInch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "PixelsPerInch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "AllowPNG",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "OfficeDocumentSettings",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "WordDocument",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "View",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "View",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zoom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zoom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "DoNotOptimizeForBrowser",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "WordDocument",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "endif",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "size",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8.5in 11.0in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1.0in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-header-margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".5in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-footer-margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".5in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-paper-source",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "table",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "solid 1px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border-collapse",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "collapse",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "table td, table th",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "solid 1px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "td",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-inside",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "tr",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-after",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "div.Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Confluence print stylesheet. Common to all themes for print medi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Full of !important until we improve batching for print CSS",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "media print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "main",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding-bottom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1em !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "The default padding of 6em is to",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "o much for printouts",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "rif",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "full-height-container,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "main,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content, .has-personal-sid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-surface,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "color",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-text,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "width",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "100",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "min-height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "block !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "link, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "visited, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "focus, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hover, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "active",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "color",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-text,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h1,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h2,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h3,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h4,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h5,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h6",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-after",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "pre",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-font-code, Monaco,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Courier New",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", monospace",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".aui-header-inner,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "navigation,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "personal-info-sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".ia-fixed-sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".page-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".navmenu,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".ajs-menu-bar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".noprint,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".inline-control-link,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".inline-control-link a,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a.show-labels-editor,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".global-comment-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".comment-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".quick-comment-container,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "addcomment",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "CONF-28544 cannot print multiple pages in IE",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "splitter-content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "position",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "relative !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".comment .date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "before",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "remove middot for print view",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "h1.pagetitle img",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "width",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".print-only",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "block",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "footer",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "position",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "relative !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "CONF-17506 Place the footer at en",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d of the content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "clear",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "both",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border-top",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby li.print-only",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "list-item",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font-style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "italic",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby li.noprint",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "no width controls in print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".wiki-content .table-wrap,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".wiki-content p,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".panel .codeContent,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".panel .codeContent pre,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".image-wrap",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "overflow",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "visible !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TODO - should this work?",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment .comment-body,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment .comment-content,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment p",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-inside",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-children a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text-decoration",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hide twixies",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "the specificity here is a hack because print styles",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "are getting loaded before the base styles.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section.pageSection .section-header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section.pageSection .section-title,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section.pageSection .section-header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section.pageSection .section-title,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".children-show-hide",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding-left",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-left",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".children-show-hide.icon",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "personal sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".has-personal-sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-right",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".has-personal-sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content .pageSection",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-right",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".no-print, .no-print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "head",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Meeting Minutes of 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "13 - Rehearsal",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "div class",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "71f297359728",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Hi all,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0f6d1958e9b9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "6de46868f894",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Thank you so much for your attendance. Please",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "kindly check the meeting minutes below for the meeting.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "6021df0496e1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "2ea80d1b11f8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Monday, 13",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "July, 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "feba9607426a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Time",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "30 HK time",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "4495626bdc99",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Attendees",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Lark Jiang, Suker, Loura Guo, Tao H",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "uang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Hui",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "fang Liu, Jiaxing Dai, Shu Cheng",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9009ba6199b0",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Quick Recap",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ea48593f3506",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Today, team held a rehearsal for Checkpoint 1.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "After presentation, the mentors provided constructive feedback. We then ha",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d a productive discussion about the project",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "s ambition and its unique value",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "proposition.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "be94d6d1f85e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "66efd68e675b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Discussion Summary",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "b1d51d0f-fa2d-4e65-ab0a-c2dbb6d1f677",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "b616415c-83d6-4356-9e14-190ae15da15e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "572735ea06bf",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "The presentation duration still needs to be cu",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "t to 9 minutes or less.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "61c14cab-e180-43f0-8537-f1a9353229a9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "358692638d8f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "overall visual should be clear for ev",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "eryone in the room. Font styles and colors need to be more distinguishable.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "6de9711a-0bf3-4014-8555-0235017b3301",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d776fabbb42e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Different points should be clearly separated",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "94 for example, by using bold text for key takeaways.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "eaaf46b0-9929-4bc2-b2c8-9f077b0740dd",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "4f7d7c8fad4f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "The demo use case should be replaced with one",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "that is more relevant to banking scenarios. Additionally, a pre-recorded de",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mo video would be more reliable than running it live on site.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "14a24f96-cb91-4e73-aa1f-d8955f75d607",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a53a04e2afbd",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "The unique value proposition of our project sh",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ould be clearly highlighted throughout the presentation. We should also und",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "erscore our future ambition and long-term vision.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d3b7f6f5-12b6-4021-bd61-d54fff06a27c",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "f7e43701af28",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "For future improvements, we can explore both r",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "esearch-oriented and product-oriented directions. Update your thought on Co",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nfluence.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "f9f20b2c8a85",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Action Items",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ol start",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "6636c205-5348-4aa4-80a0-7660e68006b9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "127a53f3-4717-439d-9205-a09a9fb1f3fc",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8ddc23344c9c",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All team members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Arri",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ve at Taikoo Hui first floor this friday at 1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "30 pm.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "963b26f0-cef4-43a0-a8eb-c390e1831561",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "f0cf6263f1e7",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All team members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Upda",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "te your thought about improving the chatbot in multiple directions.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5edf66e9-af6d-490e-a294-2dafafdfa0f9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e0863246c51f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Yixi Wang",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Polish up the pres",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "entation and find a time to present to Tao.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d5598cea0ecf",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Hi Jiajin and Daijiang,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "aa2326369741",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nbsp",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0844ef1d070b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Kindly remind you that Jiajin will be the host",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "and Daijiang will be the MoM Noter of next weekly meeting. Please read abo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ve Notes and get prepard.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e10ebe04cfef",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "db0857d7b81e",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Kind regards,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "7f783ddfa150",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "189986e47861",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Jiajin Zhong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "------",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1863225294.1785900652207--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+Date: Wed, 5 Aug 2026 03:30:45 +0000 (UTC)
+Message-ID: <1109419788.25.1785900645856@b819bc306df8>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_24_605063245.1785900645855"
+
+------=_Part_24_605063245.1785900645855
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/07/06 - Demo Sharing</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/07/06 - Demo Sharing</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"9b7d31703f97">Hi all,</p>
+<p local-id=3D"019d135dfe3b">Thank you all for attending this meeting. Belo=
+w are the meeting minutes and future work arrangements.</p>
+<p local-id=3D"c30c084856b4"></p>
+<h3 local-id=3D"55b90c34f437" id=3D"MeetingMinutesof2026/07/06-DemoSharing-=
+QuickRecap"><strong>Quick Recap</strong></h3>
+<p local-id=3D"3587f32df92a">This meeting is the third meeting of the =E6=
+=B1=87=E4=B8=B0=E7=A7=91=E6=8A=80=E8=8F=81=E8=8B=B1=E8=AE=AD=E7=BB=83=E8=90=
+=A5 =E2=80=93 AI=E6=99=BA=E8=83=BD=E9=97=AE=E7=AD=94=E5=8A=A9=E6=89=8B. The=
+ session focused on two main topics: the progress of the AI project and pre=
+parations for the upcoming demo on the 17th. Mu Guangyuan shared his resear=
+ch on large model memory systems, including a three-module system based on =
+the Lightman paper. Wang Yixi demonstrated the progress of the data pipelin=
+e module, covering document conversion, chunking, and vector database stora=
+ge. The team also discussed UI improvements, technical issues discovered du=
+ring code integration, and the timeline for the demo PPT submission.</p>
+<p local-id=3D"26d58d0f128a"></p>
+<h3 local-id=3D"e48eda1cb8a2" id=3D"MeetingMinutesof2026/07/06-DemoSharing-=
+PlanSharing"><strong>Plan Sharing</strong></h3>
+<p local-id=3D"01e0e123b6a0">Mu Guangyuan: Shared his research on optimizin=
+g large model memory systems. He introduced a cost-effective three-module s=
+ystem (information filtering, topic segmentation, and compression) based on=
+ the Lightman paper. The system uses small models for information extractio=
+n and an attention-based mechanism for topic block segmentation, featuring =
+an innovative "artificial sleep" update mechanism for memory optimization. =
+He also introduced a pluggable memory system as a lightweight external memo=
+ry maintenance plugin applicable to various projects.</p>
+<p local-id=3D"0e99d44210ba">Wang Yixi: Demonstrated the progress of the da=
+ta pipeline module. The current test version (without large model integrati=
+on) can convert documents into a unified document model and process queries=
+ with relevant information and relevance scores. She also shared several te=
+chnical issues discovered during code integration, including inconsistent P=
+DF parsing results, code structure optimization suggestions, and interface =
+adapter implementation.</p>
+<p local-id=3D"ea5925b46efd">Vincent: Proposed multiple UI improvements, in=
+cluding page layout optimization, adding statistical data displays (e.g., h=
+it count, total count), modifying the logo, and adding a high-level archite=
+cture diagram for the PPT. He emphasized that UI design is critical for the=
+ judges' impression during the demo. He also confirmed the timeline for the=
+ PPT draft submission next Thursday and discussed the allocation of the 8-m=
+inute presentation time.</p>
+<p local-id=3D"96ebe7229a2b"></p>
+<h3 local-id=3D"51a2cebb4951" id=3D"MeetingMinutesof2026/07/06-DemoSharing-=
+DiscussionSummary"><strong>Discussion Summary</strong></h3>
+<p local-id=3D"0d607578c8de">-UI Improvements: The team agreed to optimize =
+the front-end display page by removing unnecessary buttons, adjusting resul=
+t presentation (e.g., tree structure, highlighting key information), adding=
+ statistics, and changing the top-left icon to the project or AI name. Vinc=
+ent suggested using an AI-generated logo.</p>
+<p local-id=3D"331222359913">PDF Parsing Issues:The team acknowledged the l=
+imitations of PDF parsing due to its nature as a print-oriented format. Con=
+sensus was reached to prioritize structured file formats such as Word, Exce=
+l, and HTML, and to lower the priority of PDF optimization unless it become=
+s a significant requirement during future integration with other project gr=
+oups.</p>
+<p local-id=3D"03dea695967d">Code Structure Optimization: The team agreed t=
+o clean up test and redundant code (e.g., local JSON search, evaluation mod=
+ules) to avoid mixing with core functionality, ensuring clear and maintaina=
+ble code.</p>
+<p local-id=3D"47bdd88b463b">Demo Preparation: The team confirmed that Wang=
+ Yixi will prepare the first draft of the PPT by Thursday, with a total pre=
+sentation time of 8 minutes covering both the demo and PPT explanation.</p>
+<p local-id=3D"552b926eae8f"></p>
+<h3 local-id=3D"410cc88f0da6" id=3D"MeetingMinutesof2026/07/06-DemoSharing-=
+ActionItems"><strong>Action Items</strong></h3>
+<p local-id=3D"dee75afaa776"><strong>Vincent</strong>=EF=BC=9AFollow up wit=
+h large model resource providers this week to obtain available APIs or API =
+keys for project integration. |</p>
+<p local-id=3D"2013f34ce552"><strong>Wang Yixi</strong>=EF=BC=9AOptimize th=
+e front-end display page before the 17th (remove unnecessary buttons, adjus=
+t result display with tree structure and key information highlights, add st=
+atistics such as hit count and total count, change the top-left icon to the=
+ project or AI name, and prepare a high-level architecture diagram for the =
+PPT). |</p>
+<p local-id=3D"b6b39a151a30"><strong>Project Team</strong>=EF=BC=9AWhen int=
+egrating with other project groups (e.g., conference-related), reassess whe=
+ther PDF parsing optimization is needed if the proportion of PDF files is h=
+igh; currently lower the priority of PDF parsing and focus on structured fi=
+le formats like Word, Excel, and HTML.&nbsp;</p>
+<p local-id=3D"626db3f255f0">Project Team=EF=BC=9AReview and optimize code =
+structure, remove test or redundant code (e.g., local JSON search, evaluati=
+on test modules) to avoid mixing with core functions, ensuring clear and ma=
+intainable code.</p>
+<p local-id=3D"8f8d57acd72a"></p>
+<p local-id=3D"db6cbe08ef4d">Kind regards,</p>
+<p local-id=3D"72e96ea319d3">Yixi Wang</p>
+    </div>
+</body>
+</html>
+------=_Part_24_605063245.1785900645855--

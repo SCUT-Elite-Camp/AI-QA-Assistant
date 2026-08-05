@@ -375,7 +375,8 @@ class SearchTool(BaseTool):
                 timeout_seconds=self.backend_timeout_seconds,
             )
         except Exception as e:
-            raise RetrievalError(f"milvus_search_failed: {e}") from e
+            self.logger.warning("[VECTOR_SEARCH_FALLBACK] Milvus search failed, falling back to BM25: %s", e)
+            return []
 
         rows = []
         for hit in hits:

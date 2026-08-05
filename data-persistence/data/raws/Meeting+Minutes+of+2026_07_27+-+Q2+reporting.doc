@@ -1,0 +1,378 @@
+Date: Wed, 5 Aug 2026 03:31:05 +0000 (UTC)
+Message-ID: <144975946.11.1785900665776@293389840a4e>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_10_1496181884.1785900665776"
+
+------=_Part_10_1496181884.1785900665776
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/07/27 - Q2 reporting</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/07/27 - Q2 reporting</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"9af512e1472b">Hi all,</p>
+<p local-id=3D"4af405f9f914">Thank you for your attendance. Please find the=
+ meeting minutes below.</p>
+<p local-id=3D"6e60bbfbfb5f">Date: Monday, 27th July, 2026<br>
+Time: [Please add] HK Time<br>
+Attendees: [Please confirm attendees]</p>
+<h2 local-id=3D"92b7757352ec" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+QuickRecap">Quick Recap</h2>
+<p local-id=3D"aee0a52c2984">This meeting focused on AI knowledge sharing a=
+nd progress updates across the project layers. Daijiang Xie introduced STOA=
+G (Self-Training On-Going Agent), an enhanced RAG-agent approach that uses =
+a controller to determine whether the available evidence is sufficient and =
+to identify information gaps for targeted follow-up retrieval. The Data Pro=
+cessing Layer completed semantic segmentation and card-system development. =
+The Tool Layer tested an English financial QA dataset and explored re-ranki=
+ng and BM25 tokenization improvements, while identifying issues with recall=
+ quality and chunking. The Integration Layer presented CPR-system enhanceme=
+nts, including multi-turn tool calling, short-term memory, and query rewrit=
+ing. The Monitoring Layer developed frontend observability features. The me=
+eting also confirmed that a document-listing function can be implemented se=
+curely through appropriate permission controls.</p>
+<h2 local-id=3D"ebb83a64de0c" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+Follow-upActions">Follow-up Actions</h2>
+<p local-id=3D"a1bc4d00e2cb">Huifang Liu</p>
+<ul local-id=3D"086070c1-1b3d-4662-9810-f5c9fa9e8b5f">
+<li local-id=3D"a44b3b82-52a0-4475-894a-dd616d37ed6b">
+<p local-id=3D"ee4b1781b224">Integrate the completed query-understanding co=
+mponents into the main workflow.</p></li>
+<li local-id=3D"6f851d4a-6ab9-4afd-868a-d04358eaf482">
+<p local-id=3D"9f0a8d798e3a">Upload relevant local unit tests to Confluence=
+.</p></li>
+</ul>
+<p local-id=3D"0dc99e5c58fc">Jiaxing Dai</p>
+<ul local-id=3D"3df06335-449c-4209-a1a7-29f614e68a30">
+<li local-id=3D"6048dba9-0d29-43d4-9d86-7f3111451464">
+<p local-id=3D"fdfb021013e5">Experiment with alternative embedding models, =
+including different dimensions or model types, to improve retrieval quality=
+.</p></li>
+<li local-id=3D"808a1658-ff31-4cb9-add6-cdb0babdbd33">
+<p local-id=3D"434746a900fe">Evaluate and, if appropriate, adjust the chunk=
+ aggregation strategy, such as ranking multiple chunks together.</p></li>
+<li local-id=3D"c636cfe2-dbb3-40a2-9b69-d657b503fb4b">
+<p local-id=3D"231c48e5ea50">Evaluate and, if appropriate, revise the chunk=
+ing strategy from fixed-length splitting to paragraph-based splitting.</p><=
+/li>
+</ul>
+<p local-id=3D"6e0de392dca5">Daijiang Xie</p>
+<ul local-id=3D"a57ba27d-0a86-4b54-b2e9-6011c7b201a9">
+<li local-id=3D"b189a3d0-24fb-4058-89d6-5daaba9ac39f">
+<p local-id=3D"58ec6cdf1428">Share the STOAG paper link in the meeting grou=
+p.</p></li>
+</ul>
+<h2 local-id=3D"3f8b5fc72d3a" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+Collaboration">Collaboration</h2>
+<p local-id=3D"e5b1249902c8">All members:</p>
+<ul local-id=3D"92a13142-2070-445f-a36d-1e15d6c3a6f9">
+<li local-id=3D"d5b7a15e-69cb-4bec-ac02-6ce2c93b0ff8">
+<p local-id=3D"ddbc769cf971">Upload this week=E2=80=99s completed technical=
+ documentation to the designated Confluence folder.</p></li>
+<li local-id=3D"93635ee2-4b49-42b9-810f-24c18c65fda6">
+<p local-id=3D"04cb46ad7669">Continue improving layer-specific functionalit=
+y and prepare for integration testing next week.</p></li>
+</ul>
+<h2 local-id=3D"15a06dc7810f" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+Summary">Summary</h2>
+<h3 local-id=3D"465acc45626b" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+STOAGKnowledgeSharing">STOAG Knowledge Sharing</h3>
+<p local-id=3D"ea0dcbd46c60">Daijiang Xie shared STOAG, a solution designed=
+ to improve Retrieval-Augmented Generation (RAG) agents in multi-hop questi=
+on-answering scenarios. Traditional RAG agents may stop retrieval too early=
+ or continue searching unnecessarily. STOAG addresses this issue by introdu=
+cing a controller that evaluates whether the current evidence is sufficient=
+ to answer the question.</p>
+<p local-id=3D"4135a4eac62e">The controller examines evidence sufficiency a=
+nd identifies missing information. If the available evidence is adequate, r=
+etrieval stops. Otherwise, the system generates structured information-gap =
+descriptions to guide the next retrieval round. Daijiang suggested integrat=
+ing this approach into the current project, potentially through the evidenc=
+e-context component.</p>
+<h3 local-id=3D"fb03b22aa7b7" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+IterativeRetrievalDiscussion">Iterative Retrieval Discussion</h3>
+<p local-id=3D"2cf43da11290">Tao asked for an example of iterative retrieva=
+l. Daijiang explained that the approach progressively focuses on evidence m=
+issing from the previous retrieval round. Vincent asked about the specific =
+algorithm used by the judge controller; Daijiang noted that he would verify=
+ the implementation details from the paper.</p>
+<h3 local-id=3D"fb320b4abc36" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+ConfluenceSecurityandWebLayerProgress">Confluence Security and Web Layer Pr=
+ogress</h3>
+<p local-id=3D"eada964b223a">Guangyuan Mu reported that the Confluence work=
+space has been created and that some members have uploaded technical docume=
+nts. However, most members still need to upload their completed work.</p>
+<p local-id=3D"a7588f5920fb">Suijie Song introduced the Web Layer=E2=80=99s=
+ task allocation, including API documentation and CPI-function planning. Co=
+mpleted features include string tabs, message persistence, and authenticati=
+on. Tao asked about the CPI plan and current progress; Suijie confirmed tha=
+t the related documentation is available in the shared folder.</p>
+<h3 local-id=3D"7cbc609eaf25" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+DataProcessingLayerDevelopment">Data Processing Layer Development</h3>
+<p local-id=3D"8cf9bcc99359">Guangyuan Mu presented the Data Processing Lay=
+er=E2=80=99s completed semantic segmentation and card-system functionality.=
+ A pre-compressor was added to calculate text weights, remove low-value con=
+tent such as filler words, and use sentence similarity to create more natur=
+al semantic segments.</p>
+<p local-id=3D"54435dfcb3b0">After segmentation, the system groups sentence=
+s by topic using a hash-table structure. When content exceeds a defined thr=
+eshold, the system produces a summary and invokes an LLM to generate cards =
+containing key content and keywords.</p>
+<p local-id=3D"a74fd4732e68">Guangyuan also discussed link-type relationshi=
+ps, including conflict, evidence, and support relationships, as well as tim=
+estamp-based update mechanisms. Zeng Zhong=E2=80=99s Confluence document-pa=
+rsing work was also mentioned.</p>
+<h3 local-id=3D"55437e03ba51" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+RankingandBM25Improvements">Ranking and BM25 Improvements</h3>
+<p local-id=3D"22b08a99aa47">Jiaxing Dai reported progress on adding a rank=
+ing function and changing the BM25 tokenizer from Chinese to English. He te=
+sted the system using an English financial information-retrieval dataset co=
+ntaining 648 queries and 400 documents. The overall results were not yet sa=
+tisfactory.</p>
+<p local-id=3D"e5cef29f00ee">Vincent suggested exploring more flexible rank=
+ing approaches for document chunks. The team discussed retrieval-quality an=
+d embedding-segmentation issues. Vincent recommended testing higher-dimensi=
+onal embedding models, approximately 1,000=E2=80=932,000 dimensions, and co=
+nsidering an A2 model. He also noted that reducing chunk dimensions below 8=
+0% could significantly weaken relevance.</p>
+<h3 local-id=3D"82cd88a34047" id=3D"MeetingMinutesof2026/07/27-Q2reporting-=
+CPRSystemEnhancement">CPR System Enhancement</h3>
+<p local-id=3D"05678b59201f">Daijiang introduced CPR-system enhancements, i=
+ncluding multi-turn execution and short-term memory, enabling the model to =
+ask follow-up questions and retain conversational context.</p>
+<p local-id=3D"4beed277de44">Huifang Liu presented the main user-request-pr=
+ocessing components: intent classification, coreference resolution, and que=
+ry rewriting. Seven question categories have been completed.</p>
+<p local-id=3D"510ed965f560">The Monitoring Layer also demonstrated fronten=
+d observability features, including real-time requests-per-second and P95-l=
+atency monitoring, as well as automated API-metric collection. The team dis=
+cussed confidentiality concerns around the document management system and a=
+greed that the document-listing feature can be safely supported through acc=
+ess-control mechanisms.</p>
+<p local-id=3D"4bd8db74076e">The team will complete remaining layer-level i=
+mprovements and prepare for integration testing next week.</p>
+<p local-id=3D"07c208e10f73">=E6=98=9F=E6=9C=9F=E4=B8=8021:52</p>
+    </div>
+</body>
+</html>
+------=_Part_10_1496181884.1785900665776--

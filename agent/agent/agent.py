@@ -115,12 +115,23 @@ class Agent:
             self.audit_service.record(
                 trace_id=trace_id,
                 query=request.query,
-                answer=response.answer,
+                answer=response.answer or response.message,
                 status=response.status,
                 latency_ms=latency_ms,
                 session_id=request.session_id,
             )
             return response
+        except Exception as exc:
+            latency_ms = self.audit_service.stop_timer(start_time)
+            self.audit_service.record(
+                trace_id=trace_id,
+                query=request.query,
+                answer=f"Error: {exc}",
+                status=StatusCode.AGENT_LIMIT_REACHED,
+                latency_ms=latency_ms,
+                session_id=request.session_id,
+            )
+            raise exc
         finally:
             self.trace_service.clear_trace()
 

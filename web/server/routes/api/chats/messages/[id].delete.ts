@@ -49,6 +49,8 @@ export default defineHandler(async (event) => {
 
   if (idsToDelete.length > 0) {
     await db.delete(tables.messages).where(inArray(tables.messages.id, idsToDelete))
+    // Clear Agent in-memory history so regenerate/edit rebuilds clean context
+    fetch(`http://127.0.0.1:8000/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
   }
 
   return { success: true }

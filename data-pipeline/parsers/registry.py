@@ -2,6 +2,7 @@ import os
 from parsers.base import BaseParser
 from parsers.pdf_parser import PDFParser
 from parsers.docx_parser import DocxParser
+from parsers.doc_parser import DocParser
 from models.document import Document
 
 class DocumentParser:
@@ -12,9 +13,9 @@ class DocumentParser:
     def __init__(self, parsers: list[BaseParser] = None):
         self._parser_map: dict[str, BaseParser] = {}
         
-        # 默认注册 PDFParser 和 DocxParser
+        # 默认注册 PDFParser, DocxParser 和 DocParser
         if parsers is None:
-            parsers = [PDFParser(), DocxParser()]
+            parsers = [PDFParser(), DocxParser(), DocParser()]
             
         for p in parsers:
             self.register_parser(p)

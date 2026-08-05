@@ -1,0 +1,463 @@
+Date: Wed, 5 Aug 2026 03:31:11 +0000 (UTC)
+Message-ID: <1584102593.29.1785900671048@b819bc306df8>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_28_1846177782.1785900671048"
+
+------=_Part_28_1846177782.1785900671048
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/08/04 - Q2 reporting</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/08/04 - Q2 reporting</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"814e836be223">Hi all,</p>
+<p local-id=3D"14c728b5cb16">&nbsp;</p>
+<p local-id=3D"250807b435cc">Thank you so much for your attendance. Please =
+kindly check the meeting minutes below for the meeting.</p>
+<p local-id=3D"a88e1e520f03">Date: Monday, 3rd August, 2026</p>
+<p local-id=3D"210ac2bc6908">Time: 17:30 HK time</p>
+<p local-id=3D"ef1275f8cc07">Attendees:Tao Huang, Loura Guo, Vincent, Jiaji=
+n Zhong, Daijiang Xie, Yixi Wang,Guangyuan Mu, Huifang Liu, Jiaxing Dai</p>
+<h2 local-id=3D"2af280213029" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+QuickRecap">Quick Recap</h2>
+<p local-id=3D"535c5524639e">This meeting focused on weekly progress update=
+s, technical discussions, and research sharing across different project lay=
+ers. Huifang Liu introduced a research paper on<strong>&nbsp;language reinf=
+orcement learning and self-reflection mechanisms</strong>, explaining how r=
+eflection-based architectures can help agents identify execution errors and=
+ improve future task performance through components such as the action mode=
+l, evaluator, and self-reflection model.</p>
+<p local-id=3D"c3b60361cc23">Jiajin Zhong reported progress on <strong>Conf=
+luence integration and PPT parsing </strong>development, including successf=
+ul Confluence API access, meeting-record Q&amp;A testing, and discussions a=
+round API permissions and document parsing optimization.&nbsp;</p>
+<p local-id=3D"be104c97e935">Guangyuan Mu presented upgrades to the data pr=
+ocessing pipeline, including <strong>semantic segmentation, topic clusterin=
+g, and graph-based card generation</strong>, which aim to improve retrieval=
+ performance and multi-hop reasoning capabilities.</p>
+<p local-id=3D"b2eca6326b55">Jiaxing Dai shared progress on <strong>two-sta=
+ge retrieval and ranking functions</strong>. However, current evaluation re=
+sults showed unsatisfactory recall performance, leading to discussions on c=
+hunking strategies, embedding dimensions, query rewriting, and retrieval op=
+timization.&nbsp;</p>
+<p local-id=3D"482b721f0a42">Daijiang Xie and Huifang Liu provided updates =
+on the Agent Layer, including intent recognition, query rewriting, routing =
+strategies, tool registry, and multi-turn conversation memory.</p>
+<p local-id=3D"83f5a6e5d03f">At the end of the meeting, Tao provided severa=
+l improvement suggestions, including <strong>preparing a CPR progress demon=
+stration</strong>&nbsp;before next Tuesday, researching existing market sol=
+utions, improving meeting efficiency, and defining clear objectives and pro=
+gress for each module.</p>
+<hr local-id=3D"5f9093ba-5dfd-43ea-9477-247dee32ecba" data-layout=3D"wide" =
+data-width=3D"760">
+<h1 local-id=3D"c67644d9feb4" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+Follow-upActions">Follow-up Actions</h1>
+<h3 local-id=3D"1b93580edf0f" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+YixiWang">Yixi Wang</h3>
+<ul local-id=3D"836aaa29-7c20-48cc-abf5-b5a26dd36c7c">
+<li local-id=3D"7c3d81d6-13bc-47b3-af35-a7593cfe1f52">
+<p local-id=3D"3acbe684d36c">Record and design a <strong>proposal regarding=
+ file </strong>update frequency and buffer-layer mechanisms, and prepare <s=
+trong>related content for the next-stage</strong>&nbsp;presentation.</p></l=
+i>
+</ul>
+<h3 local-id=3D"f02803448482" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+GuangyuanMu">Guangyuan Mu</h3>
+<ul local-id=3D"fa9fe233-80fe-4d01-b9d0-58c63145551d">
+<li local-id=3D"d8052b67-624b-4c62-ac40-181b856f6e17">
+<p local-id=3D"9a9ee8237af8">Provide a <strong>detailed presentation</stron=
+g>&nbsp;in the next meeting using concrete examples and diagrams to explain=
+ the upgraded data processing pipeline, including semantic segmentation, to=
+pic clustering, graph card generation, and retrieval mechanisms.</p></li>
+<li local-id=3D"1c92273a-f728-4ee3-a877-e23854a93da3">
+<p local-id=3D"f409424e2833">Present <strong>evaluation results</strong>&nb=
+sp;of the upgraded pipeline.</p></li>
+<li local-id=3D"cb3bddce-2c55-4ca3-96b0-6e2117b7fd11">
+<p local-id=3D"21ae54cc13bd">Clearly document this week=E2=80=99s completed=
+ work i<strong>n Confluence</strong>, including data pipeline upgrades and =
+ranking mechanism improvements.</p></li>
+</ul>
+<h3 local-id=3D"5f91cf9c7f47" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+JiajinZhong">Jiajin Zhong</h3>
+<ul local-id=3D"61e86371-1a19-4b59-a1bf-879b80364d46">
+<li local-id=3D"2fa6cb0f-81ad-4608-8256-d047257f3c47">
+<p local-id=3D"bb1c6e56bdc1">Investigate whether the current Confluence int=
+egration uses the export function (expo), and evaluate whether an HTML pars=
+er should be added to replace the current HTML-to-Word conversion process.<=
+/p></li>
+<li local-id=3D"1072a452-e5ab-498e-b269-22c21e7932d1">
+<p local-id=3D"19d59bf4ff46">Communicate with Guangyuan Mu (Confluence spac=
+e administrator) to obtain the <strong>required permissions or API </strong=
+>for accessing the team Confluence space.</p></li>
+<li local-id=3D"4d9ead1b-a0e5-4d4c-82ef-9eea656c7f73">
+<p local-id=3D"cde8c0e89a4c">Research and design an <strong>incremental upd=
+ate mechanism</strong>&nbsp;for Confluence content, such as using modificat=
+ion history or version numbers, and discuss the design with the team.</p></=
+li>
+</ul>
+<h3 local-id=3D"6a5f1ce2925a" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+Collaboration">Collaboration</h3>
+<p local-id=3D"4b0865cbce55"><strong>All members:</strong></p>
+<ul local-id=3D"ef88b2a0-4b62-4e6d-a0af-3c067ae4fbbd">
+<li local-id=3D"e3d6158c-68ab-426c-8a66-d694e3caebdc">
+<p local-id=3D"183d0619b190">Discuss and finalize the <strong>appropriate e=
+mbedding model </strong>dimension selection to support future retrieval opt=
+imization.</p></li>
+<li local-id=3D"755a022e-345d-4381-9a73-9458233e9b53">
+<p local-id=3D"e09bc5149ce7">Continue improving layer-specific functionalit=
+y and prepare for upcoming integration demonstrations.</p></li>
+</ul>
+<hr local-id=3D"efb2030d-211a-4761-944a-a09132766a01" data-layout=3D"wide" =
+data-width=3D"760">
+<h1 local-id=3D"907d93ea7e72" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+Summary">Summary</h1>
+<h2 local-id=3D"c7ec248ee934" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+LanguageReinforcementLearningandSelf-ReflectionDiscussion">Language Reinfor=
+cement Learning and Self-Reflection Discussion</h2>
+<p local-id=3D"fe76f5930eeb">Huifang Liu shared a research paper related to=
+ language reinforcement learning, introducing its architecture and working =
+principles, with a focus on how self-reflection mechanisms can improve agen=
+t execution processes.</p>
+<p local-id=3D"1af2e6762504">Tao asked about the difference between reflect=
+ion and ReAct. Huifang explained that reflection focuses on identifying spe=
+cific execution failures and generating targeted improvement strategies, wh=
+ile ReAct represents a broader reasoning-action-observation loop.</p>
+<p local-id=3D"cfa8715f44fc">Yixi Wang suggested integrating user feedback =
+into the agent=E2=80=99s context to improve future task execution. Tao note=
+d that users may not always be willing to provide detailed feedback and sug=
+gested reducing user effort through lightweight feedback methods, such as c=
+omparison-based selection.</p>
+<hr local-id=3D"c553c6d5-cb2b-4deb-858f-4f69ca210ff8" data-layout=3D"wide" =
+data-width=3D"760">
+<h2 local-id=3D"4b29d253637b" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+ConfluenceAPIIntegrationandDataProcessingDiscussion">Confluence API Integra=
+tion and Data Processing Discussion</h2>
+<p local-id=3D"39abbe3901a7">Jiajin Zhong reported two major achievements: =
+successful Confluence platform integration, including meeting-record questi=
+on-answering tests, and the addition of a PPT parser.</p>
+<p local-id=3D"6b7e1b7af11e">During the discussion, the team identified tha=
+t the current pipeline converts HTML content into Word documents before par=
+sing. Yixi Wang suggested directly introducing an HTML parser to simplify t=
+he processing flow.</p>
+<p local-id=3D"38f64e534fcc">The team also discussed Confluence API usage a=
+nd data pipeline improvements. Jiajin confirmed successful API integration =
+and proposed improvements including incremental updates and buffer-layer me=
+chanisms. Vincent suggested documenting these design mechanisms for the nex=
+t-stage CPR presentation.</p>
+<hr local-id=3D"4a7c018d-708f-480a-a15c-425f6671bbf9" data-layout=3D"wide" =
+data-width=3D"760">
+<h2 local-id=3D"5c56e89bde3a" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+DataProcessingPipelineUpgrade">Data Processing Pipeline Upgrade</h2>
+<p local-id=3D"070afb8f4748">Guangyuan Mu presented a comprehensive upgrade=
+ of the data processing pipeline, including pre-compression, semantic segme=
+ntation, and topic clustering.</p>
+<p local-id=3D"5b76a7e5e5db">The upgraded pipeline generates 333 hybrid-ind=
+ex cards and uses graph-based querying mechanisms to improve multi-hop reas=
+oning performance.</p>
+<p local-id=3D"a33ee72073e3">The team discussed how semantic segmentation a=
+nd topic-based clustering could produce more meaningful retrieval units com=
+pared with traditional fixed-length chunking methods.</p>
+<hr local-id=3D"da38cd2a-3f4b-41c9-9ccd-80781f555a21" data-layout=3D"wide" =
+data-width=3D"760">
+<h2 local-id=3D"109b55c9a39e" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+RetrievalQualityandRankingOptimizationDiscussion">Retrieval Quality and Ran=
+king Optimization Discussion</h2>
+<p local-id=3D"8ffa1c4ff882">Jiaxing Dai shared progress on implementing tw=
+o-stage retrieval and ranking functions.</p>
+<p local-id=3D"808feca62d23">The current approach first filters relevant fi=
+nancial reports and then performs vector retrieval on chunks from the top-r=
+anked documents. However, current testing results showed low recall perform=
+ance.</p>
+<p local-id=3D"e8a49ea8e0a4">The team discussed possible causes, including =
+chunking strategies, embedding models, and named entity recognition (NER). =
+Tao suggested solving the current recall problem before introducing query r=
+ewriting improvements.</p>
+<p local-id=3D"eb239e7e376c">Vincent recommended referring to existing rese=
+arch papers, datasets, and evaluation methods to improve retrieval performa=
+nce.</p>
+<hr local-id=3D"209d794e-25a8-4d2f-9744-32f17511bf50" data-layout=3D"wide" =
+data-width=3D"760">
+<h2 local-id=3D"100d0b3ac89d" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+MLModelRecallIssueDiscussion">ML Model Recall Issue Discussion</h2>
+<p local-id=3D"5272ba7c2d59">The team discussed current recall issues in th=
+e retrieval model.</p>
+<p local-id=3D"0e148480d016">Vincent pointed out that a recall score below =
+0.8 would make the system difficult to use effectively. Jiajin suggested th=
+at the issue might come from the chunking layer of the data processing pipe=
+line.</p>
+<p local-id=3D"142619c72ff1">Yixi Wang mentioned that previous testing achi=
+eved approximately 84% recall, suggesting that the current dataset may intr=
+oduce additional challenges.</p>
+<p local-id=3D"167c418bdafe">Huifang Liu introduced recent Agent Layer prog=
+ress, including the complete workflow from frontend requests to answer gene=
+ration. Completed functions include query rewriting, routing strategies, an=
+d tool registry. Further evaluation and optimization are still required.</p=
+>
+<hr local-id=3D"27c3f570-72b0-43b7-ae5d-7c2534d29598" data-layout=3D"wide" =
+data-width=3D"760">
+<h2 local-id=3D"187e60fba51a" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+KnowledgeBaseFunctionalityDemonstration">Knowledge Base Functionality Demon=
+stration</h2>
+<p local-id=3D"a286b9ce59f2">Daijiang Xie demonstrated the working principl=
+es of intent recognition and query rewriting within the knowledge base syst=
+em.</p>
+<p local-id=3D"4f20b6f241b9">Using a business-trip reimbursement example, D=
+aijiang explained how multiple retrieval rounds and query rewriting can imp=
+rove answer efficiency and accuracy.</p>
+<p local-id=3D"7f530e27ccad">Tao asked whether these functions require addi=
+tional third-party models. Daijiang confirmed that these capabilities are i=
+mplemented internally within the Agent system and do not require external m=
+odels.</p>
+<p local-id=3D"157f89c76770">The team discussed evaluation methods for thes=
+e functions, while detailed testing approaches still require further design=
+.</p>
+<hr local-id=3D"c922590a-125f-49b7-bb6b-394fc551be68" data-layout=3D"wide" =
+data-width=3D"760">
+<h2 local-id=3D"6e9c297dcbc8" id=3D"MeetingMinutesof2026/08/04-Q2reporting-=
+CodeIntegrationandProjectProgressDiscussion">Code Integration and Project P=
+rogress Discussion</h2>
+<p local-id=3D"e16406d585e4">The team discussed code merging and overall pr=
+oject progress.</p>
+<p local-id=3D"6c8f01d95151">Yixi Wang agreed to assist with code merging a=
+fter the meeting and prepare a demo version for the next presentation.</p>
+<p local-id=3D"d18f7790d20a">Tao emphasized that each module should clarify=
+ its objectives and completion status before next Tuesday. He also encourag=
+ed the team to study existing AI system designs in the market.</p>
+<p local-id=3D"0c6bf3abcb58">The team further discussed testing requirement=
+s for query rewriting functionality. Tao suggested implementing simple unit=
+ tests to evaluate rewriting effectiveness.</p>
+<p local-id=3D"e98db27e874f"></p>
+<p local-id=3D"fd39f6f5c172">Hi <strong>Huijie</strong>,</p>
+<p local-id=3D"f319a5c914ba">&nbsp;</p>
+<p local-id=3D"187a5d7450a1">Kindly remind you that <strong>Huijie </strong=
+>will be the <strong>host</strong>&nbsp;and <strong>MoM Noter</strong>&nbsp=
+;of next weekly meeting. Please read above Notes and get prepared.</p>
+<p local-id=3D"9952d4d17a28">&nbsp;</p>
+<p local-id=3D"fbda02400424">Kind regards,</p>
+<p local-id=3D"8e6868a3a496"></p>
+<p local-id=3D"c625ea4eb31b"><strong>Huifang</strong></p>
+<p local-id=3D"63ee85a0c3c0"></p>
+    </div>
+</body>
+</html>
+------=_Part_28_1846177782.1785900671048--

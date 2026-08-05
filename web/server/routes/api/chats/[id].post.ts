@@ -9,6 +9,49 @@ import { MODELS } from '../../../../shared/utils/models'
 import { logger } from '../../../utils/logger'
 import { recordAiCall } from '../../../utils/metrics'
 
+async function generateSmartTitle(userQuery: string): Promise<string> {
+  const cleanQuery = userQuery.trim().replace(/^[\s\n\r]+/, '')
+  if (!cleanQuery) return '新对话'
+
+  try {
+    const apiKey = process.env.LLM_API_KEY || 'ak_2tl4PD6KT2Yu9Sf67W02t2S09GD6C'
+    const apiBase = process.env.LLM_API_BASE || 'https://api.longcat.chat/openai/v1'
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 4000)
+
+    const res = await fetch(`${apiBase}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: process.env.LLM_MODEL || 'LongCat-2.0',
+        messages: [
+          { role: 'system', content: '你是对话标题生成器。根据用户第一次提出的问题，总结生成一个简短、精炼的主题标题（15字以内，绝对不要包含标点符号、引号或多余文字）。' },
+          { role: 'user', content: cleanQuery }
+        ],
+        max_tokens: 30,
+        temperature: 0.3
+      }),
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    if (res.ok) {
+      const data = await res.json()
+      const title = data?.choices?.[0]?.message?.content?.trim()
+        ?.replace(/['"“”`\.\!\?。！？]/g, '')
+      if (title && title.length >= 2 && title.length <= 25) {
+        return title
+      }
+    }
+  } catch (e) {
+    console.warn('[TitleGen] LLM title gen fallback:', e)
+  }
+
+  return cleanQuery.length > 20 ? cleanQuery.slice(0, 20) + '...' : cleanQuery
+}
+
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
 
@@ -35,14 +78,17 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
-  // Generate title locally from first message to avoid external API calls
-  if (!chat.title) {
-    const firstMsgText = messages[0]?.content || 'New Chat'
-    const title = firstMsgText.length > 25 ? firstMsgText.slice(0, 25) + '...' : firstMsgText
-    await db.update(tables.chats).set({ title }).where(eq(tables.chats.id, id as string))
+  const lastMessage = messages[messages.length - 1]
+  const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+
+  // Generate smart title from user content during first conversation turn
+  const needsTitle = !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话'
+  let newTitle = ''
+  if (needsTitle && queryText) {
+    newTitle = await generateSmartTitle(queryText)
+    await db.update(tables.chats).set({ title: newTitle }).where(eq(tables.chats.id, id as string))
   }
 
-  const lastMessage = messages[messages.length - 1]
   if (lastMessage?.role === 'user' && messages.length > 1) {
     await db.insert(tables.messages).values({
       id: lastMessage.id,
@@ -62,15 +108,12 @@ export default defineHandler(async (event) => {
     },
     execute: async ({ writer }) => {
       try {
-        const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
         console.log("[DEBUG queryText]", queryText)
         
-        // Write a transient status so the user knows RAG is searching
-        if (!chat.title) {
+        if (newTitle) {
           writer.write({
             type: 'data-chat-title',
-            data: { message: 'Generating title...' },
-            transient: true
+            data: { title: newTitle }
           })
         }
 
@@ -84,6 +127,7 @@ export default defineHandler(async (event) => {
           },
           body: JSON.stringify({
             query: queryText,
+            session_id: id,
             top_k: 5,
             retrieval_mode: "hybrid"
           }),
@@ -97,7 +141,8 @@ export default defineHandler(async (event) => {
         const agentData = await agentRes.json()
         recordAiCall(Date.now() - aiCallStart)
 
-        if (agentData.status !== "success") {
+        const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
+        if (!isValidResponse) {
           const errMsg = agentData.message || "RAG retrieval error from Agent layer"
           const responseId = `err-msg-${Date.now()}`
           writer.write({
@@ -116,7 +161,7 @@ export default defineHandler(async (event) => {
           return
         }
 
-        const rawAnswer = agentData.answer || ""
+        const rawAnswer = agentData.answer || agentData.message || ""
         const citationsList: any[] = agentData.citations || []
 
         // 2. Replace [N] markers with :cite-mark{index="N"} — only pass index.

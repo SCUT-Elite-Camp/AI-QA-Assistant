@@ -97,12 +97,13 @@ def auto_process_raws(
         
     # 初始化 Milvus 连接并测试是否能够连接
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
+    has_milvus = False
     try:
         milvus.connect()
+        has_milvus = True
         print(" [Milvus] 成功连接到 Milvus 向量库")
     except Exception as e:
-        print(f" [Error] 无法连接到 Milvus 服务，请确认 Docker 及 Milvus 容器已启动并在运行。错误: {e}")
-        sys.exit(1)
+        print(f" [Warning] 无法连接到 Milvus 服务（{e}）。将跳过向量库写入，仅生成 JSON 元数据和 BM25 索引。")
         
     processed_count = 0
     
@@ -136,32 +137,33 @@ def auto_process_raws(
             save_document(doc.doc_id, json_data)
             print(f"  → JSON 元数据已保存至: data-persistence/data/documents/{doc.doc_id}.json")
             
-            # 5. 写入向量数据到 Milvus
-            dim = len(embeddings[0])
-            milvus.init_collection(dim=dim)
-            
-            # 若文件为修改过的，先清除该 doc_id 原有向量分块，避免重复数据
-            try:
-                delete_expr = f"doc_id == '{doc.doc_id}'"
-                milvus.collection.delete(expr=delete_expr)
-                print(f"  → 已清理旧向量分块 (doc_id: {doc.doc_id})")
-            except Exception as de:
-                print(f"  [Warning] 清理旧向量分块失败或集合为空: {de}")
+            # 5. 写入向量数据到 Milvus（若可用）
+            if has_milvus:
+                dim = len(embeddings[0])
+                milvus.init_collection(dim=dim)
                 
-            chunk_ids = [ch.chunk_id for ch in chunks]
-            doc_ids = [doc.doc_id] * len(chunks)
-            chunk_indices = [ch.index for ch in chunks]
-            source_urls = [doc.source_url] * len(chunks)
-            
-            milvus.insert_chunks(
-                embeddings=embeddings,
-                chunk_ids=chunk_ids,
-                chunk_texts=chunk_texts,
-                doc_ids=doc_ids,
-                chunk_indices=chunk_indices,
-                source_urls=source_urls
-            )
-            print(f"  → 向量数据已成功写入 Milvus 向量库")
+                # 若文件为修改过的，先清理旧分块
+                try:
+                    delete_expr = f"doc_id == '{doc.doc_id}'"
+                    milvus.collection.delete(expr=delete_expr)
+                    print(f"  → 已清理旧向量分块 (doc_id: {doc.doc_id})")
+                except Exception as de:
+                    print(f"  [Warning] 清理旧向量分块失败或集合为空: {de}")
+                    
+                chunk_ids = [ch.chunk_id for ch in chunks]
+                doc_ids = [doc.doc_id] * len(chunks)
+                chunk_indices = [ch.index for ch in chunks]
+                source_urls = [doc.source_url] * len(chunks)
+                
+                milvus.insert_chunks(
+                    embeddings=embeddings,
+                    chunk_ids=chunk_ids,
+                    chunk_texts=chunk_texts,
+                    doc_ids=doc_ids,
+                    chunk_indices=chunk_indices,
+                    source_urls=source_urls
+                )
+                print(f"  → 向量数据已成功写入 Milvus 向量库")
             processed_count += 1
             
         except Exception as e:
