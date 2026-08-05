@@ -19,6 +19,9 @@ rank-bm25
 jieba
 PyMuPDF
 python-docx
+python-pptx
+beautifulsoup4
+openpyxl
 sentence-transformers
 modelscope
 

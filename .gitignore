@@ -9,3 +9,17 @@ web/.env
 web/auto-imports.d.ts
 web/components.d.ts
 data-persistence/volumes/
+# Confluence 凭据与拉取的源数据（含内部内容，勿提交）
+data-pipeline/.confluence.env
+data-pipeline/data/raws/
+data-pipeline/data/documents/
+data-pipeline/confluence_pull*.log
+data-pipeline/confluence_metadata_*.json
+
+# 本地密钥与运行产物（勿提交）
+agent/.env
+data-persistence/data/
+agent_run.log
+install_pptx.log
+pptx_install.log
+tmp_test_chat.py
