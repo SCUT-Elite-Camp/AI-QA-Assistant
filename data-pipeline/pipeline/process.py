@@ -70,51 +70,53 @@ def process_folder(
     for i, file_path in enumerate(files, 1):
         print(f"\n[{i}/{len(files)}] 处理: {file_path}")
         try:
-            # 1. 解析文档
-            doc = parse_file(file_path)
-            print(f"  → 解析完成，全文 {len(doc.content)} 字符")
+            # 1. 解析文档（HtmlParser 可能返回多个文档：主文档 + 附件文档）
+            docs = parse_file(file_path)
+            total_chars = sum(len(d.content) for d in docs)
+            print(f"  → 解析完成，全文 {total_chars} 字符，{len(docs)} 个文档")
 
-            # 2. 文本切片（优先使用块感知切片）
-            if doc.content_blocks:
-                chunks = chunk_from_blocks(doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-            else:
-                chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-            doc.chunks = chunks
-            print(f"  → 切片完成，共 {len(chunks)} 个分块")
+            for doc in docs:
+                # 2. 文本切片（优先使用块感知切片）
+                if doc.content_blocks:
+                    chunks = chunk_from_blocks(doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
+                else:
+                    chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
+                doc.chunks = chunks
+                print(f"    [{doc.doc_id[:8]}] 切片完成，共 {len(chunks)} 个分块")
 
-            if not chunks:
-                print(f"  ⚠ 跳过（无内容）")
-                continue
+                if not chunks:
+                    print(f"    [SKIP] 跳过（无内容）")
+                    continue
 
-            # 3. 向量化
-            chunk_texts = [ch.text for ch in chunks]
-            print(f"  → 正在向量化 {len(chunk_texts)} 个分块...")
-            embeddings = embed_texts(chunk_texts)
-            print(f"  → 向量化完成")
+                # 3. 向量化
+                chunk_texts = [ch.text for ch in chunks]
+                print(f"    → 正在向量化 {len(chunk_texts)} 个分块...")
+                embeddings = embed_texts(chunk_texts)
+                print(f"    → 向量化完成")
 
-            # 4. 保存 JSON 到 data/documents/
-            json_data = doc.model_dump(mode="json")
-            save_document(doc.doc_id, json_data)
-            print(f"  → JSON 已保存: data/documents/{doc.doc_id}.json")
+                # 4. 保存 JSON 到 data/documents/
+                json_data = doc.model_dump(mode="json")
+                save_document(doc.doc_id, json_data)
+                print(f"    → JSON 已保存: data/documents/{doc.doc_id}.json")
 
-            # 5. 插入向量到 Milvus
-            chunk_ids = [ch.chunk_id for ch in chunks]
-            doc_ids = [doc.doc_id] * len(chunks)
-            chunk_indices = [ch.index for ch in chunks]
-            source_urls = [doc.source_url] * len(chunks)
-            milvus.insert_chunks(
-                embeddings=embeddings,
-                chunk_ids=chunk_ids,
-                chunk_texts=chunk_texts,
-                doc_ids=doc_ids,
-                chunk_indices=chunk_indices,
-                source_urls=source_urls,
-            )
-            print(f"  → 向量已写入 Milvus")
+                # 5. 插入向量到 Milvus
+                chunk_ids = [ch.chunk_id for ch in chunks]
+                doc_ids = [doc.doc_id] * len(chunks)
+                chunk_indices = [ch.index for ch in chunks]
+                source_urls = [doc.source_url] * len(chunks)
+                milvus.insert_chunks(
+                    embeddings=embeddings,
+                    chunk_ids=chunk_ids,
+                    chunk_texts=chunk_texts,
+                    doc_ids=doc_ids,
+                    chunk_indices=chunk_indices,
+                    source_urls=source_urls,
+                )
+                print(f"    → 向量已写入 Milvus")
 
-            documents.append(doc)
+                documents.append(doc)
         except Exception as e:
-            print(f"  ❌ 处理文件时出错: {file_path}，错误: {e}")
+            print(f"  [FAIL] 处理文件时出错: {file_path}，错误: {e}")
 
     # 6. 全部完成后构建 BM25 索引
     print(f"\n构建 BM25 索引...")
