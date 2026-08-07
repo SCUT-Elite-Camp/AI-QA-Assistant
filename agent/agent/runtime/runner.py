@@ -79,6 +79,7 @@ class AgentRunner:
         mode: str = "hybrid",
         top_k: int = 5,
         max_iterations: int | None = None,
+        is_first_message: bool = False,
     ) -> AgentRunResult:
         """Execute a bounded Agent run.
 
@@ -114,7 +115,7 @@ class AgentRunner:
         state = AgentState(
             trace_id=trace_id,
             query_plan=query_plan,
-            messages=self._build_messages(query_plan, history or []),
+            messages=self._build_messages(query_plan, history or [], is_first_message=is_first_message),
         )
         schemas = self._tool_schemas(policy)
         last_fingerprint: str | None = None
@@ -172,11 +173,12 @@ class AgentRunner:
                     and policy.requires_citations
                     and not state.evidence
                     and schemas
+                    and not answer
                 ):
                     return self._result(
                         state,
                         StopReason.NO_RELEVANT_CONTEXT,
-                        message="回答前未获得满足策略要求的知识库证据。",
+                        message="未检索到具体匹配的文档库片段，请尝试调整搜索关键词。",
                         error_code="evidence_required",
                     )
                 state.messages.append(
@@ -246,12 +248,7 @@ class AgentRunner:
                             error_code="repeated_tool_call",
                         )
                     )
-                    return self._result(
-                        state,
-                        StopReason.REPEATED_TOOL_CALL,
-                        message="检测到重复工具调用，Agent 已安全停止。",
-                        error_code="repeated_tool_call",
-                    )
+                    return self._fallback_final_answer(state, "检测到重复工具调用，Agent 已安全停止。")
 
                 if policy is not None and tool_name not in policy.candidate_tools:
                     state.tool_calls.append(
@@ -423,13 +420,20 @@ class AgentRunner:
     def _build_messages(
         query_plan: QueryPlan,
         history: list[dict[str, Any]],
+        is_first_message: bool = False,
     ) -> list[dict[str, Any]]:
+        title_directive = (
+            "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
+            if is_first_message
+            else ""
+        )
         system_content = (
             f"{SYSTEM_ROLE}\n\n"
             "你可以使用提供的工具获取回答所需的证据。"
             "工具返回后，基于观察结果给出最终答案；不要编造不存在的证据。\n\n"
             f"检索用独立查询：{query_plan.standalone_query}\n\n"
             f"回答约束：\n{ANSWER_RULES}"
+            f"{title_directive}"
         )
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": system_content}
@@ -507,6 +511,33 @@ class AgentRunner:
             raise ValueError("tool arguments must decode to an object")
         return call_id, tool_name, arguments
 
+    def _fallback_final_answer(self, state: AgentState, default_message: str) -> AgentRunResult:
+        """Fallback helper to attempt a tool-less final LLM answer generation when tool limits or repetitions occur."""
+        try:
+            fallback_messages = list(state.messages)
+            fallback_messages.append({
+                "role": "user",
+                "content": "请结合已掌握的核心专业知识与背景信息，对用户提出的问题直接给出清晰、全面、有条理的回答，不要再调用任何工具。"
+            })
+            fallback_resp = self.llm.chat(fallback_messages, temperature=0.3)
+            answer = fallback_resp.get("content", "").strip() if isinstance(fallback_resp, dict) else str(fallback_resp).strip()
+            if answer:
+                state.messages.append({"role": "assistant", "content": answer})
+                return self._result(
+                    state,
+                    StopReason.FINAL_ANSWER,
+                    answer=answer,
+                )
+        except Exception as exc:
+            logger.warning("[Runner] Fallback final answer generation failed: %s", exc)
+
+        return self._result(
+            state,
+            StopReason.REPEATED_TOOL_CALL,
+            message=default_message,
+            error_code="repeated_tool_call",
+        )
+
     @staticmethod
     def _apply_execution_constraints(
         *,
@@ -518,7 +549,8 @@ class AgentRunner:
     ) -> dict[str, Any]:
         constrained = dict(arguments)
         if tool_name == "search_documents":
-            constrained["query"] = query_plan.standalone_query
+            if not constrained.get("query"):
+                constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
             constrained["mode"] = mode
             constrained["filters"] = dict(query_plan.filters)
@@ -588,9 +620,7 @@ class AgentRunner:
 
         current = self._typed_evidence(state.evidence)
         if policy is None or evidence_gate is None:
-            if not state.evidence:
-                raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
-            return state.evidence, []
+            return state.evidence or [], []
 
         gate_result = evidence_gate.evaluate(
             query_plan,
@@ -606,7 +636,7 @@ class AgentRunner:
             or corrective_retrieval is None
             or tool_executor is None
         ):
-            raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+            return [], []
 
         requests = corrective_retrieval.plan(
             query_plan,
@@ -616,7 +646,7 @@ class AgentRunner:
             previous_top_k=previous_top_k,
         )
         if not requests:
-            raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+            return [], []
 
         correction_messages: list[dict[str, Any]] = []
         corrected = list(current)
@@ -663,7 +693,7 @@ class AgentRunner:
             retrieval_attempt=state.retrieval_attempts,
         )
         if not second_gate.accepted:
-            raise NoRelevantContext("当前知识库没有足够信息回答该问题。")
+            return [], correction_messages
         return [item.model_dump() for item in second_gate.evidence], correction_messages
 
     @staticmethod

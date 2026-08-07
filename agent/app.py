@@ -30,17 +30,22 @@ async def lifespan(app: FastAPI):
     
     logger.info("Preloading retrieval model weights and dictionary (cold-start prevention)...")
     try:
-        from agent.agent import Agent
-        from agent.schemas.chat import ChatRequest
-        agent = Agent()
-        # Send a dummy request to trigger cold start loading of SearchTool
-        dummy_request = ChatRequest(query="预热", top_k=1, retrieval_mode="hybrid")
-        agent.chat(dummy_request)
-        logger.info("Retrieval model preloaded successfully!")
+        import threading
+        def preload():
+            try:
+                from toolset.tool_layer.search_tool import SearchTool
+                search_tool = SearchTool()
+                search_tool.search("预热", top_k=1, mode="hybrid")
+                logger.info("Retrieval model BGE weights & dictionary preloaded successfully into RAM!")
+            except Exception as e:
+                logger.warning(f"Background preload failed (non-fatal): {e}")
+        t = threading.Thread(target=preload, daemon=True)
+        t.start()
     except Exception as e:
-        logger.error(f"Failed to preload retrieval model: {e}")
+        logger.warning(f"Could not start preload thread (non-fatal): {e}")
         
     yield
+
     logger.info("Shutting down")
 
 

@@ -59,9 +59,10 @@ class Settings(BaseModel):
     QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
     TOOL_TIMEOUT_MS: int = Field(
-        default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 30000),
+        default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
     )
+
 
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
     MAX_MEMORY_MESSAGES: int = Field(

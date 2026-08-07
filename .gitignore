@@ -19,8 +19,10 @@ data-pipeline/confluence_metadata_*.json
 
 # 本地密钥与运行产物（勿提交）
 agent/.env
+agent/data-persistence/
 data-persistence/data/
-agent_run.log
-install_pptx.log
-pptx_install.log
+data-persistence/data-persistence/
+*.log
+*.db
+*.sqlite
 tmp_test_chat.py

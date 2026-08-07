@@ -74,6 +74,7 @@ class AgentOrchestrator:
             request,
             policy,
         )
+        is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
         run_result = self.runner.run(
             plan,
             policy=policy,
@@ -84,6 +85,7 @@ class AgentOrchestrator:
             trace_id=trace_id,
             mode=retrieval_mode,
             top_k=top_k,
+            is_first_message=is_first,
         )
         return OrchestrationResult(
             query_plan=plan,
