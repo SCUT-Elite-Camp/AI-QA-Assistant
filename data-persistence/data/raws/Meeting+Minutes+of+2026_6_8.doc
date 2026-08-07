@@ -1,0 +1,379 @@
+Date: Wed, 5 Aug 2026 03:30:17 +0000 (UTC)
+Message-ID: <988217788.9.1785900617654@04c71ba29de4>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_8_1199731188.1785900617654"
+
+------=_Part_8_1199731188.1785900617654
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/6/8</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/6/8</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"84eb9470e97f">Hi all,</p>
+<p local-id=3D"28a44faf7fdb">Thank you so much for your attendance. Please =
+kindly check the meeting minutes below.</p>
+<p local-id=3D"e20e70a85f92">Date: Monday, 8th June, 2026</p>
+<p local-id=3D"df5a8b140f1c">Time: 17:30</p>
+<p local-id=3D"7b82e5bbf6c1">Attendees: Tao Huang, Loura Guo, Jiajin Zhong,=
+ Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing D=
+ai</p>
+<p local-id=3D"1422b8dafe39">Quick Recap</p>
+<p local-id=3D"bb8ac7200389">This meeting mainly focused on the module divi=
+sion and development plan for the =E6=B1=87=E4=B8=B0=E7=A7=91=E6=8A=80=E8=
+=8F=81=E8=8B=B1=E8=AE=AD=E7=BB=83=E8=90=A5 =E2=80=93 AI=E6=99=BA=E8=83=BD=
+=E9=97=AE=E7=AD=94=E5=8A=A9=E6=89=8B project.</p>
+<p local-id=3D"e01ea04af2bb">Yixi led the discussion on module division bas=
+ed on the current system architecture. The team tentatively divided the sys=
+tem into five major modules: data persistence layer, data processing pipeli=
+ne, tool set layer, web layer, and agent integration layer. Each module own=
+er introduced their technical background, preferred direction, and possible=
+ contribution to the project.</p>
+<p local-id=3D"a3ddeea945e8">The team also discussed whether the modules sh=
+ould be developed in parallel or strictly according to dependency order. Af=
+ter discussion, the team tentatively agreed to start with parallel developm=
+ent for efficiency, while adjusting the collaboration model if dependency i=
+ssues arise later.</p>
+<p local-id=3D"03772056dd99">Vincent emphasized that the team should focus =
+on the time constraints and deliverables of the first phase in July, avoid =
+over-designing the system at the early stage, and clarify the specific obje=
+ctives of each module for Phase 1. He also suggested that team members make=
+ good use of AI tools to improve development and documentation efficiency.<=
+/p>
+<p local-id=3D"099c14fb2487">The meeting concluded that each module owner s=
+hould define the expected Phase 1 functions, deliverables, and acceptance c=
+riteria before Wednesday, and prepare a four-phase development plan for the=
+ next meeting.</p>
+<p local-id=3D"9188aa1cc13c">Discussion Summary</p>
+<p local-id=3D"e254d0b8c841">Vincent and Tao discussed the project timeline=
+ arrangement. The original plan was to arrange a session around 11th June, =
+but the exact time still depends on ERC=E2=80=99s availability. Vincent men=
+tioned that he would confirm the schedule with ERC and notify the team in a=
+dvance. He also reminded the team to focus on the July Phase 1 deadline and=
+ avoid spending too much time on overly complex designs at this stage.</p>
+<p local-id=3D"181a6616dc98">Yixi introduced the proposed module division p=
+lan. Based on the current architecture, the project will be divided into fi=
+ve modules: data persistence layer, data processing pipeline, tool set laye=
+r, web layer, and agent integration layer. The team agreed that module-base=
+d division can improve development efficiency, while members with extra cap=
+acity may support other modules later.</p>
+<p local-id=3D"8100fc0d9cfe">The team discussed the development sequence of=
+ different modules. One option is to develop the modules strictly according=
+ to dependencies, starting from data persistence and data processing. Anoth=
+er option is to let different modules proceed in parallel and resolve depen=
+dency issues through interface definitions, mock data, and later integratio=
+n. The team tentatively agreed to proceed with parallel development first.<=
+/p>
+<p local-id=3D"9dde67afadd3">Daijiang shared knowledge related to MCP, whic=
+h stands for Model Context Protocol. He introduced the basic interaction me=
+chanism between AI agents and external tools, including how the LLM communi=
+cates with the MCP client, how requests are passed to the MCP server, and h=
+ow backend tools are invoked. Vincent suggested that the team could refer t=
+o the Open Manus project to better understand the implementation of an MCP =
+server. Daijiang will share related blog links with the team.</p>
+<p local-id=3D"fd2c146a36d1">Vincent and Tao also provided suggestions on f=
+uture AI knowledge sharing. They suggested that when introducing technical =
+concepts, especially abbreviations such as MCP, the presenter should first =
+explain the full name and provide enough background information so that all=
+ team members can follow the discussion more easily.</p>
+<p local-id=3D"56d9435df7de">The team members introduced their technical ba=
+ckgrounds and module preferences. Daijiang introduced his experience in RAG=
+, embedding applications, data processing, data governance, database design=
+, and AI-assisted engineering tools. Jiajin introduced his experience in Py=
+thon, databases, and data processing pipelines. Jiaxing introduced his expe=
+rience related to tool set development and keyword-based retrieval. Other m=
+embers also discussed their possible roles in the project.</p>
+<p local-id=3D"b4d0d1a45faf">The final module responsibility arrangement wa=
+s discussed as follows. Suijie will be responsible for the web layer. Jiaxi=
+ng will be responsible for the tool set layer. Yixi will prioritize the dat=
+a persistence layer to provide basic interfaces for the data processing pip=
+eline. Daijiang will be responsible for the agent integration layer. Jiajin=
+ will be responsible for the data processing pipeline.</p>
+<p local-id=3D"872880b9aed5">The team also discussed the four-phase develop=
+ment plan. For the first phase, the focus should be on clarifying the minim=
+um deliverables and building the basic framework of each module. Later phas=
+es may include deeper integration, optimization, and more advanced features=
+. Vincent suggested that the team should consider adding some highlight fea=
+tures in later demonstrations, such as improving data search accuracy throu=
+gh wiki-style organization or similar mechanisms.</p>
+<p local-id=3D"be158a375e8f">Action Items</p>
+<p local-id=3D"5f9ed0baa774">All team members:</p>
+<p local-id=3D"dca16837ba65">Continue implementation based on the module-ba=
+sed division of work.</p>
+<p local-id=3D"db483832bb9d">All team members:</p>
+<p local-id=3D"f00d5d284921">Make sure each function point has a clear owne=
+r, and each module has clear internal responsibility division.</p>
+<p local-id=3D"734c9506c486">All module owners:</p>
+<p local-id=3D"3a3a4a76b640">Communicate with module partners and further c=
+larify detailed module-level task division.</p>
+<p local-id=3D"ae99bca4e883">All module owners:</p>
+<p local-id=3D"3f224e209f11">Define the objectives, deliverables, and accep=
+tance criteria for each phase, especially Phase 1 in July.</p>
+<p local-id=3D"95191673e9a4">All module owners:</p>
+<p local-id=3D"bdd4b1b2f15d">Prepare a four-phase development plan and pres=
+ent it in the next weekly meeting.</p>
+<p local-id=3D"2c972050fc02">All module owners:</p>
+<p local-id=3D"278255727784">Submit or clarify the expected Phase 1 functio=
+ns before Wednesday.</p>
+<p local-id=3D"ae7fa3182d5e">Vincent:</p>
+<p local-id=3D"283fa733c644">Confirm ERC=E2=80=99s available time and notif=
+y the team in advance.</p>
+<p local-id=3D"2397dbc3bedc">Vincent:</p>
+<p local-id=3D"1ed4487493e9">Share the Open Manus project link in the comme=
+nt section for team members to study the implementation of MCP server.</p>
+<p local-id=3D"547bbe6f1532">Suijie:</p>
+<p local-id=3D"9b877626d6c6">Take responsibility for the development of the=
+ web layer.</p>
+<p local-id=3D"c69753ee349f">Jiaxing:</p>
+<p local-id=3D"580aad8157ac">Take responsibility for the development of the=
+ tool set layer.</p>
+<p local-id=3D"2bcfbd0f3456">Yixi:</p>
+<p local-id=3D"ae744b3271e8">Prioritize the development of the data persist=
+ence layer and provide basic interface support for the data processing pipe=
+line.</p>
+<p local-id=3D"c39df1592387">Daijiang:</p>
+<p local-id=3D"9a1f6aa15736">Share MCP-related blog links in the comment se=
+ction for team members=E2=80=99 reference.</p>
+<p local-id=3D"2fcbb047a24a">Daijiang:</p>
+<p local-id=3D"69343ced750f">Take responsibility for the development of the=
+ agent integration layer.</p>
+<p local-id=3D"089b1cced071">Daijiang:</p>
+<p local-id=3D"98e36a463b72">When sharing AI knowledge in the future, expla=
+in the full name of abbreviations when they are first mentioned, such as MC=
+P, so that all team members can better understand the topic.</p>
+<p local-id=3D"4c668d2054b4">Jiajin:</p>
+<p local-id=3D"76a9641a8c3e">Take responsibility for the development of the=
+ data processing pipeline.</p>
+<p local-id=3D"b141312ac50b">Reference Links / Materials</p>
+<p local-id=3D"b5cebe814a4d">Open Manus project link: To be shared by Vince=
+nt.</p>
+<p local-id=3D"8d9a702ea2ea">MCP-related blog links: To be shared by Daijia=
+ng.</p>
+<p local-id=3D"8d97a14cabad">Module division / architecture diagram: To be =
+shared later if available.</p>
+<p local-id=3D"b469574d42ec">Four-phase development plan: To be updated by =
+each module owner and presented in the next weekly meeting.</p>
+    </div>
+</body>
+</html>
+------=_Part_8_1199731188.1785900617654--

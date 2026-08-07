@@ -1,0 +1,409 @@
+Date: Wed, 5 Aug 2026 03:30:59 +0000 (UTC)
+Message-ID: <560980197.15.1785900659101@483068d4924b>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_14_341004224.1785900659101"
+
+------=_Part_14_341004224.1785900659101
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/07/20 - Q2 discussion</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/07/20 - Q2 discussion</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"fa9b7025fa60">Hi all,</p>
+<p local-id=3D"b42a907d5534">&nbsp;</p>
+<p local-id=3D"8e0f6d151534">Thank you so much for your attendance. Please =
+kindly check the meeting minutes below for the meeting.</p>
+<p local-id=3D"dcfee8a8854e">&nbsp;</p>
+<p local-id=3D"8f5ad109fc21">Date: Monday, 20th July, 2026</p>
+<p local-id=3D"9190c201b7af">Time: 17:30 HK time</p>
+<p local-id=3D"1e0b8312f82f">Attendees:Tao Huang, Loura Guo, Jiajin Zhong, =
+Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Da=
+i</p>
+<p local-id=3D"4bf2edd9e16a"><strong>Quick Recap</strong><br>
+This meeting primarily focused on AI knowledge sharing and goal planning fo=
+r Project Checkpoint 2. Zhong Jiajin shared the differences between LNWiki =
+and LNWT, explaining how LNWiki analyzes documents, extracts entities, and =
+uses graph expansion to answer questions. Wang Yixi presented system evalua=
+tion results, noting that while the system returns relevant results, rankin=
+g needs improvement. The team discussed next-phase priorities, including mu=
+lti-data-source integration, PDF processing (especially images, tables, and=
+ formulas), toolset expansion, and Confluence integration. Tao emphasized t=
+he importance of creating Confluence documentation, suggesting that each mo=
+dule lead record their progress and ideas, and recommended standardized for=
+mats for tracking feature development and performance improvements. The mee=
+ting concluded with next-week action items, including Confluence page setup=
+, infrastructure building, and performance monitoring.</p>
+<p local-id=3D"5e002aef4f29"><strong>Follow-up Actions</strong></p>
+<ul local-id=3D"24938363-0042-4136-b811-8cfa789c932f">
+<li local-id=3D"3f3697e4-ea68-4046-b3c4-f6cff5548907">
+<p local-id=3D"06df2942ad73"><strong>Dai Jiaxing</strong></p>
+<ul local-id=3D"bfebf906-3e54-41da-80a9-47dc3840a3e0">
+<li local-id=3D"85ecffe7-13fc-49c9-b69e-4eba2d77d702">
+<p local-id=3D"1e7465fce3e8">Research and experiment with solutions for han=
+dling complex PDF content (images, tables, formulas), including OCR and mul=
+ti-module understanding layer design.</p></li>
+<li local-id=3D"ac25be6d-b6da-4679-9669-191c61559733">
+<p local-id=3D"1ff2b319fdd1">Continue identifying and evaluating suitable E=
+nglish datasets for future functional testing and performance assessment.</=
+p></li>
+</ul></li>
+<li local-id=3D"fc2189fd-f93b-4619-a87a-d932e1cf8a03">
+<p local-id=3D"0359ae05d517"><strong>Wang Yixi</strong></p>
+<ul local-id=3D"527d06c3-c650-433c-a2aa-cb23284f7e34">
+<li local-id=3D"ddbc5d6c-fb95-4c4a-b7bc-e9e26bd1a00e">
+<p local-id=3D"aba6e2cee83d">Complete the Confluence page for data layer pr=
+ocessing within the next week.</p></li>
+</ul></li>
+<li local-id=3D"a163d18b-76d0-4428-9630-f7adab19e63e">
+<p local-id=3D"546d09c7ccb2"><strong>Mu Guangyuan</strong></p>
+<ul local-id=3D"2a66ee8e-c78f-4b26-83ff-f62c6bfaa729">
+<li local-id=3D"a210830f-8b34-4e98-815b-f234ec0ade17">
+<p local-id=3D"e7c7a3846958">Manage and maintain Confluence pages, organizi=
+ng and documenting progress, feature ideas, and contributions for each modu=
+le.</p></li>
+</ul></li>
+<li local-id=3D"636f3072-94f5-41a2-b922-3706673c513a">
+<p local-id=3D"3f605d0f8144"><strong>Dai Jiaxing</strong></p>
+<ul local-id=3D"e3e104ac-2b26-44d7-af32-4ddc83288437">
+<li local-id=3D"c59b4721-54c8-49c1-acac-80422f8684c0">
+<p local-id=3D"b04a4ba27bc9">Responsible for taking and compiling these mee=
+ting minutes.</p></li>
+</ul></li>
+<li local-id=3D"fc621a83-ea67-4067-9b74-2f54b8e6ab13">
+<p local-id=3D"97d1460b4580"><strong>Collaboration</strong></p>
+<ul local-id=3D"d96f4b7d-5363-4e69-a71b-a0b9a0a32980">
+<li local-id=3D"1ea3bdaa-bed5-42df-865d-07a9b1c02b5e">
+<p local-id=3D"52d1bdfe4f97"><strong>All members:</strong>&nbsp;Create Conf=
+luence pages for their respective modules by next Monday, summarizing imple=
+mented features during the CPU phase, planned features for the CPR phase, a=
+nd encountered issues, while documenting progress in writing.</p></li>
+<li local-id=3D"79b35399-9baf-4cb5-b856-187e7556fae3">
+<p local-id=3D"ec76ed4dc97a"><strong>All members:</strong>&nbsp;When develo=
+ping new features or optimizations, ensure clear interface definitions (inp=
+ut/output specifications) are provided and recorded in Confluence.</p></li>
+<li local-id=3D"faf55da7-dbea-478a-be04-94dddcf078b1">
+<p local-id=3D"1ec77a7dae1d"><strong>Web layer lead:</strong>&nbsp;Set up b=
+asic system observability infrastructure, including query performance (e.g.=
+, response time) monitoring.</p></li>
+<li local-id=3D"b000176b-9df6-46c8-b8ac-b6c903b3a8cb">
+<p local-id=3D"a43bd9fc1bae"><strong>Integration layer lead:</strong>&nbsp;=
+Optimize the re-ranking algorithm, considering better ranking models.</p></=
+li>
+<li local-id=3D"08a4b6bb-4ad9-4047-b92e-9a1303d9c2fb">
+<p local-id=3D"7a4d1ac1ec83"><strong>All members:</strong>&nbsp;Starting ne=
+xt week, each team meeting should include 1=E2=80=933 slides summarizing la=
+st week's accomplishments, challenges faced, and next week's goals, to be s=
+hared during the session.</p></li>
+</ul></li>
+</ul>
+<p local-id=3D"88320b249c2f"><strong>Summary</strong></p>
+<p local-id=3D"d992e99d76e6"><strong>=E2=80=82=E2=80=82=E2=80=82=E2=80=82LL=
+MWiki vs. RAG Technology Comparison</strong><br>
+Zhong Jiajin shared AI knowledge on LLMWiki , distinguishing how these tech=
+nologies process documents and answer questions. LLMWiki organizes knowledg=
+e by analyzing key entities in documents and generating structured wiki pag=
+es, while LLMWiki employs graph expansion techniques to discover inter=E2=
+=80=91document connections and uses a four=E2=80=91signal model to assess r=
+elevance. Zhong summarized the differences between LNWiki and traditional R=
+AG systems in terms of processing approach, knowledge state, retrieval meth=
+ods, and efficiency.</p>
+<p local-id=3D"c5eacba3b309"><strong>Knowledge Graph Construction &amp; Doc=
+ument Processing</strong><br>
+=E2=80=82=E2=80=82=E2=80=82=E2=80=82The team discussed technical aspects of=
+ knowledge graph construction and document handling. Zhong explained how LN=
+Wiki parses documents to generate metadata, including entity extraction and=
+ text structuring. Wang Yixi reported evaluation results, showing the syste=
+m effectively retrieves relevant documents but requires ranking improvement=
+s. Dai Jiaxing outlined next-phase priorities: multi=E2=80=91data=E2=80=91s=
+ource support, integration with different platforms, PDF processing enhance=
+ments (especially OCR and handling images/tables), and toolset expansion.</=
+p>
+<p local-id=3D"36dfcde51a9d"><strong>Financial Dataset Handling</strong><br=
+>
+=E2=80=82=E2=80=82=E2=80=82=E2=80=82Dai Jiaxing shared a financial dataset =
+comprising multiple PDFs, some containing flowcharts that OCR could not eff=
+ectively extract. Wang Yixi noted that due to budget constraints, an end=E2=
+=80=91to=E2=80=91end model might be more suitable. Tao suggested temporaril=
+y deprioritizing image processing in favor of text handling and recommended=
+ integrating with Confluence first to read article contents.</p>
+<p local-id=3D"83cba413939b"><strong>Platform Data Extraction &amp; Optimiz=
+ation</strong><br>
+=E2=80=82=E2=80=82=E2=80=82=E2=80=82Wang Yixi emphasized the importance of =
+platform data extraction and encouraged team members to independently explo=
+re optimization and enhancement directions for their modules. Tao proposed =
+creating dedicated Confluence pages to track progress and record implemente=
+d features, with Mu Guangyuan volunteering to manage these pages. The team =
+agreed that future meetings should focus more on each member sharing functi=
+onal updates and work demonstrations for their modules, rather than having =
+Wang Yixi unilaterally set plans.</p>
+<p local-id=3D"5ddbb0f248d3"><strong>Feature Development Progress</strong><=
+br>
+=E2=80=82=E2=80=82=E2=80=82=E2=80=82Tao and Wang Yixi discussed progress on=
+ feature development. Tao suggested that each sub=E2=80=91team summarize cu=
+rrently implemented features at their layer and propose new feasible additi=
+ons, with a goal of completing open discussion and feature planning by next=
+ week. Tao also proposed standardizing team meeting agendas, including proj=
+ect updates, knowledge sharing, and progress reports from each group, recom=
+mending each group prepare 1=E2=80=933 concise slides to facilitate present=
+ations. Zhong Jiajin confirmed the target of conducting feature discussions=
+ and planning by next Monday.</p>
+<p local-id=3D"1c63e5e69371"><strong>Confluence Page Tracking System</stron=
+g><br>
+=E2=80=82=E2=80=82=E2=80=82=E2=80=82Tao proposed creating a shared Confluen=
+ce page to track team progress and resolve issues. Mu Guangyuan and Dai Jia=
+xing agreed, and the group discussed page organization, including module=E2=
+=80=91based sections, status tracking, and contributor information. Wang Yi=
+xi mentioned the need for usage guidelines and suggested using English rath=
+er than Chinese for documentation. The discussion also touched on performan=
+ce test dataset selection, with Wang noting that existing datasets include =
+various test scenarios useful for evaluating system improvements.</p>
+<p local-id=3D"cc4b83f83d1d"><strong>System Architecture &amp; Interface De=
+sign</strong><br>
+=E2=80=82=E2=80=82=E2=80=82=E2=80=82The team discussed system architecture =
+interfaces and tool integration. Wang Yixi advised everyone to expose stand=
+ardized interfaces when implementing new features and register tools in the=
+ tool table, rather than using overly complex implementations. Tao stressed=
+ the need to clearly define input/output requirements, similar to API contr=
+act design. Wang Yixi also outlined next week's work plan, including buildi=
+ng the memory module, finalizing Confluence page processing, infrastructure=
+ setup, and tool integration optimization. Mu Guangyuan requested that meet=
+ing minutes be placed on Confluence, and Zhong Jiajin confirmed that Mu wou=
+ld first set up the roadmap configuration on Confluence.</p>
+<p local-id=3D"01fa3d82582b"></p>
+<p local-id=3D"c4907af598bf"></p>
+<p local-id=3D"9b2cd2d62398">Hi <strong>Daijiang</strong>&nbsp;and <strong>=
+Huijie</strong>,</p>
+<p local-id=3D"ed3586efd2e4">&nbsp;</p>
+<p local-id=3D"044eebac0596">Kindly remind you that <strong>Daijiang </stro=
+ng>will be the <strong>host</strong>&nbsp;and <strong>Huijie </strong>will =
+be the <strong>MoM Noter</strong>&nbsp;of next weekly meeting. Please read =
+above Notes and get prepared.</p>
+<p local-id=3D"4d753ddc69be">&nbsp;</p>
+<p local-id=3D"c80b88e36a8d">Kind regards,</p>
+<p local-id=3D"19042ea92558"></p>
+<p local-id=3D"40a2806914f3"><strong>Jiaxing</strong></p>
+    </div>
+</body>
+</html>
+------=_Part_14_341004224.1785900659101--

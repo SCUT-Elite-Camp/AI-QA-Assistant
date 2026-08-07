@@ -13,7 +13,7 @@ export function useChatActions() {
   const toast = useToast()
   const overlay = useOverlay()
   const { csrf, headerName } = useCsrf()
-  const { updateChat, removeChat } = useChats()
+  const { updateChat, removeChat, fetchChats } = useChats()
 
   const renameModal = overlay.create(ModalRename)
   const deleteModal = overlay.create(ModalConfirm, {
@@ -87,8 +87,62 @@ export function useChatActions() {
     }
   }
 
+  async function createTopicForChat(chatId: string) {
+    try {
+      const topic: any = await $fetch('/api/topics', {
+        method: 'POST',
+        headers: { [headerName]: csrf() },
+        body: { chatId }
+      })
+      const isGenerating = topic.status === 'generating'
+      toast.add({
+        title: isGenerating ? 'Generating Topic Space...' : 'Topic Space Created Successfully',
+        description: isGenerating
+          ? 'AI is synthesizing conversation into topic cognition...'
+          : `Topic: ${topic.title}`,
+        color: isGenerating ? 'info' : 'success'
+      })
+      await fetchChats()
+      router.push(`/chat/${chatId}`)
+      return topic
+    } catch (err: any) {
+      toast.add({
+        title: 'Failed to create Topic Space',
+        description: err.message || 'Error creating topic',
+        color: 'error'
+      })
+      return null
+    }
+  }
+
+  async function addChatToTopic(chatId: string, topicId: string | null) {
+    try {
+      const updated: any = await $fetch(`/api/chats/topic/${chatId}`, {
+        method: 'PATCH',
+        headers: { [headerName]: csrf() },
+        body: { topicId }
+      })
+      toast.add({
+        title: topicId ? 'Added to Topic' : 'Removed from Topic',
+        description: topicId ? 'Chat has been added to the topic' : 'Chat is now standalone',
+        color: 'success'
+      })
+      return updated
+    } catch (err: any) {
+      toast.add({
+        title: 'Failed to update topic',
+        description: err.message || 'Error updating topic',
+        color: 'error'
+      })
+      return null
+    }
+  }
+
   return {
     renameChat,
-    deleteChat
+    deleteChat,
+    createTopicForChat,
+    addChatToTopic
   }
 }
+

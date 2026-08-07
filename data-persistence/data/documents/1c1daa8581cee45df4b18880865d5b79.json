@@ -1,0 +1,4135 @@
+{
+  "doc_id": "1c1daa8581cee45df4b18880865d5b79",
+  "title": "Meeting+Minutes+of+2026_05_18+-+Plan+Sharing",
+  "content": "Date\n\nWed, 5 Aug 2026 03\n\n0000\n\nMessage-ID\n\n978255842.5.1785900585674\n\n3c53bb23da5b\n\nSubject\n\nExported From Confluence\n\nMIME-Version\n\n1.0\n\nContent-Type\n\nmultipart\n\nrelated\n\nboundary\n\n----\n\nPart\n\n704982021.1785900585674\n\n------\n\nPart\n\n704982021.1785900585674\n\nContent-Type\n\ntext\n\nhtml\n\ncharset\n\nUTF-8\n\nContent-Transfer-Encoding\n\nquoted-printable\n\nContent-Location\n\nfile\n\nexported.html\n\nhtml xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns\n\nschemas-microsoft-com\n\nxmlns\n\nw3-org-ns\n\nHTML\n\nhead\n\nmeta http-equiv\n\nContent-Type\n\ncontent\n\ntext\n\nhtml\n\ncharset\n\n3Dutf-8\n\ntitle\n\nMeeting Minutes of 2026\n\n18 - Plan Sharing\n\ntitle\n\nif gte mso 9\n\nOfficeDocumentSettings\n\nTargetScreenSize\n\n1024x640\n\nTargetScreenSize\n\nPixelsPerInch\n\nPixelsPerInch\n\nAllowPNG\n\nOfficeDocumentSettings\n\nWordDocument\n\nView\n\nPrint\n\nView\n\nZoom\n\nZoom\n\nDoNotOptimizeForBrowser\n\nWordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin\n\n.5in\n\nmso-footer-margin\n\n.5in\n\nmso-paper-source\n\ntable\n\nborder\n\nsolid 1px\n\nborder-collapse\n\ncollapse\n\ntable td, table th\n\nborder\n\nsolid 1px\n\npadding\n\n5px\n\ntd\n\npage-break-inside\n\navoid\n\ntr\n\npage-break-after\n\navoid\n\ndiv.Section1\n\npage\n\nSection1\n\nConfluence print stylesheet. Common to all themes for print medi\n\na\n\nFull of !important until we improve batching for print CSS\n\nmedia print\n\nmain\n\npadding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar\n\n--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se\n\nrif\n\nbody,\n\nfull-height-container,\n\nmain,\n\npage,\n\ncontent, .has-personal-sid\n\nebar\n\ncontent\n\nbackground\n\nvar\n\n--ds-surface,\n\n!important\n\ncolor\n\nvar\n\n--ds-text,\n\n!important\n\nborder\n\n0 !important\n\nwidth\n\n100\n\n!important\n\nheight\n\nauto !important\n\nmin-height\n\nauto !important\n\nmargin\n\n0 !important\n\npadding\n\n0 !important\n\ndisplay\n\nblock !important\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,\n\ncontent h2,\n\ncontent h3,\n\ncontent h4,\n\ncontent h5,\n\ncontent h6\n\npage-break-after\n\navoid\n\npre\n\nfont\n\nvar\n\n--ds-font-code, Monaco,\n\nCourier New\n\n, monospace\n\nheader,\n\n.aui-header-inner,\n\nnavigation,\n\nsidebar,\n\n.sidebar,\n\npersonal-info-sidebar,\n\n.ia-fixed-sidebar,\n\n.page-actions,\n\n.navmenu,\n\n.ajs-menu-bar,\n\n.noprint,\n\n.inline-control-link,\n\n.inline-control-link a,\n\na.show-labels-editor,\n\n.global-comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important\n\nCONF-28544 cannot print multiple pages in IE\n\nsplitter-content\n\nposition\n\nrelative !important\n\n.comment .date\n\nbefore\n\ncontent\n\nnone !important\n\nremove middot for print view\n\nh1.pagetitle img\n\nheight\n\nauto\n\nwidth\n\nauto\n\n.print-only\n\ndisplay\n\nblock\n\nfooter\n\nposition\n\nrelative !important\n\nCONF-17506 Place the footer at en\n\nd of the content\n\nmargin\n\npadding\n\nbackground\n\nnone\n\nclear\n\nboth\n\npoweredby\n\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic\n\npoweredby li.noprint\n\ndisplay\n\nnone\n\nno width controls in print\n\n.wiki-content .table-wrap,\n\n.wiki-content p,\n\n.panel .codeContent,\n\n.panel .codeContent pre,\n\n.image-wrap\n\noverflow\n\nvisible !important\n\nTODO - should this work?\n\nchildren-section,\n\ncomments-section .comment,\n\ncomments-section .comment .comment-body,\n\ncomments-section .comment .comment-content,\n\ncomments-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies\n\nthe specificity here is a hack because print styles\n\nare getting loaded before the base styles.\n\ncomments-section.pageSection .section-header,\n\ncomments-section.pageSection .section-title,\n\nchildren-section.pageSection .section-header,\n\nchildren-section.pageSection .section-title,\n\n.children-show-hide\n\npadding-left\n\nmargin-left\n\n.children-show-hide.icon\n\ndisplay\n\nnone\n\npersonal sidebar\n\n.has-personal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right\n\n0px\n\n.no-print, .no-print\n\ndisplay\n\nnone !important\n\n--\n\nstyle\n\nhead\n\nbody\n\nMeeting Minutes of 2026\n\n18 - Plan Sharing\n\ndiv class\n\nSection1\n\np local-id\n\n789429891717\n\nHi all,\n\np local-id\n\n1dcc288a1883\n\nThank you all for attending this meeting. Belo\n\nw are the meeting minutes and future work arrangements.\n\np local-id\n\n9ec1375f817d\n\nstrong\n\nQuick Recap\n\nstrong\n\np local-id\n\n36215538c3c5\n\nThis meeting is the second meeting of the\n\n93 AI\n\n8B. Thi\n\ns meeting was an architecture sharing session for the team\n\n99s AI ass\n\nistant system development, mainly discussing the system design plans propos\n\ned by each member. Team members presented different system architecture sch\n\nemes, including components such as the user layer, security layer, core age\n\nnt layer and data persistence layer, and put forward their suggestions and\n\nopinions on the system. Everyone shared their respective design ideas. In t\n\nhe next step, the team needs to improve the details of each module and conf\n\nirm a unified plan.\n\np local-id\n\nc624113b91d6\n\nstrong\n\nPlan Sharing\n\nstrong\n\nul local-id\n\ne8917f154dc8\n\nli local-id\n\n9458c77b6fa3\n\np local-id\n\n7a18012ce64d\n\n9AShared the\n\ndesign ideas of Agent system, including memory retrieval system, multi-age\n\nnt communication mechanism and other technologies.\n\nli local-id\n\neddf3ec6f910\n\np local-id\n\ncdc4f2ba2b35\n\n9AShared the\n\noverall system architecture, including user layer, gateway and security la\n\nyer, core agent layer, data persistence storage layer and infrastructure la\n\nyer. The architecture is clear and can be taken as the foundation. Priority\n\nneeds to be sorted out and work promoted by functional points in the follo\n\nw-up.\n\nli local-id\n\nae277edf6c30\n\np local-id\n\n0105b243b65c\n\n9AMade discu\n\nssions based on user layer and data layer. In user layer, he considered que\n\nstion interface, multi-person dialogue and exception handling\n\nin data laye\n\nr, he focused on chunking, database construction and retrieval.\n\nli local-id\n\n741d3fd76668\n\np local-id\n\n0439ec876c88\n\n9ADesigned Confluence knowledge base to achieve co\n\nntent structuring, answer generation and citation, and set up evaluation an\n\nd testing criteria. It also covers modules such as data access, data cleani\n\nng, chunking, metadata indexing and permission filtering.\n\nli local-id\n\n35103ea1bd68\n\np local-id\n\ne9a5cd4cc22c\n\n9AProposed t\n\no build a user feedback collection system, and optimize model retrieval str\n\nategies and prompt templates.\n\nli local-id\n\nc2566d3ec315\n\np local-id\n\n92de004c6132\n\n9ASuggested\n\nrealizing the complete RAG closed loop first. Adopt Apache Tika technology\n\nfor document warehousing links, and keep user question-and-answer links con\n\nsistent with existing designs.\n\nli local-id\n\n64e7d244f741\n\np local-id\n\n9be033870fef\n\n9APut forward adding\n\naudit logs, IP whitelist and role management functions. Apply the shortest\n\njob first strategy to multi-agent collaboration, and add dialogue export fu\n\nnction.\n\np local-id\n\ndcd97d77fe7a\n\nstrong\n\nDiscussion Summary\n\nstrong\n\nul local-id\n\n3ec4cdc6c2f3\n\nli local-id\n\naad64bc439ea\n\np local-id\n\nf6e505881753\n\nAgreed to hold regular meetings weekly at the\n\nstart of the project, with a move to a bi-weekly cadence later. Each meetin\n\ng will follow a three-part agenda\n\nAI knowledge sharing, project progress u\n\npdates, and issue discussion.\n\np local-id\n\n9463a1178a3d\n\nAction Items\n\nol start\n\nlocal-id\n\n9d794bb57201\n\nli local-id\n\ncf752722d771\n\np local-id\n\n5b2339577db7\n\nstrong\n\nAll team members\n\nstrong\n\nBefore the\n\nnext meeting, refine the functions of the original architecture solutions,\n\nconfirm the specific function list to be delivered for the July demo, and w\n\nork out relevant implementation plans.\n\nli local-id\n\n07014e99fec3\n\np local-id\n\n9c7a098fc4d4\n\nstrong\n\nAll team members\n\nstrong\n\nUpload the\n\ndiscussed solutions and meeting minutes to the Confluence platform.\n\nli local-id\n\n5feeacba8c3c\n\np local-id\n\nf745dc4487a3\n\nstrong\n\nAll team members\n\nstrong\n\nCompile a C\n\nonfluence usage guide to standardize document uploading for other teams in\n\nfollow-up work.\n\nli local-id\n\n2802d2a0ac8f\n\np local-id\n\n8493338dd730\n\nstrong\n\nAll team members\n\nstrong\n\nIndependent\n\nly explore AI coding and prepare the sharing.\n\np local-id\n\nfece3ec3e05a\n\nKind regards,\n\np local-id\n\n22e09ef3ea15\n\nstrong\n\nYixi Wang\n\nstrong\n\nbody\n\nhtml\n\n------\n\nPart\n\n704982021.1785900585674--",
+  "space": "raws",
+  "address": "C:\\Users\\Hola\\Desktop\\Q&A\\AI-QA-Assistant\\data-persistence\\data\\raws\\Meeting+Minutes+of+2026_05_18+-+Plan+Sharing.doc",
+  "last_updated": "2026-08-05T03:29:46.050268+00:00",
+  "chunks": [
+    {
+      "index": 0,
+      "text": "Date\n\nWed, 5 Aug 2026 03\n\n0000\n\nMessage-ID\n\n978255842.5.1785900585674\n\n3c53bb23da5b\n\nSubject\n\nExported From Confluence\n\nMIME-Version\n\n1.0\n\nContent-Type\n\nmultipart\n\nrelated\n\nboundary\n\n----\n\nPart\n\n704982021.1785900585674\n\n------\n\nPart\n\n704982021.1785900585674\n\nContent-Type\n\ntext\n\nhtml\n\ncharset\n\nUTF-8\n\nContent-Transfer-Encoding\n\nquoted-printable\n\nContent-Location\n\nfile\n\nexported.html\n\nhtml xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_0"
+    },
+    {
+      "index": 1,
+      "text": "html xmlns\n\nschemas-microsoft-com\n\noffice\n\noffice\n\nxmlns\n\nschemas-microsoft-com\n\noffice\n\nword\n\nxmlns\n\nschemas-microsoft-com\n\nxmlns\n\nw3-org-ns\n\nHTML\n\nhead\n\nmeta http-equiv\n\nContent-Type\n\ncontent\n\ntext\n\nhtml\n\ncharset\n\n3Dutf-8\n\ntitle\n\nMeeting Minutes of 2026\n\n18 - Plan Sharing\n\ntitle\n\nif gte mso 9\n\nOfficeDocumentSettings\n\nTargetScreenSize\n\n1024x640\n\nTargetScreenSize\n\nPixelsPerInch\n\nPixelsPerInch\n\nAllowPNG\n\nOfficeDocumentSettings\n\nWordDocument\n\nView\n\nPrint\n\nView\n\nZoom\n\nZoom\n\nDoNotOptimizeForBrowser\n\nWordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_1"
+    },
+    {
+      "index": 2,
+      "text": "WordDocument\n\nendif\n\nstyle\n\n!--\n\npage Section1\n\nsize\n\n8.5in 11.0in\n\nmargin\n\n1.0in\n\nmso-header-margin\n\n.5in\n\nmso-footer-margin\n\n.5in\n\nmso-paper-source\n\ntable\n\nborder\n\nsolid 1px\n\nborder-collapse\n\ncollapse\n\ntable td, table th\n\nborder\n\nsolid 1px\n\npadding\n\n5px\n\ntd\n\npage-break-inside\n\navoid\n\ntr\n\npage-break-after\n\navoid\n\ndiv.Section1\n\npage\n\nSection1\n\nConfluence print stylesheet. Common to all themes for print medi\n\na\n\nFull of !important until we improve batching for print CSS\n\nmedia print\n\nmain\n\npadding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_2"
+    },
+    {
+      "index": 3,
+      "text": "ding-bottom\n\n1em !important\n\nThe default padding of 6em is to\n\no much for printouts\n\nbody\n\nfont\n\nvar\n\n--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se\n\nrif\n\nbody,\n\nfull-height-container,\n\nmain,\n\npage,\n\ncontent, .has-personal-sid\n\nebar\n\ncontent\n\nbackground\n\nvar\n\n--ds-surface,\n\n!important\n\ncolor\n\nvar\n\n--ds-text,\n\n!important\n\nborder\n\n0 !important\n\nwidth\n\n100\n\n!important\n\nheight\n\nauto !important\n\nmin-height\n\nauto !important\n\nmargin\n\n0 !important\n\npadding\n\n0 !important\n\ndisplay\n\nblock !important\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_3"
+    },
+    {
+      "index": 4,
+      "text": "mportant\n\na, a\n\nlink, a\n\nvisited, a\n\nfocus, a\n\nhover, a\n\nactive\n\ncolor\n\nvar\n\n--ds-text,\n\ncontent h1,\n\ncontent h2,\n\ncontent h3,\n\ncontent h4,\n\ncontent h5,\n\ncontent h6\n\npage-break-after\n\navoid\n\npre\n\nfont\n\nvar\n\n--ds-font-code, Monaco,\n\nCourier New\n\n, monospace\n\nheader,\n\n.aui-header-inner,\n\nnavigation,\n\nsidebar,\n\n.sidebar,\n\npersonal-info-sidebar,\n\n.ia-fixed-sidebar,\n\n.page-actions,\n\n.navmenu,\n\n.ajs-menu-bar,\n\n.noprint,\n\n.inline-control-link,\n\n.inline-control-link a,\n\na.show-labels-editor,\n\n.global-comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_4"
+    },
+    {
+      "index": 5,
+      "text": "comment-actions,\n\n.comment-actions,\n\n.quick-comment-container,\n\naddcomment\n\ndisplay\n\nnone !important\n\nCONF-28544 cannot print multiple pages in IE\n\nsplitter-content\n\nposition\n\nrelative !important\n\n.comment .date\n\nbefore\n\ncontent\n\nnone !important\n\nremove middot for print view\n\nh1.pagetitle img\n\nheight\n\nauto\n\nwidth\n\nauto\n\n.print-only\n\ndisplay\n\nblock\n\nfooter\n\nposition\n\nrelative !important\n\nCONF-17506 Place the footer at en\n\nd of the content\n\nmargin\n\npadding\n\nbackground\n\nnone\n\nclear\n\nboth\n\npoweredby\n\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_5"
+    },
+    {
+      "index": 6,
+      "text": "\nborder-top\n\nnone\n\nbackground\n\nnone\n\npoweredby li.print-only\n\ndisplay\n\nlist-item\n\nfont-style\n\nitalic\n\npoweredby li.noprint\n\ndisplay\n\nnone\n\nno width controls in print\n\n.wiki-content .table-wrap,\n\n.wiki-content p,\n\n.panel .codeContent,\n\n.panel .codeContent pre,\n\n.image-wrap\n\noverflow\n\nvisible !important\n\nTODO - should this work?\n\nchildren-section,\n\ncomments-section .comment,\n\ncomments-section .comment .comment-body,\n\ncomments-section .comment .comment-content,\n\ncomments-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_6"
+    },
+    {
+      "index": 7,
+      "text": "s-section .comment p\n\npage-break-inside\n\navoid\n\npage-children a\n\ntext-decoration\n\nnone\n\nhide twixies\n\nthe specificity here is a hack because print styles\n\nare getting loaded before the base styles.\n\ncomments-section.pageSection .section-header,\n\ncomments-section.pageSection .section-title,\n\nchildren-section.pageSection .section-header,\n\nchildren-section.pageSection .section-title,\n\n.children-show-hide\n\npadding-left\n\nmargin-left\n\n.children-show-hide.icon\n\ndisplay\n\nnone\n\npersonal sidebar\n\n.has-personal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_7"
+    },
+    {
+      "index": 8,
+      "text": "sonal-sidebar\n\ncontent\n\nmargin-right\n\n0px\n\n.has-personal-sidebar\n\ncontent .pageSection\n\nmargin-right\n\n0px\n\n.no-print, .no-print\n\ndisplay\n\nnone !important\n\n--\n\nstyle\n\nhead\n\nbody\n\nMeeting Minutes of 2026\n\n18 - Plan Sharing\n\ndiv class\n\nSection1\n\np local-id\n\n789429891717\n\nHi all,\n\np local-id\n\n1dcc288a1883\n\nThank you all for attending this meeting. Belo\n\nw are the meeting minutes and future work arrangements.\n\np local-id\n\n9ec1375f817d\n\nstrong\n\nQuick Recap\n\nstrong\n\np local-id\n\n36215538c3c5\n\nThis meeting is the second meeting of the\n\n93 AI\n\n8B. Thi",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_8"
+    },
+    {
+      "index": 9,
+      "text": "k Recap\n\nstrong\n\np local-id\n\n36215538c3c5\n\nThis meeting is the second meeting of the\n\n93 AI\n\n8B. Thi\n\ns meeting was an architecture sharing session for the team\n\n99s AI ass\n\nistant system development, mainly discussing the system design plans propos\n\ned by each member. Team members presented different system architecture sch\n\nemes, including components such as the user layer, security layer, core age\n\nnt layer and data persistence layer, and put forward their suggestions and\n\nopinions on the system. Everyone shared their respective design ideas. In t",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_9"
+    },
+    {
+      "index": 10,
+      "text": "d their suggestions and\n\nopinions on the system. Everyone shared their respective design ideas. In t\n\nhe next step, the team needs to improve the details of each module and conf\n\nirm a unified plan.\n\np local-id\n\nc624113b91d6\n\nstrong\n\nPlan Sharing\n\nstrong\n\nul local-id\n\ne8917f154dc8\n\nli local-id\n\n9458c77b6fa3\n\np local-id\n\n7a18012ce64d\n\n9AShared the\n\ndesign ideas of Agent system, including memory retrieval system, multi-age\n\nnt communication mechanism and other technologies.\n\nli local-id\n\neddf3ec6f910\n\np local-id\n\ncdc4f2ba2b35\n\n9AShared the",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_10"
+    },
+    {
+      "index": 11,
+      "text": "mechanism and other technologies.\n\nli local-id\n\neddf3ec6f910\n\np local-id\n\ncdc4f2ba2b35\n\n9AShared the\n\noverall system architecture, including user layer, gateway and security la\n\nyer, core agent layer, data persistence storage layer and infrastructure la\n\nyer. The architecture is clear and can be taken as the foundation. Priority\n\nneeds to be sorted out and work promoted by functional points in the follo\n\nw-up.\n\nli local-id\n\nae277edf6c30\n\np local-id\n\n0105b243b65c\n\n9AMade discu\n\nssions based on user layer and data layer. In user layer, he considered que",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_11"
+    },
+    {
+      "index": 12,
+      "text": "5b243b65c\n\n9AMade discu\n\nssions based on user layer and data layer. In user layer, he considered que\n\nstion interface, multi-person dialogue and exception handling\n\nin data laye\n\nr, he focused on chunking, database construction and retrieval.\n\nli local-id\n\n741d3fd76668\n\np local-id\n\n0439ec876c88\n\n9ADesigned Confluence knowledge base to achieve co\n\nntent structuring, answer generation and citation, and set up evaluation an\n\nd testing criteria. It also covers modules such as data access, data cleani\n\nng, chunking, metadata indexing and permission filtering.\n\nli local-id\n\n35103ea1bd68\n\np local-id",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_12"
+    },
+    {
+      "index": 13,
+      "text": "ni\n\nng, chunking, metadata indexing and permission filtering.\n\nli local-id\n\n35103ea1bd68\n\np local-id\n\ne9a5cd4cc22c\n\n9AProposed t\n\no build a user feedback collection system, and optimize model retrieval str\n\nategies and prompt templates.\n\nli local-id\n\nc2566d3ec315\n\np local-id\n\n92de004c6132\n\n9ASuggested\n\nrealizing the complete RAG closed loop first. Adopt Apache Tika technology\n\nfor document warehousing links, and keep user question-and-answer links con\n\nsistent with existing designs.\n\nli local-id\n\n64e7d244f741\n\np local-id\n\n9be033870fef\n\n9APut forward adding",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_13"
+    },
+    {
+      "index": 14,
+      "text": "nt with existing designs.\n\nli local-id\n\n64e7d244f741\n\np local-id\n\n9be033870fef\n\n9APut forward adding\n\naudit logs, IP whitelist and role management functions. Apply the shortest\n\njob first strategy to multi-agent collaboration, and add dialogue export fu\n\nnction.\n\np local-id\n\ndcd97d77fe7a\n\nstrong\n\nDiscussion Summary\n\nstrong\n\nul local-id\n\n3ec4cdc6c2f3\n\nli local-id\n\naad64bc439ea\n\np local-id\n\nf6e505881753\n\nAgreed to hold regular meetings weekly at the\n\nstart of the project, with a move to a bi-weekly cadence later. Each meetin\n\ng will follow a three-part agenda",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_14"
+    },
+    {
+      "index": 15,
+      "text": "he project, with a move to a bi-weekly cadence later. Each meetin\n\ng will follow a three-part agenda\n\nAI knowledge sharing, project progress u\n\npdates, and issue discussion.\n\np local-id\n\n9463a1178a3d\n\nAction Items\n\nol start\n\nlocal-id\n\n9d794bb57201\n\nli local-id\n\ncf752722d771\n\np local-id\n\n5b2339577db7\n\nstrong\n\nAll team members\n\nstrong\n\nBefore the\n\nnext meeting, refine the functions of the original architecture solutions,\n\nconfirm the specific function list to be delivered for the July demo, and w\n\nork out relevant implementation plans.\n\nli local-id\n\n07014e99fec3\n\np local-id\n\n9c7a098fc4d4\n\nstrong",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_15"
+    },
+    {
+      "index": 16,
+      "text": "\nork out relevant implementation plans.\n\nli local-id\n\n07014e99fec3\n\np local-id\n\n9c7a098fc4d4\n\nstrong\n\nAll team members\n\nstrong\n\nUpload the\n\ndiscussed solutions and meeting minutes to the Confluence platform.\n\nli local-id\n\n5feeacba8c3c\n\np local-id\n\nf745dc4487a3\n\nstrong\n\nAll team members\n\nstrong\n\nCompile a C\n\nonfluence usage guide to standardize document uploading for other teams in\n\nfollow-up work.\n\nli local-id\n\n2802d2a0ac8f\n\np local-id\n\n8493338dd730\n\nstrong\n\nAll team members\n\nstrong\n\nIndependent\n\nly explore AI coding and prepare the sharing.\n\np local-id\n\nfece3ec3e05a\n\nKind regards,\n\np local-id",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_16"
+    },
+    {
+      "index": 17,
+      "text": "\n\nly explore AI coding and prepare the sharing.\n\np local-id\n\nfece3ec3e05a\n\nKind regards,\n\np local-id\n\n22e09ef3ea15\n\nstrong\n\nYixi Wang\n\nstrong\n\nbody\n\nhtml\n\n------\n\nPart\n\n704982021.1785900585674--",
+      "chunk_id": "1c1daa8581cee45df4b18880865d5b79_chunk_17"
+    }
+  ],
+  "source_url": "",
+  "content_blocks": [
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Wed, 5 Aug 2026 03",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0000",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Message-ID",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "978255842.5.1785900585674",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3c53bb23da5b",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Subject",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Exported From Confluence",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "MIME-Version",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1.0",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "multipart",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "related",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "boundary",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "----",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "704982021.1785900585674",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "------",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "704982021.1785900585674",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "charset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "UTF-8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Transfer-Encoding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "quoted-printable",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Location",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "file",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "exported.html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "office",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "word",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "schemas-microsoft-com",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "xmlns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "w3-org-ns",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "HTML",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "head",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "meta http-equiv",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Content-Type",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "charset",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3Dutf-8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "title",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Meeting Minutes of 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "18 - Plan Sharing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "title",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "if gte mso 9",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "OfficeDocumentSettings",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TargetScreenSize",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1024x640",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TargetScreenSize",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "PixelsPerInch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "PixelsPerInch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "AllowPNG",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "OfficeDocumentSettings",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "WordDocument",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "View",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "View",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zoom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Zoom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "DoNotOptimizeForBrowser",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "WordDocument",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "endif",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "size",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8.5in 11.0in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1.0in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-header-margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".5in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-footer-margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".5in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "mso-paper-source",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "table",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "solid 1px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border-collapse",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "collapse",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "table td, table th",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "solid 1px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "td",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-inside",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "tr",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-after",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "div.Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Confluence print stylesheet. Common to all themes for print medi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Full of !important until we improve batching for print CSS",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "media print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "main",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding-bottom",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1em !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "The default padding of 6em is to",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "o much for printouts",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "rif",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "full-height-container,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "main,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content, .has-personal-sid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-surface,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "color",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-text,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "width",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "100",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "!important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "min-height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0 !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "block !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "link, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "visited, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "focus, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hover, a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "active",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "color",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-text,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h1,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h2,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h3,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h4,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h5,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content h6",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-after",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "pre",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "var",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--ds-font-code, Monaco,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Courier New",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ", monospace",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".aui-header-inner,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "navigation,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "personal-info-sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".ia-fixed-sidebar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".page-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".navmenu,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".ajs-menu-bar,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".noprint,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".inline-control-link,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".inline-control-link a,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "a.show-labels-editor,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".global-comment-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".comment-actions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".quick-comment-container,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "addcomment",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "CONF-28544 cannot print multiple pages in IE",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "splitter-content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "position",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "relative !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".comment .date",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "before",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "remove middot for print view",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "h1.pagetitle img",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "height",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "width",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "auto",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".print-only",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "block",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "footer",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "position",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "relative !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "CONF-17506 Place the footer at en",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d of the content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "clear",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "both",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "border-top",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "background",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby li.print-only",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "list-item",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "font-style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "italic",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "poweredby li.noprint",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "no width controls in print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".wiki-content .table-wrap,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".wiki-content p,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".panel .codeContent,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".panel .codeContent pre,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".image-wrap",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "overflow",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "visible !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "TODO - should this work?",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment .comment-body,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment .comment-content,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section .comment p",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-break-inside",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "avoid",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "page-children a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "text-decoration",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "hide twixies",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "the specificity here is a hack because print styles",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "are getting loaded before the base styles.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section.pageSection .section-header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "comments-section.pageSection .section-title,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section.pageSection .section-header,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "children-section.pageSection .section-title,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".children-show-hide",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "padding-left",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-left",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".children-show-hide.icon",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "personal sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".has-personal-sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-right",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".has-personal-sidebar",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "content .pageSection",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "margin-right",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0px",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": ".no-print, .no-print",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "display",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "none !important",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "style",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "head",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Meeting Minutes of 2026",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "18 - Plan Sharing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "div class",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Section1",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "789429891717",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Hi all,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "1dcc288a1883",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Thank you all for attending this meeting. Belo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "w are the meeting minutes and future work arrangements.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9ec1375f817d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Quick Recap",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "36215538c3c5",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "This meeting is the second meeting of the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "93 AI",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8B. Thi",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "s meeting was an architecture sharing session for the team",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "99s AI ass",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "istant system development, mainly discussing the system design plans propos",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ed by each member. Team members presented different system architecture sch",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "emes, including components such as the user layer, security layer, core age",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nt layer and data persistence layer, and put forward their suggestions and",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "opinions on the system. Everyone shared their respective design ideas. In t",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "he next step, the team needs to improve the details of each module and conf",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "irm a unified plan.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "c624113b91d6",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Plan Sharing",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e8917f154dc8",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9458c77b6fa3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "7a18012ce64d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9AShared the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "design ideas of Agent system, including memory retrieval system, multi-age",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nt communication mechanism and other technologies.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "eddf3ec6f910",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "cdc4f2ba2b35",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9AShared the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "overall system architecture, including user layer, gateway and security la",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "yer, core agent layer, data persistence storage layer and infrastructure la",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "yer. The architecture is clear and can be taken as the foundation. Priority",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "needs to be sorted out and work promoted by functional points in the follo",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "w-up.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ae277edf6c30",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0105b243b65c",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9AMade discu",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ssions based on user layer and data layer. In user layer, he considered que",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "stion interface, multi-person dialogue and exception handling",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "in data laye",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "r, he focused on chunking, database construction and retrieval.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "741d3fd76668",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "0439ec876c88",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9ADesigned Confluence knowledge base to achieve co",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ntent structuring, answer generation and citation, and set up evaluation an",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "d testing criteria. It also covers modules such as data access, data cleani",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ng, chunking, metadata indexing and permission filtering.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "35103ea1bd68",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "e9a5cd4cc22c",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9AProposed t",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "o build a user feedback collection system, and optimize model retrieval str",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ategies and prompt templates.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "c2566d3ec315",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "92de004c6132",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9ASuggested",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "realizing the complete RAG closed loop first. Adopt Apache Tika technology",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "for document warehousing links, and keep user question-and-answer links con",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "sistent with existing designs.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "64e7d244f741",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9be033870fef",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9APut forward adding",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "audit logs, IP whitelist and role management functions. Apply the shortest",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "job first strategy to multi-agent collaboration, and add dialogue export fu",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "nction.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "dcd97d77fe7a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Discussion Summary",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ul local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "3ec4cdc6c2f3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "aad64bc439ea",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "f6e505881753",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Agreed to hold regular meetings weekly at the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "start of the project, with a move to a bi-weekly cadence later. Each meetin",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "g will follow a three-part agenda",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "AI knowledge sharing, project progress u",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "pdates, and issue discussion.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9463a1178a3d",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Action Items",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ol start",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9d794bb57201",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "cf752722d771",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5b2339577db7",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All team members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Before the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "next meeting, refine the functions of the original architecture solutions,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "confirm the specific function list to be delivered for the July demo, and w",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ork out relevant implementation plans.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "07014e99fec3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "9c7a098fc4d4",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All team members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Upload the",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "discussed solutions and meeting minutes to the Confluence platform.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "5feeacba8c3c",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "f745dc4487a3",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All team members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Compile a C",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "onfluence usage guide to standardize document uploading for other teams in",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "follow-up work.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "li local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "2802d2a0ac8f",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "8493338dd730",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "All team members",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Independent",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "ly explore AI coding and prepare the sharing.",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "fece3ec3e05a",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Kind regards,",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "p local-id",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "22e09ef3ea15",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Yixi Wang",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "strong",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "body",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "html",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "------",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "Part",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    },
+    {
+      "block_type": "paragraph",
+      "level": 0,
+      "text": "704982021.1785900585674--",
+      "rows": [],
+      "headers": [],
+      "bold": false,
+      "italic": false
+    }
+  ]
+}

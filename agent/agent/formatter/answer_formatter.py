@@ -79,7 +79,7 @@ class AnswerFormatter:
             return ""
 
         normalized = REFERENCE_PATTERN.sub(replace_reference, answer)
-        normalized = re.sub(r"\s{2,}", " ", normalized).strip()
+        normalized = re.sub(r"[ \t]{2,}", " ", normalized).strip()
 
         if not has_valid_reference:
             normalized = f"{normalized} [1]".strip()

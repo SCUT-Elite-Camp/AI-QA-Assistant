@@ -9,7 +9,7 @@ class MilvusStore:
 
     def connect(self) -> None:
         if not self._connected:
-            connections.connect("default", host=self.host, port=self.port)
+            connections.connect("default", host=self.host, port=self.port, timeout=0.5)
             self._connected = True
 
     def init_collection(self, collection_name: str = "doc_chunks", dim: int = 384) -> Collection:

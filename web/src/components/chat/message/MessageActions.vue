@@ -6,7 +6,7 @@ import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 
 const props = defineProps<{
-  message: UIMessage & { createdAt?: string | Date }
+  message: UIMessage & { createdAt?: string | Date; isFavorite?: boolean }
   streaming: boolean
   editing: boolean
   vote: boolean | null
@@ -24,10 +24,14 @@ const formattedDate = computed(() => {
   }
 })
 
+// Initialize from message prop so state survives page refresh
+const isFavorite = ref(props.message.isFavorite ?? false)
+
 const emit = defineEmits<{
   edit: [message: UIMessage]
   regenerate: [message: UIMessage]
   vote: [message: UIMessage, isUpvoted: boolean]
+  favorite: [message: UIMessage, isFav: boolean]
 }>()
 
 const hasFiles = computed(() => props.message.parts.some(isFileUIPart))
@@ -45,11 +49,29 @@ function copy() {
     copied.value = false
   }, 2000)
 }
+
+function toggleFavorite() {
+  isFavorite.value = !isFavorite.value
+  // Pass the NEW state so the parent can send correct value to API
+  emit('favorite', props.message, isFavorite.value)
+}
 </script>
 
 <template>
+
   <template v-if="message.role === 'assistant' && !streaming">
-    <UTooltip text="Copy response">
+    <UTooltip text="收藏此解答">
+      <UButton
+        size="sm"
+        :color="isFavorite ? 'warning' : 'neutral'"
+        variant="ghost"
+        :icon="isFavorite ? 'i-heroicons-star-20-solid' : 'i-heroicons-star'"
+        aria-label="Favorite response"
+        @click="toggleFavorite"
+      />
+    </UTooltip>
+
+    <UTooltip text="复制回答">
       <UButton
         size="sm"
         :color="copied ? 'primary' : 'neutral'"
@@ -60,7 +82,7 @@ function copy() {
       />
     </UTooltip>
 
-    <UTooltip text="Helpful">
+    <UTooltip text="赞">
       <UButton
         size="sm"
         :color="vote === true ? 'success' : 'neutral'"
@@ -71,7 +93,7 @@ function copy() {
       />
     </UTooltip>
 
-    <UTooltip text="Not helpful">
+    <UTooltip text="踩 (提供改进建议)">
       <UButton
         size="sm"
         :color="vote === false ? 'error' : 'neutral'"
@@ -82,7 +104,7 @@ function copy() {
       />
     </UTooltip>
 
-    <UTooltip text="Regenerate">
+    <UTooltip text="重新生成">
       <UButton
         size="sm"
         color="neutral"

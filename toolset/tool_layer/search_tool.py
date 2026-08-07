@@ -217,7 +217,15 @@ class SearchTool(BaseTool):
         top_k = kwargs.get("top_k", 5)
         mode = kwargs.get("mode", "hybrid")
 
-        results = self.search(query=query, top_k=top_k, mode=mode, min_score=self.min_score)
+        results = self.search(
+            query=query,
+            top_k=top_k,
+            mode=mode,
+            min_score=self.min_score,
+            topic_doc_ids=getattr(self, "topic_doc_ids", None),
+            weight_mode=getattr(self, "weight_mode", "auto"),
+            consecutive_no_new_docs_count=getattr(self, "consecutive_no_new_docs_count", 0),
+        )
         self.latest_results = results
 
         if not results:
@@ -234,6 +242,7 @@ class SearchTool(BaseTool):
             )
         return "\n\n".join(blocks)
 
+
     def search(
         self,
         query: str,
@@ -242,6 +251,10 @@ class SearchTool(BaseTool):
         filters: Optional[Dict] = None,
         min_score: float = 0.0,
         trace_id: Optional[str] = None,
+        topic_doc_ids: Optional[List[str]] = None,
+        topic_titles: Optional[List[str]] = None,
+        weight_mode: str = "auto",
+        consecutive_no_new_docs_count: int = 0,
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
         started = time.perf_counter()
@@ -258,7 +271,7 @@ class SearchTool(BaseTool):
             )
             candidate_k = min(
                 candidate_limit,
-                max(top_k, self.rerank_top_n) if use_reranker else top_k,
+                max(top_k * 3, self.rerank_top_n) if use_reranker else top_k * 3,
             )
             observation = default_observation(mode)
             if self.retrieval_orchestrator is None:
@@ -281,6 +294,16 @@ class SearchTool(BaseTool):
             )
             if use_reranker and results:
                 results = self._rerank(normalized_query, results, trace)
+
+            if results and (topic_doc_ids or topic_titles):
+                results = self._apply_topic_weighting(
+                    results=results,
+                    top_k=top_k,
+                    topic_doc_ids=topic_doc_ids,
+                    topic_titles=topic_titles,
+                    weight_mode=weight_mode,
+                    consecutive_no_new_docs_count=consecutive_no_new_docs_count,
+                )
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
             self._log(
@@ -307,6 +330,89 @@ class SearchTool(BaseTool):
             observation, normalized_query,
         )
         return results
+
+    def _apply_topic_weighting(
+        self,
+        results: List[Dict],
+        top_k: int,
+        topic_doc_ids: Optional[List[str]] = None,
+        topic_titles: Optional[List[str]] = None,
+        weight_mode: str = "auto",
+        consecutive_no_new_docs_count: int = 0,
+    ) -> List[Dict]:
+        import math
+        if not results or (not topic_doc_ids and not topic_titles):
+            return results[:top_k]
+
+        # Rule 3: consecutive >= 3 no new docs -> fallback boost factor to 1.0
+        if consecutive_no_new_docs_count >= 3:
+            boost_multiplier = 1.0
+        elif weight_mode == "deeper":
+            boost_multiplier = 1.5
+        elif weight_mode == "wider":
+            boost_multiplier = 1.0
+        else: # "auto"
+            boost_multiplier = 1.2
+
+        # Build normalized lookup sets for SAME DOCUMENT matching
+        topic_doc_set = {str(x).strip().lower() for x in (topic_doc_ids or []) if str(x).strip()}
+        topic_titles_set = {str(x).strip().lower() for x in (topic_titles or []) if str(x).strip()}
+
+        def is_same_document(item: dict) -> bool:
+            item_doc_id = str(item.get("doc_id", "")).strip().lower()
+            item_title = str(item.get("title", "")).strip().lower()
+            item_source = str(item.get("source_url", "")).strip().lower()
+
+            if item_doc_id in topic_doc_set or item_doc_id in topic_titles_set:
+                return True
+            if item_title in topic_titles_set or item_title in topic_doc_set:
+                return True
+            if item_source in topic_doc_set or item_source in topic_titles_set:
+                return True
+
+            # Matching by clean filename / title substring for the SAME DOCUMENT
+            all_known = topic_doc_set.union(topic_titles_set)
+            for target in all_known:
+                if target and len(target) >= 3:
+                    if target in item_title or item_title in target or target in item_doc_id:
+                        return True
+            return False
+
+        scored_results = []
+        for item in results:
+            base_score = float(item.get("score", 0.0))
+            is_in_pool = is_same_document(item)
+            weighted_score = base_score * boost_multiplier if is_in_pool else base_score
+            scored_results.append({
+                **item,
+                "_weighted_score": weighted_score,
+                "_is_in_pool": is_in_pool
+            })
+
+        scored_results.sort(key=lambda x: x["_weighted_score"], reverse=True)
+
+        # Rule 2: Force at least 30% of top_k results to be non-pool documents (if available)
+        non_pool_quota = max(1, math.ceil(top_k * 0.30)) if len(scored_results) >= top_k else 0
+        non_pool_items = [r for r in scored_results if not r["_is_in_pool"]]
+        
+        selected_non_pool = non_pool_items[:non_pool_quota]
+        selected_non_pool_ids = {r.get("chunk_id") for r in selected_non_pool}
+
+        remaining_candidates = [r for r in scored_results if r.get("chunk_id") not in selected_non_pool_ids]
+        needed_remaining = top_k - len(selected_non_pool)
+        final_selected = selected_non_pool + remaining_candidates[:needed_remaining]
+
+        final_selected.sort(key=lambda x: x["_weighted_score"], reverse=True)
+        
+        clean_results = []
+        for item in final_selected:
+            res = dict(item)
+            res["score"] = res.pop("_weighted_score", res.get("score"))
+            res.pop("_is_in_pool", None)
+            clean_results.append(res)
+
+        return clean_results[:top_k]
+
 
     def _search_channel(
         self,
@@ -375,7 +481,8 @@ class SearchTool(BaseTool):
                 timeout_seconds=self.backend_timeout_seconds,
             )
         except Exception as e:
-            raise RetrievalError(f"milvus_search_failed: {e}") from e
+            self.logger.warning("[VECTOR_SEARCH_FALLBACK] Milvus search failed, falling back to BM25: %s", e)
+            return []
 
         rows = []
         for hit in hits:

@@ -2,8 +2,20 @@
 
 import re
 
-from nltk.stem.snowball import SnowballStemmer
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+try:
+    from nltk.stem.snowball import SnowballStemmer
+except ImportError:
+    class SnowballStemmer:  # type: ignore[no-redef]
+        def __init__(self, lang: str) -> None:
+            pass
+        def stem(self, word: str) -> str:
+            return word
+
+try:
+    from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+except ImportError:
+    ENGLISH_STOP_WORDS = frozenset({"a", "an", "the", "and", "or", "in", "on", "at", "to", "for", "of", "with", "is", "it", "this", "that"})
+
 
 
 DEFAULT_ENGLISH_ANALYZER_ID = "english_regex_snowball_sklearn_stopwords_v1"

@@ -47,7 +47,10 @@ export function useBffChat(options: BffChatOptions = {}) {
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({
+          query,
+          ...(options.id ? { session_id: options.id } : {})
+        }),
         signal: controller.signal,
       })
 

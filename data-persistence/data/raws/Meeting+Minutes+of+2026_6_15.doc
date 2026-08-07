@@ -1,0 +1,443 @@
+Date: Wed, 5 Aug 2026 03:30:23 +0000 (UTC)
+Message-ID: <1806190129.13.1785900623944@483068d4924b>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_12_497317485.1785900623943"
+
+------=_Part_12_497317485.1785900623943
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/6/15</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/6/15</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"1426a627f39a">Hi all,</p>
+<p local-id=3D"c71f2a1ae0b0">&nbsp;</p>
+<p local-id=3D"2a677c9f9ef9">Thank you so much for your attendance. Please =
+kindly check the meeting minutes below for the meeting.</p>
+<p local-id=3D"e71191c1a571">&nbsp;</p>
+<p local-id=3D"ce8f8e73ad03">Date: Monday, 15th June, 2026</p>
+<p local-id=3D"9d711c9ef8f8">Time: 17:30 HK time</p>
+<p local-id=3D"07ecd92601a2">Attendees:Tao Huang, Loura Guo, Jiajin Zhong, =
+Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Da=
+i, Shu Cheng</p>
+<p local-id=3D"7cff31b47e33">&nbsp;</p>
+<p local-id=3D"232e8497cf4f">&nbsp;</p>
+<p local-id=3D"939cfeb89c99"><strong>Quick Recap</strong></p>
+<p local-id=3D"981540f28c74">&nbsp;</p>
+<p local-id=3D"11fdb151df4d">This meeting is the sixth weekly meeting of th=
+e =E6=B1=87=E4=B8=B0=E7=A7=91=E6=8A=80=E8=8F=81=E8=8B=B1=E8=AE=AD=E7=BB=83=
+=E8=90=A5 =E2=80=93 AI=E6=99=BA=E8=83=BD=E9=97=AE=E7=AD=94=E5=8A=A9=E6=89=
+=8B.</p>
+<p local-id=3D"bd185013e308"></p>
+<p local-id=3D"4e39404bc88b">This meeting primarily discussed the progress =
+of the Check Home Run project and work updates from each module.&nbsp;</p>
+<p local-id=3D"12598b291749">Tao announced the company visit scheduled for =
+the afternoon of July 17th, requiring the team to prepare a 10-minute progr=
+ess report presentation, including a PPT display and a mini demo.&nbsp;</p>
+<p local-id=3D"58086f854969">Song Suijie shared basic knowledge about using=
+ AI, including the concepts of skills and superpowers, and suggestions for =
+using tools like Codex.&nbsp;</p>
+<p local-id=3D"13847f5b5a2e">Module leads demonstrated their progress:&nbsp=
+;</p>
+<p local-id=3D"054fe7c9fc38">the <strong>web</strong>&nbsp;layer completed =
+a simple chat interface demo,&nbsp;</p>
+<p local-id=3D"af079785719d">the <strong>data processing</strong>&nbsp;laye=
+r completed the functionality of converting PDF documents to JSON,&nbsp;</p=
+>
+<p local-id=3D"2f08d42a3dd7">the<strong>&nbsp;tool layer </strong>defined t=
+he unified retrieval interface,&nbsp;</p>
+<p local-id=3D"75d856907d59">the<strong>&nbsp;agent</strong>&nbsp;layer com=
+pleted a mock closed-loop workflow,&nbsp;</p>
+<p local-id=3D"e81d5e1c543b">the <strong>data persistence</strong>&nbsp;lay=
+er provided basic file access interfaces.&nbsp;</p>
+<p local-id=3D"b3332bb68cf5">Wang Yixi emphasized the need to improve team =
+communication efficiency and the code submission process, suggesting that m=
+odules use <strong>branch management</strong>&nbsp;for development. The mee=
+ting concluded with a discussion on the importance of using <strong>Conflue=
+nce</strong>&nbsp;as the main documentation platform and the need to improv=
+e the format and sharing method of meeting minutes.</p>
+<p local-id=3D"b94b5cf7efeb">&nbsp;</p>
+<p local-id=3D"bddc9c8f1003">&nbsp;</p>
+<p local-id=3D"d7dad64996d2"><strong>Discussion Summary</strong></p>
+<p local-id=3D"6249fc763bff">&nbsp;</p>
+<p local-id=3D"ce1f28ad0ed5"><strong>Company Visit Arrangement Discussion</=
+strong></p>
+<p local-id=3D"bc96914d8bf2">The team discussed the arrangements for the co=
+mpany visit on the afternoon of July 17th. The tentative time was confirmed=
+ to be fine. Visitors will need to prepare a progress report presentation o=
+f about ten minutes, including a background introduction, solution showcase=
+, and a mini demo.&nbsp;Wang Yixi confirmed the preparation status of the p=
+erformance documents; the basic structure and instructions exist but need f=
+urther refinement. Tao emphasized the importance of meeting note formatting=
+, requiring everyone to use better formatting methods. Wang Yixi and Song S=
+uijie are to discuss and decide which two members will be responsible for t=
+he presentation.</p>
+<p local-id=3D"0c5e31dddf7d">&nbsp;</p>
+<p local-id=3D"6d64eb3a3a02"><strong>AI Tools Sharing</strong></p>
+<p local-id=3D"83059a5fff43">Song Suijie shared basic knowledge on using AI=
+ tools, including the concepts of <strong>skills and superpowers</strong>, =
+and recommended using <strong>Codex </strong>instead of the relay station A=
+PI. At the end of the sharing, Song Suijie gave a brief demo of the user-fa=
+cing web layer, showing the basic functions of the chat interface.</p>
+<p local-id=3D"b01c3e418da2">&nbsp;</p>
+<p local-id=3D"0b6c85e3f7d1"><strong>User Layer Architecture Progress Discu=
+ssion</strong></p>
+<p local-id=3D"5c45cc3fbee5">Wang Yixi explained that the user layer archit=
+ecture includes <strong>a&nbsp;web layer and a simple backend component</st=
+rong>, requiring Flask for backend demonstrations. Song Suijie stated that =
+the task assignment from the previous week was not clear enough and hoped t=
+he team would define more specific requirements this week to improve work e=
+fficiency. Song Suijie will continue to improve the user layer by adding th=
+e Flask backend part and interfacing with other layers.</p>
+<p local-id=3D"e05f83527ca5">&nbsp;</p>
+<p local-id=3D"0416dc9cd3df"><strong>PDF Storage Structure Discussion</stro=
+ng></p>
+<p local-id=3D"223045ec1e30">Mu Guangyuan demonstrated the currently comple=
+ted work, including the <strong>processing of PDFs and DOCS files</strong>&=
+nbsp;and the generation of a <strong>document tree</strong>, but noted that=
+ the database and Docker-related tasks were not yet finished. Wang Yixi poi=
+nted out that the current file storage method does not conform to the proje=
+ct's standard directory structure, suggesting that Mu Guangyuan modify the =
+storage path for <strong>processed JSON files</strong>&nbsp;to the project-=
+specified <strong>`data/documents` directory.</strong>&nbsp;Wang Yixi also =
+showed the project's basic <strong>directory structure </strong>and mention=
+ed that the project does not yet have Git branch management set up.</p>
+<p local-id=3D"6ee975e4bd78">&nbsp;</p>
+<p local-id=3D"8891d2c28a2f"><strong>Unified Retrieval Interface Work Progr=
+ess Report</strong></p>
+<p local-id=3D"bac377a8356e">Dai Jiaxing reported on the progress of the un=
+ified retrieval interface, including the <strong>definition of parameters, =
+error categories, and three retrieval modes </strong>(vector semantic retri=
+eval, keyword retrieval, and hybrid mode). These interfaces are currently c=
+allable but return empty content. Dai Jiaxing will continue to improve the =
+specific implementations of the three modes. Daijiang Xie introduced the fi=
+rst week's completed work for the agent team, including the implementation =
+of a <strong>mock closed-loop and a unified response format.</strong></p>
+<p local-id=3D"d8002e3196ac">&nbsp;</p>
+<p local-id=3D"98a914ef0ebf"><strong>Data Persistence Layer Discussion</str=
+ong></p>
+<p local-id=3D"47705e8c1297">Wang Yixi briefly explained the <strong>interf=
+ace specification and usage guide</strong>&nbsp;for the data persistence la=
+yer, emphasizing that developers should directly call the provided interfac=
+es instead of rewriting the same functionality.</p>
+<p local-id=3D"c3d03921815b">&nbsp;</p>
+<p local-id=3D"4baa6ab7591b"><strong>Communication Efficiency and Process O=
+ptimization Discussion</strong></p>
+<p local-id=3D"d4ac4c64bc21">The team discussed communication efficiency is=
+sues. Song Suijie suggested that the classmate responsible for summarizing =
+each week's meeting should repeat the <strong>task list</strong>&nbsp;in th=
+e group chat and recommended updating important information such as <strong=
+>interface documentation&nbsp;to the Confluence platform </strong>first. Wa=
+ng Yixi will refine the documentation guidelines on Confluence to ensure me=
+mbers from <strong>other groups</strong>&nbsp;can upload files according to=
+ the standards. Dai Jiaxing offered suggestions to the web layer for page b=
+eautification.</p>
+<p local-id=3D"cf53a7228d1f">&nbsp;</p>
+<p local-id=3D"88084f653061"></p>
+<p local-id=3D"2d21d9aeded9"><strong>Action Items</strong></p>
+<p local-id=3D"caee12f8e07f">&nbsp;</p>
+<ul local-id=3D"8ce8e62de775">
+<li local-id=3D"0e2817c35d3b">
+<p local-id=3D"d17edc1c9eb5">All Members: Mark the <strong>afternoon of Jul=
+y 17th</strong>&nbsp;as the company visit and project presentation day; pre=
+pare in advance.</p></li>
+</ul>
+<ul local-id=3D"ae9d40b30651">
+<li local-id=3D"5ae3b56b40a2">
+<p local-id=3D"c7cdbd6bd078">All Members: Uniformly <strong>change code com=
+ments, commit messages, and frontend UI text to English.</strong></p></li>
+</ul>
+<ul local-id=3D"8eeda280667f">
+<li local-id=3D"f4fb3e18399e">
+<p local-id=3D"e9c3e5c64817">All Members: Submit work completed locally las=
+t week to respective independent <strong>branches</strong>&nbsp;(create one=
+ separate branch per layer).</p></li>
+</ul>
+<ul local-id=3D"e910ad4319b4">
+<li local-id=3D"68a493809476">
+<p local-id=3D"2662d9fe42ed">All Members: Determine the work objectives for=
+ the second phase <strong>(CPR 2)</strong>&nbsp;within this week and upload=
+ them to the <strong>Confluence </strong>platform.</p></li>
+</ul>
+<ul local-id=3D"e428650bf13f">
+<li local-id=3D"92e034585aba">
+<p local-id=3D"cd4c85673778">All Members: Future <strong>meeting minutes </=
+strong>must be organized in a <strong>structured format</strong>&nbsp;(usin=
+g headings for sections) for easier reading and use as project data.</p></l=
+i>
+</ul>
+<ul local-id=3D"875b62597b2c">
+<li local-id=3D"ed6d44867748">
+<p local-id=3D"8acb361a8a22">Tao: Create a group chat including all module =
+leads to <strong>coordinate </strong>matters regarding <strong>uploading</s=
+trong>&nbsp;performance-related <strong>documents</strong>&nbsp;to <strong>=
+Confluence.</strong>&nbsp;Confirm the internal <strong>GitHub remote reposi=
+tory</strong>&nbsp;address tomorrow and notify everyone in the group.</p></=
+li>
+</ul>
+<ul local-id=3D"0cd693ae8b6d">
+<li local-id=3D"a5d5701376a4">
+<p local-id=3D"d02b82e93e8d">Song Suijie: Continue to improve the user laye=
+r (web layer) by adding the Flask <strong>backend part </strong>and interfa=
+cing with other layers.</p></li>
+</ul>
+<ul local-id=3D"aab821c683df">
+<li local-id=3D"245d83b8e3d3">
+<p local-id=3D"df6674a7887a">Dai Jiaxing: Improve the specific implementati=
+ons of the three modes within the unified <strong>retrieval interface</stro=
+ng>: vector retrieval, keyword retrieval, and hybrid retrieval.</p></li>
+</ul>
+<ul local-id=3D"2329ef298eee">
+<li local-id=3D"de7f980fb4e7">
+<p local-id=3D"55696f4e2450">Wang Yixi: Refine the <strong>documentation gu=
+idelines on Confluence</strong>&nbsp;to ensure members from other groups ca=
+n upload files according to the standards.</p></li>
+</ul>
+<ul local-id=3D"b08f8c110ac1">
+<li local-id=3D"ba6e40f1d3cb">
+<p local-id=3D"1eac3dfd0a92">Mu Guangyuan: Modify the storage path for <str=
+ong>processed JSON files </strong>to the project-specified `data/documents`=
+ directory.</p></li>
+</ul>
+<ul local-id=3D"c6039820d1d9">
+<li local-id=3D"5573ac1074ee">
+<p local-id=3D"ab071ce77a6c">Wang Yixi / Song Suijie: Discuss and decide wh=
+ich <strong>two members</strong>&nbsp;will be responsible for the <strong>p=
+resentation on July 17th</strong>.</p></li>
+</ul>
+<p local-id=3D"6b7ade8a1b00">&nbsp;</p>
+<p local-id=3D"cd25ed879a3d"></p>
+<p local-id=3D"487cece1ecbc">Hi Huifang and Jiaxing,</p>
+<p local-id=3D"916d4be4541b">&nbsp;</p>
+<p local-id=3D"510b33bd1786">Kindly remind you that <strong>Huifang</strong=
+>&nbsp;will be the <strong>host</strong>&nbsp;and <strong>Jiajin</strong>&n=
+bsp;will be the <strong>MoM Noter</strong>&nbsp;of next weekly meeting. Ple=
+ase read above Notes and get prepared.</p>
+<p local-id=3D"b6a202d6d7b6">&nbsp;</p>
+<p local-id=3D"11a8b23dfc82">Kind regards,</p>
+<p local-id=3D"2c5375068114"></p>
+<p local-id=3D"f5e7e0afde67">Huifang Liu</p>
+    </div>
+</body>
+</html>
+------=_Part_12_497317485.1785900623943--

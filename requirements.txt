@@ -21,6 +21,8 @@ nltk
 scikit-learn
 PyMuPDF
 python-docx
+pywin32
+olefile
 python-pptx
 beautifulsoup4
 openpyxl

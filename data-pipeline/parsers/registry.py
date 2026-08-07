@@ -2,6 +2,7 @@ import os
 from parsers.base import BaseParser
 from parsers.pdf_parser import PDFParser
 from parsers.docx_parser import DocxParser
+from parsers.doc_parser import DocParser
 from parsers.pptx_parser import PptxParser
 from parsers.html_parser import HtmlParser
 from parsers.xlsx_parser import XlsxParser
@@ -17,7 +18,7 @@ class DocumentParser:
         
         # 默认注册全部解析器
         if parsers is None:
-            parsers = [PDFParser(), DocxParser(), PptxParser(),
+            parsers = [PDFParser(), DocxParser(), DocParser(), PptxParser(),
                        HtmlParser(), XlsxParser()]
             
         for p in parsers:

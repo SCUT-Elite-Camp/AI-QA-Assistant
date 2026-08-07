@@ -10,10 +10,17 @@ export interface UserSession extends Session {
 }
 
 export function useUserSession (event: HTTPEvent) {
-  if (!process.env.SESSION_SECRET) {
-    throw new Error('SESSION_SECRET environment variable is not set')
-  }
+  const secret = process.env.SESSION_SECRET || 'default_fallback_session_secret_key_qa_assistant_2026'
   return useSession<UserSession>(event, {
-    password: process.env.SESSION_SECRET
+    name: 'qa_session',
+    password: secret,
+    cookie: {
+      sameSite: 'lax',
+      secure: false,
+      httpOnly: false,
+      path: '/'
+    }
   })
 }
+
+

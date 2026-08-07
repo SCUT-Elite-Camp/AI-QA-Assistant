@@ -1,0 +1,386 @@
+Date: Wed, 5 Aug 2026 03:30:10 +0000 (UTC)
+Message-ID: <1289238140.21.1785900610793@b819bc306df8>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_20_117221801.1785900610793"
+
+------=_Part_20_117221801.1785900610793
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/06/01 - July MVP Feature Refinement, Mod=
+ule Division of Labor, and Subsequent Action Items</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/06/01 - July MVP Feature Refinement, Module=
+ Division of Labor, and Subsequent Action Items</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"67b469a994a6">Hi all,</p>
+<p local-id=3D"e54650a4d6ea">Thank you so much for your attendance. Please =
+kindly check the meeting minutes below for the meeting.</p>
+<p local-id=3D"ec7ecd005c53">Date: Monday, 1st June, 2026</p>
+<p local-id=3D"7025e64c0ea9">Time: 17:30&nbsp;</p>
+<p local-id=3D"e72c0b503d2a">Attendees: Tao Huang, Loura Guo, Jiajin Zhong,=
+ Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing D=
+ai</p>
+<hr local-id=3D"7e912723-2995-4cda-9071-09ed4913b3eb">
+<h2 local-id=3D"b964d699f5e0" id=3D"MeetingMinutesof2026/06/01-JulyMVPFeatu=
+reRefinement,ModuleDivisionofLabor,andSubsequentActionItems-QuickRecap">Qui=
+ck Recap</h2>
+<p local-id=3D"a72469a0dad4">This meeting is the fourth weekly meeting of t=
+he =E6=B1=87=E4=B8=B0=E7=A7=91=E6=8A=80=E8=8F=81=E8=8B=B1=E8=AE=AD=E7=BB=83=
+=E8=90=A5 =E2=80=93 AI=E6=99=BA=E8=83=BD=E9=97=AE=E7=AD=94=E5=8A=A9=E6=89=
+=8B.</p>
+<p local-id=3D"7916aaf2b75f">In this meeting, Jiajin shared some AI knowled=
+ge about Graph RAG and discussed its differences from traditional RAG. The =
+team then reviewed the progress of last week=E2=80=99s action items, includ=
+ing the Confluence usage standard, the Q1 timeline, and the functional desi=
+gn of each system layer.</p>
+<p local-id=3D"3fa31b1c20ad">The team further clarified the major modules o=
+f the Q&amp;A system, including the data processing pipeline, data persiste=
+nce layer, tool set, agent layer, and user layer. Mentors also provided fee=
+dback on the system architecture diagram, timeline planning, documentation =
+standard, and team collaboration approach.</p>
+<hr local-id=3D"b9827a17-3388-4b48-8491-37a115a72b5d">
+<h2 local-id=3D"a9aed79fdcc1" id=3D"MeetingMinutesof2026/06/01-JulyMVPFeatu=
+reRefinement,ModuleDivisionofLabor,andSubsequentActionItems-DiscussionSumma=
+ry">Discussion Summary</h2>
+<p local-id=3D"668c97569f7e">Jiajin shared the concept of Graph RAG and exp=
+lained that it is more suitable for questions involving entities, relations=
+hips, and multi-hop reasoning. The team discussed that Graph RAG may be hel=
+pful for relationship-based queries, but it may also introduce higher token=
+ cost, slower retrieval, and maintenance difficulties when the graph needs =
+frequent updates.</p>
+<p local-id=3D"3cbaf2666100">Yixi introduced the current Confluence setup. =
+Four Confluence spaces have been prepared for different groups, and each sp=
+ace includes a usage guide. The team discussed the need to divide documents=
+ into relatively stable documents and continuously updated documents, so th=
+at future synchronization between Confluence and the local knowledge base c=
+an be tested more clearly.</p>
+<p local-id=3D"48245e96c27a">The team discussed two possible collaboration =
+models. One option is to divide work by module, so each subgroup focuses on=
+ a specific system layer. The other option is to let all members participat=
+e in multiple modules, so that everyone can understand the whole project be=
+tter. After discussion, the team tentatively agreed to first proceed by mod=
+ule-based division for efficiency, and later allow members with extra capac=
+ity to support other modules.</p>
+<p local-id=3D"23e067ad9702">Guangyuan presented the data processing pipeli=
+ne. This layer is responsible for parsing documents, extracting document st=
+ructures, building section trees, splitting content into chunks, preserving=
+ title paths, and preparing structured JSON output. The team also discussed=
+ the possibility of using mature document parsing APIs or tools in the futu=
+re if the basic parser is not sufficient.</p>
+<p local-id=3D"db913d50d564">Jiajin presented the embedding and storage par=
+t of the data processing pipeline. This part includes selecting and configu=
+ring an embedding model, implementing single-text and batch-text vectorizat=
+ion functions, and calling the data persistence layer to store vectors, ori=
+ginal text, document IDs, chunk indexes, and local JSON files.</p>
+<p local-id=3D"ddbf01aa25e1">Guangyuan also introduced the tool set layer. =
+The tool set acts as the bridge between the agent layer and the data persis=
+tence layer. The current Q1 focus is the search tool, which should support =
+semantic vector retrieval, BM25 retrieval, hybrid retrieval, top-k control,=
+ score threshold filtering, and metadata filtering.</p>
+<p local-id=3D"88792d9614c4">Huifang and Suijie presented the agent layer. =
+The agent layer receives the user question, validates the input, generates =
+a trace ID, calls the retrieval tool, assembles the prompt, calls the LLM, =
+generates the answer, returns citations, and handles exceptional cases. The=
+ Q1 agent will focus on a single-turn RAG agent rather than a complex multi=
+-agent or multi-turn system.</p>
+<p local-id=3D"2573cf1557c3">Jiaxing and Daijiang presented the user layer.=
+ Jiaxing focused on the basic web page, chat interface, input box, message =
+display, loading state, and streaming display effect. Daijiang focused on t=
+he interface connection between the web layer and the agent layer, includin=
+g Agent API calling, response parsing, status mapping, streaming token hand=
+ling, error display, mock data, and mock API for independent frontend testi=
+ng.</p>
+<p local-id=3D"9b5e5c5282e3">Tao suggested that the system architecture dia=
+gram should be further optimized. The diagram should clearly show what each=
+ layer needs to achieve for Checkpoint 1, while detailed implementation cho=
+ices such as specific vector databases or retrieval algorithms can be left =
+in separate documents.</p>
+<p local-id=3D"32037d505bb7">Loura suggested that, in addition to the Q1 ti=
+meline, the team should also prepare an overall project timeline slide. She=
+ also reminded the MoM noter to attach the one-page slide and the Confluenc=
+e page standard to the meeting minutes.</p>
+<p local-id=3D"f8e8ec3b7b2f">Tao also suggested that project documents shou=
+ld be written in English as much as possible, since HSBC is an internationa=
+l company and most internal documents are usually written in English.</p>
+<hr local-id=3D"0f648955-c1fa-48e9-8180-a433b87d9cfc">
+<h2 local-id=3D"28851a609950" id=3D"MeetingMinutesof2026/06/01-JulyMVPFeatu=
+reRefinement,ModuleDivisionofLabor,andSubsequentActionItems-ActionItems">Ac=
+tion Items</h2>
+<p local-id=3D"ae13d6d86b87">All team members: Continue implementation base=
+d on the module-based division of work.</p>
+<p local-id=3D"a64a16ff0ba4">All team members: Further clarify the owner of=
+ each function point and make sure every function has a responsible person.=
+</p>
+<p local-id=3D"b371d800cf25">All team members: Continue improving the Q1 / =
+Checkpoint 1 design based on the layered architecture, including data proce=
+ssing pipeline, data persistence layer, tool set, agent layer, and user lay=
+er.</p>
+<p local-id=3D"db99918e8426">All team members: Try to write project documen=
+ts in English as much as possible.</p>
+<p local-id=3D"e4e1dd194a0f">Yixi and related team members: Finalize and sh=
+are the Confluence usage standard, including document structure, naming con=
+ventions, templates, and maintenance mechanism.</p>
+<p local-id=3D"95e643bcfbdd">Yixi and related team members: Share the Feish=
+u document link with the team.</p>
+<p local-id=3D"0c6d9ea01e81">Yixi and related team members: Prepare or upda=
+te the one-page timeline PPT, including key milestones, deliverables, depen=
+dencies, and risks.</p>
+<p local-id=3D"eb02b4a4daaa">Yixi and related team members: Prepare an over=
+all project timeline slide in addition to the Q1 timeline.</p>
+<p local-id=3D"9bf87c47e108">Team members responsible for the architecture =
+design: Optimize the system architecture diagram so that each layer=E2=80=
+=99s Checkpoint 1 functions are clear at a glance.</p>
+<p local-id=3D"28c31f1c7d7c">Data processing pipeline team: Continue workin=
+g on document parsing, section tree construction, chunking strategy, JSON o=
+utput, and BM25 index preparation.</p>
+<p local-id=3D"da10775b9c42">Embedding and storage related members: Continu=
+e working on embedding model configuration, single-text and batch-text vect=
+orization, vector storage, and local document storage.</p>
+<p local-id=3D"16840b905a25">Tool set team: Continue implementing the searc=
+h tool, including vector retrieval, BM25 retrieval, hybrid retrieval, top-k=
+ control, threshold filtering, and metadata filtering.</p>
+<p local-id=3D"d85167d4731f">Agent layer team: Continue working on input va=
+lidation, trace ID generation, retrieval tool calling, prompt assembly, LLM=
+ calling, answer generation, citation return, logging, and fallback handlin=
+g.</p>
+<p local-id=3D"14cf51d06e3b">User layer team: Continue working on the chat =
+page, Agent API calling, response parsing, status mapping, streaming output=
+, mock data, mock API, and frontend-Agent integration.</p>
+<p local-id=3D"158a685af51a">Daijiang: Prepare and send out the meeting min=
+utes. Please attach the one-page slide and the Confluence page standard if =
+available.</p>
+<hr local-id=3D"b2b89fba-68bb-41ea-add4-da60b2976570">
+<h2 local-id=3D"3eeaffbe73a2" id=3D"MeetingMinutesof2026/06/01-JulyMVPFeatu=
+reRefinement,ModuleDivisionofLabor,andSubsequentActionItems-Attachments">At=
+tachments</h2>
+<ol start=3D"1" local-id=3D"5ac27b9c-3ac0-487d-b530-f1be36bd8af8">
+<li local-id=3D"211f3525-d20a-48f2-a252-5e93de2f1f57">
+<p local-id=3D"c24e6c4e3fde">One-page timeline slide&nbsp;</p></li>
+<li local-id=3D"94fafab0-3c24-4d31-a9f9-e33fc7fe62b1">
+<p local-id=3D"0aac9a99e115">Confluence page standard&nbsp;</p></li>
+</ol>
+<p local-id=3D"af5f4a33d21b"></p>
+    </div>
+</body>
+</html>
+------=_Part_20_117221801.1785900610793--

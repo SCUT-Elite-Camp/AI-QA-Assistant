@@ -1,0 +1,546 @@
+Date: Wed, 5 Aug 2026 03:30:37 +0000 (UTC)
+Message-ID: <468198495.23.1785900637682@b819bc306df8>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_22_1822523048.1785900637681"
+
+------=_Part_22_1822523048.1785900637681
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/06/22 - Plan Sharing</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/06/22 - Plan Sharing</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"8e63fc784846">Hi all,</p>
+<p local-id=3D"9164403326d6">Thank you all for attending this meeting. Belo=
+w are the meeting minutes and future work arrangements.</p>
+<h2 local-id=3D"77bdb1645284" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+QuickRecap">Quick Recap</h2>
+<p local-id=3D"13e9b70afd84">The meeting focused on the current project pro=
+gress and next steps. Tao confirmed that the client demonstration would tak=
+e place on July 17 and that an internal rehearsal would be held on July 6.<=
+/p>
+<p local-id=3D"df2a985c9e3b">Team members reported progress across differen=
+t layers. Liu Huifang presented the technical architecture of KAG, or Knowl=
+edge-Augmented Generation, including the Builder, reasoning engine, and kno=
+wledge indexing components. Xie Daijiang reported that the Agent layer had =
+completed integration with the actual tools, including retrieval result sta=
+ndardization and end-to-end workflow integration. Mu Guangyuan completed th=
+e JSON storage functions for the data processing pipeline. Dai Jiaxing impl=
+emented vector retrieval, BM25 keyword retrieval, and hybrid retrieval. Son=
+g Suijie completed the basic framework of the front-end interface.</p>
+<p local-id=3D"db50f03b5764">The meeting concluded with a discussion on cod=
+e collaboration standards. All team members are required to create their ow=
+n branches and upload their code to the Git repository.</p>
+<h2 local-id=3D"a492024b74a1" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+NextSteps">Next Steps</h2>
+<h3 local-id=3D"00771706d446" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+Tao">Tao</h3>
+<ul local-id=3D"c1fc75da-e510-4e5c-832e-9c06fd58fcff">
+<li local-id=3D"d118d21b-c21d-4a6d-9e42-d3a505b2c54d">
+<p local-id=3D"56a9184a049a">Organize and host the internal rehearsal for t=
+he July 17 CPE results presentation during the weekly meeting on July 6.</p=
+></li>
+<li local-id=3D"0ba0eea1-caad-433d-8129-fa69eebbb0b1">
+<p local-id=3D"b8795d6d96db">If Tao is unable to attend the rehearsal on Ju=
+ly 6, Loura will assist in organizing and hosting it.</p></li>
+</ul>
+<h3 local-id=3D"f375d98122f2" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+Vincent">Vincent</h3>
+<ul local-id=3D"ee9b18be-b1ed-4c6f-82d2-180665652fd9">
+<li local-id=3D"caa5807b-7de6-4952-93d2-b778a2365b76">
+<p local-id=3D"30bcba62d60c">Conduct a second rehearsal around July 13 and =
+provide final adjustments to the presentation.</p></li>
+</ul>
+<h3 local-id=3D"9d95986efa4e" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+LiuHuifang">Liu Huifang</h3>
+<ul local-id=3D"dc9c90b4-751c-4386-a773-e4651d158758">
+<li local-id=3D"cc2cb3d1-6825-45e4-9ab0-35f179640d26">
+<p local-id=3D"7f35575766c4">Continue searching for comparative experiments=
+ or results on the accuracy and efficiency of KAG versus traditional knowle=
+dge graph triples.</p></li>
+<li local-id=3D"c35038ab-6435-4da2-bcfd-a16541acc87b">
+<p local-id=3D"27183e3ba7b2">If no public results are available, consider r=
+eproducing the idea and evaluating whether it provides measurable performan=
+ce improvements.</p></li>
+</ul>
+<h3 local-id=3D"6a5774cc46bf" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+SongSuijie">Song Suijie</h3>
+<ul local-id=3D"c31d7935-b629-4ef3-ac98-1f5de7acdafb">
+<li local-id=3D"6896783c-1f49-428c-9167-e863e507f1f6">
+<p local-id=3D"3b464b694dd9">Continue improving the front-end and back-end =
+framework of the user layer.</p></li>
+<li local-id=3D"8fee635c-d5dd-4b73-ad41-e9d3d1d469c7">
+<p local-id=3D"6c48b5f1a964">Complete integration once the Agent layer is r=
+eady.</p></li>
+</ul>
+<h3 local-id=3D"1ec6c872b390" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+DaiJiaxing">Dai Jiaxing</h3>
+<ul local-id=3D"9d91d8e2-193a-4105-9308-d117a0df0a16">
+<li local-id=3D"25ff9a53-7c74-4db5-beac-d8d3ee5eda0b">
+<p local-id=3D"e0bb16538a63">Improve the presentation of the retrieval demo=
+ for the tool layer.</p></li>
+<li local-id=3D"6b3195ad-4c8b-41d6-8c9f-988bf29e388b">
+<p local-id=3D"13d847acd4fb">Clearly highlight the key observations, result=
+s, and conclusions.</p></li>
+</ul>
+<h3 local-id=3D"3c3d68c9b9d3" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+MuGuangyuan">Mu Guangyuan</h3>
+<ul local-id=3D"fed9f8b2-7dc5-438f-97ca-f7d9a0f13cbe">
+<li local-id=3D"e7679428-3551-4d0c-8f9d-971508285112">
+<p local-id=3D"f21d7c527cd1">Continue supporting the integration between th=
+e data processing pipeline and the tool layer according to the existing pla=
+n.</p></li>
+<li local-id=3D"bc539492-530e-4bf6-93be-644ee51f1d40">
+<p local-id=3D"f212af752b5a">Ensure that subsequent retrieval calls can be =
+completed successfully.</p></li>
+</ul>
+<h3 local-id=3D"0b7677f20fae" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+CollaborationRequirements">Collaboration Requirements</h3>
+<ul local-id=3D"5cff8d58-aae2-421e-ac14-77d045c5add8">
+<li local-id=3D"f691fb00-3a7a-4d8f-9aaf-4c96aeb2b84e">
+<p local-id=3D"7e46b40de839"><strong>All team leaders:</strong> Update proj=
+ect progress and technical documentation for their respective teams on Conf=
+luence every week, clearly stating completed work and next steps.</p></li>
+<li local-id=3D"c0c6f0de-6d97-4cbf-92e4-3a7ed335149c">
+<p local-id=3D"17758819bd2f"><strong>All team members:</strong> Prepare a s=
+hort demo or progress update each week to present completed work and issues=
+ encountered.</p></li>
+</ul>
+<h2 local-id=3D"7ce8cd04981e" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+MeetingSummary">Meeting Summary</h2>
+<h3 local-id=3D"5548315baa24" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+ConfirmationoftheJulyClientDemonstration">Confirmation of the July Client D=
+emonstration</h3>
+<p local-id=3D"9e13a4713bb8">Tao confirmed that the client demonstration wo=
+uld take place on July 17. The proposed format includes a 10-minute PowerPo=
+int presentation covering the project background and proposed solution, fol=
+lowed by a 5-minute Q&amp;A session.</p>
+<p local-id=3D"bcc7e373d672">Vincent suggested adjusting the preparation se=
+quence by completing the working demo first and then preparing the PowerPoi=
+nt materials. The team also discussed the July examination schedule. Mu Gua=
+ngyuan stated that his examinations would continue until July 14. Tao propo=
+sed completing the main materials by July 10 and conducting internal rehear=
+sals in advance.</p>
+<h3 local-id=3D"01773c9b5c14" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+ProjectScheduleDiscussion">Project Schedule Discussion</h3>
+<p local-id=3D"a02750b0ce72">The team discussed the overall project schedul=
+e and expected the main development work to be completed by July 4, leaving=
+ approximately one week for integration and presentation preparation.</p>
+<p local-id=3D"1ff4c9db9cd7">The team agreed to conduct the first rehearsal=
+ during the weekly meeting on July 6. Vincent may be unable to attend the c=
+lient meeting on July 17 because he may be on leave that week.</p>
+<p local-id=3D"9c3f20a1dc48">At the end of the discussion, Liu Huifang enco=
+untered a screen-sharing issue and required technical assistance.</p>
+<h3 local-id=3D"fd18a0eaf316" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+KAGTechnicalArchitecturePresentation">KAG Technical Architecture Presentati=
+on</h3>
+<p local-id=3D"a0a83e8cc94b">Liu Huifang presented the technical architectu=
+re of KAG, or Knowledge-Augmented Generation. The presentation focused on c=
+omponents such as the Builder, knowledge representation, knowledge indexing=
+, and reasoning engine.</p>
+<p local-id=3D"073049f31b0c">The architecture was discussed at two main lev=
+els:</p>
+<ul local-id=3D"4b3a49f8-e7ed-4191-bc74-c11a19d4e31a">
+<li local-id=3D"c8349b2b-3d02-4d36-82b4-d0935963e11e">
+<p local-id=3D"5f0668819345">Knowledge indexing and offline knowledge const=
+ruction</p></li>
+<li local-id=3D"0e03c094-2b23-4d58-88f2-357cb50451ad">
+<p local-id=3D"4679009b46c8">Online reasoning and retrieval</p></li>
+</ul>
+<p local-id=3D"0cdc02d939e3">The online reasoning system includes a hybrid =
+reasoning engine guided by logical forms, together with semantic reasoning =
+capabilities.</p>
+<p local-id=3D"9a7c96cb02e9">Wang Yixi helped Liu Huifang resolve the scree=
+n-sharing issue. Liu Huifang then invited the team to raise questions and d=
+iscuss the technical approach.</p>
+<h3 local-id=3D"496354a8a627" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+DiscussiononTripleandStructuredRepresentationConversion">Discussion on Trip=
+le and Structured Representation Conversion</h3>
+<p local-id=3D"612217cf49b9">Tao asked whether KAG had compared traditional=
+ knowledge graph triples with JSON-like structured representations or embed=
+ding-based representations, particularly in terms of performance and accura=
+cy.</p>
+<p local-id=3D"4ced8f59b0a3">Liu Huifang suggested that the structured repr=
+esentation approach might improve performance because knowledge is organize=
+d into a model-friendly format during the initial processing stage.</p>
+<p local-id=3D"4d65d65a1c66">Vincent asked whether this LLM-friendly format=
+ was fixed. Liu Huifang explained that it could be customized by users. She=
+ also noted that knowledge types could be divided into three layers to supp=
+ort more domain-specific and personalized representations.</p>
+<p local-id=3D"c64cd5fba18a">Mu Guangyuan asked about the purpose of confid=
+ence scores and the three knowledge layers. Liu Huifang explained that they=
+ could support knowledge extraction accuracy and help large language models=
+ understand composite entities and relationships.</p>
+<h3 local-id=3D"6e73e1203da5" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+SystemArchitectureandConfidenceScoreCalculation">System Architecture and Co=
+nfidence Score Calculation</h3>
+<p local-id=3D"b52068be34e8">Liu Huifang explained the design principles of=
+ the rigorous layer, flexible layer, and domain layer within the system arc=
+hitecture.</p>
+<p local-id=3D"c5dfff2e7b59">Mu Guangyuan asked how confidence scores shoul=
+d be calculated. Liu Huifang stated that confidence scores should preferabl=
+y be defined and calculated by the structured knowledge base or system desi=
+gner to avoid introducing additional uncertainty.</p>
+<p local-id=3D"dbb66644ff2c">Vincent added that the meaning and calculation=
+ of confidence scores depend on the specific standards, scenarios, and inte=
+nded applications.</p>
+<p local-id=3D"3a944b37785b">Liu Huifang also reported the progress of the =
+Agent layer. The basic architecture and local implementation of the tool-le=
+vel interface had been completed, together with initial retrieval pipeline =
+testing. The team planned to begin integration with the actual tools for fu=
+rther testing in the following week.</p>
+<h3 local-id=3D"e5782f151ccf" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+AgentLayerWeek2Progress">Agent Layer Week 2 Progress</h3>
+<p local-id=3D"401d6ba9b741">Xie Daijiang reported the main progress of the=
+ Agent layer during Week 2.</p>
+<p local-id=3D"296b73f1e7bb">The team completed:</p>
+<ul local-id=3D"0e13d97d-dba3-441a-804b-ff24ea34b67e">
+<li local-id=3D"3115aa7b-de7f-49fc-ac38-f861b16606f3">
+<p local-id=3D"5e077d8ab0e6">Integration with the actual tool layer</p></li=
+>
+<li local-id=3D"b18a3074-24f7-418c-80c1-f4120bcb189a">
+<p local-id=3D"8035075315d1">Tool invocation</p></li>
+<li local-id=3D"f5ffa707-df0e-4c2e-86cd-f3b99568559b">
+<p local-id=3D"0a15b38c2d58">Retrieval result standardization</p></li>
+<li local-id=3D"94b176ff-8579-45de-9a60-04a1ac695189">
+<p local-id=3D"ee63d465c3a0">End-to-end integration of the main workflow</p=
+></li>
+<li local-id=3D"0c9e3254-1a6b-474b-ad0c-a68b303cc880">
+<p local-id=3D"8a321ee52e25">Smoke testing of the retrieval pipeline</p></l=
+i>
+</ul>
+<p local-id=3D"478194780d14">The team also discussed the need to prepare we=
+ekly technical documentation and demos.</p>
+<p local-id=3D"b9a4c5afec7b">Vincent emphasized that effective presentation=
+ and demonstration skills are important. Each team should clearly explain w=
+hat has been completed, what the demo is intended to show, and what conclus=
+ions the audience should draw.</p>
+<p local-id=3D"ee12641228f1">Mu Guangyuan then reported progress on the dat=
+a processing pipeline. The JSON storage and related processing functions ha=
+d been completed. The relevant code and API documentation were uploaded to =
+Git and shared with the team.</p>
+<h3 local-id=3D"440676fe3db8" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+DataPersistenceandRetrievalInterfaceDevelopment">Data Persistence and Retri=
+eval Interface Development</h3>
+<p local-id=3D"c40e652fc7b7">Wang Yixi confirmed that the relevant call and=
+ interface-related work had been completed.</p>
+<p local-id=3D"71a88e00ddda">Mu Guangyuan stated that the retrieval interfa=
+ce required by the tool layer should also have been completed.</p>
+<p local-id=3D"ec69ce6fa49a">Wang Yixi reported on the data persistence lay=
+er, noting that the basic work had already been completed and demonstrated =
+during the previous week, with no major new updates during the current week=
+.</p>
+<p local-id=3D"102c0a1682dd">Dai Jiaxing introduced the work completed duri=
+ng the week, including the implementation of vector retrieval and RRF-based=
+ fusion. He also demonstrated a simple retrieval example involving requirem=
+ents for a web chat page and document filtering functions.</p>
+<h3 local-id=3D"acdbdda4b1f4" id=3D"MeetingMinutesof2026/06/22-PlanSharing-=
+HybridRetrievalSystemDemonstration">Hybrid Retrieval System Demonstration</=
+h3>
+<p local-id=3D"342099192747">Dai Jiaxing demonstrated a hybrid retrieval sy=
+stem combining vector retrieval and BM25 keyword retrieval. He explained ho=
+w the system ranks relevant results according to retrieval scores.</p>
+<p local-id=3D"2917d07678b7">Song Suijie then presented the reconstructed u=
+ser-layer front-end interface. The basic functions included conversation na=
+ming, recommended questions, and model switching.</p>
+<p local-id=3D"ce756e26fc2c">Wang Yixi emphasized the code collaboration re=
+quirements:</p>
+<ul local-id=3D"ec0ad6ab-afa2-45a7-9e5b-1e922650d6d9">
+<li local-id=3D"a2f4164f-f46d-487d-9030-8a6f5732bf1a">
+<p local-id=3D"b1c3d18b88b2">Each developer should create and use an indivi=
+dual branch.</p></li>
+<li local-id=3D"b9d023b1-2b3b-4179-b801-669ccd0ce81b">
+<p local-id=3D"548c4e3a2ff4">Code should be uploaded to the Git repository =
+through the correct branch.</p></li>
+<li local-id=3D"92af8a70-e361-4b37-a34d-0f459b297907">
+<p local-id=3D"02cddb14d4e3">Members should only upload files related to th=
+eir own layer.</p></li>
+<li local-id=3D"036077f5-0a5d-4be8-b34c-cda592add415">
+<p local-id=3D"e23d8823fa7e">Unrelated files should not be included in code=
+ submissions.</p></li>
+<li local-id=3D"3134f219-8f8a-4fdf-98b7-f8addec49369">
+<p local-id=3D"8d5cf759036a">Repository files should remain clearly organiz=
+ed.</p></li>
+</ul>
+<p local-id=3D"214f7f4cc531">Tao asked the team to provide reference templa=
+tes for Confluence. Wang Yixi again reminded everyone to maintain proper fi=
+le organization when submitting code.</p>
+<p local-id=3D"b5850ff4279a"></p>
+<p class=3D"media-group"><img height=3D"250" style=3D"margin: 2px; border: =
+1px solid #ddd; box-sizing: border-box; vertical-align: text-bottom;" src=
+=3D"ebb93b025d77f3c390f84fd29213a5ea43bfbd924cc09ff40e249895324850fc" width=
+=3D"250"></p>
+<p local-id=3D"c405bc5fde2a"></p>
+    </div>
+</body>
+</html>
+------=_Part_22_1822523048.1785900637681
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Location: file:///C:/ebb93b025d77f3c390f84fd29213a5ea43bfbd924cc09ff40e249895324850fc
+
+iVBORw0KGgoAAAANSUhEUgAAAPoAAAD6CAMAAAC/MqoPAAADAFBMVEX19fXv7+98fHx1dXV9fX23
+t7eenp5wcHDn5+f09PTz8/Pd3d2SkpLY2Njt7e3Q0NCioqJycnKqqqq7u7uurq6CgoKGhobOzs7D
+w8PR0dGNjY3Hx8fj4+PGxsbS0tKoqKgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAABYhwFnAAAGW0lEQVR4Xu3cfXeiOBQH4ABCEIVqtWpb7eT7f6o5s/vXzuz2tE61
+vpXNTcKL0fbUniPo+HvO1IbkilySgFNQxgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+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
++QAAAABJRU5ErkJggg==
+------=_Part_22_1822523048.1785900637681--

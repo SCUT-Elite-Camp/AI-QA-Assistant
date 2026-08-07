@@ -1,0 +1,300 @@
+Date: Wed, 5 Aug 2026 03:30:52 +0000 (UTC)
+Message-ID: <993022917.27.1785900652208@b819bc306df8>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_26_1863225294.1785900652207"
+
+------=_Part_26_1863225294.1785900652207
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/07/13 - Rehearsal</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/07/13 - Rehearsal</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"71f297359728">Hi all,</p>
+<p local-id=3D"0f6d1958e9b9">&nbsp;</p>
+<p local-id=3D"6de46868f894">Thank you so much for your attendance. Please =
+kindly check the meeting minutes below for the meeting.</p>
+<p local-id=3D"6021df0496e1">&nbsp;</p>
+<p local-id=3D"2ea80d1b11f8">Date: Monday, 13<sup>th</sup>&nbsp;July, 2026<=
+/p>
+<p local-id=3D"feba9607426a">Time: 17:30 HK time</p>
+<p local-id=3D"4495626bdc99">Attendees: Lark Jiang, Suker, Loura Guo, Tao H=
+uang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Hui=
+fang Liu, Jiaxing Dai, Shu Cheng</p>
+<p local-id=3D"9009ba6199b0"><strong>Quick Recap</strong></p>
+<p local-id=3D"ea48593f3506">Today, team held a rehearsal for Checkpoint 1.=
+ After presentation, the mentors provided constructive feedback. We then ha=
+d a productive discussion about the project's ambition and its unique value=
+ proposition.</p>
+<p local-id=3D"be94d6d1f85e"></p>
+<p local-id=3D"66efd68e675b"><strong>Discussion Summary</strong></p>
+<ul local-id=3D"b1d51d0f-fa2d-4e65-ab0a-c2dbb6d1f677">
+<li local-id=3D"b616415c-83d6-4356-9e14-190ae15da15e">
+<p local-id=3D"572735ea06bf">The presentation duration still needs to be cu=
+t to 9 minutes or less.</p></li>
+<li local-id=3D"61c14cab-e180-43f0-8537-f1a9353229a9">
+<p local-id=3D"358692638d8f">The&nbsp;overall visual should be clear for ev=
+eryone in the room. Font styles and colors need to be more distinguishable.=
+</p></li>
+<li local-id=3D"6de9711a-0bf3-4014-8555-0235017b3301">
+<p local-id=3D"d776fabbb42e">Different points should be clearly separated =
+=E2=80=94 for example, by using bold text for key takeaways.</p></li>
+<li local-id=3D"eaaf46b0-9929-4bc2-b2c8-9f077b0740dd">
+<p local-id=3D"4f7d7c8fad4f">The demo use case should be replaced with one =
+that is more relevant to banking scenarios. Additionally, a pre-recorded de=
+mo video would be more reliable than running it live on site.</p></li>
+<li local-id=3D"14a24f96-cb91-4e73-aa1f-d8955f75d607">
+<p local-id=3D"a53a04e2afbd">The unique value proposition of our project sh=
+ould be clearly highlighted throughout the presentation. We should also und=
+erscore our future ambition and long-term vision.</p></li>
+<li local-id=3D"d3b7f6f5-12b6-4021-bd61-d54fff06a27c">
+<p local-id=3D"f7e43701af28">For future improvements, we can explore both r=
+esearch-oriented and product-oriented directions. Update your thought on Co=
+nfluence.</p></li>
+</ul>
+<p local-id=3D"f9f20b2c8a85"><strong>Action Items</strong></p>
+<ol start=3D"1" local-id=3D"6636c205-5348-4aa4-80a0-7660e68006b9">
+<li local-id=3D"127a53f3-4717-439d-9205-a09a9fb1f3fc">
+<p local-id=3D"8ddc23344c9c"><strong>All team members=EF=BC=9A</strong>Arri=
+ve at Taikoo Hui first floor this friday at 1:30 pm.</p></li>
+<li local-id=3D"963b26f0-cef4-43a0-a8eb-c390e1831561">
+<p local-id=3D"f0cf6263f1e7"><strong>All team members=EF=BC=9A</strong>Upda=
+te your thought about improving the chatbot in multiple directions.</p></li=
+>
+<li local-id=3D"5edf66e9-af6d-490e-a294-2dafafdfa0f9">
+<p local-id=3D"e0863246c51f"><strong>Yixi Wang: </strong>Polish up the pres=
+entation and find a time to present to Tao.</p></li>
+</ol>
+<p local-id=3D"d5598cea0ecf">Hi Jiajin and Daijiang,</p>
+<p local-id=3D"aa2326369741">&nbsp;</p>
+<p local-id=3D"0844ef1d070b">Kindly remind you that Jiajin will be the host=
+ and Daijiang will be the MoM Noter of next weekly meeting. Please read abo=
+ve Notes and get prepard.</p>
+<p local-id=3D"e10ebe04cfef"></p>
+<p local-id=3D"db0857d7b81e">Kind regards,</p>
+<p local-id=3D"7f783ddfa150"></p>
+<p local-id=3D"189986e47861">Jiajin Zhong</p>
+    </div>
+</body>
+</html>
+------=_Part_26_1863225294.1785900652207--

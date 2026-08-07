@@ -32,6 +32,6 @@ export default defineComarkComponent({
     'source-link': SourceLink,
     'cite-mark': CiteMark,
   },
-  class: '*:first:mt-0 *:last:mb-0'
+  class: 'markdown-body comark-content *:first:mt-0 *:last:mb-0'
 })
 

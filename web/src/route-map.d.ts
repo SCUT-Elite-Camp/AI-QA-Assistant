@@ -38,18 +38,25 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/__debug/metrics': RouteRecordInfo<
-      '/__debug/metrics',
-      '/__debug/metrics',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/chat/[id]': RouteRecordInfo<
       '/chat/[id]',
       '/chat/:id',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
+      | never
+    >,
+    '/favorites/': RouteRecordInfo<
+      '/favorites/',
+      '/favorites',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/topics/': RouteRecordInfo<
+      '/topics/',
+      '/topics',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -73,14 +80,6 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/__debug/metrics.vue': {
-      routes:
-        | '/__debug/metrics'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
     'src/pages/chat/[id].vue': {
       routes:
         | '/chat/[id]'
@@ -88,6 +87,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'id'
+    }
+    'src/pages/favorites/index.vue': {
+      routes:
+        | '/favorites/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/topics/index.vue': {
+      routes:
+        | '/topics/'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 
