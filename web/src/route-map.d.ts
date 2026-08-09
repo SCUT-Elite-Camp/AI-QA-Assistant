@@ -52,6 +52,20 @@ declare module 'vue-router/auto-routes' {
       { id: ParamValue<false> },
       | never
     >,
+    '/files': RouteRecordInfo<
+      '/files',
+      '/files',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/settings': RouteRecordInfo<
+      '/settings',
+      '/settings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -88,6 +102,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'id'
+    }
+    'src/pages/files.vue': {
+      routes:
+        | '/files'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/settings.vue': {
+      routes:
+        | '/settings'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 
