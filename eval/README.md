@@ -1,5 +1,69 @@
 # AI-QA-Assistant Performance Evaluation Module
 
+## CP2 Agent evaluation
+
+`run_agent_eval.py` tests the CP2 Agent layer separately from the existing
+retrieval benchmark:
+
+- **Components:** seven-intent accuracy, clarification precision/recall/F1,
+  rewrite term retention, policy output, and Query Understanding latency.
+- **Real quality:** real Qwen + local knowledge-base answers, required-fact
+  coverage, citations, citation validity, stop reason, tool/retrieval counts,
+  and end-to-end mean/P50/P90/P95 latency.
+
+Retrieval Hit Rate, Recall, MRR, MAP, and retrieval-strategy comparisons remain
+Tool Layer responsibilities and are intentionally excluded from this CP2 Agent
+report.
+
+The auditable dataset is `eval/datasets/agent_cp2_cases.json`. A required fact
+is a synonym group, so wording may vary without hiding missing information.
+
+All model-backed runs require explicit `--online` confirmation:
+
+```powershell
+D:\miniconda3\envs\htc_project\python.exe eval\run_agent_eval.py --suite components --online
+D:\miniconda3\envs\htc_project\python.exe eval\run_agent_eval.py --suite quality --online
+D:\miniconda3\envs\htc_project\python.exe eval\run_agent_eval.py --suite all --online --repeats 3
+```
+
+`--judge` adds relevance and faithfulness LLM-judge calls and therefore extra
+API usage. Without it, real quality still uses deterministic fact and citation
+metrics. Reports are JSON plus Excel-friendly UTF-8 CSV under `eval/reports/`.
+
+Offline metric and dataset tests do not call an API:
+
+```powershell
+D:\miniconda3\envs\htc_project\python.exe -m pytest eval\test_agent_metrics.py -q
+```
+
+### FinanceBench real-finance baseline
+
+The official FinanceBench corpus is kept locally under the gitignored
+`eval/datasets/external/financebench/` directory. Generate the deterministic
+20-case Agent manifest and collect only its required PDFs with:
+
+```powershell
+D:\miniconda3\envs\htc_project\python.exe eval\prepare_financebench.py
+```
+
+This creates the reviewable manifest
+`eval/datasets/financebench_agent_cases.json` and copies the 20 source PDFs to
+`eval/datasets/external/financebench_subset/pdfs/`. Ingest them into the
+isolated `financebench_eval` namespace; this does not touch the default project
+document directory, BM25 file, or Milvus collection:
+
+```powershell
+D:\miniconda3\envs\htc_project\python.exe eval\ingest_financebench.py
+```
+
+Then run answer-quality evaluation against the isolated namespace:
+
+```powershell
+D:\miniconda3\envs\htc_project\python.exe eval\run_agent_eval.py --suite quality --online --dataset eval\datasets\financebench_agent_cases.json --retrieval-namespace financebench_eval
+```
+
+Use `--limit 3` for a low-cost Agent smoke baseline before running all 20 cases.
+
 This module is designed to test and measure the performance of the AI-QA-Assistant's core question-answering flow:
 1. **Retrieval Performance** (Hit Rate, MRR, MAP, Latency)
 2. **End-to-End Generation Quality** (ROUGE-L, BLEU, Semantic Similarity, and LLM-as-a-judge Faithfulness & Relevance)

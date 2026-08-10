@@ -42,6 +42,17 @@ class AgentState(BaseModel):
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     stop_reason: StopReason | None = None
+    evidence_gate_reason: str = ""
+    covered_evidence_targets: list[str] = Field(default_factory=list)
+    missing_evidence_targets: list[str] = Field(default_factory=list)
+    eligible_evidence_count: int = 0
+    rejected_evidence_count: int = 0
+    answer_completeness_checked: bool = False
+    answer_complete: bool | None = None
+    missing_answer_aspects: list[str] = Field(default_factory=list)
+    missing_critical_facts: list[str] = Field(default_factory=list)
+    answer_repair_attempted: bool = False
+    llm_metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentRunResult(BaseModel):
@@ -56,3 +67,14 @@ class AgentRunResult(BaseModel):
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     messages: list[dict[str, Any]] = Field(default_factory=list)
     error_code: str = ""
+    evidence_gate_reason: str = ""
+    covered_evidence_targets: list[str] = Field(default_factory=list)
+    missing_evidence_targets: list[str] = Field(default_factory=list)
+    eligible_evidence_count: int = 0
+    rejected_evidence_count: int = 0
+    answer_completeness_checked: bool = False
+    answer_complete: bool | None = None
+    missing_answer_aspects: list[str] = Field(default_factory=list)
+    missing_critical_facts: list[str] = Field(default_factory=list)
+    answer_repair_attempted: bool = False
+    llm_metrics: dict[str, Any] = Field(default_factory=dict)

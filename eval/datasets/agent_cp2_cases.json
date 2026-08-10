@@ -1,0 +1,360 @@
+{
+  "metadata": {
+    "name": "CP2 Agent Local Knowledge Base Core Regression",
+    "version": "2.1",
+    "language": "zh-CN",
+    "scope": "Agent layer behavior and answer quality against the default local project knowledge base",
+    "case_count": 27,
+    "source_documents": [
+      "agent/docs/API_CONTRACT.md",
+      "agent/docs/cp2/query_plan_contract.md",
+      "agent/docs/cp2/conversation_memory_contract.md",
+      "agent/docs/cp2/clarification.md",
+      "agent/docs/cp2/query_rewriter.md",
+      "agent/docs/cp2/intent_policy.md",
+      "agent/docs/cp2/tool_registry.md",
+      "agent/docs/cp2/tool_executor.md",
+      "agent/docs/cp2/evidence_gate.md",
+      "agent/docs/cp2/corrective_retrieval.md",
+      "agent/docs/cp2/citation_check.md"
+    ]
+  },
+  "component_cases": [
+    {
+      "id": "local_intent_knowledge_qa",
+      "query": "QueryPlan 公共契约包含哪些核心字段？",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": ["QueryPlan", "公共契约"],
+      "expected_stages": ["intent_classifier", "clarifier", "query_rewriter", "policy_routing"]
+    },
+    {
+      "id": "local_intent_document_search",
+      "query": "列出知识库中与 ConversationMemory 有关的契约文档。",
+      "expected_intent": "document_search",
+      "should_clarify": false,
+      "required_rewrite_terms": ["ConversationMemory", "契约文档"],
+      "expected_stages": ["intent_classifier", "tool_execution", "citation_check"]
+    },
+    {
+      "id": "local_intent_summarization",
+      "query": "总结 CP2 Agent 的完整问答流程。",
+      "expected_intent": "summarization",
+      "should_clarify": false,
+      "required_rewrite_terms": ["CP2", "Agent", "问答流程"],
+      "expected_stages": ["intent_classifier", "query_planner", "answer_generation"]
+    },
+    {
+      "id": "local_intent_comparison",
+      "query": "比较 ToolExecutor 和 Evidence Gate 的职责差异。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["ToolExecutor", "Evidence Gate"],
+      "expected_stages": ["intent_classifier", "query_planner", "bilateral_evidence", "answer_completeness"]
+    },
+    {
+      "id": "local_intent_casual_chat",
+      "query": "你好，很高兴认识你。",
+      "expected_intent": "casual_chat",
+      "should_clarify": false,
+      "required_rewrite_terms": [],
+      "expected_stages": ["intent_classifier", "policy_routing"],
+      "expected_tool_calls": 0
+    },
+    {
+      "id": "local_intent_system_help",
+      "query": "这个问答系统目前支持哪些能力？",
+      "expected_intent": "system_help",
+      "should_clarify": false,
+      "required_rewrite_terms": [],
+      "expected_stages": ["intent_classifier", "policy_routing"],
+      "expected_tool_calls": 0
+    },
+    {
+      "id": "local_intent_unsupported",
+      "query": "帮我直接修改银行账户余额。",
+      "expected_intent": "unsupported",
+      "should_clarify": false,
+      "required_rewrite_terms": [],
+      "expected_stages": ["intent_classifier", "policy_routing"],
+      "expected_stop_reason": "unsupported",
+      "expected_tool_calls": 0
+    },
+    {
+      "id": "local_clarification_required",
+      "query": "它是怎么处理的？",
+      "history": [],
+      "expected_intent": "knowledge_qa",
+      "should_clarify": true,
+      "required_rewrite_terms": [],
+      "expected_stages": ["intent_classifier", "clarifier"],
+      "expected_stop_reason": "clarification_required"
+    },
+    {
+      "id": "local_followup_resolution",
+      "query": "它在完整链路中起什么作用？",
+      "history": [
+        {"role": "user", "content": "请介绍 ToolRegistry。"},
+        {"role": "assistant", "content": "ToolRegistry 是工具层拥有的工具注册表。"}
+      ],
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "expected_follow_up": true,
+      "required_rewrite_terms": ["ToolRegistry", "作用"],
+      "expected_stages": ["conversation_memory", "reference_resolution", "query_rewriter"]
+    },
+    {
+      "id": "local_query_rewrite_cleanup",
+      "query": "请在知识库里搜索后告诉我 CP2 的 Evidence Gate 有什么作用。",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": ["CP2", "Evidence Gate", "作用"],
+      "expected_stages": ["query_rewriter", "tool_execution", "evidence_gate"]
+    },
+    {
+      "id": "local_simple_plan",
+      "query": "根据知识库，CP2 阶段 Agent 层的核心目标是什么？",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": ["CP2", "Agent", "核心目标"],
+      "expected_stages": ["query_planner"],
+      "expected_sub_query_count_max": 1
+    },
+    {
+      "id": "local_comparison_plan",
+      "query": "分别说明 ToolExecutor 与 Evidence Gate 的输入、输出和职责。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["ToolExecutor", "Evidence Gate", "输入", "输出"],
+      "expected_stages": ["query_planner", "bilateral_evidence"],
+      "expected_sub_query_count_min": 2
+    },
+    {
+      "id": "local_clarification_reply",
+      "query": "我指的是 Evidence Gate。",
+      "history": [
+        {"role": "user", "content": "它有什么作用？"},
+        {"role": "assistant", "content": "你指的是哪个 CP2 组件？"}
+      ],
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "expected_follow_up": true,
+      "required_rewrite_terms": ["Evidence Gate"],
+      "expected_stages": ["conversation_memory", "clarifier", "query_rewriter"],
+      "expected_clarification_reply": true
+    },
+    {
+      "id": "local_no_relevant_context",
+      "query": "根据知识库说明 CP2 的量子交易预测模块如何实现。",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": ["CP2", "量子交易预测模块"],
+      "expected_stages": ["tool_execution", "evidence_gate", "corrective_retrieval"],
+      "expected_stop_reason": "no_relevant_context"
+    },
+    {
+      "id": "local_compound_cp1_cp2_summary_comparison",
+      "online_query": "\u5e2e\u6211\u5206\u522b\u603b\u7ed3 CP1 \u548c CP2 \u7684\u6838\u5fc3\u529f\u80fd\u94fe\u8def\uff0c\u5e76\u6bd4\u8f83\u4e24\u4e2a\u9636\u6bb5\u7684\u4e3b\u8981\u53d8\u5316\u3002",
+      "online_required_rewrite_terms": ["CP1", "CP2"],
+      "query": "帮我分别总结 CP1 和 CP2 的核心功能链路，并比较两个阶段的主要变化。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["CP1", "CP2", "功能链路", "比较"],
+      "expected_stages": ["intent_classifier", "query_planner", "parallel_retrieval", "bilateral_evidence", "answer_generation"],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    },
+    {
+      "id": "local_compound_executor_gate_dimensions",
+      "online_query": "\u5206\u522b\u5f52\u7eb3 ToolExecutor \u548c Evidence Gate \u7684\u8f93\u5165\u3001\u8f93\u51fa\u4e0e\u804c\u8d23\uff0c\u7136\u540e\u6309\u8fd9\u4e09\u4e2a\u7ef4\u5ea6\u6bd4\u8f83\u3002",
+      "online_required_rewrite_terms": ["ToolExecutor", "Evidence Gate"],
+      "query": "分别归纳 ToolExecutor 和 Evidence Gate 的输入、输出与职责，然后按这三个维度比较。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["ToolExecutor", "Evidence Gate", "输入", "输出", "职责"],
+      "expected_stages": ["query_planner", "parallel_retrieval", "bilateral_evidence", "answer_completeness"],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    },
+    {
+      "id": "local_compound_three_component_summary",
+      "online_query": "\u5206\u522b\u603b\u7ed3 ToolRegistry\u3001ToolExecutor \u548c Evidence Gate \u7684\u4f5c\u7528\uff0c\u518d\u8bf4\u660e\u4e09\u8005\u5728\u6267\u884c\u94fe\u8def\u4e2d\u7684\u8854\u63a5\u5173\u7cfb\u3002",
+      "online_required_rewrite_terms": ["ToolRegistry", "ToolExecutor", "Evidence Gate"],
+      "query": "分别总结 ToolRegistry、ToolExecutor 和 Evidence Gate 的作用，再说明三者在执行链路中的衔接关系。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["ToolRegistry", "ToolExecutor", "Evidence Gate", "衔接"],
+      "expected_stages": ["query_planner", "parallel_retrieval", "evidence_gate", "answer_generation"],
+      "expected_sub_query_count_min": 3,
+      "expected_parallel_target_count": 3
+    },
+    {
+      "id": "local_compound_contract_comparison",
+      "online_query": "\u5bf9\u6bd4 ConversationMemory \u516c\u5171\u5951\u7ea6\u548c QueryPlan \u516c\u5171\u5951\u7ea6\uff1a\u5148\u6982\u62ec\u5404\u81ea\u5b57\u6bb5\uff0c\u518d\u8bf4\u660e\u5b83\u4eec\u5982\u4f55\u914d\u5408\u3002",
+      "online_required_rewrite_terms": ["ConversationMemory", "QueryPlan"],
+      "query": "对比 ConversationMemory 公共契约和 QueryPlan 公共契约：先概括各自字段，再说明它们如何配合。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["ConversationMemory", "QueryPlan", "公共契约", "字段"],
+      "expected_stages": ["query_planner", "parallel_retrieval", "bilateral_evidence", "citation_check"],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    },
+    {
+      "id": "local_compound_gate_citation_handoff",
+      "online_query": "\u5148\u5206\u522b\u603b\u7ed3 Evidence Gate \u4e0e Citation Check\uff0c\u518d\u6bd4\u8f83\u5b83\u4eec\u7684\u8d28\u91cf\u63a7\u5236\u8fb9\u754c\u548c\u524d\u540e\u4f9d\u8d56\u3002",
+      "online_required_rewrite_terms": ["Evidence Gate", "Citation Check"],
+      "query": "先分别总结 Evidence Gate 与 Citation Check，再比较它们的质量控制边界和前后依赖。",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": ["Evidence Gate", "Citation Check", "质量控制", "依赖"],
+      "expected_stages": ["query_planner", "parallel_retrieval", "bilateral_evidence", "answer_completeness"],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    }
+  ],
+  "quality_cases": [
+    {
+      "id": "local_quality_api_flow",
+      "online_query": "\u6839\u636e\u77e5\u8bc6\u5e93\u8bf4\u660e CP2 \u7684 API \u95ee\u7b54\u8bf7\u6c42\u4ece\u8fdb\u5165\u7cfb\u7edf\u5230\u8fd4\u56de\u7b54\u6848\u4f1a\u7ecf\u8fc7\u54ea\u4e9b\u6838\u5fc3\u6b65\u9aa4\uff1f",
+      "query": "根据知识库说明 CP2 的 API 问答请求从进入系统到返回答案会经过哪些核心步骤？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["ConversationMemory", "Conversation Memory", "\u4f1a\u8bdd\u8bb0\u5fc6"],
+        ["QueryUnderstanding", "Query Understanding", "\u67e5\u8be2\u7406\u89e3"],
+        ["IntentPolicyRouter", "Policy Routing", "\u610f\u56fe\u7b56\u7565\u8def\u7531"],
+        ["ToolExecutor", "Tool Executor", "\u5de5\u5177\u6267\u884c"],
+        ["EvidenceGate", "Evidence Gate", "\u8bc1\u636e\u95e8\u7981"],
+        ["CitationChecker", "Citation Check", "\u5f15\u7528\u68c0\u67e5"]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": ["API_CONTRACT"],
+      "target_stages": ["query_understanding", "tool_execution", "evidence_gate", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_quality_query_plan",
+      "online_query": "QueryPlan \u516c\u5171\u5951\u7ea6\u5305\u542b\u54ea\u4e9b\u6838\u5fc3\u4fe1\u606f\uff0c\u4e3a\u4ec0\u4e48 AgentRunner \u8981\u76f4\u63a5\u6d88\u8d39\u5b83\uff1f",
+      "query": "QueryPlan 公共契约包含哪些核心信息，为什么 AgentRunner 要直接消费它？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["original_query"],
+        ["standalone_query"],
+        ["intent"],
+        ["needs_clarification", "clarification_question"],
+        ["sub_queries"],
+        ["filters"]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": ["query_plan_contract"],
+      "target_stages": ["query_rewriter", "query_planner", "answer_completeness", "citation_check"]
+    },
+    {
+      "id": "local_quality_tool_registry",
+      "online_query": "ToolRegistry \u7531\u54ea\u4e00\u5c42\u62e5\u6709\uff0cAgent \u5982\u4f55\u901a\u8fc7\u5b83\u53d1\u73b0\u5de5\u5177\u548c\u53c2\u6570 Schema\uff1f",
+      "query": "ToolRegistry 由哪一层拥有，Agent 如何通过它发现工具和参数 Schema？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["Toolset", "工具层"],
+        ["ToolRegistryAdapter"],
+        ["Schema", "parameters"],
+        ["get_tool", "get_all_tools"],
+        ["不维护第二份", "second tool dictionary"]
+      ],
+      "min_fact_groups": 4,
+      "min_citations": 1,
+      "expected_doc_names": ["tool_registry"],
+      "target_stages": ["tool_registry_adapter", "tool_execution", "citation_check"]
+    },
+    {
+      "id": "local_quality_tool_executor",
+      "online_query": "ToolExecutor \u63a5\u6536\u4ec0\u4e48\u8f93\u5165\uff0c\u5982\u4f55\u6821\u9a8c\u5e76\u8fd4\u56de\u7ed3\u6784\u5316\u6267\u884c\u7ed3\u679c\uff1f",
+      "query": "ToolExecutor 接收什么输入，如何校验并返回结构化执行结果？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["tool_call_id"],
+        ["tool_name"],
+        ["arguments", "参数"],
+        ["JSON Schema", "Schema"],
+        ["ToolExecutionResult"],
+        ["Evidence"]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": ["tool_executor"],
+      "target_stages": ["tool_execution", "evidence_normalization", "citation_check"]
+    },
+    {
+      "id": "local_quality_evidence_gate",
+      "online_query": "Evidence Gate \u5982\u4f55\u8fc7\u6ee4\u3001\u53bb\u91cd\u5e76\u9488\u5bf9\u4e0d\u540c\u610f\u56fe\u5224\u65ad\u8bc1\u636e\u662f\u5426\u53ef\u7528\u4e8e\u56de\u7b54\uff1f",
+      "query": "Evidence Gate 如何过滤、去重并针对不同意图判断证据是否可用于回答？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["MIN_RETRIEVAL_SCORE", "score"],
+        ["doc_id", "chunk_id"],
+        ["deduplicate", "去重"],
+        ["single_fact"],
+        ["topic_coverage"],
+        ["bilateral_coverage"]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": ["evidence_gate"],
+      "target_stages": ["evidence_gate", "corrective_retrieval", "answer_completeness"]
+    },
+    {
+      "id": "local_quality_corrective_retrieval",
+      "online_query": "\u7b2c\u4e00\u6b21 Evidence Gate \u5224\u65ad\u8bc1\u636e\u4e0d\u8db3\u540e\uff0cCorrectiveRetrievalPlanner \u4f1a\u5982\u4f55\u9650\u5236\u5e76\u8c03\u6574\u7b2c\u4e8c\u6b21\u68c0\u7d22\uff1f",
+      "query": "第一次 Evidence Gate 判断证据不足后，CorrectiveRetrievalPlanner 会如何限制并调整第二次检索？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["second retrieval", "第二次检索"],
+        ["at most once", "最多一次", "仅一次"],
+        ["standalone_query", "standalone query", "独立查询"],
+        ["missing_targets", "missing targets", "缺失目标"],
+        ["filters", "filter constraints", "过滤条件"],
+        ["no_relevant_context", "no relevant context", "无相关上下文"]
+      ],
+      "min_fact_groups": 4,
+      "min_citations": 1,
+      "expected_doc_names": ["corrective_retrieval", "evidence_gate"],
+      "target_stages": ["evidence_gate", "corrective_retrieval", "stop_reason"]
+    },
+    {
+      "id": "local_quality_citation_check",
+      "online_query": "CitationChecker \u4f1a\u68c0\u67e5\u54ea\u4e9b\u5f15\u7528\u4e00\u81f4\u6027\u89c4\u5219\uff0c\u54ea\u4e9b\u60c5\u51b5\u4f1a\u5224\u5b9a\u65e0\u6548\uff1f",
+      "query": "CitationChecker 会检查哪些引用一致性规则，哪些情况会判定无效？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["[n]", "marker"],
+        ["citation_id"],
+        ["contiguous", "连续"],
+        ["doc_id"],
+        ["chunk_id"],
+        ["accepted Evidence", "已接受 Evidence"]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": ["citation_check"],
+      "target_stages": ["answer_formatter", "citation_check"]
+    },
+    {
+      "id": "local_quality_memory_clarification",
+      "online_query": "ConversationMemory \u4fdd\u5b58\u54ea\u4e9b\u4f1a\u8bdd\u4fe1\u606f\uff0c\u5b83\u600e\u6837\u652f\u6301\u591a\u8f6e\u8ffd\u95ee\u548c\u5f85\u6f84\u6e05\u72b6\u6001\uff1f",
+      "query": "ConversationMemory 保存哪些会话信息，它怎样支持多轮追问和待澄清状态？",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        ["session_id"],
+        ["messages", "历史消息"],
+        ["summary", "摘要"],
+        ["pending clarification", "待澄清"],
+        ["is_follow_up", "多轮追问"]
+      ],
+      "min_fact_groups": 4,
+      "min_citations": 1,
+      "expected_doc_names": ["conversation_memory_contract"],
+      "target_stages": ["conversation_memory", "reference_resolution", "clarifier", "query_rewriter"]
+    }
+  ]
+}

@@ -202,3 +202,30 @@ read-only adapter:
 The OpenAI function-calling representation is available internally through
 `registry.to_openai_schemas()` and is intentionally separate from this public
 metadata response. See `docs/cp2/tool_registry.md` for the complete contract.
+
+## Service Health And Readiness
+
+`GET /health` remains the lightweight liveness endpoint and returns:
+
+```json
+{"status": "ok"}
+```
+
+`GET /ready` reports whether the Tool Layer completed retrieval cold-start
+loading. Startup invokes `SearchTool.search()` directly, so this internal
+preload does not enter intent classification, clarification, query planning, or
+answer generation and does not consume a conversation turn.
+
+Ready response:
+
+```json
+{
+  "status": "ready",
+  "retrieval_ready": true,
+  "detail": ""
+}
+```
+
+If local embedding, BM25, or Milvus initialization fails, the service remains
+available for diagnostics and returns `status="degraded"`,
+`retrieval_ready=false`, and a non-secret error summary in `detail`.

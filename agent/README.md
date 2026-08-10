@@ -30,6 +30,7 @@ Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为�
 
 - FastAPI 服务入口
 - `GET /health`
+- `GET /ready` 检索冷启动就绪状态
 - `POST /api/chat`
 - ChatRequest / ChatResponse / Citation 接口契约
 - Mock Retrieval
@@ -130,7 +131,18 @@ DEFAULT_RETRIEVAL_MODE=hybrid
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
+# Optional: use a faster model only for rewrite + retrieval planning.
+# Empty or omitted keeps the existing single-model behavior.
+QUERY_PREPARATION_MODEL=
+ANSWER_FAST_MODEL=
+ANSWER_FAST_MODEL_THINKING=false
 QUERY_UNDERSTANDING_ENABLED=true
+UNIFIED_QUERY_UNDERSTANDING_ENABLED=false
+CASCADED_QUERY_UNDERSTANDING_ENABLED=false
+HYBRID_INTENT_ROUTER_ENABLED=false
+INTENT_EMBEDDING_MODEL_PATH=
+INTENT_EMBEDDING_THRESHOLD=0.72
+INTENT_EMBEDDING_MARGIN=0.08
 QUERY_REWRITE_ENABLED=true
 CLARIFICATION_ENABLED=true
 MEMORY_ENABLED=true
@@ -138,6 +150,23 @@ MAX_MEMORY_MESSAGES=10
 MAX_AGENT_ITERATIONS=5
 MAX_REPEATED_TOOL_CALLS=2
 ```
+
+`UNIFIED_QUERY_UNDERSTANDING_ENABLED` 默认关闭。开启后，Agent 会用一次
+LLM 调用联合生成意图、澄清判断、独立查询和检索子查询；解析、超时或契约
+校验失败时自动回退到原有的 IntentClassifier → Clarifier → QueryRewriter →
+QueryPlanner 链路。
+
+`CASCADED_QUERY_UNDERSTANDING_ENABLED` 默认关闭。开启后，意图识别保持独立；
+明确问题由规则化 ClarificationGate 放行，疑似缺少指代来源的问题才调用
+Clarifier；检索意图再由一次 QueryPreparation 调用联合完成指代消解、查询
+重写和子查询规划。准备阶段失败时只回退 QueryRewriter 与 QueryPlanner。
+如果级联与四合一开关同时开启，级联模式优先。
+
+`HYBRID_INTENT_ROUTER_ENABLED` 默认关闭。开启后，无历史的首轮问题依次经过
+高精度规则、Embedding样例分类和原LLM分类器兜底；带历史的问题直接使用原
+LLM分类器，以保留follow-up和clarification reply判断。Embedding模型只从
+`INTENT_EMBEDDING_MODEL_PATH` 本地路径加载，不会隐式下载。最高相似度和
+第一、第二名差值必须分别达到threshold与margin，否则回退LLM。
 
 本地 Ollama 启动后，可通过兼容 OpenAI Chat Completions 的
 `/v1/chat/completions` 接口接入 `llama3.1`，通常不需要配置
