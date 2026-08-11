@@ -12,6 +12,13 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent
 os.chdir(str(project_root))
 
+# Permanently enforce offline mode for HuggingFace & Transformers (Zero network connections/downloads)
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+os.environ["DISABLE_SYMLINKS_WARNING"] = "1"
+os.environ["LOCAL_EMBEDDING_MODEL_PATH"] = str(project_root / "data-persistence" / "models" / "bge-small-en-v1.5")
+
 # Standard paths for PYTHONPATH
 python_paths = [
     str(project_root),
@@ -193,6 +200,11 @@ cleanup_port(8000)
 print("Starting Agent Backend service on port 8000...")
 agent_env = os.environ.copy()
 agent_env["PYTHONPATH"] = env_pythonpath
+agent_env["HF_HUB_OFFLINE"] = "1"
+agent_env["TRANSFORMERS_OFFLINE"] = "1"
+agent_env["HF_DATASETS_OFFLINE"] = "1"
+agent_env["DISABLE_SYMLINKS_WARNING"] = "1"
+agent_env["LOCAL_EMBEDDING_MODEL_PATH"] = str(project_root / "data-persistence" / "models" / "bge-small-en-v1.5")
 agent_log = open(project_root / "agent" / "agent_stdout.log", "w", encoding="utf-8")
 agent_err = open(project_root / "agent" / "agent_stderr.log", "w", encoding="utf-8")
 

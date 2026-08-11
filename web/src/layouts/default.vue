@@ -9,10 +9,19 @@ import { useChatActions } from '../composables/useChatActions'
 import { useFavorites } from '../composables/useFavorites'
 import { useCsrf } from '../composables/useCsrf'
 import ModalSelectTopic from '../components/ModalSelectTopic.vue'
+import ModalDashboard from '../components/ModalDashboard.vue'
+import ModalSettings from '../components/ModalSettings.vue'
 
 const router = useRouter()
 const route = useRoute()
-const { loggedIn, openInPopup, fetchSession } = useUserSession()
+const { loggedIn, fetchSession } = useUserSession()
+
+const showDashboardModal = ref(false)
+const showSettingsModal = ref(false)
+
+function openDashboard() {
+  window.open('/dashboard', '_blank')
+}
 const { chats, groups, fetchChats } = useChats()
 const { renameChat, deleteChat, createTopicForChat, addChatToTopic } = useChatActions()
 const { csrf, headerName } = useCsrf()
@@ -413,19 +422,29 @@ defineShortcuts({
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu
-          v-if="loggedIn"
-          :collapsed="collapsed"
-        />
-        <UButton
-          v-else
-          :label="collapsed ? '' : 'Sign in with GitHub'"
-          icon="i-simple-icons:github"
-          color="neutral"
-          variant="ghost"
-          class="w-full"
-          @click="openInPopup('/auth/github')"
-        />
+        <div class="flex items-center gap-2.5">
+          <!-- Dashboard Circle Button -->
+          <UButton
+            icon="i-lucide-layout-dashboard"
+            color="neutral"
+            variant="none"
+            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-emerald-400 hover:bg-zinc-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            aria-label="Dashboard"
+            :ui="{ leadingIcon: 'w-5 h-5' }"
+            @click="openDashboard"
+          />
+
+          <!-- Settings Circle Button -->
+          <UButton
+            icon="i-lucide-settings"
+            color="neutral"
+            variant="none"
+            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-sky-400 hover:bg-zinc-800 hover:border-sky-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            aria-label="Settings"
+            :ui="{ leadingIcon: 'w-5 h-5' }"
+            @click="showSettingsModal = true"
+          />
+        </div>
       </template>
     </UDashboardSidebar>
 
@@ -454,6 +473,18 @@ defineShortcuts({
       :topics="topics"
       @select-topic="handleSelectTopicForChat"
       @create-new-topic="targetChatIdForTopicModal ? createTopicForChat(targetChatIdForTopicModal) : null"
+    />
+
+    <!-- Modal for System Dashboard -->
+    <ModalDashboard
+      v-if="showDashboardModal"
+      v-model:open="showDashboardModal"
+    />
+
+    <!-- Modal for System Settings -->
+    <ModalSettings
+      v-if="showSettingsModal"
+      v-model:open="showSettingsModal"
     />
   </UDashboardGroup>
 </template>

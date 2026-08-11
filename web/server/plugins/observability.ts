@@ -16,24 +16,15 @@ export default (nitroApp: any) => {
     const path = getRequestPath(event)
 
     event.__traceId = traceId
-    event.__observabilityStart = start
-    event.__observabilityMethod = method
-    event.__observabilityPath = path
-
     logger.debug({ traceId, method, path }, 'request started')
-  })
 
-  nitroApp.hooks.hook('afterResponse', (event: any) => {
-    const start = event.__observabilityStart
-    const traceId = event.__traceId || 'unknown'
-    const method = event.__observabilityMethod || 'GET'
-    const path = event.__observabilityPath || '/'
-
-    if (start) {
-      const duration = Date.now() - start
-      const statusCode = event.node.res.statusCode || 200
-      recordRequest(method, path, statusCode, duration)
-      logger.info({ traceId, method, path, statusCode, duration }, 'request completed')
+    if (event.node?.res) {
+      event.node.res.once('finish', () => {
+        const duration = Date.now() - start
+        const statusCode = event.node.res.statusCode || 200
+        recordRequest(method, path, statusCode, duration)
+        logger.info({ traceId, method, path, statusCode, duration }, 'request completed')
+      })
     }
   })
 }

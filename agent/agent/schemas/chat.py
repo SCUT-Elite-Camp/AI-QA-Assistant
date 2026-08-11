@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
     retrieval_mode: Literal["vector", "bm25", "hybrid"] = "hybrid"
     topic_id: Optional[str] = None
     weight_mode: Optional[Literal["deeper", "auto", "wider"]] = "auto"
+    soul_content: Optional[str] = None
     topic_doc_ids: Optional[list[str]] = None
     topic_titles: Optional[list[str]] = None
     consecutive_no_new_docs_count: int = 0

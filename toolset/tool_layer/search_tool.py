@@ -104,7 +104,6 @@ def _hybrid_search(
             rrf_score += 1.0 / (rrf_k + bm25_rank[key])
 
         merged[key]["score"] = rrf_score
-        merged[key]["vector_score"] = vector_scores.get(key, 0.0)
         merged[key]["bm25_score"] = bm25_scores.get(key, 0.0)
 
     rows = list(merged.values())

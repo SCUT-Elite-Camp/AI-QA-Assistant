@@ -10,7 +10,7 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { MODELS } from '../../../../shared/utils/models'
 import { logger } from '../../../utils/logger'
 import { recordAiCall } from '../../../utils/metrics'
-import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
+import { syncTopicToDisk, ensureTopicDir, loadTopicFromDisk, syncAllTopicDocuments } from '../../../utils/topicStorage'
 
 
 
@@ -92,7 +92,7 @@ export default defineHandler(async (event) => {
   const messageCount = (chat.messages || []).length
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
-  if (lastMessage?.role === 'user' && messages.length > 1) {
+  if (lastMessage?.role === 'user') {
     await db.insert(tables.messages).values({
       id: lastMessage.id,
       chatId: id as string,
@@ -102,10 +102,15 @@ export default defineHandler(async (event) => {
   }
 
   const abortController = new AbortController()
-  event.runtime?.node?.req?.on('close', () => abortController.abort())
+  const timeoutId = setTimeout(() => abortController.abort(), 90000)
+  event.runtime?.node?.req?.on('close', () => {
+    clearTimeout(timeoutId)
+    abortController.abort()
+  })
 
   const stream = createUIMessageStream({
     onError: (err: any) => {
+      clearTimeout(timeoutId)
       console.error('[web-stream] onError occurred:', err)
       return err.message || 'An error occurred.'
     },
@@ -117,14 +122,19 @@ export default defineHandler(async (event) => {
         let topicInfo: any = null
         let topicDocIds: string[] = []
         let topicTitles: string[] = []
+        let soulContent: string | undefined = undefined
+
         if (chat.topicId) {
           topicInfo = await db.query.topics.findFirst({
             where: eq(tables.topics.id, chat.topicId)
           })
-          if (topicInfo) {
+          const diskData = loadTopicFromDisk(chat.topicId)
+          soulContent = topicInfo?.soulContent || diskData?.soulContent || undefined
+
+          if (topicInfo || diskData) {
             const topicDocs = await db.query.topicDocuments.findMany({
               where: and(
-                eq(tables.topicDocuments.topicId, topicInfo.id),
+                eq(tables.topicDocuments.topicId, chat.topicId),
                 eq(tables.topicDocuments.isRemoved, false)
               )
             })
@@ -148,7 +158,7 @@ export default defineHandler(async (event) => {
             retrieval_mode: "hybrid",
             topic_id: chat.topicId || undefined,
             weight_mode: topicInfo?.weightMode || "auto",
-            soul_content: topicInfo?.soulContent || undefined,
+            soul_content: soulContent || undefined,
             topic_doc_ids: topicDocIds,
             topic_titles: topicTitles,
             consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
@@ -156,13 +166,18 @@ export default defineHandler(async (event) => {
           }),
           signal: abortController.signal
         })
+        clearTimeout(timeoutId)
 
         if (!agentRes.ok) {
           throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
         }
 
         const agentData = await agentRes.json()
-        recordAiCall(Date.now() - aiCallStart)
+        const aiDuration = Date.now() - aiCallStart
+        const rawAnswer = agentData.answer || agentData.message || ""
+        const tokensCount = Math.max(20, Math.round((rawAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
+        const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
+        recordAiCall(aiDuration, ttftMs, tokensCount)
 
         if (agentData.chat_title) {
           await db.update(tables.chats).set({ title: agentData.chat_title }).where(eq(tables.chats.id, id as string))
@@ -192,7 +207,6 @@ export default defineHandler(async (event) => {
           return
         }
 
-        const rawAnswer = agentData.answer || agentData.message || ""
         const citationsList: any[] = agentData.citations || []
 
         // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
@@ -253,13 +267,8 @@ export default defineHandler(async (event) => {
               await db.update(tables.topics)
                 .set({ consecutiveNoNewDocsCount: newCount })
                 .where(eq(tables.topics.id, chat.topicId))
-
-              const latestTopic = await db.query.topics.findFirst({ where: eq(tables.topics.id, chat.topicId) })
-              const latestDocs = await db.query.topicDocuments.findMany({ where: eq(tables.topicDocuments.topicId, chat.topicId) })
-              if (latestTopic) {
-                syncTopicToDisk(latestTopic.id, latestTopic, latestTopic.soulContent, latestDocs)
-              }
             }
+            await syncAllTopicDocuments(db, chat.topicId)
           } catch (docErr) {
             console.error('[TopicDocPoolUpdateError]', docErr)
           }
@@ -296,6 +305,8 @@ export default defineHandler(async (event) => {
             source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
             chunk_text: cit.snippet || '',
             score: cit.score ?? null,
+            similarity: cit.vector_score ?? cit.similarity_score ?? null,
+            vector_score: cit.vector_score ?? null
           }))
         })
 
@@ -327,6 +338,11 @@ export default defineHandler(async (event) => {
       } catch (err: any) {
         console.error('[web-post] error in agent call:', err)
         const responseId = `err-msg-${Date.now()}`
+        const isTimeout = err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timeout')
+        const msg = isTimeout 
+          ? `目前远端大模型响应超时，但知识库检索引擎仍正常运行。请稍后再试或精简提问。`
+          : `响应生成受阻：${err.message || '网络连接中断'}`
+
         writer.write({
           type: 'text-start',
           id: responseId
@@ -334,7 +350,7 @@ export default defineHandler(async (event) => {
         writer.write({
           type: 'text-delta',
           id: responseId,
-          delta: `Failed to retrieve answer from Agent Layer: ${err.message}`
+          delta: msg
         })
         writer.write({
           type: 'text-end',

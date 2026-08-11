@@ -78,6 +78,7 @@ export const topicDocuments = sqliteTable('topic_documents', {
   lastRecalledAt: integer('last_recalled_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   score: integer('score'),
   isRemoved: integer('is_removed', { mode: 'boolean' }).notNull().default(false),
+  isUserUploaded: integer('is_user_uploaded', { mode: 'boolean' }).notNull().default(false),
   ...timestamps
 }, table => [
   index('topic_docs_topic_id_idx').on(table.topicId),

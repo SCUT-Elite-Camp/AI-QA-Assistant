@@ -80,6 +80,7 @@ class AgentRunner:
         top_k: int = 5,
         max_iterations: int | None = None,
         is_first_message: bool = False,
+        soul_content: str | None = None,
     ) -> AgentRunResult:
         """Execute a bounded Agent run.
 
@@ -115,7 +116,7 @@ class AgentRunner:
         state = AgentState(
             trace_id=trace_id,
             query_plan=query_plan,
-            messages=self._build_messages(query_plan, history or [], is_first_message=is_first_message),
+            messages=self._build_messages(query_plan, history or [], is_first_message=is_first_message, soul_content=soul_content),
         )
         schemas = self._tool_schemas(policy)
         last_fingerprint: str | None = None
@@ -421,16 +422,25 @@ class AgentRunner:
         query_plan: QueryPlan,
         history: list[dict[str, Any]],
         is_first_message: bool = False,
+        soul_content: str | None = None,
     ) -> list[dict[str, Any]]:
         title_directive = (
             "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
             if is_first_message
             else ""
         )
+        soul_directive = (
+            f"\n\n【话题归属认知 (Topic Cognition - Soul.md)】:\n"
+            f"当前对话运行在特定话题空间（Topic Workspace）内。以下是本话题的核心技术认知、领域实体与边界指引。在回答与使用检索工具时，请务必紧密结合此话题背景进行定位：\n"
+            f"{soul_content}\n"
+            if soul_content and soul_content.strip()
+            else ""
+        )
         system_content = (
             f"{SYSTEM_ROLE}\n\n"
             "你可以使用提供的工具获取回答所需的证据。"
             "工具返回后，基于观察结果给出最终答案；不要编造不存在的证据。\n\n"
+            f"{soul_directive}\n"
             f"检索用独立查询：{query_plan.standalone_query}\n\n"
             f"回答约束：\n{ANSWER_RULES}"
             f"{title_directive}"

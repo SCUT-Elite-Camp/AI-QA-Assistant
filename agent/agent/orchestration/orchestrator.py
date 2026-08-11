@@ -86,6 +86,7 @@ class AgentOrchestrator:
             mode=retrieval_mode,
             top_k=top_k,
             is_first_message=is_first,
+            soul_content=request.soul_content,
         )
         return OrchestrationResult(
             query_plan=plan,
@@ -128,9 +129,17 @@ class AgentOrchestrator:
         if query_plan is not None:
             return self._merge_request_constraints(request, query_plan)
 
+        effective_history = list(history)
+        if not history and request.soul_content:
+            # Inject short topic summary context hint into history for query rewriter / planner
+            effective_history.insert(0, {
+                "role": "user",
+                "content": f"[Topic Workspace Cognition Context]:\n{request.soul_content[:600]}"
+            })
+
         analyzed_plan = self.query_understanding.analyze(
             request.query,
-            history,
+            effective_history,
             filters=request.filters,
         )
         return self._merge_request_constraints(request, analyzed_plan)

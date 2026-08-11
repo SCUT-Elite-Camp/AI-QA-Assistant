@@ -25,4 +25,6 @@ data-persistence/data-persistence/
 *.log
 *.db
 *.sqlite
+data-persistence/models/
+eval/logs/
 tmp_test_chat.py

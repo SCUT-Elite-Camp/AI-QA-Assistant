@@ -4,7 +4,7 @@ import { readValidatedBody } from 'nitro/h3'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { requestTopicSummarizerFromPersistence } from '../../../utils/soul'
-import { syncTopicToDisk, loadTopicFromDisk } from '../../../utils/topicStorage'
+import { syncTopicToDisk, loadTopicFromDisk, syncAllTopicDocuments } from '../../../utils/topicStorage'
 
 export default defineHandler(async (event) => {
   const { chatId: inputChatId, title: customTitle } = await readValidatedBody(event, z.object({
@@ -119,6 +119,9 @@ export default defineHandler(async (event) => {
 
   // Attach chat to topic
   await db.update(tables.chats).set({ topicId: topic.id }).where(eq(tables.chats.id, chat.id))
+
+  // Immediately extract and record all retrieved document chunks from chat messages into Topic Document Pool
+  await syncAllTopicDocuments(db, topicId)
 
   // Trigger Data Persistence Layer Infrastructure Summarizer Service asynchronously in background
   requestTopicSummarizerFromPersistence(topicId, discussionText, cleanCustomTitle).then(async (result) => {

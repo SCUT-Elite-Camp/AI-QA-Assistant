@@ -54,7 +54,8 @@ export function useDrizzle() {
       try { client.execute('ALTER TABLE topics ADD COLUMN tags TEXT;') } catch (e) {}
       try { client.execute('ALTER TABLE topics ADD COLUMN status TEXT NOT NULL DEFAULT "ready";') } catch (e) {}
       try { client.execute('ALTER TABLE topics ADD COLUMN description TEXT;') } catch (e) {}
-      client.execute('CREATE TABLE IF NOT EXISTS topic_documents (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, doc_id TEXT NOT NULL, title TEXT NOT NULL, source_url TEXT, snippet TEXT, recall_count INTEGER NOT NULL DEFAULT 1, last_recalled_at INTEGER NOT NULL, score REAL, is_removed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
+      client.execute('CREATE TABLE IF NOT EXISTS topic_documents (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, doc_id TEXT NOT NULL, title TEXT NOT NULL, source_url TEXT, snippet TEXT, recall_count INTEGER NOT NULL DEFAULT 1, last_recalled_at INTEGER NOT NULL, score REAL, is_removed INTEGER NOT NULL DEFAULT 0, is_user_uploaded INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
+      try { client.execute('ALTER TABLE topic_documents ADD COLUMN is_user_uploaded INTEGER NOT NULL DEFAULT 0;') } catch (e) {}
       client.execute('CREATE TABLE IF NOT EXISTS message_feedbacks (id TEXT PRIMARY KEY, chat_id TEXT NOT NULL, message_id TEXT NOT NULL, is_favorite INTEGER NOT NULL DEFAULT 0, suggestion_text TEXT, created_at INTEGER NOT NULL)')
     } catch (e) {
       // Ignore

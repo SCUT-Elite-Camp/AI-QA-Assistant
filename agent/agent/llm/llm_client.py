@@ -14,14 +14,14 @@ class LLMClient(BaseLLM):
         msg = self.chat(messages)
         return (msg.get("content") or "").strip()
 
-    def chat(self, messages: list[dict], tools: list[dict] = None) -> dict:
+    def chat(self, messages: list[dict], tools: list[dict] = None, temperature: float = None, max_tokens: int = None, **kwargs) -> dict:
         """Calls the OpenAI-compatible chat/completions endpoint with messages and tools."""
         endpoint = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
         payload = {
             "model": settings.LLM_MODEL,
             "messages": messages,
-            "temperature": settings.LLM_TEMPERATURE,
-            "max_tokens": settings.LLM_MAX_TOKENS,
+            "temperature": temperature if temperature is not None else settings.LLM_TEMPERATURE,
+            "max_tokens": max_tokens if max_tokens is not None else settings.LLM_MAX_TOKENS,
         }
         if tools:
             payload["tools"] = tools

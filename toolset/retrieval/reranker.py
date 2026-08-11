@@ -27,14 +27,28 @@ class CrossEncoderReranker:
     @property
     def model(self) -> Any:
         if self._model is None:
+            import os
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
+            os.environ["HF_DATASETS_OFFLINE"] = "1"
             from sentence_transformers import CrossEncoder
 
-            self._model = CrossEncoder(
-                self.model_id,
-                revision=self.revision,
-                max_length=self.max_length,
-                device=self.device,
-            )
+            try:
+                self._model = CrossEncoder(
+                    self.model_id,
+                    revision=self.revision,
+                    max_length=self.max_length,
+                    device=self.device,
+                    local_files_only=True,
+                )
+            except Exception:
+                # If pinned revision is not local, try local loading without revision
+                self._model = CrossEncoder(
+                    self.model_id,
+                    max_length=self.max_length,
+                    device=self.device,
+                    local_files_only=True,
+                )
         return self._model
 
     def rerank(

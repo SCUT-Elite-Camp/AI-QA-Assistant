@@ -23,11 +23,14 @@ import DocumentModal from '../../components/chat/DocumentModal.vue'
 import SoulModal from '../../components/chat/SoulModal.vue'
 import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
+import QuickNavDial from '../../components/chat/QuickNavDial.vue'
+import HitRateDrawer from '../../components/chat/HitRateDrawer.vue'
 import type { Vote } from '../../../server/utils/drizzle'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
 const toast = useToast()
+const showHitRateDrawer = ref(false)
 const currentWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
@@ -467,6 +470,22 @@ onMounted(() => {
             :visibility="visibility"
             @update:visibility="visibility = $event"
           />
+
+          <template #right-end>
+            <!-- Hit Rate Monitor Button at the absolute far right top navbar (Solid White Icon) -->
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-bar-chart-3"
+              size="sm"
+              title="检索命中率监控 (Hit Rate)"
+              :class="[
+                'cursor-pointer transition-colors text-zinc-100 dark:text-white',
+                showHitRateDrawer ? 'bg-zinc-800 text-emerald-400 font-bold' : 'hover:text-white hover:bg-zinc-800/80'
+              ]"
+              @click="showHitRateDrawer = !showHitRateDrawer"
+            />
+          </template>
         </Navbar>
       </div>
     </template>
@@ -547,12 +566,14 @@ onMounted(() => {
               </template>
 
               <template #content="{ message }">
-                <ChatMessageContent
-                  :message="message"
-                  :editing="isOwner && editingMessageId === message.id"
-                  @save="saveEdit"
-                  @cancel-edit="cancelEdit"
-                />
+                <div :id="`msg-${message.id}`" :data-message-id="message.id" class="w-full">
+                  <ChatMessageContent
+                    :message="message"
+                    :editing="isOwner && editingMessageId === message.id"
+                    @save="saveEdit"
+                    @cancel-edit="cancelEdit"
+                  />
+                </div>
               </template>
 
               <template
@@ -646,6 +667,14 @@ onMounted(() => {
           </UContainer>
         </div>
 
+        <!-- In-Flow Right Side Panel Window for Hit Rate Monitoring (Same plane layout, non-overlay) -->
+        <HitRateDrawer
+          v-if="showHitRateDrawer"
+          :open="showHitRateDrawer"
+          :messages="chat.messages"
+          @update:open="showHitRateDrawer = $event"
+        />
+
         <!-- In-Flow Right Side Panel for Selection Q&A (Same plane layout, non-overlay) -->
         <SelectionDrawer
           v-if="showSelectionDrawer"
@@ -657,6 +686,9 @@ onMounted(() => {
           @update:open="showSelectionDrawer = $event"
           @convert-to-branch="handleCreateBranch"
         />
+
+        <!-- Right Semi-Circular Quick Navigation Dial Widget (Attached to Dark Gray Chat Panel Edge, hidden when HitRate side drawer is open) -->
+        <QuickNavDial v-if="!showHitRateDrawer" :messages="chat.messages" />
       </div>
     </template>
   </UDashboardPanel>
