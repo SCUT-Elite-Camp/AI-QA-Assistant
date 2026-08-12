@@ -315,6 +315,22 @@ def test_simple_knowledge_answer_uses_fast_model_after_retrieval() -> None:
     assert all("tool_calls" not in message for message in answer_messages)
 
 
+def test_answer_evidence_prioritizes_directly_named_contract() -> None:
+    evidence = [
+        {"title": "cp1_cp2_architecture_overview", "chunk_id": "overview"},
+        {"title": "conversation_memory_contract", "chunk_id": "contract"},
+        {"title": "meeting_minutes", "chunk_id": "meeting"},
+    ]
+
+    ranked = AgentRunner._prioritize_evidence_for_answer(
+        "Which ConversationMemory field identifies a session?",
+        evidence,
+    )
+
+    assert [item["chunk_id"] for item in ranked] == ["contract", "overview", "meeting"]
+    assert {item["chunk_id"] for item in ranked} == {"overview", "contract", "meeting"}
+
+
 def test_comparison_answer_stays_on_complex_model() -> None:
     search = RecordingSearchTool()
     planner = ScriptedLLM(

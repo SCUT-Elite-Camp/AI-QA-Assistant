@@ -135,12 +135,130 @@ class HybridIntentRouter:
         if self.enabled:
             self._ensure_example_vectors()
 
+    def classify_local(
+        self,
+        query: str,
+        *,
+        default_intent: QueryIntent = QueryIntent.KNOWLEDGE_QA,
+    ) -> IntentResult:
+        """Classify without ever delegating to the online LLM fallback."""
+        normalized = query.strip()
+        rule_intent = self._rule_intent(normalized) if self.enabled else None
+        if rule_intent is not None:
+            return IntentResult(
+                intent=rule_intent,
+                confidence=1.0,
+                reason="high_precision_rule_local_only",
+            )
+        if self.enabled:
+            try:
+                prediction = self._embedding_intent(normalized)
+            except Exception as exc:
+                self.logger.warning(
+                    "[HYBRID_INTENT] source=embedding action=local_default "
+                    "error=%s query=%s",
+                    exc.__class__.__name__,
+                    normalized,
+                )
+            else:
+                if prediction is not None:
+                    intent, score, score_margin = prediction
+                    return IntentResult(
+                        intent=intent,
+                        confidence=max(0.0, min(1.0, score)),
+                        reason=(
+                            f"embedding_local_only score={score:.3f} "
+                            f"margin={score_margin:.3f}"
+                        ),
+                    )
+        return IntentResult(
+            intent=default_intent,
+            confidence=0.5,
+            reason="local_only_parent_intent_fallback",
+        )
+
+    def classify_local_batch(
+        self,
+        queries: list[str],
+        *,
+        default_intent: QueryIntent = QueryIntent.KNOWLEDGE_QA,
+    ) -> list[IntentResult]:
+        """Classify sub-queries in one local embedding batch, without online I/O."""
+        results: list[IntentResult | None] = [None] * len(queries)
+        pending_indexes: list[int] = []
+        pending_queries: list[str] = []
+        for index, query in enumerate(queries):
+            normalized = query.strip()
+            rule_intent = self._rule_intent(normalized) if self.enabled else None
+            if rule_intent is not None:
+                results[index] = IntentResult(
+                    intent=rule_intent,
+                    confidence=1.0,
+                    reason="high_precision_rule_local_only",
+                )
+            else:
+                pending_indexes.append(index)
+                pending_queries.append(normalized)
+
+        predictions: list[tuple[QueryIntent, float, float] | None] = []
+        if pending_queries and self.enabled:
+            try:
+                self._ensure_example_vectors()
+                predictions = [
+                    self._prediction_from_vector(vector)
+                    for vector in self.encoder.encode(pending_queries)
+                ]
+            except Exception as exc:
+                self.logger.warning(
+                    "[HYBRID_INTENT] source=embedding_batch action=local_default "
+                    "error=%s count=%d",
+                    exc.__class__.__name__,
+                    len(pending_queries),
+                )
+                predictions = [None] * len(pending_queries)
+        else:
+            predictions = [None] * len(pending_queries)
+
+        for index, prediction in zip(pending_indexes, predictions):
+            if prediction is None:
+                results[index] = IntentResult(
+                    intent=default_intent,
+                    confidence=0.5,
+                    reason="local_only_parent_intent_fallback",
+                )
+                continue
+            intent, score, score_margin = prediction
+            results[index] = IntentResult(
+                intent=intent,
+                confidence=max(0.0, min(1.0, score)),
+                reason=(
+                    f"embedding_batch_local_only score={score:.3f} "
+                    f"margin={score_margin:.3f}"
+                ),
+            )
+        return [
+            result
+            if result is not None
+            else IntentResult(
+                intent=default_intent,
+                confidence=0.5,
+                reason="local_only_parent_intent_fallback",
+            )
+            for result in results
+        ]
+
     def _embedding_intent(
         self,
         query: str,
     ) -> tuple[QueryIntent, float, float] | None:
         self._ensure_example_vectors()
         query_vector = self.encoder.encode([query])[0]
+        return self._prediction_from_vector(query_vector)
+
+    def _prediction_from_vector(
+        self,
+        query_vector: list[float],
+    ) -> tuple[QueryIntent, float, float] | None:
         best_by_intent: dict[QueryIntent, float] = {}
         for label, vector in zip(self._example_labels, self._example_vectors or []):
             score = self._cosine(query_vector, vector)

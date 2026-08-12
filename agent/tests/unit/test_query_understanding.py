@@ -222,6 +222,39 @@ def test_cascaded_path_uses_intent_gate_and_query_preparation() -> None:
     planner.enrich.assert_not_called()
 
 
+def test_cascaded_simple_single_target_bypasses_query_preparation() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    classifier.classify.return_value = IntentResult(
+        intent=QueryIntent.KNOWLEDGE_QA,
+        confidence=0.99,
+        is_follow_up=False,
+        is_clarification_reply=False,
+    )
+    gate = Mock()
+    gate.evaluate.return_value = ClarificationDecision(
+        needs_clarification=False,
+        reason="deterministic_clear_query",
+    )
+    preparation = Mock()
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        clarification_gate=gate,
+        query_preparation=preparation,
+        cascaded_enabled=True,
+    )
+
+    plan = service.analyze("Which system layer owns the ToolRegistry?", [])
+
+    assert plan.standalone_query == "Which system layer owns the ToolRegistry?"
+    assert plan.sub_queries == []
+    preparation.prepare.assert_not_called()
+    rewriter.rewrite.assert_not_called()
+    planner.enrich.assert_not_called()
+
+
 def test_cascaded_non_retrieval_intent_skips_gate_and_preparation() -> None:
     classifier, clarifier, rewriter, planner = _components()
     classifier.classify.return_value = IntentResult(

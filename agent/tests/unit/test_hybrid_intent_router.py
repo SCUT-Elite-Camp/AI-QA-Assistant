@@ -175,3 +175,66 @@ def test_query_understanding_uses_hybrid_router_by_default() -> None:
     service = QueryUnderstanding()
 
     assert isinstance(service.intent_classifier, HybridIntentRouter)
+
+
+def test_default_intent_examples_include_english_knowledge_queries() -> None:
+    examples = HybridIntentRouter._load_examples()
+
+    assert any("QueryPlan" in value for value in examples[QueryIntent.KNOWLEDGE_QA])
+    assert any("CitationChecker" in value for value in examples[QueryIntent.KNOWLEDGE_QA])
+    assert any("Compare" in value for value in examples[QueryIntent.COMPARISON])
+
+
+def test_local_only_classification_never_calls_llm_fallback() -> None:
+    fallback = _fallback(QueryIntent.SYSTEM_HELP)
+    encoder = FakeEncoder(
+        {
+            "knowledge example": [1.0, 0.0],
+            "uncertain query": [0.7, 0.7],
+        }
+    )
+    router = HybridIntentRouter(
+        fallback=fallback,
+        encoder=encoder,
+        examples={QueryIntent.KNOWLEDGE_QA: ["knowledge example"]},
+        enabled=True,
+        threshold=1.1,
+        margin=1.0,
+    )
+
+    result = router.classify_local(
+        "uncertain query",
+        default_intent=QueryIntent.SUMMARIZATION,
+    )
+
+    assert result.intent == QueryIntent.SUMMARIZATION
+    assert result.reason == "local_only_parent_intent_fallback"
+    fallback.classify.assert_not_called()
+
+
+def test_local_batch_encodes_all_unresolved_queries_together() -> None:
+    fallback = _fallback(QueryIntent.SYSTEM_HELP)
+    encoder = FakeEncoder(
+        {
+            "knowledge example": [1.0, 0.0],
+            "first task": [1.0, 0.0],
+            "second task": [1.0, 0.0],
+        }
+    )
+    router = HybridIntentRouter(
+        fallback=fallback,
+        encoder=encoder,
+        examples={QueryIntent.KNOWLEDGE_QA: ["knowledge example"]},
+        enabled=True,
+        threshold=0.7,
+        margin=0.0,
+    )
+
+    results = router.classify_local_batch(["first task", "second task"])
+
+    assert [result.intent for result in results] == [
+        QueryIntent.KNOWLEDGE_QA,
+        QueryIntent.KNOWLEDGE_QA,
+    ]
+    assert encoder.calls[-1] == ["first task", "second task"]
+    fallback.classify.assert_not_called()

@@ -113,7 +113,12 @@ class QueryPreparationAnalyzer:
             "references using history and rewrite the request into one faithful, "
             "self-contained standalone_query. Preserve technical identifiers and "
             "never add facts. Return JSON only with exactly standalone_query, "
-            "sub_queries, filters, reason. Return at most four unique sub_queries. "
+            "sub_tasks, filters, reason. Each sub_tasks item must contain query "
+            "and suggested_intent. suggested_intent must be one of knowledge_qa, "
+            "document_search, summarization, comparison, casual_chat, system_help, "
+            "unsupported. Preserve mixed actions: a request that summarizes and "
+            "compares must produce separately labeled tasks. Return at most four "
+            "unique sub_tasks. For a simple request return an empty sub_tasks list. "
             "Supported filter keys are doc_id, doc_ids, space, doc_type; never "
             "infer unstated filters. "
             + intent_instruction

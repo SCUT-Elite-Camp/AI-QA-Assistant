@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
@@ -764,6 +765,10 @@ class AgentRunner:
     ) -> dict[str, Any]:
         """Generate an answer without carrying tool-call history forward."""
 
+        state.evidence = self._prioritize_evidence_for_answer(
+            state.query_plan.standalone_query or state.query_plan.original_query,
+            state.evidence,
+        )
         evidence_context = self._format_search_observation(state.evidence)
         response = self._chat_for_answer(
             state,
@@ -793,6 +798,36 @@ class AgentRunner:
         if not isinstance(content, str) or not content.strip():
             raise ValueError("forced answer response must contain text")
         return response
+
+    @staticmethod
+    def _prioritize_evidence_for_answer(
+        query: str,
+        evidence: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Prefer directly named technical documents without dropping evidence."""
+
+        stopwords = {
+            "which", "what", "how", "does", "the", "and", "from", "into",
+            "with", "that", "this", "field", "module", "answer", "question",
+            "request", "system", "use", "uses", "using", "performs",
+        }
+
+        def tokens(value: str) -> set[str]:
+            expanded = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", value)
+            return {
+                token
+                for token in re.findall(r"[a-z0-9]+", expanded.casefold().replace("_", " "))
+                if len(token) >= 3 and token not in stopwords
+            }
+
+        query_tokens = tokens(query)
+        ranked = []
+        for index, item in enumerate(evidence):
+            title = str(item.get("title") or "")
+            overlap = len(query_tokens & tokens(title))
+            ranked.append((-overlap, index, item))
+        ranked.sort(key=lambda entry: (entry[0], entry[1]))
+        return [item for _, _, item in ranked]
 
     def _chat_for_answer(
         self,

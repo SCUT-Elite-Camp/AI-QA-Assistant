@@ -9,7 +9,9 @@ from agent.query.intent_classifier import IntentClassifier
 from agent.query.hybrid_intent import HybridIntentRouter
 from agent.query.planner import QueryPlanner
 from agent.query.preparation import QueryPreparationAnalyzer
+from agent.query.preparation_gate import QueryPreparationGate
 from agent.query.rewriter import QueryRewriter
+from agent.query.schemas import IntentResult
 from agent.query.unified import UnifiedQueryAnalyzer
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 
@@ -36,6 +38,7 @@ class QueryUnderstanding:
         unified_enabled: bool | None = None,
         clarification_gate: ClarificationGate | None = None,
         query_preparation: QueryPreparationAnalyzer | None = None,
+        query_preparation_gate: QueryPreparationGate | None = None,
         cascaded_enabled: bool | None = None,
     ) -> None:
         self.intent_classifier = intent_classifier or HybridIntentRouter()
@@ -52,6 +55,9 @@ class QueryUnderstanding:
             self.clarifier
         )
         self.query_preparation = query_preparation or QueryPreparationAnalyzer()
+        self.query_preparation_gate = (
+            query_preparation_gate or QueryPreparationGate()
+        )
         self.cascaded_enabled = (
             settings.CASCADED_QUERY_UNDERSTANDING_ENABLED
             if cascaded_enabled is None
@@ -170,12 +176,56 @@ class QueryUnderstanding:
                 filters=plan_filters,
             )
 
+        if self.query_preparation_gate.can_bypass(query, history, intent):
+            standalone_query = query.strip()
+            sub_queries = []
+            intent_hints: dict[str, QueryIntent] = {}
+            self.logger.info(
+                "[QUERY_PREPARATION_GATE] action=bypass reason=simple_single_target "
+                "query=%s",
+                standalone_query,
+            )
+        else:
+            standalone_query, sub_queries, plan_filters, intent_hints = self._prepare_query(
+                query,
+                history,
+                intent,
+                plan_filters,
+            )
+
+        plan = QueryPlan(
+            original_query=query,
+            standalone_query=standalone_query,
+            intent=intent.intent,
+            intent_confidence=intent.confidence,
+            is_follow_up=intent.is_follow_up,
+            is_clarification_reply=intent.is_clarification_reply,
+            needs_clarification=False,
+            clarification_question="",
+            ambiguity_reason=clarification.reason,
+            sub_queries=sub_queries,
+            filters=plan_filters,
+        )
+        plan._subquery_intent_hints = intent_hints
+        return plan
+
+    def _prepare_query(
+        self,
+        query: str,
+        history: list[dict[str, Any]],
+        intent: IntentResult,
+        plan_filters: dict[str, Any],
+    ) -> tuple[str, list[str], dict[str, Any], dict[str, QueryIntent]]:
+        intent_hints: dict[str, QueryIntent] = {}
         try:
             prepared = self.query_preparation.prepare(query, history, intent.intent)
             semantic_filters = deepcopy(prepared.filters)
             semantic_filters.update(plan_filters)
             standalone_query = prepared.standalone_query
             sub_queries = prepared.sub_queries
+            intent_hints = {
+                task.query: task.suggested_intent for task in prepared.sub_tasks
+            }
             plan_filters = semantic_filters
         except Exception as exc:
             self.logger.warning(
@@ -193,17 +243,4 @@ class QueryUnderstanding:
             semantic_filters = enrichment.filters
             semantic_filters.update(plan_filters)
             plan_filters = semantic_filters
-
-        return QueryPlan(
-            original_query=query,
-            standalone_query=standalone_query,
-            intent=intent.intent,
-            intent_confidence=intent.confidence,
-            is_follow_up=intent.is_follow_up,
-            is_clarification_reply=intent.is_clarification_reply,
-            needs_clarification=False,
-            clarification_question="",
-            ambiguity_reason=clarification.reason,
-            sub_queries=sub_queries,
-            filters=plan_filters,
-        )
+        return standalone_query, sub_queries, plan_filters, intent_hints

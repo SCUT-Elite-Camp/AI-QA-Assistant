@@ -72,6 +72,37 @@ class IntentClassifier:
         )
         return result
 
+    def classify_batch(self, queries: list[str]) -> list[IntentResult]:
+        """Classify multiple independent sub-queries in one LLM request."""
+        normalized = [query.strip() for query in queries if query.strip()]
+        if not normalized or not self.enabled:
+            return [self._fallback("batch_classification_disabled") for _ in normalized]
+        messages = [
+            {
+                "role": "system",
+                "content": self._system_prompt()
+                + " Classify every item independently. Return a JSON array of "
+                "objects in input order using the same intent result shape.",
+            },
+            {"role": "user", "content": json.dumps(normalized, ensure_ascii=False)},
+        ]
+        try:
+            response = self.llm.chat(messages)
+            content = response.get("content")
+            if not isinstance(content, str):
+                raise ValueError("batch intent response is empty")
+            payload = json.loads(content.strip())
+            if not isinstance(payload, list) or len(payload) != len(normalized):
+                raise ValueError("batch intent response size mismatch")
+            return [IntentResult.model_validate(item) for item in payload]
+        except Exception as exc:
+            self.logger.warning(
+                "[SUBQUERY_INTENT_BATCH] action=fallback error=%s count=%d",
+                exc.__class__.__name__,
+                len(normalized),
+            )
+            return [self._fallback("batch_intent_classification_failed") for _ in normalized]
+
     @staticmethod
     def _system_prompt() -> str:
         return (

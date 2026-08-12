@@ -30,6 +30,32 @@ D:\miniconda3\envs\htc_project\python.exe eval\run_agent_eval.py --suite all --o
 API usage. Without it, real quality still uses deterministic fact and citation
 metrics. Reports are JSON plus Excel-friendly UTF-8 CSV under `eval/reports/`.
 
+### Local knowledge-base online test by complexity
+
+`run_local_kb_online.py` runs real local-KB answer-quality tests while keeping
+single-target questions separate from multi-aspect and compound questions.
+Both groups use English questions. The legacy core-regression dataset remains
+unchanged so historical reports stay reproducible.
+
+```powershell
+# Preview case IDs without calling an online model
+D:\miniconda3\envs\htc_project\python.exe eval\run_local_kb_online.py --mode all --list
+
+# Run ordinary single-target questions
+D:\miniconda3\envs\htc_project\python.exe eval\run_local_kb_online.py --mode simple --online
+
+# Run complex multi-aspect and compound questions
+D:\miniconda3\envs\htc_project\python.exe eval\run_local_kb_online.py --mode complex --online
+
+# Run both groups twice and choose the report path
+D:\miniconda3\envs\htc_project\python.exe eval\run_local_kb_online.py --mode all --repeats 2 --online --output eval\reports\local_kb_online_all.json
+```
+
+The script writes one JSON report and a separate scalar CSV for each executed
+group. It supports `--case-id`, `--limit`, `--judge`,
+`--retrieval-namespace`, and `--no-retrieval-warmup`. `--mode ordinary` is an
+alias of `--mode simple`.
+
 Offline metric and dataset tests do not call an API:
 
 ```powershell

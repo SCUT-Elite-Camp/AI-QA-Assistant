@@ -8,48 +8,86 @@
     "CP2 API问答请求从进入系统到返回答案经过哪些步骤",
     "Agent层一个问题从接收到回答的处理流程是什么",
     "CorrectiveRetrievalPlanner怎样在证据不足时进行第二次检索",
-    "查询Evidence Gate和CorrectiveRetrievalPlanner的工作机制"
+    "查询Evidence Gate和CorrectiveRetrievalPlanner的工作机制",
+    "Which QueryPlan field stores the original user question?",
+    "Which layer owns the ToolRegistry?",
+    "Which field tells ToolExecutor which tool to execute?",
+    "How does Evidence Gate deduplicate evidence?",
+    "How many corrective retrieval attempts are allowed per request?",
+    "What citation marker format does CitationChecker recognize?",
+    "Which ConversationMemory field identifies a session?",
+    "Which module performs citation validation in the API flow?"
   ],
   "document_search": [
     "查找与ConversationMemory有关的文档",
     "列出知识库中的接口契约文件",
     "帮我找到CP2开发计划文档",
     "搜索包含ToolExecutor的资料",
-    "知识库里有哪些Evidence Gate文档"
+    "知识库里有哪些Evidence Gate文档",
+    "Find the ConversationMemory contract document",
+    "List the interface contract files in the knowledge base",
+    "Search for documents about ToolExecutor",
+    "Locate the CP2 development plan",
+    "Which Evidence Gate documents are available?"
   ],
   "summarization": [
     "总结CP2 Agent的完整流程",
     "概括这份文档的主要内容",
     "给我一个项目进展摘要",
     "归纳本周Agent层完成的工作",
-    "简要总结查询理解模块"
+    "简要总结查询理解模块",
+    "Summarize the complete CP2 Agent flow",
+    "Give me a summary of this document",
+    "Summarize the Agent work completed this week",
+    "Provide a brief overview of Query Understanding",
+    "Summarize the main findings"
   ],
   "comparison": [
     "比较ToolExecutor和Evidence Gate的区别",
     "分别说明两个组件的职责",
     "QueryRewriter与QueryPlanner有什么差异",
     "对比CP1和CP2的Agent流程",
-    "这两个方案各自有什么优缺点"
+    "这两个方案各自有什么优缺点",
+    "Compare ToolExecutor with Evidence Gate",
+    "What are the differences between QueryRewriter and QueryPlanner?",
+    "Compare the CP1 and CP2 Agent flows",
+    "Explain the responsibilities of both components and compare them",
+    "What are the advantages and disadvantages of these two approaches?"
   ],
   "casual_chat": [
     "你好",
     "很高兴认识你",
     "谢谢你的帮助",
     "早上好",
-    "你今天怎么样"
+    "你今天怎么样",
+    "Hello",
+    "Nice to meet you",
+    "Thank you for your help",
+    "Good morning",
+    "How are you today?"
   ],
   "system_help": [
     "这个问答系统怎么使用",
     "系统目前支持哪些能力",
     "怎样在接口中发送问题",
     "我可以上传什么类型的文件",
-    "如何查看回答中的引用"
+    "如何查看回答中的引用",
+    "How do I use this question-answering system?",
+    "What capabilities does the system support?",
+    "How can I send a question through the API?",
+    "What file types can I upload?",
+    "How can I view citations in an answer?"
   ],
   "unsupported": [
     "帮我修改银行账户余额",
     "替我执行转账",
     "删除其他用户的数据",
     "帮我绕过系统权限",
-    "直接登录我的银行账户操作"
+    "直接登录我的银行账户操作",
+    "Change my bank account balance",
+    "Transfer money on my behalf",
+    "Delete another user's data",
+    "Bypass the system permissions",
+    "Log in to my bank account and perform an operation"
   ]
 }

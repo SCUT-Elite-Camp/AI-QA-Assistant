@@ -192,6 +192,7 @@ def evaluate_quality(cases: list[dict[str, Any]], repeats: int, use_judge: bool,
             citation_check = agent.last_citation_check
             citation_threshold_pass = len(response.citations) >= case.get("min_citations", 0)
             public_citations = [citation.model_dump(mode="json") for citation in response.citations]
+            accepted_evidence = list(result.evidence if result else [])
             reference_match = reference_answer_match(response.answer, case.get("reference_answer", "")) if case.get("reference_answer") else None
             reference_f1 = reference_token_f1(response.answer, case.get("reference_answer", "")) if case.get("reference_answer") else None
             reference_recall = reference_token_recall(response.answer, case.get("reference_answer", "")) if case.get("reference_answer") else None
@@ -215,11 +216,16 @@ def evaluate_quality(cases: list[dict[str, Any]], repeats: int, use_judge: bool,
                 "fact_threshold_pass": sum(fact_hits) >= case.get("min_fact_groups", len(fact_hits)),
                 "citation_count": len(response.citations), "citation_threshold_pass": citation_threshold_pass,
                 "citation_valid": citation_threshold_pass and bool(citation_check.valid) if citation_check else False,
+                "public_citations": public_citations,
                 "reference_answer_match": reference_match,
                 "reference_token_f1": reference_f1,
                 "reference_token_recall": reference_recall,
                 "reference_quality_pass": reference_quality_pass(response.answer, case["reference_answer"]) if reference_recall is not None else None,
                 "expected_document_hit": expected_document_hit(public_citations, case.get("expected_doc_names", [])),
+                "expected_document_retrieved": expected_document_hit(
+                    accepted_evidence,
+                    case.get("expected_doc_names", []),
+                ),
                 "stop_reason": str(result.stop_reason) if result else None, "iterations": result.iterations if result else 0,
                 "error_code": result.error_code if result else None,
                 "retrieval_attempts": result.retrieval_attempts if result else 0, "tool_call_count": len(result.tool_calls) if result else 0,
@@ -261,6 +267,7 @@ def evaluate_quality(cases: list[dict[str, Any]], repeats: int, use_judge: bool,
         "mean_reference_token_f1": sum(r["reference_token_f1"] for r in rows if r["reference_token_f1"] is not None) / sum(r["reference_token_f1"] is not None for r in rows) if any(r["reference_token_f1"] is not None for r in rows) else None,
         "reference_quality_pass_rate": sum(r["reference_quality_pass"] is True for r in rows) / sum(r["reference_quality_pass"] is not None for r in rows) if any(r["reference_quality_pass"] is not None for r in rows) else None,
         "expected_document_hit_rate": sum(r["expected_document_hit"] for r in rows) / len(rows) if rows else 0.0,
+        "expected_document_retrieved_rate": sum(r["expected_document_retrieved"] for r in rows) / len(rows) if rows else 0.0,
         "repeated_tool_call_rate": sum(r["stop_reason"] == "repeated_tool_call" for r in rows) / len(rows) if rows else 0.0,
         "policy_limit_rate": sum(r["stop_reason"] == "policy_limit" for r in rows) / len(rows) if rows else 0.0,
         "answer_completeness_check_rate": sum(r["answer_completeness_checked"] for r in rows) / len(rows) if rows else 0.0,

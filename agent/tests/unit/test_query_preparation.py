@@ -111,3 +111,29 @@ def test_llm_client_supports_instance_specific_model_without_changing_default() 
 
     assert preparation_client.model == "fast-preparation-model"
     assert default_client.model != "fast-preparation-model"
+
+
+def test_prepare_preserves_mixed_subtask_intent_suggestions() -> None:
+    analyzer = QueryPreparationAnalyzer(
+        llm=FakeLLM(
+            {
+                "standalone_query": "Summarize CP1 and compare it with CP2.",
+                "sub_tasks": [
+                    {"query": "Summarize CP1.", "suggested_intent": "summarization"},
+                    {"query": "Compare CP1 with CP2.", "suggested_intent": "comparison"},
+                ],
+                "filters": {},
+                "reason": "mixed task",
+            }
+        )
+    )
+
+    result = analyzer.prepare(
+        "Summarize CP1 and compare it with CP2.", [], QueryIntent.COMPARISON
+    )
+
+    assert result.sub_queries == ["Summarize CP1.", "Compare CP1 with CP2."]
+    assert [task.suggested_intent for task in result.sub_tasks] == [
+        QueryIntent.SUMMARIZATION,
+        QueryIntent.COMPARISON,
+    ]
