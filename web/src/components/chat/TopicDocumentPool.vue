@@ -142,7 +142,7 @@ onMounted(() => {
         </div>
       </div>
     </template>
-  </UModal
+  </UModal>
 
   <!-- Full Content Viewer Modal -->
   <DocumentModal

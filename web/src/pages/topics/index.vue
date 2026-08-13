@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
+import { useToast } from '@nuxt/ui/composables'
 import { useCsrf } from '../../composables/useCsrf'
 
 const TopicDocumentPool = defineAsyncComponent(() => import('../../components/chat/TopicDocumentPool.vue'))
@@ -9,7 +10,6 @@ const DocumentModal = defineAsyncComponent(() => import('../../components/chat/D
 
 const router = useRouter()
 const toast = useToast()
-const overlay = useOverlay()
 const { csrf, headerName } = useCsrf()
 
 const topics = ref<any[]>([])
@@ -101,7 +101,7 @@ function checkPolling() {
           clearInterval(pollTimer)
           pollTimer = null
         }
-      } catch (e) {}
+      } catch {}
     }, 2500)
   } else if (!hasGenerating && pollTimer) {
     clearInterval(pollTimer)
@@ -185,7 +185,7 @@ async function openSettingsModal(topic: any) {
     if (topicData?.tags && Array.isArray(topicData.tags)) {
       topicTags.value = [...topicData.tags]
     }
-  } catch (e) {
+  } catch {
     topicDocs.value = []
   } finally {
     loadingDocs.value = false

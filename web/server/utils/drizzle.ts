@@ -34,8 +34,8 @@ export function useDrizzle() {
         const duration = Date.now() - start
         recordDbQuery(duration)
         if (duration > 100) {
-          const sql = typeof args[0] === 'string' ? args[0] : args[0]?.sql || 'unknown'
-          logger.warn({ sql: sql.slice(0, 200), duration }, 'slow db query')
+          const queryText = typeof args[0] === 'string' ? args[0] : 'unknown'
+          logger.warn({ sql: queryText.slice(0, 200), duration }, 'slow db query')
         }
         return result
       } catch (err) {
@@ -51,12 +51,12 @@ export function useDrizzle() {
     // Ensure database tables exist
     try {
       client.execute('CREATE TABLE IF NOT EXISTS topics (id TEXT PRIMARY KEY, title TEXT NOT NULL, main_chat_id TEXT NOT NULL, soul_content TEXT NOT NULL DEFAULT "", description TEXT, weight_mode TEXT NOT NULL DEFAULT "auto", tags TEXT, status TEXT NOT NULL DEFAULT "ready", consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
-      try { client.execute('ALTER TABLE topics ADD COLUMN tags TEXT;') } catch (e) {}
-      try { client.execute('ALTER TABLE topics ADD COLUMN status TEXT NOT NULL DEFAULT "ready";') } catch (e) {}
-      try { client.execute('ALTER TABLE topics ADD COLUMN description TEXT;') } catch (e) {}
+      try { client.execute('ALTER TABLE topics ADD COLUMN tags TEXT;') } catch {}
+      try { client.execute('ALTER TABLE topics ADD COLUMN status TEXT NOT NULL DEFAULT "ready";') } catch {}
+      try { client.execute('ALTER TABLE topics ADD COLUMN description TEXT;') } catch {}
       client.execute('CREATE TABLE IF NOT EXISTS topic_documents (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, doc_id TEXT NOT NULL, title TEXT NOT NULL, source_url TEXT, snippet TEXT, recall_count INTEGER NOT NULL DEFAULT 1, last_recalled_at INTEGER NOT NULL, score REAL, is_removed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
       client.execute('CREATE TABLE IF NOT EXISTS message_feedbacks (id TEXT PRIMARY KEY, chat_id TEXT NOT NULL, message_id TEXT NOT NULL, is_favorite INTEGER NOT NULL DEFAULT 0, suggestion_text TEXT, created_at INTEGER NOT NULL)')
-    } catch (e) {
+    } catch {
       // Ignore
     }
 

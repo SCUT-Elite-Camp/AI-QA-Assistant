@@ -48,7 +48,7 @@ async function fetchDoc() {
         content: props.targetSnippet || '暂无详细内容'
       }
     }
-  } catch (e) {
+  } catch {
     doc.value = {
       title: props.docTitle || '文档详情',
       content: props.targetSnippet || '暂无详细内容'
