@@ -1,15 +1,15 @@
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
-import { useUserSession } from '../../../../utils/session'
-import { useDrizzle, tables, eq, and, asc, inArray } from '../../../../utils/drizzle'
+import { useDrizzle, tables, eq, asc, inArray } from '../../../../utils/drizzle'
+import { getAgentBaseUrl, requireOwnedChat } from '../../../../utils/chatAccess'
 
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
-
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+
+  await requireOwnedChat(event, id)
 
   const { messageId, type } = await readValidatedBody(event, z.object({
     messageId: z.string(),
@@ -17,14 +17,6 @@ export default defineHandler(async (event) => {
   }).parse)
 
   const db = useDrizzle()
-
-  const chat = await db.query.chats.findFirst({
-    where: (chat, { eq }) => and(eq(chat.id, id as string), eq(chat.userId, session.data.user?.id || session.id!))
-  })
-
-  if (!chat) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
-  }
 
   const allMessages = await db.select({ id: tables.messages.id, role: tables.messages.role })
     .from(tables.messages)
@@ -50,7 +42,9 @@ export default defineHandler(async (event) => {
   if (idsToDelete.length > 0) {
     await db.delete(tables.messages).where(inArray(tables.messages.id, idsToDelete))
     // Clear Agent in-memory history so regenerate/edit rebuilds clean context
-    fetch(`http://127.0.0.1:8000/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
+    fetch(`${getAgentBaseUrl()}/api/chat/memory/${id}`, {
+      method: 'DELETE'
+    }).catch(() => {})
   }
 
   return { success: true }
