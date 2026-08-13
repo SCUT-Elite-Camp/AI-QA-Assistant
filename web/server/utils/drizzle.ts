@@ -9,7 +9,7 @@ export { sql, eq, and, or, asc, desc, inArray } from 'drizzle-orm'
 
 export const tables = schema
 
-let _db: ReturnType<typeof drizzle<typeof schema>> & { $client: ReturnType<typeof createClient> }
+let _db: (ReturnType<typeof drizzle<typeof schema>> & { $client: ReturnType<typeof createClient> }) | undefined
 
 import fs from 'fs'
 import path from 'path'
@@ -47,21 +47,21 @@ export function useDrizzle() {
     }
 
     _db = drizzle(client, { schema }) as any
-
-    // Ensure database tables exist
-    try {
-      client.execute('CREATE TABLE IF NOT EXISTS topics (id TEXT PRIMARY KEY, title TEXT NOT NULL, main_chat_id TEXT NOT NULL, soul_content TEXT NOT NULL DEFAULT "", description TEXT, weight_mode TEXT NOT NULL DEFAULT "auto", tags TEXT, status TEXT NOT NULL DEFAULT "ready", consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
-      try { client.execute('ALTER TABLE topics ADD COLUMN tags TEXT;') } catch {}
-      try { client.execute('ALTER TABLE topics ADD COLUMN status TEXT NOT NULL DEFAULT "ready";') } catch {}
-      try { client.execute('ALTER TABLE topics ADD COLUMN description TEXT;') } catch {}
-      client.execute('CREATE TABLE IF NOT EXISTS topic_documents (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, doc_id TEXT NOT NULL, title TEXT NOT NULL, source_url TEXT, snippet TEXT, recall_count INTEGER NOT NULL DEFAULT 1, last_recalled_at INTEGER NOT NULL, score REAL, is_removed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
-      client.execute('CREATE TABLE IF NOT EXISTS message_feedbacks (id TEXT PRIMARY KEY, chat_id TEXT NOT NULL, message_id TEXT NOT NULL, is_favorite INTEGER NOT NULL DEFAULT 0, suggestion_text TEXT, created_at INTEGER NOT NULL)')
-    } catch {
-      // Ignore
-    }
-
   }
   return _db
+}
+
+/**
+ * Test-only connection reset. Production code must rely on the process-wide
+ * client and schema migrations, never on runtime table creation.
+ */
+export function resetDrizzleForTests(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('resetDrizzleForTests is only available in tests')
+  }
+
+  _db?.$client.close()
+  _db = undefined
 }
 
 
