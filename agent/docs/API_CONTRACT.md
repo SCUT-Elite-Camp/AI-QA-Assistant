@@ -16,6 +16,51 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
 
+## Frozen internal persistent-Memory contract (Unit 04)
+
+This section defines DTOs only. The token-protected `/api/internal/*` routes are
+not enabled until Unit 04a, so the public `/api/chat` route and its response
+remain unchanged.
+
+`InternalChatRequest` inherits the existing `ChatRequest` fields and adds a
+required `memory_context`. It is deliberately a separate model so the public
+route never consumes browser-provided Memory fields.
+
+```json
+{
+  "query": "继续刚才的话题",
+  "memory_context": {
+    "actor": { "user_id": "user-a", "authenticated": true },
+    "chat_id": "chat-a",
+    "revision": 2,
+    "current_message_id": "message-3",
+    "current_sequence": 3,
+    "snapshot": null,
+    "facts": [
+      {
+        "id": "fact-1",
+        "category": "PREFERENCE",
+        "value": "使用简洁中文回复",
+        "expires_at": null
+      }
+    ],
+    "tail": []
+  }
+}
+```
+
+- `actor.authenticated` is literal `true`; the browser never supplies this DTO.
+- `role` is `user`, `assistant`, or `system`; Fact categories are `GOAL`,
+  `PREFERENCE`, or `PLAN_CONSTRAINT`.
+- `snapshot` is nullable. `facts` and `tail` are arrays. `expires_at` is either
+  `null` or a non-negative Unix epoch-millisecond timestamp in UTC.
+- Snapshot and Tail revisions must equal `memory_context.revision`; Tail is
+  strictly sequence-ordered, follows `snapshot.covered_to_sequence` when a
+  Snapshot exists, precedes the current message, and cannot repeat it.
+- All internal DTOs reject unknown fields. `InternalChatResponse` wraps the
+  unchanged `ChatResponse` as `response` and places `MemoryDecision` only in
+  `memory_decision`; it must never be forwarded to the browser.
+
 ## Request
 
 ```json
