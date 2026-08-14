@@ -3,6 +3,7 @@ import { defineHandler, HTTPError } from 'nitro'
 import { readValidatedBody } from 'nitro/h3'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables } from '../../../utils/drizzle'
+import { appendMessage } from '../../../utils/messageLifecycle'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
@@ -44,7 +45,7 @@ export default defineHandler(async (event) => {
         ? msg.parts
         : [{ type: 'text', text: msg.text || '' }]
 
-      await db.insert(tables.messages).values({
+      await appendMessage(db, {
         chatId: newChat.id,
         role: msg.role === 'user' ? 'user' : 'assistant',
         parts: msgParts

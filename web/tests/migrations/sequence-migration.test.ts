@@ -42,6 +42,28 @@ describe('migration baseline', () => {
     expect(useDrizzle()).not.toBe(first)
   })
 
+  it('creates the sequence and revision columns required by the lifecycle', async () => {
+    const client = createClient({ url: process.env.TURSO_DATABASE_URL! })
+    try {
+      const [chatColumns, messageColumns] = await Promise.all([
+        client.execute("PRAGMA table_info('chats')"),
+        client.execute("PRAGMA table_info('messages')")
+      ])
+
+      expect(chatColumns.rows.map(row => String(row.name))).toEqual(expect.arrayContaining([
+        'history_revision',
+        'next_message_sequence'
+      ]))
+      expect(messageColumns.rows.map(row => String(row.name))).toEqual(expect.arrayContaining([
+        'history_revision',
+        'request_id',
+        'sequence'
+      ]))
+    } finally {
+      client.close()
+    }
+  })
+
   it('migrates a database previously repaired by the retired runtime bootstrap', async () => {
     const fixtureDirectory = await mkdtemp(join(tmpdir(), 'ai-qa-memory-legacy-migration-'))
     const legacyMigrationsDirectory = join(fixtureDirectory, 'legacy-migrations')

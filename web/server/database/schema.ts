@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 
 const timestamps = {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
@@ -45,6 +45,8 @@ export const chats = sqliteTable('chats', {
   title: text('title'),
   userId: text('user_id').notNull(),
   visibility: text('visibility', { enum: ['public', 'private'] }).notNull().default('private'),
+  historyRevision: integer('history_revision').notNull().default(1),
+  nextMessageSequence: integer('next_message_sequence').notNull().default(1),
   topicId: text('topic_id').references(() => topics.id, { onDelete: 'set null' }),
   isBranch: integer('is_branch', { mode: 'boolean' }).notNull().default(false),
   parentChatId: text('parent_chat_id'),
@@ -96,11 +98,18 @@ export const messages = sqliteTable('messages', {
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
   parts: text('parts', { mode: 'json' }),
+  sequence: integer('sequence').notNull(),
+  historyRevision: integer('history_revision').notNull(),
+  requestId: text('request_id'),
   isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
   suggestionText: text('suggestion_text'),
   ...timestamps
 }, table => [
-  index('messages_chat_id_idx').on(table.chatId)
+  index('messages_chat_id_idx').on(table.chatId),
+  uniqueIndex('messages_chat_sequence_idx').on(table.chatId, table.sequence),
+  uniqueIndex('messages_chat_request_role_idx')
+    .on(table.chatId, table.requestId, table.role)
+    .where(sql`${table.requestId} IS NOT NULL`)
 ])
 
 export const messagesRelations = relations(messages, ({ one, many }) => ({

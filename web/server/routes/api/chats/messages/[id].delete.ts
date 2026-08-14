@@ -1,8 +1,9 @@
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
-import { useDrizzle, tables, eq, asc, inArray } from '../../../../utils/drizzle'
+import { useDrizzle } from '../../../../utils/drizzle'
 import { getAgentBaseUrl, requireOwnedChat } from '../../../../utils/chatAccess'
+import { MessageLifecycleError, truncateHistory } from '../../../../utils/messageLifecycle'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -18,34 +19,26 @@ export default defineHandler(async (event) => {
 
   const db = useDrizzle()
 
-  const allMessages = await db.select({ id: tables.messages.id, role: tables.messages.role })
-    .from(tables.messages)
-    .where(eq(tables.messages.chatId, id as string))
-    .orderBy(asc(tables.messages.createdAt), asc(tables.messages.id))
-
-  const targetIndex = allMessages.findIndex(m => m.id === messageId)
-  if (targetIndex === -1) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'Message not found' })
+  let result
+  try {
+    result = await truncateHistory(db, {
+      chatId: id,
+      messageId,
+      type
+    })
+  } catch (error) {
+    if (error instanceof MessageLifecycleError) {
+      throw new HTTPError({ statusCode: error.statusCode, statusMessage: error.message })
+    }
+    throw error
   }
 
-  const targetRole = allMessages[targetIndex]!.role
-  if (type === 'edit' && targetRole !== 'user') {
-    throw new HTTPError({ statusCode: 400, statusMessage: 'Can only edit user messages' })
-  }
-  if (type === 'regenerate' && targetRole !== 'assistant') {
-    throw new HTTPError({ statusCode: 400, statusMessage: 'Can only regenerate assistant messages' })
-  }
-
-  const startIndex = type === 'edit' ? targetIndex + 1 : targetIndex
-  const idsToDelete = allMessages.slice(startIndex).map(m => m.id)
-
-  if (idsToDelete.length > 0) {
-    await db.delete(tables.messages).where(inArray(tables.messages.id, idsToDelete))
+  if (result.deletedMessageIds.length > 0) {
     // Clear Agent in-memory history so regenerate/edit rebuilds clean context
     fetch(`${getAgentBaseUrl()}/api/chat/memory/${id}`, {
       method: 'DELETE'
     }).catch(() => {})
   }
 
-  return { success: true }
+  return { success: true, historyRevision: result.historyRevision }
 })

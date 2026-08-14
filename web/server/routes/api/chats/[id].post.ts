@@ -9,6 +9,7 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { recordAiCall } from '../../../utils/metrics'
 import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
 import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
+import { appendMessage } from '../../../utils/messageLifecycle'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -31,7 +32,9 @@ export default defineHandler(async (event) => {
   const chat = await db.query.chats.findFirst({
     where: (chat, { eq }) => eq(chat.id, id as string),
     with: {
-      messages: true
+      messages: {
+        orderBy: (message, { asc }) => asc(message.sequence)
+      }
     }
   })
   if (!chat) {
@@ -47,12 +50,14 @@ export default defineHandler(async (event) => {
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
   if (lastMessage?.role === 'user' && messages.length > 1) {
-    await db.insert(tables.messages).values({
+    await appendMessage(db, {
       id: lastMessage.id,
       chatId: id as string,
       role: 'user',
-      parts: lastMessage.parts
-    }).onConflictDoUpdate({ target: tables.messages.id, set: { parts: lastMessage.parts } })
+      parts: lastMessage.parts,
+      replaceExisting: true,
+      requestId: lastMessage.id
+    })
   }
 
   const abortController = new AbortController()
@@ -298,12 +303,16 @@ export default defineHandler(async (event) => {
     },
     onFinish: async ({ messages }) => {
       try {
-        await db.insert(tables.messages).values(messages.map(message => ({
-          id: message.id,
-          chatId: chat.id,
-          role: message.role as 'user' | 'assistant',
-          parts: message.parts
-        }))).onConflictDoNothing()
+        for (const message of messages) {
+          if (message.role !== 'assistant') continue
+
+          await appendMessage(db, {
+            id: message.id,
+            chatId: chat.id,
+            parts: message.parts,
+            role: 'assistant'
+          })
+        }
       } catch (dbErr) {
         console.error('[web-onFinish] DB save error:', dbErr)
       }

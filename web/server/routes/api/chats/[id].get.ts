@@ -13,7 +13,7 @@ export default defineHandler(async (event) => {
     where: (chat, { eq }) => eq(chat.id, id as string),
     with: {
       messages: {
-        orderBy: (message, { asc }) => asc(message.createdAt)
+        orderBy: (message, { asc }) => asc(message.sequence)
       }
     }
   })

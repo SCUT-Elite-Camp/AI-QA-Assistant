@@ -5,6 +5,7 @@ import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { generateTopicTitle, generateInitialSoul } from '../../../../utils/soul'
 import { copyChatCitationsToTopic } from '../../../../utils/topicStorage'
+import { appendMessage } from '../../../../utils/messageLifecycle'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
@@ -83,14 +84,14 @@ export default defineHandler(async (event) => {
         ? msg.parts
         : [{ type: 'text', text: msg.text || '' }]
 
-      await db.insert(tables.messages).values({
+      await appendMessage(db, {
         chatId: branchChat.id,
         role: msg.role === 'user' ? 'user' : 'assistant',
         parts: msgParts
       })
     }
   } else if (initialQuery) {
-    await db.insert(tables.messages).values({
+    await appendMessage(db, {
       chatId: branchChat.id,
       role: 'user',
       parts: [{ type: 'text', text: initialQuery }]
