@@ -1,11 +1,23 @@
 import json
 from typing import Any
 
+import pytest
+
 from agent.agent import Agent
+from agent.config.settings import settings
 from agent.memory import InMemoryConversationMemory
 from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.query_plan import QueryPlan
+
+
+@pytest.fixture(autouse=True)
+def isolate_query_understanding_mode_from_local_env(monkeypatch) -> None:
+    """Keep scripted integration tests independent of a developer's .env."""
+
+    monkeypatch.setattr(settings, "UNIFIED_QUERY_UNDERSTANDING_ENABLED", False)
+    monkeypatch.setattr(settings, "CASCADED_QUERY_UNDERSTANDING_ENABLED", False)
+    monkeypatch.setattr(settings, "HYBRID_INTENT_ROUTER_ENABLED", False)
 
 
 class InspectingLLM:

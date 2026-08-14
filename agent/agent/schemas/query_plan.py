@@ -2,7 +2,7 @@
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 
 class QueryIntent(StrEnum):
@@ -37,6 +37,7 @@ class QueryPlan(BaseModel):
 
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
+    _subquery_intent_hints: dict[str, QueryIntent] = PrivateAttr(default_factory=dict)
 
     @field_validator("original_query")
     @classmethod

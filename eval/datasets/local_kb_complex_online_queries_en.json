@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "name": "CP2 Agent Local KB Complex English Query Overlay",
+    "version": "1.0",
+    "description": "English online queries keyed by the stable IDs in agent_cp2_cases.json."
+  },
+  "queries": {
+    "local_quality_api_flow": "According to the knowledge base, what core stages does a CP2 API question-answering request pass through from entry to final response?",
+    "local_quality_query_plan": "What core information does the public QueryPlan contract contain, and why does AgentRunner consume it directly?",
+    "local_quality_tool_registry": "Which layer owns ToolRegistry, and how does the Agent use it to discover tools and their parameter schemas?",
+    "local_quality_tool_executor": "What input does ToolExecutor receive, how does it validate that input, and what structured execution result does it return?",
+    "local_quality_evidence_gate": "How does Evidence Gate filter and deduplicate evidence, and how does it decide whether the evidence is usable for different intents?",
+    "local_quality_corrective_retrieval": "After the first Evidence Gate check finds insufficient evidence, how does CorrectiveRetrievalPlanner constrain and adjust the second retrieval?",
+    "local_quality_citation_check": "Which citation-consistency rules does CitationChecker enforce, and which conditions make a citation invalid?",
+    "local_quality_memory_clarification": "What conversation information does ConversationMemory store, and how does it support follow-up questions and pending clarification state?",
+    "local_compound_cp1_cp2_summary_comparison": "Summarize the core functional flows of CP1 and CP2 separately, then compare the main changes between the two stages.",
+    "local_compound_executor_gate_dimensions": "Summarize the inputs, outputs, and responsibilities of ToolExecutor and Evidence Gate separately, then compare them across those three dimensions.",
+    "local_compound_three_component_summary": "Summarize the roles of ToolRegistry, ToolExecutor, and Evidence Gate separately, then explain how the three components connect in the execution flow.",
+    "local_compound_contract_comparison": "Compare the public ConversationMemory and QueryPlan contracts: summarize their fields separately, then explain how they work together.",
+    "local_compound_gate_citation_handoff": "Summarize Evidence Gate and Citation Check separately, then compare their quality-control boundaries and upstream/downstream dependencies."
+  }
+}

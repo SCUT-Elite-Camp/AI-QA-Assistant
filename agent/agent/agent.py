@@ -1,20 +1,30 @@
 import logging
 from typing import Any, Optional
 
+from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, EvidenceGate
 from agent.formatter.answer_formatter import AnswerFormatter
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
+from agent.llm.observability import (
+    ObservedLLM,
+    clear_llm_metrics,
+    snapshot_llm_metrics,
+    start_llm_metrics,
+)
 from agent.memory import ConversationMemory, get_default_memory
 from agent.orchestration import AgentOrchestrator, OrchestrationResult
 from agent.policy import IntentPolicyRouter
 from agent.query import (
     Clarifier,
     IntentClassifier,
+    HybridIntentRouter,
     QueryPlanner,
+    QueryPreparationAnalyzer,
     QueryRewriter,
     QueryUnderstanding,
+    UnifiedQueryAnalyzer,
 )
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
@@ -49,8 +59,40 @@ class Agent:
         corrective_retrieval: CorrectiveRetrievalPlanner | None = None,
         citation_checker: CitationChecker | None = None,
         orchestrator: AgentOrchestrator | None = None,
+        answer_completeness_checker: AnswerCompletenessChecker | None = None,
     ) -> None:
+        custom_llm_supplied = llm is not None
         self.llm = llm or LLMClient()
+        self.runtime_llm = ObservedLLM(self.llm, "agent_runtime")
+        self.answer_llm = ObservedLLM(self.llm, "answer_generation_complex")
+        self.fast_answer_llm: BaseLLM | None = None
+        if (
+            not custom_llm_supplied
+            and settings.ANSWER_FAST_MODEL
+            and settings.ANSWER_FAST_MODEL != settings.LLM_MODEL
+        ):
+            self.fast_answer_llm = ObservedLLM(
+                LLMClient(
+                    model=settings.ANSWER_FAST_MODEL,
+                    enable_thinking=settings.ANSWER_FAST_MODEL_THINKING,
+                ),
+                "answer_generation_fast",
+            )
+        self.title_llm = ObservedLLM(self.llm, "title_generation")
+        completeness_llm: BaseLLM = self.llm
+        if (
+            not custom_llm_supplied
+            and settings.ANSWER_COMPLETENESS_MODEL
+            and settings.ANSWER_COMPLETENESS_MODEL != settings.LLM_MODEL
+        ):
+            completeness_llm = LLMClient(
+                model=settings.ANSWER_COMPLETENESS_MODEL,
+                enable_thinking=settings.ANSWER_COMPLETENESS_MODEL_THINKING,
+            )
+        self.completeness_llm = ObservedLLM(
+            completeness_llm,
+            "answer_completeness",
+        )
         self.answer_formatter = answer_formatter or AnswerFormatter()
         self.trace_service = TraceService()
         self.audit_service = AuditService()
@@ -64,15 +106,48 @@ class Agent:
             search_tool.min_score = settings.MIN_RETRIEVAL_SCORE
 
         self.runner = runner or AgentRunner(
-            llm=self.llm,
+            llm=self.runtime_llm,
             registry=self.registry,
             audit_service=self.audit_service,
+            answer_completeness_checker=(
+                answer_completeness_checker or AnswerCompletenessChecker(self.completeness_llm)
+            ),
+            answer_llm=self.answer_llm,
+            fast_answer_llm=self.fast_answer_llm,
         )
+        preparation_llm: BaseLLM = self.llm
+        preparation_fallback_llm: BaseLLM | None = None
+        if (
+            not custom_llm_supplied
+            and settings.QUERY_PREPARATION_MODEL
+            and settings.QUERY_PREPARATION_MODEL != settings.LLM_MODEL
+        ):
+            preparation_llm = LLMClient(model=settings.QUERY_PREPARATION_MODEL)
+            preparation_fallback_llm = self.llm
+
         self.query_understanding = query_understanding or QueryUnderstanding(
-            intent_classifier=IntentClassifier(llm=self.llm),
-            clarifier=Clarifier(llm=self.llm),
-            query_rewriter=QueryRewriter(llm=self.llm),
-            query_planner=QueryPlanner(llm=self.llm),
+            intent_classifier=HybridIntentRouter(
+                fallback=IntentClassifier(
+                    llm=ObservedLLM(self.llm, "intent_classifier")
+                )
+            ),
+            clarifier=Clarifier(llm=ObservedLLM(self.llm, "clarifier")),
+            query_rewriter=QueryRewriter(llm=ObservedLLM(self.llm, "query_rewriter")),
+            query_planner=QueryPlanner(llm=ObservedLLM(self.llm, "query_planner")),
+            unified_analyzer=UnifiedQueryAnalyzer(
+                llm=ObservedLLM(self.llm, "unified_query_understanding")
+            ),
+            query_preparation=QueryPreparationAnalyzer(
+                llm=ObservedLLM(preparation_llm, "query_preparation"),
+                fallback_llm=(
+                    ObservedLLM(
+                        preparation_fallback_llm,
+                        "query_preparation_fallback",
+                    )
+                    if preparation_fallback_llm is not None
+                    else None
+                ),
+            ),
         )
         self.policy_router = policy_router or IntentPolicyRouter()
         self.tool_executor = tool_executor or ToolExecutor(self.registry)
@@ -107,6 +182,7 @@ class Agent:
     ) -> ChatResponse:
         """Execute one chat turn and preserve the CP1 Web response contract."""
         start_time = self.audit_service.start_timer()
+        metrics_token = start_llm_metrics()
         trace_id = self.trace_service.start_trace()
 
         try:
@@ -133,6 +209,7 @@ class Agent:
             )
             raise exc
         finally:
+            clear_llm_metrics(metrics_token)
             self.trace_service.clear_trace()
 
     def _chat_internal(
@@ -216,6 +293,12 @@ class Agent:
                 trace_id,
                 self.last_citation_check.errors,
             )
+        run_result.llm_metrics = snapshot_llm_metrics()
+        logger.info(
+            "[LLM_METRICS] trace_id=%s metrics=%s",
+            trace_id,
+            run_result.llm_metrics,
+        )
         self._save_conversation_turn(
             session_id=request.session_id,
             query=plan.original_query,
@@ -248,7 +331,7 @@ class Agent:
         """Fallback smart title generation via fast LLM call or clean query slice."""
         try:
             prompt = f"请根据用户第一次提问，总结提取一个极简对话标题（3-10字，绝对不要聊天标点或无用词如'我想知道'）：\n问题：{query}"
-            raw_res = self.llm.chat([{"role": "user", "content": prompt}], max_tokens=30, temperature=0.2)
+            raw_res = self.title_llm.chat([{"role": "user", "content": prompt}], max_tokens=30, temperature=0.2)
             raw = raw_res.get("content", "") if isinstance(raw_res, dict) else str(raw_res)
             clean = raw.strip().replace("'", "").replace('"', "").replace("`", "").replace("。", "").replace("！", "").replace("？", "").strip()
             clean = clean.replace("标题：", "").replace("Title:", "").replace("我想知道", "").strip()

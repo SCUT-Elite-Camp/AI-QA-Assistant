@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from copy import deepcopy
 from typing import Any
 
@@ -49,6 +50,12 @@ class QueryPlanner:
         query = standalone_query.strip()
         if not query or not self.enabled or intent not in self.RETRIEVAL_INTENTS:
             return QueryEnrichment(reason="query_planning_skipped")
+        if intent == QueryIntent.KNOWLEDGE_QA and self._is_simple_single_target(query):
+            self.logger.info(
+                "[QUERY_PLANNING] action=fast_path reason=simple_single_target query=%s",
+                query,
+            )
+            return QueryEnrichment(reason="simple_knowledge_qa_fast_path")
 
         messages = [
             {"role": "system", "content": self._system_prompt()},
@@ -75,6 +82,23 @@ class QueryPlanner:
             sub_queries=result.sub_queries,
             filters=self._supported_filters(result.filters),
             reason=result.reason,
+        )
+
+    @staticmethod
+    def _is_simple_single_target(query: str) -> bool:
+        """Return true only when decomposition is unlikely to improve retrieval."""
+
+        if len(query) > 120 or query.count("?") + query.count("？") > 1:
+            return False
+        complex_patterns = (
+            r"\bcompare\b|\bversus\b|\bvs\.?\b|\bdifference\b",
+            r"\band\b.*\b(?:why|how|what|which|where|when)\b",
+            r"比较|对比|区别|差异|分别|各自|两者|以及|同时|并且",
+            r"[，,；;].*(?:为什么|如何|哪些|什么|是否|怎么)",
+        )
+        return not any(
+            re.search(pattern, query, flags=re.IGNORECASE)
+            for pattern in complex_patterns
         )
 
     @staticmethod

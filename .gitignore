@@ -27,3 +27,18 @@ data-persistence/data-persistence/
 *.sqlite
 tmp_test_chat.py
 docs/memory-context-implementation-plan.local.md
+
+# Large third-party evaluation corpora stay local on the D: workspace.
+eval/datasets/external/*
+!eval/datasets/external/README.md
+
+# Local pretrained model weights stay on D: and must not be committed.
+models/
+
+# Local IDE, Codex artifact, preview, and generated evaluation outputs.
+.idea/
+.tmp/
+.codex_spreadsheet/
+outputs/
+eval/reports/
+~$*.xlsx

@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 
 from agent.runtime import AgentRunner, StopReason
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryIntent, QueryPlan
 from agent.service.audit_service import AuditService
 from toolset.tool_layer import BaseTool, ToolRegistry
 
@@ -140,7 +140,12 @@ def test_search_loop_uses_standalone_query_filters_and_trace_id() -> None:
             "trace_id": "trace-cp2",
         }
     ]
-    assert llm.calls[1]["messages"][-1]["role"] == "tool"
+    answer_messages = llm.calls[1]["messages"]
+    assert [message["role"] for message in answer_messages] == ["system", "user"]
+    assert "Accepted evidence:" in answer_messages[1]["content"]
+    assert "CP2 分工文档内容" in answer_messages[1]["content"]
+    assert llm.calls[0]["tools"]
+    assert llm.calls[1]["tools"] is None
 
 
 def test_runner_supports_multiple_different_tool_iterations() -> None:
@@ -283,3 +288,141 @@ def test_unknown_tool_and_invalid_json_are_controlled_errors(
 
     assert result.stop_reason == StopReason.TOOL_ERROR
     assert expected_error in result.error_code
+
+
+def test_simple_knowledge_answer_uses_fast_model_after_retrieval() -> None:
+    search = RecordingSearchTool()
+    planner = ScriptedLLM(
+        [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
+    )
+    complex_answer = ScriptedLLM([{"content": "complex answer"}])
+    fast_answer = ScriptedLLM([{"content": "fast answer [1]"}])
+    runner = make_runner(
+        planner,
+        [search],
+        answer_llm=complex_answer,
+        fast_answer_llm=fast_answer,
+    )
+
+    result = runner.run(make_plan(), trace_id="trace-fast-answer")
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "fast answer [1]"
+    assert len(fast_answer.calls) == 1
+    assert complex_answer.calls == []
+    answer_messages = fast_answer.calls[0]["messages"]
+    assert "Accepted evidence:" in answer_messages[1]["content"]
+    assert all("tool_calls" not in message for message in answer_messages)
+
+
+def test_answer_evidence_prioritizes_directly_named_contract() -> None:
+    evidence = [
+        {"title": "cp1_cp2_architecture_overview", "chunk_id": "overview"},
+        {"title": "conversation_memory_contract", "chunk_id": "contract"},
+        {"title": "meeting_minutes", "chunk_id": "meeting"},
+    ]
+
+    ranked = AgentRunner._prioritize_evidence_for_answer(
+        "Which ConversationMemory field identifies a session?",
+        evidence,
+    )
+
+    assert [item["chunk_id"] for item in ranked] == ["contract", "overview", "meeting"]
+    assert {item["chunk_id"] for item in ranked} == {"overview", "contract", "meeting"}
+
+
+def test_comparison_answer_stays_on_complex_model() -> None:
+    search = RecordingSearchTool()
+    planner = ScriptedLLM(
+        [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
+    )
+    complex_answer = ScriptedLLM([{"content": "complex comparison [1]"}])
+    fast_answer = ScriptedLLM([{"content": "fast answer [1]"}])
+    runner = make_runner(
+        planner,
+        [search],
+        answer_llm=complex_answer,
+        fast_answer_llm=fast_answer,
+    )
+
+    result = runner.run(
+        make_plan(intent=QueryIntent.COMPARISON, sub_queries=["A", "B"]),
+        trace_id="trace-complex-answer",
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "complex comparison [1]"
+    assert len(complex_answer.calls) == 1
+    assert fast_answer.calls == []
+
+
+def test_single_planned_sub_query_stays_on_complex_model() -> None:
+    search = RecordingSearchTool()
+    planner = ScriptedLLM(
+        [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
+    )
+    complex_answer = ScriptedLLM([{"content": "complex planned answer [1]"}])
+    fast_answer = ScriptedLLM([{"content": "fast answer [1]"}])
+    runner = make_runner(
+        planner,
+        [search],
+        answer_llm=complex_answer,
+        fast_answer_llm=fast_answer,
+    )
+
+    result = runner.run(
+        make_plan(sub_queries=["one required aspect"]),
+        trace_id="trace-single-sub-query",
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "complex planned answer [1]"
+    assert len(complex_answer.calls) == 1
+    assert fast_answer.calls == []
+
+
+def test_multi_aspect_flow_question_stays_on_complex_model_without_sub_queries() -> None:
+    search = RecordingSearchTool()
+    planner = ScriptedLLM(
+        [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
+    )
+    complex_answer = ScriptedLLM([{"content": "complete flow answer [1]"}])
+    fast_answer = ScriptedLLM([{"content": "fast answer [1]"}])
+    runner = make_runner(
+        planner,
+        [search],
+        answer_llm=complex_answer,
+        fast_answer_llm=fast_answer,
+    )
+    plan = make_plan()
+    plan.original_query = "问答请求从进入系统到返回答案会经过哪些核心步骤？"
+    plan.standalone_query = plan.original_query
+
+    result = runner.run(plan, trace_id="trace-multi-aspect-flow")
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "complete flow answer [1]"
+    assert len(complex_answer.calls) == 1
+    assert fast_answer.calls == []
+
+
+def test_fast_answer_failure_falls_back_to_complex_model() -> None:
+    search = RecordingSearchTool()
+    planner = ScriptedLLM(
+        [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
+    )
+    fast_answer = ScriptedLLM([RuntimeError("fast model unavailable")])
+    complex_answer = ScriptedLLM([{"content": "fallback answer [1]"}])
+    runner = make_runner(
+        planner,
+        [search],
+        answer_llm=complex_answer,
+        fast_answer_llm=fast_answer,
+    )
+
+    result = runner.run(make_plan(), trace_id="trace-answer-fallback")
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "fallback answer [1]"
+    assert len(fast_answer.calls) == 1
+    assert len(complex_answer.calls) == 1

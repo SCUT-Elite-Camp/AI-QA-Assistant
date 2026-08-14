@@ -8,11 +8,13 @@ from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
 from agent.memory import ConversationMemory
 from agent.policy import IntentPolicyRouter
 from agent.query import QueryUnderstanding
+from agent.query.subquery_router import SubQueryRouter
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
 from agent.schemas.chat import ChatRequest, Citation
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
+from agent.schemas.subquery_routing import SubQueryRoutingResult
 from agent.schemas.tool_execution import Evidence
 from agent.tools import ToolExecutor
 
@@ -27,6 +29,7 @@ class OrchestrationResult:
     history: list[dict[str, Any]]
     retrieval_mode: str
     top_k: int
+    subquery_routing: SubQueryRoutingResult
 
 
 class AgentOrchestrator:
@@ -48,6 +51,7 @@ class AgentOrchestrator:
         evidence_gate: EvidenceGate,
         corrective_retrieval: CorrectiveRetrievalPlanner,
         citation_checker: CitationChecker,
+        subquery_router: SubQueryRouter | None = None,
     ) -> None:
         self.memory = memory
         self.query_understanding = query_understanding
@@ -57,6 +61,10 @@ class AgentOrchestrator:
         self.evidence_gate = evidence_gate
         self.corrective_retrieval = corrective_retrieval
         self.citation_checker = citation_checker
+        classifier = getattr(query_understanding, "intent_classifier", None)
+        self.subquery_router = subquery_router
+        if self.subquery_router is None and classifier is not None:
+            self.subquery_router = SubQueryRouter(classifier, policy_router)
 
     def run(
         self,
@@ -70,6 +78,11 @@ class AgentOrchestrator:
         history = self._read_history(request.session_id)
         plan = self._resolve_query_plan(request, query_plan, history)
         policy = self.policy_router.route(plan)
+        subquery_routing = (
+            self.subquery_router.route(plan)
+            if self.subquery_router is not None
+            else SubQueryRoutingResult(is_complex=len(plan.sub_queries) >= 2)
+        )
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
@@ -94,6 +107,7 @@ class AgentOrchestrator:
             history=history,
             retrieval_mode=retrieval_mode,
             top_k=top_k,
+            subquery_routing=subquery_routing,
         )
 
     def validate_citations(
