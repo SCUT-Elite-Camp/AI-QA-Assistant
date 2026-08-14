@@ -35,14 +35,34 @@ export function createCurrentMessageHandoff(
   }
 }
 
-export function shouldPersistAssistantMessage(input: {
-  assistantResponseCompleted: boolean
-  isAborted: boolean
-  responseRole: string
-}): boolean {
-  return input.assistantResponseCompleted
-    && !input.isAborted
-    && input.responseRole === 'assistant'
+export interface AssistantStreamState {
+  agentSucceeded: boolean
+  assistantContent: string
+  clientAborted: boolean
+  streamCompleted: boolean
+  streamFailed: boolean
+}
+
+export function createAssistantStreamState(): AssistantStreamState {
+  return {
+    agentSucceeded: false,
+    assistantContent: '',
+    clientAborted: false,
+    streamCompleted: false,
+    streamFailed: false
+  }
+}
+
+export function shouldPersistAssistantMessage(state: AssistantStreamState): boolean {
+  return state.agentSucceeded
+    && state.streamCompleted
+    && !state.clientAborted
+    && !state.streamFailed
+    && Boolean(state.assistantContent.trim())
+}
+
+export function createAssistantMessageId(): string {
+  return crypto.randomUUID()
 }
 
 export class MessageLifecycleError extends Error {
@@ -177,6 +197,31 @@ async function withChatWriteLock<T>(chatId: string, operation: () => Promise<T>)
  */
 export async function appendMessage(db: Database, input: AppendMessageInput) {
   return withChatWriteLock(input.chatId, () => appendMessageWithRetries(db, input))
+}
+
+export interface PersistCurrentUserMessageInput {
+  chatId: string
+  id: string
+  parts: typeof tables.messages.$inferInsert.parts
+}
+
+/**
+ * Persists the exact final user message supplied to the streaming endpoint.
+ * The UI message ID is both the stable message ID and the retry key, so an
+ * initial hydrated message or a network retry reuses its existing sequence.
+ */
+export async function persistCurrentUserMessage(
+  db: Database,
+  input: PersistCurrentUserMessageInput
+) {
+  return appendMessage(db, {
+    chatId: input.chatId,
+    id: input.id,
+    parts: input.parts,
+    replaceExisting: true,
+    requestId: input.id,
+    role: 'user'
+  })
 }
 
 async function appendMessageWithRetries(db: Database, input: AppendMessageInput) {

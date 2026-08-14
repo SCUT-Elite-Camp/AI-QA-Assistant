@@ -11,7 +11,10 @@ import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
 import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
 import {
   appendMessage,
+  createAssistantMessageId,
+  createAssistantStreamState,
   createCurrentMessageHandoff,
+  persistCurrentUserMessage,
   shouldPersistAssistantMessage
 } from '../../../utils/messageLifecycle'
 
@@ -63,17 +66,14 @@ export default defineHandler(async (event) => {
   const messageCount = (chat.messages || []).length
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
-  let currentMessage = chat.messages[chat.messages.length - 1]
-  if (messages.length > 1) {
-    currentMessage = await appendMessage(db, {
-      id: lastMessage.id,
-      chatId: id as string,
-      role: 'user',
-      parts: lastMessage.parts,
-      replaceExisting: true,
-      requestId: lastMessage.id
-    })
-  }
+  // Always resolve the Agent handoff from the exact body message. For the
+  // initial hydrated turn this returns the existing row; for a direct or
+  // retried request it persists or reuses that same UI message ID.
+  const currentMessage = await persistCurrentUserMessage(db, {
+    chatId: id as string,
+    id: lastMessage.id,
+    parts: lastMessage.parts
+  })
 
   if (!currentMessage || currentMessage.role !== 'user') {
     throw new HTTPError({ statusCode: 409, statusMessage: 'Current user message was not persisted' })
@@ -84,11 +84,16 @@ export default defineHandler(async (event) => {
   const currentAgentInput = createCurrentMessageHandoff(actor.userId, currentMessage)
 
   const abortController = new AbortController()
-  event.runtime?.node?.req?.on('close', () => abortController.abort())
-  let assistantResponseCompleted = false
+  const assistantState = createAssistantStreamState()
+  let assistantMessageId: string | undefined
+  event.runtime?.node?.req?.on('close', () => {
+    assistantState.clientAborted = true
+    abortController.abort()
+  })
 
   const stream = createUIMessageStream({
     onError: (err: any) => {
+      assistantState.streamFailed = true
       console.error('[web-stream] onError occurred:', err)
       return 'Request failed.'
     },
@@ -158,6 +163,7 @@ export default defineHandler(async (event) => {
 
         const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
         if (!isValidResponse) {
+          assistantState.streamFailed = true
           writer.write({
             type: 'error',
             errorText: 'Agent request failed.'
@@ -167,6 +173,9 @@ export default defineHandler(async (event) => {
 
         const rawAnswer = agentData.answer || agentData.message || ""
         const citationsList: any[] = agentData.citations || []
+        assistantState.agentSucceeded = true
+        const currentAssistantMessageId = createAssistantMessageId()
+        assistantMessageId = currentAssistantMessageId
 
         // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
         if (chat.topicId && citationsList.length > 0) {
@@ -274,61 +283,76 @@ export default defineHandler(async (event) => {
 
 
         // 4. Stream answer text chunk-by-chunk to simulate real-time typing
-        const responseId = `assistant-msg-${Date.now()}`
         writer.write({
           type: 'text-start',
-          id: responseId
+          id: currentAssistantMessageId
         })
 
         const chunkSize = 2
         for (let i = 0; i < processedAnswer.length; i += chunkSize) {
-          if (abortController.signal.aborted) return
+          if (abortController.signal.aborted) {
+            assistantState.clientAborted = true
+            return
+          }
 
           const chunk = processedAnswer.slice(i, i + chunkSize)
           writer.write({
             type: 'text-delta',
-            id: responseId,
+            id: currentAssistantMessageId,
             delta: chunk
           })
+          assistantState.assistantContent += chunk
           // Small delay for natural streaming pacing
           await new Promise((resolve) => setTimeout(resolve, 20))
         }
 
-        if (abortController.signal.aborted) return
+        if (abortController.signal.aborted) {
+          assistantState.clientAborted = true
+          return
+        }
         writer.write({
           type: 'text-end',
-          id: responseId
+          id: currentAssistantMessageId
         })
-        assistantResponseCompleted = true
+        assistantState.streamCompleted = true
 
       } catch (err: any) {
+        assistantState.streamFailed = true
         console.error('[web-post] error in agent call:', err)
-        if (abortController.signal.aborted) return
+        if (abortController.signal.aborted) {
+          assistantState.clientAborted = true
+          return
+        }
 
-        writer.write({
-          type: 'error',
-          errorText: 'Failed to retrieve an answer from the Agent layer.'
-        })
+        try {
+          writer.write({
+            type: 'error',
+            errorText: 'Failed to retrieve an answer from the Agent layer.'
+          })
+        } catch (writerError) {
+          console.error('[web-post] unable to write stream error:', writerError)
+        }
       }
     },
-    onFinish: async ({ isAborted, responseMessage }) => {
-      if (!shouldPersistAssistantMessage({
-        assistantResponseCompleted,
-        isAborted: isAborted || abortController.signal.aborted,
-        responseRole: responseMessage.role
-      })) {
+    onFinish: async ({ isAborted }) => {
+      if (isAborted || abortController.signal.aborted) {
+        assistantState.clientAborted = true
+      }
+
+      if (!assistantMessageId || !shouldPersistAssistantMessage(assistantState)) {
         return
       }
 
       try {
         await appendMessage(db, {
-          id: responseMessage.id,
+          id: assistantMessageId,
           chatId: chat.id,
-          parts: responseMessage.parts,
+          parts: [{ type: 'text', text: assistantState.assistantContent }],
           role: 'assistant'
         })
-      } catch (dbErr) {
-        console.error('[web-onFinish] DB save error:', dbErr)
+      } catch {
+        assistantState.streamFailed = true
+        console.error('[web-onFinish] assistant message persistence failed')
       }
     }
   })

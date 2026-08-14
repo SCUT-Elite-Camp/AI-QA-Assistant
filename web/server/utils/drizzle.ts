@@ -14,13 +14,29 @@ let _db: (ReturnType<typeof drizzle<typeof schema>> & { $client: ReturnType<type
 import fs from 'fs'
 import path from 'path'
 
+export function resolveRuntimeDatabaseUrl(
+  environment: Record<string, string | undefined> = process.env,
+  cwd = process.cwd()
+): string {
+  const configuredUrl = environment.TURSO_DATABASE_URL?.trim()
+  if (configuredUrl) return configuredUrl
+
+  if (environment.NODE_ENV !== 'development') {
+    throw new Error('TURSO_DATABASE_URL must be configured outside development')
+  }
+
+  return `file:${path.resolve(cwd, '.data', 'sqlite.db')}`
+}
+
 export function useDrizzle() {
   if (!_db) {
-    const defaultDbPath = path.resolve(process.cwd(), '../data-persistence/data/sqlite.db')
-    fs.mkdirSync(path.dirname(defaultDbPath), { recursive: true })
+    const databaseUrl = resolveRuntimeDatabaseUrl()
+    if (!process.env.TURSO_DATABASE_URL?.trim()) {
+      fs.mkdirSync(path.resolve(process.cwd(), '.data'), { recursive: true })
+    }
 
     const client = createClient({
-      url: process.env.TURSO_DATABASE_URL || `file:${defaultDbPath}`,
+      url: databaseUrl,
       authToken: process.env.TURSO_AUTH_TOKEN,
     })
 

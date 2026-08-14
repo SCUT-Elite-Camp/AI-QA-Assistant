@@ -68,6 +68,43 @@ describe('message lifecycle', () => {
     })
   })
 
+  it('persists the exact single-message request before handing it to the Agent', async () => {
+    const {
+      createCurrentMessageHandoff,
+      persistCurrentUserMessage
+    } = await import('../../server/utils/messageLifecycle')
+    const { chatId, db } = await createFixture()
+    const actorUserId = crypto.randomUUID()
+    const messageId = crypto.randomUUID()
+    const parts = [{ text: 'single-message request', type: 'text' }]
+
+    const persisted = await persistCurrentUserMessage(db, {
+      chatId,
+      id: messageId,
+      parts
+    })
+    const retry = await persistCurrentUserMessage(db, {
+      chatId,
+      id: messageId,
+      parts
+    })
+
+    expect(persisted).toMatchObject({
+      historyRevision: 1,
+      id: messageId,
+      requestId: messageId,
+      sequence: 1
+    })
+    expect(retry).toMatchObject({ id: messageId, sequence: 1 })
+    expect(createCurrentMessageHandoff(actorUserId, persisted)).toMatchObject({
+      actorUserId,
+      chatId,
+      currentMessageId: messageId,
+      currentSequence: 1,
+      historyRevision: 1
+    })
+  })
+
   it('returns the existing user message for concurrent request retries', async () => {
     const { appendMessage } = await import('../../server/utils/messageLifecycle')
     const { chatId, db } = await createFixture()
@@ -159,28 +196,32 @@ describe('message lifecycle', () => {
   })
 
   it('allows persistence only for a completed, non-aborted assistant response', async () => {
-    const { shouldPersistAssistantMessage } = await import('../../server/utils/messageLifecycle')
+    const {
+      createAssistantMessageId,
+      createAssistantStreamState,
+      shouldPersistAssistantMessage
+    } = await import('../../server/utils/messageLifecycle')
 
-    expect(shouldPersistAssistantMessage({
-      assistantResponseCompleted: true,
-      isAborted: false,
-      responseRole: 'assistant'
-    })).toBe(true)
-    expect(shouldPersistAssistantMessage({
-      assistantResponseCompleted: false,
-      isAborted: false,
-      responseRole: 'assistant'
-    })).toBe(false)
-    expect(shouldPersistAssistantMessage({
-      assistantResponseCompleted: true,
-      isAborted: true,
-      responseRole: 'assistant'
-    })).toBe(false)
-    expect(shouldPersistAssistantMessage({
-      assistantResponseCompleted: true,
-      isAborted: false,
-      responseRole: 'user'
-    })).toBe(false)
+    const state = createAssistantStreamState()
+    expect(shouldPersistAssistantMessage(state)).toBe(false)
+
+    state.agentSucceeded = true
+    state.assistantContent = 'completed answer'
+    state.streamCompleted = true
+    expect(shouldPersistAssistantMessage(state)).toBe(true)
+
+    state.clientAborted = true
+    expect(shouldPersistAssistantMessage(state)).toBe(false)
+    state.clientAborted = false
+
+    state.streamFailed = true
+    expect(shouldPersistAssistantMessage(state)).toBe(false)
+    state.streamFailed = false
+
+    state.assistantContent = '  '
+    expect(shouldPersistAssistantMessage(state)).toBe(false)
+
+    expect(createAssistantMessageId()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
   })
 
   it('serializes concurrent allocations without duplicate sequences', async () => {

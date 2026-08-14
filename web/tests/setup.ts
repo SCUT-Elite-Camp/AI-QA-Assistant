@@ -1,5 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdtemp } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { afterAll, beforeAll } from 'vitest'
 
@@ -8,7 +7,12 @@ let originalDatabaseUrl: string | undefined
 let originalAuthToken: string | undefined
 
 beforeAll(async () => {
-  temporaryDirectory = await mkdtemp(join(tmpdir(), 'ai-qa-memory-test-'))
+  const temporaryRoot = process.env.AI_QA_VITEST_TEMP_ROOT
+  if (!temporaryRoot) {
+    throw new Error('AI_QA_VITEST_TEMP_ROOT must be configured by globalSetup')
+  }
+
+  temporaryDirectory = await mkdtemp(join(temporaryRoot, 'suite-'))
   originalDatabaseUrl = process.env.TURSO_DATABASE_URL
   originalAuthToken = process.env.TURSO_AUTH_TOKEN
 
@@ -54,12 +58,4 @@ afterAll(async () => {
     process.env.TURSO_AUTH_TOKEN = originalAuthToken
   }
 
-  if (temporaryDirectory) {
-    await rm(temporaryDirectory, {
-      force: true,
-      maxRetries: 5,
-      recursive: true,
-      retryDelay: 100
-    })
-  }
 })

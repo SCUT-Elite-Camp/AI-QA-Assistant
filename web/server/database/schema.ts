@@ -99,7 +99,7 @@ export const messages = sqliteTable('messages', {
   role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
   parts: text('parts', { mode: 'json' }),
   sequence: integer('sequence').notNull(),
-  historyRevision: integer('history_revision').notNull(),
+  historyRevision: integer('history_revision').notNull().default(1),
   requestId: text('request_id'),
   isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
   suggestionText: text('suggestion_text'),
