@@ -26,3 +26,4 @@ data-persistence/data-persistence/
 *.db
 *.sqlite
 tmp_test_chat.py
+docs/memory-context-implementation-plan.local.md
