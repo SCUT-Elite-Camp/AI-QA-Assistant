@@ -1,9 +1,19 @@
-import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index, uniqueIndex, primaryKey, check } from 'drizzle-orm/sqlite-core'
 import { relations, sql } from 'drizzle-orm'
 
 const timestamps = {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
 }
+
+export const memorySnapshotStatuses = ['ACTIVE', 'ARCHIVED'] as const
+export const memoryFactCategories = ['GOAL', 'PREFERENCE', 'PLAN_CONSTRAINT'] as const
+export const memoryFactScopes = ['SESSION'] as const
+export const memoryFactStatuses = ['PROPOSED', 'CONFIRMED', 'REVOKED'] as const
+
+export type MemorySnapshotStatus = typeof memorySnapshotStatuses[number]
+export type MemoryFactCategory = typeof memoryFactCategories[number]
+export type MemoryFactScope = typeof memoryFactScopes[number]
+export type MemoryFactStatus = typeof memoryFactStatuses[number]
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -19,7 +29,9 @@ export const users = sqliteTable('users', {
 ])
 
 export const usersRelations = relations(users, ({ many }) => ({
-  chats: many(chats)
+  chats: many(chats),
+  memoryFacts: many(memoryFacts),
+  memorySnapshots: many(memorySnapshots)
 }))
 
 export const topics = sqliteTable('topics', {
@@ -66,7 +78,9 @@ export const chatsRelations = relations(chats, ({ one, many }) => ({
     fields: [chats.topicId],
     references: [topics.id]
   }),
-  messages: many(messages)
+  messages: many(messages),
+  memoryFacts: many(memoryFacts),
+  memorySnapshots: many(memorySnapshots)
 }))
 
 export const topicDocuments = sqliteTable('topic_documents', {
@@ -117,7 +131,81 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
     fields: [messages.chatId],
     references: [chats.id]
   }),
-  feedbacks: many(messageFeedbacks)
+  feedbacks: many(messageFeedbacks),
+  memoryFacts: many(memoryFacts)
+}))
+
+export const memorySnapshots = sqliteTable('memory_snapshots', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  historyRevision: integer('history_revision').notNull(),
+  version: integer('version').notNull(),
+  coveredFromSequence: integer('covered_from_sequence').notNull(),
+  coveredToSequence: integer('covered_to_sequence').notNull(),
+  coveredFromMessageId: text('covered_from_message_id').notNull(),
+  coveredToMessageId: text('covered_to_message_id').notNull(),
+  summary: text('summary').notNull(),
+  status: text('status', { enum: memorySnapshotStatuses }).notNull(),
+  archivedAt: integer('archived_at', { mode: 'timestamp' }),
+  ...timestamps
+}, table => [
+  check('memory_snapshots_status_check', sql`${table.status} IN ('ACTIVE', 'ARCHIVED')`),
+  uniqueIndex('memory_snapshots_chat_revision_version_idx')
+    .on(table.chatId, table.historyRevision, table.version),
+  index('memory_snapshots_chat_revision_status_covered_to_idx')
+    .on(table.chatId, table.historyRevision, table.status, table.coveredToSequence)
+])
+
+export const memorySnapshotsRelations = relations(memorySnapshots, ({ one }) => ({
+  chat: one(chats, {
+    fields: [memorySnapshots.chatId],
+    references: [chats.id]
+  }),
+  user: one(users, {
+    fields: [memorySnapshots.userId],
+    references: [users.id]
+  })
+}))
+
+export const memoryFacts = sqliteTable('memory_facts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  historyRevision: integer('history_revision').notNull(),
+  sourceMessageId: text('source_message_id').references(() => messages.id, { onDelete: 'set null' }),
+  category: text('category', { enum: memoryFactCategories }).notNull(),
+  scope: text('scope', { enum: memoryFactScopes }).notNull(),
+  status: text('status', { enum: memoryFactStatuses }).notNull(),
+  value: text('value').notNull(),
+  proposalKey: text('proposal_key').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
+  confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
+  revokedAt: integer('revoked_at', { mode: 'timestamp' }),
+  ...timestamps
+}, table => [
+  check('memory_facts_category_check', sql`${table.category} IN ('GOAL', 'PREFERENCE', 'PLAN_CONSTRAINT')`),
+  check('memory_facts_scope_check', sql`${table.scope} = 'SESSION'`),
+  check('memory_facts_status_check', sql`${table.status} IN ('PROPOSED', 'CONFIRMED', 'REVOKED')`),
+  index('memory_facts_user_chat_revision_status_expires_idx')
+    .on(table.userId, table.chatId, table.historyRevision, table.status, table.expiresAt),
+  uniqueIndex('memory_facts_chat_revision_proposal_key_idx')
+    .on(table.chatId, table.historyRevision, table.proposalKey)
+])
+
+export const memoryFactsRelations = relations(memoryFacts, ({ one }) => ({
+  chat: one(chats, {
+    fields: [memoryFacts.chatId],
+    references: [chats.id]
+  }),
+  sourceMessage: one(messages, {
+    fields: [memoryFacts.sourceMessageId],
+    references: [messages.id]
+  }),
+  user: one(users, {
+    fields: [memoryFacts.userId],
+    references: [users.id]
+  })
 }))
 
 export const messageFeedbacks = sqliteTable('message_feedbacks', {
