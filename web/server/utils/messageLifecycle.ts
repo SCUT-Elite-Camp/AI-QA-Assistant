@@ -14,6 +14,37 @@ export interface AppendMessageInput {
   role: MessageRole
 }
 
+export interface CurrentMessageHandoff {
+  actorUserId: string
+  chatId: string
+  currentMessageId: string
+  currentSequence: number
+  historyRevision: number
+}
+
+export function createCurrentMessageHandoff(
+  actorUserId: string,
+  message: Pick<typeof tables.messages.$inferSelect, 'chatId' | 'historyRevision' | 'id' | 'sequence'>
+): CurrentMessageHandoff {
+  return {
+    actorUserId,
+    chatId: message.chatId,
+    currentMessageId: message.id,
+    currentSequence: message.sequence,
+    historyRevision: message.historyRevision
+  }
+}
+
+export function shouldPersistAssistantMessage(input: {
+  assistantResponseCompleted: boolean
+  isAborted: boolean
+  responseRole: string
+}): boolean {
+  return input.assistantResponseCompleted
+    && !input.isAborted
+    && input.responseRole === 'assistant'
+}
+
 export class MessageLifecycleError extends Error {
   constructor(
     readonly statusCode: number,
@@ -58,10 +89,14 @@ async function findExistingMessage(db: Database, input: AppendMessageInput) {
 async function replaceExistingMessage(
   db: Database,
   input: AppendMessageInput,
-  existing: typeof tables.messages.$inferSelect
+  existing: typeof tables.messages.$inferSelect,
+  historyRevision: number
 ) {
   const updated = await db.update(tables.messages)
-    .set({ parts: input.parts })
+    .set({
+      historyRevision,
+      parts: input.parts
+    })
     .where(and(
       eq(tables.messages.id, existing.id),
       eq(tables.messages.chatId, input.chatId)
@@ -69,6 +104,20 @@ async function replaceExistingMessage(
     .returning()
 
   return updated[0] ?? existing
+}
+
+async function getChatRevision(db: Database, chatId: string) {
+  const chats = await db.select({ historyRevision: tables.chats.historyRevision })
+    .from(tables.chats)
+    .where(eq(tables.chats.id, chatId))
+    .limit(1)
+
+  const chat = chats[0]
+  if (!chat) {
+    throw new MessageLifecycleError(404, 'Chat not found')
+  }
+
+  return chat.historyRevision
 }
 
 function isDatabaseBusy(error: unknown): boolean {
@@ -135,9 +184,12 @@ async function appendMessageWithRetries(db: Database, input: AppendMessageInput)
     return await withDatabaseLockRetry(() => db.transaction(async (tx) => {
         const existing = await findExistingMessage(tx, input)
         if (existing) {
-          return input.replaceExisting
-            ? replaceExistingMessage(tx, input, existing)
-            : existing
+          const currentRevision = await getChatRevision(tx, input.chatId)
+          if (input.replaceExisting && existing.historyRevision !== currentRevision) {
+            return replaceExistingMessage(tx, input, existing, currentRevision)
+          }
+
+          return existing
         }
 
         const allocation = await tx.update(tables.chats)
@@ -177,9 +229,12 @@ async function appendMessageWithRetries(db: Database, input: AppendMessageInput)
 
     const existing = await findExistingMessage(db, input)
     if (existing) {
-      return input.replaceExisting
-        ? replaceExistingMessage(db, input, existing)
-        : existing
+      const currentRevision = await getChatRevision(db, input.chatId)
+      if (input.replaceExisting && existing.historyRevision !== currentRevision) {
+        return replaceExistingMessage(db, input, existing, currentRevision)
+      }
+
+      return existing
     }
 
     throw error

@@ -1,17 +1,17 @@
 import { z } from 'zod'
-import { defineHandler, HTTPError } from 'nitro'
+import { defineHandler } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { generateTopicTitle, generateInitialSoul } from '../../../../utils/soul'
-import { copyChatCitationsToTopic } from '../../../../utils/topicStorage'
+import { requireOwnedChat } from '../../../../utils/chatAccess'
 import { appendMessage } from '../../../../utils/messageLifecycle'
 
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+
+  const { actor, chat: parentChat } = await requireOwnedChat(event, id)
 
   const { initialQuery, parentMessageId, selectedText, contextText, messages } = await readValidatedBody(event, z.object({
     initialQuery: z.string().optional(),
@@ -26,15 +26,6 @@ export default defineHandler(async (event) => {
   }).parse)
 
   const db = useDrizzle()
-
-  const parentChat = await db.query.chats.findFirst({
-    where: eq(tables.chats.id, id),
-    with: { messages: true }
-  })
-
-  if (!parentChat) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'Parent chat not found' })
-  }
 
   const selPrefix = (selectedText || '').trim()
   const qPart = (initialQuery || '').trim()
@@ -69,7 +60,7 @@ export default defineHandler(async (event) => {
   // Create formal branch chat
   const [branchChat] = await db.insert(tables.chats).values({
     title: branchTitle,
-    userId: session.data.user?.id || session.id!,
+    userId: actor.userId,
     visibility: 'private',
     topicId,
     isBranch: true,

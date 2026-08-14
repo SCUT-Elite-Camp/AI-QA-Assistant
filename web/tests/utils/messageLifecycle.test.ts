@@ -47,6 +47,27 @@ describe('message lifecycle', () => {
     expect(assistantMessage).toMatchObject({ historyRevision: 1, sequence: 2 })
   })
 
+  it('builds the trusted Agent handoff from the persisted user message', async () => {
+    const { appendMessage, createCurrentMessageHandoff } = await import('../../server/utils/messageLifecycle')
+    const { chatId, db } = await createFixture()
+    const actorUserId = crypto.randomUUID()
+    const message = await appendMessage(db, {
+      chatId,
+      id: crypto.randomUUID(),
+      parts: [{ text: 'handoff', type: 'text' }],
+      requestId: crypto.randomUUID(),
+      role: 'user'
+    })
+
+    expect(createCurrentMessageHandoff(actorUserId, message)).toEqual({
+      actorUserId,
+      chatId,
+      currentMessageId: message.id,
+      currentSequence: 1,
+      historyRevision: 1
+    })
+  })
+
   it('returns the existing user message for concurrent request retries', async () => {
     const { appendMessage } = await import('../../server/utils/messageLifecycle')
     const { chatId, db } = await createFixture()
@@ -70,7 +91,7 @@ describe('message lifecycle', () => {
   })
 
   it('updates an edited message without consuming another sequence', async () => {
-    const { appendMessage } = await import('../../server/utils/messageLifecycle')
+    const { appendMessage, truncateHistory } = await import('../../server/utils/messageLifecycle')
     const { chatId, db } = await createFixture()
     const id = crypto.randomUUID()
 
@@ -80,6 +101,17 @@ describe('message lifecycle', () => {
       parts: [{ text: 'original text', type: 'text' }],
       requestId: id,
       role: 'user'
+    })
+    await appendMessage(db, {
+      chatId,
+      id: crypto.randomUUID(),
+      parts: [{ text: 'old assistant answer', type: 'text' }],
+      role: 'assistant'
+    })
+    await truncateHistory(db, {
+      chatId,
+      messageId: id,
+      type: 'edit'
     })
     const edited = await appendMessage(db, {
       chatId,
@@ -96,9 +128,59 @@ describe('message lifecycle', () => {
       role: 'assistant'
     })
 
-    expect(edited).toMatchObject({ id: original.id, sequence: 1 })
+    expect(edited).toMatchObject({ historyRevision: 2, id: original.id, sequence: 1 })
     expect(edited.parts).toEqual([{ text: 'edited text', type: 'text' }])
-    expect(following.sequence).toBe(2)
+    expect(following.sequence).toBe(3)
+  })
+
+  it('returns the existing message unchanged for a same-revision retry', async () => {
+    const { appendMessage } = await import('../../server/utils/messageLifecycle')
+    const { chatId, db } = await createFixture()
+    const id = crypto.randomUUID()
+
+    await appendMessage(db, {
+      chatId,
+      id,
+      parts: [{ text: 'original text', type: 'text' }],
+      requestId: id,
+      role: 'user'
+    })
+    const retried = await appendMessage(db, {
+      chatId,
+      id,
+      parts: [{ text: 'must not overwrite', type: 'text' }],
+      replaceExisting: true,
+      requestId: id,
+      role: 'user'
+    })
+
+    expect(retried).toMatchObject({ historyRevision: 1, id, sequence: 1 })
+    expect(retried.parts).toEqual([{ text: 'original text', type: 'text' }])
+  })
+
+  it('allows persistence only for a completed, non-aborted assistant response', async () => {
+    const { shouldPersistAssistantMessage } = await import('../../server/utils/messageLifecycle')
+
+    expect(shouldPersistAssistantMessage({
+      assistantResponseCompleted: true,
+      isAborted: false,
+      responseRole: 'assistant'
+    })).toBe(true)
+    expect(shouldPersistAssistantMessage({
+      assistantResponseCompleted: false,
+      isAborted: false,
+      responseRole: 'assistant'
+    })).toBe(false)
+    expect(shouldPersistAssistantMessage({
+      assistantResponseCompleted: true,
+      isAborted: true,
+      responseRole: 'assistant'
+    })).toBe(false)
+    expect(shouldPersistAssistantMessage({
+      assistantResponseCompleted: true,
+      isAborted: false,
+      responseRole: 'user'
+    })).toBe(false)
   })
 
   it('serializes concurrent allocations without duplicate sequences', async () => {

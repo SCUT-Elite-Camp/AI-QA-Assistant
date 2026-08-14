@@ -9,7 +9,17 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { recordAiCall } from '../../../utils/metrics'
 import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
 import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
-import { appendMessage } from '../../../utils/messageLifecycle'
+import {
+  appendMessage,
+  createCurrentMessageHandoff,
+  shouldPersistAssistantMessage
+} from '../../../utils/messageLifecycle'
+
+const uiMessageSchema = z.object({
+  id: z.string().min(1),
+  parts: z.array(z.unknown()),
+  role: z.enum(['user', 'assistant', 'system'])
+}).passthrough()
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -18,14 +28,14 @@ export default defineHandler(async (event) => {
 
   // Authorize before reading the request body, writing a user message, or
   // calling the Agent so a supplied chat ID can never cross ownership bounds.
-  await requireOwnedChat(event, id)
+  const { actor } = await requireOwnedChat(event, id)
 
   const body = await readValidatedBody(event, z.object({
     model: z.string().optional(),
-    messages: z.array(z.custom<UIMessage>())
+    messages: z.array(uiMessageSchema).min(1)
   }).parse)
 
-  const messages = body.messages
+  const messages = body.messages as UIMessage[]
 
   const db = useDrizzle()
 
@@ -43,14 +53,19 @@ export default defineHandler(async (event) => {
 
 
   const lastMessage = messages[messages.length - 1]
-  const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+  if (!lastMessage || lastMessage.role !== 'user') {
+    throw new HTTPError({ statusCode: 400, statusMessage: 'The last message must be a user message' })
+  }
+
+  const queryText = lastMessage.content || (lastMessage as any)?.parts?.[0]?.text || ''
 
   // Detect if chat needs title (first message turn or placeholder title)
   const messageCount = (chat.messages || []).length
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
-  if (lastMessage?.role === 'user' && messages.length > 1) {
-    await appendMessage(db, {
+  let currentMessage = chat.messages[chat.messages.length - 1]
+  if (messages.length > 1) {
+    currentMessage = await appendMessage(db, {
       id: lastMessage.id,
       chatId: id as string,
       role: 'user',
@@ -60,13 +75,22 @@ export default defineHandler(async (event) => {
     })
   }
 
+  if (!currentMessage || currentMessage.role !== 'user') {
+    throw new HTTPError({ statusCode: 409, statusMessage: 'Current user message was not persisted' })
+  }
+
+  // This trusted handoff stays server-only until Unit 04/04a maps it to the
+  // token-protected memory_context contract. It must not enter public /api/chat.
+  const currentAgentInput = createCurrentMessageHandoff(actor.userId, currentMessage)
+
   const abortController = new AbortController()
   event.runtime?.node?.req?.on('close', () => abortController.abort())
+  let assistantResponseCompleted = false
 
   const stream = createUIMessageStream({
     onError: (err: any) => {
       console.error('[web-stream] onError occurred:', err)
-      return err.message || 'An error occurred.'
+      return 'Request failed.'
     },
     execute: async ({ writer }) => {
       try {
@@ -95,24 +119,25 @@ export default defineHandler(async (event) => {
         // 1. Call real Python Agent API
         const agentUrl = `${getAgentBaseUrl()}/api/chat`
         const aiCallStart = Date.now()
+        const publicAgentRequest = {
+          query: queryText,
+          session_id: currentAgentInput.chatId,
+          top_k: 5,
+          retrieval_mode: 'hybrid',
+          topic_id: chat.topicId || undefined,
+          weight_mode: topicInfo?.weightMode || 'auto',
+          soul_content: topicInfo?.soulContent || undefined,
+          topic_doc_ids: topicDocIds,
+          topic_titles: topicTitles,
+          consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
+          is_first_message: needsTitle
+        }
         const agentRes = await fetch(agentUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            query: queryText,
-            session_id: id,
-            top_k: 5,
-            retrieval_mode: "hybrid",
-            topic_id: chat.topicId || undefined,
-            weight_mode: topicInfo?.weightMode || "auto",
-            soul_content: topicInfo?.soulContent || undefined,
-            topic_doc_ids: topicDocIds,
-            topic_titles: topicTitles,
-            consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
-            is_first_message: needsTitle
-          }),
+          body: JSON.stringify(publicAgentRequest),
           signal: abortController.signal
         })
 
@@ -133,20 +158,9 @@ export default defineHandler(async (event) => {
 
         const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
         if (!isValidResponse) {
-          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
-          const responseId = `err-msg-${Date.now()}`
           writer.write({
-            type: 'text-start',
-            id: responseId
-          })
-          writer.write({
-            type: 'text-delta',
-            id: responseId,
-            delta: `Error: ${errMsg}`
-          })
-          writer.write({
-            type: 'text-end',
-            id: responseId
+            type: 'error',
+            errorText: 'Agent request failed.'
           })
           return
         }
@@ -268,6 +282,8 @@ export default defineHandler(async (event) => {
 
         const chunkSize = 2
         for (let i = 0; i < processedAnswer.length; i += chunkSize) {
+          if (abortController.signal.aborted) return
+
           const chunk = processedAnswer.slice(i, i + chunkSize)
           writer.write({
             type: 'text-delta',
@@ -278,41 +294,39 @@ export default defineHandler(async (event) => {
           await new Promise((resolve) => setTimeout(resolve, 20))
         }
 
+        if (abortController.signal.aborted) return
         writer.write({
           type: 'text-end',
           id: responseId
         })
+        assistantResponseCompleted = true
 
       } catch (err: any) {
         console.error('[web-post] error in agent call:', err)
-        const responseId = `err-msg-${Date.now()}`
+        if (abortController.signal.aborted) return
+
         writer.write({
-          type: 'text-start',
-          id: responseId
-        })
-        writer.write({
-          type: 'text-delta',
-          id: responseId,
-          delta: `Failed to retrieve answer from Agent Layer: ${err.message}`
-        })
-        writer.write({
-          type: 'text-end',
-          id: responseId
+          type: 'error',
+          errorText: 'Failed to retrieve an answer from the Agent layer.'
         })
       }
     },
-    onFinish: async ({ messages }) => {
-      try {
-        for (const message of messages) {
-          if (message.role !== 'assistant') continue
+    onFinish: async ({ isAborted, responseMessage }) => {
+      if (!shouldPersistAssistantMessage({
+        assistantResponseCompleted,
+        isAborted: isAborted || abortController.signal.aborted,
+        responseRole: responseMessage.role
+      })) {
+        return
+      }
 
-          await appendMessage(db, {
-            id: message.id,
-            chatId: chat.id,
-            parts: message.parts,
-            role: 'assistant'
-          })
-        }
+      try {
+        await appendMessage(db, {
+          id: responseMessage.id,
+          chatId: chat.id,
+          parts: responseMessage.parts,
+          role: 'assistant'
+        })
       } catch (dbErr) {
         console.error('[web-onFinish] DB save error:', dbErr)
       }
