@@ -28,7 +28,7 @@ from agent.query import (
 )
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
-from agent.schemas.chat import ChatRequest, ChatResponse
+from agent.schemas.chat import ChatRequest, ChatResponse, InternalChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
@@ -184,29 +184,35 @@ class Agent:
         start_time = self.audit_service.start_timer()
         metrics_token = start_llm_metrics()
         trace_id = self.trace_service.start_trace()
+        self.last_run_result = None
+        self.last_orchestration = None
+        self.last_citation_check = None
+        persistent_memory_request = self._is_persistent_memory_request(request)
 
         try:
             response = self._chat_internal(request, trace_id, query_plan=query_plan)
             latency_ms = self.audit_service.stop_timer(start_time)
-            self.audit_service.record(
-                trace_id=trace_id,
-                query=request.query,
-                answer=response.answer or response.message,
-                status=response.status,
-                latency_ms=latency_ms,
-                session_id=request.session_id,
-            )
+            if not persistent_memory_request:
+                self.audit_service.record(
+                    trace_id=trace_id,
+                    query=request.query,
+                    answer=self._audit_answer(response),
+                    status=response.status,
+                    latency_ms=latency_ms,
+                    session_id=request.session_id,
+                )
             return response
         except Exception as exc:
             latency_ms = self.audit_service.stop_timer(start_time)
-            self.audit_service.record(
-                trace_id=trace_id,
-                query=request.query,
-                answer=f"Error: {exc}",
-                status=StatusCode.AGENT_LIMIT_REACHED,
-                latency_ms=latency_ms,
-                session_id=request.session_id,
-            )
+            if not persistent_memory_request:
+                self.audit_service.record(
+                    trace_id=trace_id,
+                    query=request.query,
+                    answer=f"Error: {exc}",
+                    status=StatusCode.AGENT_LIMIT_REACHED,
+                    latency_ms=latency_ms,
+                    session_id=request.session_id,
+                )
             raise exc
         finally:
             clear_llm_metrics(metrics_token)
@@ -262,6 +268,19 @@ class Agent:
         run_result = orchestration.run_result
         self.last_run_result = run_result
 
+        memory_recall = orchestration.memory_recall
+        if memory_recall is not None and memory_recall.handled:
+            return ChatResponse(
+                trace_id=trace_id,
+                status=StatusCode.SUCCESS,
+                answer=memory_recall.answer or "",
+                message="",
+                citations=[],
+            )
+
+        if run_result is None:
+            raise RuntimeError("orchestration returned no runtime result")
+
         response = self._map_run_result(
             run_result=run_result,
             trace_id=trace_id,
@@ -303,6 +322,7 @@ class Agent:
             session_id=request.session_id,
             query=plan.original_query,
             response=response,
+            persistent_memory=self._is_persistent_memory_request(request),
         )
         return response
 
@@ -438,10 +458,12 @@ class Agent:
         session_id: str | None,
         query: str,
         response: ChatResponse,
+        persistent_memory: bool = False,
     ) -> None:
         if (
             not settings.MEMORY_ENABLED
             or not session_id
+            or persistent_memory
             or response.status
             not in {StatusCode.SUCCESS, StatusCode.CLARIFICATION_REQUIRED}
         ):
@@ -452,6 +474,23 @@ class Agent:
             return
         self.memory.add_message(session_id, "user", query)
         self.memory.add_message(session_id, "assistant", assistant_content)
+
+    @staticmethod
+    def _is_persistent_memory_request(request: ChatRequest) -> bool:
+        return settings.PERSISTENT_MEMORY_ENABLED and isinstance(
+            request,
+            InternalChatRequest,
+        )
+
+    def _audit_answer(self, response: ChatResponse) -> str:
+        memory_recall = (
+            self.last_orchestration.memory_recall
+            if self.last_orchestration is not None
+            else None
+        )
+        if memory_recall is not None and memory_recall.handled:
+            return "[memory_recall]"
+        return response.answer or response.message
 
     def _map_run_result(
         self,

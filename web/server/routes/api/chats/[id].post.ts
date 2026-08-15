@@ -9,6 +9,9 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { recordAiCall } from '../../../utils/metrics'
 import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
 import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
+import { callChatWithPersistentFallback, shouldUsePersistentMemory } from '../../../utils/agentInternalClient'
+import { compactAfterSuccessfulAssistantPersistence } from '../../../utils/postTurnCompaction'
+import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import {
   appendMessage,
   createAssistantMessageId,
@@ -86,6 +89,7 @@ export default defineHandler(async (event) => {
   const abortController = new AbortController()
   const assistantState = createAssistantStreamState()
   let assistantMessageId: string | undefined
+  let shouldAttemptCompaction = false
   event.runtime?.node?.req?.on('close', () => {
     assistantState.clientAborted = true
     abortController.abort()
@@ -121,13 +125,14 @@ export default defineHandler(async (event) => {
           }
         }
 
-        // 1. Call real Python Agent API
-        const agentUrl = `${getAgentBaseUrl()}/api/chat`
+        // 1. Call the public Agent API, or the token-protected Memory API only
+        // after an authenticated user's exact current message is persisted.
         const aiCallStart = Date.now()
         const publicAgentRequest = {
           query: queryText,
           session_id: currentAgentInput.chatId,
           top_k: 5,
+          stream: false,
           retrieval_mode: 'hybrid',
           topic_id: chat.topicId || undefined,
           weight_mode: topicInfo?.weightMode || 'auto',
@@ -137,20 +142,35 @@ export default defineHandler(async (event) => {
           consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
           is_first_message: needsTitle
         }
-        const agentRes = await fetch(agentUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(publicAgentRequest),
-          signal: abortController.signal
-        })
-
-        if (!agentRes.ok) {
-          throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+        const callPublicAgent = async () => {
+          const agentRes = await fetch(`${getAgentBaseUrl()}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(publicAgentRequest),
+            signal: abortController.signal
+          })
+          if (!agentRes.ok) {
+            throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+          }
+          return agentRes.json()
         }
 
-        const agentData = await agentRes.json()
+        const usePersistentMemory = shouldUsePersistentMemory(actor.isAuthenticated)
+        const memoryContext = usePersistentMemory
+          ? await buildPersistentMemoryContext(db, currentAgentInput)
+          : undefined
+        const { soul_content: _soulContent, ...internalAgentFields } = publicAgentRequest
+        const agentResult = await callChatWithPersistentFallback({
+          usePersistentMemory,
+          internalRequest: {
+            ...internalAgentFields,
+            memory_context: memoryContext!
+          },
+          callPublic: callPublicAgent,
+          options: { signal: abortController.signal }
+        })
+        shouldAttemptCompaction = usePersistentMemory && 'response' in agentResult
+        const agentData = 'response' in agentResult ? agentResult.response : agentResult
         recordAiCall(Date.now() - aiCallStart)
 
         if (agentData.chat_title) {
@@ -350,6 +370,14 @@ export default defineHandler(async (event) => {
           parts: [{ type: 'text', text: assistantState.assistantContent }],
           role: 'assistant'
         })
+        if (shouldAttemptCompaction) {
+          try {
+            await compactAfterSuccessfulAssistantPersistence(db, currentAgentInput)
+          } catch {
+            // Snapshot planning is best-effort and must never affect this answer.
+            console.error('[web-onFinish] post-turn compaction failed')
+          }
+        }
       } catch {
         assistantState.streamFailed = true
         console.error('[web-onFinish] assistant message persistence failed')

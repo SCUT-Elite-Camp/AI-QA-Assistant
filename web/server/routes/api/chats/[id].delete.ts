@@ -2,7 +2,8 @@ import { defineHandler } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { z } from 'zod'
-import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
+import { requireOwnedChat } from '../../../utils/chatAccess'
+import { resetShortWindow } from '../../../utils/agentInternalClient'
 
 
 export default defineHandler(async (event) => {
@@ -13,13 +14,16 @@ export default defineHandler(async (event) => {
   const { actor } = await requireOwnedChat(event, id)
   const db = useDrizzle()
 
-  // Clear agent memory asynchronously (ignore network errors if Agent is offline)
-  fetch(`${getAgentBaseUrl()}/api/chat/memory/${id}`, {
-    method: 'DELETE'
-  }).catch(() => {})
-
-  return await db.delete(tables.chats)
+  const deleted = await db.delete(tables.chats)
     .where(and(eq(tables.chats.id, id as string), eq(tables.chats.userId, actor.userId)))
     .returning()
+
+  // The database mutation is authoritative. A reset failure only affects the
+  // legacy short-window compatibility path and must not roll back deletion.
+  if (deleted.length > 0) {
+    void resetShortWindow(id).catch(() => {})
+  }
+
+  return deleted
 })
 

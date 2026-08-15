@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { and, asc, desc, eq, gt, isNull, or } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm'
 import type {
   MemoryFactCategory,
   MemoryFactStatus,
@@ -118,9 +118,47 @@ export interface ArchiveSnapshotInput extends ReadMemoryInput {
   version: number
 }
 
+export interface ApplyCompactionPlanInput extends ReadMemoryInput {
+  expectedActiveSnapshot: {
+    id: string
+    version: number
+  } | null
+  newSnapshot: Omit<WriteSnapshotInput, 'actorUserId' | 'chatId' | 'historyRevision' | 'version'>
+  now?: Date
+}
+
+export type ApplyCompactionPlanResult =
+  | { outcome: 'applied', snapshot: MemorySnapshotDto }
+  | { outcome: 'conflict' }
+
 export interface DeleteMemoryByChatInput {
   actorUserId: string
   chatId: string
+}
+
+export interface TruncateHistoryAndInvalidateMemoryInput {
+  actorUserId: string
+  chatId: string
+  messageId: string
+  now?: Date
+  type: 'edit' | 'regenerate'
+}
+
+export interface TruncateHistoryAndInvalidateMemoryResult {
+  deletedMessageIds: string[]
+  historyRevision: number
+  revokedFactCount: number
+}
+
+/** A client-facing mutation error with the route's established HTTP semantics. */
+export class HistoryMutationError extends Error {
+  constructor(
+    readonly statusCode: 400 | 404 | 409,
+    message: string
+  ) {
+    super(message)
+    this.name = 'HistoryMutationError'
+  }
 }
 
 function toMemorySnapshotDto(snapshot: MemorySnapshotRecord): MemorySnapshotDto {
@@ -285,6 +323,24 @@ export async function readTailMessages(
     ))
     .orderBy(asc(tables.messages.sequence))
     .limit(input.limit)
+
+  return messages.map(toTailMessageDto)
+}
+
+/** Read all current-revision messages for an internal compaction plan. */
+export async function readRevisionMessages(
+  db: Database,
+  input: ReadMemoryInput
+): Promise<TailMessageDto[]> {
+  await requireOwnedChat(db, input.actorUserId, input.chatId)
+
+  const messages = await db.select()
+    .from(tables.messages)
+    .where(and(
+      eq(tables.messages.chatId, input.chatId),
+      eq(tables.messages.historyRevision, input.historyRevision)
+    ))
+    .orderBy(asc(tables.messages.sequence))
 
   return messages.map(toTailMessageDto)
 }
@@ -496,6 +552,184 @@ export async function writeSnapshot(
     }
 
     return toMemorySnapshotDto(snapshot)
+  })
+}
+
+class CompactionConflictError extends Error {
+  constructor () {
+    super('The active Snapshot changed before the compaction plan could be applied')
+  }
+}
+
+function isDatabaseBusyError (error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && (error as { code?: unknown }).code === 'SQLITE_BUSY'
+}
+
+/**
+ * Atomically archive the expected ACTIVE Snapshot and create its successor.
+ * A stale plan never changes the database and can be retried from a fresh read.
+ */
+export async function applyCompactionPlan(
+  db: Database,
+  input: ApplyCompactionPlanInput
+): Promise<ApplyCompactionPlanResult> {
+  try {
+    return await db.transaction(async (tx) => {
+      await requireOwnedChat(tx, input.actorUserId, input.chatId)
+      const archivedAt = input.now ?? new Date()
+      const nextVersion = input.expectedActiveSnapshot
+        ? input.expectedActiveSnapshot.version + 1
+        : 1
+
+      if (input.expectedActiveSnapshot) {
+        const archived = await tx.update(tables.memorySnapshots)
+          .set({ archivedAt, status: 'ARCHIVED' })
+          .where(and(
+            eq(tables.memorySnapshots.id, input.expectedActiveSnapshot.id),
+            eq(tables.memorySnapshots.userId, input.actorUserId),
+            eq(tables.memorySnapshots.chatId, input.chatId),
+            eq(tables.memorySnapshots.historyRevision, input.historyRevision),
+            eq(tables.memorySnapshots.version, input.expectedActiveSnapshot.version),
+            eq(tables.memorySnapshots.status, 'ACTIVE')
+          ))
+          .returning({ id: tables.memorySnapshots.id })
+        if (!archived[0]) throw new CompactionConflictError()
+      } else {
+        const active = await tx.select({ id: tables.memorySnapshots.id })
+          .from(tables.memorySnapshots)
+          .where(and(
+            eq(tables.memorySnapshots.userId, input.actorUserId),
+            eq(tables.memorySnapshots.chatId, input.chatId),
+            eq(tables.memorySnapshots.historyRevision, input.historyRevision),
+            eq(tables.memorySnapshots.status, 'ACTIVE')
+          ))
+          .limit(1)
+        if (active[0]) throw new CompactionConflictError()
+      }
+
+      const inserted = await tx.insert(tables.memorySnapshots)
+        .values({
+          chatId: input.chatId,
+          coveredFromMessageId: input.newSnapshot.coveredFromMessageId,
+          coveredFromSequence: input.newSnapshot.coveredFromSequence,
+          coveredToMessageId: input.newSnapshot.coveredToMessageId,
+          coveredToSequence: input.newSnapshot.coveredToSequence,
+          historyRevision: input.historyRevision,
+          status: 'ACTIVE',
+          summary: input.newSnapshot.summary,
+          userId: input.actorUserId,
+          version: nextVersion
+        })
+        .onConflictDoNothing()
+        .returning()
+      if (!inserted[0]) throw new CompactionConflictError()
+
+      return { outcome: 'applied', snapshot: toMemorySnapshotDto(inserted[0]) }
+    })
+  } catch (error) {
+    if (error instanceof CompactionConflictError || isDatabaseBusyError(error)) {
+      return { outcome: 'conflict' }
+    }
+    throw error
+  }
+}
+
+/**
+ * Deletes the mutable suffix and invalidates all Memory derived from the old
+ * revision in one transaction. Snapshot rows deliberately remain as historical
+ * records; every resolver is scoped to the chat's newly advanced revision.
+ */
+export async function truncateHistoryAndInvalidateMemory(
+  db: Database,
+  input: TruncateHistoryAndInvalidateMemoryInput
+): Promise<TruncateHistoryAndInvalidateMemoryResult> {
+  return db.transaction(async (tx) => {
+    const chatRows = await tx.select({
+      historyRevision: tables.chats.historyRevision,
+      nextMessageSequence: tables.chats.nextMessageSequence
+    })
+      .from(tables.chats)
+      .where(and(
+        eq(tables.chats.id, input.chatId),
+        eq(tables.chats.userId, input.actorUserId)
+      ))
+      .limit(1)
+    const chat = chatRows[0]
+    if (!chat) {
+      throw new HistoryMutationError(404, 'Chat not found')
+    }
+
+    const messages = await tx.select({
+      id: tables.messages.id,
+      role: tables.messages.role,
+      sequence: tables.messages.sequence
+    })
+      .from(tables.messages)
+      .where(eq(tables.messages.chatId, input.chatId))
+      .orderBy(asc(tables.messages.sequence))
+
+    const targetIndex = messages.findIndex(message => message.id === input.messageId)
+    if (targetIndex === -1) {
+      throw new HistoryMutationError(404, 'Message not found')
+    }
+
+    const target = messages[targetIndex]!
+    if (input.type === 'edit' && target.role !== 'user') {
+      throw new HistoryMutationError(400, 'Can only edit user messages')
+    }
+    if (input.type === 'regenerate' && target.role !== 'assistant') {
+      throw new HistoryMutationError(400, 'Can only regenerate assistant messages')
+    }
+
+    const startIndex = input.type === 'edit' ? targetIndex + 1 : targetIndex
+    const deletedMessageIds = messages.slice(startIndex).map(message => message.id)
+    if (deletedMessageIds.length > 0) {
+      await tx.delete(tables.messages)
+        .where(and(
+          eq(tables.messages.chatId, input.chatId),
+          inArray(tables.messages.id, deletedMessageIds)
+        ))
+    }
+
+    const revoked = await tx.update(tables.memoryFacts)
+      .set({
+        revokedAt: input.now ?? new Date(),
+        status: 'REVOKED'
+      })
+      .where(and(
+        eq(tables.memoryFacts.userId, input.actorUserId),
+        eq(tables.memoryFacts.chatId, input.chatId),
+        eq(tables.memoryFacts.historyRevision, chat.historyRevision),
+        eq(tables.memoryFacts.scope, 'SESSION'),
+        inArray(tables.memoryFacts.status, ['PROPOSED', 'CONFIRMED'])
+      ))
+      .returning({ id: tables.memoryFacts.id })
+
+    const updated = await tx.update(tables.chats)
+      .set({ historyRevision: sql`${tables.chats.historyRevision} + 1` })
+      .where(and(
+        eq(tables.chats.id, input.chatId),
+        eq(tables.chats.userId, input.actorUserId),
+        eq(tables.chats.historyRevision, chat.historyRevision),
+        // An append allocates a sequence in the same chat. If it raced this
+        // mutation, roll back the deletion/Fact revocation rather than leave
+        // a newly appended old-revision message outside the new lineage.
+        eq(tables.chats.nextMessageSequence, chat.nextMessageSequence)
+      ))
+      .returning({ historyRevision: tables.chats.historyRevision })
+    const nextChat = updated[0]
+    if (!nextChat) {
+      throw new HistoryMutationError(409, 'Chat history changed; retry the mutation')
+    }
+
+    return {
+      deletedMessageIds,
+      historyRevision: nextChat.historyRevision,
+      revokedFactCount: revoked.length
+    }
   })
 }
 

@@ -770,27 +770,34 @@ class AgentRunner:
             state.evidence,
         )
         evidence_context = self._format_search_observation(state.evidence)
+        context_history = self._history_before_current_query(state)
+        question_context = f"Original question: {state.query_plan.original_query}"
+        if state.query_plan.standalone_query != state.query_plan.original_query:
+            question_context += (
+                f"\nStandalone question: {state.query_plan.standalone_query}"
+            )
+        clean_messages: list[dict[str, Any]] = [
+            {
+                "role": "system",
+                "content": (
+                    f"{SYSTEM_ROLE}\n\n{ANSWER_RULES}\n\n"
+                    "Retrieval is complete. Do not call or describe tools. "
+                    "Answer only from the supplied evidence and include citation markers."
+                ),
+            },
+            *context_history,
+            {
+                "role": "user",
+                "content": (
+                    f"{question_context}\n"
+                    f"Answer style: {state.query_plan.intent.value}\n\n"
+                    f"Accepted evidence:\n{evidence_context}"
+                ),
+            },
+        ]
         response = self._chat_for_answer(
             state,
-            [
-                {
-                    "role": "system",
-                    "content": (
-                        f"{SYSTEM_ROLE}\n\n{ANSWER_RULES}\n\n"
-                        "Retrieval is complete. Do not call or describe tools. "
-                        "Answer only from the supplied evidence and include citation markers."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        f"Original question: {state.query_plan.original_query}\n"
-                        f"Standalone question: {state.query_plan.standalone_query}\n"
-                        f"Answer style: {state.query_plan.intent.value}\n\n"
-                        f"Accepted evidence:\n{evidence_context}"
-                    ),
-                },
-            ],
+            clean_messages,
         )
         if not isinstance(response, dict):
             raise ValueError("forced answer response must be an object")
@@ -798,6 +805,29 @@ class AgentRunner:
         if not isinstance(content, str) or not content.strip():
             raise ValueError("forced answer response must contain text")
         return response
+
+    @staticmethod
+    def _history_before_current_query(state: AgentState) -> list[dict[str, Any]]:
+        """Keep initial Memory/legacy history when the final answer uses clean evidence."""
+        current_index: int | None = None
+        for index in range(len(state.messages) - 1, -1, -1):
+            message = state.messages[index]
+            if (
+                message.get("role") == "user"
+                and message.get("content") == state.query_plan.original_query
+            ):
+                current_index = index
+                break
+
+        if current_index is None:
+            return []
+
+        return [
+            {"role": message["role"], "content": message["content"]}
+            for message in state.messages[1:current_index]
+            if message.get("role") in {"system", "user", "assistant"}
+            and isinstance(message.get("content"), str)
+        ]
 
     @staticmethod
     def _prioritize_evidence_for_answer(

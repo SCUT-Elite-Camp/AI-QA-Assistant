@@ -117,6 +117,240 @@ describe('memory repository', () => {
     expect(facts[0]?.sourceMessageId).toBeNull()
   })
 
+  it('advances revision and makes edited history Memory-invisible in the same transaction', async () => {
+    const fixture = await createFixture()
+    const { appendMessage, createCurrentMessageHandoff } = await import('../../server/utils/messageLifecycle')
+    const { buildPersistentMemoryContext } = await import('../../server/utils/persistentMemoryContext')
+    const {
+      confirmFact,
+      createFactProposal,
+      getActiveSnapshot,
+      getVisibleFacts,
+      truncateHistoryAndInvalidateMemory,
+      writeSnapshot
+    } = await import('../../server/utils/memoryRepository')
+
+    const priorAssistant = await appendMessage(fixture.db, {
+      chatId: fixture.chatId,
+      id: randomUUID(),
+      parts: [{ text: 'Old assistant answer.', type: 'text' }],
+      role: 'assistant'
+    })
+    const snapshot = await writeSnapshot(fixture.db, {
+      ...snapshotInput(fixture),
+      coveredToMessageId: priorAssistant.id,
+      coveredToSequence: priorAssistant.sequence
+    })
+    const confirmedProposal = await createFactProposal(fixture.db, proposalInput(fixture))
+    const pendingProposal = await createFactProposal(fixture.db, {
+      ...proposalInput(fixture),
+      category: 'GOAL',
+      value: 'Finish the current task.'
+    })
+    await confirmFact(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      expiresAt: null,
+      factId: confirmedProposal.fact.id,
+      historyRevision: 1
+    })
+
+    const result = await truncateHistoryAndInvalidateMemory(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      messageId: fixture.source.id,
+      now: new Date('2026-08-15T00:00:00.000Z'),
+      type: 'edit'
+    })
+    expect(result).toEqual({
+      deletedMessageIds: [priorAssistant.id],
+      historyRevision: 2,
+      revokedFactCount: 2
+    })
+
+    const edited = await appendMessage(fixture.db, {
+      chatId: fixture.chatId,
+      id: fixture.source.id,
+      parts: [{ text: 'Edited question.', type: 'text' }],
+      replaceExisting: true,
+      requestId: fixture.source.requestId!,
+      role: 'user'
+    })
+    const oldSnapshot = await getActiveSnapshot(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: 1
+    })
+    const newSnapshot = await getActiveSnapshot(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: 2
+    })
+    const oldFacts = await fixture.db.select().from((await import('../../server/utils/drizzle')).tables.memoryFacts)
+      .where(eq((await import('../../server/utils/drizzle')).tables.memoryFacts.chatId, fixture.chatId))
+    const context = await buildPersistentMemoryContext(
+      fixture.db,
+      createCurrentMessageHandoff(fixture.userId, edited)
+    )
+
+    expect(oldSnapshot).toEqual(snapshot)
+    expect(newSnapshot).toBeUndefined()
+    expect(oldFacts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: confirmedProposal.fact.id, status: 'REVOKED' }),
+      expect.objectContaining({ id: pendingProposal.fact.id, status: 'REVOKED' })
+    ]))
+    expect(await getVisibleFacts(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: 2
+    })).toEqual([])
+    expect(context).toMatchObject({ facts: [], snapshot: null, tail: [] })
+  })
+
+  it('removes the regenerated assistant answer and never resolves it from the new revision', async () => {
+    const fixture = await createFixture()
+    const { appendMessage, createCurrentMessageHandoff } = await import('../../server/utils/messageLifecycle')
+    const { buildPersistentMemoryContext } = await import('../../server/utils/persistentMemoryContext')
+    const { truncateHistoryAndInvalidateMemory, writeSnapshot } = await import('../../server/utils/memoryRepository')
+
+    const oldAssistant = await appendMessage(fixture.db, {
+      chatId: fixture.chatId,
+      id: randomUUID(),
+      parts: [{ text: 'Old regenerated answer.', type: 'text' }],
+      role: 'assistant'
+    })
+    await writeSnapshot(fixture.db, {
+      ...snapshotInput(fixture),
+      coveredToMessageId: oldAssistant.id,
+      coveredToSequence: oldAssistant.sequence
+    })
+
+    await truncateHistoryAndInvalidateMemory(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      messageId: oldAssistant.id,
+      type: 'regenerate'
+    })
+    await appendMessage(fixture.db, {
+      chatId: fixture.chatId,
+      id: fixture.source.id,
+      parts: fixture.source.parts,
+      replaceExisting: true,
+      requestId: fixture.source.requestId!,
+      role: 'user'
+    })
+    const newAssistant = await appendMessage(fixture.db, {
+      chatId: fixture.chatId,
+      id: randomUUID(),
+      parts: [{ text: 'New regenerated answer.', type: 'text' }],
+      role: 'assistant'
+    })
+    const nextUser = await appendMessage(fixture.db, {
+      chatId: fixture.chatId,
+      id: randomUUID(),
+      parts: [{ text: 'Follow-up after regeneration.', type: 'text' }],
+      requestId: randomUUID(),
+      role: 'user'
+    })
+    const { tables } = await import('../../server/utils/drizzle')
+    const remainingOldAnswer = await fixture.db.select().from(tables.messages)
+      .where(eq(tables.messages.id, oldAssistant.id))
+    const context = await buildPersistentMemoryContext(
+      fixture.db,
+      createCurrentMessageHandoff(fixture.userId, nextUser)
+    )
+
+    expect(remainingOldAnswer).toEqual([])
+    expect(context.snapshot).toBeNull()
+    expect(context.tail).toEqual(expect.arrayContaining([
+      expect.objectContaining({ content: 'New regenerated answer.', id: newAssistant.id })
+    ]))
+    expect(context.tail).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ content: 'Old regenerated answer.', id: oldAssistant.id })
+    ]))
+  })
+
+  it('does not let a different user mutate a chat or its Memory', async () => {
+    const fixture = await createFixture()
+    const {
+      createFactProposal,
+      getActiveSnapshot,
+      truncateHistoryAndInvalidateMemory,
+      writeSnapshot
+    } = await import('../../server/utils/memoryRepository')
+
+    const snapshot = await writeSnapshot(fixture.db, snapshotInput(fixture))
+    const proposal = await createFactProposal(fixture.db, proposalInput(fixture))
+    await expect(truncateHistoryAndInvalidateMemory(fixture.db, {
+      actorUserId: `attacker-${randomUUID()}`,
+      chatId: fixture.chatId,
+      messageId: fixture.source.id,
+      type: 'edit'
+    })).rejects.toMatchObject({ statusCode: 404 })
+
+    const { tables } = await import('../../server/utils/drizzle')
+    const [chat] = await fixture.db.select().from(tables.chats)
+      .where(eq(tables.chats.id, fixture.chatId))
+    const [fact] = await fixture.db.select().from(tables.memoryFacts)
+      .where(eq(tables.memoryFacts.id, proposal.fact.id))
+    expect(chat?.historyRevision).toBe(1)
+    expect(fact?.status).toBe('PROPOSED')
+    expect(await getActiveSnapshot(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: 1
+    })).toEqual(snapshot)
+  })
+
+  it('keeps branch sequence and persistent Memory isolated from its parent chat', async () => {
+    const fixture = await createFixture()
+    const { appendMessage } = await import('../../server/utils/messageLifecycle')
+    const { confirmFact, createFactProposal, getActiveSnapshot, getVisibleFacts, writeSnapshot } = await import('../../server/utils/memoryRepository')
+    const { tables } = await import('../../server/utils/drizzle')
+    const parentSnapshot = await writeSnapshot(fixture.db, snapshotInput(fixture))
+    const proposal = await createFactProposal(fixture.db, proposalInput(fixture))
+    await confirmFact(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      expiresAt: null,
+      factId: proposal.fact.id,
+      historyRevision: 1
+    })
+
+    const branchId = randomUUID()
+    await fixture.db.insert(tables.chats).values({
+      id: branchId,
+      isBranch: true,
+      parentChatId: fixture.chatId,
+      parentMessageId: fixture.source.id,
+      title: 'Isolated branch',
+      userId: fixture.userId
+    })
+    const branchMessage = await appendMessage(fixture.db, {
+      chatId: branchId,
+      id: randomUUID(),
+      parts: [{ text: 'Branch question.', type: 'text' }],
+      role: 'user'
+    })
+
+    expect(branchMessage).toMatchObject({ historyRevision: 1, sequence: 1 })
+    expect(await getActiveSnapshot(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: branchId,
+      historyRevision: 1
+    })).toBeUndefined()
+    expect(await getVisibleFacts(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: branchId,
+      historyRevision: 1
+    })).toEqual([])
+    expect(await getActiveSnapshot(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: 1
+    })).toEqual(parentSnapshot)
+  })
+
   it('reads tail messages and applies the SESSION Fact state machine idempotently', async () => {
     const fixture = await createFixture()
     const { appendMessage } = await import('../../server/utils/messageLifecycle')
@@ -226,5 +460,103 @@ describe('memory repository', () => {
       actorUserId: fixture.userId,
       chatId: fixture.chatId
     })).toEqual({ deletedFactCount: 1, deletedSnapshotCount: 1 })
+  })
+
+  it('atomically archives the expected ACTIVE Snapshot before creating its next version', async () => {
+    const fixture = await createFixture()
+    const { appendMessage } = await import('../../server/utils/messageLifecycle')
+    const { applyCompactionPlan, getActiveSnapshot } = await import('../../server/utils/memoryRepository')
+    const { tables } = await import('../../server/utils/drizzle')
+
+    const messages = [fixture.source]
+    for (let sequence = 2; sequence <= 32; sequence += 1) {
+      messages.push(await appendMessage(fixture.db, {
+        chatId: fixture.chatId,
+        id: randomUUID(),
+        parts: [{ text: `message-${sequence}`, type: 'text' }],
+        role: sequence % 2 === 0 ? 'assistant' : 'user'
+      }))
+    }
+
+    const first = await applyCompactionPlan(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision,
+      expectedActiveSnapshot: null,
+      newSnapshot: {
+        coveredFromMessageId: messages[0]!.id,
+        coveredFromSequence: 1,
+        coveredToMessageId: messages[11]!.id,
+        coveredToSequence: 12,
+        summary: 'First twelve messages.'
+      }
+    })
+    expect(first).toMatchObject({ outcome: 'applied', snapshot: { status: 'ACTIVE', version: 1 } })
+    if (first.outcome !== 'applied') throw new Error('first compaction should apply')
+
+    const second = await applyCompactionPlan(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision,
+      expectedActiveSnapshot: { id: first.snapshot.id, version: first.snapshot.version },
+      newSnapshot: {
+        coveredFromMessageId: messages[12]!.id,
+        coveredFromSequence: 13,
+        coveredToMessageId: messages[23]!.id,
+        coveredToSequence: 24,
+        summary: 'First twenty-four messages.'
+      }
+    })
+    expect(second).toMatchObject({ outcome: 'applied', snapshot: { status: 'ACTIVE', version: 2 } })
+
+    const snapshots = await fixture.db.select().from(tables.memorySnapshots)
+      .where(eq(tables.memorySnapshots.chatId, fixture.chatId))
+      .orderBy(tables.memorySnapshots.version)
+    expect(snapshots.map(snapshot => snapshot.status)).toEqual(['ARCHIVED', 'ACTIVE'])
+    expect((await getActiveSnapshot(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision
+    }))?.version).toBe(2)
+  })
+
+  it('does not create two ACTIVE Snapshots when concurrent plans start without one', async () => {
+    const fixture = await createFixture()
+    const { appendMessage } = await import('../../server/utils/messageLifecycle')
+    const { applyCompactionPlan } = await import('../../server/utils/memoryRepository')
+    const { tables } = await import('../../server/utils/drizzle')
+
+    const messages = [fixture.source]
+    for (let sequence = 2; sequence <= 20; sequence += 1) {
+      messages.push(await appendMessage(fixture.db, {
+        chatId: fixture.chatId,
+        id: randomUUID(),
+        parts: [{ text: `message-${sequence}`, type: 'text' }],
+        role: sequence % 2 === 0 ? 'assistant' : 'user'
+      }))
+    }
+    const input = {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision,
+      expectedActiveSnapshot: null,
+      newSnapshot: {
+        coveredFromMessageId: messages[0]!.id,
+        coveredFromSequence: 1,
+        coveredToMessageId: messages[11]!.id,
+        coveredToSequence: 12,
+        summary: 'Concurrent compaction.'
+      }
+    }
+
+    const outcomes = await Promise.all([
+      applyCompactionPlan(fixture.db, input),
+      applyCompactionPlan(fixture.db, input)
+    ])
+    expect(outcomes.map(result => result.outcome).sort()).toEqual(['applied', 'conflict'])
+
+    const active = await fixture.db.select().from(tables.memorySnapshots)
+      .where(eq(tables.memorySnapshots.status, 'ACTIVE'))
+    expect(active.filter(snapshot => snapshot.chatId === fixture.chatId)).toHaveLength(1)
   })
 })

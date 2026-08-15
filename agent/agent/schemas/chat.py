@@ -17,6 +17,14 @@ class ChatRequest(BaseModel):
     consecutive_no_new_docs_count: int = 0
     is_first_message: Optional[bool] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def reject_public_memory_context(cls, value: Any) -> Any:
+        """Keep browser-supplied persistent Memory out of the public route."""
+        if cls is ChatRequest and isinstance(value, dict) and "memory_context" in value:
+            raise ValueError("memory_context is only accepted by the internal endpoint")
+        return value
+
 
 class Citation(BaseModel):
     citation_id: int
@@ -160,3 +168,83 @@ class InternalChatResponse(BaseModel):
 
     response: ChatResponse
     memory_decision: MemoryDecision = Field(default_factory=MemoryDecision)
+
+
+class CompactionPlanRequest(BaseModel):
+    """Trusted, already-persisted messages for deterministic Snapshot planning."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    actor: InternalActor
+    chat_id: str = Field(min_length=1)
+    revision: int = Field(ge=1)
+    active_snapshot: MemorySnapshotInput | None = None
+    messages: list[MemoryMessage] = Field(default_factory=list)
+    tail_size: int = Field(ge=1)
+    min_coverable_messages: int = Field(ge=1)
+    soft_token_budget: int = Field(ge=1)
+
+    @model_validator(mode="after")
+    def validate_active_snapshot_revision(self) -> "CompactionPlanRequest":
+        if self.active_snapshot and self.active_snapshot.revision != self.revision:
+            raise ValueError("active_snapshot.revision must equal revision")
+        previous_sequence = 0
+        for message in self.messages:
+            if message.revision != self.revision:
+                raise ValueError("compaction message revision must equal revision")
+            if message.sequence <= previous_sequence:
+                raise ValueError("compaction messages must be strictly ordered by sequence")
+            previous_sequence = message.sequence
+        return self
+
+
+class ExpectedActiveSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1)
+    version: int = Field(ge=1)
+    revision: int = Field(ge=1)
+
+
+class NewMemorySnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    covered_from_sequence: int = Field(ge=1)
+    covered_to_sequence: int = Field(ge=1)
+    covered_from_message_id: str = Field(min_length=1)
+    covered_to_message_id: str = Field(min_length=1)
+    summary: str
+
+    @model_validator(mode="after")
+    def validate_coverage(self) -> "NewMemorySnapshot":
+        if self.covered_from_sequence > self.covered_to_sequence:
+            raise ValueError("covered_from_sequence must not exceed covered_to_sequence")
+        return self
+
+
+class CompactionPlanResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    should_compact: bool
+    expected_active_snapshot: ExpectedActiveSnapshot | None = None
+    new_snapshot: NewMemorySnapshot | None = None
+
+    @model_validator(mode="after")
+    def validate_plan_shape(self) -> "CompactionPlanResponse":
+        if self.should_compact != (self.new_snapshot is not None):
+            raise ValueError("new_snapshot must exist exactly when should_compact is true")
+        if not self.should_compact and self.expected_active_snapshot is not None:
+            raise ValueError("expected_active_snapshot is only valid for a compaction plan")
+        if (
+            self.expected_active_snapshot is not None
+            and self.new_snapshot is not None
+            and self.expected_active_snapshot.revision < 1
+        ):
+            raise ValueError("expected_active_snapshot revision must be positive")
+        return self
+
+
+class ResetShortWindowRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    chat_id: str = Field(min_length=1)

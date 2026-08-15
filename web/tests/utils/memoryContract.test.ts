@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  compactionPlanResponseSchema,
   internalChatRequestSchema,
   internalChatResponseSchema,
   memoryContextInputSchema
@@ -92,5 +93,26 @@ describe('internal Memory contract', () => {
 
     expect(parsed.response).not.toHaveProperty('memory_decision')
     expect(parsed.memory_decision.fact_proposals).toHaveLength(1)
+  })
+
+  it('accepts only the two fixed compaction response shapes', () => {
+    expect(compactionPlanResponseSchema.parse({ should_compact: false })).toEqual({
+      should_compact: false
+    })
+    expect(compactionPlanResponseSchema.parse({
+      should_compact: true,
+      expected_active_snapshot: { id: 'snapshot-1', version: 1, revision: 2 },
+      new_snapshot: {
+        covered_from_sequence: 1,
+        covered_to_sequence: 12,
+        covered_from_message_id: 'message-1',
+        covered_to_message_id: 'message-12',
+        summary: 'Compacted history.'
+      }
+    })).toMatchObject({ should_compact: true })
+    expect(() => compactionPlanResponseSchema.parse({
+      should_compact: true,
+      expected_active_snapshot: null
+    })).toThrow()
   })
 })

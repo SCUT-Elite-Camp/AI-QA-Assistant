@@ -18,9 +18,9 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 
 ## Frozen internal persistent-Memory contract (Unit 04)
 
-This section defines DTOs only. The token-protected `/api/internal/*` routes are
-not enabled until Unit 04a, so the public `/api/chat` route and its response
-remain unchanged.
+The token-protected `/api/internal/*` routes are enabled for BFF-to-Agent
+transport only. The public `/api/chat` route rejects browser-supplied
+`memory_context`, and its response remains unchanged.
 
 `InternalChatRequest` inherits the existing `ChatRequest` fields and adds a
 required `memory_context`. It is deliberately a separate model so the public
@@ -60,6 +60,34 @@ route never consumes browser-provided Memory fields.
 - All internal DTOs reject unknown fields. `InternalChatResponse` wraps the
   unchanged `ChatResponse` as `response` and places `MemoryDecision` only in
   `memory_decision`; it must never be forwarded to the browser.
+- Every `/api/internal/*` request requires `X-Agent-Internal-Token` and returns
+  `403` for missing or incorrect tokens. `POST /api/internal/chat` and
+  `POST /api/internal/memory/compaction-plan` return
+  `409 {"code":"persistent_memory_disabled"}` when the Agent flag is off.
+- `POST /api/internal/memory/compaction-plan` accepts only BFF-supplied,
+  already-persisted messages, the current ACTIVE Snapshot (or `null`), and the
+  fixed Tail/threshold/token limits. It returns either
+  `{"should_compact": false}` or a pure optimistic plan:
+
+  ```json
+  {
+    "should_compact": true,
+    "expected_active_snapshot": { "id": "...", "version": 2, "revision": 1 },
+    "new_snapshot": {
+      "covered_from_sequence": 1,
+      "covered_to_sequence": 24,
+      "covered_from_message_id": "...",
+      "covered_to_message_id": "...",
+      "summary": "..."
+    }
+  }
+  ```
+
+  For an initial Snapshot, `expected_active_snapshot` is `null`. The Agent
+  performs neither database I/O nor LLM calls for this plan; Web applies it
+  atomically only after the assistant message is durable. `POST
+  /api/internal/memory/reset-short-window` clears only the legacy process-local
+  `ConversationMemory` after a successful Web history mutation.
 
 ## Request
 

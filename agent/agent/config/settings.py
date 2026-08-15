@@ -91,6 +91,24 @@ class Settings(BaseModel):
 
 
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
+    PERSISTENT_MEMORY_ENABLED: bool = _env_bool("PERSISTENT_MEMORY_ENABLED", False)
+    SESSION_FACT_ENABLED: bool = _env_bool("SESSION_FACT_ENABLED", False)
+    AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
+    MEMORY_TAIL_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
+        ge=1,
+        le=100,
+    )
+    MEMORY_BRIEF_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_BRIEF_MAX_CHARS", 1200),
+        ge=128,
+        le=12000,
+    )
+    MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
+        ge=256,
+        le=60000,
+    )
     MAX_MEMORY_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
         ge=1,

@@ -59,9 +59,13 @@ export default defineHandler(async (event) => {
 
   // Create formal branch chat
   const [branchChat] = await db.insert(tables.chats).values({
+    // A branch starts a separate history lineage. Snapshot and Fact rows are
+    // intentionally not copied because they are scoped to the parent chat ID.
+    historyRevision: 1,
     title: branchTitle,
     userId: actor.userId,
     visibility: 'private',
+    nextMessageSequence: 1,
     topicId,
     isBranch: true,
     parentChatId: parentChat.id,

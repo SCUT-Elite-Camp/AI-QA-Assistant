@@ -177,6 +177,68 @@ export const internalChatResponseSchema = z.object({
   memory_decision: memoryDecisionSchema
 }).strict()
 
+export const compactionPlanRequestSchema = z.object({
+  actor: internalActorSchema,
+  chat_id: z.string().min(1),
+  revision: z.number().int().positive(),
+  active_snapshot: memorySnapshotInputSchema.nullable(),
+  messages: z.array(memoryMessageSchema),
+  tail_size: z.number().int().positive(),
+  min_coverable_messages: z.number().int().positive(),
+  soft_token_budget: z.number().int().positive()
+}).strict().superRefine((request, issue) => {
+  if (request.active_snapshot && request.active_snapshot.revision !== request.revision) {
+    issue.addIssue({
+      code: 'custom',
+      message: 'active_snapshot.revision must equal revision',
+      path: ['active_snapshot', 'revision']
+    })
+  }
+})
+
+export const expectedActiveSnapshotSchema = z.object({
+  id: z.string().min(1),
+  version: z.number().int().positive(),
+  revision: z.number().int().positive()
+}).strict()
+
+export const newMemorySnapshotSchema = z.object({
+  covered_from_sequence: z.number().int().positive(),
+  covered_to_sequence: z.number().int().positive(),
+  covered_from_message_id: z.string().min(1),
+  covered_to_message_id: z.string().min(1),
+  summary: z.string()
+}).strict().superRefine((snapshot, issue) => {
+  if (snapshot.covered_from_sequence > snapshot.covered_to_sequence) {
+    issue.addIssue({
+      code: 'custom',
+      message: 'covered_from_sequence must not exceed covered_to_sequence',
+      path: ['covered_from_sequence']
+    })
+  }
+})
+
+export const compactionPlanResponseSchema = z.discriminatedUnion('should_compact', [
+  z.object({
+    should_compact: z.literal(false)
+  }).strict(),
+  z.object({
+    should_compact: z.literal(true),
+    expected_active_snapshot: expectedActiveSnapshotSchema.nullable(),
+    new_snapshot: newMemorySnapshotSchema
+  }).strict()
+])
+
+export const resetShortWindowRequestSchema = z.object({
+  chat_id: z.string().min(1)
+}).strict()
+
+export const resetShortWindowResponseSchema = z.object({
+  status: z.literal('ok')
+}).strict()
+
 export type InternalChatRequest = z.infer<typeof internalChatRequestSchema>
 export type InternalChatResponse = z.infer<typeof internalChatResponseSchema>
 export type MemoryContextInput = z.infer<typeof memoryContextInputSchema>
+export type CompactionPlanRequest = z.infer<typeof compactionPlanRequestSchema>
+export type CompactionPlanResponse = z.infer<typeof compactionPlanResponseSchema>
