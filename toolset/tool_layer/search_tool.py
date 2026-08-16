@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -80,6 +81,69 @@ def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None)
     return True
 
 
+SUPPORTED_DOC_TYPES = frozenset(
+    {
+        "csv", "doc", "docx", "epub", "htm", "html", "json", "md",
+        "markdown", "odp", "ods", "odt", "pdf", "ppt", "pptx", "rst",
+        "rtf", "txt", "xls", "xlsx", "xml",
+    }
+)
+
+
+def _normalize_public_filters(filters: Optional[Dict]) -> Dict:
+    """Validate the Agent-facing filter contract before backend dispatch."""
+    if filters is None:
+        return {}
+    if not isinstance(filters, dict):
+        raise RetrievalParameterError("invalid_filters: filters must be a dict or None")
+    unknown = set(filters) - {"doc_id", "doc_ids", "space", "doc_type"}
+    if unknown:
+        raise RetrievalParameterError(
+            "invalid_filters: unsupported keys " + ", ".join(sorted(unknown))
+        )
+    normalized: Dict = {}
+    raw_ids = filters.get("doc_ids")
+    if raw_ids is None and filters.get("doc_id") is not None:
+        raw_ids = [filters["doc_id"]]
+    if raw_ids is not None:
+        if isinstance(raw_ids, str):
+            raw_ids = [raw_ids]
+        if not isinstance(raw_ids, (list, tuple, set)):
+            raise RetrievalParameterError(
+                "invalid_filters: doc_ids must be a string or list of strings"
+            )
+        values = []
+        for value in raw_ids:
+            if not isinstance(value, str) or not value.strip() or len(value.strip()) > 128:
+                raise RetrievalParameterError(
+                    "invalid_filters: every doc_id must be a non-empty string up to 128 characters"
+                )
+            if value.strip() not in values:
+                values.append(value.strip())
+        if values:
+            normalized["doc_ids"] = values
+    for key, maximum in (("space", 256), ("doc_type", 64)):
+        value = filters.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > maximum:
+            raise RetrievalParameterError(
+                f"invalid_filters: {key} must be a non-empty string up to {maximum} characters"
+            )
+        candidate = value.strip()
+        normalized_value = (
+            candidate.lower().rsplit("/", 1)[-1].removeprefix(".")
+            if key == "doc_type"
+            else candidate
+        )
+        if key == "doc_type" and normalized_value not in SUPPORTED_DOC_TYPES:
+            raise RetrievalParameterError(
+                "invalid_filters: doc_type must be a supported file extension"
+            )
+        normalized[key] = normalized_value
+    return normalized
+
+
 def _hybrid_search(
     vector_rows: list[dict],
     bm25_rows: list[dict],
@@ -135,13 +199,24 @@ class SearchTool(BaseTool):
         rerank_fail_open: bool = True,
         retrieval_orchestrator=None,
         backend_timeout_seconds: float = 2.0,
+        neighbor_expansion_enabled: bool = False,
     ):
         self.project_root = Path(__file__).resolve().parent.parent.parent
         self.documents_dir = (
             Path(documents_dir) if documents_dir else
             self.project_root / "data-persistence" / "data" / "documents"
         )
-        self.bm25_path = self.project_root / "data-persistence" / "data" / "bm25_index.pkl"
+        configured_bm25_path = Path(
+            os.getenv(
+                "BM25_INDEX_PATH",
+                str(self.project_root / "data-persistence" / "data" / "bm25_index.pkl"),
+            )
+        )
+        self.bm25_path = (
+            configured_bm25_path
+            if configured_bm25_path.is_absolute()
+            else self.project_root / configured_bm25_path
+        )
 
         self.backend = backend
         self.logger = logger or logging.getLogger(__name__)
@@ -156,6 +231,7 @@ class SearchTool(BaseTool):
         self.rerank_fail_open = rerank_fail_open
         self.retrieval_orchestrator = retrieval_orchestrator
         self.backend_timeout_seconds = float(backend_timeout_seconds)
+        self.neighbor_expansion_enabled = bool(neighbor_expansion_enabled)
 
         self._milvus_store = None
         self._bm25_index = None
@@ -207,20 +283,44 @@ class SearchTool(BaseTool):
                     "type": "string",
                     "description": "Retrieval mode: 'vector', 'bm25', or 'hybrid'.",
                     "default": "hybrid"
+                },
+                "filters": {
+                    "type": "object",
+                    "properties": {
+                        "doc_id": {"type": "string"},
+                        "doc_ids": {"type": "array", "items": {"type": "string"}},
+                        "space": {"type": "string"},
+                        "doc_type": {
+                            "type": "string",
+                            "enum": sorted(SUPPORTED_DOC_TYPES),
+                            "description": "File extension only; not a content category.",
+                        },
+                    },
+                    "additionalProperties": False,
+                },
+                "include_neighbors": {
+                    "type": "boolean",
+                    "description": "Add the previous and next chunk as context after ranking.",
+                    "default": False,
                 }
             },
-            "required": ["query"]
+            "required": ["query"],
+            "additionalProperties": False,
         }
 
     def execute(self, **kwargs: Any) -> Any:
         query = kwargs.get("query")
         top_k = kwargs.get("top_k", 5)
         mode = kwargs.get("mode", "hybrid")
+        filters = kwargs.get("filters")
+        include_neighbors = kwargs.get("include_neighbors", False)
 
         results = self.search(
             query=query,
             top_k=top_k,
             mode=mode,
+            filters=filters,
+            include_neighbors=include_neighbors,
             min_score=self.min_score,
             topic_doc_ids=getattr(self, "topic_doc_ids", None),
             weight_mode=getattr(self, "weight_mode", "auto"),
@@ -238,6 +338,8 @@ class SearchTool(BaseTool):
                 f"doc_id: {item.get('doc_id')}\n"
                 f"chunk_id: {item.get('chunk_id')}\n"
                 f"content: {item.get('chunk_text')}\n"
+                f"context_before: {item.get('context_before', [])}\n"
+                f"context_after: {item.get('context_after', [])}\n"
                 f"score: {item.get('score'):.4f}"
             )
         return "\n\n".join(blocks)
@@ -255,11 +357,16 @@ class SearchTool(BaseTool):
         topic_titles: Optional[List[str]] = None,
         weight_mode: str = "auto",
         consecutive_no_new_docs_count: int = 0,
+        include_neighbors: bool = False,
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
         started = time.perf_counter()
         trace = trace_id or "-"
-        filters = filters or {}
+        filters = _normalize_public_filters(filters)
+        if not isinstance(include_neighbors, bool):
+            raise RetrievalParameterError(
+                "invalid_include_neighbors: include_neighbors must be boolean"
+            )
 
         try:
             normalized_query = query.strip()
@@ -293,7 +400,8 @@ class SearchTool(BaseTool):
                 raw_results, filters, float(min_score)
             )
             if use_reranker and results:
-                results = self._rerank(normalized_query, results, trace)
+                rerank_query = observation.get("preferred_rerank_query") or normalized_query
+                results = self._rerank(rerank_query, results, trace)
 
             if results and (topic_doc_ids or topic_titles):
                 results = self._apply_topic_weighting(
@@ -323,6 +431,8 @@ class SearchTool(BaseTool):
 
         latency_ms = int((time.perf_counter() - started) * 1000)
         results = results[:top_k]
+        if include_neighbors and self.neighbor_expansion_enabled:
+            results = self._expand_neighbors(results)
         top_scores = [row["score"] for row in results[:5]]
         observation["rerank_used"] = bool(use_reranker and results)
         self._log(
@@ -330,6 +440,49 @@ class SearchTool(BaseTool):
             observation, normalized_query,
         )
         return results
+
+    def _expand_neighbors(self, results: List[Dict]) -> List[Dict]:
+        """Attach adjacent context without changing core ranking or scores."""
+        expanded = []
+        document_cache: Dict[str, Dict] = {}
+        for result in results:
+            row = dict(result)
+            doc_id = row["doc_id"]
+            if doc_id not in document_cache:
+                document_cache[doc_id] = self._load_document_meta(doc_id)
+            document = document_cache[doc_id]
+            chunks_by_index = {}
+            for chunk in document.get("chunks", []):
+                if not isinstance(chunk, dict):
+                    continue
+                try:
+                    chunks_by_index[int(chunk.get("index", 0))] = chunk
+                except (TypeError, ValueError):
+                    continue
+            current_index = int(row["chunk_index"])
+            row["context_before"] = self._context_chunk(
+                chunks_by_index.get(current_index - 1),
+                doc_id,
+            )
+            row["context_after"] = self._context_chunk(
+                chunks_by_index.get(current_index + 1),
+                doc_id,
+            )
+            expanded.append(row)
+        return expanded
+
+    @staticmethod
+    def _context_chunk(chunk: Optional[Dict], doc_id: str) -> List[Dict]:
+        if not chunk:
+            return []
+        index = int(chunk.get("index", 0))
+        return [{
+            "role": "context",
+            "doc_id": doc_id,
+            "chunk_id": chunk.get("chunk_id") or f"{doc_id}::chunk_{index}",
+            "chunk_index": index,
+            "chunk_text": str(chunk.get("text", "")),
+        }]
 
     def _apply_topic_weighting(
         self,
@@ -465,19 +618,11 @@ class SearchTool(BaseTool):
 
         query_vector = embed_texts([query])[0]
 
-        doc_ids_filter = None
-        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
-        if doc_ids:
-            if isinstance(doc_ids, str):
-                doc_ids_filter = [doc_ids]
-            else:
-                doc_ids_filter = list(doc_ids)
-
         try:
             hits = self.milvus_store.search_similar(
                 query_vector=query_vector,
                 top_k=top_k,
-                doc_ids_filter=doc_ids_filter,
+                filters=filters,
                 timeout_seconds=self.backend_timeout_seconds,
             )
         except Exception as e:
@@ -494,6 +639,10 @@ class SearchTool(BaseTool):
                 "score": hit.distance,
                 "vector_score": hit.distance,
                 "bm25_score": 0.0,
+                "title": entity.get("title") or "",
+                "space": entity.get("space") or "",
+                "doc_type": entity.get("doc_type") or "",
+                "source_url": entity.get("source_url") or "",
             }
             if not _matches_filters(row, filters):
                 continue
@@ -508,7 +657,7 @@ class SearchTool(BaseTool):
 
     def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
         try:
-            hits = self.bm25_index.search(query, top_k=top_k)
+            hits = self.bm25_index.search(query, top_k=top_k, filters=filters)
         except Exception as e:
             raise RetrievalError(f"bm25_search_failed: {e}") from e
 
@@ -523,6 +672,10 @@ class SearchTool(BaseTool):
                 "score": hit.get("score", 0.0),
                 "vector_score": 0.0,
                 "bm25_score": hit.get("score", 0.0),
+                "title": hit.get("title", ""),
+                "space": hit.get("space", ""),
+                "doc_type": hit.get("doc_type", ""),
+                "source_url": hit.get("source_url", ""),
             }
 
             doc_meta = self._load_document_meta(str(doc_id))
@@ -572,8 +725,7 @@ class SearchTool(BaseTool):
                 "invalid_backend_timeout: backend timeout must be positive"
             )
 
-        if filters is not None and not isinstance(filters, dict):
-            raise RetrievalParameterError("invalid_filters: filters must be a dict or None")
+        _normalize_public_filters(filters)
 
         try:
             float(min_score)
@@ -624,6 +776,12 @@ class SearchTool(BaseTool):
                     "vector_score": _safe_float(item.get("vector_score")),
                     "bm25_score": _safe_float(item.get("bm25_score")),
                     "source_url": str(source_url),
+                    "space": str(item.get("space") or doc_meta.get("space") or ""),
+                    "doc_type": str(
+                        item.get("doc_type")
+                        or doc_meta.get("doc_type")
+                        or ""
+                    ),
                 }
             )
 

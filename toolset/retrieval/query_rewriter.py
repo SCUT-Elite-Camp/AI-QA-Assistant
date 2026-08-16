@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
@@ -7,6 +8,14 @@ from typing import List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+
+_CJK_PATTERN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+
+
+def contains_cjk(text: str) -> bool:
+    """Return whether a query contains a CJK unified ideograph."""
+    return bool(_CJK_PATTERN.search(text or ""))
 
 
 @dataclass(frozen=True)
@@ -17,6 +26,7 @@ class RewriteConfig:
     timeout_ms: int = 1200
     max_variants: int = 2
     max_query_chars: int = 512
+    cross_language_enabled: bool = False
 
 
 class QueryRewriter(ABC):
@@ -49,6 +59,23 @@ class OpenAICompatibleQueryRewriter(QueryRewriter):
         query: str,
         max_variants: int = 2,
     ) -> Tuple[List[str], str]:
+        return self._rewrite_with_status(query, max_variants, None)
+
+    def rewrite_with_context(
+        self,
+        query: str,
+        max_variants: int,
+        cross_language: bool,
+    ) -> Tuple[List[str], str]:
+        """Rewrite with an orchestrator-selected cross-language route."""
+        return self._rewrite_with_status(query, max_variants, cross_language)
+
+    def _rewrite_with_status(
+        self,
+        query: str,
+        max_variants: int,
+        cross_language_override: bool | None,
+    ) -> Tuple[List[str], str]:
         if not self.config.api_base or not self.config.model:
             self.logger.error(
                 "[QUERY_REWRITE_CONFIG_ERROR] api_base_configured=%s model_configured=%s",
@@ -57,9 +84,37 @@ class OpenAICompatibleQueryRewriter(QueryRewriter):
             )
             return [], "config_error"
 
+        cross_language = (
+            self.config.cross_language_enabled and contains_cjk(query)
+            if cross_language_override is None
+            else bool(cross_language_override and contains_cjk(query))
+        )
         limit = min(max(int(max_variants), 0), self.config.max_variants, 2)
+        if cross_language:
+            limit = min(limit, 1)
         if limit == 0:
             return [], "disabled"
+
+        if cross_language:
+            system_prompt = (
+                "Translate the Chinese or mixed Chinese-English user query into one "
+                "concise English retrieval query for an English BM25 index. Preserve "
+                "the exact intent, product names, API names, code identifiers, numbers, "
+                "dates, and versions. Do not invent entities, facts, or answer terms. "
+                "Return only strict JSON with exactly one field: "
+                '{"queries": ["..."]}.'
+            )
+        else:
+            system_prompt = (
+                "Create retrieval queries with distinct responsibilities, "
+                "in this order: (1) expand abbreviations, terminology aliases, "
+                "and full names already supported by the query; (2) produce a "
+                "concise keyword-focused search query, removing empty pronouns "
+                "without guessing missing entities. Preserve the original intent "
+                "and never invent answer terms or facts. Return at most "
+                f"{limit} queries and only strict JSON with exactly one field: "
+                '{"queries": ["..."]}.'
+            )
 
         payload = {
             "model": self.config.model,
@@ -69,16 +124,7 @@ class OpenAICompatibleQueryRewriter(QueryRewriter):
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "Create retrieval queries with distinct responsibilities, "
-                        "in this order: (1) expand abbreviations, terminology aliases, "
-                        "and full names already supported by the query; (2) produce a "
-                        "concise keyword-focused search query, removing empty pronouns "
-                        "without guessing missing entities. Preserve the original intent "
-                        "and never invent answer terms or facts. Return at most "
-                        f"{limit} queries and only strict JSON with exactly one field: "
-                        '{"queries": ["..."]}.'
-                    ),
+                    "content": system_prompt,
                 },
                 {"role": "user", "content": query},
             ],
@@ -90,6 +136,8 @@ class OpenAICompatibleQueryRewriter(QueryRewriter):
             response = self._post(payload)
             content = response["choices"][0]["message"]["content"]
             variants = self._parse_variants(content, query, limit)
+            if cross_language and any(contains_cjk(variant) for variant in variants):
+                raise ValueError("cross-language rewrite must return English queries")
             return variants, "success" if variants else "empty"
         except TimeoutError:
             self.logger.warning("[QUERY_REWRITE_TIMEOUT]")

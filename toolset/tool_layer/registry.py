@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -13,11 +14,21 @@ from retrieval.query_rewriter import OpenAICompatibleQueryRewriter, RewriteConfi
 from retrieval.query_router import QueryRouter
 
 from .base_tool import BaseTool
+from .document_tools import FindDocumentsTool, GetDocumentTool
 from .search_tool import SearchTool
+from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env", override=False)
+logger = logging.getLogger(__name__)
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _build_default_search_tool() -> SearchTool:
@@ -27,8 +38,19 @@ def _build_default_search_tool() -> SearchTool:
         if rerank_enabled in {"0", "false", "no", "off"}
         else CrossEncoderReranker()
     )
-    rewrite_enabled = os.getenv("QUERY_REWRITE_ENABLED", "false").strip().lower()
-    enhanced_retrieval = rewrite_enabled not in {"0", "false", "no", "off"}
+    legacy_rewrite = os.getenv("QUERY_REWRITE_ENABLED")
+    if legacy_rewrite is not None and os.getenv("RETRIEVAL_EXPANSION_ENABLED") is None:
+        logger.warning(
+            "QUERY_REWRITE_ENABLED is deprecated for Toolset; "
+            "use RETRIEVAL_EXPANSION_ENABLED"
+        )
+    retrieval_expansion_enabled = (
+        _env_bool("RETRIEVAL_EXPANSION_ENABLED")
+        if os.getenv("RETRIEVAL_EXPANSION_ENABLED") is not None
+        else _env_bool("QUERY_REWRITE_ENABLED")
+    )
+    cross_language_enabled = _env_bool("CROSS_LANGUAGE_RETRIEVAL_ENABLED")
+    enhanced_retrieval = retrieval_expansion_enabled or cross_language_enabled
     rewrite_timeout_ms = _env_int("QUERY_REWRITE_TIMEOUT_MS", 1200, minimum=1)
     rewrite_max_variants = _env_int(
         "QUERY_REWRITE_MAX_VARIANTS", 2, minimum=0, maximum=2
@@ -63,6 +85,7 @@ def _build_default_search_tool() -> SearchTool:
                 ),
                 timeout_ms=rewrite_timeout_ms,
                 max_variants=rewrite_max_variants,
+                cross_language_enabled=cross_language_enabled,
             )
         )
         orchestrator = RetrievalOrchestrator(
@@ -73,6 +96,8 @@ def _build_default_search_tool() -> SearchTool:
                 rewrite_max_variants=rewrite_max_variants,
                 total_budget_ms=2000,
                 fusion_candidate_limit=20,
+                cross_language_enabled=cross_language_enabled,
+                retrieval_expansion_enabled=retrieval_expansion_enabled,
             ),
         )
 
@@ -85,7 +110,20 @@ def _build_default_search_tool() -> SearchTool:
             "RETRIEVAL_BACKEND_TIMEOUT_MS", 2000, minimum=1
         )
         / 1000.0,
+        neighbor_expansion_enabled=_env_bool("NEIGHBOR_EXPANSION_ENABLED"),
     )
+
+
+def _build_default_tools() -> List[BaseTool]:
+    search_tool = _build_default_search_tool()
+    tools: List[BaseTool] = [
+        search_tool,
+        FindDocumentsTool(search_tool),
+        GetDocumentTool(search_tool.documents_dir),
+    ]
+    if _env_bool("ATTACHMENTS_ENABLED"):
+        tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
+    return tools
 
 
 def _env_int(
@@ -113,7 +151,7 @@ class ToolRegistry:
         self._tools: Dict[str, BaseTool] = {}
         if tools is None:
             # Register default tools in the toolset layer
-            default_tools = [_build_default_search_tool()]
+            default_tools = _build_default_tools()
         else:
             default_tools = tools
 

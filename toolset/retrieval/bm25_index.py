@@ -7,6 +7,11 @@ import pickle
 from rank_bm25 import BM25Okapi
 from retrieval.english_analyzer import EnglishAnalyzer
 from storage.document_store import DOCS_DIR
+from storage.filtering import matches_filters, normalize_filters
+
+
+INDEX_FORMAT_VERSION = 2
+DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
 
 
 class BM25Index:
@@ -25,6 +30,10 @@ class BM25Index:
         self._bm25: BM25Okapi | None = None
         self._chunk_meta: list[dict] = []
         self._tokenized_corpus: list[list[str]] = []
+        self._embedding_model_id = os.getenv(
+            "LOCAL_EMBEDDING_MODEL_NAME",
+            DEFAULT_EMBEDDING_MODEL,
+        )
 
     def build_from_documents(self, docs_dir: str | None = None):
         """Build BM25 from all processed document chunks."""
@@ -56,6 +65,11 @@ class BM25Index:
                     "doc_id": doc_id,
                     "chunk_index": ch.get("index", 0),
                     "text": ch.get("text", ""),
+                    "title": data.get("title", ""),
+                    "space": data.get("space", ""),
+                    "doc_type": _document_type(data),
+                    "last_updated": data.get("last_updated", ""),
+                    "source_url": data.get("source_url", ""),
                 })
                 corpus_texts.append(ch.get("text", ""))
 
@@ -70,7 +84,12 @@ class BM25Index:
         self._bm25 = BM25Okapi(self._tokenized_corpus)
         print(f"BM25 index built with {len(corpus_texts)} chunks")
 
-    def search(self, query: str, top_k: int = 5) -> list[dict]:
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        filters: dict | None = None,
+    ) -> list[dict]:
         """Return the highest-scoring chunks for an English query."""
         if self._bm25 is None:
             raise RuntimeError(
@@ -82,7 +101,12 @@ class BM25Index:
             return []
         scores = self._bm25.get_scores(tokens)
 
-        indexed_scores = list(enumerate(scores))
+        normalized_filters = normalize_filters(filters)
+        indexed_scores = [
+            (index, score)
+            for index, score in enumerate(scores)
+            if matches_filters(self._chunk_meta[index], normalized_filters)
+        ]
         indexed_scores.sort(key=lambda x: x[1], reverse=True)
         top_indices = [idx for idx, _score in indexed_scores[:top_k]]
 
@@ -96,7 +120,10 @@ class BM25Index:
     @staticmethod
     def default_index_path() -> str:
         """Return the default persisted-index path."""
-        return os.path.join(os.path.dirname(DOCS_DIR), "bm25_index.pkl")
+        return os.getenv(
+            "BM25_INDEX_PATH",
+            os.path.join(os.path.dirname(DOCS_DIR), "bm25_index.pkl"),
+        )
 
     def save(self, path: str):
         """Persist the tokenized index with its analyzer identity."""
@@ -104,7 +131,9 @@ class BM25Index:
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
         data = {
+            "format_version": INDEX_FORMAT_VERSION,
             "analyzer_id": self._analyzer.analyzer_id,
+            "embedding_model_id": self._embedding_model_id,
             "tokenized_corpus": self._tokenized_corpus,
             "chunk_meta": self._chunk_meta,
         }
@@ -123,8 +152,16 @@ class BM25Index:
                 f"got {stored_analyzer_id or 'legacy_jieba_or_unknown'}; "
                 "rebuild the BM25 index"
             )
+        stored_format = int(data.get("format_version", 1))
+        if stored_format not in {1, INDEX_FORMAT_VERSION}:
+            raise ValueError(
+                f"unsupported BM25 index format {stored_format}; rebuild the BM25 index"
+            )
         self._tokenized_corpus = data["tokenized_corpus"]
         self._chunk_meta = data["chunk_meta"]
+        self._embedding_model_id = str(
+            data.get("embedding_model_id") or "legacy_or_unknown"
+        )
         if self._tokenized_corpus:
             self._bm25 = BM25Okapi(self._tokenized_corpus)
         else:
@@ -143,6 +180,14 @@ class BM25Index:
         return len(self._chunk_meta)
 
     @property
+    def document_count(self) -> int:
+        return len({str(row.get("doc_id", "")) for row in self._chunk_meta})
+
+    @property
+    def embedding_model_id(self) -> str:
+        return self._embedding_model_id
+
+    @property
     def analyzer_id(self) -> str:
         """Return the analyzer identity used for indexing and querying."""
         return self._analyzer.analyzer_id
@@ -150,3 +195,17 @@ class BM25Index:
     @property
     def is_empty(self) -> bool:
         return self._bm25 is None
+
+
+def _document_type(document: dict) -> str:
+    value = document.get("doc_type")
+    if not value and isinstance(document.get("metadata"), dict):
+        metadata = document["metadata"]
+        value = metadata.get("doc_type") or metadata.get("content_type")
+    fallback = os.path.splitext(str(document.get("address", "")))[1]
+    candidate = str(value or "").strip().lower()
+    if "/" in candidate:
+        candidate = candidate.rsplit("/", 1)[-1]
+    if not candidate or candidate in {"attachment", "page"}:
+        candidate = fallback
+    return candidate.removeprefix(".")
