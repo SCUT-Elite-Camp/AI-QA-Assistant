@@ -38,6 +38,34 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/__debug/metrics': RouteRecordInfo<
+      '/__debug/metrics',
+      '/__debug/metrics',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/': RouteRecordInfo<
+      '/admin/',
+      '/admin',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/departments': RouteRecordInfo<
+      '/admin/departments',
+      '/admin/departments',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/users': RouteRecordInfo<
+      '/admin/users',
+      '/admin/users',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/chat/[id]': RouteRecordInfo<
       '/chat/[id]',
       '/chat/:id',
@@ -45,16 +73,16 @@ declare module 'vue-router/auto-routes' {
       { id: ParamValue<false> },
       | never
     >,
-    '/favorites/': RouteRecordInfo<
-      '/favorites/',
-      '/favorites',
+    '/files': RouteRecordInfo<
+      '/files',
+      '/files',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    '/topics/': RouteRecordInfo<
-      '/topics/',
-      '/topics',
+    '/settings': RouteRecordInfo<
+      '/settings',
+      '/settings',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -80,6 +108,38 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/__debug/metrics.vue': {
+      routes:
+        | '/__debug/metrics'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/index.vue': {
+      routes:
+        | '/admin/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/departments.vue': {
+      routes:
+        | '/admin/departments'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/users.vue': {
+      routes:
+        | '/admin/users'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/chat/[id].vue': {
       routes:
         | '/chat/[id]'
@@ -88,17 +148,17 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | 'id'
     }
-    'src/pages/favorites/index.vue': {
+    'src/pages/files.vue': {
       routes:
-        | '/favorites/'
+        | '/files'
       views:
         | never
       pathParamNames:
         | never
     }
-    'src/pages/topics/index.vue': {
+    'src/pages/settings.vue': {
       routes:
-        | '/topics/'
+        | '/settings'
       views:
         | never
       pathParamNames:

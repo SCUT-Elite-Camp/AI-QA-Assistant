@@ -112,6 +112,18 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     type: 'checkbox'
   }]
 }], [{
+  label: 'Settings',
+  icon: 'i-lucide-settings',
+  to: '/settings'
+}, {
+  label: 'Files',
+  icon: 'i-lucide-folder',
+  to: '/files'
+}, ...(user.value?.role === 'admin' ? [{
+  label: 'Admin',
+  icon: 'i-lucide-shield',
+  to: '/admin'
+}] : [])], [{
   label: 'Docs',
   icon: 'i-lucide-book-open',
   to: 'https://ui.nuxt.com/docs/getting-started/installation/vue',

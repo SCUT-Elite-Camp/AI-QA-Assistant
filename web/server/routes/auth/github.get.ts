@@ -7,6 +7,7 @@ import { withQuery } from 'ufo'
 import { defu } from 'defu'
 import type { Endpoints } from '@octokit/types'
 import { useUserSession } from '../../utils/session'
+import { useDrizzle, tables, eq } from '../../utils/drizzle'
 
 interface RequestAccessTokenResponse {
   access_token?: string
@@ -104,12 +105,37 @@ export default defineHandler(async (event: H3Event) => {
   // Success
   const session = await useUserSession(event)
 
+  const db = useDrizzle()
+  const userId = user.id.toString()
+
+  // 确保用户在 users 表中存在（权限/角色/部门管理依赖该记录）
+  let [dbUser] = await db.select().from(tables.users).where(eq(tables.users.id, userId))
+  if (!dbUser) {
+    await db.insert(tables.users).values({
+      id: userId,
+      email: user.email || `${user.login}@github.local`,
+      name: user.name || user.login,
+      avatar: user.avatar_url,
+      username: user.login,
+      provider: 'github',
+      providerId: userId,
+    })
+    ;[dbUser] = await db.select().from(tables.users).where(eq(tables.users.id, userId))
+  }
+
+  // 读取当前部门，写入 session 供 Agent 层部门级授权使用
+  const memberships = await db.select().from(tables.userDepartments).where(eq(tables.userDepartments.userId, userId))
+  const departmentIds = memberships.map(m => m.departmentId)
+
   await session.update(defu({
     user: {
-      id: user.id.toString(),
+      id: userId,
       username: user.login,
       name: user.name || user.login,
       avatar: user.avatar_url,
+      role: dbUser?.role,
+      disabled: dbUser?.disabled,
+      departmentIds,
     },
   }, session.data))
 

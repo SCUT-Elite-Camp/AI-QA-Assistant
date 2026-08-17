@@ -7,7 +7,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [string | false] }>()
 
+const open = ref(true)
 const value = ref(props.title ?? '')
+
+function onOpenChange(v: boolean) {
+  if (!v) emit('close', false)
+}
 
 const trimmed = computed(() => value.value.trim())
 
@@ -19,6 +24,8 @@ function submit() {
 
 <template>
   <UModal
+    v-model:open="open"
+    @update:open="onOpenChange"
     title="Rename chat"
     description="Choose a new title for this chat."
     :ui="{
