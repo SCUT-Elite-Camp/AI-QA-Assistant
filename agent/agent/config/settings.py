@@ -1,19 +1,12 @@
 import os
+from pathlib import Path
 from typing import Optional
 
-from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-# Load environment variables from agent/.env and root .env
-_agent_env = Path(__file__).resolve().parent.parent.parent / ".env"
-if _agent_env.exists():
-    load_dotenv(_agent_env)
-_root_env = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-if _root_env.exists():
-    load_dotenv(_root_env)
+# Load environment variables from .env file
 load_dotenv()
-
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -52,31 +45,6 @@ class Settings(BaseModel):
         le=1.0,
     )
     DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
-    QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
-        "QUERY_UNDERSTANDING_ENABLED",
-        True,
-    )
-    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
-    CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
-    TOOL_TIMEOUT_MS: int = Field(
-        default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
-        gt=0,
-    )
-
-
-    MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
-    MAX_MEMORY_MESSAGES: int = Field(
-        default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
-        ge=1,
-    )
-    MAX_AGENT_ITERATIONS: int = Field(
-        default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
-        ge=1,
-    )
-    MAX_REPEATED_TOOL_CALLS: int = Field(
-        default_factory=lambda: _env_int("MAX_REPEATED_TOOL_CALLS", 2),
-        ge=1,
-    )
 
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
     LLM_API_BASE: str = os.getenv(
@@ -90,6 +58,13 @@ class Settings(BaseModel):
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
+
+    # Web 层 SQLite 数据库路径，Agent 层权限服务据此查询文件权限。
+    # 默认定位到 AI-QA-Assistant/web/.data/sqlite.db。
+    WEB_SQLITE_PATH: str = os.getenv(
+        "WEB_SQLITE_PATH",
+        str(Path(__file__).resolve().parents[3] / "web" / ".data" / "sqlite.db"),
+    )
 
 
 settings = Settings()
