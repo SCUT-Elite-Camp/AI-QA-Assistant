@@ -10,7 +10,6 @@ import ChatToolSources from '../tool/Sources.vue'
 import type { ChunkCitation } from '../tool/Sources.vue'
 import ChatMessageEdit from './MessageEdit.vue'
 import { getMergedParts } from '../../../utils/ai'
-import { getSearchQuery } from '../../../utils/tool'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
 
@@ -64,6 +63,13 @@ provide('ragCitationMap', citationMap)
       :text="part.text"
       :streaming="isPartStreaming(part)"
       chevron="leading"
+      class="my-1 text-sm font-normal"
+      :ui="{
+        root: 'text-sm',
+        trigger: 'text-sm font-medium text-neutral-300 hover:text-neutral-100 transition-colors py-1 cursor-pointer select-none',
+        label: 'text-sm font-medium text-neutral-300',
+        chevronIcon: 'size-4 text-neutral-400'
+      }"
     >
       <ChatComark
         :markdown="part.text"
@@ -83,9 +89,15 @@ provide('ragCitationMap', citationMap)
       <UChatTool
         v-else-if="getToolName(part) === 'rag_search' || getToolName(part) === 'web_search' || getToolName(part) === 'google_search'"
         :text="isToolStreaming(part) ? '正在检索知识库...' : '已检索知识库'"
-        :suffix="getSearchQuery(part)"
         :streaming="isToolStreaming(part)"
         chevron="leading"
+        class="my-1 text-sm font-normal"
+        :ui="{
+          root: 'text-sm',
+          trigger: 'text-sm font-medium text-neutral-300 hover:text-neutral-100 transition-colors py-1 cursor-pointer select-none',
+          label: 'text-sm font-medium text-neutral-300',
+          chevronIcon: 'size-4 text-neutral-400'
+        }"
       >
         <ChatToolSources :citations="getChunkCitations(part)" />
       </UChatTool>

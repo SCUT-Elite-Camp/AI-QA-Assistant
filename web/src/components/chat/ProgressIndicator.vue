@@ -75,8 +75,8 @@ const realStatusText = computed(() => {
 </script>
 
 <template>
-  <div class="py-1.5 flex items-center gap-2 text-xs text-zinc-300 font-sans select-none">
-    <span class="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse shrink-0"></span>
-    <span class="font-normal text-zinc-300">{{ realStatusText }}</span>
+  <div class="py-1.5 flex items-center gap-2 text-sm text-neutral-300 font-sans select-none">
+    <span class="w-2 h-2 rounded-full bg-neutral-400 animate-pulse shrink-0"></span>
+    <span class="font-normal text-neutral-300">{{ realStatusText }}</span>
   </div>
 </template>

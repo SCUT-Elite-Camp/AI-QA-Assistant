@@ -126,3 +126,19 @@ html.dark .shiki span {
   scrollbar-width: none !important;
 }
 
+/* Collapsible trigger typography (UChatTool & UChatReasoning) */
+[data-slot="trigger"] {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.25rem !important;
+}
+
+[data-slot="label"] {
+  font-size: 0.875rem !important; /* 14px */
+  font-weight: 500 !important;
+}
+
+[data-slot="chevronIcon"] {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
