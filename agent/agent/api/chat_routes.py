@@ -161,6 +161,7 @@ def chat_stream(
                 query=request.query,
                 status=StatusCode.SUCCESS,
                 answer=clean_answer or accumulated_answer,
+                message="",
                 citations=citations,
                 chat_title=chat_title,
             )
