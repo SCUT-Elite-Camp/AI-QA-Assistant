@@ -51,33 +51,70 @@ const citationMap = computed(() => {
 
 // Make citations available to all CiteMark children via inject
 provide('ragCitationMap', citationMap)
+
+const mergedParts = computed(() => getMergedParts(props.message.parts))
+
+const reasoningPart = computed(() => {
+  return mergedParts.value.find(p => isReasoningUIPart(p))
+})
+
+const ragToolPart = computed(() => {
+  return mergedParts.value.find(p => isToolUIPart(p) && ['rag_search', 'web_search', 'google_search'].includes(getToolName(p)))
+})
+
+const remainingParts = computed(() => {
+  return mergedParts.value.filter(p => p !== reasoningPart.value && p !== ragToolPart.value)
+})
 </script>
 
 <template>
-  <template
-    v-for="(part, index) in getMergedParts(message.parts)"
-    :key="`${message.id}-${part.type}-${index}`"
+  <!-- Top meta row for assistant: Thought on left, Knowledge search on right -->
+  <div
+    v-if="reasoningPart || ragToolPart"
+    class="flex flex-wrap items-start gap-x-6 gap-y-2 mb-2 w-full"
   >
     <UChatReasoning
-      v-if="isReasoningUIPart(part)"
-      :text="part.text"
-      :streaming="isPartStreaming(part)"
+      v-if="reasoningPart"
+      :text="reasoningPart.text"
+      :streaming="isPartStreaming(reasoningPart)"
       chevron="leading"
-      class="my-1 text-sm font-normal"
+      class="w-auto max-w-full my-0.5"
       :ui="{
-        root: 'text-sm',
+        root: 'w-auto max-w-full',
         trigger: 'text-sm font-medium text-neutral-300 hover:text-neutral-100 transition-colors py-1 cursor-pointer select-none',
         label: 'text-sm font-medium text-neutral-300',
         chevronIcon: 'size-4 text-neutral-400'
       }"
     >
       <ChatComark
-        :markdown="part.text"
-        :streaming="isPartStreaming(part)"
+        :markdown="reasoningPart.text"
+        :streaming="isPartStreaming(reasoningPart)"
       />
     </UChatReasoning>
 
-    <template v-else-if="isToolUIPart(part)">
+    <UChatTool
+      v-if="ragToolPart"
+      :text="isToolStreaming(ragToolPart) ? '正在检索知识库...' : '已检索知识库'"
+      :streaming="isToolStreaming(ragToolPart)"
+      chevron="leading"
+      class="w-auto max-w-full my-0.5"
+      :ui="{
+        root: 'w-auto max-w-full',
+        trigger: 'text-sm font-medium text-neutral-300 hover:text-neutral-100 transition-colors py-1 cursor-pointer select-none',
+        label: 'text-sm font-medium text-neutral-300',
+        chevronIcon: 'size-4 text-neutral-400'
+      }"
+    >
+      <ChatToolSources :citations="getChunkCitations(ragToolPart)" />
+    </UChatTool>
+  </div>
+
+  <!-- Remaining content parts (Charts, Weather, Answer Text, User Edits) -->
+  <template
+    v-for="(part, index) in remainingParts"
+    :key="`${message.id}-${part.type}-${index}`"
+  >
+    <template v-if="isToolUIPart(part)">
       <ChatToolChart
         v-if="getToolName(part) === 'chart'"
         :invocation="{ ...(part as ChartUIToolInvocation) }"
@@ -86,21 +123,6 @@ provide('ragCitationMap', citationMap)
         v-else-if="getToolName(part) === 'weather'"
         :invocation="{ ...(part as WeatherUIToolInvocation) }"
       />
-      <UChatTool
-        v-else-if="getToolName(part) === 'rag_search' || getToolName(part) === 'web_search' || getToolName(part) === 'google_search'"
-        :text="isToolStreaming(part) ? '正在检索知识库...' : '已检索知识库'"
-        :streaming="isToolStreaming(part)"
-        chevron="leading"
-        class="my-1 text-sm font-normal"
-        :ui="{
-          root: 'text-sm',
-          trigger: 'text-sm font-medium text-neutral-300 hover:text-neutral-100 transition-colors py-1 cursor-pointer select-none',
-          label: 'text-sm font-medium text-neutral-300',
-          chevronIcon: 'size-4 text-neutral-400'
-        }"
-      >
-        <ChatToolSources :citations="getChunkCitations(part)" />
-      </UChatTool>
     </template>
 
     <template v-else-if="isTextUIPart(part)">
