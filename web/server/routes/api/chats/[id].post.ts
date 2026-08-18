@@ -143,7 +143,16 @@ export default defineHandler(async (event) => {
           }
         }
 
-        // 1. Call real Python Agent API (port 8000)
+        // 1. Emit tool-input-available event immediately so client tracks real retrieval state
+        const toolCallId = `call_${Date.now()}`
+        writer.write({
+          type: 'tool-input-available',
+          toolCallId,
+          toolName: 'rag_search',
+          input: { query: queryText }
+        })
+
+        // 2. Call real Python Agent API (port 8000)
         const agentUrl = "http://127.0.0.1:8000/api/chat"
         const aiCallStart = Date.now()
         const agentRes = await fetch(agentUrl, {
@@ -284,15 +293,8 @@ export default defineHandler(async (event) => {
 
 
 
-        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
+        // 3. Write RAG search tool output — full ChunkCitation array in output.
         //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
-        const toolCallId = `call_${Date.now()}`
-        writer.write({
-          type: 'tool-input-available',
-          toolCallId,
-          toolName: 'rag_search',
-          input: { query: queryText }
-        })
 
         writer.write({
           type: 'tool-output-available',
