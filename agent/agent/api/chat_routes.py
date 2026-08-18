@@ -124,15 +124,20 @@ def chat_stream(
                     })
 
             # Build and yield citations immediately so client displays retrieved document chunks
+            def _get_ev(item, key, default=None):
+                if isinstance(item, dict):
+                    return item.get(key, default)
+                return getattr(item, key, default)
+
             citations = [
                 Citation(
                     citation_id=idx,
-                    doc_id=ev.doc_id,
-                    chunk_id=ev.chunk_id,
-                    title=ev.title or f"Document {idx}",
-                    source_url=ev.source_url,
-                    score=ev.score,
-                    snippet=getattr(ev, 'chunk_text', getattr(ev, 'snippet', ''))
+                    doc_id=str(_get_ev(ev, "doc_id", "") or ""),
+                    chunk_id=str(_get_ev(ev, "chunk_id", "") or ""),
+                    title=_get_ev(ev, "title", f"Document {idx}") or f"Document {idx}",
+                    source_url=_get_ev(ev, "source_url", None),
+                    score=float(_get_ev(ev, "score", 0.0)) if _get_ev(ev, "score") is not None else None,
+                    snippet=str(_get_ev(ev, "chunk_text", _get_ev(ev, "snippet", _get_ev(ev, "content", ""))) or ""),
                 )
                 for idx, ev in enumerate(state.evidence, start=1)
             ]
