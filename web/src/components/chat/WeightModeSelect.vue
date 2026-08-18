@@ -37,17 +37,14 @@ const displayLabel = computed(() => {
 const menuItems = computed(() => [[
   {
     label: 'Auto',
-    icon: 'i-lucide-sparkles',
     onSelect: () => selectMode('auto')
   },
   {
     label: 'Fast',
-    icon: 'i-lucide-zap',
     onSelect: () => selectMode('fast')
   },
   {
     label: 'Thinking',
-    icon: 'i-lucide-brain',
     onSelect: () => selectMode('thinking')
   }
 ]])
