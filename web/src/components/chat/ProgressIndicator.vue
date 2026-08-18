@@ -1,80 +1,55 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import type { UIMessage } from 'ai'
 import { isToolUIPart, isTextUIPart, getToolName } from 'ai'
+import { isToolStreaming } from '@nuxt/ui/utils/ai'
 
 const props = defineProps<{
   status?: string
   messages?: UIMessage[]
 }>()
 
-const startTime = ref<number>(Date.now())
-const elapsedSeconds = ref<number>(0)
-let timer: ReturnType<typeof setInterval> | null = null
-
-// Reset timer whenever streaming starts
-watch(() => props.status, (newStatus) => {
-  if (newStatus === 'streaming' || newStatus === 'submitted') {
-    startTime.value = Date.now()
-    elapsedSeconds.value = 0
-    if (!timer) {
-      timer = setInterval(() => {
-        elapsedSeconds.value = (Date.now() - startTime.value) / 1000
-      }, 300)
-    }
-  } else {
-    if (timer) {
-      clearInterval(timer)
-      timer = null
-    }
-  }
-}, { immediate: true })
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
-
 /**
- * Real backend system status derived from AI SDK streaming events and elapsed time
+ * 100% Real backend system status derived strictly from actual SSE message parts (NO timers/estimations)
  */
 const realStatusText = computed(() => {
   const msgs = props.messages ?? []
   const assistantMsg = [...msgs].reverse().find(m => m.role === 'assistant')
 
-  let isSearching = false
-  let retrievedCount = 0
-  let hasText = false
+  if (!assistantMsg || !assistantMsg.parts || !assistantMsg.parts.length) {
+    return '意图理解中...'
+  }
 
-  if (assistantMsg?.parts) {
-    for (const part of assistantMsg.parts) {
-      if (isToolUIPart(part) && (getToolName(part) === 'rag_search' || getToolName(part) === 'search')) {
-        isSearching = true
-        const output = (part as any).output || (part as any).result
-        if (Array.isArray(output) && output.length > 0) {
-          retrievedCount = output.length
-        }
-      } else if (isTextUIPart(part) && (part as any).text?.trim()) {
-        hasText = true
+  let isToolExecuting = false
+  let retrievedCount = 0
+  let hasTextContent = false
+
+  for (const part of assistantMsg.parts) {
+    if (isToolUIPart(part) && (getToolName(part) === 'rag_search' || getToolName(part) === 'search')) {
+      if (isToolStreaming(part)) {
+        isToolExecuting = true
       }
+      const output = (part as any).output || (part as any).result
+      if (Array.isArray(output) && output.length > 0) {
+        retrievedCount = output.length
+      }
+    } else if (isTextUIPart(part) && (part as any).text?.trim()) {
+      hasTextContent = true
     }
   }
 
-  // 1. If text generation has started
-  if (hasText) {
+  if (hasTextContent) {
     return '回答生成中...'
   }
 
-  // 2. If tool citations output has arrived
   if (retrievedCount > 0) {
     return `已检索到 ${retrievedCount} 个切块，生成中...`
   }
 
-  // 3. If tool search is active or past 2s
-  if (isSearching || elapsedSeconds.value >= 2.0) {
+  if (isToolExecuting) {
     return '知识库检索中...'
   }
 
-  // 4. Initial phase
   return '意图理解中...'
 })
 </script>
