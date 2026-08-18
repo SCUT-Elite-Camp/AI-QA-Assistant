@@ -179,7 +179,11 @@ def chat_stream(
                 citations=citations,
                 chat_title=chat_title,
             )
-            agent._save_conversation_turn(request.session_id, plan.original_query, resp_obj)
+            agent._save_conversation_turn(
+                session_id=request.session_id,
+                query=plan.original_query,
+                response=resp_obj,
+            )
 
         except Exception as exc:
             yield build_sse_event("error", {"message": str(exc)})
