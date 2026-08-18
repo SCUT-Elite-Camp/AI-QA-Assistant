@@ -1,42 +1,62 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 
-const props = defineProps<{
-  modelValue?: 'deeper' | 'auto' | 'wider'
-}>()
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', val: 'deeper' | 'auto' | 'wider'): void
-  (e: 'change', val: 'deeper' | 'auto' | 'wider'): void
-}>()
-
-const mode = ref<'deeper' | 'auto' | 'wider'>(props.modelValue || 'auto')
-
-watch(() => props.modelValue, (val) => {
-  if (val) mode.value = val
+const props = withDefaults(defineProps<{
+  modelValue?: 'thinking' | 'auto' | 'fast' | string
+}>(), {
+  modelValue: 'thinking'
 })
 
-function selectMode(m: 'deeper' | 'auto' | 'wider') {
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: 'thinking' | 'auto' | 'fast'): void
+  (e: 'change', val: 'thinking' | 'auto' | 'fast'): void
+}>()
+
+const mode = ref<'thinking' | 'auto' | 'fast'>((props.modelValue as any) || 'thinking')
+
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    if (val === 'deeper') mode.value = 'thinking'
+    else if (val === 'wider') mode.value = 'fast'
+    else mode.value = val as 'thinking' | 'auto' | 'fast'
+  }
+})
+
+function selectMode(m: 'thinking' | 'auto' | 'fast') {
   mode.value = m
   emit('update:modelValue', m)
   emit('change', m)
 }
 
 const displayLabel = computed(() => {
-  if (mode.value === 'deeper') return 'Deeper'
-  if (mode.value === 'wider') return 'Wider'
+  if (mode.value === 'thinking' || mode.value === ('deeper' as any)) return 'Thinking'
+  if (mode.value === 'fast' || mode.value === ('wider' as any)) return 'Fast'
   return 'Auto'
 })
+
+const menuItems = computed(() => [[
+  {
+    label: 'Auto',
+    icon: 'i-lucide-sparkles',
+    onSelect: () => selectMode('auto')
+  },
+  {
+    label: 'Fast',
+    icon: 'i-lucide-zap',
+    onSelect: () => selectMode('fast')
+  },
+  {
+    label: 'Thinking',
+    icon: 'i-lucide-brain',
+    onSelect: () => selectMode('thinking')
+  }
+]])
 </script>
 
 <template>
   <UDropdownMenu
-    :items="[[
-      { label: 'Auto', onSelect: () => selectMode('auto') },
-      { label: 'Deeper', onSelect: () => selectMode('deeper') },
-      { label: 'Wider', onSelect: () => selectMode('wider') }
-    ]]"
-    :content="{ align: 'start' }"
+    :items="menuItems"
+    :content="{ align: 'end' }"
   >
     <UButton
       color="neutral"
@@ -45,7 +65,7 @@ const displayLabel = computed(() => {
       class="text-sm font-semibold text-zinc-200 hover:text-white flex items-center gap-1 cursor-pointer px-2"
     >
       <span>{{ displayLabel }}</span>
-      <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-zinc-400 ms-0.5" />
+      <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-zinc-400 ms-0.5" />
     </UButton>
   </UDropdownMenu>
 </template>

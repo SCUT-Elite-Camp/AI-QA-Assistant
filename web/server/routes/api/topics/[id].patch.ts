@@ -12,7 +12,7 @@ export default defineHandler(async (event) => {
 
   const body = await readValidatedBody(event, z.object({
     title: z.string().optional(),
-    weightMode: z.enum(['deeper', 'auto', 'wider']).optional(),
+    weightMode: z.enum(['thinking', 'auto', 'fast', 'deeper', 'wider']).optional(),
     soulContent: z.string().optional(),
     tags: z.array(z.string()).optional()
   }).parse)

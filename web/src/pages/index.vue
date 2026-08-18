@@ -12,7 +12,7 @@ const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { user } = useUserSession()
 const input = ref('')
-const currentWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
+const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('thinking')
 const loading = ref(false)
 const router = useRouter()
 

@@ -28,7 +28,7 @@ export const topics = sqliteTable('topics', {
   mainChatId: text('main_chat_id').notNull(),
   soulContent: text('soul_content').notNull().default(''),
   description: text('description'),
-  weightMode: text('weight_mode', { enum: ['deeper', 'auto', 'wider'] }).notNull().default('auto'),
+  weightMode: text('weight_mode', { enum: ['thinking', 'auto', 'fast', 'deeper', 'wider'] }).notNull().default('thinking'),
   tags: text('tags', { mode: 'json' }),
   status: text('status', { enum: ['generating', 'ready'] }).notNull().default('ready'),
   consecutiveNoNewDocsCount: integer('consecutive_no_new_docs_count').notNull().default(0),
