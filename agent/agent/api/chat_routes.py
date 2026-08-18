@@ -110,7 +110,18 @@ def chat_stream(
                     state.messages.append(tool_msg)
 
             # Build and yield citations immediately so client displays retrieved document chunks
-            citations = agent.orchestrator.runner._build_citations(state.evidence)
+            citations = [
+                Citation(
+                    citation_id=idx,
+                    doc_id=ev.doc_id,
+                    chunk_id=ev.chunk_id,
+                    title=ev.title or f"Document {idx}",
+                    source_url=ev.source_url,
+                    score=ev.score,
+                    snippet=getattr(ev, 'chunk_text', getattr(ev, 'snippet', ''))
+                )
+                for idx, ev in enumerate(state.evidence, start=1)
+            ]
             yield build_sse_event(
                 "citations",
                 [c.model_dump() for c in citations],
