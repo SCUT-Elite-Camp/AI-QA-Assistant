@@ -167,16 +167,6 @@ onUnmounted(() => {
 
         <!-- Top / Bottom Scroll Action Buttons (Compact View) -->
         <div v-if="isCollapsed" class="flex flex-col items-center gap-1.5 my-1">
-          <!-- Hit Rate Monitor Button (Collapsed Mode) -->
-          <button
-            type="button"
-            title="查看检索命中率监控 (Hit Rate)"
-            class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs mb-1"
-            @click="showHitRateDrawer = true"
-          >
-            <UIcon name="i-lucide-bar-chart-3" class="w-3.5 h-3.5" />
-          </button>
-
           <button
             type="button"
             title="Scroll to Top"
@@ -216,19 +206,6 @@ onUnmounted(() => {
 
         <!-- Expanded View: List of User Questions with Jump Action -->
         <div v-else class="flex flex-col gap-1.5 max-h-[60vh] overflow-y-auto no-scrollbar pr-0.5">
-          <!-- Hit Rate Monitor Banner (Expanded Mode) -->
-          <button
-            type="button"
-            class="w-full py-1.5 px-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-medium flex items-center justify-between transition-colors cursor-pointer mb-1.5"
-            @click="showHitRateDrawer = true"
-          >
-            <div class="flex items-center gap-1.5">
-              <UIcon name="i-lucide-bar-chart-3" class="w-4 h-4" />
-              <span>Hit Rate 命中率监控</span>
-            </div>
-            <UIcon name="i-heroicons-chevron-right" class="w-3.5 h-3.5 opacity-70" />
-          </button>
-
           <button
             v-for="turn in turns"
             :key="turn.assistantMessage.id"
