@@ -10,13 +10,33 @@ const props = defineProps<{
 }>()
 
 /**
- * 100% Real backend system status derived strictly from actual SSE message parts (NO timers/estimations)
+ * 100% Real backend system status derived strictly from current turn SSE message parts
  */
 const realStatusText = computed(() => {
   const msgs = props.messages ?? []
-  const assistantMsg = [...msgs].reverse().find(m => m.role === 'assistant')
+  
+  // Find index of the latest user message for the current turn
+  let lastUserIdx = -1
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].role === 'user') {
+      lastUserIdx = i
+      break
+    }
+  }
 
-  if (!assistantMsg || !assistantMsg.parts || !assistantMsg.parts.length) {
+  // Only inspect assistant message created AFTER the latest user message
+  let currentAssistantMsg: UIMessage | undefined = undefined
+  if (lastUserIdx !== -1) {
+    for (let i = lastUserIdx + 1; i < msgs.length; i++) {
+      if (msgs[i].role === 'assistant') {
+        currentAssistantMsg = msgs[i]
+        break
+      }
+    }
+  }
+
+  // If no assistant message has been created yet for this turn
+  if (!currentAssistantMsg || !currentAssistantMsg.parts || !currentAssistantMsg.parts.length) {
     return '意图理解中...'
   }
 
@@ -24,7 +44,7 @@ const realStatusText = computed(() => {
   let retrievedCount = 0
   let hasTextContent = false
 
-  for (const part of assistantMsg.parts) {
+  for (const part of currentAssistantMsg.parts) {
     if (isToolUIPart(part) && (getToolName(part) === 'rag_search' || getToolName(part) === 'search')) {
       if (isToolStreaming(part)) {
         isToolExecuting = true
