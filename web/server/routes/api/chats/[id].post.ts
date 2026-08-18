@@ -349,9 +349,13 @@ export default defineHandler(async (event) => {
                     })
                   }
                 } else if (currentEvent === 'error') {
-                  throw new Error(data.message || 'Stream processing error')
+                  const errMsg = data.message || 'Stream processing error'
+                  throw new Error(errMsg)
                 }
-              } catch (parseErr) {
+              } catch (parseErr: any) {
+                if (currentEvent === 'error' || parseErr?.message?.includes('Stream processing error') || parseErr?.message?.includes('validation error')) {
+                  throw parseErr
+                }
                 console.error('[SSE parse error]', parseErr, line)
               }
             }

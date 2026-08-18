@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from agent.schemas.chat import ChatRequest, ChatResponse
+from agent.schemas.chat import ChatRequest, ChatResponse, Citation
 from agent.agent import Agent
 from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
