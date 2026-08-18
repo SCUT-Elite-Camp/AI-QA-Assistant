@@ -152,8 +152,8 @@ export default defineHandler(async (event) => {
           input: { query: queryText }
         })
 
-        // 2. Call real Python Agent API (port 8000)
-        const agentUrl = "http://127.0.0.1:8000/api/chat"
+        // 2. Call real Python Agent Streaming API (port 8000)
+        const agentUrl = "http://127.0.0.1:8000/api/chat/stream"
         const aiCallStart = Date.now()
         const agentRes = await fetch(agentUrl, {
           method: "POST",
@@ -177,165 +177,200 @@ export default defineHandler(async (event) => {
         })
         clearTimeout(timeoutId)
 
-        if (!agentRes.ok) {
+        if (!agentRes.ok || !agentRes.body) {
           throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
         }
 
-        const agentData = await agentRes.json()
-        const aiDuration = Date.now() - aiCallStart
-        const rawAnswer = agentData.answer || agentData.message || ""
-        const tokensCount = Math.max(20, Math.round((rawAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
-        const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
-        recordAiCall(aiDuration, ttftMs, tokensCount)
+        const reader = agentRes.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        const reasoningId = `reasoning-${Date.now()}`
+        const responseId = `assistant-msg-${Date.now()}`
+        let hasReasoningStarted = false
+        let hasReasoningEnded = false
+        let hasTextStarted = false
+        let accumulatedAnswer = ''
+        let citationsList: any[] = []
 
-        if (agentData.chat_title) {
-          await db.update(tables.chats).set({ title: agentData.chat_title }).where(eq(tables.chats.id, id as string))
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          let currentEvent = ''
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed) continue
+
+            if (trimmed.startsWith('event:')) {
+              currentEvent = trimmed.slice(6).trim()
+            } else if (trimmed.startsWith('data:')) {
+              const dataStr = trimmed.slice(5).trim()
+              try {
+                const data = JSON.parse(dataStr)
+
+                if (currentEvent === 'citations' || Array.isArray(data)) {
+                  citationsList = Array.isArray(data) ? data : (data.citations || [])
+                  
+                  // Write citations to client
+                  writer.write({
+                    type: 'tool-output-available',
+                    toolCallId,
+                    output: citationsList.map((cit: any, i: number) => ({
+                      index: i + 1,
+                      doc_id: cit.doc_id || `doc_${i}`,
+                      chunk_id: cit.chunk_id || `chunk_${i}`,
+                      title: cit.title || cit.doc_id || `Document ${i + 1}`,
+                      source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+                      chunk_text: cit.snippet || '',
+                      score: cit.score ?? null,
+                      similarity: cit.vector_score ?? cit.similarity_score ?? null,
+                      vector_score: cit.vector_score ?? null
+                    }))
+                  })
+
+                  // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
+                  if (chat.topicId && citationsList.length > 0) {
+                    try {
+                      let hasNewDocs = false
+                      for (const cit of citationsList) {
+                        const docId = cit.doc_id || `doc_${Date.now()}`
+                        const title = cit.title || docId
+                        const snippet = cit.snippet || ''
+
+                        const existingDoc = await db.query.topicDocuments.findFirst({
+                          where: and(
+                            eq(tables.topicDocuments.topicId, chat.topicId),
+                            eq(tables.topicDocuments.docId, docId)
+                          )
+                        })
+
+                        if (existingDoc) {
+                          await db.update(tables.topicDocuments).set({
+                            recallCount: existingDoc.recallCount + 1,
+                            lastRecalledAt: new Date(),
+                            snippet: snippet || existingDoc.snippet
+                          }).where(eq(tables.topicDocuments.id, existingDoc.id))
+                        } else {
+                          hasNewDocs = true
+                          await db.insert(tables.topicDocuments).values({
+                            topicId: chat.topicId,
+                            docId,
+                            title,
+                            sourceUrl: cit.source_url || null,
+                            snippet,
+                            recallCount: 1,
+                            score: cit.score ? Math.round(cit.score * 100) : null
+                          })
+                        }
+
+                        // Physical document file persistence directly to data-persistence/data/topics/<topicId>/documents/
+                        try {
+                          const topicDir = ensureTopicDir(chat.topicId)
+                          const docsFolder = path.join(topicDir, 'documents')
+                          if (!fs.existsSync(docsFolder)) {
+                            fs.mkdirSync(docsFolder, { recursive: true })
+                          }
+                          const safeTitle = title.replace(/[^a-zA-Z0-9_\-\.\u4e00-\u9fa5]/g, '_')
+                          const filePath = path.join(docsFolder, `${docId}_${safeTitle}.txt`)
+                          const fileText = `Title: ${title}\nSource: ${cit.source_url || 'RAG Retrieval'}\nScore: ${cit.score || ''}\n\nContent:\n${snippet}`
+                          fs.writeFileSync(filePath, fileText, 'utf-8')
+                        } catch (fileErr) {
+                          console.error('[TopicDocFileSaveError]', fileErr)
+                        }
+                      }
+
+                      // Update anti-echo-chamber counter & sync to disk folder
+                      if (topicInfo) {
+                        const newCount = hasNewDocs ? 0 : (topicInfo.consecutiveNoNewDocsCount || 0) + 1
+                        await db.update(tables.topics)
+                          .set({ consecutiveNoNewDocsCount: newCount })
+                          .where(eq(tables.topics.id, chat.topicId))
+                      }
+                      await syncAllTopicDocuments(db, chat.topicId)
+                    } catch (docErr) {
+                      console.error('[TopicDocPoolUpdateError]', docErr)
+                    }
+                  }
+                } else if (currentEvent === 'reasoning') {
+                  const reasoningDelta = data.content || ''
+                  if (reasoningDelta) {
+                    if (!hasReasoningStarted) {
+                      hasReasoningStarted = true
+                      writer.write({
+                        type: 'reasoning-start',
+                        id: reasoningId
+                      })
+                    }
+                    writer.write({
+                      type: 'reasoning-delta',
+                      id: reasoningId,
+                      delta: reasoningDelta
+                    })
+                  }
+                } else if (currentEvent === 'token') {
+                  const tokenDelta = data.content || ''
+                  if (tokenDelta) {
+                    if (hasReasoningStarted && !hasReasoningEnded) {
+                      hasReasoningEnded = true
+                      writer.write({
+                        type: 'reasoning-end',
+                        id: reasoningId
+                      })
+                    }
+                    if (!hasTextStarted) {
+                      hasTextStarted = true
+                      writer.write({
+                        type: 'text-start',
+                        id: responseId
+                      })
+                    }
+                    accumulatedAnswer += tokenDelta
+                    writer.write({
+                      type: 'text-delta',
+                      id: responseId,
+                      delta: tokenDelta
+                    })
+                  }
+                } else if (currentEvent === 'done') {
+                  const aiDuration = Date.now() - aiCallStart
+                  const tokensCount = Math.max(20, Math.round((accumulatedAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
+                  const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
+                  recordAiCall(aiDuration, ttftMs, tokensCount)
+
+                  if (data.chat_title) {
+                    await db.update(tables.chats).set({ title: data.chat_title }).where(eq(tables.chats.id, id as string))
+                    writer.write({
+                      type: 'data-chat-title',
+                      data: { title: data.chat_title }
+                    })
+                  }
+                } else if (currentEvent === 'error') {
+                  throw new Error(data.message || 'Stream processing error')
+                }
+              } catch (parseErr) {
+                console.error('[SSE parse error]', parseErr, line)
+              }
+            }
+          }
+        }
+
+        if (hasReasoningStarted && !hasReasoningEnded) {
           writer.write({
-            type: 'data-chat-title',
-            data: { title: agentData.chat_title }
+            type: 'reasoning-end',
+            id: reasoningId
           })
         }
 
-        const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
-        if (!isValidResponse) {
-          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
-          const responseId = `err-msg-${Date.now()}`
-          writer.write({
-            type: 'text-start',
-            id: responseId
-          })
-          writer.write({
-            type: 'text-delta',
-            id: responseId,
-            delta: `Error: ${errMsg}`
-          })
+        if (hasTextStarted) {
           writer.write({
             type: 'text-end',
             id: responseId
           })
-          return
         }
-
-        const citationsList: any[] = agentData.citations || []
-
-        // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
-        if (chat.topicId && citationsList.length > 0) {
-          try {
-            let hasNewDocs = false
-            for (const cit of citationsList) {
-              const docId = cit.doc_id || `doc_${Date.now()}`
-              const title = cit.title || docId
-              const snippet = cit.snippet || ''
-
-              const existingDoc = await db.query.topicDocuments.findFirst({
-                where: and(
-                  eq(tables.topicDocuments.topicId, chat.topicId),
-                  eq(tables.topicDocuments.docId, docId)
-                )
-              })
-
-              if (existingDoc) {
-                await db.update(tables.topicDocuments).set({
-                  recallCount: existingDoc.recallCount + 1,
-                  lastRecalledAt: new Date(),
-                  snippet: snippet || existingDoc.snippet
-                }).where(eq(tables.topicDocuments.id, existingDoc.id))
-              } else {
-                hasNewDocs = true
-                await db.insert(tables.topicDocuments).values({
-                  topicId: chat.topicId,
-                  docId,
-                  title,
-                  sourceUrl: cit.source_url || null,
-                  snippet,
-                  recallCount: 1,
-                  score: cit.score ? Math.round(cit.score * 100) : null
-                })
-              }
-
-              // Physical document file persistence directly to data-persistence/data/topics/<topicId>/documents/
-              try {
-                const topicDir = ensureTopicDir(chat.topicId)
-                const docsFolder = path.join(topicDir, 'documents')
-                if (!fs.existsSync(docsFolder)) {
-                  fs.mkdirSync(docsFolder, { recursive: true })
-                }
-                const safeTitle = title.replace(/[^a-zA-Z0-9_\-\.\u4e00-\u9fa5]/g, '_')
-                const filePath = path.join(docsFolder, `${docId}_${safeTitle}.txt`)
-                const fileText = `Title: ${title}\nSource: ${cit.source_url || 'RAG Retrieval'}\nScore: ${cit.score || ''}\n\nContent:\n${snippet}`
-                fs.writeFileSync(filePath, fileText, 'utf-8')
-              } catch (fileErr) {
-                console.error('[TopicDocFileSaveError]', fileErr)
-              }
-            }
-
-
-            // Update anti-echo-chamber counter & sync to disk folder
-            if (topicInfo) {
-              const newCount = hasNewDocs ? 0 : (topicInfo.consecutiveNoNewDocsCount || 0) + 1
-              await db.update(tables.topics)
-                .set({ consecutiveNoNewDocsCount: newCount })
-                .where(eq(tables.topics.id, chat.topicId))
-            }
-            await syncAllTopicDocuments(db, chat.topicId)
-          } catch (docErr) {
-            console.error('[TopicDocPoolUpdateError]', docErr)
-          }
-        }
-
-
-        // 2. Replace [N] markers with :cite-mark{index="N"} — only pass index.
-        let processedAnswer = rawAnswer
-        for (let i = 0; i < citationsList.length; i++) {
-          const idx = i + 1
-          processedAnswer = processedAnswer.split(`[${idx}]`).join(` :cite-mark{index="${idx}"}`)
-        }
-
-
-
-        // 3. Write RAG search tool output — full ChunkCitation array in output.
-        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
-
-        writer.write({
-          type: 'tool-output-available',
-          toolCallId,
-          output: citationsList.map((cit: any, i: number) => ({
-            index: i + 1,
-            doc_id: cit.doc_id || `doc_${i}`,
-            chunk_id: cit.chunk_id || `chunk_${i}`,
-            title: cit.title || cit.doc_id || `Document ${i + 1}`,
-            source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
-            chunk_text: cit.snippet || '',
-            score: cit.score ?? null,
-            similarity: cit.vector_score ?? cit.similarity_score ?? null,
-            vector_score: cit.vector_score ?? null
-          }))
-        })
-
-
-        // 4. Stream answer text chunk-by-chunk to simulate real-time typing
-        const responseId = `assistant-msg-${Date.now()}`
-        writer.write({
-          type: 'text-start',
-          id: responseId
-        })
-
-        const chunkSize = 2
-        for (let i = 0; i < processedAnswer.length; i += chunkSize) {
-          const chunk = processedAnswer.slice(i, i + chunkSize)
-          writer.write({
-            type: 'text-delta',
-            id: responseId,
-            delta: chunk
-          })
-          // Small delay for natural streaming pacing
-          await new Promise((resolve) => setTimeout(resolve, 20))
-        }
-
-        writer.write({
-          type: 'text-end',
-          id: responseId
-        })
 
       } catch (err: any) {
         console.error('[web-post] error in agent call:', err)

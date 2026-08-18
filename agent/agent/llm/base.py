@@ -10,3 +10,6 @@ class BaseLLM(ABC):
     def chat(self, messages: list[dict], tools: list[dict] = None, temperature: float = None, max_tokens: int = None, **kwargs) -> dict:
         raise NotImplementedError
 
+    def stream_chat(self, messages: list[dict], tools: list[dict] = None, temperature: float = None, max_tokens: int = None, **kwargs):
+        raise NotImplementedError
+

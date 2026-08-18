@@ -49,38 +49,118 @@ def list_available_tools(
     """Returns public metadata for all tools registered with the Agent."""
     return agent.registry.list_tool_metadata()
 
+from toolset.tool_layer import SearchTool
+from agent.schemas.common import StatusCode
+from agent.runtime.state import AgentState
+
 @router.post("/chat/stream")
 def chat_stream(
     request: ChatRequest,
     agent: Agent = Depends(get_agent),
 ) -> StreamingResponse:
-    response = agent.chat(request)
-
     def event_stream():
-        if response.answer:
-            for token in _chunk_answer(response.answer):
-                yield build_sse_event("token", {"content": token})
+        trace_id = agent.trace_service.start_trace()
+        start_time = agent.audit_service.start_timer()
+        try:
+            # 1. Execute query plan & knowledge retrieval tools
+            search_tool = agent.registry.get_tool("search_documents")
+            if isinstance(search_tool, SearchTool):
+                search_tool.topic_doc_ids = request.topic_doc_ids
+                search_tool.topic_titles = request.topic_titles
+                search_tool.weight_mode = request.weight_mode or "auto"
+                search_tool.consecutive_no_new_docs_count = request.consecutive_no_new_docs_count or 0
 
-        yield build_sse_event(
-            "citations",
-            [citation.model_dump() for citation in response.citations],
-        )
-        yield build_sse_event(
-            "done",
-            {
-                "trace_id": response.trace_id,
-                "status": response.status,
-                "message": response.message,
-                "citations_count": len(response.citations),
-                "chat_title": response.chat_title,
-            },
-        )
+            history = agent.orchestrator._read_history(request.session_id)
+            plan = agent.orchestrator._resolve_query_plan(request, None, history)
+            policy = agent.orchestrator.policy_router.route(plan)
+            retrieval_mode, top_k = agent.orchestrator._effective_retrieval_options(request, policy)
+            is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
+
+            state = AgentState(
+                trace_id=trace_id,
+                query_plan=plan,
+                messages=agent.orchestrator.runner._build_messages(
+                    plan,
+                    history or [],
+                    is_first_message=is_first,
+                    soul_content=request.soul_content,
+                ),
+            )
+
+            # Execute tool calling for retrieval
+            schemas = agent.orchestrator.runner._tool_schemas(policy)
+            initial_res = agent.llm.chat(state.messages, tools=schemas)
+            tool_calls = initial_res.get("tool_calls") or []
+
+            if tool_calls:
+                state.messages.append(agent.orchestrator.runner._assistant_tool_call_message(initial_res, tool_calls))
+                for raw_call in tool_calls:
+                    call_id, tool_name, arguments = agent.orchestrator.runner._parse_tool_call(raw_call)
+                    arguments = agent.orchestrator.runner._apply_execution_constraints(
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        query_plan=plan,
+                        mode=retrieval_mode,
+                        top_k=top_k,
+                    )
+                    exec_res = agent.orchestrator.tool_executor.execute(tool_name, arguments)
+                    if exec_res.success and exec_res.evidence:
+                        state.evidence.extend(exec_res.evidence)
+                    tool_msg = agent.orchestrator.runner._tool_message(call_id, tool_name, exec_res.output)
+                    state.messages.append(tool_msg)
+
+            # Build and yield citations immediately so client displays retrieved document chunks
+            citations = agent.orchestrator.runner._build_citations(state.evidence)
+            yield build_sse_event(
+                "citations",
+                [c.model_dump() for c in citations],
+            )
+
+            # 2. Stream tokens directly from LLM (reasoning_content and content tokens)
+            accumulated_answer = ""
+            for delta in agent.llm.stream_chat(state.messages):
+                reasoning = delta.get("reasoning_content")
+                content = delta.get("content")
+                if reasoning:
+                    yield build_sse_event("reasoning", {"content": reasoning})
+                if content:
+                    accumulated_answer += content
+                    yield build_sse_event("token", {"content": content})
+
+            # Separate title and answer if generated
+            extracted_title, clean_answer = agent._separate_title_and_answer(accumulated_answer)
+            chat_title = extracted_title
+            if not chat_title and is_first:
+                chat_title = agent._generate_fallback_title(request.query)
+
+            # 3. Yield done event
+            yield build_sse_event(
+                "done",
+                {
+                    "trace_id": trace_id,
+                    "status": "success",
+                    "citations_count": len(citations),
+                    "chat_title": chat_title,
+                },
+            )
+
+            # Save turn to conversation memory
+            resp_obj = ChatResponse(
+                trace_id=trace_id,
+                query=request.query,
+                status=StatusCode.SUCCESS,
+                answer=clean_answer or accumulated_answer,
+                citations=citations,
+                chat_title=chat_title,
+            )
+            agent._save_conversation_turn(request.session_id, plan.original_query, resp_obj)
+
+        except Exception as exc:
+            yield build_sse_event("error", {"message": str(exc)})
+        finally:
+            agent.trace_service.clear_trace()
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-def _chunk_answer(answer: str, chunk_size: int = 24) -> list[str]:
-    return [answer[index:index + chunk_size] for index in range(0, len(answer), chunk_size)]
 
 
 from pydantic import BaseModel
