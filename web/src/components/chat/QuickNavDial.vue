@@ -190,7 +190,7 @@ onUnmounted(() => {
               ]"
               @click="scrollToMessage(turn.assistantMessage.id, turn.turnIndex)"
             >
-              #{{ turn.turnIndex }}
+              {{ turn.turnIndex }}
             </button>
           </div>
 
