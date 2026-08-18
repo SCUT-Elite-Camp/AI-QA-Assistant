@@ -103,11 +103,25 @@ def chat_stream(
                         mode=retrieval_mode,
                         top_k=top_k,
                     )
-                    exec_res = agent.orchestrator.tool_executor.execute(tool_name, arguments)
-                    if exec_res.success and exec_res.evidence:
-                        state.evidence.extend(exec_res.evidence)
-                    tool_msg = agent.orchestrator.runner._tool_message(call_id, tool_name, exec_res.output)
-                    state.messages.append(tool_msg)
+                    tool = agent.orchestrator.runner._get_tool(tool_name, policy)
+                    observation, evidence, is_retrieval = agent.orchestrator.runner._execute_tool(
+                        tool=tool,
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        query_plan=plan,
+                        trace_id=trace_id,
+                        tool_call_id=call_id,
+                        tool_executor=agent.orchestrator.tool_executor,
+                        retrieval_attempt=1,
+                    )
+                    if evidence:
+                        state.evidence.extend(evidence)
+                    state.messages.append({
+                        "role": "tool",
+                        "tool_call_id": call_id,
+                        "name": tool_name,
+                        "content": observation,
+                    })
 
             # Build and yield citations immediately so client displays retrieved document chunks
             citations = [
