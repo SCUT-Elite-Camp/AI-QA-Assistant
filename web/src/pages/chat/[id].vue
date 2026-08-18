@@ -25,6 +25,7 @@ import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
 import QuickNavDial from '../../components/chat/QuickNavDial.vue'
 import HitRateDrawer from '../../components/chat/HitRateDrawer.vue'
+import ProgressIndicator from '../../components/chat/ProgressIndicator.vue'
 import type { Vote } from '../../../server/utils/drizzle'
 
 const route = useRoute<'/chat/[id]'>()
@@ -559,10 +560,7 @@ onMounted(() => {
               class="pt-(--ui-header-height) pb-4 sm:pb-6"
             >
               <template #indicator>
-                <div class="flex items-center gap-1.5">
-                  <ChatIndicator />
-                  <UChatShimmer text="Thinking..." class="text-sm" />
-                </div>
+                <ProgressIndicator :status="chat.status" :last-message="chat.messages[chat.messages.length - 1]" />
               </template>
 
               <template #content="{ message }">
