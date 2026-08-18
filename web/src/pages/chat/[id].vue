@@ -560,7 +560,7 @@ onMounted(() => {
               class="pt-(--ui-header-height) pb-4 sm:pb-6"
             >
               <template #indicator>
-                <ProgressIndicator :status="chat.status" :last-message="chat.messages[chat.messages.length - 1]" />
+                <ProgressIndicator :status="chat.status" :messages="chat.messages" />
               </template>
 
               <template #content="{ message }">
