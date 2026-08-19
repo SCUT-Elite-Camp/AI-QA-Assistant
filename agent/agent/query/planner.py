@@ -10,6 +10,7 @@ from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
 from agent.query.schemas import QueryEnrichment
+from agent.query.source_intent import heuristic_source_intent
 from agent.schemas.query_plan import QueryIntent
 
 
@@ -75,7 +76,13 @@ class QueryPlanner:
         """Return optional retrieval planning data with a safe empty fallback."""
         query = standalone_query.strip()
         if not query or not self.enabled or intent not in self.RETRIEVAL_INTENTS:
-            return QueryEnrichment(reason="query_planning_skipped")
+            return QueryEnrichment(
+                source_intent=heuristic_source_intent(
+                    query,
+                    enterprise_default=intent in self.RETRIEVAL_INTENTS,
+                ),
+                reason="query_planning_skipped",
+            )
 
         messages = [
             {"role": "system", "content": self._system_prompt()},
@@ -96,11 +103,19 @@ class QueryPlanner:
                 exc.__class__.__name__,
                 query,
             )
-            return QueryEnrichment(reason="query_planning_failed")
+            return QueryEnrichment(
+                source_intent=heuristic_source_intent(query),
+                reason="query_planning_failed",
+            )
 
         return QueryEnrichment(
             sub_queries=result.sub_queries,
             filters=self._supported_filters(result.filters),
+            source_intent=(
+                result.source_intent
+                if result.source_intent.sources
+                else heuristic_source_intent(query)
+            ),
             reason=result.reason,
         )
 
@@ -108,7 +123,12 @@ class QueryPlanner:
     def _system_prompt() -> str:
         return (
             "Plan retrieval for an enterprise knowledge Agent. "
-            "Return JSON only with keys sub_queries, filters, and reason. "
+            "Return JSON only with keys sub_queries, filters, source_intent, and reason. "
+            "source_intent has sources (any of personal_library, enterprise_kb, "
+            "conversation_attachment, web), mode (explicit or inferred), and optional "
+            "confidence. It may contain multiple sources for comparison. Source intent "
+            "selects retrieval sources only and must never contain user IDs, knowledge "
+            "base IDs, tokens, or authorization data. "
             "For comparison, create one self-contained sub-query per comparison "
             "target. For other intents, use sub_queries only when decomposition "
             "materially improves retrieval. Return at most four sub-queries. "
@@ -120,7 +140,9 @@ class QueryPlanner:
             "the retrieval query and must not be emitted as doc_type. A document title or "
             "filename is not a doc_id; emit doc_id only for an explicit opaque "
             "identifier. Example shape: "
-            '{"sub_queries":[],"filters":{},"reason":"not needed"}'
+            '{"sub_queries":[],"filters":{},"source_intent":{"sources":'
+            '["enterprise_kb"],"mode":"inferred","confidence":0.8},'
+            '"reason":"not needed"}'
         )
 
     @staticmethod

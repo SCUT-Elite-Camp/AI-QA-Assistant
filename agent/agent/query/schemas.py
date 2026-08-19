@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from agent.schemas.query_plan import QueryIntent, QueryPlan
+from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent
 
 
 class IntentResult(BaseModel):
@@ -46,6 +46,7 @@ class QueryEnrichment(BaseModel):
 
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
+    source_intent: SourceIntent = Field(default_factory=SourceIntent)
     reason: str = ""
 
     @field_validator("sub_queries")

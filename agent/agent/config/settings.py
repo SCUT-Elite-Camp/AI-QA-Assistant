@@ -71,6 +71,15 @@ class Settings(BaseModel):
     # Backward-compatible attribute for callers that have not migrated yet.
     QUERY_REWRITE_ENABLED: bool = CONVERSATION_REWRITE_ENABLED
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
+    SOURCE_INTENT_ROUTING_MODE: str = Field(
+        default_factory=lambda: os.getenv("SOURCE_INTENT_ROUTING_MODE", "shadow").strip().lower(),
+        pattern="^(heuristic|shadow|canary|default)$",
+    )
+    SOURCE_INTENT_CANARY_PERCENT: int = Field(
+        default_factory=lambda: _env_int("SOURCE_INTENT_CANARY_PERCENT", 10),
+        ge=0,
+        le=100,
+    )
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,

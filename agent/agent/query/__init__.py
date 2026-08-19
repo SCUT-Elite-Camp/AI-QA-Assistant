@@ -11,6 +11,8 @@ from agent.query.schemas import (
     QueryPlan,
     RewriteResult,
 )
+from agent.query.source_intent import heuristic_source_intent
+from agent.schemas.query_plan import SourceIntent, SourceIntentMode, SourceKind
 
 __all__ = [
     "ClarificationDecision",
@@ -24,4 +26,8 @@ __all__ = [
     "QueryRewriter",
     "QueryUnderstanding",
     "RewriteResult",
+    "SourceIntent",
+    "SourceIntentMode",
+    "SourceKind",
+    "heuristic_source_intent",
 ]

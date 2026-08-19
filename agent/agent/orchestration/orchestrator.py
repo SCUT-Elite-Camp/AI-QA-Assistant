@@ -1,5 +1,7 @@
 """Cross-component Agent orchestration for the CP2 request lifecycle."""
 
+import hashlib
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,13 +10,26 @@ from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
 from agent.memory import ConversationMemory
 from agent.policy import IntentPolicyRouter
 from agent.query import QueryUnderstanding
+from agent.query.source_intent import heuristic_source_intent
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
 from agent.schemas.chat import ChatRequest, Citation
 from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent, SourceKind
 from agent.schemas.tool_execution import Evidence
 from agent.tools import ToolExecutor
+
+
+logger = logging.getLogger("agent-layer.source-intent")
+
+
+def policy_requires_retrieval(plan: QueryPlan) -> bool:
+    return plan.intent in {
+        QueryIntent.KNOWLEDGE_QA,
+        QueryIntent.DOCUMENT_SEARCH,
+        QueryIntent.SUMMARIZATION,
+        QueryIntent.COMPARISON,
+    }
 
 
 @dataclass(frozen=True)
@@ -70,8 +85,12 @@ class AgentOrchestrator:
         history = self._read_history(request.session_id)
         plan = self._resolve_query_plan(request, query_plan, history)
         policy = self.policy_router.route(plan)
-        policy = self._apply_library_policy(request, policy)
-        policy = self._apply_attachment_policy(request, policy)
+        heuristic_intent, effective_intent, routing_mode = self._resolve_source_intent(
+            request,
+            plan,
+            trace_id,
+        )
+        policy = self._apply_source_policy(request, policy, effective_intent)
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
@@ -88,6 +107,16 @@ class AgentOrchestrator:
             mode=retrieval_mode,
             top_k=top_k,
             is_first_message=is_first,
+        )
+        self._log_source_routing(
+            request=request,
+            trace_id=trace_id,
+            routing_mode=routing_mode,
+            heuristic_intent=heuristic_intent,
+            structured_intent=plan.source_intent,
+            effective_intent=effective_intent,
+            policy=policy,
+            evidence=run_result.evidence,
         )
         return OrchestrationResult(
             query_plan=plan,
@@ -155,23 +184,68 @@ class AgentOrchestrator:
         return query_plan.model_copy(update={"filters": merged_filters})
 
     @staticmethod
-    def _apply_library_policy(request: ChatRequest, policy: IntentPolicy) -> IntentPolicy:
-        if not request.personal_library_context:
-            return policy
-        normalized = request.query.casefold()
-        personal_markers = (
-            "我的资料库", "个人资料库", "我的文件", "个人文件", "我保存的",
-            "my library", "my files", "personal library",
+    def _resolve_source_intent(
+        request: ChatRequest,
+        plan: QueryPlan,
+        trace_id: str,
+    ) -> tuple[SourceIntent, SourceIntent, str]:
+        heuristic = heuristic_source_intent(
+            request.query,
+            enterprise_default=policy_requires_retrieval(plan),
         )
-        if not any(marker in normalized for marker in personal_markers):
-            return policy
-        candidates = tuple(dict.fromkeys((*policy.candidate_tools, "search_library")))
-        updates: dict[str, Any] = {
-            "candidate_tools": candidates,
-            "max_tool_calls": min(10, max(2, policy.max_tool_calls + 1)),
-            "max_iterations": min(10, max(2, policy.max_iterations + 1)),
+        structured = plan.source_intent
+        mode = settings.SOURCE_INTENT_ROUTING_MODE
+        if mode in {"heuristic", "shadow"} or not structured.sources:
+            return heuristic, heuristic, mode
+        if mode == "canary":
+            identity = trace_id or request.session_id or request.query
+            bucket = int(hashlib.sha256(identity.encode("utf-8")).hexdigest()[:8], 16) % 100
+            if bucket >= settings.SOURCE_INTENT_CANARY_PERCENT:
+                return heuristic, heuristic, mode
+        return heuristic, structured, mode
+
+    @staticmethod
+    def _apply_source_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+        source_intent: SourceIntent,
+    ) -> IntentPolicy:
+        selected = set(source_intent.sources)
+        source_tools = {
+            "search_documents",
+            "find_documents",
+            "get_document",
+            "search_library",
+            "search_attachments",
+            "inspect_attachment",
         }
-        if policy.retrieval_strategy == "none":
+        candidates = [tool for tool in policy.candidate_tools if tool not in source_tools]
+        if SourceKind.ENTERPRISE_KB in selected:
+            enterprise = [tool for tool in policy.candidate_tools if tool in {
+                "search_documents", "find_documents", "get_document",
+            }]
+            candidates.extend(enterprise or ["search_documents"])
+        if SourceKind.PERSONAL_LIBRARY in selected and request.personal_library_context:
+            candidates.append("search_library")
+        attachment_context = request.attachment_context
+        if (
+            SourceKind.CONVERSATION_ATTACHMENT in selected
+            and attachment_context
+            and attachment_context.allowed_attachment_ids
+        ):
+            candidates.extend(("search_attachments", "inspect_attachment"))
+        candidates_tuple = tuple(dict.fromkeys(candidates))
+        updates: dict[str, Any] = {
+            "candidate_tools": candidates_tuple,
+        }
+        added_source_count = len([tool for tool in candidates_tuple if tool in source_tools])
+        if added_source_count:
+            updates.update(
+                max_tool_calls=min(10, max(2, policy.max_tool_calls + added_source_count)),
+                max_iterations=min(10, max(2, policy.max_iterations + added_source_count)),
+                max_retrieval_attempts=min(5, max(2, policy.max_retrieval_attempts + 1)),
+            )
+        if added_source_count and policy.retrieval_strategy == "none":
             updates.update(
                 retrieval_strategy="hybrid",
                 evidence_policy="single_fact",
@@ -181,7 +255,58 @@ class AgentOrchestrator:
                 max_retrieval_attempts=2,
                 requires_citations=True,
             )
+        if (
+            SourceKind.CONVERSATION_ATTACHMENT in selected
+            and attachment_context
+            and attachment_context.selected_attachment_ids
+        ):
+            updates.update(
+                max_tool_calls=max(5, int(updates.get("max_tool_calls", policy.max_tool_calls))),
+                max_iterations=max(5, int(updates.get("max_iterations", policy.max_iterations))),
+                max_retrieval_attempts=max(
+                    5,
+                    int(updates.get("max_retrieval_attempts", policy.max_retrieval_attempts)),
+                ),
+            )
         return policy.model_copy(update=updates)
+
+    @staticmethod
+    def _apply_library_policy(request: ChatRequest, policy: IntentPolicy) -> IntentPolicy:
+        """One-release compatibility wrapper for callers of the old heuristic."""
+        intent = heuristic_source_intent(
+            request.query,
+            enterprise_default=policy.retrieval_strategy != "none",
+        )
+        return AgentOrchestrator._apply_source_policy(request, policy, intent)
+
+    @staticmethod
+    def _log_source_routing(
+        *,
+        request: ChatRequest,
+        trace_id: str,
+        routing_mode: str,
+        heuristic_intent: SourceIntent,
+        structured_intent: SourceIntent,
+        effective_intent: SourceIntent,
+        policy: IntentPolicy,
+        evidence: list[dict[str, Any]],
+    ) -> None:
+        citation_sources = sorted({
+            str(item.get("source_scope") or item.get("source_type") or "unknown")
+            for item in evidence
+        })
+        logger.info(
+            "[SOURCE_INTENT] trace_id=%s query_hash=%s mode=%s heuristic=%s "
+            "structured=%s effective=%s tools=%s evidence_sources=%s",
+            trace_id,
+            hashlib.sha256(request.query.encode("utf-8")).hexdigest()[:16],
+            routing_mode,
+            [source.value for source in heuristic_intent.sources],
+            [source.value for source in structured_intent.sources],
+            [source.value for source in effective_intent.sources],
+            list(policy.candidate_tools),
+            citation_sources,
+        )
 
     @staticmethod
     def _apply_attachment_policy(

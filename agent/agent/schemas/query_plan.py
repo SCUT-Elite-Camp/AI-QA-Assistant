@@ -17,6 +17,33 @@ class QueryIntent(StrEnum):
     UNSUPPORTED = "unsupported"
 
 
+class SourceKind(StrEnum):
+    """Retrieval sources selected by planning, never authorization identities."""
+
+    PERSONAL_LIBRARY = "personal_library"
+    ENTERPRISE_KB = "enterprise_kb"
+    CONVERSATION_ATTACHMENT = "conversation_attachment"
+    WEB = "web"
+
+
+class SourceIntentMode(StrEnum):
+    EXPLICIT = "explicit"
+    INFERRED = "inferred"
+
+
+class SourceIntent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sources: list[SourceKind] = Field(default_factory=list)
+    mode: SourceIntentMode = SourceIntentMode.INFERRED
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+
+    @field_validator("sources")
+    @classmethod
+    def unique_sources(cls, values: list[SourceKind]) -> list[SourceKind]:
+        return list(dict.fromkeys(values))
+
+
 class QueryPlan(BaseModel):
     """Frozen output contract produced by Query Understanding."""
 
@@ -37,6 +64,7 @@ class QueryPlan(BaseModel):
 
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
+    source_intent: SourceIntent = Field(default_factory=SourceIntent)
 
     @field_validator("original_query")
     @classmethod
