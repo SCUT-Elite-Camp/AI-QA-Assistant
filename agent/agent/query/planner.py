@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from copy import deepcopy
 from typing import Any
 
@@ -16,6 +17,32 @@ class QueryPlanner:
     """Generate bounded retrieval sub-queries and supported semantic filters."""
 
     FILTER_KEYS = frozenset({"doc_id", "doc_ids", "space", "doc_type"})
+    SUPPORTED_DOC_TYPES = frozenset(
+        {
+            "csv",
+            "doc",
+            "docx",
+            "epub",
+            "htm",
+            "html",
+            "json",
+            "md",
+            "markdown",
+            "odp",
+            "ods",
+            "odt",
+            "pdf",
+            "ppt",
+            "pptx",
+            "rst",
+            "rtf",
+            "txt",
+            "xls",
+            "xlsx",
+            "xml",
+        }
+    )
+    _DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
     RETRIEVAL_INTENTS = frozenset(
         {
             QueryIntent.KNOWLEDGE_QA,
@@ -87,7 +114,12 @@ class QueryPlanner:
             "materially improves retrieval. Return at most four sub-queries. "
             "Extract filters only when explicitly stated by the user. Supported "
             "filter keys are doc_id, doc_ids, space, and doc_type. Do not infer "
-            "unstated facts or add any other filter key. Example shape: "
+            "unstated facts or add any other filter key. doc_type means a real "
+            "file extension such as pdf, doc, docx, md, or txt; a content category "
+            "such as meeting minutes, policy, report, or contract must remain in "
+            "the retrieval query and must not be emitted as doc_type. A document title or "
+            "filename is not a doc_id; emit doc_id only for an explicit opaque "
+            "identifier. Example shape: "
             '{"sub_queries":[],"filters":{},"reason":"not needed"}'
         )
 
@@ -109,10 +141,31 @@ class QueryPlanner:
 
     @classmethod
     def _supported_filters(cls, filters: dict[str, Any]) -> dict[str, Any]:
-        return deepcopy(
-            {
-                key: value
-                for key, value in filters.items()
-                if key in cls.FILTER_KEYS and value not in (None, "", [])
-            }
-        )
+        supported: dict[str, Any] = {}
+        space = filters.get("space")
+        if isinstance(space, str) and space.strip():
+            supported["space"] = space.strip()
+
+        doc_type = filters.get("doc_type")
+        if isinstance(doc_type, str):
+            normalized_doc_type = (
+                doc_type.strip().lower().rsplit("/", 1)[-1].removeprefix(".")
+            )
+            if normalized_doc_type in cls.SUPPORTED_DOC_TYPES:
+                supported["doc_type"] = normalized_doc_type
+
+        doc_id = filters.get("doc_id")
+        if isinstance(doc_id, str) and cls._DOC_ID_PATTERN.fullmatch(doc_id):
+            supported["doc_id"] = doc_id
+
+        doc_ids = filters.get("doc_ids")
+        if isinstance(doc_ids, list):
+            valid_ids = [
+                value
+                for value in doc_ids
+                if isinstance(value, str) and cls._DOC_ID_PATTERN.fullmatch(value)
+            ]
+            if valid_ids:
+                supported["doc_ids"] = valid_ids
+
+        return deepcopy(supported)

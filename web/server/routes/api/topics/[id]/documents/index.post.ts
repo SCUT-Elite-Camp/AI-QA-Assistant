@@ -6,11 +6,14 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../../utils/drizzle'
 import { syncTopicToDisk, ensureTopicDir } from '../../../../../utils/topicStorage'
+import { requireCsrf, requireTopicRole } from '../../../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+  requireCsrf(event)
+  await requireTopicRole(event, id, 'editor')
 
   const { title, content } = await readValidatedBody(event, z.object({
     title: z.string(),

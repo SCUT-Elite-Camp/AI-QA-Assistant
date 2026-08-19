@@ -3,6 +3,7 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq, and } from '../../../../../utils/drizzle'
 import { syncTopicToDisk } from '../../../../../utils/topicStorage'
+import { requireCsrf, requireTopicRole } from '../../../../../utils/attachmentAuth'
 
 
 export default defineHandler(async (event) => {
@@ -10,6 +11,8 @@ export default defineHandler(async (event) => {
     id: z.string(),
     docId: z.string()
   }).parse)
+  requireCsrf(event)
+  await requireTopicRole(event, id, 'editor')
 
   const db = useDrizzle()
 

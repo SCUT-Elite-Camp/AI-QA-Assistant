@@ -70,6 +70,8 @@ class AgentOrchestrator:
         history = self._read_history(request.session_id)
         plan = self._resolve_query_plan(request, query_plan, history)
         policy = self.policy_router.route(plan)
+        policy = self._apply_library_policy(request, policy)
+        policy = self._apply_attachment_policy(request, policy)
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
@@ -147,10 +149,76 @@ class AgentOrchestrator:
 
         merged_filters = dict(query_plan.filters)
         for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
+            # Request filters are explicit caller constraints and therefore
+            # take precedence over filters inferred by QueryPlanner.
             merged_filters[key] = value
         return query_plan.model_copy(update={"filters": merged_filters})
+
+    @staticmethod
+    def _apply_library_policy(request: ChatRequest, policy: IntentPolicy) -> IntentPolicy:
+        if not request.personal_library_context or policy.retrieval_strategy == "none":
+            return policy
+        candidates = tuple(dict.fromkeys((*policy.candidate_tools, "search_library")))
+        return policy.model_copy(update={
+            "candidate_tools": candidates,
+            "max_tool_calls": min(10, max(2, policy.max_tool_calls + 1)),
+            "max_iterations": min(10, max(2, policy.max_iterations + 1)),
+        })
+
+    @staticmethod
+    def _apply_attachment_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+    ) -> IntentPolicy:
+        context = request.attachment_context
+        if not context or not context.allowed_attachment_ids:
+            return policy
+
+        explicitly_selected = bool(context.selected_attachment_ids)
+        retrieval_enabled = policy.retrieval_strategy != "none"
+        if not explicitly_selected and not retrieval_enabled:
+            # Merely having access to Topic attachments must not turn casual
+            # chat or system-help requests into retrieval requests.
+            return policy
+
+        candidates = tuple(
+            dict.fromkeys(
+                (*policy.candidate_tools, "search_attachments", "inspect_attachment")
+            )
+        )
+        updates: dict[str, Any] = {
+            "candidate_tools": candidates,
+            "max_tool_calls": min(10, max(2, policy.max_tool_calls + 2)),
+            "max_iterations": min(10, max(2, policy.max_iterations + 2)),
+            "max_retrieval_attempts": min(
+                5,
+                max(2, policy.max_retrieval_attempts + 2),
+            ),
+        }
+        if explicitly_selected and not retrieval_enabled:
+            # An explicitly selected attachment is request-local evidence.
+            # It must override a mistaken zero-tool intent classification,
+            # while the request allowlist still constrains every tool call.
+            updates.update(
+                retrieval_strategy="hybrid",
+                evidence_policy="single_fact",
+                assembly_strategy="score_order",
+                answer_style="concise_qa",
+                top_k=max(5, policy.top_k),
+                requires_citations=True,
+            )
+        if explicitly_selected:
+            # A selected multimodal attachment may require lexical/OCR search
+            # followed by one deep-vision inspection and a final synthesis.
+            updates.update(
+                max_tool_calls=max(5, updates["max_tool_calls"]),
+                max_iterations=max(5, updates["max_iterations"]),
+                max_retrieval_attempts=max(
+                    5,
+                    updates["max_retrieval_attempts"],
+                ),
+            )
+        return policy.model_copy(update=updates)
 
     @staticmethod
     def _effective_retrieval_options(

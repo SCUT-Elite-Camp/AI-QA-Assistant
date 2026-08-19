@@ -69,6 +69,26 @@ function keepOpen() {
     closeTimeout = null
   }
 }
+
+const attachmentUrl = computed(() => {
+  if (!citation.value?.attachment_id) return ''
+  const query = new URLSearchParams()
+  if (citation.value.evidence_id) query.set('evidence_id', citation.value.evidence_id)
+  if (citation.value.version) query.set('version', String(citation.value.version))
+  return `/attachments/${citation.value.attachment_id}?${query}`
+})
+
+const attachmentPreviewUrl = computed(() => {
+  if (!citation.value?.attachment_id) return ''
+  const page = citation.value.locator?.page
+  return `/api/attachments/${citation.value.attachment_id}/preview${page ? `?page=${page}` : ''}`
+})
+
+const boxStyle = computed(() => {
+  const box = citation.value?.locator?.bbox
+  if (!box || box.length !== 4) return {}
+  return { left: `${box[0]! * 100}%`, top: `${box[1]! * 100}%`, width: `${(box[2]! - box[0]!) * 100}%`, height: `${(box[3]! - box[1]!) * 100}%` }
+})
 </script>
 
 <template>
@@ -110,6 +130,14 @@ function keepOpen() {
         <!-- Scrollable content -->
         <div class="p-3 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed max-h-72 overflow-y-auto whitespace-pre-wrap select-text cite-scroll-container">
           {{ citation.chunk_text || '（暂无摘要）' }}
+          <div v-if="citation.source_type === 'attachment'" class="mt-3 space-y-2">
+            <div class="text-[11px] text-neutral-500">Evidence {{ citation.evidence_id }} · v{{ citation.version }} · {{ JSON.stringify(citation.locator || {}) }}</div>
+            <div v-if="citation.locator?.bbox" class="relative overflow-hidden rounded border border-neutral-300 dark:border-neutral-700">
+              <img :src="attachmentPreviewUrl" class="block w-full" alt="附件引用区域预览">
+              <span class="pointer-events-none absolute border-2 border-red-500 bg-red-500/10" :style="boxStyle" />
+            </div>
+            <a :href="attachmentUrl" target="_blank" rel="noopener" class="text-primary underline">打开附件证据定位</a>
+          </div>
         </div>
       </div>
     </Transition>

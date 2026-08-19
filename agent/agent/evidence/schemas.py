@@ -13,4 +13,4 @@ class EvidenceGateResult(BaseModel):
     reason: str
     missing_targets: list[str] = Field(default_factory=list)
     should_retry: bool = False
-    retrieval_attempt: int = Field(ge=1, le=2)
+    retrieval_attempt: int = Field(ge=1, le=5)

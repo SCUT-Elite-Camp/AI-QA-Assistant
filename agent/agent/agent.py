@@ -110,6 +110,22 @@ class Agent:
         trace_id = self.trace_service.start_trace()
 
         try:
+            context = request.attachment_context
+            for tool_name in ("search_attachments", "inspect_attachment"):
+                tool = self.registry.get_tool(tool_name)
+                if tool is not None and hasattr(tool, "set_request_context"):
+                    tool.set_request_context(
+                        context.allowed_attachment_ids if context else [],
+                        context.selected_attachment_ids if context else [],
+                    )
+            library_context = request.personal_library_context
+            library_tool = self.registry.get_tool("search_library")
+            if library_tool is not None and hasattr(library_tool, "set_request_context"):
+                library_tool.set_request_context(
+                    library_context.owner_user_id if library_context else "",
+                    library_context.knowledge_base_id if library_context else "",
+                    library_context.access_token if library_context else "",
+                )
             response = self._chat_internal(request, trace_id, query_plan=query_plan)
             latency_ms = self.audit_service.stop_timer(start_time)
             self.audit_service.record(
@@ -133,6 +149,10 @@ class Agent:
             )
             raise exc
         finally:
+            for tool_name in ("search_attachments", "inspect_attachment", "search_library"):
+                tool = self.registry.get_tool(tool_name)
+                if tool is not None and hasattr(tool, "clear_request_context"):
+                    tool.clear_request_context()
             self.trace_service.clear_trace()
 
     def _chat_internal(
@@ -336,8 +356,8 @@ class Agent:
 
         merged_filters = dict(query_plan.filters)
         for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
+            # Request filters are explicit caller constraints and therefore
+            # take precedence over filters inferred by QueryPlanner.
             merged_filters[key] = value
         return query_plan.model_copy(update={"filters": merged_filters})
 
@@ -491,6 +511,15 @@ class Agent:
                     title=str(item.get("title", "")),
                     source_url=item.get("source_url") or "",
                     score=float(item["score"]),
+                    source_type=str(item.get("source_type") or "knowledge"),
+                    attachment_id=item.get("attachment_id"),
+                    evidence_id=item.get("evidence_id"),
+                    locator=item.get("locator"),
+                    version=item.get("version"),
+                    source_scope=item.get("source_scope"),
+                    knowledge_base_id=item.get("knowledge_base_id"),
+                    document_id=item.get("document_id"),
+                    version_id=item.get("version_id"),
                 )
             except (KeyError, TypeError, ValueError):
                 logger.warning("[EVIDENCE_DROPPED] malformed evidence: %r", item)

@@ -17,6 +17,7 @@ from .base_tool import BaseTool
 from .document_tools import FindDocumentsTool, GetDocumentTool
 from .search_tool import SearchTool
 from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
+from .search_library_tool import SearchLibraryTool
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -123,6 +124,8 @@ def _build_default_tools() -> List[BaseTool]:
     ]
     if _env_bool("ATTACHMENTS_ENABLED"):
         tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
+    if _env_bool("PERSONAL_LIBRARY_ENABLED", True):
+        tools.append(SearchLibraryTool())
     return tools
 
 

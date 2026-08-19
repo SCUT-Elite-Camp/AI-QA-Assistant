@@ -1,12 +1,10 @@
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
-import { useUserSession } from '../../../utils/session'
 import { useDrizzle } from '../../../utils/drizzle'
 import { z } from 'zod'
+import { requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
-
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
@@ -24,15 +22,16 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
-  const userId = session.data.user?.id || session.id!
-  // In local unauthenticated environment, allow opening all local chats smoothly
-  const isOwner = chat.userId === userId || !session.data.user
-
-  if (chat.visibility === 'private' && !isOwner) {
+  const userId = await requirePrincipal(event)
+  const isOwner = chat.userId === userId
+  let topicRole: 'owner' | 'editor' | 'viewer' | null = null
+  if (chat.topicId) {
+    topicRole = (await requireTopicRole(event, chat.topicId, 'viewer')).role
+  } else if (chat.visibility === 'private' && !isOwner) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { userId: _, ...rest } = chat
-  return { ...rest, isOwner: true }
+  return { ...rest, isOwner, topicRole }
 })

@@ -9,6 +9,11 @@ export interface ChunkCitation {
   source_url?: string
   chunk_text?: string
   score?: number
+  source_type?: 'knowledge' | 'attachment'
+  attachment_id?: string
+  evidence_id?: string
+  locator?: { page?: number, slide?: number, sheet?: string, cell_range?: string, bbox?: number[] }
+  version?: number
 }
 
 const props = defineProps<{
@@ -74,7 +79,7 @@ const dedupedDocs = computed(() => {
       </span>
 
       <!-- local-document badge -->
-      <span class="text-xs text-dimmed shrink-0 hidden sm:block">local-document</span>
+      <span class="text-xs text-dimmed shrink-0 hidden sm:block">{{ citation.source_type === 'attachment' ? 'attachment' : 'local-document' }}</span>
     </div>
   </div>
 </template>

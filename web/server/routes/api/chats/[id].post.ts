@@ -1,16 +1,23 @@
 import fs from 'fs'
 import path from 'path'
+import { createHmac } from 'node:crypto'
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
 import { useUserSession } from '../../../utils/session'
-import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
+import { useDrizzle, tables, eq, and, inArray } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { MODELS } from '../../../../shared/utils/models'
 import { logger } from '../../../utils/logger'
 import { recordAiCall } from '../../../utils/metrics'
 import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
+import { requireAttachmentAccess } from '../../../utils/attachmentAccess'
+import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
+import { extractAttachmentSelection, mergeSafeAttachmentParts } from '../../../../shared/utils/attachmentParts'
+import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
+import { createAgentStreamError, getAgentFailureMessage } from '../../../utils/agentResponse'
+import { getOrCreateDefaultLibrary } from '../../../utils/library'
 
 
 
@@ -58,6 +65,7 @@ async function generateSmartTitle(userQuery: string): Promise<string> {
 }
 
 export default defineHandler(async (event) => {
+  requireCsrf(event)
   const session = await useUserSession(event)
 
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -83,22 +91,55 @@ export default defineHandler(async (event) => {
   if (!chat) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
+  const principal = await requirePrincipal(event)
+  const personalLibrary = await getOrCreateDefaultLibrary(principal)
+  const librarySecret = process.env.ATTACHMENT_INTERNAL_SECRET || ''
+  const personalLibraryContext = librarySecret ? {
+    owner_user_id: principal,
+    knowledge_base_id: personalLibrary.id,
+    access_token: createHmac('sha256', librarySecret).update(`${principal}:${personalLibrary.id}`).digest('hex')
+  } : undefined
+  if (chat.topicId) await requireTopicRole(event, chat.topicId, 'viewer')
+  else if (chat.userId !== principal) throw new HTTPError({ statusCode: 403, statusMessage: 'chat_forbidden' })
 
 
   const lastMessage = messages[messages.length - 1]
   const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+  const messageMetadata = (lastMessage as any)?.metadata || {}
+  const attachmentSelection = extractAttachmentSelection((lastMessage as any)?.parts, messageMetadata)
+  const selectedAttachmentIds = attachmentSelection.attachmentIds
+  for (const attachmentId of selectedAttachmentIds) await requireAttachmentAccess(event, attachmentId)
+  const selectedAttachments = selectedAttachmentIds.length
+    ? await db.query.attachments.findMany({ where: inArray(tables.attachments.id, selectedAttachmentIds) })
+    : []
+  if (selectedAttachments.some(item => !canSelectAttachmentForChat(item, chat.id, chat.topicId))) {
+    throw new HTTPError({ statusCode: 409, statusMessage: 'attachment_scope_mismatch' })
+  }
+  if (selectedAttachments.some(item => item.topicId && item.topicId !== chat.topicId)) {
+    throw new HTTPError({ statusCode: 403, statusMessage: 'attachment_space_mismatch' })
+  }
+  const acceptedReviewIds = new Set(attachmentSelection.acceptedNeedsReviewIds)
+  if (selectedAttachments.some(item => item.status !== 'ready' && !(item.status === 'needs_review' && acceptedReviewIds.has(item.id)))) {
+    throw new HTTPError({ statusCode: 409, statusMessage: 'attachments_not_ready_or_unconfirmed' })
+  }
 
   // Detect if chat needs title (first message turn or placeholder title)
   const messageCount = (chat.messages || []).length
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
   if (lastMessage?.role === 'user' && messages.length > 1) {
+    const safeParts = mergeSafeAttachmentParts(lastMessage.parts, selectedAttachments, acceptedReviewIds)
     await db.insert(tables.messages).values({
       id: lastMessage.id,
       chatId: id as string,
       role: 'user',
-      parts: lastMessage.parts
-    }).onConflictDoUpdate({ target: tables.messages.id, set: { parts: lastMessage.parts } })
+      parts: safeParts
+    }).onConflictDoUpdate({ target: tables.messages.id, set: { parts: safeParts } })
+    if (selectedAttachments.length) {
+      await db.insert(tables.messageAttachments).values(selectedAttachments.map(item => ({
+        messageId: lastMessage.id, attachmentId: item.id, evidenceVersion: item.evidenceVersion
+      }))).onConflictDoNothing()
+    }
   }
 
   const abortController = new AbortController()
@@ -117,6 +158,7 @@ export default defineHandler(async (event) => {
         let topicInfo: any = null
         let topicDocIds: string[] = []
         let topicTitles: string[] = []
+        let topicAttachmentIds: string[] = []
         if (chat.topicId) {
           topicInfo = await db.query.topics.findFirst({
             where: eq(tables.topics.id, chat.topicId)
@@ -130,6 +172,10 @@ export default defineHandler(async (event) => {
             })
             topicDocIds = topicDocs.map(d => d.docId)
             topicTitles = topicDocs.map(d => d.title)
+            const topicAttachments = await db.query.attachments.findMany({
+              where: and(eq(tables.attachments.topicId, topicInfo.id), eq(tables.attachments.scope, 'topic'))
+            })
+            topicAttachmentIds = topicAttachments.filter(item => item.status === 'ready' && !item.deletedAt).map(item => item.id)
           }
         }
 
@@ -153,6 +199,12 @@ export default defineHandler(async (event) => {
             topic_titles: topicTitles,
             consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
             is_first_message: needsTitle
+            ,personal_library_context: personalLibraryContext
+            ,attachment_context: {
+              selected_attachment_ids: selectedAttachmentIds,
+              topic_attachment_ids: topicAttachmentIds,
+              allowed_attachment_ids: Array.from(new Set([...selectedAttachmentIds, ...topicAttachmentIds]))
+            }
           }),
           signal: abortController.signal
         })
@@ -172,23 +224,9 @@ export default defineHandler(async (event) => {
           })
         }
 
-        const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
-        if (!isValidResponse) {
-          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
-          const responseId = `err-msg-${Date.now()}`
-          writer.write({
-            type: 'text-start',
-            id: responseId
-          })
-          writer.write({
-            type: 'text-delta',
-            id: responseId,
-            delta: `Error: ${errMsg}`
-          })
-          writer.write({
-            type: 'text-end',
-            id: responseId
-          })
+        const agentFailure = getAgentFailureMessage(agentData)
+        if (agentFailure) {
+          writer.write(createAgentStreamError(agentFailure))
           return
         }
 
@@ -199,7 +237,7 @@ export default defineHandler(async (event) => {
         if (chat.topicId && citationsList.length > 0) {
           try {
             let hasNewDocs = false
-            for (const cit of citationsList) {
+            for (const cit of citationsList.filter((item: any) => !['attachment', 'personal'].includes(item.source_type))) {
               const docId = cit.doc_id || `doc_${Date.now()}`
               const title = cit.title || docId
               const snippet = cit.snippet || ''
@@ -296,6 +334,15 @@ export default defineHandler(async (event) => {
             source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
             chunk_text: cit.snippet || '',
             score: cit.score ?? null,
+            source_type: cit.source_type || 'knowledge',
+            attachment_id: cit.attachment_id || null,
+            evidence_id: cit.evidence_id || null,
+            locator: cit.locator || null,
+            version: cit.version || null,
+            source_scope: cit.source_scope || null,
+            knowledge_base_id: cit.knowledge_base_id || null,
+            document_id: cit.document_id || null,
+            version_id: cit.version_id || null,
           }))
         })
 
@@ -326,20 +373,7 @@ export default defineHandler(async (event) => {
 
       } catch (err: any) {
         console.error('[web-post] error in agent call:', err)
-        const responseId = `err-msg-${Date.now()}`
-        writer.write({
-          type: 'text-start',
-          id: responseId
-        })
-        writer.write({
-          type: 'text-delta',
-          id: responseId,
-          delta: `Failed to retrieve answer from Agent Layer: ${err.message}`
-        })
-        writer.write({
-          type: 'text-end',
-          id: responseId
-        })
+        writer.write(createAgentStreamError(err))
       }
     },
     onFinish: async ({ messages }) => {

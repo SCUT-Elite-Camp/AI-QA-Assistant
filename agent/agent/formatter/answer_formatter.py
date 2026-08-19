@@ -50,6 +50,15 @@ class AnswerFormatter:
                 chunk_id=result.chunk_id,
                 score=result.score,
                 snippet=result.chunk_text,
+                source_type=("attachment" if result.attachment_id else ("personal" if result.source_scope == "personal" else "knowledge")),
+                attachment_id=result.attachment_id,
+                evidence_id=result.evidence_id,
+                locator=result.locator,
+                version=result.version,
+                source_scope=result.source_scope,
+                knowledge_base_id=result.knowledge_base_id,
+                document_id=result.document_id,
+                version_id=result.version_id,
             )
             for index, result in enumerate(selected_results, start=1)
         ]

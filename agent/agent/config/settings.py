@@ -23,6 +23,13 @@ def _env_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_bool_with_legacy(name: str, legacy_name: str, default: bool) -> bool:
+    """Read a new boolean setting while honoring the legacy name for one release."""
+    if os.getenv(name) is not None:
+        return _env_bool(name, default)
+    return _env_bool(legacy_name, default)
+
+
 def _env_int(name: str, default: int) -> int:
     value = os.getenv(name)
     if value is None:
@@ -56,7 +63,13 @@ class Settings(BaseModel):
         "QUERY_UNDERSTANDING_ENABLED",
         True,
     )
-    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
+    CONVERSATION_REWRITE_ENABLED: bool = _env_bool_with_legacy(
+        "CONVERSATION_REWRITE_ENABLED",
+        "QUERY_REWRITE_ENABLED",
+        True,
+    )
+    # Backward-compatible attribute for callers that have not migrated yet.
+    QUERY_REWRITE_ENABLED: bool = CONVERSATION_REWRITE_ENABLED
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),

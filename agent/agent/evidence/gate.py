@@ -23,11 +23,6 @@ class EvidenceGate:
         *,
         retrieval_attempt: int,
     ) -> EvidenceGateResult:
-        if retrieval_attempt not in {1, 2}:
-            raise ValueError("retrieval_attempt must be one or two")
-
-        eligible = self._filter_and_deduplicate(evidence)
-
         if policy.evidence_policy == "none":
             return self._result(
                 accepted=True,
@@ -36,6 +31,13 @@ class EvidenceGate:
                 policy=policy,
                 retrieval_attempt=retrieval_attempt,
             )
+
+        if not 1 <= retrieval_attempt <= policy.max_retrieval_attempts:
+            raise ValueError(
+                "retrieval_attempt must be within the policy retrieval budget"
+            )
+
+        eligible = self._filter_and_deduplicate(evidence)
 
         if policy.evidence_policy in {"single_fact", "document_identity"}:
             accepted = bool(eligible)
@@ -136,7 +138,12 @@ class EvidenceGate:
             missing_targets=missing_targets or [],
             should_retry=(
                 not accepted
-                and retrieval_attempt < policy.max_retrieval_attempts
+                # CorrectiveRetrievalPlanner deliberately owns only the
+                # bounded first -> second search fallback. Later attempts are
+                # normal multi-tool/document-page reads and must not trigger
+                # another automatic corrective search.
+                and retrieval_attempt == 1
+                and policy.max_retrieval_attempts >= 2
             ),
             retrieval_attempt=retrieval_attempt,
         )

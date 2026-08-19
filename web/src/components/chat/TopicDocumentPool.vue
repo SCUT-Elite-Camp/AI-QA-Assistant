@@ -3,6 +3,8 @@ import { ref, watch, onMounted } from 'vue'
 import { $fetch } from 'ofetch'
 import { useCsrf } from '../../composables/useCsrf'
 import DocumentModal from './DocumentModal.vue'
+import AttachmentTray from './AttachmentTray.vue'
+import AttachmentEvidenceModal from './AttachmentEvidenceModal.vue'
 
 const props = defineProps<{
   open: boolean
@@ -16,6 +18,14 @@ const emit = defineEmits<{
 const { csrf, headerName } = useCsrf()
 const loading = ref(false)
 const documents = ref<any[]>([])
+const attachments = ref<any[]>([])
+const topicRole = ref<'owner' | 'editor' | 'viewer'>('viewer')
+const currentUserId = ref('')
+const members = ref<any[]>([])
+const memberIdentifier = ref('')
+const memberRole = ref<'owner' | 'editor' | 'viewer'>('viewer')
+const activeAttachment = ref<any>(null)
+const showEvidence = ref(false)
 
 // Document preview state
 const showPreviewModal = ref(false)
@@ -33,6 +43,47 @@ async function fetchDocuments() {
   } finally {
     loading.value = false
   }
+}
+
+async function fetchAttachments() {
+  if (!props.topicId) return
+  const result = await $fetch<any>(`/api/topics/${props.topicId}/attachments`).catch(() => ({ items: [], role: 'viewer' }))
+  attachments.value = result.items || []
+  topicRole.value = result.role || 'viewer'
+  currentUserId.value = result.current_user_id || ''
+  if (topicRole.value === 'owner') await fetchMembers()
+}
+
+async function fetchMembers() {
+  const result = await $fetch<any>(`/api/topics/${props.topicId}/members`).catch(() => ({ items: [] }))
+  members.value = result.items || []
+}
+
+async function saveMember(identifier: string, role: 'owner' | 'editor' | 'viewer') {
+  const target = identifier.trim()
+  if (!target) return
+  await $fetch(`/api/topics/${props.topicId}/members/${encodeURIComponent(target)}`, {
+    method: 'PUT', headers: { [headerName]: csrf() }, body: { role }
+  })
+  memberIdentifier.value = ''
+  await fetchMembers()
+}
+
+async function removeMember(userId: string) {
+  await $fetch(`/api/topics/${props.topicId}/members/${encodeURIComponent(userId)}`, {
+    method: 'DELETE', headers: { [headerName]: csrf() }
+  })
+  await fetchMembers()
+}
+
+async function removeAttachment(attachment: any) {
+  await $fetch(`/api/attachments/${attachment.id}`, { method: 'DELETE', headers: { [headerName]: csrf() } })
+  await fetchAttachments()
+}
+
+function openEvidence(attachment: any) {
+  activeAttachment.value = attachment
+  showEvidence.value = true
 }
 
 async function removeDoc(docId: string, event: Event) {
@@ -62,11 +113,11 @@ function cleanTitle(doc: any): string {
 }
 
 watch(() => props.open, (val) => {
-  if (val) fetchDocuments()
+  if (val) { fetchDocuments(); fetchAttachments() }
 }, { immediate: true })
 
 onMounted(() => {
-  if (props.open) fetchDocuments()
+  if (props.open) { fetchDocuments(); fetchAttachments() }
 })
 </script>
 
@@ -96,6 +147,37 @@ onMounted(() => {
 
         <!-- Body Content -->
         <div class="py-2">
+          <section class="mb-5 rounded-xl border border-zinc-800 p-3">
+            <div class="mb-2 flex items-center justify-between">
+              <h4 class="text-sm font-medium">Topic 附件池（{{ attachments.length }}）</h4>
+              <span class="text-xs text-zinc-500">与知识库引用文档分离</span>
+            </div>
+            <AttachmentTray v-if="topicRole !== 'viewer'" scope="topic" :topic-id="topicId" @change="fetchAttachments" />
+            <div v-for="attachment in attachments" :key="attachment.id" class="mt-2 flex items-center gap-2 rounded border border-zinc-800 p-2 text-xs">
+              <button class="min-w-0 flex-1 text-left" @click="openEvidence(attachment)">
+                <div class="truncate">{{ attachment.filename }}</div>
+                <div class="text-zinc-500">{{ attachment.status }} · Evidence v{{ attachment.evidenceVersion }} · {{ attachment.ownerId }}</div>
+              </button>
+              <UButton v-if="topicRole === 'owner' || attachment.ownerId === currentUserId" icon="i-lucide-trash-2" size="xs" color="error" variant="ghost" @click="removeAttachment(attachment)" />
+            </div>
+          </section>
+          <section v-if="topicRole === 'owner'" class="mb-5 rounded-xl border border-zinc-800 p-3">
+            <h4 class="mb-2 text-sm font-medium">Topic 成员（{{ members.length }}）</h4>
+            <div class="mb-3 flex gap-2">
+              <UInput v-model="memberIdentifier" class="min-w-0 flex-1" placeholder="用户 ID、邮箱或用户名" />
+              <select v-model="memberRole" class="rounded border border-zinc-700 bg-zinc-900 px-2 text-xs">
+                <option value="viewer">viewer</option><option value="editor">editor</option><option value="owner">owner</option>
+              </select>
+              <UButton label="添加" size="xs" @click="saveMember(memberIdentifier, memberRole)" />
+            </div>
+            <div v-for="member in members" :key="member.userId" class="flex items-center gap-2 border-t border-zinc-800 py-2 text-xs">
+              <div class="min-w-0 flex-1"><div class="truncate">{{ member.name || member.username || member.userId }}</div><div class="truncate text-zinc-500">{{ member.email || member.userId }}</div></div>
+              <select :value="member.role" class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1" @change="saveMember(member.userId, ($event.target as HTMLSelectElement).value as any)">
+                <option value="viewer">viewer</option><option value="editor">editor</option><option value="owner">owner</option>
+              </select>
+              <UButton icon="i-lucide-user-minus" size="xs" color="error" variant="ghost" @click="removeMember(member.userId)" />
+            </div>
+          </section>
           <div v-if="loading" class="text-center py-10 text-zinc-400 text-xs flex items-center justify-center gap-2">
             <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-emerald-500" />
             <span>Loading topic document pool...</span>
@@ -130,6 +212,7 @@ onMounted(() => {
 
               <!-- Delete Action Button -->
               <UButton
+                v-if="topicRole !== 'viewer'"
                 color="neutral"
                 variant="ghost"
                 size="xs"
@@ -142,7 +225,7 @@ onMounted(() => {
         </div>
       </div>
     </template>
-  </UModal
+  </UModal>
 
   <!-- Full Content Viewer Modal -->
   <DocumentModal
@@ -151,5 +234,12 @@ onMounted(() => {
     :doc-id="activePreviewDoc.docId"
     :doc-title="cleanTitle(activePreviewDoc)"
     :doc-content="activePreviewDoc.content || activePreviewDoc.snippet"
+  />
+  <AttachmentEvidenceModal
+    v-if="activeAttachment"
+    v-model:open="showEvidence"
+    :attachment="activeAttachment"
+    :can-edit="topicRole !== 'viewer'"
+    @updated="fetchAttachments"
   />
 </template>

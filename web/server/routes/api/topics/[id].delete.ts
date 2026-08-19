@@ -3,11 +3,15 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { deleteTopicFromDisk } from '../../../utils/topicStorage'
+import { requireCsrf, requireTopicRole } from '../../../utils/attachmentAuth'
+import { attachmentServiceFetch } from '../../../utils/attachmentService'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+  requireCsrf(event)
+  await requireTopicRole(event, id, 'owner')
 
   const db = useDrizzle()
 
@@ -17,6 +21,16 @@ export default defineHandler(async (event) => {
 
   if (!topic) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Topic space not found' })
+  }
+
+  const topicAttachments = await db.query.attachments.findMany({
+    where: eq(tables.attachments.topicId, id)
+  })
+  for (const attachment of topicAttachments.filter(item => !item.deletedAt)) {
+    const response = await attachmentServiceFetch(`/v1/attachments/${attachment.id}`, { method: 'DELETE' })
+    if (!response.ok && response.status !== 404) {
+      throw new HTTPError({ statusCode: 503, statusMessage: 'attachment_cleanup_unavailable' })
+    }
   }
 
   // 1. Unlink chats

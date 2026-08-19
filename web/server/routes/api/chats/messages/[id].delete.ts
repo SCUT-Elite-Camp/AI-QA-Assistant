@@ -3,8 +3,11 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
 import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq, and, asc, inArray } from '../../../../utils/drizzle'
+import { cleanupOrphanedAttachments } from '../../../../utils/attachmentCleanup'
+import { requireCsrf } from '../../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
+  requireCsrf(event)
   const session = await useUserSession(event)
 
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -48,7 +51,9 @@ export default defineHandler(async (event) => {
   const idsToDelete = allMessages.slice(startIndex).map(m => m.id)
 
   if (idsToDelete.length > 0) {
+    const attachmentLinks = await db.query.messageAttachments.findMany({ where: inArray(tables.messageAttachments.messageId, idsToDelete) })
     await db.delete(tables.messages).where(inArray(tables.messages.id, idsToDelete))
+    await cleanupOrphanedAttachments(attachmentLinks.map(link => link.attachmentId))
     // Clear Agent in-memory history so regenerate/edit rebuilds clean context
     fetch(`http://127.0.0.1:8000/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
   }

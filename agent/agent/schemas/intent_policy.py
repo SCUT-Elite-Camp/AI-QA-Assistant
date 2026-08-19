@@ -37,6 +37,6 @@ class IntentPolicy(BaseModel):
     top_k: int = Field(default=5, ge=0, le=20)
     max_iterations: int = Field(default=3, ge=0, le=10)
     max_tool_calls: int = Field(default=2, ge=0, le=10)
-    max_retrieval_attempts: int = Field(default=2, ge=0, le=2)
+    max_retrieval_attempts: int = Field(default=2, ge=0, le=5)
 
     requires_citations: bool = True

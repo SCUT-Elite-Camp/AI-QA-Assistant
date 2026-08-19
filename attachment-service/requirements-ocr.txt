@@ -1,0 +1,6 @@
+-r requirements.txt
+paddleocr>=3.2,<4
+paddlepaddle>=3.1,<4
+# PPStructureV3 needs the full PaddleX OCR extra; paddleocr alone installs
+# only ocr-core, which cannot construct the document-structure pipeline.
+paddlex[ocr]>=3.7,<3.8

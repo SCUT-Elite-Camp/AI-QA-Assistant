@@ -38,6 +38,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/attachments/[id]': RouteRecordInfo<
+      '/attachments/[id]',
+      '/attachments/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
     '/chat/[id]': RouteRecordInfo<
       '/chat/[id]',
       '/chat/:id',
@@ -48,6 +55,13 @@ declare module 'vue-router/auto-routes' {
     '/favorites/': RouteRecordInfo<
       '/favorites/',
       '/favorites',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/library/': RouteRecordInfo<
+      '/library/',
+      '/library',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -80,6 +94,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/attachments/[id].vue': {
+      routes:
+        | '/attachments/[id]'
+      views:
+        | never
+      pathParamNames:
+        | 'id'
+    }
     'src/pages/chat/[id].vue': {
       routes:
         | '/chat/[id]'
@@ -91,6 +113,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/favorites/index.vue': {
       routes:
         | '/favorites/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/library/index.vue': {
+      routes:
+        | '/library/'
       views:
         | never
       pathParamNames:

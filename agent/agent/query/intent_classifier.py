@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any
 
 from pydantic import ValidationError
@@ -12,6 +13,11 @@ from agent.query.schemas import IntentResult, QueryIntent
 
 class IntentClassifier:
     """Classify a user query into the frozen CP2 intent taxonomy."""
+
+    _SUMMARY_REQUEST = re.compile(
+        r"(?:总结|概括|摘要|归纳|summari[sz]e|\bsummary\b)",
+        re.IGNORECASE,
+    )
 
     def __init__(
         self,
@@ -53,6 +59,11 @@ class IntentClassifier:
         try:
             response = self.llm.chat(messages)
             result = self._parse_response(response)
+            result = self._enforce_explicit_intent(
+                normalized_query,
+                history,
+                result,
+            )
         except Exception as exc:
             self.logger.warning(
                 "[INTENT_CLASSIFICATION] action=fallback error=%s query=%s",
@@ -82,6 +93,9 @@ class IntentClassifier:
             "knowledge_qa asks for a factual answer from knowledge sources. "
             "document_search asks to find or list documents. "
             "summarization asks to summarize provided or retrievable material. "
+            "A request to summarize a named document is summarization, not "
+            "document_search. document_search only locates or lists documents "
+            "without synthesizing their contents. "
             "comparison asks to compare two or more objects. "
             "casual_chat is ordinary conversation that does not need retrieval. "
             "system_help asks about this system's real capabilities or usage. "
@@ -94,6 +108,29 @@ class IntentClassifier:
             '"is_follow_up":false,"is_clarification_reply":false,'
             '"reason":"..."}'
         )
+
+    @classmethod
+    def _enforce_explicit_intent(
+        cls,
+        query: str,
+        history: list[dict],
+        result: IntentResult,
+    ) -> IntentResult:
+        """Correct narrow, explicit intent cues when the model under-classifies."""
+        if (
+            cls._SUMMARY_REQUEST.search(query)
+            and result.intent
+            in {QueryIntent.KNOWLEDGE_QA, QueryIntent.DOCUMENT_SEARCH}
+        ):
+            return result.model_copy(
+                update={
+                    "intent": QueryIntent.SUMMARIZATION,
+                    "confidence": max(result.confidence, 0.95),
+                    "is_follow_up": result.is_follow_up or bool(history),
+                    "reason": "explicit_summary_request",
+                }
+            )
+        return result
 
     @staticmethod
     def _build_input(query: str, history: list[dict]) -> str:

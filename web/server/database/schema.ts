@@ -22,6 +22,69 @@ export const usersRelations = relations(users, ({ many }) => ({
   chats: many(chats)
 }))
 
+export const knowledgeBases = sqliteTable('knowledge_bases', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull().default('My Library'),
+  scopeType: text('scope_type', { enum: ['personal', 'enterprise'] }).notNull(),
+  ownerUserId: text('owner_user_id'),
+  workspaceId: text('workspace_id'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' })
+}, table => [
+  index('knowledge_bases_owner_idx').on(table.ownerUserId, table.scopeType),
+])
+
+export const libraryDocuments = sqliteTable('library_documents', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  knowledgeBaseId: text('knowledge_base_id').notNull().references(() => knowledgeBases.id),
+  ownerUserId: text('owner_user_id').notNull(),
+  workspaceId: text('workspace_id'),
+  sourceScope: text('source_scope', { enum: ['personal', 'enterprise'] }).notNull(),
+  sourceType: text('source_type').notNull().default('upload'),
+  filename: text('filename').notNull(),
+  displayName: text('display_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  docType: text('doc_type').notNull(),
+  activeVersionId: text('active_version_id'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' })
+}, table => [
+  index('library_documents_owner_idx').on(table.ownerUserId, table.deletedAt),
+  index('library_documents_kb_idx').on(table.knowledgeBaseId, table.deletedAt)
+])
+
+export const documentVersions = sqliteTable('document_versions', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id').notNull().references(() => libraryDocuments.id),
+  contentHash: text('content_hash').notNull(),
+  storageRef: text('storage_ref').notNull(),
+  fileSize: integer('file_size').notNull(),
+  status: text('status', { enum: ['UPLOADED', 'PARSING', 'CHUNKING', 'EMBEDDING', 'INDEXING', 'READY', 'FAILED', 'REINDEXING'] }).notNull(),
+  errorCode: text('error_code').notNull().default(''),
+  errorMessage: text('error_message').notNull().default(''),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  indexedAt: integer('indexed_at', { mode: 'timestamp' })
+}, table => [
+  index('document_versions_document_idx').on(table.documentId, table.createdAt),
+  uniqueIndex('document_versions_identity_idx').on(table.documentId, table.contentHash)
+])
+
+export const knowledgeBasesRelations = relations(knowledgeBases, ({ many }) => ({
+  documents: many(libraryDocuments)
+}))
+
+export const libraryDocumentsRelations = relations(libraryDocuments, ({ one, many }) => ({
+  knowledgeBase: one(knowledgeBases, { fields: [libraryDocuments.knowledgeBaseId], references: [knowledgeBases.id] }),
+  versions: many(documentVersions)
+}))
+
+export const documentVersionsRelations = relations(documentVersions, ({ one }) => ({
+  document: one(libraryDocuments, { fields: [documentVersions.documentId], references: [libraryDocuments.id] })
+}))
+
 export const topics = sqliteTable('topics', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text('title').notNull(),
@@ -37,8 +100,20 @@ export const topics = sqliteTable('topics', {
 
 export const topicsRelations = relations(topics, ({ many }) => ({
   chats: many(chats),
-  documents: many(topicDocuments)
+  documents: many(topicDocuments),
+  members: many(topicMembers),
+  attachments: many(attachments)
 }))
+
+export const topicMembers = sqliteTable('topic_members', {
+  topicId: text('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull(),
+  role: text('role', { enum: ['owner', 'editor', 'viewer'] }).notNull(),
+  ...timestamps
+}, table => [
+  primaryKey({ columns: [table.topicId, table.userId] }),
+  index('topic_members_user_idx').on(table.userId)
+])
 
 export const chats = sqliteTable('chats', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -108,8 +183,55 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
     fields: [messages.chatId],
     references: [chats.id]
   }),
-  feedbacks: many(messageFeedbacks)
+  feedbacks: many(messageFeedbacks),
+  attachments: many(messageAttachments)
 }))
+
+export const attachmentBatches = sqliteTable('attachment_batches', {
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(),
+  scope: text('scope', { enum: ['draft', 'chat', 'topic'] }).notNull(),
+  chatId: text('chat_id').references(() => chats.id, { onDelete: 'cascade' }),
+  topicId: text('topic_id').references(() => topics.id, { onDelete: 'cascade' }),
+  fileCount: integer('file_count').notNull().default(0),
+  totalBytes: integer('total_bytes').notNull().default(0),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
+  ...timestamps
+}, table => [index('attachment_batches_owner_idx').on(table.ownerId)])
+
+export const attachments = sqliteTable('attachments', {
+  id: text('id').primaryKey(),
+  batchId: text('batch_id').notNull().references(() => attachmentBatches.id, { onDelete: 'cascade' }),
+  ownerId: text('owner_id').notNull(),
+  scope: text('scope', { enum: ['draft', 'chat', 'topic'] }).notNull(),
+  chatId: text('chat_id').references(() => chats.id, { onDelete: 'set null' }),
+  topicId: text('topic_id').references(() => topics.id, { onDelete: 'cascade' }),
+  filename: text('filename').notNull(),
+  mimeType: text('mime_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  sha256: text('sha256').notNull(),
+  status: text('status', { enum: ['uploading', 'scanning', 'parsing', 'ready', 'needs_review', 'failed', 'quarantined', 'expired', 'deleted'] }).notNull(),
+  visionStatus: text('vision_status', { enum: ['not_requested', 'queued', 'running', 'ready', 'failed'] }).notNull().default('not_requested'),
+  evidenceVersion: integer('evidence_version').notNull().default(1),
+  errorCode: text('error_code').notNull().default(''),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  ...timestamps
+}, table => [
+  index('attachments_owner_idx').on(table.ownerId),
+  index('attachments_topic_idx').on(table.topicId),
+  index('attachments_expiry_idx').on(table.expiresAt)
+])
+
+export const messageAttachments = sqliteTable('message_attachments', {
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  attachmentId: text('attachment_id').notNull().references(() => attachments.id, { onDelete: 'cascade' }),
+  evidenceVersion: integer('evidence_version').notNull(),
+  ...timestamps
+}, table => [
+  primaryKey({ columns: [table.messageId, table.attachmentId] }),
+  index('message_attachments_attachment_idx').on(table.attachmentId)
+])
 
 export const messageFeedbacks = sqliteTable('message_feedbacks', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),

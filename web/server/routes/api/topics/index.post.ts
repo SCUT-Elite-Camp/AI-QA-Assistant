@@ -1,20 +1,20 @@
 import { z } from 'zod'
 import { defineHandler, HTTPError } from 'nitro'
 import { readValidatedBody } from 'nitro/h3'
-import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { requestTopicSummarizerFromPersistence } from '../../../utils/soul'
 import { syncTopicToDisk, loadTopicFromDisk } from '../../../utils/topicStorage'
+import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
+  requireCsrf(event)
   const { chatId: inputChatId, title: customTitle } = await readValidatedBody(event, z.object({
     chatId: z.string().optional(),
     title: z.string().optional()
   }).parse)
 
   const db = useDrizzle()
-  const session = await useUserSession(event)
-  const userId = session.data.user?.id || session.id!
+  const userId = await requirePrincipal(event)
 
   let chat: any = null
 
@@ -23,6 +23,10 @@ export default defineHandler(async (event) => {
       where: eq(tables.chats.id, inputChatId),
       with: { messages: true }
     })
+    if (chat?.topicId) await requireTopicRole(event, chat.topicId, 'viewer')
+    else if (chat && chat.userId !== userId) {
+      throw new HTTPError({ statusCode: 403, statusMessage: 'chat_forbidden' })
+    }
   } else {
     // Create new main chat for this topic space
     const [newChat] = await db.insert(tables.chats).values({
@@ -116,6 +120,7 @@ export default defineHandler(async (event) => {
     weightMode: 'auto',
     consecutiveNoNewDocsCount: 0
   }).returning()
+  await db.insert(tables.topicMembers).values({ topicId: topic.id, userId, role: 'owner' }).onConflictDoNothing()
 
   // Attach chat to topic
   await db.update(tables.chats).set({ topicId: topic.id }).where(eq(tables.chats.id, chat.id))

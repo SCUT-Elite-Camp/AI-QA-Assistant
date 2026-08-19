@@ -3,11 +3,13 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { loadTopicFromDisk, getTopicDocumentsFromDisk } from '../../../utils/topicStorage'
+import { requireTopicRole } from '../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+  await requireTopicRole(event, id, 'viewer')
 
   const db = useDrizzle()
 

@@ -7,6 +7,13 @@ class BaseLLM(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def chat(self, messages: list[dict], tools: list[dict] = None) -> dict:
+    def chat(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> dict:
         raise NotImplementedError
 

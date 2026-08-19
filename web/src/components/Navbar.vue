@@ -15,6 +15,14 @@
       <UButton
         color="neutral"
         variant="ghost"
+        icon="i-lucide-library"
+        to="/library"
+        aria-label="My Library"
+      />
+
+      <UButton
+        color="neutral"
+        variant="ghost"
         icon="i-lucide-circle-plus"
         to="/"
         class="lg:hidden"

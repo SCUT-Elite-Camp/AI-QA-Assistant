@@ -10,7 +10,7 @@ class IntentPolicyRouter:
             candidate_tools=("search_documents",),
         ),
         QueryIntent.DOCUMENT_SEARCH: IntentPolicy(
-            candidate_tools=("search_documents",),
+            candidate_tools=("find_documents",),
             retrieval_strategy="bm25",
             evidence_policy="document_identity",
             assembly_strategy="document_order",
@@ -18,12 +18,15 @@ class IntentPolicyRouter:
             top_k=10,
         ),
         QueryIntent.SUMMARIZATION: IntentPolicy(
-            candidate_tools=("search_documents",),
+            candidate_tools=("find_documents", "get_document", "search_documents"),
             retrieval_strategy="hybrid",
             evidence_policy="topic_coverage",
             assembly_strategy="document_order",
             answer_style="structured_summary",
             top_k=10,
+            max_iterations=5,
+            max_tool_calls=5,
+            max_retrieval_attempts=5,
         ),
         QueryIntent.COMPARISON: IntentPolicy(
             candidate_tools=("search_documents",),

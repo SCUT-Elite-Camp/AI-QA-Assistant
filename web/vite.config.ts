@@ -25,7 +25,15 @@ export default defineConfig({
       }
     }),
     nitro({
-      serverDir: './server'
+      serverDir: './server',
+      // Nitro 3 beta emits dynamic route names such as "[batch_id]" as a
+      // Rollup filename pattern on Windows. Sanitize chunk names while still
+      // retaining content hashes so attachment routes can be built safely.
+      rollupConfig: {
+        output: {
+          chunkFileNames: chunk => `_chunks/${chunk.name.replace(/[\[\]]/g, '_')}-[hash].mjs`
+        }
+      }
     })
   ],
   server: {
