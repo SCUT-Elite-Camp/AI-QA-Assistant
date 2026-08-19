@@ -14,6 +14,10 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 -> memory write-back -> JSON response
 ```
 
+Query planning also emits a structured multi-source `SourceIntent` in the same
+planner call. This routing hint cannot provide owner IDs, knowledge-base IDs, or
+tokens; Personal Library access remains bound to Web-signed trusted context.
+
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
 
 ## Request

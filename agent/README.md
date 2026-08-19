@@ -9,6 +9,8 @@
 - `ConversationMemory` 稳定接口及线程安全的进程内实现。
 - 基于 `session_id` 的上下文读取、写回、隔离、截断和清理。
 - `QueryIntent` / `QueryPlan` 严格 Pydantic 契约。
+- `SourceIntent` 在现有 QueryPlanner 调用内选择 Personal、Enterprise、会话附件或
+  Web 多数据源，并以 shadow/canary/default 渐进启用；授权身份仍只来自可信请求上下文。
 - Agent Runner 动态读取工具 schema，支持连续多轮工具调用。
 - 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
 - 检索统一使用 `standalone_query`，保留 `original_query` 用于对话、记忆和审计。
