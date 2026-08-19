@@ -67,6 +67,7 @@ export function useDrizzle() {
 }
 
 async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
+  await client.execute('PRAGMA busy_timeout=5000')
   await client.execute("CREATE TABLE IF NOT EXISTS topics (id TEXT PRIMARY KEY, title TEXT NOT NULL, main_chat_id TEXT NOT NULL, soul_content TEXT NOT NULL DEFAULT '', description TEXT, weight_mode TEXT NOT NULL DEFAULT 'auto', tags TEXT, status TEXT NOT NULL DEFAULT 'ready', consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
 
   await ensureColumns(client, 'topics', [
@@ -118,6 +119,11 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   await client.execute(`UPDATE library_documents SET latest_version_number=COALESCE((
     SELECT MAX(version_number) FROM document_versions WHERE document_id=library_documents.id
   ),0) WHERE latest_version_number=0`)
+  await client.execute(`UPDATE library_documents SET
+    deleted_at=unixepoch(),active_version_id=NULL,desired_version_id=NULL,updated_at=unixepoch()
+    WHERE source_scope='personal' AND deleted_at IS NULL AND NOT EXISTS (
+      SELECT 1 FROM document_versions WHERE document_versions.document_id=library_documents.id
+    )`)
 
   await client.execute('CREATE INDEX IF NOT EXISTS chats_topic_id_idx ON chats(topic_id)')
   await client.execute('CREATE INDEX IF NOT EXISTS topic_docs_topic_id_idx ON topic_documents(topic_id)')
