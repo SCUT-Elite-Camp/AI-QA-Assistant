@@ -12,6 +12,10 @@ on:
   push:
     branches: [toolset]
 
+concurrency:
+  group: personal-library-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   personal-library:
     runs-on: windows-latest
@@ -39,6 +43,7 @@ jobs:
           toolset/tests
           agent/tests/unit/test_personal_library_evidence.py
           agent/tests/unit/test_personal_library_routing.py
+          agent/tests/unit/test_personal_library_source_intent.py
           agent/tests/unit/test_personal_library_tool.py
           -q
 
@@ -72,4 +77,4 @@ jobs:
 
       - name: Build Web application
         working-directory: web
-        run: pnpm exec vite build
+        run: pnpm run build
