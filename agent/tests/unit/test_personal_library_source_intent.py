@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.orchestration.orchestrator import AgentOrchestrator
 from agent.query.planner import QueryPlanner
@@ -137,6 +138,39 @@ def test_selected_attachment_is_a_trusted_source_constraint() -> None:
         "trace-selected-attachment",
     )
     assert SourceKind.CONVERSATION_ATTACHMENT in effective.sources
+
+
+@pytest.mark.parametrize(
+    ("mode", "canary_percent", "expected"),
+    [
+        ("heuristic", 10, SourceKind.ENTERPRISE_KB),
+        ("shadow", 10, SourceKind.ENTERPRISE_KB),
+        ("canary", 0, SourceKind.ENTERPRISE_KB),
+        ("canary", 100, SourceKind.PERSONAL_LIBRARY),
+        ("default", 10, SourceKind.PERSONAL_LIBRARY),
+    ],
+)
+def test_source_intent_rollout_modes(
+    monkeypatch: pytest.MonkeyPatch,
+    mode: str,
+    canary_percent: int,
+    expected: SourceKind,
+) -> None:
+    monkeypatch.setattr(settings, "SOURCE_INTENT_ROUTING_MODE", mode)
+    monkeypatch.setattr(settings, "SOURCE_INTENT_CANARY_PERCENT", canary_percent)
+    request = ChatRequest(query="公司的请假制度是什么", session_id="stable-session")
+    plan = QueryPlan(
+        original_query=request.query,
+        standalone_query=request.query,
+        source_intent=SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY]),
+    )
+    _heuristic, effective, selected_mode = AgentOrchestrator._resolve_source_intent(
+        request,
+        plan,
+        "random-trace",
+    )
+    assert selected_mode == mode
+    assert effective.sources == [expected]
 
 
 def test_prompt_injection_cannot_change_personal_authorization_context() -> None:
