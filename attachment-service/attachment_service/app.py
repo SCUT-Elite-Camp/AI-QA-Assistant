@@ -21,6 +21,11 @@ from pydantic import BaseModel, Field
 
 from .config import AttachmentSettings
 from .chunking import chunk_attachment_evidence
+from .library_service import (
+    fuse_library_candidates,
+    rebuild_library_projection,
+    validate_library_configuration,
+)
 from .crypto import decrypt_file, encrypt_file
 from .parser_runner import parse_with_timeout
 from .office import remove_office_tree
@@ -286,7 +291,7 @@ def _worker() -> None:
         if job["kind"] == "delete":
             try:
                 if VECTOR_INDEX.enabled:
-                    VECTOR_INDEX.delete(attachment["id"])
+                    VECTOR_INDEX.delete(str(attachment.get("vector_ref") or attachment["id"]))
                 derivative_paths = [item["blob_path"] for item in STORE.list_derivatives(attachment["id"])]
                 blob = STORE.get_blob(attachment["dedupe_domain"], attachment["sha256"])
                 if blob and int(blob["ref_count"]) <= 1:
@@ -309,7 +314,7 @@ def _worker() -> None:
         if job["kind"] == "cleanup_index":
             try:
                 if VECTOR_INDEX.enabled:
-                    VECTOR_INDEX.delete(attachment["id"])
+                    VECTOR_INDEX.delete(str(job["payload"].get("vector_ref") or attachment["id"]))
                 STORE.complete_job(job["id"])
                 LOGGER.info("LIBRARY_CLEANUP_COMPLETE version_id=%s", attachment["id"])
             except Exception as exc:
@@ -323,8 +328,10 @@ def _worker() -> None:
                     STORE.complete_job(job["id"], error_code="cleanup_failed")
             continue
         temporary = SETTINGS.data_dir / "temporary" / f"{attachment['id']}{attachment['extension']}"
+        preserve_active = bool(job["payload"].get("preserve_active")) and bool(attachment.get("active"))
         try:
-            STORE.transition_attachment(attachment["id"], "parsing", error_code="")
+            if not preserve_active:
+                STORE.transition_attachment(attachment["id"], "parsing", error_code="")
             decrypt_file(Path(attachment["blob_path"]), temporary, SETTINGS.encryption_key, _blob_aad(attachment))
             evidence = parse_with_timeout(
                 temporary, attachment["id"], attachment["extension"], SETTINGS.parse_timeout_seconds,
@@ -348,7 +355,8 @@ def _worker() -> None:
                 # active-version switch so a failure preserves the old one.
                 if not evidence:
                     raise RuntimeError("empty_parse_result")
-                STORE.transition_attachment(attachment["id"], "chunking")
+                if not preserve_active:
+                    STORE.transition_attachment(attachment["id"], "chunking")
                 evidence = chunk_attachment_evidence(
                     evidence,
                     str(attachment.get("version_id") or attachment["id"]),
@@ -356,15 +364,37 @@ def _worker() -> None:
                 )
                 if not evidence:
                     raise RuntimeError("empty_parse_result")
-                STORE.replace_evidence(attachment["id"], evidence)
-                STORE.transition_attachment(attachment["id"], "embedding")
+                LOGGER.info(
+                    "LIBRARY_CHUNK_COMPLETE document_id=%s version_id=%s chunks=%s",
+                    attachment.get("document_id"), attachment.get("version_id"), len(evidence),
+                )
+                if not preserve_active:
+                    STORE.transition_attachment(attachment["id"], "embedding")
                 if not VECTOR_INDEX.enabled:
                     raise RuntimeError("library_vector_index_disabled")
-                VECTOR_INDEX.replace(attachment["id"], evidence)
-                STORE.transition_attachment(attachment["id"], "indexing")
+                # Build under a generation-specific ref. The previous active
+                # vector/evidence projection remains searchable on failure.
+                previous_vector_ref, new_vector_ref = rebuild_library_projection(
+                    STORE, VECTOR_INDEX, attachment, evidence, job["id"],
+                )
+                if not preserve_active:
+                    STORE.transition_attachment(attachment["id"], "indexing")
                 # READY is an indexed candidate. Web owns the logical active
                 # pointer and activates the matching desired version via CAS.
-                STORE.transition_attachment(attachment["id"], "ready")
+                if preserve_active:
+                    STORE.update_attachment(attachment["id"], status="ready", error_code="")
+                else:
+                    STORE.transition_attachment(attachment["id"], "ready")
+                LOGGER.info(
+                    "LIBRARY_VERSION_READY document_id=%s version_id=%s version_number=%s",
+                    attachment.get("document_id"), attachment.get("version_id"),
+                    attachment.get("version_number", 0),
+                )
+                if previous_vector_ref and previous_vector_ref != new_vector_ref:
+                    STORE.enqueue(
+                        f"job_{uuid4().hex}", attachment["id"], "cleanup_index",
+                        {"vector_ref": previous_vector_ref},
+                    )
             else:
                 STORE.replace_evidence(attachment["id"], evidence)
                 _queue_vector_index(attachment["id"])
@@ -391,6 +421,9 @@ def _worker() -> None:
             elif int(job["attempts"]) < 3:
                 time.sleep(1)
                 STORE.requeue_job(job["id"], code)
+            elif preserve_active:
+                STORE.update_attachment(attachment["id"], status="ready", error_code="reindex_failed")
+                STORE.complete_job(job["id"], error_code="reindex_failed")
             else:
                 STORE.transition_attachment(attachment["id"], "failed", error_code=code)
                 STORE.complete_job(job["id"], error_code=code)
@@ -431,6 +464,10 @@ def _verify_scanner() -> None:
 async def lifespan(_: FastAPI):
     global SCANNER_READY
     STOP.clear()
+    validate_library_configuration(
+        library_enabled=os.getenv("PERSONAL_LIBRARY_ENABLED", "false").lower() in {"1", "true", "yes", "on"},
+        vector_enabled=VECTOR_INDEX.enabled,
+    )
     try:
         await asyncio.to_thread(_verify_scanner)
         SCANNER_READY = True
@@ -538,6 +575,12 @@ async def upload(
             )
         STORE.transition_attachment(attachment_id, "parsing")
         STORE.enqueue(f"job_{uuid4().hex}", attachment_id, "parse")
+        if x_scope == "library":
+            LOGGER.info(
+                "LIBRARY_UPLOAD owner_hash=%s knowledge_base_id=%s document_id=%s version_id=%s",
+                hashlib.sha256(x_owner_id.encode()).hexdigest()[:12], x_knowledge_base_id,
+                x_document_id, x_version_id,
+            )
         return _public_record(STORE.get_attachment(attachment_id) or record)
     except AttachmentValidationError as exc:
         raise HTTPException(422, {"code": exc.code, "message": str(exc)}) from exc
@@ -638,8 +681,13 @@ def retry(attachment_id: str) -> dict[str, Any]:
         raise HTTPException(404, "attachment not found")
     if record["status"] not in {"failed", "needs_review", "ready"}:
         raise HTTPException(409, "attachment is not retryable")
-    STORE.transition_attachment(attachment_id, "parsing", error_code="")
-    STORE.enqueue(f"job_{uuid4().hex}", attachment_id, "parse")
+    preserve_active = record["status"] == "ready" and bool(record.get("active"))
+    if not preserve_active:
+        STORE.transition_attachment(attachment_id, "parsing", error_code="")
+    STORE.enqueue(
+        f"job_{uuid4().hex}", attachment_id, "parse",
+        {"preserve_active": preserve_active},
+    )
     return _public_record(STORE.get_attachment(attachment_id) or {})
 
 
@@ -656,8 +704,12 @@ def activate_library_version(attachment_id: str, body: LibraryActivation) -> dic
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
     for stale_id in result["stale_ids"]:
-        if not STORE.has_active_job(stale_id, "cleanup_index"):
-            STORE.enqueue(f"job_{uuid4().hex}", stale_id, "cleanup_index")
+        stale = STORE.get_attachment(stale_id)
+        if stale and not STORE.has_active_job(stale_id, "cleanup_index"):
+            STORE.enqueue(
+                f"job_{uuid4().hex}", stale_id, "cleanup_index",
+                {"vector_ref": str(stale.get("vector_ref") or stale_id)},
+            )
     LOGGER.info(
         "LIBRARY_ACTIVE_SWITCH version_id=%s version_number=%s activated=%s stale_count=%s",
         attachment_id,
@@ -692,6 +744,11 @@ def delete(attachment_id: str) -> None:
     if not record:
         return
     STORE.soft_delete(attachment_id)
+    if record.get("scope") == "library":
+        LOGGER.info(
+            "LIBRARY_DELETE document_id=%s version_id=%s",
+            record.get("document_id"), record.get("version_id"),
+        )
     if not STORE.has_active_job(attachment_id, "delete"):
         STORE.enqueue(f"job_{uuid4().hex}", attachment_id, "delete")
 
@@ -739,26 +796,37 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
         active_only=True,
     )
     attachment_ids = [str(item["id"]) for item in versions]
-    if body.mode == "vector" and body.query_vector is not None:
-        vector_rows = VECTOR_INDEX.search_by_vector(attachment_ids, body.query_vector, body.top_k)
-        evidence = {
-            item["evidence_id"]: item for item in STORE.list_evidence(attachment_ids)
-        }
-        items = []
-        for row in vector_rows:
-            item = evidence.get(str(row.get("evidence_id")))
-            if item:
-                item = dict(item)
-                item["score"] = min(1.0, max(0.0, float(row.get("score", 0.0))))
-                items.append(item)
-        result = {"items": items}
-    else:
-        result = search(SearchRequest(
-            attachment_ids=attachment_ids,
-            query=body.query,
-            top_k=body.top_k,
-            query_vector=(body.query_vector if body.mode == "hybrid" else None),
-        ))
+    vector_refs = [str(item.get("vector_ref") or item["id"]) for item in versions]
+    vector_to_attachment = {
+        str(item.get("vector_ref") or item["id"]): str(item["id"])
+        for item in versions
+    }
+    candidate_k = max(body.top_k * 4, 20)
+    lexical_rows = (
+        STORE.search_evidence(attachment_ids, body.query, candidate_k)
+        if body.mode in {"bm25", "hybrid"} else []
+    )
+    vector_rows: list[dict[str, Any]] = []
+    vector_degraded = False
+    if body.mode in {"vector", "hybrid"} and body.query_vector is not None:
+        try:
+            vector_rows = VECTOR_INDEX.search_by_vector(vector_refs, body.query_vector, candidate_k)
+            for row in vector_rows:
+                row["attachment_id"] = vector_to_attachment.get(str(row.get("attachment_id")), str(row.get("attachment_id")))
+        except Exception as exc:
+            vector_degraded = True
+            LOGGER.warning(
+                "LIBRARY_SEARCH vector degraded knowledge_base_id=%s error=%s",
+                body.knowledge_base_id, exc.__class__.__name__,
+            )
+    evidence = {item["evidence_id"]: item for item in STORE.list_evidence(attachment_ids)}
+    result = {"items": fuse_library_candidates(
+        evidence, lexical_rows, vector_rows, mode=body.mode, top_k=body.top_k,
+    )}
+    if vector_degraded:
+        result["degraded"] = ["vector"]
+        if body.mode == "vector":
+            result["error"] = "library_vector_unavailable"
     metadata = {str(item["id"]): item for item in versions}
     for item in result.get("items", []):
         version = metadata.get(str(item.get("attachment_id")), {})
@@ -769,6 +837,14 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
             "source_scope": "personal",
             "filename": version.get("filename", item.get("filename")),
         })
+    LOGGER.info(
+        "LIBRARY_SEARCH owner_hash=%s knowledge_base_id=%s mode=%s candidates=%s results=%s",
+        hashlib.sha256(body.owner_id.encode()).hexdigest()[:12],
+        body.knowledge_base_id,
+        body.mode,
+        len(set(item.get("evidence_id") for item in (*lexical_rows, *vector_rows))),
+        len(result["items"]),
+    )
     return result
 
 

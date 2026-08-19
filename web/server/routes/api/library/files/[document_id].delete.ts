@@ -12,11 +12,14 @@ export default defineHandler(async (event) => {
   const db = useDrizzle()
   const versions = await db.select().from(tables.documentVersions)
     .where(eq(tables.documentVersions.documentId, document.id))
-  await Promise.all(versions.map(async version => {
+  // Logical deletion is the privacy boundary. Remote blobs and indexes are
+  // projections and may be cleaned asynchronously without keeping the
+  // document visible when Milvus or the attachment service is degraded.
+  await db.update(tables.libraryDocuments).set({ deletedAt: new Date(), activeVersionId: null, updatedAt: new Date() })
+    .where(eq(tables.libraryDocuments.id, document.id))
+  const cleanup = await Promise.allSettled(versions.map(async version => {
     const response = await attachmentServiceFetch(`/v1/attachments/${version.storageRef}`, { method: 'DELETE' })
     if (!response.ok && response.status !== 404) throw new Error('library_index_delete_failed')
   }))
-  await db.update(tables.libraryDocuments).set({ deletedAt: new Date(), activeVersionId: null, updatedAt: new Date() })
-    .where(eq(tables.libraryDocuments.id, document.id))
-  return { deleted: true }
+  return { deleted: true, cleanup_pending: cleanup.some(result => result.status === 'rejected') }
 })

@@ -59,7 +59,7 @@ class AttachmentStore:
           evidence_version INTEGER NOT NULL DEFAULT 1, deleted_at INTEGER,
           knowledge_base_id TEXT, document_id TEXT, version_id TEXT,
           source_scope TEXT, active INTEGER NOT NULL DEFAULT 0,
-          version_number INTEGER NOT NULL DEFAULT 0
+          version_number INTEGER NOT NULL DEFAULT 0, vector_ref TEXT
         );
         CREATE TABLE IF NOT EXISTS blobs (
           storage_key TEXT PRIMARY KEY, dedupe_domain TEXT NOT NULL, sha256 TEXT NOT NULL,
@@ -115,6 +115,7 @@ class AttachmentStore:
             ("source_scope", "TEXT"),
             ("active", "INTEGER NOT NULL DEFAULT 0"),
             ("version_number", "INTEGER NOT NULL DEFAULT 0"),
+            ("vector_ref", "TEXT"),
         ):
             if column not in existing:
                 db.execute(f"ALTER TABLE attachments ADD COLUMN {column} {declaration}")

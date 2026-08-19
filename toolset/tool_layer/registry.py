@@ -124,7 +124,7 @@ def _build_default_tools() -> List[BaseTool]:
     ]
     if _env_bool("ATTACHMENTS_ENABLED"):
         tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
-    if _env_bool("PERSONAL_LIBRARY_ENABLED", True):
+    if _env_bool("PERSONAL_LIBRARY_ENABLED", False):
         tools.append(SearchLibraryTool())
     return tools
 

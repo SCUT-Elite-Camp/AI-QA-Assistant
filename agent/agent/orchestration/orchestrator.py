@@ -156,14 +156,32 @@ class AgentOrchestrator:
 
     @staticmethod
     def _apply_library_policy(request: ChatRequest, policy: IntentPolicy) -> IntentPolicy:
-        if not request.personal_library_context or policy.retrieval_strategy == "none":
+        if not request.personal_library_context:
+            return policy
+        normalized = request.query.casefold()
+        personal_markers = (
+            "我的资料库", "个人资料库", "我的文件", "个人文件", "我保存的",
+            "my library", "my files", "personal library",
+        )
+        if not any(marker in normalized for marker in personal_markers):
             return policy
         candidates = tuple(dict.fromkeys((*policy.candidate_tools, "search_library")))
-        return policy.model_copy(update={
+        updates: dict[str, Any] = {
             "candidate_tools": candidates,
             "max_tool_calls": min(10, max(2, policy.max_tool_calls + 1)),
             "max_iterations": min(10, max(2, policy.max_iterations + 1)),
-        })
+        }
+        if policy.retrieval_strategy == "none":
+            updates.update(
+                retrieval_strategy="hybrid",
+                evidence_policy="single_fact",
+                assembly_strategy="score_order",
+                answer_style="concise_qa",
+                top_k=5,
+                max_retrieval_attempts=2,
+                requires_citations=True,
+            )
+        return policy.model_copy(update=updates)
 
     @staticmethod
     def _apply_attachment_policy(
