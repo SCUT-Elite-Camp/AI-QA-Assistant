@@ -1,11 +1,12 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import * as schema from '../server/database/schema'
+import { removeTemporaryDatabaseDirectory } from './sqliteTestUtils'
 import {
   createDocumentWithInitialVersion,
   createLibraryVersion,
@@ -73,16 +74,7 @@ async function visibleDocumentCount(db: TestDb) {
 afterEach(async () => {
   while (clients.length) await clients.pop()!.close()
   while (databaseDirectories.length) {
-    try {
-      rmSync(databaseDirectories.pop()!, {
-        recursive: true,
-        force: true,
-        maxRetries: 5,
-        retryDelay: 50,
-      })
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error
-    }
+    removeTemporaryDatabaseDirectory(databaseDirectories.pop()!)
   }
 })
 

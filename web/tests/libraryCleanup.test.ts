@@ -1,12 +1,13 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { eq } from 'drizzle-orm'
 import * as schema from '../server/database/schema'
+import { removeTemporaryDatabaseDirectory } from './sqliteTestUtils'
 import {
   getCleanupJobsForDocument,
   processLibraryCleanupJob,
@@ -50,20 +51,7 @@ afterEach(async () => {
   vi.restoreAllMocks()
   while (clients.length) await clients.pop()!.close()
   while (directories.length) {
-    try {
-      rmSync(directories.pop()!, {
-        recursive: true,
-        force: true,
-        maxRetries: 1,
-        retryDelay: 25,
-      })
-    } catch (error) {
-      // Windows runners can keep the native SQLite handle briefly after
-      // client.close(). The runner workspace is ephemeral; a cleanup-only
-      // lock must not turn passing database assertions into a false failure.
-      const code = (error as NodeJS.ErrnoException).code
-      if (code !== 'EPERM' && code !== 'EBUSY') throw error
-    }
+    removeTemporaryDatabaseDirectory(directories.pop()!)
   }
 })
 
