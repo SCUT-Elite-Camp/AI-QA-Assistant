@@ -6,6 +6,7 @@ import { attachmentServiceFetch, attachmentServiceJson } from '../../../../utils
 import { getOrCreateDefaultLibrary } from '../../../../utils/library'
 import {
   activateDesiredVersion,
+  createDocumentWithInitialVersion,
   createLibraryVersion,
   findVersionByHash,
   getActiveVersion,
@@ -27,7 +28,7 @@ export default defineHandler(async (event) => {
   const db = useDrizzle()
   const library = await getOrCreateDefaultLibrary(userId)
   const requestedDocumentId = event.req.headers.get('x-document-id')?.trim() || ''
-  let existingDocument = requestedDocumentId
+  const existingDocument = requestedDocumentId
     ? await db.query.libraryDocuments.findFirst({ where: and(eq(tables.libraryDocuments.id, requestedDocumentId), eq(tables.libraryDocuments.ownerUserId, userId), eq(tables.libraryDocuments.knowledgeBaseId, library.id)) })
     : undefined
   if (requestedDocumentId && (!existingDocument || existingDocument.deletedAt)) {
@@ -83,29 +84,26 @@ export default defineHandler(async (event) => {
       return { document_id: documentId, version_id: duplicate.id, version_number: duplicate.versionNumber, status: duplicate.status, unchanged: false, pending: true }
     }
     const extension = filename.includes('.') ? filename.split('.').pop()!.toLowerCase() : ''
-    if (!existingDocument) {
-      await db.insert(tables.libraryDocuments).values({
-        id: documentId, knowledgeBaseId: library.id, ownerUserId: userId,
-        sourceScope: 'personal', sourceType: 'upload', filename,
-        displayName: filename, mimeType, docType: extension,
-        latestVersionNumber: 0,
-        createdAt: new Date(), updatedAt: new Date()
-      })
-      existingDocument = await db.query.libraryDocuments.findFirst({ where: eq(tables.libraryDocuments.id, documentId) })
-    } else {
-      await db.update(tables.libraryDocuments).set({
-        filename, displayName: filename, mimeType, docType: extension, updatedAt: new Date()
-      }).where(eq(tables.libraryDocuments.id, documentId))
-    }
-    if (!existingDocument) throw new Error('library_document_create_failed')
     let versionNumber: number
+    const version = {
+      id: versionId, documentId, contentHash: remote.sha256,
+      storageRef: versionId, fileSize: remote.size_bytes,
+      status: remote.status === 'parsing' ? 'PARSING' as const : 'UPLOADED' as const,
+      createdAt: new Date(), updatedAt: new Date()
+    }
     try {
-      versionNumber = await createLibraryVersion(documentId, {
-        id: versionId, documentId, contentHash: remote.sha256,
-        storageRef: versionId, fileSize: remote.size_bytes,
-        status: remote.status === 'parsing' ? 'PARSING' : 'UPLOADED',
-        createdAt: new Date(), updatedAt: new Date()
-      })
+      if (existingDocument) {
+        versionNumber = await createLibraryVersion(documentId, version, {
+          filename, displayName: filename, mimeType, docType: extension,
+        }, db)
+      } else {
+        versionNumber = await createDocumentWithInitialVersion({
+          id: documentId, knowledgeBaseId: library.id, ownerUserId: userId,
+          sourceScope: 'personal', sourceType: 'upload', filename,
+          displayName: filename, mimeType, docType: extension,
+          createdAt: new Date(), updatedAt: new Date(),
+        }, version, db)
+      }
     } catch (error) {
       // A concurrent identical upload may win the unique hash constraint.
       const winner = await findVersionByHash(documentId, remote.sha256)
