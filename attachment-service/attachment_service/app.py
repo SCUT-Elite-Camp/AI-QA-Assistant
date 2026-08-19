@@ -132,6 +132,11 @@ class ScopeUpdate(BaseModel):
     dedupe_domain: str | None = Field(default=None, min_length=1, max_length=256)
 
 
+class LibraryActivation(BaseModel):
+    version_number: int = Field(ge=1)
+    explicit: bool = False
+
+
 def _authorize(authorization: str = Header(default="")) -> None:
     expected = f"Bearer {SETTINGS.internal_secret}"
     if not hmac.compare_digest(authorization, expected):
@@ -301,6 +306,22 @@ def _worker() -> None:
                 else:
                     STORE.complete_job(job["id"], error_code="delete_failed")
             continue
+        if job["kind"] == "cleanup_index":
+            try:
+                if VECTOR_INDEX.enabled:
+                    VECTOR_INDEX.delete(attachment["id"])
+                STORE.complete_job(job["id"])
+                LOGGER.info("LIBRARY_CLEANUP_COMPLETE version_id=%s", attachment["id"])
+            except Exception as exc:
+                LOGGER.warning(
+                    "LIBRARY_CLEANUP_RETRY version_id=%s attempts=%s error=%s",
+                    attachment["id"], job["attempts"], exc.__class__.__name__,
+                )
+                if int(job["attempts"]) < 10:
+                    STORE.requeue_job(job["id"], "cleanup_failed")
+                else:
+                    STORE.complete_job(job["id"], error_code="cleanup_failed")
+            continue
         temporary = SETTINGS.data_dir / "temporary" / f"{attachment['id']}{attachment['extension']}"
         try:
             STORE.transition_attachment(attachment["id"], "parsing", error_code="")
@@ -341,9 +362,9 @@ def _worker() -> None:
                     raise RuntimeError("library_vector_index_disabled")
                 VECTOR_INDEX.replace(attachment["id"], evidence)
                 STORE.transition_attachment(attachment["id"], "indexing")
-                stale_ids = STORE.activate_library_version(attachment["id"])
-                for stale_id in stale_ids:
-                    VECTOR_INDEX.delete(stale_id)
+                # READY is an indexed candidate. Web owns the logical active
+                # pointer and activates the matching desired version via CAS.
+                STORE.transition_attachment(attachment["id"], "ready")
             else:
                 STORE.replace_evidence(attachment["id"], evidence)
                 _queue_vector_index(attachment["id"])
@@ -620,6 +641,31 @@ def retry(attachment_id: str) -> dict[str, Any]:
     STORE.transition_attachment(attachment_id, "parsing", error_code="")
     STORE.enqueue(f"job_{uuid4().hex}", attachment_id, "parse")
     return _public_record(STORE.get_attachment(attachment_id) or {})
+
+
+@app.post("/v1/attachments/{attachment_id}/library/activate", dependencies=[Depends(_authorize)])
+def activate_library_version(attachment_id: str, body: LibraryActivation) -> dict[str, Any]:
+    try:
+        result = STORE.activate_library_version(
+            attachment_id,
+            body.version_number,
+            explicit=body.explicit,
+        )
+    except KeyError as exc:
+        raise HTTPException(404, "library version not found") from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    for stale_id in result["stale_ids"]:
+        if not STORE.has_active_job(stale_id, "cleanup_index"):
+            STORE.enqueue(f"job_{uuid4().hex}", stale_id, "cleanup_index")
+    LOGGER.info(
+        "LIBRARY_ACTIVE_SWITCH version_id=%s version_number=%s activated=%s stale_count=%s",
+        attachment_id,
+        body.version_number,
+        result["activated"],
+        len(result["stale_ids"]),
+    )
+    return result
 
 
 @app.patch("/v1/attachments/{attachment_id}/scope", dependencies=[Depends(_authorize)])

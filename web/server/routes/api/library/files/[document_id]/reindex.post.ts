@@ -12,7 +12,7 @@ export default defineHandler(async (event) => {
   const db = useDrizzle()
   const version = (await db.select().from(tables.documentVersions)
     .where(eq(tables.documentVersions.documentId, document.id))
-    .orderBy(desc(tables.documentVersions.createdAt)).limit(1))[0]
+    .orderBy(desc(tables.documentVersions.versionNumber)).limit(1))[0]
   if (!version) throw new HTTPError({ statusCode: 404, statusMessage: 'library_version_not_found' })
   await attachmentServiceJson(`/v1/attachments/${version.storageRef}/retry`, { method: 'POST' })
   await db.update(tables.documentVersions).set({ status: 'REINDEXING', errorCode: '', errorMessage: '', updatedAt: new Date() })

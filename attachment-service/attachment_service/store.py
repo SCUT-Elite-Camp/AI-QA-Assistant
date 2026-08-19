@@ -58,7 +58,8 @@ class AttachmentStore:
           updated_at INTEGER NOT NULL, expires_at INTEGER, error_code TEXT NOT NULL DEFAULT '',
           evidence_version INTEGER NOT NULL DEFAULT 1, deleted_at INTEGER,
           knowledge_base_id TEXT, document_id TEXT, version_id TEXT,
-          source_scope TEXT, active INTEGER NOT NULL DEFAULT 0
+          source_scope TEXT, active INTEGER NOT NULL DEFAULT 0,
+          version_number INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS blobs (
           storage_key TEXT PRIMARY KEY, dedupe_domain TEXT NOT NULL, sha256 TEXT NOT NULL,
@@ -113,6 +114,7 @@ class AttachmentStore:
             ("version_id", "TEXT"),
             ("source_scope", "TEXT"),
             ("active", "INTEGER NOT NULL DEFAULT 0"),
+            ("version_number", "INTEGER NOT NULL DEFAULT 0"),
         ):
             if column not in existing:
                 db.execute(f"ALTER TABLE attachments ADD COLUMN {column} {declaration}")
@@ -122,7 +124,7 @@ class AttachmentStore:
         )
         db.execute(
             "CREATE INDEX IF NOT EXISTS attachments_library_document_idx "
-            "ON attachments(document_id, version_id)"
+            "ON attachments(document_id, version_number, version_id)"
         )
         db.execute("UPDATE jobs SET status='queued', updated_at=? WHERE status='running'", (int(time.time()),))
         db.execute(
@@ -210,8 +212,16 @@ class AttachmentStore:
         query += " ORDER BY created_at DESC,id"
         return [dict(row) for row in self.connection().execute(query, tuple(params)).fetchall()]
 
-    def activate_library_version(self, attachment_id: str) -> list[str]:
-        """Atomically switch a document to a READY version and return stale version ids."""
+    def activate_library_version(
+        self,
+        attachment_id: str,
+        version_number: int,
+        *,
+        explicit: bool = False,
+    ) -> dict[str, Any]:
+        """CAS the active projection; automatic activation never moves backwards."""
+        if version_number < 1:
+            raise ValueError("invalid_library_version_number")
         db = self.connection()
         db.execute("BEGIN IMMEDIATE")
         current = db.execute(
@@ -222,6 +232,25 @@ class AttachmentStore:
         if not current:
             db.rollback()
             raise KeyError("library_version_not_found")
+        if current["status"] != "ready":
+            db.rollback()
+            raise ValueError("library_version_not_ready")
+        active_row = db.execute(
+            "SELECT id,version_number FROM attachments WHERE document_id=? "
+            "AND active=1 AND deleted_at IS NULL LIMIT 1",
+            (current["document_id"],),
+        ).fetchone()
+        if (
+            active_row
+            and not explicit
+            and int(active_row["version_number"] or 0) > version_number
+        ):
+            db.rollback()
+            return {
+                "activated": False,
+                "active_id": str(active_row["id"]),
+                "stale_ids": [],
+            }
         old_rows = db.execute(
             "SELECT id FROM attachments WHERE document_id=? AND id<>? AND active=1",
             (current["document_id"], attachment_id),
@@ -233,11 +262,12 @@ class AttachmentStore:
             (now, current["document_id"], attachment_id),
         )
         db.execute(
-            "UPDATE attachments SET active=1,status='ready',error_code='',updated_at=? WHERE id=?",
-            (now, attachment_id),
+            "UPDATE attachments SET active=1,version_number=?,status='ready',"
+            "error_code='',updated_at=? WHERE id=?",
+            (version_number, now, attachment_id),
         )
         db.commit()
-        return old_ids
+        return {"activated": True, "active_id": attachment_id, "stale_ids": old_ids}
 
     def update_attachment(self, attachment_id: str, **values: Any) -> None:
         values["updated_at"] = int(time.time())

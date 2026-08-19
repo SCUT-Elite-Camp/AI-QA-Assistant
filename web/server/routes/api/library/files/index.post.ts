@@ -4,6 +4,14 @@ import { and, eq, tables, useDrizzle } from '../../../../utils/drizzle'
 import { requireCsrf, requirePrincipal } from '../../../../utils/attachmentAuth'
 import { attachmentServiceFetch, attachmentServiceJson } from '../../../../utils/attachmentService'
 import { getOrCreateDefaultLibrary } from '../../../../utils/library'
+import {
+  activateDesiredVersion,
+  createLibraryVersion,
+  findVersionByHash,
+  getActiveVersion,
+  resolveUploadedHash,
+  setDesiredVersion,
+} from '../../../../utils/libraryVersionService'
 
 export default defineHandler(async (event) => {
   requireCsrf(event)
@@ -47,36 +55,66 @@ export default defineHandler(async (event) => {
       duplex: 'half'
     } as RequestInit & { duplex: 'half' })
     remoteCreated = true
-    const duplicate = existingDocument
-      ? await db.query.documentVersions.findFirst({ where: and(eq(tables.documentVersions.documentId, documentId), eq(tables.documentVersions.contentHash, remote.sha256)) })
-      : undefined
-    if (duplicate) {
+    const activeVersion = existingDocument ? await getActiveVersion(existingDocument) : undefined
+    const duplicate = existingDocument ? await findVersionByHash(documentId, remote.sha256) : undefined
+    const hashResolution = resolveUploadedHash(activeVersion?.contentHash, remote.sha256, duplicate?.status)
+    if (hashResolution === 'unchanged' && activeVersion) {
       await attachmentServiceFetch(`/v1/attachments/${versionId}`, { method: 'DELETE' })
       remoteCreated = false
-      return { document_id: documentId, version_id: duplicate.id, status: duplicate.status, unchanged: true }
+      return { document_id: documentId, version_id: activeVersion.id, version_number: activeVersion.versionNumber, status: activeVersion.status, unchanged: true }
+    }
+    if (duplicate && existingDocument && hashResolution !== 'create') {
+      await attachmentServiceFetch(`/v1/attachments/${versionId}`, { method: 'DELETE' })
+      remoteCreated = false
+      await setDesiredVersion(documentId, duplicate.id)
+      if (hashResolution === 'reactivate') {
+        await activateDesiredVersion(
+          { ...existingDocument, desiredVersionId: duplicate.id },
+          duplicate,
+        )
+        return { document_id: documentId, version_id: duplicate.id, version_number: duplicate.versionNumber, status: duplicate.status, unchanged: false, reactivated: true }
+      }
+      if (hashResolution === 'retry') {
+        await attachmentServiceJson(`/v1/attachments/${duplicate.storageRef}/retry`, { method: 'POST' })
+        await db.update(tables.documentVersions).set({ status: 'REINDEXING', errorCode: '', errorMessage: '', updatedAt: new Date() })
+          .where(eq(tables.documentVersions.id, duplicate.id))
+        return { document_id: documentId, version_id: duplicate.id, version_number: duplicate.versionNumber, status: 'REINDEXING', unchanged: false, retrying: true }
+      }
+      return { document_id: documentId, version_id: duplicate.id, version_number: duplicate.versionNumber, status: duplicate.status, unchanged: false, pending: true }
     }
     const extension = filename.includes('.') ? filename.split('.').pop()!.toLowerCase() : ''
-    await db.transaction(async tx => {
-      if (!existingDocument) {
-        await tx.insert(tables.libraryDocuments).values({
-          id: documentId, knowledgeBaseId: library.id, ownerUserId: userId,
-          sourceScope: 'personal', sourceType: 'upload', filename,
-          displayName: filename, mimeType, docType: extension,
-          createdAt: new Date(), updatedAt: new Date()
-        })
-      } else {
-        await tx.update(tables.libraryDocuments).set({
-          filename, displayName: filename, mimeType, docType: extension, updatedAt: new Date()
-        }).where(eq(tables.libraryDocuments.id, documentId))
-      }
-      await tx.insert(tables.documentVersions).values({
+    if (!existingDocument) {
+      await db.insert(tables.libraryDocuments).values({
+        id: documentId, knowledgeBaseId: library.id, ownerUserId: userId,
+        sourceScope: 'personal', sourceType: 'upload', filename,
+        displayName: filename, mimeType, docType: extension,
+        latestVersionNumber: 0,
+        createdAt: new Date(), updatedAt: new Date()
+      })
+      existingDocument = await db.query.libraryDocuments.findFirst({ where: eq(tables.libraryDocuments.id, documentId) })
+    } else {
+      await db.update(tables.libraryDocuments).set({
+        filename, displayName: filename, mimeType, docType: extension, updatedAt: new Date()
+      }).where(eq(tables.libraryDocuments.id, documentId))
+    }
+    if (!existingDocument) throw new Error('library_document_create_failed')
+    let versionNumber: number
+    try {
+      versionNumber = await createLibraryVersion(documentId, {
         id: versionId, documentId, contentHash: remote.sha256,
         storageRef: versionId, fileSize: remote.size_bytes,
         status: remote.status === 'parsing' ? 'PARSING' : 'UPLOADED',
         createdAt: new Date(), updatedAt: new Date()
       })
-    })
-    return { document_id: documentId, version_id: versionId, status: remote.status, unchanged: false }
+    } catch (error) {
+      // A concurrent identical upload may win the unique hash constraint.
+      const winner = await findVersionByHash(documentId, remote.sha256)
+      if (!winner) throw error
+      await attachmentServiceFetch(`/v1/attachments/${versionId}`, { method: 'DELETE' })
+      remoteCreated = false
+      return { document_id: documentId, version_id: winner.id, version_number: winner.versionNumber, status: winner.status, unchanged: true, concurrent: true }
+    }
+    return { document_id: documentId, version_id: versionId, version_number: versionNumber, status: remote.status, unchanged: false }
   } catch (error) {
     if (remoteCreated) await attachmentServiceFetch(`/v1/attachments/${versionId}`, { method: 'DELETE' }).catch(() => undefined)
     throw error

@@ -4,6 +4,7 @@ import type { HTTPEvent } from 'nitro/h3'
 import { and, eq, sql, tables, useDrizzle } from './drizzle'
 import { requirePrincipal } from './attachmentAuth'
 import { attachmentServiceJson } from './attachmentService'
+import { activateDesiredVersion } from './libraryVersionService'
 
 export type LibraryStatus = 'UPLOADED' | 'PARSING' | 'CHUNKING' | 'EMBEDDING' | 'INDEXING' | 'READY' | 'FAILED' | 'REINDEXING'
 
@@ -68,8 +69,12 @@ export async function syncLibraryVersion(version: typeof tables.documentVersions
     indexedAt: status === 'READY' ? now : version.indexedAt
   }).where(eq(tables.documentVersions.id, version.id))
   if (status === 'READY') {
-    await db.update(tables.libraryDocuments).set({ activeVersionId: version.id, updatedAt: now })
-      .where(eq(tables.libraryDocuments.id, version.documentId))
+    const document = await db.query.libraryDocuments.findFirst({
+      where: eq(tables.libraryDocuments.id, version.documentId)
+    })
+    if (document) {
+      await activateDesiredVersion(document, { ...version, status, indexedAt: now, updatedAt: now })
+    }
   }
   return { ...version, status, errorCode: String(remote.error_code || ''), updatedAt: now, remote }
 }

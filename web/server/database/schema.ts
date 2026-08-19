@@ -47,6 +47,8 @@ export const libraryDocuments = sqliteTable('library_documents', {
   mimeType: text('mime_type').notNull(),
   docType: text('doc_type').notNull(),
   activeVersionId: text('active_version_id'),
+  desiredVersionId: text('desired_version_id'),
+  latestVersionNumber: integer('latest_version_number').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   deletedAt: integer('deleted_at', { mode: 'timestamp' })
@@ -61,6 +63,7 @@ export const documentVersions = sqliteTable('document_versions', {
   contentHash: text('content_hash').notNull(),
   storageRef: text('storage_ref').notNull(),
   fileSize: integer('file_size').notNull(),
+  versionNumber: integer('version_number').notNull(),
   status: text('status', { enum: ['UPLOADED', 'PARSING', 'CHUNKING', 'EMBEDDING', 'INDEXING', 'READY', 'FAILED', 'REINDEXING'] }).notNull(),
   errorCode: text('error_code').notNull().default(''),
   errorMessage: text('error_message').notNull().default(''),
@@ -69,6 +72,7 @@ export const documentVersions = sqliteTable('document_versions', {
   indexedAt: integer('indexed_at', { mode: 'timestamp' })
 }, table => [
   index('document_versions_document_idx').on(table.documentId, table.createdAt),
+  uniqueIndex('document_versions_number_idx').on(table.documentId, table.versionNumber),
   uniqueIndex('document_versions_identity_idx').on(table.documentId, table.contentHash)
 ])
 
