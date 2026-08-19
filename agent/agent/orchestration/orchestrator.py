@@ -220,7 +220,7 @@ class AgentOrchestrator:
         if mode in {"heuristic", "shadow"} or not structured.sources:
             return heuristic, heuristic, mode
         if mode == "canary":
-            identity = trace_id or request.session_id or request.query
+            identity = request.session_id or trace_id or request.query
             bucket = int(hashlib.sha256(identity.encode("utf-8")).hexdigest()[:8], 16) % 100
             if bucket >= settings.SOURCE_INTENT_CANARY_PERCENT:
                 return heuristic, heuristic, mode
