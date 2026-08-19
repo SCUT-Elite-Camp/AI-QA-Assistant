@@ -302,7 +302,7 @@ defineShortcuts({
                 :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10': dragOverTopicId === topic.id }"
                 @click="toggleTopic(topic.id)"
                 @dragover.prevent="handleDragOver(topic.id, $event)"
-                @dragleave="handleDragLeave(topic.id, $event)"
+                @dragleave="handleDragLeave(topic.id)"
                 @drop.prevent="handleDropOnTopic(topic.id, $event)"
               >
                 <!-- Expand/collapse chevron -->
@@ -370,7 +370,7 @@ defineShortcuts({
               class="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 pt-3 pb-1 rounded-lg transition-all"
               :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10 text-emerald-400': dragOverStandalone }"
               @dragover.prevent="handleDragOverStandalone($event)"
-              @dragleave="handleDragLeaveStandalone($event)"
+              @dragleave="handleDragLeaveStandalone()"
               @drop.prevent="handleDropOnStandalone($event)"
             >
               Chats
