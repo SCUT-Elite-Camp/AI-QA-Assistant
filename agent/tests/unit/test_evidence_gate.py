@@ -179,7 +179,7 @@ def test_invalid_retrieval_attempt_is_rejected(attempt: int) -> None:
     plan = _plan(QueryIntent.KNOWLEDGE_QA)
     policy = IntentPolicyRouter().route(plan)
 
-    with pytest.raises(ValueError, match="one or two"):
+    with pytest.raises(ValueError, match="policy retrieval budget"):
         EvidenceGate().evaluate(
             plan,
             policy,

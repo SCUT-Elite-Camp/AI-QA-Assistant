@@ -62,3 +62,11 @@ def test_failed_version_cannot_be_activated(tmp_path):
         assert str(exc) == "library_version_not_ready"
     else:
         raise AssertionError("failed version was activated")
+
+
+def test_failed_new_version_does_not_displace_ready_active_version(tmp_path):
+    store = AttachmentStore(tmp_path / "library.sqlite3")
+    store.create_attachment(_record("ver_1", 1, active=1))
+    store.create_attachment(_record("ver_2", 2, status="failed"))
+
+    assert [item["id"] for item in store.list_library_versions("user-a", "kb-a")] == ["ver_1"]

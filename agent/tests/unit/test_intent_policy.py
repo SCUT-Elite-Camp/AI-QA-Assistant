@@ -64,7 +64,7 @@ def test_policy_is_immutable() -> None:
 
 def test_policy_rejects_unknown_fields_and_unsafe_budgets() -> None:
     with pytest.raises(ValidationError):
-        IntentPolicy(max_retrieval_attempts=3)
+        IntentPolicy(max_retrieval_attempts=6)
 
     with pytest.raises(ValidationError, match="extra_forbidden"):
         IntentPolicy(model_selected_tool="delete_documents")

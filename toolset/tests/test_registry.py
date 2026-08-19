@@ -38,9 +38,10 @@ class ToolRegistryTest(unittest.TestCase):
     def test_default_registry_initialization(self) -> None:
         registry = ToolRegistry()
         tools = registry.get_all_tools()
-        # By default, should have SearchTool registered
-        self.assertEqual(len(tools), 1)
-        self.assertEqual(tools[0].name, "search_documents")
+        self.assertEqual(
+            {tool.name for tool in tools},
+            {"search_documents", "find_documents", "get_document"},
+        )
 
     def test_custom_registry_initialization(self) -> None:
         fake_tool = FakeCustomTool()
@@ -83,8 +84,10 @@ class ToolRegistryTest(unittest.TestCase):
 
     def test_get_tools_backward_compatibility(self) -> None:
         tools = get_tools()
-        self.assertEqual(len(tools), 1)
-        self.assertEqual(tools[0].name, "search_documents")
+        self.assertEqual(
+            {tool.name for tool in tools},
+            {"search_documents", "find_documents", "get_document"},
+        )
 
 
 if __name__ == "__main__":
