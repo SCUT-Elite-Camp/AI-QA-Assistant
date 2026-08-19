@@ -14,6 +14,7 @@ from agent.schemas.chat import (
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import (
     QueryIntent,
+    QueryPlan,
     SourceIntent,
     SourceIntentMode,
     SourceKind,
@@ -115,6 +116,27 @@ def test_attachment_source_uses_only_server_allowlisted_context() -> None:
         SourceIntent(sources=[SourceKind.CONVERSATION_ATTACHMENT]),
     )
     assert policy.candidate_tools == ("search_attachments", "inspect_attachment")
+
+
+def test_selected_attachment_is_a_trusted_source_constraint() -> None:
+    request = ChatRequest(
+        query="帮我总结一下",
+        attachment_context=AttachmentContext(
+            selected_attachment_ids=["att-allowed"],
+            allowed_attachment_ids=["att-allowed"],
+        ),
+    )
+    plan = QueryPlan(
+        original_query=request.query,
+        standalone_query=request.query,
+        intent=QueryIntent.CASUAL_CHAT,
+    )
+    _heuristic, effective, _mode = AgentOrchestrator._resolve_source_intent(
+        request,
+        plan,
+        "trace-selected-attachment",
+    )
+    assert SourceKind.CONVERSATION_ATTACHMENT in effective.sources
 
 
 def test_prompt_injection_cannot_change_personal_authorization_context() -> None:

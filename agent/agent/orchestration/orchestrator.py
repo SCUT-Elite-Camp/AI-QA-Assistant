@@ -194,6 +194,28 @@ class AgentOrchestrator:
             enterprise_default=policy_requires_retrieval(plan),
         )
         structured = plan.source_intent
+        if (
+            request.attachment_context
+            and request.attachment_context.selected_attachment_ids
+        ):
+            if SourceKind.CONVERSATION_ATTACHMENT not in heuristic.sources:
+                heuristic = heuristic.model_copy(
+                    update={
+                        "sources": [
+                            *heuristic.sources,
+                            SourceKind.CONVERSATION_ATTACHMENT,
+                        ]
+                    }
+                )
+            if SourceKind.CONVERSATION_ATTACHMENT not in structured.sources:
+                structured = structured.model_copy(
+                    update={
+                        "sources": [
+                            *structured.sources,
+                            SourceKind.CONVERSATION_ATTACHMENT,
+                        ]
+                    }
+                )
         mode = settings.SOURCE_INTENT_ROUTING_MODE
         if mode in {"heuristic", "shadow"} or not structured.sources:
             return heuristic, heuristic, mode
