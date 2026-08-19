@@ -1,25 +1,40 @@
 import { defineHandler } from 'nitro'
 import { getRouterParam } from 'nitro/h3'
-import { eq, tables, useDrizzle } from '../../../../utils/drizzle'
+import { useDrizzle } from '../../../../utils/drizzle'
 import { requireCsrf } from '../../../../utils/attachmentAuth'
-import { attachmentServiceFetch } from '../../../../utils/attachmentService'
 import { requireLibraryDocument } from '../../../../utils/library'
+import {
+  getCleanupJobsForDocument,
+  processLibraryCleanupJob,
+  refreshLibraryCleanupMetrics,
+  softDeleteDocumentWithCleanup,
+} from '../../../../utils/libraryCleanup'
 
 export default defineHandler(async (event) => {
   requireCsrf(event)
   const documentId = getRouterParam(event, 'document_id') || ''
-  const { document } = await requireLibraryDocument(event, documentId)
+  const { userId, library, document } = await requireLibraryDocument(event, documentId)
   const db = useDrizzle()
-  const versions = await db.select().from(tables.documentVersions)
-    .where(eq(tables.documentVersions.documentId, document.id))
   // Logical deletion is the privacy boundary. Remote blobs and indexes are
-  // projections and may be cleaned asynchronously without keeping the
-  // document visible when Milvus or the attachment service is degraded.
-  await db.update(tables.libraryDocuments).set({ deletedAt: new Date(), activeVersionId: null, updatedAt: new Date() })
-    .where(eq(tables.libraryDocuments.id, document.id))
-  const cleanup = await Promise.allSettled(versions.map(async version => {
-    const response = await attachmentServiceFetch(`/v1/attachments/${version.storageRef}`, { method: 'DELETE' })
-    if (!response.ok && response.status !== 404) throw new Error('library_index_delete_failed')
-  }))
-  return { deleted: true, cleanup_pending: cleanup.some(result => result.status === 'rejected') }
+  // projections. The durable jobs are committed in the same transaction so
+  // a process crash cannot lose physical cleanup work.
+  const jobs = await softDeleteDocumentWithCleanup(
+    document.id,
+    userId,
+    library.id,
+    db,
+  )
+  await Promise.allSettled(jobs.map(job => processLibraryCleanupJob(job.id, db)))
+  const refreshed = await getCleanupJobsForDocument(document.id, db)
+  await refreshLibraryCleanupMetrics(db)
+  const cleanupStatus = refreshed.every(job => job.status === 'completed')
+    ? 'completed'
+    : refreshed.some(job => job.status === 'dead') ? 'dead' : 'pending'
+  return {
+    deleted: true,
+    cleanup_pending: cleanupStatus !== 'completed',
+    cleanupStatus,
+    cleanupOperationId: jobs[0]?.id || null,
+    cleanupOperationIds: jobs.map(job => job.id),
+  }
 })

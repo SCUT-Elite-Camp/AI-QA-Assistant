@@ -50,6 +50,13 @@
       "when": 1787241600000,
       "tag": "0006_library_orphan_repair",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787245200000,
+      "tag": "0007_library_cleanup_outbox",
+      "breakpoints": true
     }
   ]
 }

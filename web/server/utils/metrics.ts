@@ -35,6 +35,14 @@ interface MetricsStore {
     totalTokens: number
     ttftBuckets: LatencyBucket
   }
+  libraryCleanup: {
+    pending: number
+    retry: number
+    dead: number
+    oldestPendingAgeSeconds: number
+    attemptTotal: number
+    successTotal: number
+  }
 }
 
 function createLatencyBucket(): LatencyBucket {
@@ -82,6 +90,14 @@ const store: MetricsStore = {
     totalTokens: 0,
     ttftBuckets: createLatencyBucket(),
   },
+  libraryCleanup: {
+    pending: 0,
+    retry: 0,
+    dead: 0,
+    oldestPendingAgeSeconds: 0,
+    attemptTotal: 0,
+    successTotal: 0,
+  },
 }
 
 function getOrCreateEndpoint(method: string, path: string): EndpointMetrics {
@@ -122,6 +138,18 @@ export function recordAiCall(durationMs: number, ttftMs: number, tokens: number)
   store.ai.totalDurationMs += durationMs
   store.ai.totalTokens += tokens
   recordLatency(store.ai.ttftBuckets, ttftMs)
+}
+
+export function recordLibraryCleanupAttempt(succeeded: boolean) {
+  store.libraryCleanup.attemptTotal++
+  if (succeeded) store.libraryCleanup.successTotal++
+}
+
+export function setLibraryCleanupGauges(gauges: Pick<
+  MetricsStore['libraryCleanup'],
+  'pending' | 'retry' | 'dead' | 'oldestPendingAgeSeconds'
+>) {
+  Object.assign(store.libraryCleanup, gauges)
 }
 
 /** 获取当前 Metrics 快照 */
@@ -173,6 +201,7 @@ export function getMetrics() {
       ttftP95: calcPercentile(aiSamples, 95),
       ttftP99: calcPercentile(aiSamples, 99),
     },
+    libraryCleanup: { ...store.libraryCleanup },
   }
 }
 
@@ -182,4 +211,12 @@ export function resetMetrics() {
   store.requests = { total: 0, byEndpoint: {} }
   store.db = { totalQueries: 0, totalDurationMs: 0, slowQueries: 0 }
   store.ai = { totalCalls: 0, totalDurationMs: 0, totalTokens: 0, ttftBuckets: createLatencyBucket() }
+  store.libraryCleanup = {
+    pending: 0,
+    retry: 0,
+    dead: 0,
+    oldestPendingAgeSeconds: 0,
+    attemptTotal: 0,
+    successTotal: 0,
+  }
 }

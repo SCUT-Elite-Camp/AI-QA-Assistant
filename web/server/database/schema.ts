@@ -89,6 +89,33 @@ export const documentVersionsRelations = relations(documentVersions, ({ one }) =
   document: one(libraryDocuments, { fields: [documentVersions.documentId], references: [libraryDocuments.id] })
 }))
 
+export const libraryCleanupJobs = sqliteTable('library_cleanup_jobs', {
+  id: text('id').primaryKey(),
+  action: text('action', { enum: ['delete_version'] }).notNull(),
+  documentId: text('document_id').notNull(),
+  versionId: text('version_id'),
+  remoteObjectId: text('remote_object_id').notNull(),
+  ownerUserId: text('owner_user_id').notNull(),
+  knowledgeBaseId: text('knowledge_base_id').notNull(),
+  idempotencyKey: text('idempotency_key').notNull(),
+  status: text('status', { enum: ['pending', 'processing', 'retry', 'completed', 'dead'] }).notNull().default('pending'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  maxAttempts: integer('max_attempts').notNull().default(10),
+  nextAttemptAt: integer('next_attempt_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  claimToken: text('claim_token'),
+  claimedAt: integer('claimed_at', { mode: 'timestamp' }),
+  leaseExpiresAt: integer('lease_expires_at', { mode: 'timestamp' }),
+  lastErrorCode: text('last_error_code').notNull().default(''),
+  lastErrorMessage: text('last_error_message').notNull().default(''),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+}, table => [
+  uniqueIndex('library_cleanup_jobs_idempotency_idx').on(table.idempotencyKey),
+  index('library_cleanup_jobs_claim_idx').on(table.status, table.nextAttemptAt, table.leaseExpiresAt),
+  index('library_cleanup_jobs_document_idx').on(table.documentId),
+])
+
 export const topics = sqliteTable('topics', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text('title').notNull(),

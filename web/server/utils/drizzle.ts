@@ -88,6 +88,7 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   await client.execute("CREATE TABLE IF NOT EXISTS knowledge_bases (id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT 'My Library', scope_type TEXT NOT NULL, owner_user_id TEXT, workspace_id TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, deleted_at INTEGER, CHECK ((scope_type='personal' AND owner_user_id IS NOT NULL AND workspace_id IS NULL) OR (scope_type='enterprise' AND workspace_id IS NOT NULL)))")
   await client.execute("CREATE TABLE IF NOT EXISTS library_documents (id TEXT PRIMARY KEY, knowledge_base_id TEXT NOT NULL REFERENCES knowledge_bases(id), owner_user_id TEXT NOT NULL, workspace_id TEXT, source_scope TEXT NOT NULL, source_type TEXT NOT NULL DEFAULT 'upload', filename TEXT NOT NULL, display_name TEXT NOT NULL, mime_type TEXT NOT NULL, doc_type TEXT NOT NULL, active_version_id TEXT, desired_version_id TEXT, latest_version_number INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, deleted_at INTEGER)")
   await client.execute("CREATE TABLE IF NOT EXISTS document_versions (id TEXT PRIMARY KEY, document_id TEXT NOT NULL REFERENCES library_documents(id), content_hash TEXT NOT NULL, storage_ref TEXT NOT NULL, file_size INTEGER NOT NULL, version_number INTEGER NOT NULL, status TEXT NOT NULL, error_code TEXT NOT NULL DEFAULT '', error_message TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, indexed_at INTEGER)")
+  await client.execute("CREATE TABLE IF NOT EXISTS library_cleanup_jobs (id TEXT PRIMARY KEY, action TEXT NOT NULL, document_id TEXT NOT NULL, version_id TEXT, remote_object_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, knowledge_base_id TEXT NOT NULL, idempotency_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempt_count INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 10, next_attempt_at INTEGER NOT NULL, claim_token TEXT, claimed_at INTEGER, lease_expires_at INTEGER, last_error_code TEXT NOT NULL DEFAULT '', last_error_message TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, completed_at INTEGER)")
   await client.execute("INSERT OR IGNORE INTO topic_members(topic_id,user_id,role,created_at) SELECT topics.id,chats.user_id,'owner',unixepoch() FROM topics JOIN chats ON chats.id=topics.main_chat_id")
 
   // Older local databases predate Topic/Branch and feedback support. Drizzle's
@@ -141,6 +142,9 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   await client.execute('CREATE INDEX IF NOT EXISTS document_versions_document_idx ON document_versions(document_id,created_at)')
   await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS document_versions_identity_idx ON document_versions(document_id,content_hash)')
   await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS document_versions_number_idx ON document_versions(document_id,version_number)')
+  await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS library_cleanup_jobs_idempotency_idx ON library_cleanup_jobs(idempotency_key)')
+  await client.execute('CREATE INDEX IF NOT EXISTS library_cleanup_jobs_claim_idx ON library_cleanup_jobs(status,next_attempt_at,lease_expires_at)')
+  await client.execute('CREATE INDEX IF NOT EXISTS library_cleanup_jobs_document_idx ON library_cleanup_jobs(document_id)')
 }
 
 async function ensureColumns(
