@@ -7,7 +7,10 @@ from .store import AttachmentStore
 
 def validate_library_configuration(*, library_enabled: bool, vector_enabled: bool) -> None:
     if library_enabled and not vector_enabled:
-        raise RuntimeError("personal_library_requires_vector_index")
+        raise RuntimeError(
+            "PERSONAL_LIBRARY_ENABLED=true requires "
+            "ATTACHMENT_VECTOR_INDEX_ENABLED=true"
+        )
 
 
 def rebuild_library_projection(
