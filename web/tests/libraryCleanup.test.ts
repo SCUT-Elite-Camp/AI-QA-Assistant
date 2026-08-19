@@ -54,8 +54,8 @@ afterEach(async () => {
       rmSync(directories.pop()!, {
         recursive: true,
         force: true,
-        maxRetries: 20,
-        retryDelay: 100,
+        maxRetries: 1,
+        retryDelay: 25,
       })
     } catch (error) {
       // Windows runners can keep the native SQLite handle briefly after
