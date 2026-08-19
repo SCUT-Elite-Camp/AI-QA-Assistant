@@ -15,7 +15,6 @@ import ChatVisibility from '../../components/chat/ChatVisibility.vue'
 import ChatTitle from '../../components/chat/ChatTitle.vue'
 import ChatIndicator from '../../components/chat/Indicator.vue'
 import Navbar from '../../components/Navbar.vue'
-import TopicBar from '../../components/chat/TopicBar.vue'
 import SelectionDrawer from '../../components/chat/SelectionDrawer.vue'
 import DialogueTreeModal from '../../components/chat/DialogueTreeModal.vue'
 import TopicDocumentPool from '../../components/chat/TopicDocumentPool.vue'
@@ -77,16 +76,6 @@ const greeting = computed(() => {
 const visibleMessages = computed(() => {
   return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant') || []
 })
-
-const quickChats = [
-  { label: 'Introduce yourself', icon: 'i-lucide-bot' },
-  { label: "What's the weather today?", icon: 'i-lucide-sun' },
-  { label: 'Help me analyze sales data', icon: 'i-lucide-line-chart' },
-  { label: 'What is a vector database?', icon: 'i-lucide-database' },
-  { label: 'Write a Vue 3 component example', icon: 'i-logos-vue' },
-  { label: 'How to optimize RAG retrieval?', icon: 'i-lucide-search' },
-  { label: 'Explain the Transformer architecture', icon: 'i-lucide-brain' },
-]
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const deepResearchMode = ref(false)
@@ -348,21 +337,6 @@ async function handleUpdateWeightMode(mode: 'deeper' | 'auto' | 'wider') {
       description: `当前模式: ${mode.toUpperCase()}`,
       color: 'success'
     })
-  } catch (err: any) {
-    toast.add({ description: err.message, color: 'error' })
-  }
-}
-
-async function handleRenameTopic(newTitle: string) {
-  if (!topic.value?.id) return
-  try {
-    const updated: any = await $fetch(`/api/topics/${topic.value.id}`, {
-      method: 'PATCH',
-      headers: { [headerName]: csrf() },
-      body: { title: newTitle }
-    })
-    topic.value = updated
-    toast.add({ title: '话题空间重命名成功', color: 'success' })
   } catch (err: any) {
     toast.add({ description: err.message, color: 'error' })
   }
@@ -655,7 +629,6 @@ onMounted(() => {
           :chat-id="data!.id"
           :topic-id="topic?.id"
           @update:open="showSelectionDrawer = $event"
-          @convert-to-branch="handleCreateBranch"
         />
       </div>
     </template>

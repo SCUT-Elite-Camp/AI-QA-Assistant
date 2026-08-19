@@ -1,7 +1,14 @@
 import { ref, shallowRef } from 'vue'
 import type { UIMessage } from 'ai'
-import { $fetch } from 'ofetch'
-import { getErrorMessage } from '../mock/errorMap'
+
+function getErrorMessage(status?: string, fallback?: string): string {
+  const messages: Record<string, string> = {
+    invalid_query: '请输入有效问题。',
+    no_relevant_evidence: '没有找到足够相关的资料。',
+    network_error: '网络请求失败，请稍后重试。',
+  }
+  return (status && messages[status]) || fallback || '请求失败，请稍后重试。'
+}
 
 function getTextFromParts(parts: UIMessage['parts']): string {
   for (const part of parts) {

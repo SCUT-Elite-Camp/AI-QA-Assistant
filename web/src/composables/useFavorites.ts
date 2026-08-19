@@ -16,7 +16,7 @@ export const useFavorites = createSharedComposable(() => {
         to: `/chat/${c.id}`,
         lastFavoritedAt: c.lastFavoritedAt || c.updatedAt || ''
       }))
-    } catch (e) {
+    } catch {
       favoriteChats.value = []
     } finally {
       loading.value = false

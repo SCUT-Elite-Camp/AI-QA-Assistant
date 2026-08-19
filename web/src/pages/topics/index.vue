@@ -9,7 +9,6 @@ const DocumentModal = defineAsyncComponent(() => import('../../components/chat/D
 
 const router = useRouter()
 const toast = useToast()
-const overlay = useOverlay()
 const { csrf, headerName } = useCsrf()
 
 const topics = ref<any[]>([])
@@ -101,7 +100,7 @@ function checkPolling() {
           clearInterval(pollTimer)
           pollTimer = null
         }
-      } catch (e) {}
+      } catch {}
     }, 2500)
   } else if (!hasGenerating && pollTimer) {
     clearInterval(pollTimer)
@@ -185,7 +184,7 @@ async function openSettingsModal(topic: any) {
     if (topicData?.tags && Array.isArray(topicData.tags)) {
       topicTags.value = [...topicData.tags]
     }
-  } catch (e) {
+  } catch {
     topicDocs.value = []
   } finally {
     loadingDocs.value = false
@@ -336,7 +335,7 @@ async function handleDeleteTopic(topic: any) {
           class="w-56"
         />
         <UButton
-          color="emerald"
+          color="success"
           icon="i-heroicons-plus"
           size="sm"
           class="font-semibold shadow-xs"
@@ -358,7 +357,7 @@ async function handleDeleteTopic(topic: any) {
       <UIcon name="i-heroicons-folder-open" class="w-12 h-12 text-zinc-700 mx-auto" />
       <h3 class="text-sm font-semibold text-zinc-300">No Topics</h3>
       <UButton
-        color="emerald"
+        color="success"
         variant="soft"
         size="xs"
         icon="i-heroicons-plus"
@@ -669,7 +668,7 @@ async function handleDeleteTopic(topic: any) {
             />
             <div class="flex items-center gap-3">
               <UButton
-                color="sky"
+                color="info"
                 variant="subtle"
                 size="sm"
                 icon="i-heroicons-sparkles"
@@ -689,7 +688,7 @@ async function handleDeleteTopic(topic: any) {
                 Cancel
               </UButton>
               <UButton
-                color="emerald"
+                color="success"
                 variant="subtle"
                 size="sm"
                 icon="i-heroicons-check"
@@ -731,7 +730,7 @@ async function handleDeleteTopic(topic: any) {
               Cancel
             </UButton>
             <UButton
-              color="emerald"
+              color="success"
               variant="subtle"
               size="sm"
               icon="i-heroicons-check"

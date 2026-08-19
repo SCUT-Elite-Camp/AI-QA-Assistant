@@ -26,15 +26,15 @@ function handleSave() {
 </script>
 
 <template>
-  <UModal :model-value="open" prevent-close :ui="{ width: 'sm:max-w-2xl' }" @update:model-value="emit('update:open', $event)">
-    <UCard :ui="{ ring: '', divide: 'divide-y divide-zinc-200 dark:divide-zinc-800' }">
+  <UModal :model-value="open" prevent-close :ui="{ content: 'sm:max-w-2xl' }" @update:model-value="emit('update:open', $event)">
+    <UCard :ui="{ root: 'ring-0 divide-y divide-zinc-200 dark:divide-zinc-800' }">
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
             <UIcon name="i-heroicons-cpu-chip" class="w-5 h-5 text-emerald-500" />
             <span>话题记忆 (Soul.md)</span>
           </div>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" size="xs" @click="emit('update:open', false)" />
+          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="xs" @click="emit('update:open', false)" />
         </div>
       </template>
 
@@ -43,9 +43,9 @@ function handleSave() {
           <span>Soul 记录了 AI 对本话题的核心实体、场景边界与背景理解，会在请求中约束 Agent 思考。</span>
           <UButton
             v-if="!isEditing"
-            color="emerald"
+            color="success"
             variant="soft"
-            size="2xs"
+            size="xs"
             icon="i-heroicons-pencil-square"
             @click="isEditing = true"
           >
@@ -65,8 +65,8 @@ function handleSave() {
             placeholder="编辑 Soul.md 内容..."
           />
           <div class="flex justify-end gap-2">
-            <UButton color="gray" size="xs" @click="isEditing = false">取消</UButton>
-            <UButton color="emerald" size="xs" icon="i-heroicons-check" @click="handleSave">保存修正</UButton>
+            <UButton color="neutral" size="xs" @click="isEditing = false">取消</UButton>
+            <UButton color="success" size="xs" icon="i-heroicons-check" @click="handleSave">保存修正</UButton>
           </div>
         </div>
       </div>
