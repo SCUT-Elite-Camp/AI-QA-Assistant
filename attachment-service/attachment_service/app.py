@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .config import AttachmentSettings
+from .chunking import chunk_attachment_evidence
 from .crypto import decrypt_file, encrypt_file
 from .parser_runner import parse_with_timeout
 from .office import remove_office_tree
@@ -327,6 +328,13 @@ def _worker() -> None:
                 if not evidence:
                     raise RuntimeError("empty_parse_result")
                 STORE.transition_attachment(attachment["id"], "chunking")
+                evidence = chunk_attachment_evidence(
+                    evidence,
+                    str(attachment.get("version_id") or attachment["id"]),
+                    attachment["extension"],
+                )
+                if not evidence:
+                    raise RuntimeError("empty_parse_result")
                 STORE.replace_evidence(attachment["id"], evidence)
                 STORE.transition_attachment(attachment["id"], "embedding")
                 if not VECTOR_INDEX.enabled:
