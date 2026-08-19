@@ -77,4 +77,6 @@ jobs:
 
       - name: Build Web application
         working-directory: web
-        run: pnpm run build
+        run: |
+          New-Item -ItemType Directory -Force .data | Out-Null
+          pnpm run build
