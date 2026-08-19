@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { defineHandler, HTTPError } from 'nitro'
-import { and, eq, tables, useDrizzle } from '../../../../utils/drizzle'
+import { eq, tables, useDrizzle } from '../../../../utils/drizzle'
 import { requireCsrf, requirePrincipal } from '../../../../utils/attachmentAuth'
 import { attachmentServiceFetch, attachmentServiceJson } from '../../../../utils/attachmentService'
-import { getOrCreateDefaultLibrary } from '../../../../utils/library'
+import { getOrCreateDefaultLibrary, getPersonalLibraryDocument } from '../../../../utils/library'
 import {
   activateDesiredVersion,
   createDocumentWithInitialVersion,
@@ -29,9 +29,9 @@ export default defineHandler(async (event) => {
   const library = await getOrCreateDefaultLibrary(userId)
   const requestedDocumentId = event.req.headers.get('x-document-id')?.trim() || ''
   const existingDocument = requestedDocumentId
-    ? await db.query.libraryDocuments.findFirst({ where: and(eq(tables.libraryDocuments.id, requestedDocumentId), eq(tables.libraryDocuments.ownerUserId, userId), eq(tables.libraryDocuments.knowledgeBaseId, library.id)) })
+    ? await getPersonalLibraryDocument(userId, library.id, requestedDocumentId, db)
     : undefined
-  if (requestedDocumentId && (!existingDocument || existingDocument.deletedAt)) {
+  if (requestedDocumentId && !existingDocument) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'library_document_not_found' })
   }
   const documentId = existingDocument?.id || `doc_${randomUUID().replace(/-/g, '')}`

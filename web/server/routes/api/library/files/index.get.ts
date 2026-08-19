@@ -1,12 +1,14 @@
 import { defineHandler } from 'nitro'
-import { and, desc, eq, sql, tables, useDrizzle } from '../../../../utils/drizzle'
+import { desc, eq, tables, useDrizzle } from '../../../../utils/drizzle'
 import { requirePrincipal } from '../../../../utils/attachmentAuth'
+import { getOrCreateDefaultLibrary, personalLibraryDocumentPredicate } from '../../../../utils/library'
 
 export default defineHandler(async (event) => {
   const userId = await requirePrincipal(event)
   const db = useDrizzle()
+  const library = await getOrCreateDefaultLibrary(userId, db)
   const documents = await db.select().from(tables.libraryDocuments)
-    .where(and(eq(tables.libraryDocuments.ownerUserId, userId), sql`${tables.libraryDocuments.deletedAt} IS NULL`))
+    .where(personalLibraryDocumentPredicate(userId, library.id))
     .orderBy(desc(tables.libraryDocuments.updatedAt))
   const files = await Promise.all(documents.map(async document => {
     const versions = await db.select().from(tables.documentVersions)

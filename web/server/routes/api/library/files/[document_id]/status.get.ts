@@ -10,7 +10,7 @@ export default defineHandler(async (event) => {
     .where(eq(tables.documentVersions.documentId, document.id))
     .orderBy(desc(tables.documentVersions.versionNumber)).limit(1))[0]
   if (!version) throw new HTTPError({ statusCode: 404, statusMessage: 'library_version_not_found' })
-  const synced = await syncLibraryVersion(version)
+  const synced = await syncLibraryVersion(version, document)
   const refreshed = await useDrizzle().query.libraryDocuments.findFirst({ where: eq(tables.libraryDocuments.id, document.id) })
   return { document_id: document.id, active_version_id: refreshed?.activeVersionId || null, version_id: version.id, version_number: version.versionNumber, status: synced.status, error_code: synced.errorCode }
 })
