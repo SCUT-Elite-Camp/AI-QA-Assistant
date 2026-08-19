@@ -17,6 +17,8 @@ const clients: ReturnType<typeof createClient>[] = []
 const directories: string[] = []
 
 async function cleanupDatabase() {
+  // File-backed SQLite is required because libSQL transactions may use a
+  // different connection, which would not share a plain in-memory database.
   const baseDirectory = process.platform === 'win32' ? 'C:\\Users\\Public' : tmpdir()
   const directory = mkdtempSync(join(baseDirectory, 'aiqa-cleanup-test-'))
   directories.push(directory)
@@ -49,9 +51,18 @@ afterEach(async () => {
   while (clients.length) await clients.pop()!.close()
   while (directories.length) {
     try {
-      rmSync(directories.pop()!, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
+      rmSync(directories.pop()!, {
+        recursive: true,
+        force: true,
+        maxRetries: 20,
+        retryDelay: 100,
+      })
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error
+      // Windows runners can keep the native SQLite handle briefly after
+      // client.close(). The runner workspace is ephemeral; a cleanup-only
+      // lock must not turn passing database assertions into a false failure.
+      const code = (error as NodeJS.ErrnoException).code
+      if (code !== 'EPERM' && code !== 'EBUSY') throw error
     }
   }
 })
