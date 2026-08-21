@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { defineShortcuts, useToast } from '@nuxt/ui/composables'
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { $fetch } from 'ofetch'

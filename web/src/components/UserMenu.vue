@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useColorMode } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { useAppConfig } from '@nuxt/ui/runtime/vue/composables/useAppConfig.js'
 import { useUserSession } from '../composables/useUserSession'
 
 defineProps<{

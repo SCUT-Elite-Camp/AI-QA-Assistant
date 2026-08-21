@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useToast } from '@nuxt/ui/composables'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { $fetch } from 'ofetch'
 import Navbar from '../../components/Navbar.vue'
