@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { UIMessage } from 'ai'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
@@ -35,13 +35,13 @@ watch(() => {
 
 const displayDuration = computed(() => {
   if (reasoningDuration.value) {
-    return ${reasoningDuration.value}s
+    return `${reasoningDuration.value}s`
   }
   const rPart = props.message.parts?.find(isReasoningUIPart)
   if (rPart && (rPart as any).text) {
     const textLen = (rPart as any).text.length
     const est = Math.max(2, Math.round(textLen / 25))
-    return ${est}s
+    return `${est}s`
   }
   return '2s'
 })
@@ -134,7 +134,7 @@ const dynamicSubSteps = computed(() => {
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <span :class="isSearchActive ? 'text-emerald-400 font-medium animate-pulse' : 'text-neutral-300'">
-            {{ isSearchActive ? '正在检索知识库文档...' : 已检索知识库 ( 个切块) }}
+            {{ isSearchActive ? '正在检索知识库文档...' : `已检索知识库 (${citations.length} 个切块)` }}
           </span>
           <button
             v-if="citations.length > 0 && !isSearchActive"
@@ -195,7 +195,7 @@ const dynamicSubSteps = computed(() => {
           class="size-3.5 text-neutral-400 transition-transform duration-200"
           :class="{ '-rotate-90': !isReasoningOpen }"
         />
-        <span>{{ isReasoningActive ? '思考中...' : 思考了  }}</span>
+        <span>{{ isReasoningActive ? '思考中...' : `思考了 ${displayDuration}` }}</span>
       </button>
     </div>
 
