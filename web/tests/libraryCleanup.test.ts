@@ -1,58 +1,58 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { eq } from 'drizzle-orm'
 import * as schema from '../server/database/schema'
-import { removeTemporaryDatabaseDirectory } from './sqliteTestUtils'
 import {
   getCleanupJobsForDocument,
   processLibraryCleanupJob,
   softDeleteDocumentWithCleanup,
 } from '../server/utils/libraryCleanup'
 
-const clients: ReturnType<typeof createClient>[] = []
-const directories: string[] = []
+let client: ReturnType<typeof createClient> | undefined
+let testDb: ReturnType<typeof drizzle<typeof schema>> | undefined
 
 async function cleanupDatabase() {
-  // File-backed SQLite is required because libSQL transactions may use a
-  // different connection, which would not share a plain in-memory database.
-  const baseDirectory = process.platform === 'win32' ? 'C:\\Users\\Public' : tmpdir()
-  const directory = mkdtempSync(join(baseDirectory, 'aiqa-cleanup-test-'))
-  directories.push(directory)
-  const client = createClient({ url: `file:${join(directory, 'cleanup.sqlite3')}` })
-  clients.push(client)
-  await client.execute('PRAGMA busy_timeout=5000')
-  const db = drizzle(client, { schema })
-  await migrate(db, { migrationsFolder: 'server/database/migrations' })
-  await db.insert(schema.knowledgeBases).values({
+  if (!client || !testDb) {
+    // libSQL transactions may use another connection. A suite-scoped shared
+    // memory database keeps those connections together without OS file locks.
+    client = createClient({ url: 'file::memory:?cache=shared' })
+    await client.execute('PRAGMA busy_timeout=5000')
+    testDb = drizzle(client, { schema })
+    await migrate(testDb, { migrationsFolder: 'server/database/migrations' })
+  }
+  await client.execute('DROP TRIGGER IF EXISTS fail_cleanup_insert')
+  await client.execute('DROP TRIGGER IF EXISTS fail_document_delete')
+  await client.execute('DELETE FROM library_cleanup_jobs')
+  await client.execute('DELETE FROM document_versions')
+  await client.execute('DELETE FROM library_documents')
+  await client.execute('DELETE FROM knowledge_bases')
+  await testDb.insert(schema.knowledgeBases).values({
     id: 'kb-a', name: 'My Library', scopeType: 'personal', ownerUserId: 'owner-a',
     createdAt: new Date(), updatedAt: new Date(),
   })
-  await db.insert(schema.libraryDocuments).values({
+  await testDb.insert(schema.libraryDocuments).values({
     id: 'doc-a', knowledgeBaseId: 'kb-a', ownerUserId: 'owner-a',
     sourceScope: 'personal', sourceType: 'upload', filename: 'report.md',
     displayName: 'report.md', mimeType: 'text/markdown', docType: 'md',
     activeVersionId: 'ver-a', desiredVersionId: 'ver-a', latestVersionNumber: 1,
     createdAt: new Date(), updatedAt: new Date(),
   })
-  await db.insert(schema.documentVersions).values({
+  await testDb.insert(schema.documentVersions).values({
     id: 'ver-a', documentId: 'doc-a', contentHash: 'hash-a', storageRef: 'remote-a',
     fileSize: 42, versionNumber: 1, status: 'READY',
     createdAt: new Date(), updatedAt: new Date(),
   })
-  return { client, db }
+  return { client, db: testDb }
 }
 
-afterEach(async () => {
+afterEach(() => {
   vi.restoreAllMocks()
-  while (clients.length) await clients.pop()!.close()
-  while (directories.length) {
-    removeTemporaryDatabaseDirectory(directories.pop()!)
-  }
+})
+
+afterAll(() => {
+  client?.close()
 })
 
 describe('personal library durable cleanup outbox', () => {

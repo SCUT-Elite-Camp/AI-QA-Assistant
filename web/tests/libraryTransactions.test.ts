@@ -1,12 +1,8 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import * as schema from '../server/database/schema'
-import { removeTemporaryDatabaseDirectory } from './sqliteTestUtils'
 import {
   createDocumentWithInitialVersion,
   createLibraryVersion,
@@ -17,23 +13,28 @@ import {
 
 type TestDb = ReturnType<typeof drizzle<typeof schema>>
 
-const clients: ReturnType<typeof createClient>[] = []
-const databaseDirectories: string[] = []
+let client: ReturnType<typeof createClient> | undefined
+let testDb: TestDb | undefined
 
 async function database() {
-  const baseDirectory = process.platform === 'win32' ? 'C:\\Users\\Public' : tmpdir()
-  const directory = mkdtempSync(join(baseDirectory, 'aiqa-vitest-library-'))
-  databaseDirectories.push(directory)
-  const client = createClient({ url: `file:${join(directory, 'test.sqlite3')}` })
-  clients.push(client)
-  const db = drizzle(client, { schema })
-  await client.execute('PRAGMA busy_timeout=5000')
-  await migrate(db, { migrationsFolder: 'server/database/migrations' })
-  await db.insert(schema.knowledgeBases).values({
+  if (!client || !testDb) {
+    // Drizzle transactions may acquire another libSQL connection. A
+    // suite-scoped shared memory database preserves those semantics without
+    // creating a Windows file handle that teardown must unlink.
+    client = createClient({ url: 'file::memory:?cache=shared' })
+    testDb = drizzle(client, { schema })
+    await client.execute('PRAGMA busy_timeout=5000')
+    await migrate(testDb, { migrationsFolder: 'server/database/migrations' })
+  }
+  await client.execute('DELETE FROM library_cleanup_jobs')
+  await client.execute('DELETE FROM document_versions')
+  await client.execute('DELETE FROM library_documents')
+  await client.execute('DELETE FROM knowledge_bases')
+  await testDb.insert(schema.knowledgeBases).values({
     id: 'kb-a', name: 'My Library', scopeType: 'personal', ownerUserId: 'user-a',
     createdAt: new Date(), updatedAt: new Date(),
   })
-  return db
+  return testDb
 }
 
 function initialRows(suffix = '') {
@@ -71,11 +72,8 @@ async function visibleDocumentCount(db: TestDb) {
   return rows.filter(row => row.sourceScope === 'personal' && row.deletedAt === null).length
 }
 
-afterEach(async () => {
-  while (clients.length) await clients.pop()!.close()
-  while (databaseDirectories.length) {
-    removeTemporaryDatabaseDirectory(databaseDirectories.pop()!)
-  }
+afterAll(() => {
+  client?.close()
 })
 
 describe('personal library document/version transactions', () => {
