@@ -97,6 +97,10 @@ python scripts/check_contract.py
 python scripts/run_week4_acceptance.py
 ```
 
+CP2 Local Deep Research Week 1 的固定环境、单命令测试、Chat 基线和
+LangGraph Spike 说明见
+[`docs/cp2/week1_member_b_delivery.md`](docs/cp2/week1_member_b_delivery.md)。
+
 ## API 示例
 
 ```bash

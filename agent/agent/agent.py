@@ -49,13 +49,17 @@ class Agent:
         corrective_retrieval: CorrectiveRetrievalPlanner | None = None,
         citation_checker: CitationChecker | None = None,
         orchestrator: AgentOrchestrator | None = None,
+        toolset_registry: ToolsetRegistry | None = None,
+        audit_service: AuditService | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
         self.trace_service = TraceService()
-        self.audit_service = AuditService()
+        self.audit_service = audit_service or AuditService()
         # Toolset owns registration; Agent only consumes it through an adapter.
-        toolset_registry = ToolsetRegistry(tools=tools)
+        if toolset_registry is not None and tools is not None:
+            raise ValueError("tools and toolset_registry cannot both be provided")
+        toolset_registry = toolset_registry or ToolsetRegistry(tools=tools)
         self.registry = ToolRegistryAdapter(toolset_registry)
         self.memory = memory or get_default_memory()
 
