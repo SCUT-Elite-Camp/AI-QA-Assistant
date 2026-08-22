@@ -4,7 +4,7 @@
 
 实现受用户控制的会话事实。Fact 是独立于 Snapshot 的结构化状态：只在确认后可作为 `memoryBrief` 或显式回忆的依据。
 
-前置：`03`、`04`、`06`、`07`、`08`。负责人：Agent + Web。后续依赖：`10`、`12`。
+前置：`03`、`04`、`06`、`07`、`08`、`09a`。负责人：Agent + Web。后续依赖：`10`、`12`。
 
 ## 生命周期与业务规则
 
@@ -40,7 +40,7 @@ POST   /api/chats/:id/memory/facts/:factId/revoke
 
 `GET /api/chats/:id/memory/facts` 不接受浏览器的 status/revision 参数；服务器固定返回当前 chat、当前 `history_revision`、当前 actor 可见且未过期的 `PROPOSED` 与 `CONFIRMED` Fact，按 `created_at ASC, id ASC` 排序，且从不返回 `REVOKED`、旧 revision 或其他用户 Fact。该 GET 是 Fact UI 的唯一读取来源。
 
-confirm/revoke 的状态机、proposal 去重键和 HTTP 响应已由 `09a` 固定。confirm 仅接受 Fact ID，不接受浏览器改写的 user/chat/value/scope；Repository 用 actor/chat/fact/status 条件读取和更新。
+confirm/revoke 的状态机、proposal 去重键和 HTTP 响应已由已完成的 `09a` 固定。confirm 仅接受 Fact ID，不接受浏览器改写的 user/chat/value/scope；Repository 用 actor/chat/fact/status 条件读取和更新。
 
 ## 验收
 

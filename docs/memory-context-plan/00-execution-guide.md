@@ -79,14 +79,14 @@ RAG 仍只负责外部知识与 citations；Memory 不能产生或支撑 RAG cit
 12. `06-agent-prompt-and-recall.md`
 13. `07-post-turn-compaction.md`
 14. `08-history-mutation-and-deletion.md`
-15. `09-session-fact-lifecycle.md`
-16. `09a-fact-idempotency-contract.md`
+15. `09a-fact-idempotency-contract.md`
+16. `09-session-fact-lifecycle.md`
 17. `10-fact-web-experience.md`
 18. `11-security-observability-and-flags.md`
 19. `12-test-and-acceptance.md`
 20. `13-rollout-and-handoff.md`
 
-`01` 完成后必须先完成 `12a`，使后续所有 Web 单元从第一天就有隔离测试。`02`、`02a` 与 `02b` 必须全部完成，才可建 Memory 表或接入流。`04a` 是唯一服务间接口规范，禁止选择其他返回通道或添加未定义的私有调用。`06a` 固定 Agent 施工基线，`06b` 完成迁移前适配检查后，`04a`、`05` 与 `06` 才能按各自边界实施；`06` 必须正式以前述四个单元为前置。`07` 先固定敏感值过滤规则，`09` 只能复用该规则。`09` 与 `09a` 一起完成后，`10` 才能开始。
+`01` 完成后必须先完成 `12a`，使后续所有 Web 单元从第一天就有隔离测试。`02`、`02a` 与 `02b` 必须全部完成，才可建 Memory 表或接入流。`04a` 是唯一服务间接口规范，禁止选择其他返回通道或添加未定义的私有调用；其阶段性端点行为和开关门禁由 04a 自身定义。`06a` 固定 Agent 施工基线，`06b` 完成迁移前适配检查后，`04a`、`05` 与 `06` 才能按各自边界实施；`06` 必须正式以前述四个单元为前置。`07` 先固定敏感值过滤规则，`09a` 先固定 Fact 去重/幂等合同，`09` 必须复用两者；`09` 与 `09a` 一起完成后，`10` 才能开始。
 
 ## 每份施工单必须包含的执行信息
 

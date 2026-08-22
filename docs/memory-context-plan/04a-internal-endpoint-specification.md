@@ -10,6 +10,40 @@
 `D:\project\AI-QA-Assistant`（`web-dev`）中既有 BFF internal client、路由选择和单次回退
 实现只作审查证据，不得重复施工；若审查发现它与本契约不一致，停止并单独报告跨层契约问题。
 
+## 允许修改范围
+
+- `D:\project\AI-QA-Assistant-agent-memory\agent\app.py`（仅注册 internal router；不得改 lifespan、warm-up、`/ready`）
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\api\chat_routes.py`（仅删除旧公开 reset route）
+- 新建 `D:\project\AI-QA-Assistant-agent-memory\agent\agent\api\internal_memory_routes.py`
+- 对应 internal route、token dependency、FastAPI dependency override 与公开 route 拒绝内部字段的 tests
+- `D:\project\AI-QA-Assistant-agent-memory\agent\docs\API_CONTRACT.md`（仅内部 endpoint 说明）
+
+禁止修改 `schemas/chat.py`、`config/settings.py`、`agent.py`、`orchestration/orchestrator.py`、
+`runtime/runner.py`、`runtime/lifecycle.py`、`tools/executor.py`、`deep_research/**` 或 Web 文件；DTO/
+配置属于 `04`，Resolver/Pipeline 属于 `05`/`06`，Planner 属于 `07`。
+
+## 分阶段端点行为与开关门禁
+
+`04a` 必须先完成 transport/auth/reset，不能假装 05、06、07 已完成。所有部署环境在 `07`
+审查通过前都必须保持 Web `PERSISTENT_MEMORY_ENABLED=false`，因此 BFF 不会把真实浏览器流量
+送入私有 endpoint；Agent 开关只能在 endpoint contract test 的局部 override 中开启。
+
+在 `04a` 完成后的固定中间状态：
+
+1. `POST /api/internal/chat` 在 Agent persistent 开关关闭时仍返回固定 409
+   `persistent_memory_disabled`。测试 override 开关后，handler 只复用共享 `get_agent()` 执行现有
+   Chat，并返回既定 `InternalChatResponse` 与空 `fact_proposals`；它只做 DTO/token 边界校验，
+   不解析或注入 `memory_context`，不生成 Fact。
+2. `POST /api/internal/memory/compaction-plan` 在 `07` 前固定返回
+   `{ "should_compact": false }`，不读写数据库、不生成 Snapshot。该稳定 no-op 使 Web 在测试中
+   可以安全调用；`07` 是唯一可替换为 `CompactionPlanner` 的单元。
+3. `POST /api/internal/memory/reset-short-window` 在 `04a` 即完整可用：只调用旧
+   `ConversationMemory.clear(chat_id)`，不读写 Snapshot/Fact。
+
+`06` 是唯一可把 internal chat handler 接到 `ContextResolver`、Prompt/Recall 的单元；完成前不得
+声称 persistent context 已生效。`07` 审查通过且 Web/Agent 两侧开关配置一致后，才允许在集成
+环境开启 persistent Memory；`13` 仍控制任何发布环境的启用顺序。
+
 ## 鉴权
 
 所有 `/api/internal/*` endpoint 要求 header：
@@ -101,7 +135,7 @@ BFF 仅在编辑、重生成或删除 chat 的数据库事务提交成功后调�
 
 ## 实施与测试
 
-- Agent 新建 internal router/dependency，删除公开 reset route，公开 `/api/chat` 不接受 `memory_context`。在 5955 上，`app.py` 保留 `ApplicationContainer`、warmup 和 `/ready`，只额外执行 `app.include_router(internal_memory_router, prefix="/api/internal")`。
+- Agent 新建 internal router/dependency，删除公开 reset route，公开 `/api/chat` 不接受 `memory_context`。在 5955 上，`app.py` 保留 `ApplicationContainer`、warmup 和 `/ready`，只额外执行 `app.include_router(internal_memory_router, prefix="/api/internal")`；三个端点必须严格遵守上述阶段性语义。
 - 在 Agent worktree 为缺 token、错误 token、外部 public 请求传 memory 字段、DTO version 不匹配、开关关闭 409 和 `get_agent()` dependency override 增加 contract tests。不得构造新的 Agent。
 - 审查 Web 已有的 server-only `agentInternalClient.ts`、5 秒超时、`isPersistentMemoryEnabled()`、5xx 处理及 `persistent_memory_disabled` 单次公开回退；本单元不修改 Web 实现。
 - 更新内部 API 文档，并明确 `ChatResponse` 不变。
