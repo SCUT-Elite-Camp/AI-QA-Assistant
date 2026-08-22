@@ -104,6 +104,37 @@ Fields:
 `clarification_required` keeps `answer` empty and puts the Agent's clarification
 question in `message`, matching the existing Web error/status rendering path.
 
+## Internal Persistent Memory contract (not a public endpoint)
+
+The public `POST /api/chat` request and `ChatResponse` above remain unchanged.
+They reject the internal-only `memory_context` field. The token-protected
+`/api/internal/*` routes are introduced separately in Unit 04a; Unit 04 only
+defines their Pydantic DTOs and configuration.
+
+`InternalChatRequest` contains all existing `ChatRequest` fields plus a required
+`memory_context`:
+
+```text
+InternalActor { user_id, authenticated: true }
+MemoryMessage { id, sequence, revision, role, content }
+MemorySnapshotInput { id, version, revision, covered_to_sequence, summary }
+MemoryFactInput { id, category, value, expires_at: epoch-ms | null }
+MemoryContextInput { actor, chat_id, revision, current_message_id,
+                     current_sequence, snapshot: nullable, facts, tail }
+```
+
+The future internal chat response is
+`InternalChatResponse { response: ChatResponse, memory_decision }`. Its
+`memory_decision` may contain a `context_artifact`, `recall`, and
+`fact_proposals`; `fact_proposals` is always an empty array through Units 01--08.
+The compaction and short-window reset DTOs are also internal-only. BFF remains
+the only writer of ChatMessage, Snapshot, and Fact records.
+
+Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
+`AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
+the example file intentionally leaves it empty. Unit 04a defines the constant-
+time comparison, 403/409 behavior, and endpoint registration.
+
 ## Week 3 Quality Rules
 
 - Empty or whitespace-only `query` returns `invalid_query` before retrieval or LLM calls.
