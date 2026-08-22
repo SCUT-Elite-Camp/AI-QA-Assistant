@@ -1,7 +1,8 @@
-# CP2 Week 1 reproducible environment (Python 3.11.15)
+# CP2 Week 1 reproducible environment (Python 3.11; validated on Windows with 3.11.9)
 fastapi==0.139.0
 httpx==0.28.1
 pydantic==2.13.4
+python-dotenv==1.0.1
 pytest==9.1.1
 uvicorn==0.41.0
 langgraph==1.2.11
