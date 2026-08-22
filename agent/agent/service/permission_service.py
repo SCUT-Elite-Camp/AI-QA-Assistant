@@ -5,8 +5,10 @@
 设计要点：
 - 不做缓存，每次检索实时查询（权限变更立即生效，无需重启或失效处理）。
 - 管理员（users.role == 'admin'）返回 None，表示不过滤、可访问全部文档。
-- 查询失败时 fail-open（返回 None），避免权限服务故障阻断问答主流程；
-  故障会记录 warning 日志，便于后续评估是否改为 fail-closed。
+- 查询失败时的行为由 ``PERMISSION_FAIL_OPEN`` 配置控制：
+  - False（默认，fail-closed）：返回空列表，拒绝全部文档访问，遵循最小权限。
+  - True（fail-open）：返回 None（不过滤），供排查/降级时临时开启。
+  故障始终记录 warning 日志。
 """
 
 import logging
@@ -75,8 +77,8 @@ class PermissionService:
     def get_accessible_doc_ids(self, user_id: str) -> Optional[list[str]]:
         """返回用户可访问的 doc_id 列表。
 
-        返回 None 表示不过滤（管理员或查询异常），
-        返回空列表表示该用户当前没有任何可访问文件。
+        返回 None 表示不过滤（管理员或配置为 fail-open 时的查询异常），
+        返回空列表表示该用户当前没有任何可访问文件（或 fail-closed 时的查询异常）。
         """
         if not user_id:
             return None
@@ -97,4 +99,8 @@ class PermissionService:
                 user_id,
                 exc,
             )
-            return None
+            # fail-open（返回 None）仅在 PERMISSION_FAIL_OPEN=true 时允许，
+            # 默认 fail-closed（返回空列表），避免权限服务故障时权限全开。
+            if settings.PERMISSION_FAIL_OPEN:
+                return None
+            return []

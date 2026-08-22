@@ -59,6 +59,16 @@ class Settings(BaseModel):
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
 
+    # Agent 服务共享密钥：Web 可信端调用 /api/* 业务接口时携带
+    # `Authorization: Bearer <AGENT_API_KEY>`。未配置时 agent 业务接口
+    # 返回 503，杜绝外部直连端口伪造 user_id 绕过权限隔离。
+    AGENT_API_KEY: str = os.getenv("AGENT_API_KEY", "")
+
+    # 权限服务查询异常时的策略：
+    # - False（默认，fail-closed）：返回空文档列表，拒绝全部文档访问，遵循最小权限。
+    # - True（fail-open）：返回 None（不过滤），供排查/降级使用，需谨慎开启。
+    PERMISSION_FAIL_OPEN: bool = _env_bool("PERMISSION_FAIL_OPEN", False)
+
     # Web 层 SQLite 数据库路径，Agent 层权限服务据此查询文件权限。
     # 默认定位到 AI-QA-Assistant/web/.data/sqlite.db。
     WEB_SQLITE_PATH: str = os.getenv(

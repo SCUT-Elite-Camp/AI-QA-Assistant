@@ -101,6 +101,7 @@ python scripts/run_week4_acceptance.py
 
 ```bash
 curl -X POST "http://localhost:8000/api/chat" \
+  -H "Authorization: Bearer <AGENT_API_KEY>" \
   -H "Content-Type: application/json" \
   -d "{\"query\":\"项目 Q1 阶段需要完成哪些功能？\",\"stream\":false,\"retrieval_mode\":\"hybrid\"}"
 ```
@@ -137,7 +138,36 @@ MEMORY_ENABLED=true
 MAX_MEMORY_MESSAGES=10
 MAX_AGENT_ITERATIONS=5
 MAX_REPEATED_TOOL_CALLS=2
+
+# 接口共享密钥（必配）：Web 可信端调用 /api/* 业务接口时携带
+# `Authorization: Bearer <AGENT_API_KEY>`。未配置时业务接口返回 503，
+# 防止外部直连 agent 端口伪造 user_id 绕过权限隔离。
+AGENT_API_KEY=
+
+# 权限查询异常策略（默认 false = fail-closed，拒绝全部文档；故障时避免权限全开）
+PERMISSION_FAIL_OPEN=false
 ```
+
+### 接口认证说明
+
+Agent 服务仅接受 Web 可信端的调用（内网单向可信链路）。所有 `/api/*` 业务接口
+（`/api/chat`、`/api/chat/history`、`/api/chat/stream`、`/api/tools`、
+`/api/chat/memory/{id}`、`/api/topics/summarize`）都要求携带共享密钥：
+
+```bash
+curl -X POST "http://localhost:8000/api/chat" \
+  -H "Authorization: Bearer <AGENT_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\":\"...\",\"retrieval_mode\":\"hybrid\",\"user_id\":\"...\"}"
+```
+
+- `AGENT_API_KEY` 未配置：业务接口返回 `503`（拒绝服务）。
+- 缺少/错误的密钥：返回 `401`。
+- `GET /health` 保持匿名（供探活）。
+- 校验使用 `secrets.compare_digest` 恒定时间比较，防时序攻击。
+
+`AGENT_API_KEY` 需与 Web 层 `web/.env` 中配置的值保持一致（Web 转发 session 注入的
+`user_id` 并附带相同的 Bearer 密钥）。
 
 本地 Ollama 启动后，可通过兼容 OpenAI Chat Completions 的
 `/v1/chat/completions` 接口接入 `llama3.1`，通常不需要配置
