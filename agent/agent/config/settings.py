@@ -69,6 +69,14 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
         ge=1,
     )
+    # Persistent Memory is separately gated and remains disabled until rollout.
+    PERSISTENT_MEMORY_ENABLED: bool = Field(
+        default_factory=lambda: _env_bool("PERSISTENT_MEMORY_ENABLED", False),
+    )
+    # Empty by default; 04a rejects private requests unless the configured token matches.
+    AGENT_INTERNAL_TOKEN: str = Field(
+        default_factory=lambda: os.getenv("AGENT_INTERNAL_TOKEN", ""),
+    )
     MAX_AGENT_ITERATIONS: int = Field(
         default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
         ge=1,
