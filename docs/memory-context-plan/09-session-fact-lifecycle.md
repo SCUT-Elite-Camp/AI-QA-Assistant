@@ -4,7 +4,7 @@
 
 实现受用户控制的会话事实。Fact 是独立于 Snapshot 的结构化状态：只在确认后可作为 `memoryBrief` 或显式回忆的依据。
 
-前置：`03`、`04`、`06`、`08`。负责人：Agent + Web。后续依赖：`10`、`12`。
+前置：`03`、`04`、`06`、`07`、`08`。负责人：Agent + Web。后续依赖：`10`、`12`。
 
 ## 生命周期与业务规则
 
@@ -22,7 +22,9 @@
 - Agent 只对用户的明确记忆意图提出候选，如“请记住我的目标是…”。
 - 普通聊天、模型回答、检索内容、工具输出绝不生成 Fact proposal。
 - 提议返回 category、规范化 value、source message ID；不直接写 CONFIRMED。Web Repository 按类别固定计算到期时间，忽略 Agent 提供的任何 `expires_at`：`PLAN_CONSTRAINT=30天`，`GOAL/PREFERENCE=90天`。
-- 新建共享纯函数 `isSensitiveMemoryValue(text)`，Fact proposal、手动保存和 compaction 共用。命中以下任一规则返回 true 并拒绝保存/摘要：大小写不敏感的 `password|passwd|secret|token|api key|private key|access key`；18 位中国身份证格式 `\b\d{17}[\dXx]\b`；去除非数字后长度 13-19 的连续数字；或包含 `银行卡|银行账户|账号|住址|详细地址|诊断|病历|疾病|药物|金融账户`。拒绝时不记录原文到日志。
+- 复用 `07` 已冻结的 `isSensitiveMemoryValue(text)` 规则。Agent 的纯 helper 已在 `07` 创建；
+  Web 需要以 TypeScript 实现相同语义，不能跨语言直接 import Python，也不得自行增删匹配规则。
+  必须与 `07` 的表驱动命中/非命中样例一致；命中时拒绝保存/摘要，且不记录原文到日志。
 - Web 还必须支持用户手动从一条 user message 发起 proposal；服务器重新验证 message 属于 actor/chat/revision。
 
 ## 内部接口

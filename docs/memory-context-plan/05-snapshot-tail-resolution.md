@@ -4,7 +4,10 @@
 
 将 Web 提供的同 revision Snapshot、确认 Fact 与未覆盖 Tail 规则式组装为 Agent 可消费的 `ContextArtifact`。本单元不落库、不压缩、不调用 LLM。
 
-前置：`04`。负责人：Agent。后续依赖：`06`、`07`。
+前置：`04`、`04a`。负责人：Agent。后续依赖：`06`、`07`。
+
+施工位置：`D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`）。Web 已有的
+`memory_context` 构造只作审查证据；本单元不修改 `D:\project\AI-QA-Assistant`。
 
 ## 目标行为
 
@@ -18,12 +21,12 @@
 
 ## 允许修改范围
 
-- 新建 `D:\project\AI-QA-Assistant\agent\agent\memory\persistent_models.py`
-- 新建 `D:\project\AI-QA-Assistant\agent\agent\memory\context_resolver.py`
-- 修改 `agent/agent/config/settings.py`，仅增加配置读取
-- 新建 `agent/tests/unit/test_context_resolver.py`
+- 新建 `D:\project\AI-QA-Assistant-agent-memory\agent\agent\memory\persistent_models.py`
+- 新建 `D:\project\AI-QA-Assistant-agent-memory\agent\agent\memory\context_resolver.py`
+- 修改 `D:\project\AI-QA-Assistant-agent-memory\agent\agent\config\settings.py`，仅增加配置读取
+- 新建 `D:\project\AI-QA-Assistant-agent-memory\agent\tests\unit\test_context_resolver.py`
 
-`ContextResolver` 是纯函数式 Chat Memory 组件：不得导入 `ApplicationContainer`、`deep_research`、数据库、HTTP client 或 LLM。5955 的共享 Agent 生命周期不改变本单元的输入输出；接入 lifecycle 和最终 Prompt 的工作分别属于 `04a`、`06b`、`06`。
+`ContextResolver` 是纯函数式 Chat Memory 组件：不得导入 `ApplicationContainer`、`deep_research`、数据库、HTTP client 或 LLM。5955 的共享 Agent 生命周期不改变本单元的输入输出；internal endpoint 接线属于 `04a`，最终 Prompt 接入属于 `06`；`06b` 只记录迁移前核对，不含代码接线。
 
 固定默认配置：`PERSISTENT_MEMORY_ENABLED=false`、`MEMORY_TAIL_MESSAGES=8`、`MEMORY_BRIEF_MAX_CHARS=1200`、`MEMORY_MODEL_HISTORY_MAX_CHARS=6000`。配置必须有合法范围，不能依赖硬编码常量。
 

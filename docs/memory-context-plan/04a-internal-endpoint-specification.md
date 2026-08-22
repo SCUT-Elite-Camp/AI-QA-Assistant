@@ -6,6 +6,10 @@
 
 前置：`04`。负责人：Web + Agent。后续：`05`、`06`、`07`、`09`。
 
+施工位置：Agent endpoint 只在 `D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`）实施。
+`D:\project\AI-QA-Assistant`（`web-dev`）中既有 BFF internal client、路由选择和单次回退
+实现只作审查证据，不得重复施工；若审查发现它与本契约不一致，停止并单独报告跨层契约问题。
+
 ## 鉴权
 
 所有 `/api/internal/*` endpoint 要求 header：
@@ -97,9 +101,9 @@ BFF 仅在编辑、重生成或删除 chat 的数据库事务提交成功后调�
 
 ## 实施与测试
 
-- Agent 新建 internal router/dependency；删除公开 reset route；公开 `/api/chat` 不接受 `memory_context`。在 5955 上，`app.py` 保留 `ApplicationContainer`、warmup 和 `/ready`，只额外执行 `app.include_router(internal_memory_router, prefix="/api/internal")`。
-- Web 新建 `agentInternalClient.ts`，仅 server import；设 5 秒超时与结构化错误类型。它必须暴露固定的 `isPersistentMemoryEnabled()`，只有路由选择条件满足时才允许请求三个私有端点；收到 `persistent_memory_disabled` 时只允许一次公开调用回退。
-- 为两端加 schema contract tests：缺 token、错误 token、外部 public 请求传 memory 字段、DTO version 不匹配、Agent 5xx、Agent persistent 开关关闭时的单次回退；并断言 internal router 使用 `get_agent()` 的 dependency override，而不是构造新的 Agent。
+- Agent 新建 internal router/dependency，删除公开 reset route，公开 `/api/chat` 不接受 `memory_context`。在 5955 上，`app.py` 保留 `ApplicationContainer`、warmup 和 `/ready`，只额外执行 `app.include_router(internal_memory_router, prefix="/api/internal")`。
+- 在 Agent worktree 为缺 token、错误 token、外部 public 请求传 memory 字段、DTO version 不匹配、开关关闭 409 和 `get_agent()` dependency override 增加 contract tests。不得构造新的 Agent。
+- 审查 Web 已有的 server-only `agentInternalClient.ts`、5 秒超时、`isPersistentMemoryEnabled()`、5xx 处理及 `persistent_memory_disabled` 单次公开回退；本单元不修改 Web 实现。
 - 更新内部 API 文档，并明确 `ChatResponse` 不变。
 
 ## 完成标准

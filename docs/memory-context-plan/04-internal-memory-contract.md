@@ -2,9 +2,14 @@
 
 ## 目标
 
-定义唯一的服务间 DTO，使 BFF 提供可信持久数据、Agent 提供纯记忆决策，公开 `ChatResponse` 保持兼容。此单元先冻结 schema、鉴权和 mock；不接入真实 Prompt。
+定义唯一的服务间 DTO，使 BFF 提供可信持久数据、Agent 提供纯记忆决策，公开 `ChatResponse` 保持兼容。本单元只冻结 schema、开关、鉴权约束和 mock；不创建私有 HTTP endpoint，不接入真实 Prompt。
 
 前置：`01`、`02`、`03`。负责人：Web + Agent。后续依赖：`05`、`06`、`07`、`09`。
+
+施工位置：Web 证据位于 `D:\project\AI-QA-Assistant`（`web-dev`）；Agent DTO/配置只在
+`D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`）实施。当前 Web 契约实现
+已完成，只能审查；本单元当前待实施范围是 Agent DTO、配置和内部契约文档。三条私有端点、
+token dependency、路由接线和端到端 contract tests 一律属于 `04a`。
 
 ## 边界
 
@@ -19,8 +24,11 @@ MemorySnapshotInput { id, version, revision, covered_to_sequence, summary }
 MemoryFactInput { id, category, value, expires_at }
 MemoryContextInput { actor, chat_id, revision, current_message_id,
                      current_sequence, snapshot?, facts[], tail[] }
-ChatRequest.memory_context?: MemoryContextInput
+InternalChatRequest { <现有 ChatRequest 字段>, memory_context: MemoryContextInput }
 ```
+
+公开 `ChatRequest` 不增加 `memory_context`。只有 `InternalChatRequest` 可以携带它，并且
+只能由 token 保护的 `04a` 私有路由解析；浏览器向公开 `/api/chat` 发送同名字段必须被拒绝。
 
 Agent 内部返回额外 `MemoryDecision`，但不得加到公开 `ChatResponse`：
 
@@ -46,23 +54,29 @@ MemoryDecision {
 - `agent/runtime/lifecycle.py` 与 `agent/tools/executor.py` 是冻结 runtime 文件，不得为接入 Memory 而回退或覆盖；
 - Deep Research 是独立模块。内部 Memory 请求只服务 Chat，不能携带 Research ID、不能触发 Research Job，也不能调用 `agent/deep_research/**`。
 
+## 允许修改范围
+
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\schemas\chat.py`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\config\settings.py`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\.env.example`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\docs\API_CONTRACT.md`（或同级内部契约文档）
+- 对应 DTO/config unit tests；Web 文件只允许审查既有契约证据。
+
+禁止修改 `app.py`、`api/chat_routes.py`、新增 internal router、`agent.py`、`orchestration/orchestrator.py`、`runtime/runner.py` 或任何 Web 路由；这些接线在 `04a`、`06`、`07` 各自施工。
+
 ## 实施步骤
 
-1. Web 新建 `memoryContract.ts`，Agent 新建对应 Pydantic DTO；字段、枚举、null 语义和时间格式必须逐项一致。
-2. 为 Agent 添加 `AGENT_INTERNAL_TOKEN` 设置项；使用常量时间比较，缺失/错误 header 返回 403。Web 只从环境变量读取 token。
-3. BFF 路由选择固定如下：仅当 Web `PERSISTENT_MEMORY_ENABLED=true`、actor 已认证且用户消息已持久化时，通过 Repository 构造 `memory_context` 并调用私有端点；否则调用公开 `/api/chat`，且不传任何内部字段。私有端点返回 `409 persistent_memory_disabled` 时，BFF 只记录配置错误并仅重试一次公开 `/api/chat`；其他私有端点错误按 `11` 的降级矩阵处理，不可把内部字段发送到公开端点。
-4. Agent 验证 `current_message_id/current_sequence` 与 Tail 的 revision/sequence 一致；无效输入视为内部契约错误并安全降级，不可相信其中的 user ID。
-5. 实现 `04a` 的三个私有端点、token dependency 与 mock contract tests；internal router 中的 `Agent` dependency 必须复用 `chat_routes.get_agent()`。公开 `/api/chat` 仅保留旧兼容请求，不读取任何 browser 传来的 `memory_context`。
-6. 更新 `agent/docs/API_CONTRACT.md` 或新建同级内部契约文档，明确公开 JSON 的五个核心字段不变。
+1. 审查既有 `web-dev` 的 `memoryContract.ts`，在 Agent 新建对应 Pydantic DTO；字段、枚举、null 语义和时间格式必须逐项一致。`InternalChatRequest` 与公开 `ChatRequest` 必须是独立类型；公开 `ChatRequest`/`ChatResponse` 不得因内部 DTO 改变。
+2. 为 Agent 添加 `AGENT_INTERNAL_TOKEN` 与持久 Memory 开关设置项，默认关闭，并写明未来 `04a` 必须使用常量时间比较：缺失/错误 header 为 403，开关关闭为固定 409。此步只提供配置和 schema，不注册 dependency 或路由。
+3. 更新内部契约文档并添加 DTO/config mock tests：未知字段、错误枚举和非法时间格式必须被拒绝；`memory_context` 只能属于内部 request 类型。BFF 路由选择、可信 actor/revision/Tail 校验和错误回退由 `04a` 实施。
 
 ## 验收
 
 - DTO 双端样例可序列化/反序列化；未知字段与错误枚举被拒绝。
-- 没有内部 token 的请求不能注入 Fact、Snapshot、actor。
-- BFF 发出的 Memory input 与 owner chat/revision 一致。
-- Web 开关关闭或匿名 actor 时，BFF 固定走公开 `/api/chat`，不调用任何私有 Memory endpoint；Agent 返回固定 409 时，BFF 恰好回退一次公开调用且不泄露内部字段。
+- 公开 `ChatRequest` 不包含也不能解析 `memory_context`；内部 DTO 才能表达 actor、Snapshot、Fact 和 Tail。
+- 内部 DTO 清晰表达 owner chat/revision、current message 和 Tail 的校验所需字段；实际可信输入校验与 BFF 回退测试由 `04a` 验收。
 - 公开 `/api/chat` 的 answer/status/citations 契约无破坏性变化。
 
 ## 停止条件
 
-若当前 checkout 不是精确的 `5955cd0`，或 `ApplicationContainer -> get_agent() -> Agent.chat()` 的实际路径无法用源码和测试确认，只能提交 DTO/mock/contract；不得修改 `agent.py`、`orchestration/orchestrator.py`、`runtime/runner.py` 的最终接线。
+若 `5955cd0` 不再是 HEAD 的祖先，或除 docs 与 `06a` 记录的 `agent/requirements-week1.txt` 例外外出现未归属的 Agent 源码差异，只能提交 DTO/mock/contract；不得修改 `agent.py`、`orchestration/orchestrator.py`、`runtime/runner.py` 的最终接线。
