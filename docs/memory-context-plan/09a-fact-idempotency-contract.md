@@ -1,10 +1,15 @@
-# 09a Fact 去重与幂等 HTTP 合同
+# 09a Fact 去重与幂等 HTTP 合同（先行单元）
 
 ## 目标
 
-使 Fact proposal、confirm、revoke 在网络重试和双击条件下有唯一结果；前后端不再自行选择“返回 409 还是幂等成功”。
+先于 `09` 冻结并实现 Fact proposal、confirm、revoke 的去重和幂等合同，使后续生命周期/Agent
+proposal 接入不再自行选择“返回 409 还是幂等成功”。本单元只实现 Repository/HTTP 合同，不生成
+Agent Fact proposal、不做 UI；confirm/revoke 仍严格按本合同更新既有 Fact 状态。
 
-前置：`03`、`09`。负责人：Web + Agent。后续：`10`、`12`。
+前置：`03`、`04`、`07`、`08`。负责人：Web + Agent。后续：`09`、`10`、`12`。
+
+施工位置：Web Repository/HTTP 合同只在 `D:\project\AI-QA-Assistant`（`web-dev`）实施；
+Agent 仅审查 `FactProposal { category, value, sourceMessageId }` 的字段约定，不修改 Agent 源码。
 
 ## 固定去重规则
 
@@ -35,7 +40,8 @@ chat_id \0 history_revision \0 source_message_id \0 category \0 normalized_value
 ## 实施步骤
 
 1. 在 `memoryRepository.ts` 以 transaction 实现 proposal upsert/read、confirm、revoke；所有查询必须带 actorUserId、chatId、historyRevision。
-2. Agent 的 FactProposal 必须提供 category/value/sourceMessageId；Web 计算 proposal_key，Agent 不生成 key。
+2. 固定 Agent 的 FactProposal 字段为 category/value/sourceMessageId；Web 计算 proposal_key，Agent
+   不生成 key。实际 Agent proposal 生成只由后续 `09` 实施。
 3. API error body 固定为 `{ "code": "fact_revoked", "message": "..." }`；UI 按 code 显示可理解提示，不以字符串匹配。
 4. Confirm/revoke UI 禁用重复点击，但正确性依赖服务端幂等而非 UI。
 
