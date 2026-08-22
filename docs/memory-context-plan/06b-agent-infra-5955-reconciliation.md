@@ -10,7 +10,7 @@
 
 输入：
 
-- 冻结工作目录 `D:\project\AI-QA-Assistant-agent-memory` 的干净 `agent-dev-infra`：`5955cd0` 必须是 HEAD 的祖先，开始代码迁移前其后的差异仅可为本目录的 docs-only 同步提交；
+- 冻结工作目录 `D:\project\AI-QA-Assistant-agent-memory` 的干净 `agent-dev-infra`：`5955cd0` 必须是 HEAD 的祖先，开始 Memory 代码迁移前其后的差异仅可为本目录的 docs-only 同步提交，或已独立验证、仅修改 `agent/requirements-week1.txt` 的可复现性修复；
 - 旧实现参考 `web-dev@e303544`、`web-dev@8048e90`；
 - 已锁定的内部 DTO/token 契约及 Web BFF `memory_context` 结构。
 
@@ -50,7 +50,7 @@
 
 ### 4. 适配 Resolve、Prompt 与 Recall
 
-添加纯 Memory 模块并在 `orchestrator.py` 接收 BFF 信任边界内的 `memory_context`。在 `runner.py` 的当前 `_build_messages()` 接入：基础/RAG system rules、Memory system context、Tail/history、当前 query 一次。保留 `5955` 原有工具循环、QueryPlan 和 citation 流程。
+添加纯 Memory 模块并在 `orchestrator.py` 接收 BFF 信任边界内的 `memory_context`。在 `runner.py` 的当前 `_build_messages()` 接入：基础/RAG system rules、Memory system context、Tail/history、当前 query 一次。`5955` 现有 system prompt 会直接包含 standalone query；若它等于 original query，必须去除这份重复原文，并新增全 messages 范围的回归断言。保留其余工具循环、QueryPlan 和 citation 流程。
 
 `MemoryResponsePolicy` 只能消费已解析的 Confirmed Facts；普通问题不触发。`fact_proposals` 在 01--08 中始终返回空数组，由 `09` 独占生成与生命周期。
 
