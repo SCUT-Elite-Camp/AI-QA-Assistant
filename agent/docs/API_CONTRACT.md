@@ -202,3 +202,23 @@ read-only adapter:
 The OpenAI function-calling representation is available internally through
 `registry.to_openai_schemas()` and is intentionally separate from this public
 metadata response. See `docs/cp2/tool_registry.md` for the complete contract.
+
+## GET /ready
+
+Reports application-scoped resource initialization and retrieval warmup state.
+It does not create a Chat turn or a Research Job:
+
+```json
+{
+  "status": "ready",
+  "initialized": true,
+  "initialization_count": 1,
+  "initialization_ms": 18,
+  "retrieval_ready": true,
+  "detail": ""
+}
+```
+
+`status="degraded"` means the service remains alive for diagnostics but the
+shared retrieval tool did not complete warmup. `/api/chat` continues to use the
+existing public response contract.

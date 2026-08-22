@@ -49,13 +49,17 @@ class Agent:
         corrective_retrieval: CorrectiveRetrievalPlanner | None = None,
         citation_checker: CitationChecker | None = None,
         orchestrator: AgentOrchestrator | None = None,
+        toolset_registry: ToolsetRegistry | None = None,
+        audit_service: AuditService | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
         self.trace_service = TraceService()
-        self.audit_service = AuditService()
+        self.audit_service = audit_service or AuditService()
         # Toolset owns registration; Agent only consumes it through an adapter.
-        toolset_registry = ToolsetRegistry(tools=tools)
+        if toolset_registry is not None and tools is not None:
+            raise ValueError("tools and toolset_registry cannot both be provided")
+        toolset_registry = toolset_registry or ToolsetRegistry(tools=tools)
         self.registry = ToolRegistryAdapter(toolset_registry)
         self.memory = memory or get_default_memory()
 
@@ -155,18 +159,22 @@ class Agent:
             )
 
         try:
-            search_tool = self.registry.get_tool("search_documents")
-            if isinstance(search_tool, SearchTool):
-                search_tool.topic_doc_ids = request.topic_doc_ids
-                search_tool.topic_titles = request.topic_titles
-                search_tool.weight_mode = request.weight_mode or "auto"
-                search_tool.consecutive_no_new_docs_count = request.consecutive_no_new_docs_count or 0
-
-            orchestration = self.orchestrator.run(
-                request,
-                trace_id=trace_id,
-                query_plan=query_plan,
+            context_token = self.tool_executor.set_request_context(
+                topic_doc_ids=request.topic_doc_ids,
+                topic_titles=request.topic_titles,
+                weight_mode=request.weight_mode or "auto",
+                consecutive_no_new_docs_count=(
+                    request.consecutive_no_new_docs_count or 0
+                ),
             )
+            try:
+                orchestration = self.orchestrator.run(
+                    request,
+                    trace_id=trace_id,
+                    query_plan=query_plan,
+                )
+            finally:
+                self.tool_executor.reset_request_context(context_token)
 
         except ValueError as exc:
             return self._error_response(

@@ -6,16 +6,21 @@ from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.agent import Agent
 from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
+from agent.runtime.lifecycle import get_application_container
 
 router = APIRouter()
 
 
 def get_agent() -> Agent:
-    """Dependency provider for Agent."""
-    return Agent()
+    """Dependency provider for the application-scoped Agent."""
+    return get_application_container().get_agent()
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    response_model_exclude={"chat_title"},
+)
 def chat(
     request: ChatRequest,
     agent: Agent = Depends(get_agent),
