@@ -3,6 +3,7 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
 import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq, and, asc, inArray } from '../../../../utils/drizzle'
+import { agentFetch } from '../../../../utils/agent-client'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
@@ -50,7 +51,7 @@ export default defineHandler(async (event) => {
   if (idsToDelete.length > 0) {
     await db.delete(tables.messages).where(inArray(tables.messages.id, idsToDelete))
     // Clear Agent in-memory history so regenerate/edit rebuilds clean context
-    fetch(`http://127.0.0.1:8000/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
+    agentFetch(`/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
   }
 
   return { success: true }

@@ -4,6 +4,7 @@ import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { deleteFile } from '../../../utils/file-storage'
 import { logAudit } from '../../../utils/audit-logger'
+import { requireFileAccess } from '../../../utils/permission-service'
 import { getRequestIP, getHeader } from 'nitro/h3'
 
 /**
@@ -19,20 +20,14 @@ export default defineHandler(async (event) => {
   const session = await useUserSession(event)
   const userId = session.data.user?.id
 
-  if (!userId) {
-    throw new HTTPError({ statusCode: 401, statusMessage: 'Unauthorized' })
-  }
-
   const db = useDrizzle()
-  const [file] = await db.select().from(tables.files).where(eq(tables.files.id, fileId))
 
-  if (!file) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'File not found' })
+  // 统一的文件访问控制（仅 owner 可删除）
+  const access = await requireFileAccess(db, userId, fileId, { mode: 'delete' })
+  if (!access.ok || !access.file) {
+    throw new HTTPError({ statusCode: access.statusCode, statusMessage: access.statusCode === 404 ? 'File not found' : access.statusCode === 401 ? 'Unauthorized' : 'Access denied: only owner can delete' })
   }
-
-  if (file.userId !== userId) {
-    throw new HTTPError({ statusCode: 403, statusMessage: 'Access denied: only owner can delete' })
-  }
+  const file = access.file
 
   // 删除磁盘文件
   await deleteFile(file.storagePath)

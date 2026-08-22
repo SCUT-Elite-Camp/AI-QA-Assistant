@@ -2,10 +2,10 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getRouterParam } from 'nitro/h3'
 import { setHeader } from 'h3'
 import { useUserSession } from '../../../utils/session'
-import { useDrizzle, tables, eq } from '../../../utils/drizzle'
+import { useDrizzle } from '../../../utils/drizzle'
 import { readFile } from '../../../utils/file-storage'
 import { logAudit } from '../../../utils/audit-logger'
-import { canAccessFile } from '../../../utils/permission-service'
+import { requireFileAccess } from '../../../utils/permission-service'
 import { getRequestIP, getHeader, getQuery } from 'nitro/h3'
 
 /**
@@ -28,16 +28,12 @@ export default defineHandler(async (event) => {
   const userId = session.data.user?.id
   const db = useDrizzle()
 
-  const [file] = await db.select().from(tables.files).where(eq(tables.files.id, fileId))
-
-  if (!file) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'File not found' })
+  // 统一的文件访问控制（owner / shared / public / 显式用户授权 / 部门授权）
+  const access = await requireFileAccess(db, userId, fileId)
+  if (!access.ok || !access.file) {
+    throw new HTTPError({ statusCode: access.statusCode, statusMessage: access.statusCode === 404 ? 'File not found' : 'Access denied' })
   }
-
-  // 访问控制（owner / shared / public / 显式用户授权 / 部门授权）
-  if (!(await canAccessFile(db, userId, file.id))) {
-    throw new HTTPError({ statusCode: 403, statusMessage: 'Access denied' })
-  }
+  const file = access.file
 
   // 审计日志
   await logAudit({

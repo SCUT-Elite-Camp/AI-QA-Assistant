@@ -1,5 +1,6 @@
 import { $fetch } from 'ofetch'
 import { logger } from './logger'
+import { AGENT_BASE_URL, agentHeaders } from './agent-client'
 
 /**
  * Invokes Data Persistence Layer Infrastructure Summarizer Service.
@@ -18,9 +19,10 @@ export async function requestTopicSummarizerFromPersistence(
   tags?: string[]
 } | null> {
   try {
-    const res: any = await $fetch('http://127.0.0.1:8000/api/topics/summarize', {
+    const res: any = await $fetch(`${AGENT_BASE_URL}/api/topics/summarize`, {
       method: 'POST',
       timeout: 70000,
+      headers: agentHeaders(),
       body: {
         topic_id: topicId,
         discussion_text: discussionText,
