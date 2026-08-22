@@ -30,14 +30,18 @@ git -C D:\project\AI-QA-Assistant-agent-memory diff --name-only 5955cd0..HEAD
 git -C D:\project\AI-QA-Assistant-agent-memory status --short --branch
 ```
 
-输出必须证明 `5955cd0` 仍是 HEAD 的祖先，且在第一笔代码提交前差异仅限
-`docs/memory-context-plan/**`，工作区也必须干净。若远程或 owner 宣布的冻结代码基线发生变化，立即停止，由 Agent owner 更新本文件、`06b` 和所有引用该基线的测试证据；不得静默跟随 remote。
+输出必须证明 `5955cd0` 仍是 HEAD 的祖先，且在第一笔 Memory 代码提交前差异仅限
+`docs/memory-context-plan/**`；唯一例外是经独立测试证明现有清单遗漏、且单独提交的
+`agent/requirements-week1.txt` 可复现性修复。该例外不得改动 Runtime 行为、不得携带
+Memory 代码，且必须在交接中给出失败原因与完整 Week-1 回归结果。工作区也必须干净。
+若远程或 owner 宣布的冻结代码基线发生变化，立即停止，由 Agent owner 更新本文件、`06b`
+和所有引用该基线的测试证据；不得静默跟随 remote。
 
 ## 必须保留的新版 Runtime 事实
 
 1. `agent/app.py` 的 lifespan 负责创建、启动并保存 `ApplicationContainer`，同时保留 warm-up 和 `/ready` 语义。
 2. `agent/agent/api/chat_routes.py` 的 `get_agent()` 从共享 `ApplicationContainer` 取得 Agent 实例。内部 Memory 路由必须复用该依赖，不得自行构造 `Agent`、`AgentRunner` 或长生命周期客户端。
-3. `agent/agent/runtime/runner.py` 的 `AgentRunner._build_messages()` 是当前最终 Prompt 组装点：基础 system prompt 在前，history 随后，当前 `query_plan.original_query` 最后且只能追加一次。
+3. `agent/agent/runtime/runner.py` 的 `AgentRunner._build_messages()` 是当前最终 Prompt 组装点：基础 system prompt 在前，history 随后，当前 `query_plan.original_query` 最后追加。冻结的 `5955` 当前还会在 system prompt 中写入原始 `query_plan.standalone_query`；当它与 `original_query` 相同时，当前问题会重复。这是 `06` 的既定修复目标，不能把该缺陷误当作已满足的不变量。
 4. `agent/agent/runtime/lifecycle.py` 的容器生命周期和 `agent/agent/tools/executor.py` 的请求上下文/执行器能力属于他人已冻结交付，Memory 不得覆盖、回退或重写它们。
 
 上述路径是当前证据，不等同于永恒接口。每次实际迁移前均应再次阅读相关源码并记录实际行号。
