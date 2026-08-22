@@ -4,16 +4,19 @@
 
 在统一 Agent 基线中把 `ContextArtifact` 正确接入 Query Understanding 和 Runner Prompt；对显式回忆已确认 Fact 的请求走确定性回答，不让模型猜测。
 
-本单元固定在 `06a` 的 `origin/agent-dev-infra@5955cd0` 上实施。新版 Runtime 的共享实例由 `ApplicationContainer` 持有；只能通过 `api/chat_routes.py:get_agent()` 取得，不能为了接入 Memory 改写 app lifespan、容器、工具执行器或 Deep Research。
+本单元在 `agent-dev-infra` 上实施，要求 `5955cd0` 仍是 HEAD 的祖先，并通过 `06a` 的基线断言与 `06b` 的迁移前核对。新版 Runtime 的共享实例由 `ApplicationContainer` 持有；只能通过 `api/chat_routes.py:get_agent()` 取得，不能为了接入 Memory 改写 app lifespan、容器、工具执行器或 Deep Research。
 
-前置：`05`、`06a`。负责人：指定 Agent 集成人。后续依赖：`07`、`09`。
+前置：`04a`、`05`、`06a`、`06b`。负责人：指定 Agent 集成人。后续依赖：`07`、`09`。
+
+施工位置：`D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`）。不修改 Web worktree。
 
 ## 允许修改范围
 
-- `D:\project\AI-QA-Assistant\agent\agent\orchestration\orchestrator.py`
-- `D:\project\AI-QA-Assistant\agent\agent\runtime\runner.py`
-- `D:\project\AI-QA-Assistant\agent\agent\agent.py`
-- 新建 `agent/agent/memory/memory_response_policy.py`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\orchestration\orchestrator.py`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\runtime\runner.py`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\agent.py`
+- `D:\project\AI-QA-Assistant-agent-memory\agent\agent\api\internal_memory_routes.py`（仅将既有私有 endpoint 的 Agent 结果包装为既定 `InternalChatResponse`；不得改变 endpoint、鉴权或路由注册）
+- 新建 `D:\project\AI-QA-Assistant-agent-memory\agent\agent\memory\memory_response_policy.py`
 - 对应 unit/integration tests。
 
 禁止修改：`agent/agent/runtime/lifecycle.py`、`agent/agent/tools/executor.py`、`agent/deep_research/**`、Web 的持久化实现，以及公开浏览器 ChatResponse。
@@ -37,4 +40,4 @@
 
 ## 完成条件
 
-实施分支必须先完成 `06b` 的人工对齐，并满足 `06a` 的基线断言；公开协议不变。若该已锁定基线的实际最终模型路径绕过 Runner，集成人把同一不变量接入实际最终模型调用点，并在交接中列出原因与测试，不得强行改旧 `_build_messages()`。
+实施分支必须先完成 `06b` 的迁移前人工核对，并满足 `06a` 的基线断言；公开协议不变。`06b` 不实施任何 Runtime/Memory 代码，实际 Prompt/Recall 接线只能在本单元完成。若该已锁定基线的实际最终模型路径绕过 Runner，集成人把同一不变量接入实际最终模型调用点，并在交接中列出原因与测试，不得强行改旧 `_build_messages()`。

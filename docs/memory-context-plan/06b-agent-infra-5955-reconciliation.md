@@ -1,10 +1,12 @@
-# 06b Agent Memory 与冻结 Runtime 的人工对齐
+# 06b Agent Memory 与冻结 Runtime 的迁移前核对（已完成）
 
 ## 目标
 
-把旧 `web-dev` 提交中已实现的 Agent Memory 行为作为参考，逐文件适配到冻结的 `origin/agent-dev-infra@5955cd0`。本单元解决的是 Runtime 结构变化后的兼容性，不新增 Snapshot、Fact、Tail、Redis、Research 或公开 API 功能。旧分支的测试结果不能替代本单元的新版 Runtime 验收。
+本单元是已完成的迁移前核对单，不是代码施工单。它只确认冻结 Runtime、旧实现来源、热点文件和后续单元的归属，防止一次“适配”吞掉 `04a`、`05`、`06`、`07`、`08`。执行 `06b` 时只能重新核对证据，不得修改任何 Agent/Web 源码、路由或测试。旧分支的测试结果不能替代后续功能单元的新版 Runtime 验收。
 
-前置：`04`、`04a`、`05`、`06a`。负责人：持有 Agent 热点写锁的集成人。后续：`06`、`07`、`08`。
+前置：`06a`。负责人：持有 Agent 热点写锁的集成人。为后续 `04`、`04a`、`05`、`06`、`07`、`08` 提供迁移矩阵；它本身不实施这些单元的代码。
+
+施工位置：`D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`），仅只读检查。
 
 ## 输入、输出与非目标
 
@@ -14,55 +16,52 @@
 - 旧实现参考 `web-dev@e303544`、`web-dev@8048e90`；
 - 已锁定的内部 DTO/token 契约及 Web BFF `memory_context` 结构。
 
-输出：在新的 Agent 基线上得到与原 01--08 相同的内部 Memory 契约、Resolver、Prompt/Recall、Compaction 和 reset 能力，并明确每个改动相对冻结 Runtime 的合并方式。
+输出：冻结 Runtime 的接入证据、旧实现的参考范围和后续单元的唯一代码归属；不产出任何 Memory 功能代码。
 
-非目标：不迁移 Web 文件、migration、Redis、USER Fact、自动确认、Fact lifecycle、UI；不采用 `feat/permission-hardening` 的 Bearer 鉴权；不接入 Deep Research。
+非目标：不迁移任何代码、Web 文件、migration、Redis、USER Fact、自动确认、Fact lifecycle、UI；不采用 `feat/permission-hardening` 的 Bearer 鉴权；不接入 Deep Research。
 
-## 文件迁移矩阵
+## 已核对的基线证据
 
-| 类别 | 文件/路径 | 处理方式 |
+- 冻结代码祖先：`origin/agent-dev-infra@5955cd0`（`feat(agent): complete member B week 1 runtime work`）。
+- 当前允许叠加经审查的 docs 同步提交；唯一非 docs 例外为 `b441acd`，仅修改
+  `agent/requirements-week1.txt` 以补齐 Week-1 测试依赖，不改变 Runtime 或 Memory 行为。
+- 最近记录的迁移前核对提交为 `e06acbe`；不得把旧 `web-dev@e303544` 或
+  `web-dev@8048e90` 整体 cherry-pick/merge 到 Agent 开发线。
+- 已验证命令：
+
+```powershell
+D:\project\AI-QA-Assistant-agent-memory\.venv\Scripts\python.exe agent\scripts\run_week1_tests.py
+```
+
+最近结果为 `214 passed, 1 warning`。它只证明冻结 Runtime 环境可回归，不证明任何 Persistent Memory 功能已实现。
+
+## 后续代码归属矩阵（仅映射，不在本单元实现）
+
+| 类别 | 文件/路径 | 后续唯一施工单 |
 | --- | --- | --- |
-| 可新增 | `agent/agent/memory/context_resolver.py`、`memory_response_policy.py`、`compaction_planner.py`、`persistent_models.py` | 从旧实现逐个复制逻辑后，按 `5955` 的 DTO/import 审查 |
-| 可新增 | `agent/agent/api/internal_memory_routes.py`、对应新增 unit/integration tests | 新建；内部依赖必须复用 `get_agent()` |
-| 人工三方合并 | `agent.py`、`api/chat_routes.py`、`config/settings.py`、`orchestration/orchestrator.py`、`runtime/runner.py`、`schemas/chat.py`、`app.py`、`.env.example`、API contract 与既有测试 | 以 `5955` 为主，按本计划重新引入最小 Memory 改动 |
-| 保持冻结 | `runtime/lifecycle.py`、`tools/executor.py` | 不从旧分支覆盖，不为 Memory 重构 |
-| 禁止触碰 | `agent/deep_research/**`、所有 `web/**` | Chat Memory 不得耦合研究运行时或 Web 数据层 |
+| DTO/config | `schemas/chat.py`、`config/settings.py`、`.env.example`、API contract 与 DTO/config tests | `04` |
+| 私有路由 | `api/internal_memory_routes.py`、`app.py` router 注册、`api/chat_routes.py` 的公开 reset 删除、端点/鉴权 tests | `04a` |
+| Resolver | `memory/persistent_models.py`、`memory/context_resolver.py`、其配置和 unit tests | `05` |
+| Prompt/Recall | `agent.py`、`orchestration/orchestrator.py`、`runtime/runner.py`、`memory_response_policy.py`，以及既有 internal handler 的 response 包装 | `06` |
+| Compaction | `memory/compaction_planner.py`、敏感值过滤 helper、compaction handler/DTO 与 tests | `07` |
+| History mutation | `04a` reset endpoint 完成后的 Agent 行为审查；Web 的 edit/delete 仍归 Web | `08`（默认审查） |
+| 保持冻结 | `runtime/lifecycle.py`、`tools/executor.py`、`agent/deep_research/**`、所有 `web/**` | 任何单元均不得为 Memory 覆盖或迁移 |
 
-## 施工步骤
+## 重新核对步骤（只读）
 
-### 1. 基线和差异清点
+1. 在 Agent worktree 运行 `git merge-base --is-ancestor 5955cd0 HEAD`、
+   `git diff --name-only 5955cd0..HEAD` 和 `git status --short --branch`，确认本地基线和工作区。
+2. 运行下列命令确认共享 Agent 和最终 Prompt 路径仍存在：
 
-在 Agent Memory 工作目录中确认 `06a` 的 hash、工作区状态和最终调用链。以 `git diff 5955cd0..web-dev -- agent/` 生成候选文件清单，但只按上表选择文件；不要 cherry-pick `8048e90`。
+```powershell
+rg -n "get_application_container|ApplicationContainer|def get_agent|def _build_messages|def run|llm\.chat" D:\project\AI-QA-Assistant-agent-memory\agent
+```
 
-停止条件：存在未归属的热点改动、基线不为 `5955cd0`，或调用链不再经过共享 `get_agent()`。
+3. 将任何新增候选文件映射到上表唯一的后续单元。跨越多个单元、需要改
+   `runtime/lifecycle.py`/`tools/executor.py`、或无法确认最终模型调用点时，停止并报告。需要刷新
+   remote 状态时单独征得允许后再 fetch，不能把 fetch 伪装成此只读施工单的一部分。
 
-### 2. 先恢复数据契约与开关
-
-以 `5955` 的 `schemas/chat.py` 和 `config/settings.py` 为主，人工增加内部 `memory_context`、`InternalChatResponse`、compaction/reset DTO 与 `PERSISTENT_MEMORY_ENABLED` 等既定开关。默认必须关闭；公开 Chat request/response 不得增加 Memory 字段。
-
-路由鉴权仍使用 `X-Agent-Internal-Token`：缺失/错误为 403，持久 Memory 关闭为 409。不得将该单元偷偷替换成 Bearer scope。
-
-### 3. 适配 ApplicationContainer 与内部路由
-
-保留 `app.py` 的 lifespan、`ApplicationContainer`、warm-up 和 `/ready`。在 app 中注册内部 Memory router，但 router 的 Agent 依赖必须导入并复用 `api/chat_routes.py:get_agent()`。不得创建第二个全局 Agent，也不得重写 `runtime/lifecycle.py`。
-
-通过 dependency override 测试证明普通 Chat 与内部 Memory endpoint 使用同一可替换依赖。
-
-### 4. 适配 Resolve、Prompt 与 Recall
-
-添加纯 Memory 模块并在 `orchestrator.py` 接收 BFF 信任边界内的 `memory_context`。在 `runner.py` 的当前 `_build_messages()` 接入：基础/RAG system rules、Memory system context、Tail/history、当前 query 一次。`5955` 现有 system prompt 会直接包含 standalone query；若它等于 original query，必须去除这份重复原文，并新增全 messages 范围的回归断言。保留其余工具循环、QueryPlan 和 citation 流程。
-
-`MemoryResponsePolicy` 只能消费已解析的 Confirmed Facts；普通问题不触发。`fact_proposals` 在 01--08 中始终返回空数组，由 `09` 独占生成与生命周期。
-
-### 5. 适配压缩与短窗 reset
-
-新增纯 `CompactionPlanner` 与内部 endpoint。仅在 Web 已持久化成功助手消息后由 BFF 调用；Planner 不访问 DB、不调用 LLM、不创建后台队列。reset endpoint 同样从共享 `get_agent()` 取得实例，仅清旧短窗兼容状态，不触碰持久 Snapshot/Fact。
-
-### 6. 交叉验证和交接
-
-运行冻结 Runtime 的 Week-1 测试、所有新增 Memory 测试和 12 的跨层证据。逐项记录迁移文件、保留的 `5955` 行为、契约差异（应为无公开差异）和无法验证项。
-
-## 必须通过的不变量
+## 后续单元必须遵守的不变量
 
 - 默认开关关闭时维持 `5955` 的 Chat 行为；
 - 一个 HTTP 请求只从共享 `ApplicationContainer` 获得一个 Agent 实例，不新增全局实例；
@@ -79,8 +78,8 @@ git -C D:\project\AI-QA-Assistant-agent-memory show --no-patch --format=%H HEAD
 rg -n "get_application_container|ApplicationContainer|def get_agent|def _build_messages|llm\.chat" D:\project\AI-QA-Assistant-agent-memory\agent
 ```
 
-测试命令以冻结分支实际提供的 runner 为准；至少包含该 runner 的 Week-1 回归、Memory 目标 pytest、以及 `12` 的跨层验证。命令、环境、通过/失败数必须进入交接；不可运行时明确写未运行和原因。
+测试命令以冻结分支实际提供的 runner 为准；每个后续单元只运行其自身要求的 Memory 目标 pytest，跨层验证由 `12` 统一执行。命令、环境、通过/失败数必须进入交接；不可运行时明确写未运行和原因。
 
 ## 完成条件
 
-所有迁移文件均已按矩阵审查，`runtime/lifecycle.py`、`tools/executor.py`、`deep_research/**` 和 Web 文件未被 Memory 改动；`06` 的 Prompt/Recall 测试、容器复用测试和 Chat/Research 隔离测试通过。否则停止在本单元，不进入 `06`、`07` 或 `08`。
+本单元已完成的输出仅为上述基线证据和迁移矩阵。重新审查时必须确认：5955 仍为祖先、唯一依赖清单例外仍独立、共享 `get_agent()` 路径仍存在、没有未归属热点改动。任何失败都阻止后续 Agent 代码单元；任何要求在本单元写代码的请求都必须改由矩阵中的对应单元执行。
