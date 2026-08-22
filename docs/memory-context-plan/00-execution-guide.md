@@ -8,6 +8,25 @@
 提交同步到唯一 Agent 开发线，随后才可实施任何 Agent Memory 代码。同步 docs 不改变
 冻结代码基线；不得据此直接修改 `dev`。
 
+## 固定工作区与当前施工状态
+
+所有施工单必须先按本节选择工作区；不得因为文件名相同就在另一个 worktree 修改：
+
+```text
+WEB_WORKTREE   = D:\project\AI-QA-Assistant
+WEB_BRANCH      = web-dev
+AGENT_WORKTREE = D:\project\AI-QA-Assistant-agent-memory
+AGENT_BRANCH    = agent-dev-infra
+```
+
+截至本总控书的当前版本，Web 已完成 `01`、`12a`、`02`、`02a`、`02b`、`03`，以及
+`04`、`04a`、`05`、`07`、`08` 的 Web/BFF 侧工作；这些 Web 内容在后续同名单元中
+只作审查证据，不得重复实现。Agent 侧待实施的代码单元依次是：`04`（DTO/开关）、
+`04a`（私有端点）、`05`（Resolver）、`06`（Prompt/Recall）和 `07`（Planner）。`06a`
+与 `06b` 是已完成的基线/迁移前核对单元；`08` 在 `04a` 完成后默认只作审查，不新增
+Agent reset 以外的代码。`09`--`13` 尚未开始。执行者必须先读本节和本单元的“当前状态”；
+状态为“已完成/审查”的内容只能审查，不能借执行命令重新施工。
+
 Agent Memory 的冻结**代码**基线固定为：
 
 ```text
@@ -17,8 +36,10 @@ subject: feat(agent): complete member B week 1 runtime work
 ```
 
 允许在 `5955cd0` 之上叠加只修改 `docs/memory-context-plan/**` 的同步提交；在第一笔
-Agent Memory 代码提交前，`5955cd0` 必须仍是 HEAD 的祖先，且二者之间不得出现任何
-`agent/**` 代码差异。`web-dev@8048e90` 是已完成的 Web 实现和旧 Agent Memory 实现的
+Agent Memory 代码提交前，`5955cd0` 必须仍是 HEAD 的祖先，且二者之间不得出现 Runtime
+或 Memory 源码差异。唯一已批准的非 docs 例外是经独立 Week-1 回归验证、仅修改
+`agent/requirements-week1.txt` 的可复现性修复（提交 `b441acd`）；它不改变 Runtime
+行为，也不代表任何 Memory 代码已经迁移。`web-dev@8048e90` 是已完成的 Web 实现和旧 Agent Memory 实现的
 迁移来源，不能被 reset、覆盖或整体 merge 到 Agent 开发线。Agent 适配只能选择性迁移
 `agent/**` 中的 Memory 文件，并保留 5955 的 lifecycle、共享 Agent 和 ToolExecutor 实现。
 
@@ -65,7 +86,7 @@ RAG 仍只负责外部知识与 citations；Memory 不能产生或支撑 RAG cit
 19. `12-test-and-acceptance.md`
 20. `13-rollout-and-handoff.md`
 
-`01` 完成后必须先完成 `12a`，使后续所有 Web 单元从第一天就有隔离测试。`02`、`02a` 与 `02b` 必须全部完成，才可建 Memory 表或接入流。`04a` 是唯一服务间接口规范，禁止选择其他返回通道或添加未定义的私有调用。`06a` 固定 Agent 施工基线，`06b` 完成基线适配检查后，`06` 才能实施。`09` 与 `09a` 一起完成后，`10` 才能开始。
+`01` 完成后必须先完成 `12a`，使后续所有 Web 单元从第一天就有隔离测试。`02`、`02a` 与 `02b` 必须全部完成，才可建 Memory 表或接入流。`04a` 是唯一服务间接口规范，禁止选择其他返回通道或添加未定义的私有调用。`06a` 固定 Agent 施工基线，`06b` 完成迁移前适配检查后，`04a`、`05` 与 `06` 才能按各自边界实施；`06` 必须正式以前述四个单元为前置。`07` 先固定敏感值过滤规则，`09` 只能复用该规则。`09` 与 `09a` 一起完成后，`10` 才能开始。
 
 ## 每份施工单必须包含的执行信息
 
@@ -76,6 +97,7 @@ RAG 仍只负责外部知识与 citations；Memory 不能产生或支撑 RAG cit
 5. 有序实施步骤；每步的读写边界和失败处理。
 6. 单元测试、集成测试、人工核查命令及预期结果。
 7. 完成标准、交接输入和明确的停止条件。
+8. `施工位置`：明确写出本单元使用的固定工作区、分支，以及哪些跨层内容仅作审查。
 
 ## Agent 执行规则
 
@@ -87,6 +109,8 @@ RAG 仍只负责外部知识与 citations；Memory 不能产生或支撑 RAG cit
 - 执行任何 Web migration 前，必须通过 `02a` 验证 Drizzle migration 和运行时使用同一 `TURSO_DATABASE_URL`；禁止依赖两个不同的默认数据库路径。
 - Memory 只属于普通 Chat。不得从 `agent/deep_research/**` 导入任何对象、不得让 `/api/chat` 或 Memory 私有端点创建 Research Job，也不得把 Chat `ConversationMemory`、Snapshot、Fact 或 Tail 作为 Deep Research Graph State。
 - 任意契约不清、迁移无法回滚、Agent 基线未确定时，停止实现并报告阻塞点。
+- 使用“执行 XX”时，执行者仍必须完整阅读本总控、本单元、其前置施工单与当前相关代码；
+  只在本单元声明的 `施工位置` 和允许范围内修改。使用“审查 XX”时一律不修改代码或文档。
 
 ## 建议的交接模板
 

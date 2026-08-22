@@ -78,7 +78,7 @@ HTTP Chat/internal route -> shared get_agent -> Agent -> Orchestrator
 - 必须三方人工合并：`agent.py`、`api/chat_routes.py`、`config/settings.py`、`orchestration/orchestrator.py`、`runtime/runner.py`、`schemas/chat.py`、`app.py`、`.env.example`、API contract 与既有测试；
 - 必须保留冻结版本：`runtime/lifecycle.py`、`tools/executor.py`、`deep_research/**` 及所有 Web 文件。
 
-详细迁移施工见 `06b-agent-infra-5955-reconciliation.md`。
+详细迁移前核对和文件归属矩阵见 `06b-agent-infra-5955-reconciliation.md`；实际代码施工只能按矩阵中的对应单元进行。
 
 ## 停止条件
 
