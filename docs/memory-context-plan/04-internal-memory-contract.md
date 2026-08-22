@@ -32,7 +32,19 @@ MemoryDecision {
 }
 ```
 
+为保持 schema 稳定，`fact_proposals` 字段在首版契约中预留；但从 `04` 到 `08` 必须返回空数组，且 Web 不得据此写入 Fact。只有 `09` 与 `09a` 完成后，才可启用 Fact proposal/confirm/revoke 生命周期。
+
 唯一传输方式由 `04a` 固定：Web 调用受 token 保护的 `POST /api/internal/chat`，得到 `InternalChatResponse { response: ChatResponse, memory_decision }`；助手成功落库后再调用 `POST /api/internal/memory/compaction-plan`；编辑/删除成功后调用 `POST /api/internal/memory/reset-short-window` 清理仅用于兼容模式的进程短窗。不得使用 response header、全局状态、第二种副通道或公开 `/api/chat` 承载内部字段。
+
+## 冻结 runtime 兼容边界（5955）
+
+本契约的字段、三条 endpoint、`X-Agent-Internal-Token` 和公开 `ChatResponse` 边界保持不变。适配
+`origin/agent-dev-infra@5955cd0` 时，仅改变 Agent 侧的接入方式：
+
+- `agent.api.chat_routes.get_agent()` 已从 `ApplicationContainer` 取得应用级共享 Agent；internal router 必须复用该 dependency，不能重新 `Agent()`；
+- `agent/app.py` 的 lifespan、`ApplicationContainer`、检索 warmup 和 `/ready` 必须原样保留；只允许额外注册 internal Memory router；
+- `agent/runtime/lifecycle.py` 与 `agent/tools/executor.py` 是冻结 runtime 文件，不得为接入 Memory 而回退或覆盖；
+- Deep Research 是独立模块。内部 Memory 请求只服务 Chat，不能携带 Research ID、不能触发 Research Job，也不能调用 `agent/deep_research/**`。
 
 ## 实施步骤
 
@@ -40,7 +52,7 @@ MemoryDecision {
 2. 为 Agent 添加 `AGENT_INTERNAL_TOKEN` 设置项；使用常量时间比较，缺失/错误 header 返回 403。Web 只从环境变量读取 token。
 3. BFF 路由选择固定如下：仅当 Web `PERSISTENT_MEMORY_ENABLED=true`、actor 已认证且用户消息已持久化时，通过 Repository 构造 `memory_context` 并调用私有端点；否则调用公开 `/api/chat`，且不传任何内部字段。私有端点返回 `409 persistent_memory_disabled` 时，BFF 只记录配置错误并仅重试一次公开 `/api/chat`；其他私有端点错误按 `11` 的降级矩阵处理，不可把内部字段发送到公开端点。
 4. Agent 验证 `current_message_id/current_sequence` 与 Tail 的 revision/sequence 一致；无效输入视为内部契约错误并安全降级，不可相信其中的 user ID。
-5. 实现 `04a` 的三个私有端点、token middleware/dependency 与 mock contract tests；公开 `/api/chat` 仅保留旧兼容请求，不读取任何 browser 传来的 `memory_context`。
+5. 实现 `04a` 的三个私有端点、token dependency 与 mock contract tests；internal router 中的 `Agent` dependency 必须复用 `chat_routes.get_agent()`。公开 `/api/chat` 仅保留旧兼容请求，不读取任何 browser 传来的 `memory_context`。
 6. 更新 `agent/docs/API_CONTRACT.md` 或新建同级内部契约文档，明确公开 JSON 的五个核心字段不变。
 
 ## 验收
@@ -53,4 +65,4 @@ MemoryDecision {
 
 ## 停止条件
 
-若 `agent-dev-infra` 尚未合入且其新运行路径不确定，仅提交 DTO/mock/contract；不得修改 `agent.py`、`orchestration/orchestrator.py`、`runtime/runner.py` 的最终接线。
+若当前 checkout 不是精确的 `5955cd0`，或 `ApplicationContainer -> get_agent() -> Agent.chat()` 的实际路径无法用源码和测试确认，只能提交 DTO/mock/contract；不得修改 `agent.py`、`orchestration/orchestrator.py`、`runtime/runner.py` 的最终接线。

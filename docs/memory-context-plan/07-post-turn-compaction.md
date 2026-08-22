@@ -6,6 +6,8 @@
 
 前置：`02`、`03`、`04`、`06`。负责人：Web + Agent。后续依赖：`08`、`12`。
 
+在新版 Runtime 中，Agent 侧 Planner 仍是纯函数：它不依赖 `ApplicationContainer`、不访问数据库、HTTP、LLM 或 Deep Research。端点注册可发生在 `app.py`，但必须保留 `5955` 的 lifespan、warm-up、`/ready`、`runtime/lifecycle.py` 和 `tools/executor.py`；依赖 Agent 的 reset 路由只能复用 `get_agent()`。
+
 ## 触发和执行时序
 
 Web 的 `onFinish` 先按 `02b` 写入成功助手消息并获得其 sequence。随后 BFF 读取当前 revision 的 active Snapshot 与消息，并调用唯一的 `POST /api/internal/memory/compaction-plan`；Agent 返回纯数据计划，Web Repository 在事务内归档旧 Snapshot、写入新 ACTIVE Snapshot。
@@ -33,6 +35,7 @@ Web 的 `onFinish` 先按 `02b` 写入成功助手消息并获得其 sequence。
 - 两个并发压缩请求不会产生两个 ACTIVE。
 - 重启/再次 resolve 可由 Snapshot + Tail 重建；当前 query 不在 Snapshot Tail 中重复。
 - 人为使 compaction plan/DB 更新失败时，聊天结果仍成功、下一回合可再次尝试。
+- 在包含 `ApplicationContainer` 的 app 测试中，compaction endpoint 不创建第二个 Agent；Chat 或压缩请求不会创建 Deep Research Job。
 
 ## 交接
 

@@ -17,6 +17,11 @@ Content-Type: application/json
 
 Agent 以常量时间比较 token；缺失或不匹配一律返回 403，无响应差异。Web 从环境读取 token，浏览器永不接触。私有端点在反向代理/防火墙层只允许 BFF 网络身份；token 不是唯一网络边界。
 
+本轮适配不引入 `feat/permission-hardening` 的 Bearer 鉴权。若未来要把该分支纳入，必须新开契约施工单；不得在本施工单中静默替换、复用或放宽 `X-Agent-Internal-Token`。
+
+在冻结 runtime `5955cd0` 上，internal router 必须通过 `agent.api.chat_routes.get_agent()` 取得
+`ApplicationContainer` 中的共享 Agent。不得创建第二个 Agent、第二个 `ConversationMemory` 或自行管理 lifespan。
+
 ## Endpoint 1：私有聊天
 
 ```text
@@ -30,15 +35,13 @@ POST /api/internal/chat
 ```json
 {
   "response": { "trace_id": "...", "status": "success", "answer": "...", "message": "", "citations": [] },
-  "memory_decision": {
-    "fact_proposals": [
-      { "category": "GOAL", "value": "...", "source_message_id": "...", "expires_at": 0 }
-    ]
-  }
+  "memory_decision": { "fact_proposals": [] }
 }
 ```
 
-`response` 必须与公开 ChatResponse 值等价；`memory_decision` 不能转发至浏览器。仅当 `SESSION_FACT_ENABLED=true`、用户显式请求记忆且聊天状态为 success/clarification 时，Agent 才可返回 proposal。`source_message_id` 必须等于 `memory_context.current_message_id`，否则 BFF 丢弃 proposal 并记录脱敏契约错误。BFF 在 response 返回后、开始模拟流前写入 PROPOSED Fact；关闭 Fact 开关时不写入。浏览器在本轮正常流结束后或页面加载时，固定通过 `GET /api/chats/:id/memory/facts` 读取该 proposal；不得从 `memory_decision`、SSE data event 或浏览器缓存取得。proposal 写入失败只记录脱敏错误，不阻断回答。
+`response` 必须与公开 ChatResponse 值等价；`memory_decision` 不能转发至浏览器。为稳定跨层 schema，字段在 01--08 保留但 `fact_proposals` 必须为空数组。`09` 启用 proposal lifecycle 后，才另行规定显式触发、`source_message_id` 校验、BFF 写入 PROPOSED Fact 和浏览器读取方式；在此之前 BFF 不得因该字段写 Fact。
+
+提议、持久化、确认和撤销只在 `09` 与 `09a` 开始后实现。本 endpoint 的字段保留是为了维持冻结契约，而不是授权提前施工。
 
 ## Endpoint 2：压缩计划
 
@@ -94,9 +97,9 @@ BFF 仅在编辑、重生成或删除 chat 的数据库事务提交成功后调�
 
 ## 实施与测试
 
-- Agent 新建 internal router/dependency；删除公开 reset route；公开 `/api/chat` 不接受 `memory_context`。
+- Agent 新建 internal router/dependency；删除公开 reset route；公开 `/api/chat` 不接受 `memory_context`。在 5955 上，`app.py` 保留 `ApplicationContainer`、warmup 和 `/ready`，只额外执行 `app.include_router(internal_memory_router, prefix="/api/internal")`。
 - Web 新建 `agentInternalClient.ts`，仅 server import；设 5 秒超时与结构化错误类型。它必须暴露固定的 `isPersistentMemoryEnabled()`，只有路由选择条件满足时才允许请求三个私有端点；收到 `persistent_memory_disabled` 时只允许一次公开调用回退。
-- 为两端加 schema contract tests：缺 token、错误 token、外部 public 请求传 memory 字段、DTO version 不匹配、Agent 5xx、Agent persistent 开关关闭时的单次回退。
+- 为两端加 schema contract tests：缺 token、错误 token、外部 public 请求传 memory 字段、DTO version 不匹配、Agent 5xx、Agent persistent 开关关闭时的单次回退；并断言 internal router 使用 `get_agent()` 的 dependency override，而不是构造新的 Agent。
 - 更新内部 API 文档，并明确 `ChatResponse` 不变。
 
 ## 完成标准

@@ -15,7 +15,7 @@
 1. 按 `sequence` 找到变动点并删除该点之后的消息（保持现有 edit/regenerate 语义）。
 2. 同事务将 chat 的 `history_revision` 加一；后续新消息带新 revision。
 3. 旧 revision Snapshot 不删除历史记录，但 Resolver 必须忽略；旧 revision 的所有 SESSION Fact 在同一事务中转为 `REVOKED`，不得进入新 revision。
-4. 移除现有无鉴权 `DELETE /api/chat/memory/{session_id}`。事务提交后由 BFF 调用 `04a` 固定的私有 reset endpoint 清理旧进程短窗；它只维护关闭持久 Memory 时的兼容体验，调用失败不得影响持久 Memory 的一致性。
+4. 移除现有无鉴权 `DELETE /api/chat/memory/{session_id}`。事务提交后由 BFF 调用 `04a` 固定的私有 reset endpoint 清理旧进程短窗；它只维护关闭持久 Memory 时的兼容体验，调用失败不得影响持久 Memory 的一致性。在 `5955` Runtime 中 reset route 必须复用 `api/chat_routes.py:get_agent()` 返回的共享 `ApplicationContainer` 实例，不得自行构造 Agent 或改动 lifespan。
 
 ### 分支 chat
 
@@ -39,6 +39,7 @@
 - 重生成后不引用旧助手答案。
 - branch 的 Fact、Snapshot、sequence 与父 chat 完全隔离。
 - 删除 chat 后没有残留 Snapshot/Facts，删除不存在/非所有者 chat 不影响任何数据。
+- reset endpoint 通过 dependency override 验证共享 `get_agent()` 注入；编辑、分支、删除和 reset 均不创建或清理 Deep Research Job。
 
 ## 停止条件
 

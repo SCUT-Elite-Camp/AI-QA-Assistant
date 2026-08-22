@@ -21,12 +21,13 @@
 - 权限/泄露疑虑：立即关闭两个功能、阻断 Fact API、保留必要脱敏审计，按团队安全流程处理。
 - 迁移已执行时不得用手工删表回滚；需要经 Review 的 forward migration 或受控备份恢复。
 
-## 交接与 PR 规则
+## 交接与单线协作规则
 
-- Web 实现走 `web-dev`，Agent 实现走 `agent-dev`；禁止直接 push `dev/main`。
-- 一个 PR 只覆盖连续且同 owner 的施工单；跨层 DTO 首先提交契约 PR/评审记录。
-- 每个 PR 描述必须列明本目录中的施工单编号、变更路径、开关默认值、测试结果、未验证项与回滚动作。
-- 本目录目前被忽略；实现前由团队将认可的契约摘要迁入可提交的 `docs/` 或 Confluence。忽略的本地草案不能作为唯一团队事实来源。
+- Web 实现继续在 `web-dev`；Agent Memory 集成只在以 `5955cd0` 为冻结代码祖先的 `agent-dev-infra` 工作线进行（允许先叠加 docs-only 同步提交）。禁止直接 push `dev/main`，也禁止从旧 `web-dev` 整体 cherry-pick Agent Memory 提交。
+- Agent 热点文件采用写锁：同一时段只有一位集成人可修改 `agent.py`、`orchestrator.py`、`runner.py`、`app.py`、`chat_routes.py`、schemas/config 与内部路由。其他同学通过独立文件、测试建议或向持锁人提交补丁参与；锁交接须记录基线 hash 和未提交文件。
+- 一个提交/PR 只覆盖连续且同 owner 的施工单；跨层 DTO 先维护契约评审记录。Agent 迁移按 `06b` 的文件矩阵人工合并，保留 `runtime/lifecycle.py`、`tools/executor.py` 与 `deep_research/**`。
+- 本目录是已追踪的团队施工文档，必须与实现一起评审；更新后同步到 Agent Memory 工作目录或在交接中写明其来源 commit。不得把本目录当作 `.gitignore` 中的个人草稿。
+- 每个提交/PR 描述必须列明施工单编号、变更路径、开关默认值、测试结果、未验证项、回滚动作，以及 Chat/Deep Research 未耦合的检查结果。
 
 ## 最终交付物
 

@@ -18,14 +18,17 @@
 
 ### Agent
 
+- 先运行 `06a` 锁定的 `5955cd0` Week-1 Runtime 回归，证明 `ApplicationContainer`、lifespan、`get_agent()`、`/ready`、工具执行路径未被 Memory 回退；
 - resolver：Snapshot/Tail 边界、Fact 可见性、长度上限、开关回退、注入文本隔离；
 - prompt：当前 query 一次、RAG system 约束仍在、CitationChecker 回归；
 - recall policy：明确回忆命中/不命中、普通问题不触发；
 - compaction planner：8 条 Tail、12 条阈值、旧摘要增量、敏感排除、冲突计划。
+- route/container：三条 internal endpoint 的 token 负向路径、409 开关路径、FastAPI dependency override 复用 `get_agent()`，且不创建第二个 Agent。
+- isolation：Chat、`/api/internal/chat`、compaction 与 reset 不导入、创建、读取或修改 `agent/deep_research/**` 的 Research Job/状态。
 
 ### 跨层
 
-用 mock Agent/Repository 或真实本地服务证明：
+在两个职责明确的工作目录中（Web `D:\project\AI-QA-Assistant`，Agent `D:\project\AI-QA-Assistant-agent-memory`）用 mock Agent/Repository 或真实本地服务证明：
 
 ```text
 用户消息落库 -> trusted context -> Agent answer -> 流成功
@@ -46,7 +49,15 @@ pnpm run typecheck
 pnpm run lint
 ```
 
-Agent 使用 `06a` 固定分支上的项目 Python/venv 运行目标 pytest 模块及全量 pytest。若环境不存在，报告准确命令和失败原因；不得编造成功。
+Agent 使用以 `5955cd0` 为冻结代码祖先（可叠加 docs-only 同步提交）的 `agent-dev-infra` 工作目录上的项目 Python/venv，先运行该分支实际提供的 Week-1 runner，再运行目标 pytest 模块及全量 pytest：
+
+```powershell
+Set-Location D:\project\AI-QA-Assistant-agent-memory
+python agent\scripts\run_week1_tests.py
+python -m pytest agent\tests
+```
+
+若项目 Python 不是 `python`，仅替换解释器路径，不改变 runner 和测试范围。若环境不存在，报告准确命令和失败原因；不得编造成功。运行前后记录 `git show --no-patch --format=%H HEAD`，防止把旧 `web-dev` 的测试结果当作新版 Runtime 的证据。
 
 每个测试报告应写：commit、环境、命令、通过/失败数、未运行项、真实限制。性能测试和 Redis 不在本单元范围。
 
@@ -58,5 +69,6 @@ Agent 使用 `06a` 固定分支上的项目 Python/venv 运行目标 pytest 模�
 - 编辑/删除后不再读取旧记忆；
 - Memory 任一故障可降级；
 - 所有权/内部 token 负向测试通过。
+- Agent 侧 `ApplicationContainer`/lifecycle/工具执行器回归通过，且 Chat Memory 与 Deep Research 严格隔离。
 
 未满足任何一项，停止发布并回到对应单元修复。
