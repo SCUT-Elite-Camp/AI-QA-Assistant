@@ -64,6 +64,18 @@ class Settings(BaseModel):
     PERSISTENT_MEMORY_ENABLED: bool = Field(
         default_factory=lambda: _env_bool("PERSISTENT_MEMORY_ENABLED", False),
     )
+    MEMORY_TAIL_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
+        ge=1,
+    )
+    MEMORY_BRIEF_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_BRIEF_MAX_CHARS", 1200),
+        ge=1,
+    )
+    MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
+        ge=1,
+    )
     # Empty by default; 04a rejects private requests unless the configured token matches.
     AGENT_INTERNAL_TOKEN: str = Field(
         default_factory=lambda: os.getenv("AGENT_INTERNAL_TOKEN", ""),
