@@ -1,16 +1,26 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app import app as production_app
+import app as app_module
+from agent.agent import Agent
+from agent.api import chat_routes
 from agent.api.chat_routes import get_agent, router as public_chat_router
 from agent.api.internal_memory_routes import router as internal_memory_router
 from agent.config.settings import settings
+from agent.llm.base import BaseLLM
+from agent.runtime import lifecycle
+from agent.runtime.lifecycle import ApplicationContainer
 from agent.schemas.chat import ChatRequest, ChatResponse, MemoryDecision
+from toolset.tool_layer.registry import ToolRegistry
+
+
+production_app = app_module.app
 
 
 @dataclass
@@ -41,6 +51,30 @@ class RecordingAgent:
         request: ChatRequest,
     ) -> tuple[ChatResponse, MemoryDecision]:
         return self.chat(request), MemoryDecision(fact_proposals=[])
+
+
+class LifecycleStubLLM(BaseLLM):
+    """Avoid external model access while exercising the production lifespan."""
+
+    def generate(self, prompt: str) -> str:
+        return "stub"
+
+    def chat(self, messages: list[dict], tools: list[dict] = None) -> dict:
+        return {"role": "assistant", "content": "stub"}
+
+
+class DeepResearchImportGuard:
+    """Fail if a Chat/Memory request ever starts loading Deep Research."""
+
+    def find_spec(
+        self,
+        fullname: str,
+        path: object = None,
+        target: object = None,
+    ) -> None:
+        if fullname == "deep_research" or fullname.startswith("deep_research."):
+            raise AssertionError("Chat and Memory endpoints must not load Deep Research")
+        return None
 
 
 @pytest.fixture
@@ -134,6 +168,83 @@ def test_production_application_registers_only_the_private_memory_routes() -> No
         str(production_app.url_path_for("reset_short_window"))
         == "/api/internal/memory/reset-short-window"
     )
+
+
+def test_production_lifespan_reuses_one_agent_without_deep_research(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exercise the real app lifespan and prove request paths stay on one Agent."""
+
+    monkeypatch.setattr(settings, "AGENT_INTERNAL_TOKEN", "internal-token")
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+
+    constructed_agents: list[Agent] = []
+    chat_requests: list[ChatRequest] = []
+    original_init = Agent.__init__
+
+    def counting_init(self: Agent, *args: object, **kwargs: object) -> None:
+        constructed_agents.append(self)
+        original_init(self, *args, **kwargs)
+
+    def controlled_chat(self: Agent, request: ChatRequest) -> ChatResponse:
+        chat_requests.append(request)
+        return ChatResponse(
+            trace_id="trace-production-lifecycle",
+            status="success",
+            answer="A controlled answer.",
+            message="",
+            citations=[],
+        )
+
+    def controlled_memory_chat(
+        self: Agent,
+        request: ChatRequest,
+    ) -> tuple[ChatResponse, MemoryDecision]:
+        return controlled_chat(self, request), MemoryDecision(fact_proposals=[])
+
+    container = ApplicationContainer(
+        llm_factory=LifecycleStubLLM,
+        registry_factory=lambda: ToolRegistry(tools=[]),
+    )
+    guard = DeepResearchImportGuard()
+    deep_research_modules = [
+        name
+        for name in sys.modules
+        if name == "deep_research" or name.startswith("deep_research.")
+    ]
+    for module_name in deep_research_modules:
+        monkeypatch.delitem(sys.modules, module_name)
+    monkeypatch.setattr(lifecycle.Agent, "__init__", counting_init)
+    monkeypatch.setattr(Agent, "chat", controlled_chat)
+    monkeypatch.setattr(Agent, "chat_with_memory", controlled_memory_chat)
+    monkeypatch.setattr(app_module, "get_application_container", lambda: container)
+    monkeypatch.setattr(chat_routes, "get_application_container", lambda: container)
+    monkeypatch.setattr(sys, "meta_path", [guard, *sys.meta_path])
+
+    with TestClient(production_app) as client:
+        assert production_app.state.application_container is container
+        assert container.snapshot().initialization_count == 1
+        assert len(constructed_agents) == 1
+
+        public_response = client.post("/api/chat", json={"query": "Public question"})
+        internal_response = client.post(
+            "/api/internal/chat",
+            json=_internal_chat_payload(),
+            headers=_headers(),
+        )
+        compaction_response = client.post(
+            "/api/internal/memory/compaction-plan",
+            json=_compaction_payload(),
+            headers=_headers(),
+        )
+
+        assert public_response.status_code == 200
+        assert internal_response.status_code == 200
+        assert compaction_response.status_code == 200
+        assert compaction_response.json() == {"should_compact": False}
+        assert len(chat_requests) == 2
+        assert len(constructed_agents) == 1
+        assert container.snapshot().initialization_count == 1
 
 
 def test_internal_endpoints_reject_missing_and_invalid_tokens(
