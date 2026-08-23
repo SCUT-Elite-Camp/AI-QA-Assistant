@@ -4,7 +4,7 @@
 
 在 Web 的权威数据库中创建可迁移、可删除、可并发控制的 Snapshot 与 Fact 表。此单元只做数据结构、约束和仓储 helper，不做 Prompt、UI 或 Agent 行为。
 
-前置：`01`、`02`。负责人：Web（需 Data Persistence reviewer）。后续依赖：`04`、`05`、`07`、`09`。
+前置：`01`、`02`。负责人：Web（需 Data Persistence reviewer）。后续依赖：`04`、`05`、`07`、`09a-Web`。
 
 ## 表定义
 
@@ -56,7 +56,7 @@ UNIQUE(chat_id, history_revision, proposal_key)
 1. 在 `web/server/database/schema.ts` 定义表、relations、枚举约束和索引；所有外键都指向 Web 权威表。
 2. 用 `pnpm run db:generate` 生成 migration。禁止手写 journal/snapshot 元文件。messages/chats 的回填顺序和统一数据库地址必须严格执行 `02a`。
 3. 审阅生成 SQL：现有 chat/messages 必须零数据丢失；新增非空字段须有默认值或安全回填；确认 Turso/SQLite 支持的 partial-index 语法后才使用。若不支持“仅一个 ACTIVE”的 partial unique index，由 `07` 使用事务 + 乐观更新保证。
-4. 新建 `web/server/utils/memoryRepository.ts`，只暴露显式方法：读取 active snapshot、按 sequence 读取 Tail、读取可见 Fact、创建 proposal、确认/撤销 Fact、归档/写入 Snapshot、按 chat 删除。方法都接收 `actorUserId` 并再次约束 user/chat。Fact 的 `proposal_key` 算法和所有状态请求的幂等结果严格执行 `09a`。
+4. 新建 `web/server/utils/memoryRepository.ts`，只暴露显式方法：读取 active snapshot、按 sequence 读取 Tail、读取可见 Fact、创建 proposal、确认/撤销 Fact、归档/写入 Snapshot、按 chat 删除。方法都接收 `actorUserId` 并再次约束 user/chat。Fact 的 `proposal_key` 算法和所有状态请求的幂等结果严格执行 `09a-Web`。
 5. Snapshot/Facts 的正文不写入通用日志；Repository 返回 DTO，不返回任意 SQL 行对象。
 
 ## 必测场景

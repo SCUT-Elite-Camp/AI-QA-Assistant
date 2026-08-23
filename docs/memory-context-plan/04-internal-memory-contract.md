@@ -4,7 +4,7 @@
 
 定义唯一的服务间 DTO，使 BFF 提供可信持久数据、Agent 提供纯记忆决策，公开 `ChatResponse` 保持兼容。本单元只冻结 schema、开关、鉴权约束和 mock；不创建私有 HTTP endpoint，不接入真实 Prompt。
 
-前置：`01`、`02`、`03`。负责人：Web + Agent。后续依赖：`05`、`06`、`07`、`09`。
+前置：`01`、`02`、`03`。负责人：Web + Agent。后续依赖：`05`、`06`、`07`、`09a-Web`。
 
 施工位置：Web 证据位于 `D:\project\AI-QA-Assistant`（`web-dev`）；Agent DTO/配置只在
 `D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`）实施。当前 Web 契约实现
@@ -40,7 +40,7 @@ MemoryDecision {
 }
 ```
 
-为保持 schema 稳定，`fact_proposals` 字段在首版契约中预留；但从 `04` 到 `08` 必须返回空数组，且 Web 不得据此写入 Fact。只有 `09` 与 `09a` 完成后，才可启用 Fact proposal/confirm/revoke 生命周期。
+为保持 schema 稳定，`fact_proposals` 字段在首版契约中预留；但从 `04` 到 `08` 必须返回空数组，且 Web 不得据此写入 Fact。只有 `09a-Web`、`09-Agent` 与 `09-Web` 均完成后，才可启用 Fact proposal/confirm/revoke 生命周期。
 
 唯一传输方式由 `04a` 固定：Web 调用受 token 保护的 `POST /api/internal/chat`，得到 `InternalChatResponse { response: ChatResponse, memory_decision }`；助手成功落库后再调用 `POST /api/internal/memory/compaction-plan`；编辑/删除成功后调用 `POST /api/internal/memory/reset-short-window` 清理仅用于兼容模式的进程短窗。不得使用 response header、全局状态、第二种副通道或公开 `/api/chat` 承载内部字段。
 
