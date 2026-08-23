@@ -271,13 +271,14 @@ def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = PipelineLLM()
     memory = InMemoryConversationMemory()
     agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
 
     response, decision = agent.chat_with_memory(
         _persistent_request(
-            "我之前确认的目标是什么？",
+            "我记住了什么？",
             facts=[
                 MemoryFactInput(
                     id="fact-1",
@@ -290,9 +291,62 @@ def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
     )
 
     assert response.status == "success"
-    assert response.answer == "你此前确认的目标：\n- 完成答辩准备。"
+    assert response.answer == "已确认的记忆：\n- GOAL: 完成答辩准备。"
     assert response.citations == []
     assert decision.recall is not None and decision.recall.handled is True
     assert decision.fact_proposals == []
     assert llm.calls == []
     assert memory.get_messages("persistent-session") == []
+
+
+def test_persistent_success_returns_one_explicit_fact_proposal_only_when_gated_on(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
+    agent = Agent(
+        llm=PipelineLLM(),
+        tools=[RecordingSearchTool()],
+        memory=InMemoryConversationMemory(),
+    )
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request("请记住偏好： 使用  中文\n回复 ")
+    )
+
+    assert response.status == "success"
+    assert response.model_dump().keys() == {
+        "trace_id", "status", "answer", "message", "citations", "chat_title"
+    }
+    assert [proposal.model_dump() for proposal in decision.fact_proposals] == [
+        {
+            "category": "PREFERENCE",
+            "value": "使用 中文 回复",
+            "source_message_id": "message-3",
+            "expires_at": None,
+        }
+    ]
+
+
+def test_fact_proposal_policy_failure_is_non_blocking_and_does_not_create_a_candidate(
+    monkeypatch,
+) -> None:
+    class RaisingFactProposalPolicy:
+        def propose(self, *args, **kwargs):
+            raise RuntimeError("candidate policy unavailable")
+
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
+    agent = Agent(
+        llm=PipelineLLM(),
+        tools=[RecordingSearchTool()],
+        memory=InMemoryConversationMemory(),
+        fact_proposal_policy=RaisingFactProposalPolicy(),  # type: ignore[arg-type]
+    )
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request("remember goal: finish the implementation")
+    )
+
+    assert response.status == "success"
+    assert decision.fact_proposals == []

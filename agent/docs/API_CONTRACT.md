@@ -130,6 +130,14 @@ The future internal chat response is
 The compaction and short-window reset DTOs are also internal-only. BFF remains
 the only writer of ChatMessage, Snapshot, and Fact records.
 
+From Unit 09 onward, an internal response may contain one `FactProposal` only
+when both persistent Memory and `SESSION_FACT_ENABLED` are enabled and the
+authenticated user sent an exact supported remember command. The proposal is a
+four-field candidate with `expires_at: null`; it is neither persisted nor
+confirmed. The Web BFF remains the only writer and computes expiry on confirm.
+Explicit recall is limited to the documented exact queries and never creates a
+RAG citation.
+
 Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
 `AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
 the example file intentionally leaves it empty.
