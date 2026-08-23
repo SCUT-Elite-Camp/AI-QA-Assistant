@@ -21,11 +21,15 @@ AGENT_BRANCH    = agent-dev-infra
 
 截至本总控书的当前版本，Web 已完成 `01`、`12a`、`02`、`02a`、`02b`、`03`，以及
 `04`、`04a`、`05`、`07`、`08` 的 Web/BFF 侧工作；这些 Web 内容在后续同名单元中
-只作审查证据，不得重复实现。Agent 侧待实施的代码单元依次是：`04`（DTO/开关）、
-`04a`（私有端点）、`05`（Resolver）、`06`（Prompt/Recall）和 `07`（Planner）。`06a`
-与 `06b` 是已完成的基线/迁移前核对单元；`08` 在 `04a` 完成后默认只作审查，不新增
-Agent reset 以外的代码。`09`--`13` 尚未开始。执行者必须先读本节和本单元的“当前状态”；
-状态为“已完成/审查”的内容只能审查，不能借执行命令重新施工。
+只作审查证据，不得重复实现。Agent 侧已完成 `04`（DTO/开关）、`04a`（私有端点）、
+`05`（Resolver）、`06`（Prompt/Recall）和 `07`（Planner）。`06a` 与 `06b` 是已完成的
+基线/迁移前核对单元；`08` 在 `04a` 完成后默认只作审查，不新增 Agent reset 以外的代码。
+
+后续尚未开始的是 `09a-Web`、`09-Agent`、`09-Web`、`10-Web`、`11-Agent`、`11-Web`、
+`12` 和 `13`。`09-session-fact-lifecycle.md` 与
+`11-security-observability-and-flags.md` 仅为导航页，**不得**作为 `<XX>` 执行；必须使用
+带工作区后缀的原子单元。执行者必须先读本节和本单元的“当前状态”；状态为“已完成/审查”的
+内容只能审查，不能借执行命令重新施工。
 
 Agent Memory 的冻结**代码**基线固定为：
 
@@ -47,7 +51,7 @@ Agent Memory 代码提交前，`5955cd0` 必须仍是 HEAD 的祖先，且二者
 
 首版提供版本化 `MemorySnapshot`、未覆盖原文 `Tail`、显式确认的 `SESSION MemoryFact` 与确定性 Fact 回忆。首版不提供 Redis、跨会话 `USER` Fact、自动确认 Fact、自动提取敏感信息或风险分级改造。
 
-消息权威源和 Memory 表均在 Web Drizzle/Turso 数据库。Web BFF 是唯一持久化方；Agent 只处理可信 Memory 输入、生成 `ContextArtifact`、确定性回忆和压缩计划。Fact 提议仅在 `09`/`09a` 启用；`01`--`08` 的 `fact_proposals` 固定为空数组。浏览器不能提交 `userId`、Snapshot、Fact、摘要或压缩版本。
+消息权威源和 Memory 表均在 Web Drizzle/Turso 数据库。Web BFF 是唯一持久化方；Agent 只处理可信 Memory 输入、生成 `ContextArtifact`、确定性回忆和压缩计划。Fact proposal 仅在 `09a-Web` 合同审查后由 `09-Agent` 生成、由 `09-Web` 持久化；`01`--`08` 的 `fact_proposals` 固定为空数组。浏览器不能提交 `userId`、Snapshot、Fact、摘要或压缩版本。
 
 ## 关键术语与不变量
 
@@ -79,14 +83,16 @@ RAG 仍只负责外部知识与 citations；Memory 不能产生或支撑 RAG cit
 12. `06-agent-prompt-and-recall.md`
 13. `07-post-turn-compaction.md`
 14. `08-history-mutation-and-deletion.md`
-15. `09a-fact-idempotency-contract.md`
-16. `09-session-fact-lifecycle.md`
-17. `10-fact-web-experience.md`
-18. `11-security-observability-and-flags.md`
-19. `12-test-and-acceptance.md`
-20. `13-rollout-and-handoff.md`
+15. `09a-fact-idempotency-contract.md`（`09a-Web`）
+16. `09-agent-fact-proposal-and-recall.md`（`09-Agent`）
+17. `09-web-fact-lifecycle.md`（`09-Web`）
+18. `10-fact-web-experience.md`（`10-Web`）
+19. `11-agent-flags-security-observability.md`（`11-Agent`）
+20. `11-web-flags-security-observability.md`（`11-Web`）
+21. `12-test-and-acceptance.md`
+22. `13-rollout-and-handoff.md`
 
-`01` 完成后必须先完成 `12a`，使后续所有 Web 单元从第一天就有隔离测试。`02`、`02a` 与 `02b` 必须全部完成，才可建 Memory 表或接入流。`04a` 是唯一服务间接口规范，禁止选择其他返回通道或添加未定义的私有调用；其阶段性端点行为和开关门禁由 04a 自身定义。`06a` 固定 Agent 施工基线，`06b` 完成迁移前适配检查后，`04a`、`05` 与 `06` 才能按各自边界实施；`06` 必须正式以前述四个单元为前置。`07` 先固定敏感值过滤规则，`09a` 先固定 Fact 去重/幂等合同，`09` 必须复用两者；`09` 与 `09a` 一起完成后，`10` 才能开始。
+`01` 完成后必须先完成 `12a`，使后续所有 Web 单元从第一天就有隔离测试。`02`、`02a` 与 `02b` 必须全部完成，才可建 Memory 表或接入流。`04a` 是唯一服务间接口规范，禁止选择其他返回通道或添加未定义的私有调用；其阶段性端点行为和开关门禁由 04a 自身定义。`06a` 固定 Agent 施工基线，`06b` 完成迁移前适配检查后，`04a`、`05` 与 `06` 才能按各自边界实施；`06` 必须正式以前述四个单元为前置。`07` 先固定敏感值过滤规则，`09a-Web` 先冻结并实现 Fact 去重/幂等合同，`09-Agent` 只能生成受限候选，`09-Web` 才能持久化候选并暴露 Fact API；三者均审查通过后，`10-Web` 才能开始。`11-Agent` 与 `11-Web` 在 `09-Agent` 和 `09-Web` 之后实施；`12` 必须等待 `10-Web`、`11-Agent`、`11-Web` 全部通过。
 
 ## 每份施工单必须包含的执行信息
 
@@ -111,6 +117,60 @@ RAG 仍只负责外部知识与 citations；Memory 不能产生或支撑 RAG cit
 - 任意契约不清、迁移无法回滚、Agent 基线未确定时，停止实现并报告阻塞点。
 - 使用“执行 XX”时，执行者仍必须完整阅读本总控、本单元、其前置施工单与当前相关代码；
   只在本单元声明的 `施工位置` 和允许范围内修改。使用“审查 XX”时一律不修改代码或文档。
+
+## 两条公式化工作 Prompt
+
+以下是后续唯一允许复用的执行与审查 Prompt。`<XX>` 必须是本总控列出的**原子单元**，例如
+`09-Agent`、`09-Web`、`11-Agent`，不能填写导航页 `09` 或 `11`。这两条 Prompt 不固定
+Agent 工作区：执行者必须先从施工单的 `施工位置` 选择唯一可写 worktree。
+
+### 执行 `<XX>`
+
+```text
+执行 <XX>。
+
+严格遵守 docs/memory-context-plan/00-execution-guide.md 与本施工单。
+完整阅读总控、本施工单、前置施工单和当前相关源码。
+
+先以本施工单“施工位置”为唯一准则选择工作区与分支；不得假设 Agent 工作区。只有 `12` 可以按其
+施工单列出的顺序在两个**测试**工作区运行命令；不得借此跨工作区扩大写入范围。
+只在本施工单声明的施工位置与允许修改范围内实施；
+不开始下一单元，不重复已完成工作，不扩展功能。
+严格遵守基线、数据、接口、安全、兼容和停止条件。
+
+完成后运行本施工单规定的测试与检查。
+
+最后按总控交接模板汇报：
+单元、基线、改动文件、契约变更、测试结果、未覆盖风险、下一单元是否可开始。
+```
+
+### 审查 `<XX>`
+
+```text
+审查 <XX>。
+
+完整阅读 docs/memory-context-plan/00-execution-guide.md、本施工单、前置施工单与当前实现。
+先以本施工单“施工位置”为唯一准则选择只读工作区；不得假设 Agent 工作区。只有 `12` 可以按其
+施工单列出的顺序在两个测试工作区汇总证据。
+仅审查，不修改代码或文档。
+
+逐项核对：
+1. 是否完整实现目标与每个实施步骤；
+2. 是否只修改允许范围内文件；
+3. 数据、接口、开关、鉴权、失败处理是否符合施工单；
+4. 是否触犯禁止项、破坏公开兼容性或冻结 Runtime；
+5. 测试是否实际运行并满足验收；
+6. 是否满足进入下一单元条件。
+
+最后只输出：
+- PASS 或 FAIL；
+- 证据：文件路径、行号、测试命令与结果；
+- 若 FAIL：按优先级列出必须修复项；
+- 下一单元是否允许开始。
+```
+
+`12` 仍必须在两个工作区分别运行规定测试并汇总证据；`13` 的执行 Prompt 只可完成发布就绪审查、
+文档和本地回滚演练。任何真实环境开关、灰度、推送、部署或回滚都需要用户另行明确授权。
 
 ## 建议的交接模板
 

@@ -4,7 +4,7 @@
 
 把 Memory 的服务间传输锁定为三条受 token 保护的 HTTP 接口，避免 header、副通道、全局变量和公开 ChatResponse 混用。BFF 是唯一调用者；浏览器永远不可访问这些端点。
 
-前置：`04`。负责人：Web + Agent。后续：`05`、`06`、`07`、`09`。
+前置：`04`。负责人：Web + Agent。后续：`05`、`06`、`07`、`09a-Web`。
 
 施工位置：Agent endpoint 只在 `D:\project\AI-QA-Assistant-agent-memory`（`agent-dev-infra`）实施。
 `D:\project\AI-QA-Assistant`（`web-dev`）中既有 BFF internal client、路由选择和单次回退
@@ -77,9 +77,9 @@ POST /api/internal/chat
 }
 ```
 
-`response` 必须与公开 ChatResponse 值等价；`memory_decision` 不能转发至浏览器。为稳定跨层 schema，字段在 01--08 保留但 `fact_proposals` 必须为空数组。`09` 启用 proposal lifecycle 后，才另行规定显式触发、`source_message_id` 校验、BFF 写入 PROPOSED Fact 和浏览器读取方式；在此之前 BFF 不得因该字段写 Fact。
+`response` 必须与公开 ChatResponse 值等价；`memory_decision` 不能转发至浏览器。为稳定跨层 schema，字段在 01--08 保留但 `fact_proposals` 必须为空数组。`09-Agent` 与 `09-Web` 在 `09a-Web` 合同之后启用 proposal lifecycle，才另行规定显式触发、`source_message_id` 校验、BFF 写入 PROPOSED Fact 和浏览器读取方式；在此之前 BFF 不得因该字段写 Fact。
 
-提议、持久化、确认和撤销只在 `09` 与 `09a` 开始后实现。本 endpoint 的字段保留是为了维持冻结契约，而不是授权提前施工。
+提议、持久化、确认和撤销只在 `09a-Web`、`09-Agent`、`09-Web` 开始后实现。本 endpoint 的字段保留是为了维持冻结契约，而不是授权提前施工。
 
 ## Endpoint 2：压缩计划
 
