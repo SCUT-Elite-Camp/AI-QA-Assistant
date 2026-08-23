@@ -1,74 +1,73 @@
-# 12 测试与验收施工单
+# 12 跨工作区验收与证据汇总
 
-## 目标
+## 目标、前置与施工位置
 
-建立从纯函数、Repository、BFF、Agent 到流式完成时序的回归证据。通过测试只代表当前本地环境和覆盖场景，不代表生产性能或回答质量。
+本单元不新增业务能力；它只补齐缺失回归、运行完整矩阵并产出可复现证据。通过测试仅说明指定 commit
+与本地环境的覆盖场景，不代表生产性能、模型质量或真实用户灰度结果。
 
-前置：`01` 至 `11` 及 `12a`。负责人：各单元 owner；最终由集成人汇总。
+前置：`01`--`08`、`09a-Web`、`09-Agent`、`09-Web`、`10-Web`、`11-Agent`、`11-Web` 与 `12a`
+均已审查通过。后续：`13`。负责人：集成人。
 
-## 必须新增的测试组
-
-### Web/数据库
-
-- migration：空库、已有库、外键级联、索引与唯一约束；
-- chat access：跨用户、匿名、公开 chat、伪造 user ID；
-- lifecycle：sequence 单调、重试幂等、取消/错误不写助手；
-- mutation：编辑/重生成 revision 失效、branch 隔离、删除清理；
-- Fact routes：proposal/confirm/revoke 的所有权、状态迁移、过期。
-
-### Agent
-
-- 先运行 `06a` 锁定的 `5955cd0` Week-1 Runtime 回归，证明 `ApplicationContainer`、lifespan、`get_agent()`、`/ready`、工具执行路径未被 Memory 回退；
-- resolver：Snapshot/Tail 边界、Fact 可见性、长度上限、开关回退、注入文本隔离；
-- prompt：当前 query 一次、RAG system 约束仍在、CitationChecker 回归；
-- recall policy：明确回忆命中/不命中、普通问题不触发；
-- compaction planner：8 条 Tail、12 条阈值、旧摘要增量、敏感排除、冲突计划。
-- route/container：三条 internal endpoint 的 token 负向路径、409 开关路径、FastAPI dependency override 复用 `get_agent()`，且不创建第二个 Agent。
-- isolation：Chat、`/api/internal/chat`、compaction 与 reset 不导入、创建、读取或修改 `agent/deep_research/**` 的 Research Job/状态。
-
-### 跨层
-
-在两个职责明确的工作目录中（Web `D:\project\AI-QA-Assistant`，Agent `D:\project\AI-QA-Assistant-agent-memory`）用 mock Agent/Repository 或真实本地服务证明：
+这是唯一可按顺序使用两个工作区的单元：
 
 ```text
-用户消息落库 -> trusted context -> Agent answer -> 流成功
--> 助手消息落库 -> compaction plan -> Snapshot 持久化
+Web 测试工作区：D:\project\AI-QA-Assistant（web-dev）
+Agent 测试工作区：D:\project\AI-QA-Assistant-agent-memory（agent-dev-infra）
 ```
 
-额外验证服务重启后由数据库恢复、Memory 失败降级、无 cross-user Fact 泄露。
+允许修改仅限缺失测试和证据：
 
-## 运行与报告
+- `web/tests/utils/**`、`web/tests/routes/**`、`web/tests/integration/**`
+- `agent/tests/unit/**`、`agent/tests/integration/**`
+- `docs/memory-context-plan/evidence/12-acceptance-report.md`
 
-Web 使用 `12a` 固定的 Vitest + 临时 libSQL 数据库。除单元测试外，至少运行：
+禁止修改生产源码、schema/migration、环境秘密、部署脚本、公开 ChatResponse、Deep Research。若任一测试
+暴露生产 bug，停止 12，回到对应原子单元修复并重新审查；不得在 12 顺手修业务代码。
+
+## 必须覆盖的验收矩阵
+
+| 层 | 必测不变量 |
+| --- | --- |
+| Web/数据库 | migration、chat ownership/匿名、sequence/幂等、SSE 失败不写助手、revision 失效、branch 隔离、删除级联、Fact proposal/confirm/revoke/过期/敏感/跨用户。 |
+| Agent | Week-1 Runtime、Resolver 的 Snapshot/Tail/Fact/injection、Prompt 当前 query 一次、命中/空 Fact recall、候选命令、Planner 8/12/敏感/冲突、三 internal endpoint token/409/shared Agent。 |
+| 开关 | persistent/fact/cache 三个默认关闭；cache 误开 fail closed；409 仅一次公开回退；Memory 故障不阻断回答且不泄露正文。 |
+| 跨层 | 用户消息持久化 → trusted context → internal Agent response → assistant 成功持久化 → proposal/compaction plan → Web 事务写入；重启后 Snapshot+Tail 恢复；编辑/删除后旧 Memory 不可见。 |
+| 隔离 | 浏览器无法提交权威 Memory；Fact 不产生 RAG citation；Chat/internal/compaction/reset 不导入、创建、读取或写入 Deep Research 状态。 |
+
+跨层自动测试必须使用固定 mock Agent HTTP response 与 04 的 `memoryContract` schema，同时在 Agent
+integration test 中验证同一 JSON fixture 被 private endpoint 接受。fixture 放在
+`docs/memory-context-plan/evidence/fixtures/`，只含虚构 ID/文本，不能放真实用户数据或 token。若需要
+真实本地服务才能验证某项，记录为“手工 smoke”，写明启动命令、端口、开关、清理步骤和结果；不因此宣称
+端到端自动化通过。
+
+## 固定执行顺序与命令
+
+运行前后在两个工作区分别记录 `git show --no-patch --format=%H HEAD`；所有结果写入报告。
 
 ```powershell
-cd D:\project\AI-QA-Assistant\web
+Set-Location D:\project\AI-QA-Assistant\web
 pnpm run db:generate
 pnpm run db:migrate
+pnpm exec vitest run
 pnpm run typecheck
 pnpm run lint
 ```
 
-Agent 使用以 `5955cd0` 为冻结代码祖先（可叠加 docs-only 同步提交）的 `agent-dev-infra` 工作目录上的项目 Python/venv，先运行该分支实际提供的 Week-1 runner，再运行目标 pytest 模块及全量 pytest：
-
 ```powershell
 Set-Location D:\project\AI-QA-Assistant-agent-memory
-python agent\scripts\run_week1_tests.py
-python -m pytest agent\tests
+& .\.venv\Scripts\python.exe agent\scripts\run_week1_tests.py
+& .\.venv\Scripts\python.exe -m pytest agent\tests
+& .\.venv\Scripts\python.exe agent\scripts\check_contract.py
 ```
 
-若项目 Python 不是 `python`，仅替换解释器路径，不改变 runner 和测试范围。若环境不存在，报告准确命令和失败原因；不得编造成功。运行前后记录 `git show --no-patch --format=%H HEAD`，防止把旧 `web-dev` 的测试结果当作新版 Runtime 的证据。
+命令失败时保留原始失败输出、commit 和环境版本；不得用跳过、删测试或修改全局 timeout 伪造通过。Windows
+临时 libSQL 目录若因句柄延迟无法删除，必须重跑验证退出码为 0 且记录该限制；不能只忽略非零退出。
 
-每个测试报告应写：commit、环境、命令、通过/失败数、未运行项、真实限制。性能测试和 Redis 不在本单元范围。
+## 证据报告、完成与停止条件
 
-## 验收门槛
+`12-acceptance-report.md` 必须含：Web/Agent commit、解释器与 pnpm 版本、每个命令、通过/失败数、
+新增/未运行测试、手工 smoke 步骤和证据位置、已知限制、默认开关值、Chat/Deep Research 隔离结论。
 
-- 无阻断性迁移问题；公开 ChatResponse 兼容；
-- Snapshot/Tail 跨重启恢复；
-- 只使用 Confirmed、未过期、同 revision SESSION Fact；
-- 编辑/删除后不再读取旧记忆；
-- Memory 任一故障可降级；
-- 所有权/内部 token 负向测试通过。
-- Agent 侧 `ApplicationContainer`/lifecycle/工具执行器回归通过，且 Chat Memory 与 Deep Research 严格隔离。
-
-未满足任何一项，停止发布并回到对应单元修复。
+完成条件：矩阵全部通过、所有公开兼容性和安全负向路径有证据、报告已审查。停止并回退到原单元：migration
+阻断、任何跨用户/内部 token 泄露、Fact 进入错误 revision、Memory 失败阻断聊天、Deep Research 耦合、
+或缺失人工验收证据。只有完成条件满足后才允许执行 13。
