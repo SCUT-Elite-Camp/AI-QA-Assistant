@@ -142,14 +142,18 @@ exact `X-Agent-Internal-Token`. The Agent compares this token in constant time;
 missing, blank, or incorrect values all receive the same `403` response.
 
 - `/chat` accepts only `InternalChatRequest`. With the Agent persistent flag
-  disabled it returns `409 { "code": "persistent_memory_disabled" }`. When a
-  contract test enables the flag, this intermediate implementation delegates to
-  the shared Agent and returns `InternalChatResponse` with
-  `memory_decision.fact_proposals=[]`; it does not yet inject Memory into a
-  Prompt or produce Facts.
-- `/memory/compaction-plan` only validates its request and always returns
-  `{ "should_compact": false }` until Unit 07. It never reads or writes the
-  Web database.
+  disabled it returns `409 { "code": "persistent_memory_disabled" }`. When
+  enabled, it delegates to the shared Agent, resolves the trusted Memory context
+  and returns `InternalChatResponse`; `memory_decision.fact_proposals=[]`
+  remains fixed through Unit 08.
+- `/memory/compaction-plan` validates BFF-supplied current-revision messages
+  and returns either `{ "should_compact": false }` or a pure optimistic
+  Snapshot plan. It never reads or writes the Web database: the BFF applies a
+  positive plan only after the assistant message is durable, using the returned
+  expected active Snapshot ID/version for its transaction. Snapshot summaries
+  are deterministically bounded by `MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS`
+  (default `1200`) and omit a whole message when the fixed sensitive-value
+  policy matches it.
 - `/memory/reset-short-window` calls only the existing in-process
   `ConversationMemory.clear(chat_id)`. It never writes Snapshot or Fact data.
 

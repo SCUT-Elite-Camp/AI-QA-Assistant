@@ -72,6 +72,10 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("MEMORY_BRIEF_MAX_CHARS", 1200),
         ge=1,
     )
+    MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS", 1200),
+        ge=1,
+    )
     MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
         default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
         ge=1,
