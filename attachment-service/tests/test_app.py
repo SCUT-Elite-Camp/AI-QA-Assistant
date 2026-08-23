@@ -182,6 +182,36 @@ def test_length_mismatch_and_internal_auth_are_rejected(service) -> None:
     assert response.json()["detail"]["code"] == "length_mismatch"
 
 
+def test_library_version_remote_id_is_accepted(service) -> None:
+    module, client = service
+    headers = _headers("manual-contract.md")
+    headers.update({
+        "X-Scope": "library",
+        "X-Knowledge-Base-ID": "kb_personal_1",
+        "X-Document-ID": "doc_manual_1",
+        "X-Version-ID": "ver_manual01",
+        "X-Source-Scope": "personal",
+    })
+
+    response = client.post(
+        "/v1/attachments/ver_manual01",
+        headers=headers,
+        content=b"# Contract\n\nPAYMENT_TERM_ALPHA_37",
+    )
+
+    assert response.status_code == 201
+    record = module.STORE.get_attachment("ver_manual01")
+    assert record["knowledge_base_id"] == "kb_personal_1"
+    assert record["document_id"] == "doc_manual_1"
+    assert record["version_id"] == "ver_manual01"
+    assert record["source_scope"] == "personal"
+    assert client.post(
+        "/v1/attachments/doc_not_remote",
+        headers=headers,
+        content=b"safe text",
+    ).status_code == 400
+
+
 def test_excel_http_flow_preserves_sheet_and_cell_range(service) -> None:
     import openpyxl
 

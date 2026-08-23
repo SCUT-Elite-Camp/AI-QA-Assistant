@@ -48,7 +48,7 @@ VECTOR_PENDING_LOCK = threading.Lock()
 VECTOR_WAKE = threading.Event()
 VECTOR_FAILURE_LOGGED: set[str] = set()
 SCANNER_READY = False
-ATTACHMENT_ID_PATTERN = re.compile(r"^att_[A-Za-z0-9]{1,60}$")
+ATTACHMENT_ID_PATTERN = re.compile(r"^(?:att|ver)_[A-Za-z0-9]{1,60}$")
 
 
 def _queue_vector_index(attachment_id: str) -> None:
