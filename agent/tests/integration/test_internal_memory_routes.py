@@ -111,6 +111,19 @@ def _compaction_payload() -> dict[str, object]:
     }
 
 
+def _compaction_messages(count: int) -> list[dict[str, object]]:
+    return [
+        {
+            "id": f"message-{sequence}",
+            "sequence": sequence,
+            "revision": 1,
+            "role": "user" if sequence % 2 else "assistant",
+            "content": f"persisted message {sequence}",
+        }
+        for sequence in range(1, count + 1)
+    ]
+
+
 def test_production_application_registers_only_the_private_memory_routes() -> None:
     assert str(production_app.url_path_for("internal_chat")) == "/api/internal/chat"
     assert (
@@ -257,4 +270,71 @@ def test_compaction_is_a_noop_and_reset_clears_only_short_window(
     assert reset.status_code == 200
     assert reset.json() == {"status": "ok"}
     assert agent.memory.cleared_chat_ids == ["chat-1"]
+    assert agent.requests == []
+
+
+def test_compaction_returns_a_pure_plan_without_using_the_shared_agent(
+    internal_client: tuple[TestClient, RecordingAgent],
+) -> None:
+    client, agent = internal_client
+    payload = _compaction_payload()
+    payload["messages"] = _compaction_messages(20)
+
+    response = client.post(
+        "/api/internal/memory/compaction-plan",
+        json=payload,
+        headers=_headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "should_compact": True,
+        "expected_active_snapshot": None,
+        "new_snapshot": {
+            "covered_from_sequence": 1,
+            "covered_to_sequence": 12,
+            "covered_from_message_id": "message-1",
+            "covered_to_message_id": "message-12",
+            "summary": "[New covered messages]\n"
+            "- user: persisted message 1\n"
+            "- assistant: persisted message 2\n"
+            "- user: persisted message 3\n"
+            "- assistant: persisted message 4\n"
+            "- user: persisted message 5\n"
+            "- assistant: persisted message 6\n"
+            "- user: persisted message 7\n"
+            "- assistant: persisted message 8\n"
+            "- user: persisted message 9\n"
+            "- assistant: persisted message 10\n"
+            "- user: persisted message 11\n"
+            "- assistant: persisted message 12",
+        },
+    }
+    assert agent.requests == []
+    assert agent.memory.cleared_chat_ids == []
+
+
+def test_compaction_rejects_non_current_revision_messages(
+    internal_client: tuple[TestClient, RecordingAgent],
+) -> None:
+    client, agent = internal_client
+    payload = _compaction_payload()
+    payload["messages"] = [
+        {
+            "id": "message-1",
+            "sequence": 1,
+            "revision": 2,
+            "role": "user",
+            "content": "stale revision",
+        }
+    ]
+
+    response = client.post(
+        "/api/internal/memory/compaction-plan",
+        json=payload,
+        headers=_headers(),
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": "invalid_memory_context"}
     assert agent.requests == []

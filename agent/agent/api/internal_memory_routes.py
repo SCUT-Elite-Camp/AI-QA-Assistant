@@ -11,12 +11,13 @@ from fastapi.responses import JSONResponse
 from agent.agent import Agent
 from agent.api.chat_routes import get_agent
 from agent.config.settings import settings
+from agent.memory.compaction_planner import CompactionPlanner
 from agent.schemas.chat import (
+    CompactionPlanResponse,
     CompactionPlanRequest,
     InternalChatRequest,
     InternalChatResponse,
     MemoryContextInput,
-    NoCompactionPlan,
     ResetShortWindowRequest,
     ResetShortWindowResponse,
 )
@@ -80,13 +81,25 @@ def validate_memory_context(context: MemoryContextInput) -> None:
 
 
 def validate_compaction_request(request: CompactionPlanRequest) -> None:
-    """Keep the no-op route strict about versioned input without reading storage."""
+    """Reject malformed versioned input without reading storage."""
 
     if (
         request.active_snapshot is not None
         and request.active_snapshot.revision != request.revision
     ):
         _reject_invalid_memory_context()
+
+    previous_sequence = 0
+    message_ids: set[str] = set()
+    for message in request.messages:
+        if message.revision != request.revision:
+            _reject_invalid_memory_context()
+        if message.sequence <= previous_sequence:
+            _reject_invalid_memory_context()
+        if message.id in message_ids:
+            _reject_invalid_memory_context()
+        previous_sequence = message.sequence
+        message_ids.add(message.id)
 
 
 @router.post("/chat", response_model=InternalChatResponse)
@@ -112,16 +125,16 @@ def internal_chat(
     )
 
 
-@router.post("/memory/compaction-plan", response_model=NoCompactionPlan)
+@router.post("/memory/compaction-plan", response_model=CompactionPlanResponse)
 def compaction_plan(
     request: CompactionPlanRequest,
     _: Annotated[None, Depends(require_agent_internal_token)],
     __: Annotated[None, Depends(require_json_content_type)],
-) -> NoCompactionPlan:
-    """Stable no-op until Unit 07 owns CompactionPlanner integration."""
+) -> CompactionPlanResponse:
+    """Return a pure post-persistence plan; the BFF remains the sole writer."""
 
     validate_compaction_request(request)
-    return NoCompactionPlan(should_compact=False)
+    return CompactionPlanner().plan(request)
 
 
 @router.post("/memory/reset-short-window", response_model=ResetShortWindowResponse)
