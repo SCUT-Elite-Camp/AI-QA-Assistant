@@ -4,7 +4,16 @@ from typing import Any
 from agent.agent import Agent
 from agent.memory import InMemoryConversationMemory
 from agent.query import QueryUnderstanding
-from agent.schemas.chat import ChatRequest
+from agent.config.settings import settings
+from agent.schemas.chat import (
+    ChatRequest,
+    InternalActor,
+    InternalChatRequest,
+    MemoryContextInput,
+    MemoryFactInput,
+    MemoryMessage,
+    MemorySnapshotInput,
+)
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 from toolset.tool_layer import BaseTool
 
@@ -132,6 +141,42 @@ class FixedQueryUnderstanding:
         return self.plan.model_copy(update={"original_query": query, "filters": merged})
 
 
+def _persistent_request(
+    query: str,
+    *,
+    facts: list[MemoryFactInput] | None = None,
+) -> InternalChatRequest:
+    return InternalChatRequest(
+        query=query,
+        session_id="persistent-session",
+        is_first_message=False,
+        memory_context=MemoryContextInput(
+            actor=InternalActor(user_id="user-1", authenticated=True),
+            chat_id="persistent-session",
+            revision=1,
+            current_message_id="message-3",
+            current_sequence=3,
+            snapshot=MemorySnapshotInput(
+                id="snapshot-1",
+                version=1,
+                revision=1,
+                covered_to_sequence=1,
+                summary="Earlier discussion summary.",
+            ),
+            facts=facts or [],
+            tail=[
+                MemoryMessage(
+                    id="message-2",
+                    sequence=2,
+                    revision=1,
+                    role="assistant",
+                    content="Earlier answer.",
+                )
+            ],
+        ),
+    )
+
+
 def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() -> None:
     llm = PipelineLLM()
     memory = InMemoryConversationMemory()
@@ -188,3 +233,66 @@ def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None
     assert [call["query"] for call in search.calls] == ["A 和 B", "A", "B"]
     assert agent.last_citation_check is not None
     assert agent.last_citation_check.valid is True
+
+
+def test_persistent_context_is_used_without_legacy_short_window_double_write(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    llm = PipelineLLM()
+    memory = InMemoryConversationMemory()
+    agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request("What did we discuss?")
+    )
+
+    assert response.status == "success"
+    assert decision.context_artifact is not None
+    assert decision.fact_proposals == []
+    assert decision.recall is None
+    assert agent.last_orchestration is not None
+    assert [message["role"] for message in agent.last_orchestration.history] == [
+        "system",
+        "assistant",
+    ]
+    runner_messages = next(call["messages"] for call in llm.calls if call["tools"])
+    assert [message["role"] for message in runner_messages[:4]] == [
+        "system",
+        "system",
+        "assistant",
+        "user",
+    ]
+    assert runner_messages[-1]["content"] == "What did we discuss?"
+    assert memory.get_messages("persistent-session") == []
+
+
+def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    llm = PipelineLLM()
+    memory = InMemoryConversationMemory()
+    agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request(
+            "我之前确认的目标是什么？",
+            facts=[
+                MemoryFactInput(
+                    id="fact-1",
+                    category="GOAL",
+                    value="完成答辩准备。",
+                    expires_at=None,
+                )
+            ],
+        )
+    )
+
+    assert response.status == "success"
+    assert response.answer == "你此前确认的目标：\n- 完成答辩准备。"
+    assert response.citations == []
+    assert decision.recall is not None and decision.recall.handled is True
+    assert decision.fact_proposals == []
+    assert llm.calls == []
+    assert memory.get_messages("persistent-session") == []

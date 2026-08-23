@@ -18,7 +18,12 @@ from agent.query import (
 )
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
-from agent.schemas.chat import ChatRequest, ChatResponse
+from agent.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    InternalChatRequest,
+    MemoryDecision,
+)
 from agent.schemas.common import StatusCode
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
@@ -110,31 +115,56 @@ class Agent:
         query_plan: QueryPlan | None = None,
     ) -> ChatResponse:
         """Execute one chat turn and preserve the CP1 Web response contract."""
+        response, _ = self._execute_chat(request, query_plan=query_plan)
+        return response
+
+    def chat_with_memory(
+        self,
+        request: InternalChatRequest,
+        query_plan: QueryPlan | None = None,
+    ) -> tuple[ChatResponse, MemoryDecision]:
+        """Execute a trusted internal Memory request without exposing its DTO publicly."""
+        response, decision = self._execute_chat(request, query_plan=query_plan)
+        return response, decision
+
+    def _execute_chat(
+        self,
+        request: ChatRequest,
+        *,
+        query_plan: QueryPlan | None = None,
+    ) -> tuple[ChatResponse, MemoryDecision]:
         start_time = self.audit_service.start_timer()
         trace_id = self.trace_service.start_trace()
+        persistent_memory_request = self._is_persistent_memory_request(request)
 
         try:
-            response = self._chat_internal(request, trace_id, query_plan=query_plan)
-            latency_ms = self.audit_service.stop_timer(start_time)
-            self.audit_service.record(
-                trace_id=trace_id,
-                query=request.query,
-                answer=response.answer or response.message,
-                status=response.status,
-                latency_ms=latency_ms,
-                session_id=request.session_id,
+            response, decision = self._chat_internal(
+                request,
+                trace_id,
+                query_plan=query_plan,
             )
-            return response
+            latency_ms = self.audit_service.stop_timer(start_time)
+            if not persistent_memory_request:
+                self.audit_service.record(
+                    trace_id=trace_id,
+                    query=request.query,
+                    answer=response.answer or response.message,
+                    status=response.status,
+                    latency_ms=latency_ms,
+                    session_id=request.session_id,
+                )
+            return response, decision
         except Exception as exc:
             latency_ms = self.audit_service.stop_timer(start_time)
-            self.audit_service.record(
-                trace_id=trace_id,
-                query=request.query,
-                answer=f"Error: {exc}",
-                status=StatusCode.AGENT_LIMIT_REACHED,
-                latency_ms=latency_ms,
-                session_id=request.session_id,
-            )
+            if not persistent_memory_request:
+                self.audit_service.record(
+                    trace_id=trace_id,
+                    query=request.query,
+                    answer=f"Error: {exc}",
+                    status=StatusCode.AGENT_LIMIT_REACHED,
+                    latency_ms=latency_ms,
+                    session_id=request.session_id,
+                )
             raise exc
         finally:
             self.trace_service.clear_trace()
@@ -145,17 +175,20 @@ class Agent:
         trace_id: str,
         *,
         query_plan: QueryPlan | None = None,
-    ) -> ChatResponse:
+    ) -> tuple[ChatResponse, MemoryDecision]:
         query = request.query.strip()
         if not query:
-            return self._error_response(
-                trace_id=trace_id,
-                query=request.query,
-                status=StatusCode.INVALID_QUERY,
-                message="请输入有效问题。",
-                stage="validation",
-                retrieval_mode=request.retrieval_mode,
-                top_k=request.top_k,
+            return (
+                self._error_response(
+                    trace_id=trace_id,
+                    query=request.query,
+                    status=StatusCode.INVALID_QUERY,
+                    message="请输入有效问题。",
+                    stage="validation",
+                    retrieval_mode=request.retrieval_mode,
+                    top_k=request.top_k,
+                ),
+                MemoryDecision(fact_proposals=[]),
             )
 
         try:
@@ -177,21 +210,47 @@ class Agent:
                 self.tool_executor.reset_request_context(context_token)
 
         except ValueError as exc:
-            return self._error_response(
-                trace_id=trace_id,
-                query=request.query,
-                status=StatusCode.INVALID_QUERY,
-                message="查询计划与当前请求不一致。",
-                stage="query_plan_validation",
-                retrieval_mode=request.retrieval_mode,
-                top_k=request.top_k,
-                error=str(exc),
+            return (
+                self._error_response(
+                    trace_id=trace_id,
+                    query=request.query,
+                    status=StatusCode.INVALID_QUERY,
+                    message="查询计划与当前请求不一致。",
+                    stage="query_plan_validation",
+                    retrieval_mode=request.retrieval_mode,
+                    top_k=request.top_k,
+                    error=str(exc),
+                ),
+                MemoryDecision(fact_proposals=[]),
             )
 
         self.last_orchestration = orchestration
         plan = orchestration.query_plan
         run_result = orchestration.run_result
         self.last_run_result = run_result
+        memory_decision = MemoryDecision(
+            context_artifact=orchestration.context_artifact,
+            fact_proposals=[],
+            recall=orchestration.memory_recall,
+        )
+
+        if (
+            orchestration.memory_recall is not None
+            and orchestration.memory_recall.handled
+        ):
+            return (
+                ChatResponse(
+                    trace_id=trace_id,
+                    status=StatusCode.SUCCESS,
+                    answer=orchestration.memory_recall.answer or "",
+                    message="",
+                    citations=[],
+                ),
+                memory_decision,
+            )
+
+        if run_result is None:
+            raise RuntimeError("orchestration returned no runtime result")
 
         response = self._map_run_result(
             run_result=run_result,
@@ -203,8 +262,14 @@ class Agent:
 
         is_first = request.is_first_message
         if is_first is None:
-            history_msgs = self.memory.get_messages(request.session_id) if request.session_id else []
-            is_first = (len(history_msgs) == 0)
+            if self._is_persistent_memory_request(request):
+                is_first = not any(
+                    message.get("role") in {"user", "assistant"}
+                    for message in orchestration.history
+                )
+            else:
+                history_msgs = self.memory.get_messages(request.session_id) if request.session_id else []
+                is_first = (len(history_msgs) == 0)
 
         extracted_title, clean_answer = self._separate_title_and_answer(response.answer)
         if extracted_title:
@@ -228,8 +293,9 @@ class Agent:
             session_id=request.session_id,
             query=plan.original_query,
             response=response,
+            persistent_memory=self._is_persistent_memory_request(request),
         )
-        return response
+        return response, memory_decision
 
     @staticmethod
     def _separate_title_and_answer(answer_text: str) -> tuple[Optional[str], str]:
@@ -363,10 +429,12 @@ class Agent:
         session_id: str | None,
         query: str,
         response: ChatResponse,
+        persistent_memory: bool = False,
     ) -> None:
         if (
             not settings.MEMORY_ENABLED
             or not session_id
+            or persistent_memory
             or response.status
             not in {StatusCode.SUCCESS, StatusCode.CLARIFICATION_REQUIRED}
         ):
@@ -377,6 +445,13 @@ class Agent:
             return
         self.memory.add_message(session_id, "user", query)
         self.memory.add_message(session_id, "assistant", assistant_content)
+
+    @staticmethod
+    def _is_persistent_memory_request(request: ChatRequest) -> bool:
+        return settings.PERSISTENT_MEMORY_ENABLED and isinstance(
+            request,
+            InternalChatRequest,
+        )
 
     def _map_run_result(
         self,

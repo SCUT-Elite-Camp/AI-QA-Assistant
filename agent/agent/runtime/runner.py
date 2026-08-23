@@ -433,11 +433,16 @@ class AgentRunner:
             if is_first_message
             else ""
         )
+        standalone_query_context = (
+            f"检索用独立查询：{query_plan.standalone_query}\n\n"
+            if query_plan.standalone_query != query_plan.original_query
+            else ""
+        )
         system_content = (
             f"{SYSTEM_ROLE}\n\n"
             "你可以使用提供的工具获取回答所需的证据。"
             "工具返回后，基于观察结果给出最终答案；不要编造不存在的证据。\n\n"
-            f"检索用独立查询：{query_plan.standalone_query}\n\n"
+            f"{standalone_query_context}"
             f"回答约束：\n{ANSWER_RULES}"
             f"{title_directive}"
         )

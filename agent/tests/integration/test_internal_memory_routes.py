@@ -10,7 +10,7 @@ from app import app as production_app
 from agent.api.chat_routes import get_agent, router as public_chat_router
 from agent.api.internal_memory_routes import router as internal_memory_router
 from agent.config.settings import settings
-from agent.schemas.chat import ChatRequest, ChatResponse
+from agent.schemas.chat import ChatRequest, ChatResponse, MemoryDecision
 
 
 @dataclass
@@ -35,6 +35,12 @@ class RecordingAgent:
             message="",
             citations=[],
         )
+
+    def chat_with_memory(
+        self,
+        request: ChatRequest,
+    ) -> tuple[ChatResponse, MemoryDecision]:
+        return self.chat(request), MemoryDecision(fact_proposals=[])
 
 
 @pytest.fixture
