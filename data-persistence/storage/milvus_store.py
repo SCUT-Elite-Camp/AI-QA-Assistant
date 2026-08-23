@@ -26,7 +26,13 @@ class MilvusStore:
 
     def connect(self) -> None:
         if not self._connected:
-            connections.connect("default", host=self.host, port=self.port, timeout=0.5)
+            try:
+                timeout = float(os.getenv("MILVUS_CONNECT_TIMEOUT_SECONDS", "5"))
+            except ValueError:
+                timeout = 5.0
+            if timeout <= 0:
+                timeout = 5.0
+            connections.connect("default", host=self.host, port=self.port, timeout=timeout)
             self._connected = True
 
     def init_collection(

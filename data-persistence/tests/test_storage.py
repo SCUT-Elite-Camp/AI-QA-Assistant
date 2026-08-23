@@ -51,6 +51,27 @@ def test_document_store():
     assert load_document(TEST_DOC_ID) is None
 
 
+@pytest.mark.parametrize(
+    ("configured", "expected"),
+    [(None, 5.0), ("7.5", 7.5), ("invalid", 5.0), ("0", 5.0)],
+)
+def test_milvus_connect_timeout_is_configurable(monkeypatch, configured, expected):
+    calls = []
+    if configured is None:
+        monkeypatch.delenv("MILVUS_CONNECT_TIMEOUT_SECONDS", raising=False)
+    else:
+        monkeypatch.setenv("MILVUS_CONNECT_TIMEOUT_SECONDS", configured)
+    monkeypatch.setattr(
+        "storage.milvus_store.connections.connect",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    store = MilvusStore()
+    store.connect()
+
+    assert calls == [(("default",), {"host": "localhost", "port": "19530", "timeout": expected})]
+
+
 @pytest.mark.skipif(not MILVUS_AVAILABLE, reason="本地 Milvus 服务未运行，跳过向量存储测试")
 def test_milvus_store():
     """
