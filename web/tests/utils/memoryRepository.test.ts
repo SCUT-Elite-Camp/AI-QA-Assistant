@@ -150,7 +150,6 @@ describe('memory repository', () => {
     await confirmFact(fixture.db, {
       actorUserId: fixture.userId,
       chatId: fixture.chatId,
-      expiresAt: null,
       factId: confirmedProposal.fact.id,
       historyRevision: 1
     })
@@ -382,14 +381,12 @@ describe('memory repository', () => {
     const confirmed = await confirmFact(fixture.db, {
       actorUserId: fixture.userId,
       chatId: fixture.chatId,
-      expiresAt: null,
       factId: proposal.fact.id,
       historyRevision: fixture.source.historyRevision
     })
     const confirmedAgain = await confirmFact(fixture.db, {
       actorUserId: fixture.userId,
       chatId: fixture.chatId,
-      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
       factId: proposal.fact.id,
       historyRevision: fixture.source.historyRevision
     })
@@ -433,7 +430,6 @@ describe('memory repository', () => {
     await expect(confirmFact(fixture.db, {
       actorUserId: fixture.userId,
       chatId: fixture.chatId,
-      expiresAt: null,
       factId: proposal.fact.id,
       historyRevision: fixture.source.historyRevision
     })).rejects.toBeInstanceOf(MemoryFactRevokedError)
@@ -460,6 +456,70 @@ describe('memory repository', () => {
       actorUserId: fixture.userId,
       chatId: fixture.chatId
     })).toEqual({ deletedFactCount: 1, deletedSnapshotCount: 1 })
+  })
+
+  it('keeps the browser Fact reader separate from the confirmed-only resolver reader', async () => {
+    const fixture = await createFixture()
+    const { confirmFact, createFactProposal, getCurrentRevisionFacts, getVisibleFacts, revokeFact } = await import('../../server/utils/memoryRepository')
+    const proposed = await createFactProposal(fixture.db, proposalInput(fixture))
+    const confirmedProposal = await createFactProposal(fixture.db, {
+      ...proposalInput(fixture),
+      category: 'GOAL',
+      value: 'Finish the current project.'
+    })
+    const confirmed = await confirmFact(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      factId: confirmedProposal.fact.id,
+      historyRevision: fixture.source.historyRevision,
+      now: new Date('2026-08-23T00:00:00.000Z')
+    })
+    const revoked = await createFactProposal(fixture.db, {
+      ...proposalInput(fixture),
+      category: 'PLAN_CONSTRAINT',
+      value: 'Finish before Friday.'
+    })
+    await revokeFact(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      factId: revoked.fact.id,
+      historyRevision: fixture.source.historyRevision
+    })
+
+    const input = {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision
+    }
+    const expectedBrowserFacts = [proposed.fact, confirmed].sort((left, right) => (
+      left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id)
+    ))
+    expect(await getCurrentRevisionFacts(fixture.db, input)).toEqual(expectedBrowserFacts)
+    expect(await getVisibleFacts(fixture.db, input)).toEqual([confirmed])
+  })
+
+  it('reads a Fact source only for its owner and exact current revision', async () => {
+    const fixture = await createFixture()
+    const { MemoryRepositoryError, readCurrentRevisionFactSource } = await import('../../server/utils/memoryRepository')
+
+    await expect(readCurrentRevisionFactSource(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision,
+      sourceMessageId: fixture.source.id
+    })).resolves.toMatchObject({ id: fixture.source.id, role: 'user' })
+    await expect(readCurrentRevisionFactSource(fixture.db, {
+      actorUserId: fixture.userId,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision + 1,
+      sourceMessageId: fixture.source.id
+    })).resolves.toBeUndefined()
+    await expect(readCurrentRevisionFactSource(fixture.db, {
+      actorUserId: `attacker-${randomUUID()}`,
+      chatId: fixture.chatId,
+      historyRevision: fixture.source.historyRevision,
+      sourceMessageId: fixture.source.id
+    })).rejects.toBeInstanceOf(MemoryRepositoryError)
   })
 
   it('atomically archives the expected ACTIVE Snapshot before creating its next version', async () => {

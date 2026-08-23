@@ -6,6 +6,7 @@ import type {
   MemorySnapshotStatus
 } from '../database/schema'
 import { tables, useDrizzle } from './drizzle'
+import type { FactView } from './memoryContract'
 
 type Database = NonNullable<ReturnType<typeof useDrizzle>>
 type MemorySnapshotRecord = typeof tables.memorySnapshots.$inferSelect
@@ -52,6 +53,13 @@ export interface TailMessageDto {
   sequence: number
 }
 
+export interface FactSourceMessageDto {
+  historyRevision: number
+  id: string
+  parts: MessageRecord['parts']
+  role: MessageRecord['role']
+}
+
 export class MemoryRepositoryError extends Error {
   constructor(
     readonly code: 'chat_not_found' | 'fact_not_found' | 'source_message_not_found',
@@ -94,7 +102,6 @@ export interface CreateFactProposalResult {
 }
 
 export interface ConfirmFactInput extends ReadMemoryInput {
-  expiresAt: Date | null
   factId: string
   now?: Date
 }
@@ -196,6 +203,20 @@ function toMemoryFactDto(fact: MemoryFactRecord): MemoryFactDto {
   }
 }
 
+/** Maps a repository record to the frozen browser-safe FactView contract. */
+export function toFactView(fact: MemoryFactDto): FactView {
+  return {
+    id: fact.id,
+    category: fact.category,
+    status: fact.status,
+    value: fact.value,
+    sourceMessageId: fact.sourceMessageId,
+    expiresAt: fact.expiresAt?.toISOString() ?? null,
+    confirmedAt: fact.confirmedAt?.toISOString() ?? null,
+    createdAt: fact.createdAt.toISOString()
+  }
+}
+
 function toTailMessageDto(message: MessageRecord): TailMessageDto {
   return {
     createdAt: message.createdAt,
@@ -222,6 +243,38 @@ function createProposalKey(input: CreateFactProposalInput): string {
   ].join('\0')
 
   return createHash('sha256').update(serialized, 'utf8').digest('hex')
+}
+
+const proposalWriteLocks = new Map<string, Promise<void>>()
+
+async function serializeProposalWrite<T>(
+  proposalKey: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  let release!: () => void
+  const completion = new Promise<void>(resolve => { release = resolve })
+  const predecessor = proposalWriteLocks.get(proposalKey) ?? Promise.resolve()
+  proposalWriteLocks.set(proposalKey, completion)
+  await predecessor
+
+  try {
+    return await operation()
+  } finally {
+    release()
+    if (proposalWriteLocks.get(proposalKey) === completion) {
+      proposalWriteLocks.delete(proposalKey)
+    }
+  }
+}
+
+const FACT_EXPIRY_MS: Record<MemoryFactCategory, number> = {
+  GOAL: 90 * 24 * 60 * 60 * 1000,
+  PREFERENCE: 90 * 24 * 60 * 60 * 1000,
+  PLAN_CONSTRAINT: 30 * 24 * 60 * 60 * 1000
+}
+
+function calculateFactExpiry(category: MemoryFactCategory, confirmedAt: Date): Date {
+  return new Date(confirmedAt.getTime() + FACT_EXPIRY_MS[category])
 }
 
 function validateTailWindow(input: ReadTailInput): void {
@@ -365,9 +418,64 @@ export async function getVisibleFacts(
         gt(tables.memoryFacts.expiresAt, now)
       )
     ))
-    .orderBy(asc(tables.memoryFacts.createdAt))
+    .orderBy(asc(tables.memoryFacts.createdAt), asc(tables.memoryFacts.id))
 
   return facts.map(toMemoryFactDto)
+}
+
+/**
+ * Browser Fact management needs pending and confirmed records, while resolver
+ * reads stay confirmed-only in getVisibleFacts().
+ */
+export async function getCurrentRevisionFacts(
+  db: Database,
+  input: ReadMemoryInput & { now?: Date }
+): Promise<MemoryFactDto[]> {
+  await requireOwnedChat(db, input.actorUserId, input.chatId)
+  const now = input.now ?? new Date()
+
+  const facts = await db.select()
+    .from(tables.memoryFacts)
+    .where(and(
+      eq(tables.memoryFacts.userId, input.actorUserId),
+      eq(tables.memoryFacts.chatId, input.chatId),
+      eq(tables.memoryFacts.historyRevision, input.historyRevision),
+      eq(tables.memoryFacts.scope, 'SESSION'),
+      inArray(tables.memoryFacts.status, ['PROPOSED', 'CONFIRMED']),
+      or(
+        isNull(tables.memoryFacts.expiresAt),
+        gt(tables.memoryFacts.expiresAt, now)
+      )
+    ))
+    .orderBy(asc(tables.memoryFacts.createdAt), asc(tables.memoryFacts.id))
+
+  return facts.map(toMemoryFactDto)
+}
+
+/**
+ * Reads one actor-owned source without returning it to a browser. Callers must
+ * still enforce the user-role and non-sensitive-text policies for their path.
+ */
+export async function readCurrentRevisionFactSource(
+  db: Database,
+  input: ReadMemoryInput & { sourceMessageId: string }
+): Promise<FactSourceMessageDto | undefined> {
+  await requireOwnedChat(db, input.actorUserId, input.chatId)
+  const messages = await db.select({
+    historyRevision: tables.messages.historyRevision,
+    id: tables.messages.id,
+    parts: tables.messages.parts,
+    role: tables.messages.role
+  })
+    .from(tables.messages)
+    .where(and(
+      eq(tables.messages.id, input.sourceMessageId),
+      eq(tables.messages.chatId, input.chatId),
+      eq(tables.messages.historyRevision, input.historyRevision)
+    ))
+    .limit(1)
+
+  return messages[0]
 }
 
 export async function createFactProposal(
@@ -375,46 +483,56 @@ export async function createFactProposal(
   input: CreateFactProposalInput
 ): Promise<CreateFactProposalResult> {
   const proposalKey = createProposalKey(input)
+  const maxBusyRetries = 5
 
-  return db.transaction(async (tx) => {
-    await requireOwnedChat(tx, input.actorUserId, input.chatId)
-    await requireSourceMessage(tx, input)
+  return serializeProposalWrite(proposalKey, async () => {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await db.transaction(async (tx) => {
+        await requireOwnedChat(tx, input.actorUserId, input.chatId)
+        await requireSourceMessage(tx, input)
 
-    const inserted = await tx.insert(tables.memoryFacts)
-      .values({
-        category: input.category,
-        chatId: input.chatId,
-        historyRevision: input.historyRevision,
-        proposalKey,
-        scope: 'SESSION',
-        sourceMessageId: input.sourceMessageId,
-        status: 'PROPOSED',
-        userId: input.actorUserId,
-        value: input.value
-      })
-      .onConflictDoNothing()
-      .returning()
+        const inserted = await tx.insert(tables.memoryFacts)
+          .values({
+            category: input.category,
+            chatId: input.chatId,
+            historyRevision: input.historyRevision,
+            proposalKey,
+            scope: 'SESSION',
+            sourceMessageId: input.sourceMessageId,
+            status: 'PROPOSED',
+            userId: input.actorUserId,
+            value: input.value
+          })
+          .onConflictDoNothing()
+          .returning()
 
-    if (inserted[0]) {
-      return { created: true, fact: toMemoryFactDto(inserted[0]) }
+        if (inserted[0]) {
+          return { created: true, fact: toMemoryFactDto(inserted[0]) }
+        }
+
+        const facts = await tx.select()
+          .from(tables.memoryFacts)
+          .where(and(
+            eq(tables.memoryFacts.userId, input.actorUserId),
+            eq(tables.memoryFacts.chatId, input.chatId),
+            eq(tables.memoryFacts.historyRevision, input.historyRevision),
+            eq(tables.memoryFacts.proposalKey, proposalKey)
+          ))
+          .limit(1)
+
+        const existing = facts[0]
+        if (!existing) {
+          throw new Error('Fact proposal conflict did not return an existing Fact')
+        }
+
+        return { created: false, fact: toMemoryFactDto(existing) }
+        })
+      } catch (error) {
+        if (!isDatabaseBusyError(error) || attempt >= maxBusyRetries) throw error
+        await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)))
+      }
     }
-
-    const facts = await tx.select()
-      .from(tables.memoryFacts)
-      .where(and(
-        eq(tables.memoryFacts.userId, input.actorUserId),
-        eq(tables.memoryFacts.chatId, input.chatId),
-        eq(tables.memoryFacts.historyRevision, input.historyRevision),
-        eq(tables.memoryFacts.proposalKey, proposalKey)
-      ))
-      .limit(1)
-
-    const existing = facts[0]
-    if (!existing) {
-      throw new Error('Fact proposal conflict did not return an existing Fact')
-    }
-
-    return { created: false, fact: toMemoryFactDto(existing) }
   })
 }
 
@@ -433,10 +551,11 @@ export async function confirmFact(
       return toMemoryFactDto(fact)
     }
 
+    const confirmedAt = input.now ?? new Date()
     const updated = await tx.update(tables.memoryFacts)
       .set({
-        confirmedAt: input.now ?? new Date(),
-        expiresAt: input.expiresAt,
+        confirmedAt,
+        expiresAt: calculateFactExpiry(fact.category, confirmedAt),
         status: 'CONFIRMED'
       })
       .where(and(

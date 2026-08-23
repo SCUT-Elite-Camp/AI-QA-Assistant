@@ -13,6 +13,13 @@ import { callChatWithPersistentFallback, shouldUsePersistentMemory } from '../..
 import { compactAfterSuccessfulAssistantPersistence } from '../../../utils/postTurnCompaction'
 import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import {
+  createFactProposal,
+  readCurrentRevisionFactSource
+} from '../../../utils/memoryRepository'
+import { isSensitiveMemoryValue } from '../../../utils/sensitiveMemoryValue'
+import { isSessionFactEnabled } from '../../../utils/sessionFactGate'
+import type { FactProposal } from '../../../utils/memoryContract'
+import {
   appendMessage,
   createAssistantMessageId,
   createAssistantStreamState,
@@ -20,6 +27,90 @@ import {
   persistCurrentUserMessage,
   shouldPersistAssistantMessage
 } from '../../../utils/messageLifecycle'
+
+type Database = NonNullable<ReturnType<typeof useDrizzle>>
+
+interface PersistAgentFactProposalsInput {
+  actorUserId: string
+  chatId: string
+  currentMessageId: string
+  historyRevision: number
+  proposals: FactProposal[]
+}
+
+const FACT_CATEGORIES = new Set<FactProposal['category']>([
+  'GOAL',
+  'PREFERENCE',
+  'PLAN_CONSTRAINT'
+])
+
+/**
+ * This server-only best-effort branch runs only after the assistant row is
+ * durable. It intentionally absorbs malformed Agent candidates and storage
+ * errors so neither condition can change an already successful chat response.
+ */
+export async function persistAgentFactProposalsAfterAssistantPersistence (
+  db: Database,
+  input: PersistAgentFactProposalsInput
+): Promise<void> {
+  if (!isSessionFactEnabled() || input.proposals.length === 0) return
+
+  let source
+  try {
+    source = await readCurrentRevisionFactSource(db, {
+      actorUserId: input.actorUserId,
+      chatId: input.chatId,
+      historyRevision: input.historyRevision,
+      sourceMessageId: input.currentMessageId
+    })
+  } catch {
+    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'source_lookup_failed' })
+    return
+  }
+
+  if (!source || source.role !== 'user') {
+    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'source_not_current_user_message' })
+    return
+  }
+
+  if (input.proposals.length > 1) {
+    console.warn('[memory-fact] rejected extra Agent Fact proposals', { reason: 'proposal_count_exceeded' })
+  }
+
+  const proposal = input.proposals[0]
+  if (!proposal) return
+  if (proposal.source_message_id !== input.currentMessageId) {
+    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'source_message_mismatch' })
+    return
+  }
+  if (!FACT_CATEGORIES.has(proposal.category)) {
+    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'invalid_category' })
+    return
+  }
+  if (!proposal.value.trim()) {
+    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'empty_value' })
+    return
+  }
+  if (isSensitiveMemoryValue(proposal.value)) {
+    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'sensitive_value' })
+    return
+  }
+
+  try {
+    // expires_at from the internal envelope is deliberately ignored. The
+    // Repository is the only component that assigns expiry on confirmation.
+    await createFactProposal(db, {
+      actorUserId: input.actorUserId,
+      category: proposal.category,
+      chatId: input.chatId,
+      historyRevision: input.historyRevision,
+      sourceMessageId: input.currentMessageId,
+      value: proposal.value
+    })
+  } catch {
+    console.warn('[memory-fact] Agent Fact proposal persistence failed', { reason: 'proposal_write_failed' })
+  }
+}
 
 const uiMessageSchema = z.object({
   id: z.string().min(1),
@@ -89,6 +180,7 @@ export default defineHandler(async (event) => {
   const abortController = new AbortController()
   const assistantState = createAssistantStreamState()
   let assistantMessageId: string | undefined
+  let agentFactProposals: FactProposal[] = []
   let shouldAttemptCompaction = false
   event.runtime?.node?.req?.on('close', () => {
     assistantState.clientAborted = true
@@ -103,8 +195,6 @@ export default defineHandler(async (event) => {
     },
     execute: async ({ writer }) => {
       try {
-        console.log("[DEBUG queryText]", queryText)
-
         // Fetch Topic Space context if chat is linked to a topic
         let topicInfo: any = null
         let topicDocIds: string[] = []
@@ -160,7 +250,7 @@ export default defineHandler(async (event) => {
           ? await buildPersistentMemoryContext(db, currentAgentInput)
           : undefined
         const { soul_content: _soulContent, ...internalAgentFields } = publicAgentRequest
-        const agentResult = await callChatWithPersistentFallback({
+        const agentCall = await callChatWithPersistentFallback({
           usePersistentMemory,
           internalRequest: {
             ...internalAgentFields,
@@ -169,19 +259,23 @@ export default defineHandler(async (event) => {
           callPublic: callPublicAgent,
           options: { signal: abortController.signal }
         })
-        shouldAttemptCompaction = usePersistentMemory && 'response' in agentResult
-        const agentData = 'response' in agentResult ? agentResult.response : agentResult
+        shouldAttemptCompaction = agentCall.source === 'internal'
+        const agentData = agentCall.value
+        if (agentCall.source === 'internal' && agentData.response.status === 'success') {
+          agentFactProposals = agentData.memory_decision.fact_proposals
+        }
+        const responseData = agentCall.source === 'internal' ? agentData.response : agentData
         recordAiCall(Date.now() - aiCallStart)
 
-        if (agentData.chat_title) {
-          await db.update(tables.chats).set({ title: agentData.chat_title }).where(eq(tables.chats.id, id as string))
+        if (responseData.chat_title) {
+          await db.update(tables.chats).set({ title: responseData.chat_title }).where(eq(tables.chats.id, id as string))
           writer.write({
             type: 'data-chat-title',
-            data: { title: agentData.chat_title }
+            data: { title: responseData.chat_title }
           })
         }
 
-        const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
+        const isValidResponse = responseData.status === "success" || responseData.status === "clarification_required"
         if (!isValidResponse) {
           assistantState.streamFailed = true
           writer.write({
@@ -191,8 +285,8 @@ export default defineHandler(async (event) => {
           return
         }
 
-        const rawAnswer = agentData.answer || agentData.message || ""
-        const citationsList: any[] = agentData.citations || []
+        const rawAnswer = responseData.answer || responseData.message || ""
+        const citationsList: any[] = responseData.citations || []
         assistantState.agentSucceeded = true
         const currentAssistantMessageId = createAssistantMessageId()
         assistantMessageId = currentAssistantMessageId
@@ -364,12 +458,21 @@ export default defineHandler(async (event) => {
       }
 
       try {
-        await appendMessage(db, {
+        const persistedAssistant = await appendMessage(db, {
           id: assistantMessageId,
           chatId: chat.id,
           parts: [{ type: 'text', text: assistantState.assistantContent }],
           role: 'assistant'
         })
+        if (shouldAttemptCompaction) {
+          await persistAgentFactProposalsAfterAssistantPersistence(db, {
+            actorUserId: actor.userId,
+            chatId: chat.id,
+            currentMessageId: currentAgentInput.currentMessageId,
+            historyRevision: persistedAssistant.historyRevision,
+            proposals: agentFactProposals
+          })
+        }
         if (shouldAttemptCompaction) {
           try {
             await compactAfterSuccessfulAssistantPersistence(db, currentAgentInput)

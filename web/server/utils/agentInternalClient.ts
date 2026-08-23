@@ -33,6 +33,15 @@ export interface AgentInternalClientOptions {
   signal?: AbortSignal
 }
 
+/**
+ * The wrapper is constructed only by this server-side client. Callers must
+ * use `source`, rather than inspecting fields in an Agent response, when a
+ * side effect is reserved for the token-protected internal endpoint.
+ */
+export type PersistentChatCallResult<T> =
+  | { source: 'internal', value: InternalChatResponse }
+  | { source: 'public', value: T }
+
 export function isPersistentMemoryEnabled (environment: Record<string, string | undefined> = process.env): boolean {
   return ['1', 'true', 'yes', 'on'].includes(environment.PERSISTENT_MEMORY_ENABLED?.trim().toLowerCase() ?? '')
 }
@@ -116,14 +125,16 @@ export async function callChatWithPersistentFallback<T> (input: {
   callPublic: () => Promise<T>
   usePersistentMemory: boolean
   options?: AgentInternalClientOptions
-}): Promise<T | InternalChatResponse> {
-  if (!input.usePersistentMemory) return input.callPublic()
+}): Promise<PersistentChatCallResult<T>> {
+  if (!input.usePersistentMemory) {
+    return { source: 'public', value: await input.callPublic() }
+  }
 
   try {
-    return await callInternalChat(input.internalRequest, input.options)
+    return { source: 'internal', value: await callInternalChat(input.internalRequest, input.options) }
   } catch (error) {
     if (error instanceof AgentInternalClientError && error.code === 'persistent_memory_disabled') {
-      return input.callPublic()
+      return { source: 'public', value: await input.callPublic() }
     }
     throw error
   }

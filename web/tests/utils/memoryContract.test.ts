@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   compactionPlanResponseSchema,
+  factViewSchema,
   internalChatRequestSchema,
   internalChatResponseSchema,
+  manualFactProposalRequestSchema,
   memoryContextInputSchema
 } from '../../server/utils/memoryContract'
 
@@ -93,6 +95,29 @@ describe('internal Memory contract', () => {
 
     expect(parsed.response).not.toHaveProperty('memory_decision')
     expect(parsed.memory_decision.fact_proposals).toHaveLength(1)
+  })
+
+  it('accepts only the browser-safe manual proposal request and FactView fields', () => {
+    expect(manualFactProposalRequestSchema.parse({
+      category: 'GOAL',
+      source_message_id: 'message-3'
+    })).toEqual({ category: 'GOAL', source_message_id: 'message-3' })
+    expect(() => manualFactProposalRequestSchema.parse({
+      category: 'GOAL',
+      source_message_id: 'message-3',
+      value: 'browser must not choose this'
+    })).toThrow()
+
+    expect(factViewSchema.parse({
+      id: 'fact-1',
+      category: 'GOAL',
+      status: 'CONFIRMED',
+      value: 'Finish the project.',
+      sourceMessageId: 'message-3',
+      expiresAt: '2026-11-21T00:00:00.000Z',
+      confirmedAt: '2026-08-23T00:00:00.000Z',
+      createdAt: '2026-08-23T00:00:00.000Z'
+    })).toMatchObject({ id: 'fact-1', status: 'CONFIRMED' })
   })
 
   it('accepts only the two fixed compaction response shapes', () => {

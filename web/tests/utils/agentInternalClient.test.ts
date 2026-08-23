@@ -56,8 +56,25 @@ describe('Agent internal client', () => {
       internalRequest: request(),
       callPublic,
       options: { environment, fetchFn }
-    })).resolves.toEqual({ status: 'success', answer: 'Public answer' })
+    })).resolves.toEqual({
+      source: 'public',
+      value: { status: 'success', answer: 'Public answer' }
+    })
     expect(callPublic).toHaveBeenCalledTimes(1)
+  })
+
+  it('wraps a successful token-protected response with the internal provenance marker', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      response: { trace_id: 'trace-1', status: 'success', answer: 'Answer.', message: '', citations: [] },
+      memory_decision: { fact_proposals: [] }
+    }), { status: 200 }))
+
+    await expect(callChatWithPersistentFallback({
+      usePersistentMemory: true,
+      internalRequest: request(),
+      callPublic: vi.fn(),
+      options: { environment, fetchFn }
+    })).resolves.toMatchObject({ source: 'internal', value: { response: { answer: 'Answer.' } } })
   })
 
   it('does not downgrade other internal errors or allow anonymous persistent selection', async () => {

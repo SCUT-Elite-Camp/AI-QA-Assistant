@@ -6,6 +6,12 @@ export const memoryFactCategorySchema = z.enum([
   'PLAN_CONSTRAINT'
 ])
 
+export const memoryFactStatusSchema = z.enum([
+  'PROPOSED',
+  'CONFIRMED',
+  'REVOKED'
+])
+
 export const memoryMessageSchema = z.object({
   id: z.string().min(1),
   sequence: z.number().int().positive(),
@@ -161,6 +167,24 @@ export const factProposalSchema = z.object({
   expires_at: memoryExpiresAtSchema
 }).strict()
 
+/** Browser routes accept only a server-selected source message and category. */
+export const manualFactProposalRequestSchema = z.object({
+  source_message_id: z.string().min(1),
+  category: memoryFactCategorySchema
+}).strict()
+
+/** The only Fact shape serialised from the BFF to the browser. */
+export const factViewSchema = z.object({
+  id: z.string().min(1),
+  category: memoryFactCategorySchema,
+  status: memoryFactStatusSchema,
+  value: z.string(),
+  sourceMessageId: z.string().min(1).nullable(),
+  expiresAt: z.string().datetime().nullable(),
+  confirmedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime()
+}).strict()
+
 export const memoryRecallSchema = z.object({
   handled: z.boolean(),
   answer: z.string().nullable().optional()
@@ -242,3 +266,6 @@ export type InternalChatResponse = z.infer<typeof internalChatResponseSchema>
 export type MemoryContextInput = z.infer<typeof memoryContextInputSchema>
 export type CompactionPlanRequest = z.infer<typeof compactionPlanRequestSchema>
 export type CompactionPlanResponse = z.infer<typeof compactionPlanResponseSchema>
+export type FactProposal = z.infer<typeof factProposalSchema>
+export type FactView = z.infer<typeof factViewSchema>
+export type ManualFactProposalRequest = z.infer<typeof manualFactProposalRequestSchema>
