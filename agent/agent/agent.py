@@ -7,6 +7,7 @@ from agent.formatter.answer_formatter import AnswerFormatter
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
 from agent.memory import ConversationMemory, get_default_memory
+from agent.memory.fact_proposal_policy import FactProposalPolicy
 from agent.orchestration import AgentOrchestrator, OrchestrationResult
 from agent.policy import IntentPolicyRouter
 from agent.query import (
@@ -21,6 +22,7 @@ from agent.runtime import AgentRunResult, AgentRunner, StopReason
 from agent.schemas.chat import (
     ChatRequest,
     ChatResponse,
+    FactProposal,
     InternalChatRequest,
     MemoryDecision,
 )
@@ -56,11 +58,13 @@ class Agent:
         orchestrator: AgentOrchestrator | None = None,
         toolset_registry: ToolsetRegistry | None = None,
         audit_service: AuditService | None = None,
+        fact_proposal_policy: FactProposalPolicy | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
         self.trace_service = TraceService()
         self.audit_service = audit_service or AuditService()
+        self.fact_proposal_policy = fact_proposal_policy or FactProposalPolicy()
         # Toolset owns registration; Agent only consumes it through an adapter.
         if toolset_registry is not None and tools is not None:
             raise ValueError("tools and toolset_registry cannot both be provided")
@@ -295,7 +299,38 @@ class Agent:
             response=response,
             persistent_memory=self._is_persistent_memory_request(request),
         )
+        memory_decision.fact_proposals = self._resolve_fact_proposals(
+            request=request,
+            response=response,
+        )
         return response, memory_decision
+
+    def _resolve_fact_proposals(
+        self,
+        *,
+        request: ChatRequest,
+        response: ChatResponse,
+    ) -> list[FactProposal]:
+        """Keep proposal failures non-blocking and isolated from public ChatResponse."""
+        if (
+            response.status != StatusCode.SUCCESS
+            or not isinstance(request, InternalChatRequest)
+            or not self._is_persistent_memory_request(request)
+        ):
+            return []
+
+        try:
+            context = request.memory_context
+            return self.fact_proposal_policy.propose(
+                request.query,
+                actor_authenticated=context.actor.authenticated,
+                current_message_id=context.current_message_id,
+                persistent_memory_enabled=settings.PERSISTENT_MEMORY_ENABLED,
+                session_fact_enabled=settings.SESSION_FACT_ENABLED,
+            )
+        except Exception:
+            # Candidate generation is optional and must not expose user data in logs.
+            return []
 
     @staticmethod
     def _separate_title_and_answer(answer_text: str) -> tuple[Optional[str], str]:
