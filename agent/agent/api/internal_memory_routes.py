@@ -16,7 +16,6 @@ from agent.schemas.chat import (
     InternalChatRequest,
     InternalChatResponse,
     MemoryContextInput,
-    MemoryDecision,
     NoCompactionPlan,
     ResetShortWindowRequest,
     ResetShortWindowResponse,
@@ -97,7 +96,7 @@ def internal_chat(
     __: Annotated[None, Depends(require_json_content_type)],
     agent: Annotated[Agent, Depends(get_agent)],
 ) -> InternalChatResponse | JSONResponse:
-    """Stage 04a only transports trusted DTOs; Unit 06 owns context injection."""
+    """Resolve trusted Memory context and keep the result inside the BFF contract."""
 
     if not settings.PERSISTENT_MEMORY_ENABLED:
         return JSONResponse(
@@ -106,10 +105,10 @@ def internal_chat(
         )
 
     validate_memory_context(request.memory_context)
-    response = agent.chat(request)
+    response, memory_decision = agent.chat_with_memory(request)
     return InternalChatResponse(
         response=response,
-        memory_decision=MemoryDecision(fact_proposals=[]),
+        memory_decision=memory_decision,
     )
 
 
