@@ -4,12 +4,15 @@ import type { UIMessage } from 'ai'
 import { isFileUIPart } from 'ai'
 import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
+import type { FactCategory } from '../../../types/memory'
 
 const props = defineProps<{
   message: UIMessage & { createdAt?: string | Date; isFavorite?: boolean }
   streaming: boolean
   editing: boolean
   vote: boolean | null
+  memoryEnabled?: boolean
+  memoryBusy?: boolean
 }>()
 
 const formattedDate = computed(() => {
@@ -32,6 +35,7 @@ const emit = defineEmits<{
   regenerate: [message: UIMessage]
   vote: [message: UIMessage, isUpvoted: boolean]
   favorite: [message: UIMessage, isFav: boolean]
+  saveMemory: [message: UIMessage, category: FactCategory]
 }>()
 
 const hasFiles = computed(() => props.message.parts.some(isFileUIPart))
@@ -55,6 +59,21 @@ function toggleFavorite() {
   // Pass the NEW state so the parent can send correct value to API
   emit('favorite', props.message, isFavorite.value)
 }
+
+const memoryCategoryItems = [
+  {
+    label: '保存为目标',
+    onSelect: () => emit('saveMemory', props.message, 'GOAL')
+  },
+  {
+    label: '保存为偏好',
+    onSelect: () => emit('saveMemory', props.message, 'PREFERENCE')
+  },
+  {
+    label: '保存为计划约束',
+    onSelect: () => emit('saveMemory', props.message, 'PLAN_CONSTRAINT')
+  }
+]
 </script>
 
 <template>
@@ -142,5 +161,20 @@ function toggleFavorite() {
         @click="emit('edit', message)"
       />
     </UTooltip>
+
+    <UDropdownMenu
+      v-if="memoryEnabled"
+      :items="memoryCategoryItems"
+      :content="{ align: 'end' }"
+    >
+      <UButton
+        size="sm"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-brain"
+        aria-label="Save as session memory"
+        :disabled="memoryBusy"
+      />
+    </UDropdownMenu>
   </template>
 </template>
