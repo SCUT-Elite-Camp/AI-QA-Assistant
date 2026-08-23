@@ -132,8 +132,29 @@ the only writer of ChatMessage, Snapshot, and Fact records.
 
 Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
 `AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
-the example file intentionally leaves it empty. Unit 04a defines the constant-
-time comparison, 403/409 behavior, and endpoint registration.
+the example file intentionally leaves it empty.
+
+## BFF-only internal Memory endpoints (Unit 04a)
+
+`POST /api/internal/chat`, `POST /api/internal/memory/compaction-plan`, and
+`POST /api/internal/memory/reset-short-window` require both JSON input and an
+exact `X-Agent-Internal-Token`. The Agent compares this token in constant time;
+missing, blank, or incorrect values all receive the same `403` response.
+
+- `/chat` accepts only `InternalChatRequest`. With the Agent persistent flag
+  disabled it returns `409 { "code": "persistent_memory_disabled" }`. When a
+  contract test enables the flag, this intermediate implementation delegates to
+  the shared Agent and returns `InternalChatResponse` with
+  `memory_decision.fact_proposals=[]`; it does not yet inject Memory into a
+  Prompt or produce Facts.
+- `/memory/compaction-plan` only validates its request and always returns
+  `{ "should_compact": false }` until Unit 07. It never reads or writes the
+  Web database.
+- `/memory/reset-short-window` calls only the existing in-process
+  `ConversationMemory.clear(chat_id)`. It never writes Snapshot or Fact data.
+
+The former unauthenticated `DELETE /api/chat/memory/{session_id}` endpoint has
+been removed. Public `/api/chat` and its response remain unchanged.
 
 ## Week 3 Quality Rules
 
