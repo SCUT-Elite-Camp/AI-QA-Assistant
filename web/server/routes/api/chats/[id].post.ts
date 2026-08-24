@@ -429,29 +429,32 @@ export default defineHandler(async (event) => {
 
 
 
-        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
-        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
-        const toolCallId = `call_${Date.now()}`
-        writer.write({
-          type: 'tool-input-available',
-          toolCallId,
-          toolName: 'rag_search',
-          input: { query: queryText }
-        })
+        // 3. Expose a RAG tool invocation only when the Agent supplied
+        //    citations. In particular, a deterministic Fact recall must not
+        //    be presented as a knowledge-base search.
+        if (citationsList.length > 0) {
+          const toolCallId = `call_${Date.now()}`
+          writer.write({
+            type: 'tool-input-available',
+            toolCallId,
+            toolName: 'rag_search',
+            input: { query: queryText }
+          })
 
-        writer.write({
-          type: 'tool-output-available',
-          toolCallId,
-          output: citationsList.map((cit: any, i: number) => ({
-            index: i + 1,
-            doc_id: cit.doc_id || `doc_${i}`,
-            chunk_id: cit.chunk_id || `chunk_${i}`,
-            title: cit.title || cit.doc_id || `Document ${i + 1}`,
-            source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
-            chunk_text: cit.snippet || '',
-            score: cit.score ?? null,
-          }))
-        })
+          writer.write({
+            type: 'tool-output-available',
+            toolCallId,
+            output: citationsList.map((cit: any, i: number) => ({
+              index: i + 1,
+              doc_id: cit.doc_id || `doc_${i}`,
+              chunk_id: cit.chunk_id || `chunk_${i}`,
+              title: cit.title || cit.doc_id || `Document ${i + 1}`,
+              source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+              chunk_text: cit.snippet || '',
+              score: cit.score ?? null,
+            }))
+          })
+        }
 
 
         // 4. Stream answer text chunk-by-chunk to simulate real-time typing

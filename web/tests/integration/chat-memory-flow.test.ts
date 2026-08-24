@@ -266,6 +266,33 @@ describe('chat to Fact proposal lifecycle', () => {
       type: 'data-memory-recall',
       data: { messageId: 'assistant-1' }
     })
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({
+      toolName: 'rag_search'
+    }))
+  })
+
+  it('emits a RAG tool invocation only when the Agent supplied citations', async () => {
+    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
+      source: 'internal',
+      value: {
+        ...internalSuccessResult(),
+        response: {
+          answer: 'Answer with a source.',
+          citations: [{ doc_id: 'doc-1', chunk_id: 'chunk-1', title: 'Source', source_url: 'https://example.test', snippet: 'Evidence.' }],
+          message: '',
+          status: 'success',
+          trace_id: 'trace-1'
+        }
+      }
+    })
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({
+      toolName: 'rag_search',
+      type: 'tool-input-available'
+    }))
   })
 
   it('never emits a recall label for a public fallback that imitates internal data', async () => {
