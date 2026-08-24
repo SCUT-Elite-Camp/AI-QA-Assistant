@@ -15,6 +15,6 @@ export default async function setupTemporaryDatabaseRoot() {
 
   return async () => {
     delete process.env[TEMP_ROOT_ENV]
-    await rm(temporaryRoot, { force: true, recursive: true })
+    await rm(temporaryRoot, { force: true, maxRetries: 3, recursive: true, retryDelay: 100 })
   }
 }
