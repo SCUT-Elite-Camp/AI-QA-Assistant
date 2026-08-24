@@ -93,7 +93,7 @@ Web 的 [metrics.ts](../../../web/server/utils/metrics.ts) 和 [logger.ts](../..
 
 | 项目 | 复核结果 | 结论 |
 | --- | --- | --- |
-| Web remote ref | `web-dev` 已推送至 `e662b76`。 | 已消除“未推送”风险。 |
+| Web remote ref | `web-dev` 远程分支已包含截至 `97723ec` 的 Web Memory 提交。 | 已消除“未推送”风险。 |
 | Agent remote ref | `agent-dev-infra` 已推送至 `4c219b5`。 | 已消除“未推送”风险。 |
 | 远程 PR / review | 浏览器已验证 Agent PR [#25](https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/pull/25) 为 open，base=`agent-dev`、head=`agent-dev-infra`，并包含 `4c219b5`；5 位 CODEOWNERS 均为 pending review。Web compare 页面可创建 `dev...web-dev` PR，但尚未提交。GitHub connector 创建 Web PR 返回 `403 Resource not accessible by integration`。 | **仍缺失已创建的 Web PR 与独立 owner approval。** 不得伪造或自我批准。 |
 | Prompt length | `agent-dev-infra@4c219b5:agent/agent/agent.py` 只在 trusted persistent Context 已实际得到 Runner 结果后发出 `memory_prompt {model_history_chars}`；`memory_observability.py` 仅接收非负整数。`agent/docs/API_CONTRACT.md` 已同步合同。 | 已消除“只有 6000 上界、没有无正文指标”风险。 |
