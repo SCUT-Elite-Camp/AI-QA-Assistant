@@ -77,6 +77,8 @@
 
 补充实际复测（2026-08-24）：用户已在普通浏览器完成 GitHub OAuth；受控浏览器接管后的首页显示已认证状态。创建私有 chat、发送受控非敏感目标文本并等待正常 SSE 回答均成功，且 user message 的操作菜单显示“保存为会话记忆”。选择“保存为目标”后，页面显示“记忆操作失败”，未出现 PROPOSED 卡片、确认/撤销入口或 Fact ID。两个 Memory 开关均已配置为 `true`。该失败仍未取得可归档的本地 Network 截图或服务器响应码，因此只记录为**已认证 proposal smoke 失败**，不得将后续 confirm、revoke、敏感拒绝、SSE 取消、跨 chat/匿名隔离或 exact-recall 标签列为已验证。
 
+修复复测（2026-08-24）：临时本地服务日志将失败定位为 `memory_facts.user_id -> users.id` 的 SQLite 外键约束。应用的 GitHub provider ID 是 chat 的所有者标识，但不保证存在本地 `users` profile 行；`0007_luxuriant_captain_britain` 将 `memory_facts` 与 `memory_snapshots` 重建为仅保留 chat/source-message 外键的表。对本地开发数据库执行迁移后，同一已认证 chat 的手动“保存为目标”成功显示 PROPOSED 卡片，确认后显示会话 Fact 与到期日，撤销并刷新后不再显示；受控 `password=not-a-real-secret` 文本的手动保存被拒绝并显示“该内容不能保存为记忆”。因此 proposal、confirm、revoke、敏感拒绝四项已通过；SSE 取消、跨 chat/匿名隔离和 exact-recall 标签仍未完成手工验证。
+
 建议在受控本地环境补齐：使用 `PERSISTENT_MEMORY_ENABLED=true`、`SESSION_FACT_ENABLED=true`，以一个已授权 GitHub 账号和匿名窗口完成私有会话、跨 chat 与匿名隔离的真实浏览器检查。不同已认证用户之间的隔离不要求为本次手工 smoke 新增第二个 GitHub 账号，继续由已通过的仓储/API 自动化回归覆盖。严格执行该手工脚本的 proposal、confirm、revoke、敏感拒绝、取消 SSE、跨 chat/匿名隔离与 exact-recall 标签步骤；截图/录屏只存放在受控位置，不记录 token 或真实用户数据。
 
 当前 `pnpm run typecheck` 的 UI 基线错误也仍需由 UI owner 单独修复或再次明确豁免；本单元没有修改这些文件。

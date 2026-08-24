@@ -137,7 +137,10 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
 
 export const memorySnapshots = sqliteTable('memory_snapshots', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id').notNull().references(() => users.id),
+  // Chat ownership is authenticated against the external provider ID. Unlike
+  // the optional local users profile table, that provider ID is always present
+  // on chats, so Memory must not require a matching local users row.
+  userId: text('user_id').notNull(),
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   historyRevision: integer('history_revision').notNull(),
   version: integer('version').notNull(),
@@ -170,7 +173,9 @@ export const memorySnapshotsRelations = relations(memorySnapshots, ({ one }) => 
 
 export const memoryFacts = sqliteTable('memory_facts', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id').notNull().references(() => users.id),
+  // See memorySnapshots.userId: ownership is enforced by the owned chat query,
+  // not by a local users-table foreign key.
+  userId: text('user_id').notNull(),
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   historyRevision: integer('history_revision').notNull(),
   sourceMessageId: text('source_message_id').references(() => messages.id, { onDelete: 'set null' }),

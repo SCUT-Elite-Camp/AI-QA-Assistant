@@ -62,6 +62,52 @@ function proposalInput(fixture: Awaited<ReturnType<typeof createFixture>>) {
 }
 
 describe('memory repository', () => {
+  it('stores Memory for a provider-backed chat without a local users row', async () => {
+    const { tables, useDrizzle } = await import('../../server/utils/drizzle')
+    const { appendMessage } = await import('../../server/utils/messageLifecycle')
+    const { createFactProposal, writeSnapshot } = await import('../../server/utils/memoryRepository')
+    const db = useDrizzle()
+    const suffix = randomUUID()
+    const userId = `github-provider-${suffix}`
+    const chatId = `provider-chat-${suffix}`
+
+    // OAuth sessions identify the chat owner by provider ID. A local profile
+    // row is optional, so this must not require tables.users to contain userId.
+    await db.insert(tables.chats).values({
+      id: chatId,
+      title: 'Provider-backed Memory chat',
+      userId
+    })
+    const source = await appendMessage(db, {
+      chatId,
+      id: randomUUID(),
+      parts: [{ text: 'Remember this session goal.', type: 'text' }],
+      requestId: `provider-request-${suffix}`,
+      role: 'user'
+    })
+
+    await expect(createFactProposal(db, {
+      actorUserId: userId,
+      category: 'GOAL',
+      chatId,
+      historyRevision: source.historyRevision,
+      sourceMessageId: source.id,
+      value: 'Remember this session goal.'
+    })).resolves.toMatchObject({ created: true, fact: { chatId } })
+
+    await expect(writeSnapshot(db, {
+      actorUserId: userId,
+      chatId,
+      coveredFromMessageId: source.id,
+      coveredFromSequence: source.sequence,
+      coveredToMessageId: source.id,
+      coveredToSequence: source.sequence,
+      historyRevision: source.historyRevision,
+      summary: 'Provider-backed session goal.',
+      version: 1
+    })).resolves.toMatchObject({ chatId })
+  })
+
   it('cascades snapshots and Facts when their chat is deleted', async () => {
     const fixture = await createFixture()
     const { createFactProposal, writeSnapshot } = await import('../../server/utils/memoryRepository')
