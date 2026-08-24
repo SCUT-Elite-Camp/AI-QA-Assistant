@@ -75,6 +75,16 @@ class MemoryObservability:
         )
         self._publish("memory_fact", {"action": action, "outcome": outcome})
 
+    def prompt(self, *, model_history_chars: int) -> None:
+        """Record only the bounded character count passed to the Runner.
+
+        The caller computes this after a trusted persistent context has reached
+        the Runner.  Keeping the helper input numeric makes it impossible for
+        this seam to carry a query, prompt, or other user-provided body.
+        """
+        self._require_non_negative(model_history_chars, "model_history_chars")
+        self._publish("memory_prompt", {"model_history_chars": model_history_chars})
+
     def _publish(self, event_name: str, payload: MemoryEventPayload) -> None:
         """Keep optional observability from changing Chat or planning results."""
         try:

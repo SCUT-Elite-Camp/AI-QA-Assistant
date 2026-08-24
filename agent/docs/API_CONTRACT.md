@@ -158,8 +158,12 @@ The Agent reads `MEMORY_TAIL_MESSAGES=8`,
 only Memory observability events contain finite enums and numbers:
 `memory_resolve {source, outcome, duration_ms}`,
 `memory_compaction {outcome, tail_count, snapshot_version?}`, and
-`memory_fact {action, outcome}`. They never include user text, Fact values,
-Snapshot summaries, Tail messages, message/chat IDs, prompts, or tokens.
+`memory_fact {action, outcome}`, and
+`memory_prompt {model_history_chars}`. The latter is emitted only after the
+Runner executes with trusted persistent context, and records the non-negative
+character count of its `model_history` only. These events never include user
+text, Fact values, Snapshot summaries, Tail messages, message/chat IDs,
+prompts, or tokens.
 
 ## BFF-only internal Memory endpoints (Unit 04a)
 
