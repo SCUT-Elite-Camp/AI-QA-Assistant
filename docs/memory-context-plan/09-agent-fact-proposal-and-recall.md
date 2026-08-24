@@ -78,6 +78,8 @@ what have you remembered?
 what are my confirmed memories?
 ```
 
+末尾的一个中文或 ASCII 问号（`？` / `?`）仅作展示标点，可省略；去除该标点后仍必须与上述命令完全一致。其他自然语言问法仍进入普通 Agent 路径，避免模型猜测或过度读取 Fact。
+
 命中且有 Fact：按 `createdAt ASC, id ASC` 返回简短、确定性列表，只含 category/value，不含 ID、
 source、expiry 或 Snapshot。命中但无可见 Fact：返回固定空结果。其余 query 永不绕过 LLM/RAG；
 Fact 不能产生 RAG citation。此 policy 必须继续防止 prompt injection，把 Fact 文本作为 data 而非 instruction。

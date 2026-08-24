@@ -14,9 +14,13 @@ def _enable_session_facts(monkeypatch: pytest.MonkeyPatch) -> None:
     "query",
     [
         "我记住了什么？",
+        "我记住了什么",
         "我之前确认的记忆是什么？",
+        "我之前确认的记忆是什么",
         "what have you remembered?",
+        "what have you remembered",
         "WHAT ARE MY CONFIRMED MEMORIES?",
+        "what are my confirmed memories",
     ],
 )
 def test_exact_recall_returns_visible_facts_in_bff_order(query: str) -> None:
@@ -50,6 +54,25 @@ def test_exact_recall_reports_no_visible_confirmed_fact_without_model_guessing()
 def test_non_exact_question_does_not_trigger_memory_recall() -> None:
     recall = MemoryResponsePolicy().resolve(
         "我之前确认的目标是什么？",
+        [PersistentFact(id="goal", category="GOAL", value="不应自动回答。")],
+    )
+
+    assert recall.handled is False
+    assert recall.answer is None
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "我记住了什么？？",
+        "我记住了什么！",
+        "我记住了什么内容",
+        "what have you remembered today",
+    ],
+)
+def test_non_exact_variants_do_not_trigger_memory_recall(query: str) -> None:
+    recall = MemoryResponsePolicy().resolve(
+        query,
         [PersistentFact(id="goal", category="GOAL", value="不应自动回答。")],
     )
 

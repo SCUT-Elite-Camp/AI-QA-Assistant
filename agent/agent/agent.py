@@ -200,6 +200,23 @@ class Agent:
                 MemoryDecision(fact_proposals=[]),
             )
 
+        fact_proposals = self._propose_explicit_facts(request)
+        if fact_proposals:
+            # An explicit Fact command is a controlled, local operation rather
+            # than a knowledge question.  Resolve it before Query Understanding
+            # so an LLM clarification or RAG result cannot suppress a valid,
+            # authenticated proposal.
+            return (
+                ChatResponse(
+                    trace_id=trace_id,
+                    status=StatusCode.SUCCESS,
+                    answer="已生成一条待确认的会话记忆，请在界面确认。",
+                    message="",
+                    citations=[],
+                ),
+                MemoryDecision(fact_proposals=fact_proposals),
+            )
+
         try:
             orchestration = self.orchestrator.run(
                 request,
@@ -305,7 +322,15 @@ class Agent:
         """Keep proposal failures non-blocking and isolated from public ChatResponse."""
         if (
             response.status != StatusCode.SUCCESS
-            or not isinstance(request, InternalChatRequest)
+        ):
+            return []
+
+        return self._propose_explicit_facts(request)
+
+    def _propose_explicit_facts(self, request: ChatRequest) -> list[FactProposal]:
+        """Parse one trusted explicit Fact command without invoking LLM/RAG."""
+        if (
+            not isinstance(request, InternalChatRequest)
             or not self._is_persistent_memory_request(request)
         ):
             return []

@@ -14,12 +14,12 @@ from agent.schemas.chat import MemoryRecall
 class MemoryResponsePolicy:
     """Return visible confirmed SESSION Facts without a database or model call."""
 
-    _EXACT_RECALL_QUERIES = frozenset(
+    _EXACT_RECALL_COMMANDS = frozenset(
         {
-            "我记住了什么？",
-            "我之前确认的记忆是什么？",
-            "what have you remembered?",
-            "what are my confirmed memories?",
+            "我记住了什么",
+            "我之前确认的记忆是什么",
+            "what have you remembered",
+            "what are my confirmed memories",
         }
     )
 
@@ -29,9 +29,14 @@ class MemoryResponsePolicy:
     def resolve(self, query: str, facts: Sequence[PersistentFact]) -> MemoryRecall:
         """Handle only exact opt-in recall commands; ordinary questions remain model-bound."""
         normalized_query = unicodedata.normalize("NFC", query).strip().casefold()
+        # A final Chinese or ASCII question mark is presentation punctuation,
+        # not part of the deterministic command. Remove at most one so
+        # ordinary free-form questions remain model-bound.
+        if normalized_query.endswith(("?", "？")):
+            normalized_query = normalized_query[:-1].rstrip()
         if (
             not settings.SESSION_FACT_ENABLED
-            or normalized_query not in self._EXACT_RECALL_QUERIES
+            or normalized_query not in self._EXACT_RECALL_COMMANDS
         ):
             return MemoryRecall(handled=False)
 
