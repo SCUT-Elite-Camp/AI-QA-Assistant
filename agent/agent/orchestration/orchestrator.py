@@ -6,11 +6,25 @@ from typing import Any
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
 from agent.memory import ConversationMemory
-from agent.policy import ChatRouteDecision, ChatRoutePolicy, IntentPolicyRouter
+from agent.memory.context_resolver import ContextResolver
+from agent.memory.memory_response_policy import MemoryResponsePolicy
+from agent.memory.persistent_models import PersistentMemoryContext
+from agent.policy import (
+    ChatRoute,
+    ChatRouteDecision,
+    ChatRoutePolicy,
+    IntentPolicyRouter,
+)
 from agent.query import QueryUnderstanding
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
-from agent.schemas.chat import ChatRequest, Citation
+from agent.schemas.chat import (
+    ChatRequest,
+    Citation,
+    ContextArtifact,
+    MemoryContextInput,
+    MemoryRecall,
+)
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
 from agent.schemas.tool_execution import Evidence
@@ -24,10 +38,12 @@ class OrchestrationResult:
     query_plan: QueryPlan
     chat_route: ChatRouteDecision
     policy: IntentPolicy
-    run_result: AgentRunResult
+    run_result: AgentRunResult | None
     history: list[dict[str, Any]]
     retrieval_mode: str
     top_k: int
+    context_artifact: ContextArtifact | None = None
+    memory_recall: MemoryRecall | None = None
 
 
 class AgentOrchestrator:
@@ -50,6 +66,8 @@ class AgentOrchestrator:
         corrective_retrieval: CorrectiveRetrievalPlanner,
         citation_checker: CitationChecker,
         chat_route_policy: ChatRoutePolicy | None = None,
+        context_resolver: ContextResolver | None = None,
+        memory_response_policy: MemoryResponsePolicy | None = None,
     ) -> None:
         self.memory = memory
         self.query_understanding = query_understanding
@@ -60,6 +78,8 @@ class AgentOrchestrator:
         self.corrective_retrieval = corrective_retrieval
         self.citation_checker = citation_checker
         self.chat_route_policy = chat_route_policy or ChatRoutePolicy()
+        self.context_resolver = context_resolver or ContextResolver()
+        self.memory_response_policy = memory_response_policy or MemoryResponsePolicy()
 
     def run(
         self,
@@ -70,7 +90,31 @@ class AgentOrchestrator:
     ) -> OrchestrationResult:
         """Run the complete CP2 Agent pipeline for one Chat request."""
 
-        history = self._read_history(request.session_id)
+        context_artifact, memory_recall = self._resolve_persistent_memory(request)
+        history = (
+            self._history_from_context_artifact(context_artifact)
+            if context_artifact is not None
+            else self._read_history(request.session_id)
+        )
+        if memory_recall is not None and memory_recall.handled:
+            plan = self._resolve_recall_query_plan(request, query_plan)
+            policy = self.policy_router.route(plan)
+            retrieval_mode, top_k = self._effective_retrieval_options(request, policy)
+            return OrchestrationResult(
+                query_plan=plan,
+                chat_route=ChatRouteDecision(
+                    route=ChatRoute.L0_DIRECT,
+                    reason="persistent_memory_exact_recall",
+                ),
+                policy=policy,
+                run_result=None,
+                history=history,
+                retrieval_mode=retrieval_mode,
+                top_k=top_k,
+                context_artifact=context_artifact,
+                memory_recall=memory_recall,
+            )
+
         plan = self._resolve_query_plan(request, query_plan, history)
         chat_route = self.chat_route_policy.route(plan)
         policy = self.policy_router.route(plan)
@@ -97,6 +141,7 @@ class AgentOrchestrator:
             history=history,
             retrieval_mode=retrieval_mode,
             top_k=top_k,
+            context_artifact=context_artifact,
         )
 
     def validate_citations(
@@ -121,6 +166,46 @@ class AgentOrchestrator:
         if not settings.MEMORY_ENABLED or not session_id:
             return []
         return self.memory.get_messages(session_id)
+
+    def _resolve_persistent_memory(
+        self,
+        request: ChatRequest,
+    ) -> tuple[ContextArtifact | None, MemoryRecall | None]:
+        memory_context = getattr(request, "memory_context", None)
+        if not isinstance(memory_context, MemoryContextInput):
+            return None, None
+
+        artifact = self.context_resolver.resolve(memory_context)
+        if artifact is None:
+            return None, None
+
+        persistent_context = PersistentMemoryContext.from_input(memory_context)
+        return artifact, self.memory_response_policy.resolve(
+            request.query,
+            persistent_context.facts,
+        )
+
+    @staticmethod
+    def _history_from_context_artifact(
+        artifact: ContextArtifact,
+    ) -> list[dict[str, Any]]:
+        return [
+            {"role": message.role, "content": message.content}
+            for message in artifact.model_history
+        ]
+
+    @staticmethod
+    def _resolve_recall_query_plan(
+        request: ChatRequest,
+        query_plan: QueryPlan | None,
+    ) -> QueryPlan:
+        if query_plan is not None:
+            return AgentOrchestrator._merge_request_constraints(request, query_plan)
+        return QueryPlan(
+            original_query=request.query,
+            standalone_query=request.query.strip(),
+            filters=dict(request.filters or {}),
+        )
 
     def _resolve_query_plan(
         self,

@@ -3,8 +3,18 @@ from typing import Any
 
 from agent.agent import Agent
 from agent.memory import InMemoryConversationMemory
+from agent.policy import ChatRoute
 from agent.query import QueryUnderstanding
-from agent.schemas.chat import ChatRequest
+from agent.config.settings import settings
+from agent.schemas.chat import (
+    ChatRequest,
+    InternalActor,
+    InternalChatRequest,
+    MemoryContextInput,
+    MemoryFactInput,
+    MemoryMessage,
+    MemorySnapshotInput,
+)
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 from toolset.tool_layer import BaseTool
 
@@ -132,6 +142,41 @@ class FixedQueryUnderstanding:
         return self.plan.model_copy(update={"original_query": query, "filters": merged})
 
 
+def _persistent_request(
+    query: str,
+    *,
+    facts: list[MemoryFactInput] | None = None,
+) -> InternalChatRequest:
+    return InternalChatRequest(
+        query=query,
+        session_id="persistent-session",
+        memory_context=MemoryContextInput(
+            actor=InternalActor(user_id="user-1", authenticated=True),
+            chat_id="persistent-session",
+            revision=1,
+            current_message_id="message-3",
+            current_sequence=3,
+            snapshot=MemorySnapshotInput(
+                id="snapshot-1",
+                version=1,
+                revision=1,
+                covered_to_sequence=1,
+                summary="Earlier discussion summary.",
+            ),
+            facts=facts or [],
+            tail=[
+                MemoryMessage(
+                    id="message-2",
+                    sequence=2,
+                    revision=1,
+                    role="assistant",
+                    content="Earlier answer.",
+                )
+            ],
+        ),
+    )
+
+
 def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() -> None:
     llm = PipelineLLM()
     memory = InMemoryConversationMemory()
@@ -188,3 +233,123 @@ def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None
     assert [call["query"] for call in search.calls] == ["A 和 B", "A", "B"]
     assert agent.last_citation_check is not None
     assert agent.last_citation_check.valid is True
+
+
+def test_persistent_context_is_used_without_legacy_short_window_double_write(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    llm = PipelineLLM()
+    memory = InMemoryConversationMemory()
+    agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request("What did we discuss?")
+    )
+
+    assert response.status == "success"
+    assert decision.context_artifact is not None
+    assert decision.fact_proposals == []
+    assert decision.recall is None
+    assert agent.last_orchestration is not None
+    assert [message["role"] for message in agent.last_orchestration.history] == [
+        "system",
+        "assistant",
+    ]
+    runner_messages = next(call["messages"] for call in llm.calls if call["tools"])
+    assert [message["role"] for message in runner_messages[:4]] == [
+        "system",
+        "system",
+        "assistant",
+        "user",
+    ]
+    assert runner_messages[-1]["content"] == "What did we discuss?"
+    assert memory.get_messages("persistent-session") == []
+
+
+def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
+    llm = PipelineLLM()
+    memory = InMemoryConversationMemory()
+    agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request(
+            "我记住了什么？",
+            facts=[
+                MemoryFactInput(
+                    id="fact-1",
+                    category="GOAL",
+                    value="完成答辩准备。",
+                    expires_at=None,
+                )
+            ],
+        )
+    )
+
+    assert response.status == "success"
+    assert response.answer == "已确认的记忆：\n- GOAL: 完成答辩准备。"
+    assert response.citations == []
+    assert decision.recall is not None and decision.recall.handled is True
+    assert decision.fact_proposals == []
+    assert llm.calls == []
+    assert memory.get_messages("persistent-session") == []
+    assert agent.last_orchestration is not None
+    assert agent.last_orchestration.chat_route.route == ChatRoute.L0_DIRECT
+    assert agent.last_orchestration.chat_route.research_entry_allowed is False
+
+
+def test_persistent_success_returns_one_explicit_fact_proposal_only_when_gated_on(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
+    agent = Agent(
+        llm=PipelineLLM(),
+        tools=[RecordingSearchTool()],
+        memory=InMemoryConversationMemory(),
+    )
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request("请记住偏好： 使用  中文\n回复 ")
+    )
+
+    assert response.status == "success"
+    assert response.model_dump().keys() == {
+        "trace_id", "status", "answer", "message", "citations"
+    }
+    assert [proposal.model_dump() for proposal in decision.fact_proposals] == [
+        {
+            "category": "PREFERENCE",
+            "value": "使用 中文 回复",
+            "source_message_id": "message-3",
+            "expires_at": None,
+        }
+    ]
+
+
+def test_fact_proposal_policy_failure_is_non_blocking_and_does_not_create_a_candidate(
+    monkeypatch,
+) -> None:
+    class RaisingFactProposalPolicy:
+        def propose(self, *args, **kwargs):
+            raise RuntimeError("candidate policy unavailable")
+
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
+    agent = Agent(
+        llm=PipelineLLM(),
+        tools=[RecordingSearchTool()],
+        memory=InMemoryConversationMemory(),
+        fact_proposal_policy=RaisingFactProposalPolicy(),  # type: ignore[arg-type]
+    )
+
+    response, decision = agent.chat_with_memory(
+        _persistent_request("remember goal: finish the implementation")
+    )
+
+    assert response.status == "success"
+    assert decision.fact_proposals == []

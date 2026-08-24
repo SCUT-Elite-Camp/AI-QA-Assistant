@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Load environment variables from .env file
 load_dotenv()
@@ -60,6 +60,44 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
         ge=1,
     )
+    # Persistent Memory is separately gated and remains disabled until rollout.
+    PERSISTENT_MEMORY_ENABLED: bool = Field(
+        default_factory=lambda: _env_bool("PERSISTENT_MEMORY_ENABLED", False),
+    )
+    SESSION_FACT_ENABLED: bool = Field(
+        default_factory=lambda: _env_bool("SESSION_FACT_ENABLED", False),
+    )
+    MEMORY_CACHE_ENABLED: bool = Field(
+        default_factory=lambda: _env_bool("MEMORY_CACHE_ENABLED", False),
+    )
+    MEMORY_TAIL_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
+        ge=1,
+    )
+    MEMORY_BRIEF_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_BRIEF_MAX_CHARS", 1200),
+        ge=1,
+    )
+    MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS", 1200),
+        ge=1,
+    )
+    MEMORY_COMPACTION_MIN_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_COMPACTION_MIN_MESSAGES", 12),
+        ge=1,
+    )
+    MEMORY_COMPACTION_SOFT_TOKENS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_COMPACTION_SOFT_TOKENS", 1000),
+        ge=1,
+    )
+    MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
+        ge=1,
+    )
+    # Empty by default; 04a rejects private requests unless the configured token matches.
+    AGENT_INTERNAL_TOKEN: str = Field(
+        default_factory=lambda: os.getenv("AGENT_INTERNAL_TOKEN", ""),
+    )
     MAX_AGENT_ITERATIONS: int = Field(
         default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
         ge=1,
@@ -81,6 +119,12 @@ class Settings(BaseModel):
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
+
+    @model_validator(mode="after")
+    def reject_unsupported_memory_cache(self) -> "Settings":
+        if self.MEMORY_CACHE_ENABLED:
+            raise ValueError("memory_cache_not_supported")
+        return self
 
 
 settings = Settings()

@@ -153,7 +153,6 @@ def run(iterations: int) -> dict[str, Any]:
     initialization_ms = (time.perf_counter() - started) * 1000
     request = ChatRequest(
         query="CP2 Week 1 为什么需要复用应用资源？",
-        is_first_message=False,
         session_id=None,
     )
     plan = QueryPlan(original_query=request.query, standalone_query=request.query)

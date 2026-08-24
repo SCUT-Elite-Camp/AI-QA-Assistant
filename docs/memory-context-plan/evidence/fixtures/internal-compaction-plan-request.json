@@ -1,0 +1,10 @@
+{
+  "actor": {
+    "user_id": "user-1",
+    "authenticated": true
+  },
+  "chat_id": "chat-1",
+  "revision": 1,
+  "active_snapshot": null,
+  "messages": []
+}

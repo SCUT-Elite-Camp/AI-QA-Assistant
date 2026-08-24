@@ -104,6 +104,98 @@ Fields:
 `clarification_required` keeps `answer` empty and puts the Agent's clarification
 question in `message`, matching the existing Web error/status rendering path.
 
+## Internal Persistent Memory contract (not a public endpoint)
+
+The public `POST /api/chat` request and `ChatResponse` above remain unchanged.
+They reject the internal-only `memory_context` field. The token-protected
+`/api/internal/*` routes are introduced separately in Unit 04a; Unit 04 only
+defines their Pydantic DTOs and configuration.
+
+`InternalChatRequest` contains all existing `ChatRequest` fields plus a required
+`memory_context`:
+
+```text
+InternalActor { user_id, authenticated: true }
+MemoryMessage { id, sequence, revision, role, content }
+MemorySnapshotInput { id, version, revision, covered_to_sequence, summary }
+MemoryFactInput { id, category, value, expires_at: epoch-ms | null }
+MemoryContextInput { actor, chat_id, revision, current_message_id,
+                     current_sequence, snapshot: nullable, facts, tail }
+```
+
+The future internal chat response is
+`InternalChatResponse { response: ChatResponse, memory_decision }`. Its
+`memory_decision` may contain a `context_artifact`, `recall`, and
+`fact_proposals`; `fact_proposals` is always an empty array through Units 01--08.
+The compaction and short-window reset DTOs are also internal-only. BFF remains
+the only writer of ChatMessage, Snapshot, and Fact records.
+
+From Unit 09 onward, an internal response may contain one `FactProposal` only
+when both persistent Memory and `SESSION_FACT_ENABLED` are enabled and the
+authenticated user sent an exact supported remember command. The proposal is a
+four-field candidate with `expires_at: null`; it is neither persisted nor
+confirmed. The Web BFF remains the only writer and computes expiry on confirm.
+Explicit recall is limited to the documented exact queries and never creates a
+RAG citation.
+
+Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
+`AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
+the example file intentionally leaves it empty.
+
+## Unit 11 Memory flags and safe events
+
+`PERSISTENT_MEMORY_ENABLED=false` and `SESSION_FACT_ENABLED=false` are both
+safe defaults. With the Fact gate disabled, candidate proposals and deterministic
+recall are suppressed and `ContextArtifact.memory_brief` omits Facts, while
+trusted Snapshot/Tail context can still be resolved when persistent Memory is
+enabled. `MEMORY_CACHE_ENABLED=true` is rejected at Agent configuration time
+with the fixed `memory_cache_not_supported` error; this release has no Redis
+support.
+
+The Agent reads `MEMORY_TAIL_MESSAGES=8`,
+`MEMORY_COMPACTION_MIN_MESSAGES=12`, and
+`MEMORY_COMPACTION_SOFT_TOKENS=1000` as positive configuration bounds. Its
+only Memory observability events contain finite enums and numbers:
+`memory_resolve {source, outcome, duration_ms}`,
+`memory_compaction {outcome, tail_count, snapshot_version?}`, and
+`memory_fact {action, outcome}`, and
+`memory_prompt {model_history_chars}`. The latter is emitted only after the
+Runner executes with trusted persistent context, and records the non-negative
+character count of its `model_history` only. These events never include user
+text, Fact values, Snapshot summaries, Tail messages, message/chat IDs,
+prompts, or tokens.
+
+## BFF-only internal Memory endpoints (Unit 04a)
+
+`POST /api/internal/chat`, `POST /api/internal/memory/compaction-plan`, and
+`POST /api/internal/memory/reset-short-window` require both JSON input and an
+exact `X-Agent-Internal-Token`. The Agent compares this token in constant time;
+missing, blank, or incorrect values all receive the same `403` response.
+
+- `/chat` accepts only `InternalChatRequest`. With the Agent persistent flag
+  disabled it returns `409 { "code": "persistent_memory_disabled" }`. When
+  enabled, it delegates to the shared Agent, resolves the trusted Memory context
+  and returns `InternalChatResponse`; `memory_decision.fact_proposals=[]`
+  remains fixed through Unit 08.
+- `/memory/compaction-plan` validates BFF-supplied current-revision messages
+  and returns either `{ "should_compact": false }` or a pure optimistic
+  Snapshot plan. It never reads or writes the Web database: the BFF applies a
+  positive plan only after the assistant message is durable, using the returned
+  expected active Snapshot ID/version for its transaction. Snapshot summaries
+  are deterministically bounded by `MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS`
+  (default `1200`) and omit a whole message when the fixed sensitive-value
+  policy matches it. During the BFF transition, the internal-only
+  `tail_size`, `min_coverable_messages`, and `soft_token_budget` request fields
+  may be omitted. Older BFF calls may still send them, but each supplied value
+  must be a strict positive integer and is ignored by the Planner. Agent
+  settings remain the sole authority for all three thresholds; unknown fields
+  are rejected and no public API version or DTO changes.
+- `/memory/reset-short-window` calls only the existing in-process
+  `ConversationMemory.clear(chat_id)`. It never writes Snapshot or Fact data.
+
+The former unauthenticated `DELETE /api/chat/memory/{session_id}` endpoint has
+been removed. Public `/api/chat` and its response remain unchanged.
+
 ## Week 3 Quality Rules
 
 - Empty or whitespace-only `query` returns `invalid_query` before retrieval or LLM calls.

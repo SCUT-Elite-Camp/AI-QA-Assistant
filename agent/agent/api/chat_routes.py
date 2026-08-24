@@ -18,7 +18,6 @@ def get_agent() -> Agent:
 @router.post(
     "/chat",
     response_model=ChatResponse,
-    response_model_exclude={"chat_title"},
 )
 def chat(
     request: ChatRequest,
