@@ -178,7 +178,12 @@ missing, blank, or incorrect values all receive the same `403` response.
   expected active Snapshot ID/version for its transaction. Snapshot summaries
   are deterministically bounded by `MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS`
   (default `1200`) and omit a whole message when the fixed sensitive-value
-  policy matches it.
+  policy matches it. During the BFF transition, the internal-only
+  `tail_size`, `min_coverable_messages`, and `soft_token_budget` request fields
+  may be omitted. Older BFF calls may still send them, but each supplied value
+  must be a strict positive integer and is ignored by the Planner. Agent
+  settings remain the sole authority for all three thresholds; unknown fields
+  are rejected and no public API version or DTO changes.
 - `/memory/reset-short-window` calls only the existing in-process
   `ConversationMemory.clear(chat_id)`. It never writes Snapshot or Fact data.
 

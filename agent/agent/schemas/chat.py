@@ -1,6 +1,6 @@
 from typing import Any, Literal, Optional, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 MemoryFactCategory: TypeAlias = Literal["GOAL", "PREFERENCE", "PLAN_CONSTRAINT"]
@@ -132,9 +132,24 @@ class CompactionPlanRequest(_InternalMemoryContractModel):
     revision: int = Field(gt=0)
     active_snapshot: Optional[MemorySnapshotInput]
     messages: list[MemoryMessage]
-    tail_size: int = Field(gt=0)
-    min_coverable_messages: int = Field(gt=0)
-    soft_token_budget: int = Field(gt=0)
+    # Deprecated internal BFF compatibility fields.  Agent settings are the
+    # sole authority for compaction thresholds; callers may omit these fields.
+    tail_size: Optional[int] = Field(default=None, gt=0)
+    min_coverable_messages: Optional[int] = Field(default=None, gt=0)
+    soft_token_budget: Optional[int] = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _reject_explicit_null_legacy_thresholds(self) -> "CompactionPlanRequest":
+        """Allow omitted legacy fields, but never accept an explicit null value."""
+
+        for field_name in (
+            "tail_size",
+            "min_coverable_messages",
+            "soft_token_budget",
+        ):
+            if field_name in self.model_fields_set and getattr(self, field_name) is None:
+                raise ValueError(f"{field_name} must be a positive integer when provided")
+        return self
 
 
 class ExpectedActiveSnapshot(_InternalMemoryContractModel):

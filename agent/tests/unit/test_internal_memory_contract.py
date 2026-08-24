@@ -141,6 +141,72 @@ def test_internal_compaction_and_reset_dtos_are_discriminated() -> None:
     assert ResetShortWindowResponse.model_validate({"status": "ok"}).status == "ok"
 
 
+def test_compaction_request_accepts_legacy_thresholds_or_omits_them() -> None:
+    payload = {
+        "actor": {"user_id": "user-1", "authenticated": True},
+        "chat_id": "chat-1",
+        "revision": 1,
+        "active_snapshot": None,
+        "messages": [],
+    }
+
+    omitted = CompactionPlanRequest.model_validate(payload)
+    legacy = CompactionPlanRequest.model_validate(
+        {
+            **payload,
+            "tail_size": 8,
+            "min_coverable_messages": 12,
+            "soft_token_budget": 1000,
+        }
+    )
+
+    assert omitted.tail_size is None
+    assert omitted.min_coverable_messages is None
+    assert omitted.soft_token_budget is None
+    assert legacy.tail_size == 8
+    assert legacy.min_coverable_messages == 12
+    assert legacy.soft_token_budget == 1000
+
+
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("tail_size", 0),
+        ("min_coverable_messages", "12"),
+        ("soft_token_budget", None),
+    ],
+)
+def test_compaction_request_rejects_invalid_legacy_thresholds(
+    field_name: str,
+    value: object,
+) -> None:
+    payload = {
+        "actor": {"user_id": "user-1", "authenticated": True},
+        "chat_id": "chat-1",
+        "revision": 1,
+        "active_snapshot": None,
+        "messages": [],
+        field_name: value,
+    }
+
+    with pytest.raises(ValidationError, match=field_name):
+        CompactionPlanRequest.model_validate(payload)
+
+
+def test_compaction_request_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError, match="unexpected"):
+        CompactionPlanRequest.model_validate(
+            {
+                "actor": {"user_id": "user-1", "authenticated": True},
+                "chat_id": "chat-1",
+                "revision": 1,
+                "active_snapshot": None,
+                "messages": [],
+                "unexpected": "not accepted",
+            }
+        )
+
+
 def test_persistent_memory_settings_default_to_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("PERSISTENT_MEMORY_ENABLED", raising=False)
     monkeypatch.delenv("SESSION_FACT_ENABLED", raising=False)
