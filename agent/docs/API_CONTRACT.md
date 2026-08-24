@@ -142,6 +142,25 @@ Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
 `AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
 the example file intentionally leaves it empty.
 
+## Unit 11 Memory flags and safe events
+
+`PERSISTENT_MEMORY_ENABLED=false` and `SESSION_FACT_ENABLED=false` are both
+safe defaults. With the Fact gate disabled, candidate proposals and deterministic
+recall are suppressed and `ContextArtifact.memory_brief` omits Facts, while
+trusted Snapshot/Tail context can still be resolved when persistent Memory is
+enabled. `MEMORY_CACHE_ENABLED=true` is rejected at Agent configuration time
+with the fixed `memory_cache_not_supported` error; this release has no Redis
+support.
+
+The Agent reads `MEMORY_TAIL_MESSAGES=8`,
+`MEMORY_COMPACTION_MIN_MESSAGES=12`, and
+`MEMORY_COMPACTION_SOFT_TOKENS=1000` as positive configuration bounds. Its
+only Memory observability events contain finite enums and numbers:
+`memory_resolve {source, outcome, duration_ms}`,
+`memory_compaction {outcome, tail_count, snapshot_version?}`, and
+`memory_fact {action, outcome}`. They never include user text, Fact values,
+Snapshot summaries, Tail messages, message/chat IDs, prompts, or tokens.
+
 ## BFF-only internal Memory endpoints (Unit 04a)
 
 `POST /api/internal/chat`, `POST /api/internal/memory/compaction-plan`, and

@@ -6,6 +6,7 @@ import re
 import unicodedata
 
 from agent.memory.sensitive_value import isSensitiveMemoryValue
+from agent.memory.memory_observability import MemoryObservability
 from agent.schemas.chat import FactProposal, MemoryFactCategory
 
 
@@ -33,6 +34,9 @@ _MAX_VALUE_CODE_POINTS = 500
 class FactProposalPolicy:
     """Generate at most one non-sensitive internal Fact candidate per request."""
 
+    def __init__(self, *, observability: MemoryObservability | None = None) -> None:
+        self._observability = observability or MemoryObservability()
+
     def propose(
         self,
         query: str,
@@ -48,17 +52,20 @@ class FactProposalPolicy:
             or not actor_authenticated
             or not current_message_id
         ):
+            self._observability.fact(action="suppressed", outcome="disabled")
             return []
 
         parsed = self._parse(query)
         if parsed is None:
+            self._observability.fact(action="suppressed", outcome="empty")
             return []
 
         category, value = parsed
         if isSensitiveMemoryValue(value):
+            self._observability.fact(action="suppressed", outcome="sensitive")
             return []
 
-        return [
+        proposals = [
             FactProposal(
                 category=category,
                 value=value,
@@ -66,6 +73,8 @@ class FactProposalPolicy:
                 expires_at=None,
             )
         ]
+        self._observability.fact(action="proposed", outcome="success")
+        return proposals
 
     @staticmethod
     def _parse(query: str) -> tuple[MemoryFactCategory, str] | None:

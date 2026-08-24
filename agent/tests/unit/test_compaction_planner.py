@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from agent.config.settings import Settings, settings
 from agent.memory.compaction_planner import CompactionPlanner
 from agent.memory.context_resolver import ContextResolver
+from agent.memory.memory_observability import MemoryObservability
 from agent.schemas.chat import (
     CompactionPlan,
     CompactionPlanRequest,
@@ -211,3 +212,60 @@ def test_snapshot_summary_limit_must_be_positive() -> None:
         Settings(MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS=0)
     with pytest.raises(ValueError, match="summary_max_chars"):
         CompactionPlanner(summary_max_chars=0)
+
+
+def test_planner_uses_settings_not_bff_supplied_compaction_thresholds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "MEMORY_TAIL_MESSAGES", 2)
+    monkeypatch.setattr(settings, "MEMORY_COMPACTION_MIN_MESSAGES", 1)
+    monkeypatch.setattr(settings, "MEMORY_COMPACTION_SOFT_TOKENS", 1_000)
+
+    plan = CompactionPlanner().plan(
+        _request(
+            [_message(sequence) for sequence in range(1, 5)],
+            tail_size=8,
+            min_coverable_messages=12,
+            soft_token_budget=1_000,
+        )
+    )
+
+    assert isinstance(plan, CompactionPlan)
+    assert plan.new_snapshot.covered_from_sequence == 1
+    assert plan.new_snapshot.covered_to_sequence == 2
+
+
+def test_planner_failure_returns_no_plan_and_only_safe_event(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[tuple[str, dict[str, str | int]]] = []
+    planner = CompactionPlanner(
+        tail_messages=2,
+        min_coverable_messages=1,
+        soft_token_budget=1_000,
+        observability=MemoryObservability(
+            emit=lambda event, payload: events.append((event, payload))
+        ),
+    )
+
+    def fail_summary(*args: object, **kwargs: object) -> str:
+        raise RuntimeError("do not expose this message content")
+
+    monkeypatch.setattr(planner, "_build_summary", fail_summary)
+
+    assert isinstance(
+        planner.plan(_request([_message(sequence) for sequence in range(1, 5)])),
+        NoCompactionPlan,
+    )
+    assert events == [
+        ("memory_compaction", {"outcome": "failed", "tail_count": 0})
+    ]
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    ["MEMORY_COMPACTION_MIN_MESSAGES", "MEMORY_COMPACTION_SOFT_TOKENS"],
+)
+def test_compaction_settings_limits_must_be_positive(field_name: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field_name: 0})
