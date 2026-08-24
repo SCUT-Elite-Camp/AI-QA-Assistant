@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import {
   AgentInternalClientError,
@@ -6,6 +7,10 @@ import {
   isPersistentMemoryEnabled,
   shouldUsePersistentMemory
 } from '../../server/utils/agentInternalClient'
+import {
+  internalChatRequestSchema,
+  internalChatResponseSchema
+} from '../../server/utils/memoryContract'
 
 const environment = {
   AGENT_BASE_URL: 'http://agent.test',
@@ -13,32 +18,18 @@ const environment = {
   PERSISTENT_MEMORY_ENABLED: 'true'
 }
 
+function readFixture (name: string): unknown {
+  return JSON.parse(readFileSync(new URL(`../../../docs/memory-context-plan/evidence/fixtures/${name}`, import.meta.url), 'utf8'))
+}
+
 function request() {
-  return {
-    query: 'Question',
-    top_k: 5,
-    stream: false,
-    retrieval_mode: 'hybrid' as const,
-    consecutive_no_new_docs_count: 0,
-    memory_context: {
-      actor: { user_id: 'user-a', authenticated: true as const },
-      chat_id: 'chat-a',
-      revision: 1,
-      current_message_id: 'message-2',
-      current_sequence: 2,
-      snapshot: null,
-      facts: [],
-      tail: [{ id: 'message-1', sequence: 1, revision: 1, role: 'user' as const, content: 'Earlier question' }]
-    }
-  }
+  return internalChatRequestSchema.parse(readFixture('internal-chat-request.json'))
 }
 
 describe('Agent internal client', () => {
   it('sends only the token-protected internal request when persistent Memory is selected', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      response: { trace_id: 'trace-1', status: 'success', answer: 'Answer.', message: '', citations: [] },
-      memory_decision: { fact_proposals: [] }
-    }), { status: 200 }))
+    const responseFixture = internalChatResponseSchema.parse(readFixture('internal-chat-response.json'))
+    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseFixture), { status: 200 }))
 
     const response = await callInternalChat(request(), { environment, fetchFn })
     expect(response.response.answer).toBe('Answer.')
@@ -64,10 +55,8 @@ describe('Agent internal client', () => {
   })
 
   it('wraps a successful token-protected response with the internal provenance marker', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      response: { trace_id: 'trace-1', status: 'success', answer: 'Answer.', message: '', citations: [] },
-      memory_decision: { fact_proposals: [] }
-    }), { status: 200 }))
+    const responseFixture = internalChatResponseSchema.parse(readFixture('internal-chat-response.json'))
+    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseFixture), { status: 200 }))
 
     await expect(callChatWithPersistentFallback({
       usePersistentMemory: true,

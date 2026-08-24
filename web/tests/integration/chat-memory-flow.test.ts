@@ -14,10 +14,16 @@ const mocks = vi.hoisted(() => ({
   getValidatedRouterParams: vi.fn(),
   isSensitiveMemoryValue: vi.fn(),
   isSessionFactEnabled: vi.fn(),
+  logMemoryEvent: vi.fn(),
   persistCurrentUserMessage: vi.fn(),
   readCurrentRevisionFactSource: vi.fn(),
   readValidatedBody: vi.fn(),
   recordAiCall: vi.fn(),
+  recordMemoryCompaction: vi.fn(),
+  recordMemoryDuration: vi.fn(),
+  recordMemoryFact: vi.fn(),
+  recordMemoryFallback: vi.fn(),
+  recordMemoryResolve: vi.fn(),
   requireOwnedChat: vi.fn(),
   shouldUsePersistentMemory: vi.fn(),
   useDrizzle: vi.fn()
@@ -47,7 +53,15 @@ vi.mock('../../server/utils/drizzle', async (importOriginal) => {
   return { ...actual, useDrizzle: mocks.useDrizzle }
 })
 
-vi.mock('../../server/utils/metrics', () => ({ recordAiCall: mocks.recordAiCall }))
+vi.mock('../../server/utils/metrics', () => ({
+  recordAiCall: mocks.recordAiCall,
+  recordMemoryCompaction: mocks.recordMemoryCompaction,
+  recordMemoryDuration: mocks.recordMemoryDuration,
+  recordMemoryFact: mocks.recordMemoryFact,
+  recordMemoryFallback: mocks.recordMemoryFallback,
+  recordMemoryResolve: mocks.recordMemoryResolve
+}))
+vi.mock('../../server/utils/logger', () => ({ logMemoryEvent: mocks.logMemoryEvent }))
 vi.mock('../../server/utils/topicStorage', () => ({ ensureTopicDir: vi.fn(), syncTopicToDisk: vi.fn() }))
 vi.mock('../../server/utils/chatAccess', () => ({
   getAgentBaseUrl: mocks.getAgentBaseUrl,

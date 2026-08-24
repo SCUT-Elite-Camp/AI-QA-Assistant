@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   compactionPlanResponseSchema,
@@ -7,6 +8,10 @@ import {
   manualFactProposalRequestSchema,
   memoryContextInputSchema
 } from '../../server/utils/memoryContract'
+
+function readFixture (name: string): unknown {
+  return JSON.parse(readFileSync(new URL(`../../../docs/memory-context-plan/evidence/fixtures/${name}`, import.meta.url), 'utf8'))
+}
 
 function createMemoryContext() {
   return {
@@ -42,6 +47,16 @@ function createMemoryContext() {
 }
 
 describe('internal Memory contract', () => {
+  it('accepts the shared cross-workspace request and response fixtures', () => {
+    expect(internalChatRequestSchema.parse(readFixture('internal-chat-request.json'))).toMatchObject({
+      memory_context: { chat_id: 'chat-fixture-1', current_sequence: 3 }
+    })
+    expect(internalChatResponseSchema.parse(readFixture('internal-chat-response.json'))).toMatchObject({
+      memory_decision: { fact_proposals: [expect.objectContaining({ source_message_id: 'message-fixture-3' })] },
+      response: { trace_id: 'trace-fixture-1' }
+    })
+  })
+
   it('serializes the authenticated Memory context with a nullable expiration timestamp', () => {
     const parsed = internalChatRequestSchema.parse({
       query: 'Continue the previous topic.',
