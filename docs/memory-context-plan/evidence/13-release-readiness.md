@@ -105,3 +105,18 @@ Web 的 [metrics.ts](../../../web/server/utils/metrics.ts) 和 [logger.ts](../..
 1. 提交已准备好的 `dev...web-dev` PR，并完成独立的 CODEOWNERS/owner 审查；Agent PR [#25](https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/pull/25) 已包含 `4c219b5`，但 5 个 owner review 均仍 pending；
 2. 发布负责人、回滚负责人、Agent 写锁 holder，以及持锁的文件范围和释放条件；
 3. Agent 本地 smoke 数据库的明确保留/备份/丢弃决定，之后得到干净工作树。
+
+## 9. 负责人、PR 与本地数据最终更新（2026-08-24）
+
+以下内容由发布持有人明确确认，不是自动推断：
+
+| 必需项 | 已确认的责任与边界 | 状态 |
+| --- | --- | --- |
+| Web PR | [#26](https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/pull/26) 已创建，base=`dev`、head=`web-dev`。PR 本身声明在独立 CODEOWNERS review 前不得 merge/deploy。 | 已满足“可审查 PR”前置；**审批仍待完成**。 |
+| Agent PR | [#25](https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/pull/25) 为 open，base=`agent-dev`、head=`agent-dev-infra`，并包含 `4c219b5`。 | 已满足“可审查 PR”前置；**审批仍待完成**。 |
+| 发布负责人 | `songsuijie`（当前发布持有人）。 | 已指定。 |
+| 回滚负责人 | `songsuijie`（当前发布持有人）。 | 已指定。 |
+| Agent 写锁 | `songsuijie` 是口头约定的唯一 holder；范围为 `agent-dev-infra` 的 Agent Memory 改动。它不是仓库强制锁。holder 在完成独立 PR review 并明确交接/释放 Agent 改动控制权后释放。 | 已指定且已说明非强制性质。 |
+| Agent 本地运行 DB | 按持有人授权，停止确认属于 `D:\\project\\AI-QA-Assistant-agent-memory` 的本地 `app.py` 后，确认端口 8000 已释放，并将 `data-persistence/data/chat_history.db` 还原到提交版本；未上传或保留 smoke 聊天记录。 | 已消除脏工作树风险。 |
+
+此后阶段 A 的唯一阻断项是：两个 PR 均须得到独立的 CODEOWNERS/owner approval。当前持有人不得对自己创建的 PR 自行审批，也不得在审批前 merge、部署或开启 persistent/Fact 环境开关。
