@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
@@ -21,6 +23,17 @@ from toolset.tool_layer.registry import ToolRegistry
 
 
 production_app = app_module.app
+_SHARED_FIXTURE_DIRECTORY = (
+    Path(__file__).resolve().parents[3]
+    / "docs"
+    / "memory-context-plan"
+    / "evidence"
+    / "fixtures"
+)
+
+
+def _shared_fixture(name: str) -> dict[str, object]:
+    return json.loads((_SHARED_FIXTURE_DIRECTORY / name).read_text(encoding="utf-8"))
 
 
 @dataclass
@@ -337,6 +350,21 @@ def test_internal_chat_uses_shared_agent_and_returns_empty_fact_proposals(
     assert response.status_code == 200
     assert response.json()["response"]["trace_id"] == "trace-internal-memory"
     assert response.json()["memory_decision"]["fact_proposals"] == []
+    assert len(agent.requests) == 1
+
+
+def test_internal_chat_accepts_the_shared_web_contract_fixture(
+    internal_client: tuple[TestClient, RecordingAgent],
+) -> None:
+    client, agent = internal_client
+
+    response = client.post(
+        "/api/internal/chat",
+        json=_shared_fixture("internal-chat-request.json"),
+        headers=_headers(),
+    )
+
+    assert response.status_code == 200
     assert len(agent.requests) == 1
 
 
