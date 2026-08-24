@@ -145,17 +145,23 @@ def _internal_chat_payload() -> dict[str, object]:
     }
 
 
-def _compaction_payload() -> dict[str, object]:
-    return {
+def _compaction_payload(*, include_legacy_thresholds: bool = True) -> dict[str, object]:
+    payload: dict[str, object] = {
         "actor": {"user_id": "user-1", "authenticated": True},
         "chat_id": "chat-1",
         "revision": 1,
         "active_snapshot": None,
         "messages": [],
-        "tail_size": 8,
-        "min_coverable_messages": 12,
-        "soft_token_budget": 1000,
     }
+    if include_legacy_thresholds:
+        payload.update(
+            {
+                "tail_size": 8,
+                "min_coverable_messages": 12,
+                "soft_token_budget": 1000,
+            }
+        )
+    return payload
 
 
 def _compaction_messages(count: int) -> list[dict[str, object]]:
@@ -449,6 +455,33 @@ def test_compaction_returns_a_pure_plan_without_using_the_shared_agent(
             "- assistant: persisted message 12",
         },
     }
+    assert agent.requests == []
+    assert agent.memory.cleared_chat_ids == []
+
+
+def test_compaction_accepts_legacy_and_omitted_threshold_contracts(
+    internal_client: tuple[TestClient, RecordingAgent],
+) -> None:
+    client, agent = internal_client
+    legacy_payload = _compaction_payload()
+    current_payload = _shared_fixture("internal-compaction-plan-request.json")
+    messages = _compaction_messages(20)
+    legacy_payload["messages"] = messages
+    current_payload["messages"] = messages
+
+    legacy_response = client.post(
+        "/api/internal/memory/compaction-plan",
+        json=legacy_payload,
+        headers=_headers(),
+    )
+    current_response = client.post(
+        "/api/internal/memory/compaction-plan",
+        json=current_payload,
+        headers=_headers(),
+    )
+
+    assert legacy_response.status_code == current_response.status_code == 200
+    assert legacy_response.json() == current_response.json()
     assert agent.requests == []
     assert agent.memory.cleared_chat_ids == []
 

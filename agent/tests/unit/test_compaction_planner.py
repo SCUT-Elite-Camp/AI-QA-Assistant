@@ -40,20 +40,27 @@ def _request(
     messages: list[MemoryMessage],
     *,
     active_snapshot: MemorySnapshotInput | None = None,
+    include_legacy_thresholds: bool = True,
     tail_size: int = 8,
     min_coverable_messages: int = 12,
     soft_token_budget: int = 1000,
 ) -> CompactionPlanRequest:
-    return CompactionPlanRequest(
-        actor=InternalActor(user_id="user-1", authenticated=True),
-        chat_id="chat-1",
-        revision=1,
-        active_snapshot=active_snapshot,
-        messages=messages,
-        tail_size=tail_size,
-        min_coverable_messages=min_coverable_messages,
-        soft_token_budget=soft_token_budget,
-    )
+    payload: dict[str, object] = {
+        "actor": InternalActor(user_id="user-1", authenticated=True),
+        "chat_id": "chat-1",
+        "revision": 1,
+        "active_snapshot": active_snapshot,
+        "messages": messages,
+    }
+    if include_legacy_thresholds:
+        payload.update(
+            {
+                "tail_size": tail_size,
+                "min_coverable_messages": min_coverable_messages,
+                "soft_token_budget": soft_token_budget,
+            }
+        )
+    return CompactionPlanRequest.model_validate(payload)
 
 
 def test_eleven_coverable_messages_do_not_create_a_snapshot() -> None:
@@ -214,25 +221,53 @@ def test_snapshot_summary_limit_must_be_positive() -> None:
         CompactionPlanner(summary_max_chars=0)
 
 
-def test_planner_uses_settings_not_bff_supplied_compaction_thresholds(
+def test_legacy_and_omitted_bff_thresholds_produce_the_same_plan(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "MEMORY_TAIL_MESSAGES", 2)
     monkeypatch.setattr(settings, "MEMORY_COMPACTION_MIN_MESSAGES", 1)
     monkeypatch.setattr(settings, "MEMORY_COMPACTION_SOFT_TOKENS", 1_000)
+    messages = [_message(sequence) for sequence in range(1, 5)]
 
-    plan = CompactionPlanner().plan(
+    legacy_plan = CompactionPlanner().plan(
         _request(
-            [_message(sequence) for sequence in range(1, 5)],
+            messages,
             tail_size=8,
             min_coverable_messages=12,
             soft_token_budget=1_000,
         )
     )
+    omitted_plan = CompactionPlanner().plan(
+        _request(messages, include_legacy_thresholds=False)
+    )
 
-    assert isinstance(plan, CompactionPlan)
-    assert plan.new_snapshot.covered_from_sequence == 1
-    assert plan.new_snapshot.covered_to_sequence == 2
+    assert isinstance(legacy_plan, CompactionPlan)
+    assert legacy_plan == omitted_plan
+    assert legacy_plan.new_snapshot.covered_from_sequence == 1
+    assert legacy_plan.new_snapshot.covered_to_sequence == 2
+
+
+def test_only_agent_settings_can_change_compaction_threshold_behavior(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    messages = [_message(sequence) for sequence in range(1, 5)]
+    monkeypatch.setattr(settings, "MEMORY_TAIL_MESSAGES", 2)
+    monkeypatch.setattr(settings, "MEMORY_COMPACTION_MIN_MESSAGES", 3)
+    monkeypatch.setattr(settings, "MEMORY_COMPACTION_SOFT_TOKENS", 10_000)
+
+    legacy_request = _request(
+        messages,
+        tail_size=1,
+        min_coverable_messages=1,
+        soft_token_budget=1,
+    )
+    omitted_request = _request(messages, include_legacy_thresholds=False)
+    assert isinstance(CompactionPlanner().plan(legacy_request), NoCompactionPlan)
+    assert CompactionPlanner().plan(legacy_request) == CompactionPlanner().plan(omitted_request)
+
+    monkeypatch.setattr(settings, "MEMORY_COMPACTION_MIN_MESSAGES", 1)
+    assert isinstance(CompactionPlanner().plan(legacy_request), CompactionPlan)
+    assert CompactionPlanner().plan(legacy_request) == CompactionPlanner().plan(omitted_request)
 
 
 def test_planner_failure_returns_no_plan_and_only_safe_event(
