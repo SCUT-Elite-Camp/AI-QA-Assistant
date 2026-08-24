@@ -91,7 +91,7 @@ watch(() => props.open, (val) => {
 </script>
 
 <template>
-  <UModal :open="open" prevent-close :ui="{ width: 'sm:max-w-4xl' }" @update:open="emit('update:open', $event)">
+  <UModal :open="open" prevent-close :ui="{ content: 'sm:max-w-4xl' }" @update:open="emit('update:open', $event)">
     <template #content>
       <div class="p-6 bg-zinc-950 text-zinc-100 rounded-3xl space-y-4 max-h-[80vh] overflow-y-auto border border-zinc-800">
         <!-- Header -->

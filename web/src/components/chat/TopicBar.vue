@@ -33,7 +33,7 @@ function saveTitle() {
   <div class="px-4 py-2 bg-gradient-to-r from-emerald-500/10 via-zinc-100 to-emerald-500/5 dark:from-emerald-950/30 dark:via-zinc-900 dark:to-emerald-950/20 border-b border-emerald-500/20 dark:border-emerald-500/10 flex items-center justify-between gap-3 text-xs">
     <!-- Left: Topic Title & Progressive Indicator -->
     <div class="flex items-center gap-2 overflow-hidden">
-      <UBadge color="emerald" variant="subtle" size="xs" class="shrink-0 flex items-center gap-1">
+      <UBadge color="success" variant="subtle" size="xs" class="shrink-0 flex items-center gap-1">
         <UIcon name="i-heroicons-squares-2x2" class="w-3 h-3" />
         <span>话题空间</span>
       </UBadge>
@@ -41,10 +41,10 @@ function saveTitle() {
       <div v-if="!isEditingTitle" class="flex items-center gap-1 group font-medium text-zinc-900 dark:text-zinc-100 truncate">
         <span class="truncate" :title="topic.title">{{ topic.title }}</span>
         <UButton
-          color="gray"
+          color="neutral"
           variant="ghost"
           icon="i-heroicons-pencil-square"
-          size="2xs"
+          size="xs"
           class="opacity-0 group-hover:opacity-100 transition-opacity"
           @click="isEditingTitle = true"
         />
@@ -53,11 +53,11 @@ function saveTitle() {
       <div v-else class="flex items-center gap-1">
         <UInput
           v-model="editedTitle"
-          size="2xs"
+          size="xs"
           class="w-36"
           @keyup.enter="saveTitle"
         />
-        <UButton color="emerald" size="2xs" icon="i-heroicons-check" @click="saveTitle" />
+        <UButton color="success" size="xs" icon="i-heroicons-check" @click="saveTitle" />
       </div>
     </div>
 
@@ -81,10 +81,10 @@ function saveTitle() {
     <div class="flex items-center gap-1">
       <UTooltip text="Dialogue Tree">
         <UButton
-          color="gray"
+          color="neutral"
           variant="ghost"
           icon="i-heroicons-git-branch"
-          size="2xs"
+          size="xs"
           @click="emit('openDialogueTree')"
         >
           Tree
@@ -93,10 +93,10 @@ function saveTitle() {
 
       <UTooltip text="Document Pool">
         <UButton
-          color="gray"
+          color="neutral"
           variant="ghost"
           icon="i-heroicons-folder-open"
-          size="2xs"
+          size="xs"
           @click="emit('openDocumentPool')"
         >
           Docs
@@ -105,10 +105,10 @@ function saveTitle() {
 
       <UTooltip text="Topic Cognition (Soul.md)">
         <UButton
-          color="emerald"
+          color="success"
           variant="soft"
           icon="i-heroicons-cpu-chip"
-          size="2xs"
+          size="xs"
           @click="emit('openSoulModal')"
         >
           Soul
