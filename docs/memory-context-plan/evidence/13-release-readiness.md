@@ -86,3 +86,22 @@ Web 的 [metrics.ts](../../../web/server/utils/metrics.ts) 和 [logger.ts](../..
 4. 没有显式、无正文的 prompt-length 发布观测指标，只有 `6000` 字符上界。
 
 交接给负责人：在独立的相应原子单元修复第 4 项并审查；由负责人处理第 1--3 项。只有再次审查本报告为 PASS 后，才可请求包含环境、命令范围、开关阶段、灰度范围、观察时长、负责人和回滚阈值的阶段 B 明确授权。
+
+## 8. 阶段 A 补充更新（2026-08-24）
+
+本补充记录发生在第 7 节结论之后；它不会将阶段 A 改写为 PASS。
+
+| 项目 | 复核结果 | 结论 |
+| --- | --- | --- |
+| Web remote ref | `web-dev` 已推送至 `e662b76`。 | 已消除“未推送”风险。 |
+| Agent remote ref | `agent-dev-infra` 已推送至 `4c219b5`。 | 已消除“未推送”风险。 |
+| 远程 PR / review | GitHub connector 对 Web draft PR 创建返回 `403 Resource not accessible by integration`；Agent 搜索仅返回历史候选 PR `#25`，无法从 connector 获得其当前状态或 owner approval。 | **仍缺失可验证的 Web PR 与独立 owner approval。** 不得伪造或自我批准。 |
+| Prompt length | `agent-dev-infra@4c219b5:agent/agent/agent.py` 只在 trusted persistent Context 已实际得到 Runner 结果后发出 `memory_prompt {model_history_chars}`；`memory_observability.py` 仅接收非负整数。`agent/docs/API_CONTRACT.md` 已同步合同。 | 已消除“只有 6000 上界、没有无正文指标”风险。 |
+| Prompt length 回归 | `..\\.venv\\Scripts\\python.exe -m pytest tests/unit/test_internal_memory_contract.py tests/unit/test_context_resolver.py tests/unit/test_compaction_planner.py tests/unit/test_fact_proposal_policy.py tests/unit/test_memory_observability.py tests/integration/test_internal_memory_routes.py -q`：**82 passed**；`..\\.venv\\Scripts\\python.exe scripts/check_contract.py`：通过。 | 事件包含实际 Runner 路径、exact-recall 不发事件、负数拒绝及无正文 payload 回归。 |
+| Agent 本地 DB | `data-persistence/data/chat_history.db` 仍是唯一未提交修改。端口 8000 没有监听者，已确认无运行服务占用；但尚未获数据所有者明确授权丢弃其中 smoke 记录。 | **仍阻断干净发布工作树。** 必须在确认“可丢弃”或先受控备份后，由持有人清理。 |
+
+因此，当前仍为 **FAIL**。剩余不可由自动化代填的阻断项仅为：
+
+1. 在 GitHub 以具备仓库权限的账号创建/确认 Web PR，并完成独立的 CODEOWNERS/owner 审查；Agent PR 也需确认其 head 已包含 `4c219b5` 并具有独立审批；
+2. 发布负责人、回滚负责人、Agent 写锁 holder，以及持锁的文件范围和释放条件；
+3. Agent 本地 smoke 数据库的明确保留/备份/丢弃决定，之后得到干净工作树。
