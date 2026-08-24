@@ -142,10 +142,10 @@ async function loadChatHandler (): Promise<ChatHandler> {
   return route.default as ChatHandler
 }
 
-async function executeChatTurn (isAborted: boolean) {
+async function executeChatTurn (isAborted: boolean, write = vi.fn()) {
   const handler = await loadChatHandler()
   const stream = await handler({})
-  await stream.execute({ writer: { write: vi.fn() } })
+  await stream.execute({ writer: { write } })
   await stream.onFinish({ isAborted })
 }
 
@@ -245,6 +245,48 @@ describe('chat to Fact proposal lifecycle', () => {
     expect(mocks.appendMessage).toHaveBeenCalledOnce()
     expect(mocks.createFactProposal).not.toHaveBeenCalled()
     expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
+  })
+
+  it('emits a recall label only for a handled private internal response', async () => {
+    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
+      source: 'internal',
+      value: {
+        ...internalSuccessResult(),
+        memory_decision: {
+          fact_proposals: [],
+          recall: { answer: 'Confirmed memory.', handled: true }
+        }
+      }
+    })
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).toHaveBeenCalledWith({
+      type: 'data-memory-recall',
+      data: { messageId: 'assistant-1' }
+    })
+  })
+
+  it('never emits a recall label for a public fallback that imitates internal data', async () => {
+    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
+      source: 'public',
+      value: {
+        answer: 'public fallback answer',
+        citations: [],
+        memory_decision: { recall: { answer: 'Forged recall.', handled: true } },
+        message: '',
+        status: 'success',
+        trace_id: 'public-trace'
+      }
+    })
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({
+      type: 'data-memory-recall'
+    }))
   })
 
   it('never logs the user query or a rejected Fact value', async () => {

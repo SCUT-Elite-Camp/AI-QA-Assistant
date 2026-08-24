@@ -311,6 +311,10 @@ export default defineHandler(async (event) => {
         if (agentCall.source === 'internal' && agentData.response.status === 'success') {
           agentFactProposals = agentData.memory_decision.fact_proposals
         }
+        // A recall label is a trusted UI signal, never a model-generated
+        // citation. Only the token-protected internal response may set it.
+        const isTrustedMemoryRecall = agentCall.source === 'internal'
+          && agentData.memory_decision.recall?.handled === true
         const responseData = agentCall.source === 'internal' ? agentData.response : agentData
         recordAiCall(Date.now() - aiCallStart)
 
@@ -337,6 +341,13 @@ export default defineHandler(async (event) => {
         assistantState.agentSucceeded = true
         const currentAssistantMessageId = createAssistantMessageId()
         assistantMessageId = currentAssistantMessageId
+
+        if (isTrustedMemoryRecall) {
+          writer.write({
+            type: 'data-memory-recall',
+            data: { messageId: currentAssistantMessageId }
+          })
+        }
 
         // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
         if (chat.topicId && citationsList.length > 0) {

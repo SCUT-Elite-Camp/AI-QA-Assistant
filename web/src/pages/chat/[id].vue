@@ -39,6 +39,8 @@ const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { loggedIn } = useUserSession()
 const sessionFacts = useSessionFacts()
+const memoryRecallMessageIds = ref<string[]>([])
+const hasPendingTrustedMemoryRecall = ref(false)
 const {
   available: sessionFactsAvailable,
   loading: sessionFactsLoading,
@@ -62,6 +64,10 @@ const sessionFactsAllowed = computed(() => Boolean(
   && visibility.value === 'private'
   && loggedIn.value
 ))
+
+function isMemoryRecallMessage(messageId: string): boolean {
+  return memoryRecallMessageIds.value.includes(messageId)
+}
 
 async function refreshSessionFacts(showFailure = false) {
   const chatId = activeChatId.value
@@ -189,8 +195,20 @@ const chat = new Chat({
     if (dataPart.type === 'data-chat-title') {
       fetchChats()
     }
+    if (dataPart.type === 'data-memory-recall') {
+      // The server-generated persistence ID is not necessarily the ID created
+      // by the client streaming state. Associate this trusted marker only when
+      // Chat provides the completed assistant message below.
+      hasPendingTrustedMemoryRecall.value = true
+    }
   },
-  onFinish: ({ isAbort, isDisconnect, isError }) => {
+  onFinish: ({ message, isAbort, isDisconnect, isError }) => {
+    if (hasPendingTrustedMemoryRecall.value && !isAbort && !isDisconnect && !isError && message.role === 'assistant') {
+      if (!memoryRecallMessageIds.value.includes(message.id)) {
+        memoryRecallMessageIds.value = [...memoryRecallMessageIds.value, message.id]
+      }
+    }
+    hasPendingTrustedMemoryRecall.value = false
     if (!isAbort && !isDisconnect && !isError) {
       void refreshSessionFacts(true)
     }
@@ -536,7 +554,7 @@ onBeforeUnmount(() => {
               v-if="isOwner"
               v-model="input"
               :error="chat.error"
-              :status="chat.status === 'streaming' ? 'streaming' : 'ready'"
+              :status="chat.status"
               placeholder="Ask me anything..."
               variant="subtle"
               class="rounded-2xl shadow-lg"
@@ -565,7 +583,7 @@ onBeforeUnmount(() => {
                     @change="handleUpdateWeightMode"
                   />
                   <UChatPromptSubmit
-                    :status="chat.status === 'streaming' ? 'streaming' : 'ready'"
+                    :status="chat.status"
                     color="neutral"
                     size="sm"
                     class="cursor-pointer"
@@ -604,6 +622,13 @@ onBeforeUnmount(() => {
                   @save="saveEdit"
                   @cancel-edit="cancelEdit"
                 />
+                <p
+                  v-if="message.role === 'assistant' && isMemoryRecallMessage(message.id)"
+                  class="mt-2 text-xs text-muted"
+                  aria-label="来自已确认会话记忆"
+                >
+                  来自已确认会话记忆
+                </p>
               </template>
 
               <template
@@ -677,7 +702,7 @@ onBeforeUnmount(() => {
               v-if="isOwner"
               v-model="input"
               :error="chat.error"
-              :status="chat.status === 'streaming' ? 'streaming' : 'ready'"
+              :status="chat.status"
               placeholder="Ask me anything..."
               variant="subtle"
               class="sticky bottom-6 mb-6 [view-transition-name:chat-prompt] rounded-2xl shadow-lg z-10"
@@ -706,7 +731,7 @@ onBeforeUnmount(() => {
                     @change="handleUpdateWeightMode"
                   />
                   <UChatPromptSubmit
-                    :status="chat.status === 'streaming' ? 'streaming' : 'ready'"
+                    :status="chat.status"
                     color="neutral"
                     size="sm"
                     class="cursor-pointer"
