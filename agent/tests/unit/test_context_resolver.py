@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from agent.config.settings import Settings, settings
 from agent.memory.context_resolver import ContextResolver
+from agent.memory.memory_observability import MemoryObservability
 from agent.memory.persistent_models import (
     PersistentFact,
     PersistentMemoryContext,
@@ -42,6 +43,7 @@ def _message(
 @pytest.fixture(autouse=True)
 def _enable_persistent_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
 
 
 def _context(**overrides: object) -> PersistentMemoryContext:
@@ -256,6 +258,67 @@ def test_fact_lifecycle_and_scope_filtering() -> None:
     assert "cross session" not in artifact.memory_brief
     assert "expired" not in artifact.memory_brief
     assert artifact.metadata["fact_count"] == 1
+
+
+def test_session_fact_gate_hides_facts_without_hiding_snapshot_or_tail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", False)
+    events: list[tuple[str, dict[str, str | int]]] = []
+    resolver = ContextResolver(
+        now_ms=lambda: 100,
+        observability=MemoryObservability(
+            emit=lambda event, payload: events.append((event, payload))
+        ),
+    )
+
+    artifact = resolver.resolve(
+        _context(
+            snapshot=PersistentSnapshot(
+                id="snapshot-1",
+                version=1,
+                revision=1,
+                covered_to_sequence=2,
+                summary="snapshot remains visible",
+            ),
+            facts=[PersistentFact(id="fact-1", category="GOAL", value="hidden fact")],
+            tail=[_message("m3", 3, content="tail remains visible")],
+        )
+    )
+
+    assert artifact is not None
+    assert "hidden fact" not in artifact.memory_brief
+    assert "snapshot remains visible" in artifact.memory_brief
+    assert [message.id for message in artifact.model_history[1:]] == ["m3"]
+    assert artifact.metadata["fact_count"] == 0
+    assert len(events) == 1
+    assert events[0][0] == "memory_resolve"
+    assert events[0][1]["source"] == "trusted_context"
+    assert events[0][1]["outcome"] == "success"
+    assert isinstance(events[0][1]["duration_ms"], int)
+    assert events[0][1]["duration_ms"] >= 0
+
+
+def test_resolver_failure_is_content_free_and_preserves_legacy_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[tuple[str, dict[str, str | int]]] = []
+    resolver = ContextResolver(
+        observability=MemoryObservability(
+            emit=lambda event, payload: events.append((event, payload))
+        )
+    )
+
+    def fail_history(*args: object, **kwargs: object) -> list[MemoryMessage]:
+        raise RuntimeError("do not expose this user text")
+
+    monkeypatch.setattr(resolver, "_build_model_history", fail_history)
+
+    assert resolver.resolve(_context(tail=[_message("m3", 3)])) is None
+    assert events[0][0] == "memory_resolve"
+    assert events[0][1]["source"] == "trusted_context"
+    assert events[0][1]["outcome"] == "rejected"
+    assert set(events[0][1]) == {"source", "outcome", "duration_ms"}
 
 
 def test_untrusted_memory_is_isolated_in_system_context_and_bounded() -> None:

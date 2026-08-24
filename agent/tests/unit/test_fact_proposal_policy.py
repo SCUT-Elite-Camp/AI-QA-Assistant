@@ -4,6 +4,7 @@ import pytest
 
 from agent.config.settings import Settings
 from agent.memory.fact_proposal_policy import FactProposalPolicy
+from agent.memory.memory_observability import MemoryObservability
 
 
 @pytest.mark.parametrize(
@@ -108,3 +109,22 @@ def test_sensitive_value_never_proposes_or_records_a_candidate() -> None:
         persistent_memory_enabled=True,
         session_fact_enabled=True,
     ) == []
+
+
+def test_fact_policy_events_cannot_contain_candidate_value_or_message_id() -> None:
+    events: list[tuple[str, dict[str, str | int]]] = []
+    policy = FactProposalPolicy(
+        observability=MemoryObservability(
+            emit=lambda event, payload: events.append((event, payload))
+        )
+    )
+
+    policy.propose(
+        "remember goal: finish the defense",
+        actor_authenticated=True,
+        current_message_id="persisted-message",
+        persistent_memory_enabled=True,
+        session_fact_enabled=True,
+    )
+
+    assert events == [("memory_fact", {"action": "proposed", "outcome": "success"})]

@@ -3,7 +3,7 @@ from typing import Optional
 
 from pathlib import Path
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Load environment variables from agent/.env and root .env
 _agent_env = Path(__file__).resolve().parent.parent.parent / ".env"
@@ -76,6 +76,9 @@ class Settings(BaseModel):
     SESSION_FACT_ENABLED: bool = Field(
         default_factory=lambda: _env_bool("SESSION_FACT_ENABLED", False),
     )
+    MEMORY_CACHE_ENABLED: bool = Field(
+        default_factory=lambda: _env_bool("MEMORY_CACHE_ENABLED", False),
+    )
     MEMORY_TAIL_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
         ge=1,
@@ -86,6 +89,14 @@ class Settings(BaseModel):
     )
     MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS: int = Field(
         default_factory=lambda: _env_int("MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS", 1200),
+        ge=1,
+    )
+    MEMORY_COMPACTION_MIN_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_COMPACTION_MIN_MESSAGES", 12),
+        ge=1,
+    )
+    MEMORY_COMPACTION_SOFT_TOKENS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_COMPACTION_SOFT_TOKENS", 1000),
         ge=1,
     )
     MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
@@ -117,6 +128,12 @@ class Settings(BaseModel):
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
+
+    @model_validator(mode="after")
+    def reject_unsupported_memory_cache(self) -> "Settings":
+        if self.MEMORY_CACHE_ENABLED:
+            raise ValueError("memory_cache_not_supported")
+        return self
 
 
 settings = Settings()

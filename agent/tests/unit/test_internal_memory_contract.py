@@ -143,11 +143,23 @@ def test_internal_compaction_and_reset_dtos_are_discriminated() -> None:
 
 def test_persistent_memory_settings_default_to_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("PERSISTENT_MEMORY_ENABLED", raising=False)
+    monkeypatch.delenv("SESSION_FACT_ENABLED", raising=False)
+    monkeypatch.delenv("MEMORY_CACHE_ENABLED", raising=False)
     monkeypatch.delenv("AGENT_INTERNAL_TOKEN", raising=False)
     assert Settings().PERSISTENT_MEMORY_ENABLED is False
+    assert Settings().SESSION_FACT_ENABLED is False
+    assert Settings().MEMORY_CACHE_ENABLED is False
+    assert Settings().MEMORY_TAIL_MESSAGES == 8
+    assert Settings().MEMORY_COMPACTION_MIN_MESSAGES == 12
+    assert Settings().MEMORY_COMPACTION_SOFT_TOKENS == 1000
     assert Settings().AGENT_INTERNAL_TOKEN == ""
 
     monkeypatch.setenv("PERSISTENT_MEMORY_ENABLED", "true")
     monkeypatch.setenv("AGENT_INTERNAL_TOKEN", "test-token")
     assert Settings().PERSISTENT_MEMORY_ENABLED is True
     assert Settings().AGENT_INTERNAL_TOKEN == "test-token"
+
+
+def test_memory_cache_is_rejected_without_exposing_configuration() -> None:
+    with pytest.raises(ValidationError, match="memory_cache_not_supported"):
+        Settings(MEMORY_CACHE_ENABLED=True)

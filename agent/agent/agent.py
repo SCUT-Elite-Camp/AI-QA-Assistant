@@ -8,6 +8,7 @@ from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
 from agent.memory import ConversationMemory, get_default_memory
 from agent.memory.fact_proposal_policy import FactProposalPolicy
+from agent.memory.memory_observability import MemoryObservability
 from agent.orchestration import AgentOrchestrator, OrchestrationResult
 from agent.policy import IntentPolicyRouter
 from agent.query import (
@@ -59,12 +60,16 @@ class Agent:
         toolset_registry: ToolsetRegistry | None = None,
         audit_service: AuditService | None = None,
         fact_proposal_policy: FactProposalPolicy | None = None,
+        memory_observability: MemoryObservability | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.answer_formatter = answer_formatter or AnswerFormatter()
         self.trace_service = TraceService()
         self.audit_service = audit_service or AuditService()
-        self.fact_proposal_policy = fact_proposal_policy or FactProposalPolicy()
+        self.memory_observability = memory_observability or MemoryObservability()
+        self.fact_proposal_policy = fact_proposal_policy or FactProposalPolicy(
+            observability=self.memory_observability,
+        )
         # Toolset owns registration; Agent only consumes it through an adapter.
         if toolset_registry is not None and tools is not None:
             raise ValueError("tools and toolset_registry cannot both be provided")
@@ -242,6 +247,10 @@ class Agent:
             orchestration.memory_recall is not None
             and orchestration.memory_recall.handled
         ):
+            self.memory_observability.fact(
+                action="recalled",
+                outcome="success" if orchestration.memory_recall.answer else "empty",
+            )
             return (
                 ChatResponse(
                     trace_id=trace_id,
@@ -330,6 +339,7 @@ class Agent:
             )
         except Exception:
             # Candidate generation is optional and must not expose user data in logs.
+            self.memory_observability.fact(action="suppressed", outcome="failed")
             return []
 
     @staticmethod

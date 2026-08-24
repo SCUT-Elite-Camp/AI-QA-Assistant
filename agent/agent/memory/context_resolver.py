@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from time import time
+from time import perf_counter, time
 
 from agent.config.settings import settings
+from agent.memory.memory_observability import MemoryObservability
 from agent.memory.persistent_models import PersistentFact, PersistentMemoryContext
 from agent.schemas.chat import ContextArtifact, MemoryContextInput, MemoryMessage
 
@@ -30,6 +31,7 @@ class ContextResolver:
         memory_brief_max_chars: int | None = None,
         model_history_max_chars: int | None = None,
         now_ms: Callable[[], int] | None = None,
+        observability: MemoryObservability | None = None,
     ) -> None:
         self._tail_messages = (
             settings.MEMORY_TAIL_MESSAGES if tail_messages is None else tail_messages
@@ -45,6 +47,7 @@ class ContextResolver:
             else model_history_max_chars
         )
         self._now_ms = now_ms or (lambda: int(time() * 1000))
+        self._observability = observability or MemoryObservability()
 
         if self._tail_messages < 1:
             raise ValueError("tail_messages must be at least 1")
@@ -58,39 +61,50 @@ class ContextResolver:
         memory_context: MemoryContextInput | PersistentMemoryContext | None,
     ) -> ContextArtifact | None:
         """Return a bounded artifact, or ``None`` for the legacy short-window path."""
+        started_at = perf_counter()
         if not settings.PERSISTENT_MEMORY_ENABLED or memory_context is None:
+            self._record("disabled" if not settings.PERSISTENT_MEMORY_ENABLED else "legacy", "fallback", started_at)
             return None
 
-        context = self._normalize(memory_context)
-        if not context.actor_authenticated:
+        try:
+            context = self._normalize(memory_context)
+            if not context.actor_authenticated:
+                self._record("legacy", "fallback", started_at)
+                return None
+
+            snapshot = context.snapshot
+            if (
+                snapshot is None
+                or snapshot.status != "ACTIVE"
+                or snapshot.revision != context.revision
+                or snapshot.covered_to_sequence >= context.current_sequence
+            ):
+                snapshot = None
+
+            covered_to_sequence = snapshot.covered_to_sequence if snapshot else 0
+            facts = self._visible_session_facts(context.facts)
+            memory_brief = self._build_memory_brief(facts, snapshot.summary if snapshot else "")
+            tail = self._select_tail(context, covered_to_sequence)
+            model_history = self._build_model_history(memory_brief, tail, context)
+
+            artifact = ContextArtifact(
+                memory_brief=memory_brief,
+                model_history=model_history,
+                metadata={
+                    "source": "persistent_memory",
+                    "snapshot_version": snapshot.version if snapshot else None,
+                    "covered_to_sequence": covered_to_sequence,
+                    "fact_count": len(facts),
+                    "tail_count": len(tail),
+                },
+            )
+            self._record("trusted_context", "success", started_at)
+            return artifact
+        except Exception:
+            # Trusted context is optional. Never surface its content through a
+            # failure path or turn a successful Chat request into a 500.
+            self._record("trusted_context", "rejected", started_at)
             return None
-
-        snapshot = context.snapshot
-        if (
-            snapshot is None
-            or snapshot.status != "ACTIVE"
-            or snapshot.revision != context.revision
-            or snapshot.covered_to_sequence >= context.current_sequence
-        ):
-            snapshot = None
-
-        covered_to_sequence = snapshot.covered_to_sequence if snapshot else 0
-        facts = self._visible_session_facts(context.facts)
-        memory_brief = self._build_memory_brief(facts, snapshot.summary if snapshot else "")
-        tail = self._select_tail(context, covered_to_sequence)
-        model_history = self._build_model_history(memory_brief, tail, context)
-
-        return ContextArtifact(
-            memory_brief=memory_brief,
-            model_history=model_history,
-            metadata={
-                "source": "persistent_memory",
-                "snapshot_version": snapshot.version if snapshot else None,
-                "covered_to_sequence": covered_to_sequence,
-                "fact_count": len(facts),
-                "tail_count": len(tail),
-            },
-        )
 
     @staticmethod
     def _normalize(
@@ -101,6 +115,8 @@ class ContextResolver:
         return PersistentMemoryContext.from_input(memory_context)
 
     def _visible_session_facts(self, facts: list[PersistentFact]) -> list[PersistentFact]:
+        if not settings.SESSION_FACT_ENABLED:
+            return []
         now = self._now_ms()
         return [
             fact
@@ -172,3 +188,10 @@ class ContextResolver:
             remaining_chars -= len(content)
         bounded_tail.reverse()
         return [system_message, *bounded_tail]
+
+    def _record(self, source: str, outcome: str, started_at: float) -> None:
+        self._observability.resolve(
+            source=source,  # type: ignore[arg-type]
+            outcome=outcome,  # type: ignore[arg-type]
+            duration_ms=max(0, int((perf_counter() - started_at) * 1000)),
+        )
