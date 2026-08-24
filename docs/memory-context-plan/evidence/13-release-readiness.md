@@ -1,0 +1,88 @@
+# Unit 13 发布就绪审查与交接（阶段 A）
+
+> 审查日期：2026-08-24  
+> 范围：仅本地工作区、已提交代码与 Unit 12 证据。未执行 push、部署、环境开关变更、灰度、生产查询、数据库操作或回滚操作。  
+> 阶段 A 结论：**FAIL — 不得请求或执行阶段 B 灰度。**
+
+## 1. 审查输入、代码基线与工作区状态
+
+| 项目 | 本地检查结果 | 结论 |
+| --- | --- | --- |
+| Web 基线 | `web-dev` HEAD=`c9d8129af017372db8562373c1d783993155ab97`；本地 `origin/web-dev`=`49efbfacd10afb5aea0e5988de2d01bdbcee5f55`；`git status -sb` 为 `ahead 7`，无未提交文件 | 源码/文档尚未推送，不能声称远程 PR 已可审查。 |
+| Agent 基线 | `agent-dev-infra` HEAD=`4b3f333e213d0a60a78b32ba0a3781bb0aab3343`；本地 `origin/agent-dev-infra`=`d381d9e8515ade1fbe7c0c60220e2540901fff45`；相对本地 remote 为 `ahead 2` | 源码尚未推送，不能声称远程 PR 已可审查。 |
+| 冻结 Runtime 基线 | `git merge-base --is-ancestor 5955cd0c2a60fe439d4206befb42307a271aef86 HEAD` 退出 `0` | Agent Memory 提交仍以冻结 Runtime 为祖先。 |
+| Agent 工作区 | `M data-persistence/data/chat_history.db` | 这是本地 smoke 服务运行生成的数据文件；未纳入代码/证据提交，也不能作为干净的发布工作树。不得删除或提交它，需由数据所有者清理或保留。 |
+| Unit 12 输入 | [12-acceptance-report.md](12-acceptance-report.md) 记录 Web 17 files / 108 tests 通过、Agent 308 passed，以及已完成的本地 smoke | 可作为阶段 A 的测试证据；不代表真实环境或生产质量。 |
+
+本单元没有修改 Agent 源码或其热点文件。Agent 写锁 holder 在当前受跟踪文档、提交消息和本地 Git 元数据中均未找到可验证记录；发布/回滚前必须由负责人明确写入 holder、锁定文件和释放条件。
+
+## 2. PR、owner 与交接责任
+
+| 必需项 | 当前证据 | 状态 |
+| --- | --- | --- |
+| Web PR 与 owner review | 本地分支领先 `origin/web-dev` 7 个提交；本单元禁止 remote Git 操作，且没有本地 PR/approve 元数据 | **缺失** |
+| Agent PR 与 owner review | 本地分支领先 `origin/agent-dev-infra` 2 个提交；没有本地 PR/approve 元数据 | **缺失** |
+| 发布负责人 | 未在输入中指定 | **缺失** |
+| 回滚负责人 | 未在输入中指定 | **缺失** |
+| Agent 写锁 holder / 释放条件 | 未在输入中指定或受跟踪记录 | **缺失** |
+
+因此不得直接 push `dev` 或 `main`，也不得创建灰度环境。本报告不虚构 PR 链接、审批人、负责人或外部环境信息。
+
+## 3. 默认开关、依赖与安全边界
+
+| 检查项 | 代码/测试证据 | 结论 |
+| --- | --- | --- |
+| Persistent 默认关闭 | Agent `agent-dev-infra@4b3f333:agent/agent/config/settings.py:73` 默认 `false`；[memoryFeatureFlags.ts](../../../web/server/utils/memoryFeatureFlags.ts) 仅显式真值启用 | 通过。 |
+| Session Fact 默认关闭 | 同上，`SESSION_FACT_ENABLED` 默认 `false`；Web feature-flag 回归验证未知值/`0` 为关闭 | 通过。 |
+| Cache / Redis | 两端 `MEMORY_CACHE_ENABLED=false`；真值会固定报 `memory_cache_not_supported`；环境示例没有 Redis 配置 | 通过；本版本无 Redis 依赖。 |
+| 内部 token | Agent internal route 以常数时间比较 `X-Agent-Internal-Token`；缺失/无效均为 403；Unit 12 Agent 回归覆盖 | 通过。 |
+| 公共兼容性 | 公共 `ChatRequest` 拒绝 `memory_context`，`ChatResponse` 不含 Memory；internal response 才携带 `memory_decision` | 通过。 |
+| Chat / Deep Research 隔离 | Agent 生产 lifespan 回归会在 Chat/Memory 端点导入 `deep_research` 时失败；Unit 12 已通过 | 通过。 |
+| RAG citation 边界 | Memory recall 是 deterministic internal decision；Unit 12 exact-recall smoke 与公共响应合同未将 Fact 作为 citation | 通过。 |
+
+受跟踪环境示例只包含空 token 占位和三个关闭的默认值：
+Agent `agent-dev-infra@4b3f333:agent/.env.example` 与 [web/.env.example](../../../web/.env.example)。本审查不读取或记录任何实际 `.env`、Cookie、token 或部署秘密。
+
+## 4. 观测、告警与隐私边界
+
+| 观察项 | 有限指标/事件证据 | 发布观察动作 |
+| --- | --- | --- |
+| compaction failed / conflict | `memory_compaction` 仅允许 `skipped|planned|conflict|failed`；Web `memory.compaction` 计数和 Agent 无正文 event 均已回归 | 若 `conflict` 或 `failed` 持续出现，先关闭 persistent，保留数据库记录供受控排查。 |
+| internal fallback | Web 仅记录有限的 `agent_disabled|internal_error|context_error`；409 回退一次的回归已通过 | 观察 `agent_disabled` 与 `internal_error`，持续异常先关闭 persistent。 |
+| 403 / 409 | Agent internal-route 回归覆盖相同 403 与 persistent-disabled 409；Web HTTP metrics 保留 endpoint 的 status-code 计数 | 403 激增检查 BFF/Agent token 配置；409 按预期触发一次公开降级。 |
+| Fact 操作失败 | `memory_fact` 仅允许 action/outcome 枚举，包含 `failed`、`sensitive`、`disabled` | 观察 `failed`；安全疑虑立即关闭 Fact gate。 |
+| prompt length | `MEMORY_MODEL_HISTORY_MAX_CHARS=6000` 提供输入上界，Resolver 按该值截断 | **缺失显式、无正文的 prompt-length 指标。** 当前只有上界，不足以满足发布期告警观察要求。 |
+
+Web 的 [metrics.ts](../../../web/server/utils/metrics.ts) 和 [logger.ts](../../../web/server/utils/logger.ts)，以及 Agent `agent-dev-infra@4b3f333:agent/agent/memory/memory_observability.py` 都只接收有限 label/数值；Unit 12 回归验证日志 payload 不含 query、Fact value、Snapshot、Tail、message/chat ID、prompt 或 token。不得通过扩展日志正文来弥补 prompt-length 指标缺失。
+
+## 5. 回滚 Runbook（未执行外部操作）
+
+本节是经现有回归验证的桌面演练，不是环境变更。实际执行需要阶段 B 的单独授权及已指定的回滚负责人。
+
+1. **Persistent 回滚。** 在获授权环境将 `PERSISTENT_MEMORY_ENABLED` 设为 `false` 后，Agent private chat 返回固定 409，BFF 只降级一次到公开/短窗路径；不删除或改写已有 Snapshot、Tail、Fact。依据：Agent internal-route 和 Web internal-client 回归。
+2. **Fact 回滚。** 在获授权环境将 `SESSION_FACT_ENABLED` 设为 `false` 后，禁止 proposal/confirm/revoke 与 deterministic Fact recall；不得自动确认既有 proposal。Persistent Snapshot/Tail 可以依照其独立 gate 保持可用。
+3. **安全回滚。** 若出现权限、隐私或日志疑虑，同时关闭 persistent 与 session fact，阻断 Fact API；保留受控审计所需的无正文指标，不输出 Fact 内容。
+4. **迁移回滚。** 已执行 migration 只能走经 review 的 forward migration，或由数据库负责人从受控备份恢复；严禁手工删表、删行或通过回滚代码破坏 Snapshot/Fact 记录。
+
+该演练没有改变任何实际环境开关、没有连接 Redis、没有执行数据库命令，也没有处理真实秘密。`memory_cache_not_supported` 的 fail-closed 回归是本版本“不得启用 Redis”的验证。
+
+## 6. 明确未实现与不可作出的声明
+
+- Redis / `MEMORY_CACHE_ENABLED` 支持；
+- 跨会话 `USER` Fact；
+- 自动确认、自由自然语言 Fact 抽取或自动保存敏感信息；
+- 生产性能、模型回答质量、RAG 检索质量或 SLA；
+- 多账号真实灰度、部署、生产观测和外部回滚。
+
+本地 single-account smoke、mock/integration test 和本报告都不能被表述为已上线或已完成生产灰度。
+
+## 7. 阶段 A 判定与交接
+
+**判定：FAIL。** Unit 12 的自动化与本地 smoke 证据可用，但以下阻断项尚未满足：
+
+1. Web 与 Agent 的当前提交均未推送到各自 remote tracking ref，且没有可验证 PR/owner approval；
+2. 未指定发布负责人、回滚负责人、Agent 写锁 holder 与释放条件；
+3. Agent 工作区包含未提交的 `data-persistence/data/chat_history.db`；
+4. 没有显式、无正文的 prompt-length 发布观测指标，只有 `6000` 字符上界。
+
+交接给负责人：在独立的相应原子单元修复第 4 项并审查；由负责人处理第 1--3 项。只有再次审查本报告为 PASS 后，才可请求包含环境、命令范围、开关阶段、灰度范围、观察时长、负责人和回滚阈值的阶段 B 明确授权。
