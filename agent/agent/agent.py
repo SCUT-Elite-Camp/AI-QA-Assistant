@@ -265,6 +265,19 @@ class Agent:
         if run_result is None:
             raise RuntimeError("orchestration returned no runtime result")
 
+        context_artifact = orchestration.context_artifact
+        if (
+            self._is_persistent_memory_request(request)
+            and context_artifact is not None
+            and context_artifact.metadata.get("source") == "persistent_memory"
+        ):
+            self.memory_observability.prompt(
+                model_history_chars=sum(
+                    len(message.content)
+                    for message in context_artifact.model_history
+                )
+            )
+
         response = self._map_run_result(
             run_result=run_result,
             trace_id=trace_id,
