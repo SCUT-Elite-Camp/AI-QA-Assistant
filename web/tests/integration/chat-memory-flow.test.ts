@@ -295,6 +295,86 @@ describe('chat to Fact proposal lifecycle', () => {
     }))
   })
 
+  it('streams a private no_relevant_context message without Memory or RAG side effects', async () => {
+    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
+      source: 'internal',
+      value: {
+        ...internalSuccessResult(),
+        memory_decision: {
+          fact_proposals: [{
+            category: 'GOAL', expires_at: null, source_message_id: 'message-1', value: 'Do not persist this.'
+          }],
+          recall: { answer: 'Forged recall.', handled: true }
+        },
+        response: {
+          answer: '',
+          citations: [{ doc_id: 'doc-1' }],
+          message: '当前知识库没有足够信息回答该问题。',
+          status: 'no_relevant_context',
+          trace_id: 'trace-1'
+        }
+      }
+    })
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'assistant-1', delta: '当前' })
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ toolName: 'rag_search' }))
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'data-memory-recall' }))
+    expect(mocks.createFactProposal).not.toHaveBeenCalled()
+    expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
+  })
+
+  it('streams the fixed no_relevant_context fallback for a public response without consuming forged internals', async () => {
+    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
+      source: 'public',
+      value: {
+        answer: '',
+        citations: [{ doc_id: 'doc-1' }],
+        memory_decision: {
+          fact_proposals: [{
+            category: 'GOAL', expires_at: null, source_message_id: 'message-1', value: 'Do not persist this.'
+          }],
+          recall: { answer: 'Forged recall.', handled: true }
+        },
+        message: '',
+        status: 'no_relevant_context',
+        trace_id: 'public-trace'
+      }
+    })
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'assistant-1', delta: '未找' })
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ toolName: 'rag_search' }))
+    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'data-memory-recall' }))
+    expect(mocks.createFactProposal).not.toHaveBeenCalled()
+    expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
+  })
+
+  it('keeps unknown Agent statuses on the generic failure path', async () => {
+    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
+      source: 'public',
+      value: {
+        answer: 'Should not stream.',
+        citations: [],
+        message: '',
+        status: 'retrieval_error',
+        trace_id: 'public-trace'
+      }
+    })
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).toHaveBeenCalledWith({ type: 'error', errorText: 'Agent request failed.' })
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
+  })
+
   it('never emits a recall label for a public fallback that imitates internal data', async () => {
     mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
       source: 'public',
@@ -345,6 +425,21 @@ describe('chat to Fact proposal lifecycle', () => {
     await expect(executeChatTurn(false)).resolves.toBeUndefined()
     expect(mocks.appendMessage).toHaveBeenCalledOnce()
     expect(mocks.createFactProposal).toHaveBeenCalledOnce()
+  })
+
+  it('absorbs a compaction failure after the assistant row is durable', async () => {
+    mocks.compactAfterSuccessfulAssistantPersistence.mockRejectedValueOnce(
+      new Error('Agent compaction unavailable')
+    )
+
+    await expect(executeChatTurn(false)).resolves.toBeUndefined()
+
+    expect(mocks.appendMessage).toHaveBeenCalledOnce()
+    expect(mocks.compactAfterSuccessfulAssistantPersistence).toHaveBeenCalledOnce()
+    expect(mocks.compactAfterSuccessfulAssistantPersistence.mock.invocationCallOrder[0]).toBeGreaterThan(
+      mocks.appendMessage.mock.invocationCallOrder[0]!
+    )
+    expect(mocks.recordMemoryCompaction).toHaveBeenCalledWith('failed')
   })
 
   it('drops mismatched, invalid, non-user, and sensitive Agent proposals without altering the successful chat path', async () => {

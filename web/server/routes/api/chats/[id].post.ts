@@ -306,8 +306,9 @@ export default defineHandler(async (event) => {
           options: { signal: abortController.signal }
         })
         recordMemoryDuration('internal_chat', Date.now() - aiCallStart)
-        shouldAttemptCompaction = agentCall.source === 'internal'
         const agentData = agentCall.value
+        shouldAttemptCompaction = agentCall.source === 'internal'
+          && agentData.response.status === 'success'
         if (agentCall.source === 'internal' && agentData.response.status === 'success') {
           agentFactProposals = agentData.memory_decision.fact_proposals
         }
@@ -326,7 +327,10 @@ export default defineHandler(async (event) => {
           })
         }
 
-        const isValidResponse = responseData.status === "success" || responseData.status === "clarification_required"
+        const isNoRelevantContext = responseData.status === 'no_relevant_context'
+        const isValidResponse = responseData.status === 'success'
+          || responseData.status === 'clarification_required'
+          || isNoRelevantContext
         if (!isValidResponse) {
           assistantState.streamFailed = true
           writer.write({
@@ -336,13 +340,16 @@ export default defineHandler(async (event) => {
           return
         }
 
-        const rawAnswer = responseData.answer || responseData.message || ""
-        const citationsList: any[] = responseData.citations || []
+        const rawAnswer = responseData.answer || responseData.message
+          || (isNoRelevantContext ? '未找到可用的知识库内容，请补充问题或调整检索范围。' : '')
+        // NO_RELEVANT_CONTEXT is a safe user-visible retrieval outcome, not
+        // evidence. It must not produce RAG, Fact, recall, or compaction side effects.
+        const citationsList: any[] = isNoRelevantContext ? [] : (responseData.citations || [])
         assistantState.agentSucceeded = true
         const currentAssistantMessageId = createAssistantMessageId()
         assistantMessageId = currentAssistantMessageId
 
-        if (isTrustedMemoryRecall) {
+        if (isTrustedMemoryRecall && !isNoRelevantContext) {
           writer.write({
             type: 'data-memory-recall',
             data: { messageId: currentAssistantMessageId }
