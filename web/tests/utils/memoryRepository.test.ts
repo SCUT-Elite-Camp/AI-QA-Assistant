@@ -134,6 +134,42 @@ describe('memory repository', () => {
     await expect(writeSnapshot(fixture.db, snapshotInput(fixture))).rejects.toThrow()
   })
 
+  it('enforces one ACTIVE Snapshot per chat revision even when a caller bypasses the repository', async () => {
+    const fixture = await createFixture()
+    const { tables } = await import('../../server/utils/drizzle')
+    const { writeSnapshot } = await import('../../server/utils/memoryRepository')
+    const first = snapshotInput(fixture)
+
+    await writeSnapshot(fixture.db, first)
+
+    const bypassValues = {
+      chatId: fixture.chatId,
+      coveredFromMessageId: fixture.source.id,
+      coveredFromSequence: fixture.source.sequence,
+      coveredToMessageId: fixture.source.id,
+      coveredToSequence: fixture.source.sequence,
+      historyRevision: fixture.source.historyRevision,
+      summary: 'Bypass write must still obey the ACTIVE Snapshot invariant.',
+      userId: fixture.userId,
+      version: 2
+    }
+
+    await expect(fixture.db.insert(tables.memorySnapshots).values({
+      ...bypassValues,
+      status: 'ACTIVE'
+    })).rejects.toThrow()
+    await expect(fixture.db.insert(tables.memorySnapshots).values({
+      ...bypassValues,
+      status: 'ARCHIVED'
+    })).resolves.toBeDefined()
+    await expect(fixture.db.insert(tables.memorySnapshots).values({
+      ...bypassValues,
+      historyRevision: fixture.source.historyRevision + 1,
+      status: 'ACTIVE',
+      version: 1
+    })).resolves.toBeDefined()
+  })
+
   it('does not allow one user to bind a Fact to another users chat', async () => {
     const owner = await createFixture()
     const attacker = await createFixture()
@@ -619,6 +655,7 @@ describe('memory repository', () => {
       .where(eq(tables.memorySnapshots.chatId, fixture.chatId))
       .orderBy(tables.memorySnapshots.version)
     expect(snapshots.map(snapshot => snapshot.status)).toEqual(['ARCHIVED', 'ACTIVE'])
+    expect(snapshots.filter(snapshot => snapshot.status === 'ACTIVE')).toHaveLength(1)
     expect((await getActiveSnapshot(fixture.db, {
       actorUserId: fixture.userId,
       chatId: fixture.chatId,

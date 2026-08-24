@@ -156,6 +156,9 @@ export const memorySnapshots = sqliteTable('memory_snapshots', {
   check('memory_snapshots_status_check', sql`${table.status} IN ('ACTIVE', 'ARCHIVED')`),
   uniqueIndex('memory_snapshots_chat_revision_version_idx')
     .on(table.chatId, table.historyRevision, table.version),
+  uniqueIndex('memory_snapshots_one_active_per_chat_revision_idx')
+    .on(table.chatId, table.historyRevision)
+    .where(sql`${table.status} = 'ACTIVE'`),
   index('memory_snapshots_chat_revision_status_covered_to_idx')
     .on(table.chatId, table.historyRevision, table.status, table.coveredToSequence)
 ])
