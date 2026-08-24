@@ -75,6 +75,8 @@
 
 `web/tests/manual/10-fact-web-experience.md` 的真实浏览器/OAuth 手工 smoke **未完成**：2026-08-24 已按用户授权点击本地页面的 GitHub 登录入口，但该入口被桌面浏览器打开为 `http://localhost:3000/auth/github`，in-app browser 的 URL 安全策略拒绝接管该回调页；未进入 GitHub、未输入或传输凭据。独立本地 HTTP 检查确认 `http://127.0.0.1:3000/` 与 `http://localhost:3000/` 均返回 `200`，因此此记录不把问题归因为服务未启动。仍缺少已认证 Web + Agent 环境、单账号私有 chat、匿名窗口和可归档截图/录屏位置。不得将自动化 mock 结果描述为 OAuth、SSE UI 或真实本地模型端到端通过。
 
+补充实际复测（2026-08-24）：用户已在普通浏览器完成 GitHub OAuth；受控浏览器接管后的首页显示已认证状态。创建私有 chat、发送受控非敏感目标文本并等待正常 SSE 回答均成功，且 user message 的操作菜单显示“保存为会话记忆”。选择“保存为目标”后，页面显示“记忆操作失败”，未出现 PROPOSED 卡片、确认/撤销入口或 Fact ID。两个 Memory 开关均已配置为 `true`。该失败仍未取得可归档的本地 Network 截图或服务器响应码，因此只记录为**已认证 proposal smoke 失败**，不得将后续 confirm、revoke、敏感拒绝、SSE 取消、跨 chat/匿名隔离或 exact-recall 标签列为已验证。
+
 建议在受控本地环境补齐：使用 `PERSISTENT_MEMORY_ENABLED=true`、`SESSION_FACT_ENABLED=true`，以一个已授权 GitHub 账号和匿名窗口完成私有会话、跨 chat 与匿名隔离的真实浏览器检查。不同已认证用户之间的隔离不要求为本次手工 smoke 新增第二个 GitHub 账号，继续由已通过的仓储/API 自动化回归覆盖。严格执行该手工脚本的 proposal、confirm、revoke、敏感拒绝、取消 SSE、跨 chat/匿名隔离与 exact-recall 标签步骤；截图/录屏只存放在受控位置，不记录 token 或真实用户数据。
 
 当前 `pnpm run typecheck` 的 UI 基线错误也仍需由 UI owner 单独修复或再次明确豁免；本单元没有修改这些文件。
