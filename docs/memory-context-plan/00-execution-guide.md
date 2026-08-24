@@ -22,11 +22,12 @@ AGENT_BRANCH    = agent-dev-infra
 截至本总控书的当前版本，Web 已完成 `01`、`12a`、`02`、`02a`、`02b`、`03`，以及
 `04`、`04a`、`05`、`07`、`08` 的 Web/BFF 侧工作；这些 Web 内容在后续同名单元中
 只作审查证据，不得重复实现。Agent 侧已完成 `04`（DTO/开关）、`04a`（私有端点）、
-`05`（Resolver）、`06`（Prompt/Recall）和 `07`（Planner）。`06a` 与 `06b` 是已完成的
+`05`（Resolver）、`06`（Prompt/Recall）、`07`（Planner）、`09-Agent`（受控 Fact
+proposal/recall）和 `11-Agent`（开关、安全与无正文可观测性）。`06a` 与 `06b` 是已完成的
 基线/迁移前核对单元；`08` 在 `04a` 完成后默认只作审查，不新增 Agent reset 以外的代码。
 
-后续尚未开始的是 `09a-Web`、`09-Agent`、`09-Web`、`10-Web`、`11-Agent`、`11-Web`、
-`12` 和 `13`。`09-session-fact-lifecycle.md` 与
+Web 后续单元和跨工作区验收仍以 `web-dev` 的最新状态为准；不得根据本 Agent 分支重复实施
+Web 代码。`09-session-fact-lifecycle.md` 与
 `11-security-observability-and-flags.md` 仅为导航页，**不得**作为 `<XX>` 执行；必须使用
 带工作区后缀的原子单元。执行者必须先读本节和本单元的“当前状态”；状态为“已完成/审查”的
 内容只能审查，不能借执行命令重新施工。

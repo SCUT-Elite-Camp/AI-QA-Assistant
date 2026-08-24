@@ -3,6 +3,7 @@ from typing import Any
 
 from agent.agent import Agent
 from agent.memory import InMemoryConversationMemory
+from agent.policy import ChatRoute
 from agent.query import QueryUnderstanding
 from agent.config.settings import settings
 from agent.schemas.chat import (
@@ -149,7 +150,6 @@ def _persistent_request(
     return InternalChatRequest(
         query=query,
         session_id="persistent-session",
-        is_first_message=False,
         memory_context=MemoryContextInput(
             actor=InternalActor(user_id="user-1", authenticated=True),
             chat_id="persistent-session",
@@ -297,6 +297,9 @@ def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
     assert decision.fact_proposals == []
     assert llm.calls == []
     assert memory.get_messages("persistent-session") == []
+    assert agent.last_orchestration is not None
+    assert agent.last_orchestration.chat_route.route == ChatRoute.L0_DIRECT
+    assert agent.last_orchestration.chat_route.research_entry_allowed is False
 
 
 def test_persistent_success_returns_one_explicit_fact_proposal_only_when_gated_on(
@@ -316,7 +319,7 @@ def test_persistent_success_returns_one_explicit_fact_proposal_only_when_gated_o
 
     assert response.status == "success"
     assert response.model_dump().keys() == {
-        "trace_id", "status", "answer", "message", "citations", "chat_title"
+        "trace_id", "status", "answer", "message", "citations"
     }
     assert [proposal.model_dump() for proposal in decision.fact_proposals] == [
         {

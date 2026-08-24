@@ -6,6 +6,7 @@ from agent.agent import Agent
 from agent.config.settings import settings
 from agent.memory.memory_observability import MemoryObservability
 from agent.orchestration import OrchestrationResult
+from agent.policy import ChatRoute, ChatRouteDecision
 from agent.runtime import AgentRunResult, StopReason
 from agent.schemas.chat import (
     ContextArtifact,
@@ -46,7 +47,6 @@ def _trusted_request() -> InternalChatRequest:
         {
             "query": "Use the prior context.",
             "session_id": "chat-1",
-            "is_first_message": False,
             "memory_context": {
                 "actor": {"user_id": "user-1", "authenticated": True},
                 "chat_id": "chat-1",
@@ -86,6 +86,14 @@ def _orchestration_result(*, recall: MemoryRecall | None = None) -> Orchestratio
         query_plan=QueryPlan(
             original_query="Use the prior context.",
             standalone_query="Use the prior context.",
+        ),
+        chat_route=ChatRouteDecision(
+            route=(
+                ChatRoute.L0_DIRECT
+                if recall is not None
+                else ChatRoute.L1_RETRIEVAL
+            ),
+            reason=("persistent_memory_exact_recall" if recall is not None else "test"),
         ),
         policy=IntentPolicy(),
         run_result=(
