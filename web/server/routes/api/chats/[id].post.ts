@@ -6,7 +6,14 @@ import { z } from 'zod'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { recordAiCall } from '../../../utils/metrics'
+import {
+  recordAiCall,
+  recordMemoryCompaction,
+  recordMemoryDuration,
+  recordMemoryFact,
+  recordMemoryFallback,
+  recordMemoryResolve
+} from '../../../utils/metrics'
 import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
 import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
 import { callChatWithPersistentFallback, shouldUsePersistentMemory } from '../../../utils/agentInternalClient'
@@ -18,6 +25,7 @@ import {
 } from '../../../utils/memoryRepository'
 import { isSensitiveMemoryValue } from '../../../utils/sensitiveMemoryValue'
 import { isSessionFactEnabled } from '../../../utils/sessionFactGate'
+import { logMemoryEvent } from '../../../utils/logger'
 import type { FactProposal } from '../../../utils/memoryContract'
 import {
   appendMessage,
@@ -53,7 +61,14 @@ export async function persistAgentFactProposalsAfterAssistantPersistence (
   db: Database,
   input: PersistAgentFactProposalsInput
 ): Promise<void> {
-  if (!isSessionFactEnabled() || input.proposals.length === 0) return
+  if (!isSessionFactEnabled()) {
+    recordMemoryFact('suppressed', 'disabled')
+    return
+  }
+  if (input.proposals.length === 0) {
+    recordMemoryFact('suppressed', 'empty')
+    return
+  }
 
   let source
   try {
@@ -64,35 +79,42 @@ export async function persistAgentFactProposalsAfterAssistantPersistence (
       sourceMessageId: input.currentMessageId
     })
   } catch {
-    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'source_lookup_failed' })
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
     return
   }
 
   if (!source || source.role !== 'user') {
-    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'source_not_current_user_message' })
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
     return
   }
 
   if (input.proposals.length > 1) {
-    console.warn('[memory-fact] rejected extra Agent Fact proposals', { reason: 'proposal_count_exceeded' })
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
   }
 
   const proposal = input.proposals[0]
   if (!proposal) return
   if (proposal.source_message_id !== input.currentMessageId) {
-    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'source_message_mismatch' })
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
     return
   }
   if (!FACT_CATEGORIES.has(proposal.category)) {
-    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'invalid_category' })
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
     return
   }
   if (!proposal.value.trim()) {
-    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'empty_value' })
+    recordMemoryFact('suppressed', 'empty')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'empty' })
     return
   }
   if (isSensitiveMemoryValue(proposal.value)) {
-    console.warn('[memory-fact] rejected Agent Fact proposal', { reason: 'sensitive_value' })
+    recordMemoryFact('suppressed', 'sensitive')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'sensitive' })
     return
   }
 
@@ -107,8 +129,11 @@ export async function persistAgentFactProposalsAfterAssistantPersistence (
       sourceMessageId: input.currentMessageId,
       value: proposal.value
     })
+    recordMemoryFact('proposed', 'success')
+    logMemoryEvent({ event: 'memory_fact', action: 'proposed', outcome: 'success' })
   } catch {
-    console.warn('[memory-fact] Agent Fact proposal persistence failed', { reason: 'proposal_write_failed' })
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
   }
 }
 
@@ -188,9 +213,9 @@ export default defineHandler(async (event) => {
   })
 
   const stream = createUIMessageStream({
-    onError: (err: any) => {
+    onError: () => {
       assistantState.streamFailed = true
-      console.error('[web-stream] onError occurred:', err)
+      console.error('[web-stream] onError occurred')
       return 'Request failed.'
     },
     execute: async ({ writer }) => {
@@ -245,10 +270,27 @@ export default defineHandler(async (event) => {
           return agentRes.json()
         }
 
-        const usePersistentMemory = shouldUsePersistentMemory(actor.isAuthenticated)
-        const memoryContext = usePersistentMemory
-          ? await buildPersistentMemoryContext(db, currentAgentInput)
-          : undefined
+        let usePersistentMemory = shouldUsePersistentMemory(actor.isAuthenticated)
+        let memoryContext
+        if (usePersistentMemory) {
+          const contextStartedAt = Date.now()
+          try {
+            memoryContext = await buildPersistentMemoryContext(db, currentAgentInput)
+            recordMemoryResolve('trusted_context', 'success')
+            logMemoryEvent({ event: 'memory_resolve', source: 'trusted_context', outcome: 'success' })
+          } catch {
+            usePersistentMemory = false
+            recordMemoryResolve('trusted_context', 'rejected')
+            recordMemoryFallback('context_error')
+            logMemoryEvent({ event: 'memory_resolve', source: 'trusted_context', outcome: 'rejected' })
+            logMemoryEvent({ event: 'memory_fallback', reason: 'context_error' })
+          } finally {
+            recordMemoryDuration('context', Date.now() - contextStartedAt)
+          }
+        } else {
+          recordMemoryResolve(actor.isAuthenticated ? 'legacy' : 'disabled', 'fallback')
+          logMemoryEvent({ event: 'memory_resolve', source: actor.isAuthenticated ? 'legacy' : 'disabled', outcome: 'fallback' })
+        }
         const { soul_content: _soulContent, ...internalAgentFields } = publicAgentRequest
         const agentCall = await callChatWithPersistentFallback({
           usePersistentMemory,
@@ -257,8 +299,13 @@ export default defineHandler(async (event) => {
             memory_context: memoryContext!
           },
           callPublic: callPublicAgent,
+          onFallback: (reason) => {
+            recordMemoryFallback(reason)
+            logMemoryEvent({ event: 'memory_fallback', reason })
+          },
           options: { signal: abortController.signal }
         })
+        recordMemoryDuration('internal_chat', Date.now() - aiCallStart)
         shouldAttemptCompaction = agentCall.source === 'internal'
         const agentData = agentCall.value
         if (agentCall.source === 'internal' && agentData.response.status === 'success') {
@@ -430,9 +477,9 @@ export default defineHandler(async (event) => {
         })
         assistantState.streamCompleted = true
 
-      } catch (err: any) {
+      } catch {
         assistantState.streamFailed = true
-        console.error('[web-post] error in agent call:', err)
+        console.error('[web-post] error in agent call')
         if (abortController.signal.aborted) {
           assistantState.clientAborted = true
           return
@@ -443,8 +490,8 @@ export default defineHandler(async (event) => {
             type: 'error',
             errorText: 'Failed to retrieve an answer from the Agent layer.'
           })
-        } catch (writerError) {
-          console.error('[web-post] unable to write stream error:', writerError)
+        } catch {
+          console.error('[web-post] unable to write stream error')
         }
       }
     },
@@ -474,11 +521,22 @@ export default defineHandler(async (event) => {
           })
         }
         if (shouldAttemptCompaction) {
+          const compactionStartedAt = Date.now()
           try {
-            await compactAfterSuccessfulAssistantPersistence(db, currentAgentInput)
+            const compactionResult = await compactAfterSuccessfulAssistantPersistence(db, currentAgentInput)
+            recordMemoryCompaction(
+              compactionResult === 'applied'
+                ? 'planned'
+                : compactionResult === 'conflict_exhausted'
+                  ? 'conflict'
+                  : 'skipped'
+            )
           } catch {
             // Snapshot planning is best-effort and must never affect this answer.
-            console.error('[web-onFinish] post-turn compaction failed')
+            recordMemoryCompaction('failed')
+            logMemoryEvent({ event: 'memory_compaction', outcome: 'failed' })
+          } finally {
+            recordMemoryDuration('compaction', Date.now() - compactionStartedAt)
           }
         }
       } catch {

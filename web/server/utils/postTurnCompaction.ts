@@ -13,6 +13,7 @@ import {
   compactionPlanRequestSchema,
   type CompactionPlanRequest
 } from './memoryContract'
+import { getMemoryFeatureFlags } from './memoryFeatureFlags'
 import type { useDrizzle } from './drizzle'
 import type { CurrentMessageHandoff } from './messageLifecycle'
 
@@ -95,6 +96,10 @@ export async function compactAfterSuccessfulAssistantPersistence (
   handoff: CurrentMessageHandoff,
   options?: AgentInternalClientOptions
 ): Promise<PostTurnCompactionResult> {
+  if (!getMemoryFeatureFlags(options?.environment).persistentMemoryEnabled) {
+    return 'not_needed'
+  }
+
   for (let attempt = 0; attempt < MAX_COMPACTION_ATTEMPTS; attempt += 1) {
     const request = await buildCompactionPlanRequest(db, handoff)
     const plan = await requestCompactionPlan(request, options)

@@ -1,5 +1,6 @@
 import { getActiveSnapshot, getVisibleFacts, readTailMessages, type MemoryFactDto, type MemorySnapshotDto, type TailMessageDto } from './memoryRepository'
 import { memoryContextInputSchema, type MemoryContextInput } from './memoryContract'
+import { isSessionFactEnabled } from './sessionFactGate'
 import type { CurrentMessageHandoff } from './messageLifecycle'
 import type { useDrizzle } from './drizzle'
 
@@ -65,7 +66,8 @@ export function createPersistentMemoryContext (
 /** The BFF is the only component that reads persistent Memory records. */
 export async function buildPersistentMemoryContext (
   db: Database,
-  handoff: CurrentMessageHandoff
+  handoff: CurrentMessageHandoff,
+  options: { includeFacts?: boolean } = {}
 ): Promise<MemoryContextInput> {
   const memoryInput = {
     actorUserId: handoff.actorUserId,
@@ -73,8 +75,9 @@ export async function buildPersistentMemoryContext (
     historyRevision: handoff.historyRevision
   }
   const snapshot = await getActiveSnapshot(db, memoryInput)
+  const includeFacts = options.includeFacts ?? isSessionFactEnabled()
   const [facts, tail] = await Promise.all([
-    getVisibleFacts(db, memoryInput),
+    includeFacts ? getVisibleFacts(db, memoryInput) : Promise.resolve([]),
     readTailMessages(db, {
       ...memoryInput,
       afterSequence: snapshot?.coveredToSequence ?? 0,

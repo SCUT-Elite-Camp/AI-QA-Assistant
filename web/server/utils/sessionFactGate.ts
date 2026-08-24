@@ -1,4 +1,4 @@
-const ENABLED_VALUES = new Set(['1', 'true', 'yes', 'on'])
+import { getMemoryFeatureFlags } from './memoryFeatureFlags'
 
 /**
  * Fact lifecycle is fail-closed until an operator explicitly enables it.
@@ -7,5 +7,5 @@ const ENABLED_VALUES = new Set(['1', 'true', 'yes', 'on'])
 export function isSessionFactEnabled (
   environment: Record<string, string | undefined> = process.env
 ): boolean {
-  return ENABLED_VALUES.has(environment.SESSION_FACT_ENABLED?.trim().toLowerCase() ?? '')
+  return getMemoryFeatureFlags(environment).sessionFactEnabled
 }

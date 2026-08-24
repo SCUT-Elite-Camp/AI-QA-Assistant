@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { getAgentInternalToken, resolveAgentBaseUrl } from './chatAccess'
+import { getMemoryFeatureFlags, shouldUsePersistentMemory } from './memoryFeatureFlags'
 import {
   compactionPlanRequestSchema,
   compactionPlanResponseSchema,
@@ -15,6 +16,7 @@ import {
 const INTERNAL_TIMEOUT_MS = 5_000
 
 export type AgentInternalErrorCode = 'persistent_memory_disabled' | 'agent_internal_configuration' | 'agent_internal_http_error' | 'agent_internal_invalid_response' | 'agent_internal_timeout'
+export type MemoryFallbackReason = 'agent_disabled' | 'internal_error'
 
 export class AgentInternalClientError extends Error {
   constructor (
@@ -42,12 +44,11 @@ export type PersistentChatCallResult<T> =
   | { source: 'internal', value: InternalChatResponse }
   | { source: 'public', value: T }
 
-export function isPersistentMemoryEnabled (environment: Record<string, string | undefined> = process.env): boolean {
-  return ['1', 'true', 'yes', 'on'].includes(environment.PERSISTENT_MEMORY_ENABLED?.trim().toLowerCase() ?? '')
-}
+export { shouldUsePersistentMemory }
 
-export function shouldUsePersistentMemory (isAuthenticated: boolean, environment?: Record<string, string | undefined>): boolean {
-  return isAuthenticated && isPersistentMemoryEnabled(environment)
+/** @deprecated Prefer getMemoryFeatureFlags for all three server-side gates. */
+export function isPersistentMemoryEnabled (environment: Record<string, string | undefined> = process.env): boolean {
+  return getMemoryFeatureFlags(environment).persistentMemoryEnabled
 }
 
 async function postInternal<TRequest, TResponse> (
@@ -100,7 +101,7 @@ async function postInternal<TRequest, TResponse> (
     if (controller.signal.aborted) {
       throw new AgentInternalClientError('agent_internal_timeout', 'Agent internal request timed out')
     }
-    throw error
+    throw new AgentInternalClientError('agent_internal_http_error', 'Agent internal request failed')
   } finally {
     clearTimeout(timeout)
     options.signal?.removeEventListener('abort', abortFromCaller)
@@ -123,6 +124,7 @@ export function resetShortWindow (chatId: string, options?: AgentInternalClientO
 export async function callChatWithPersistentFallback<T> (input: {
   internalRequest: InternalChatRequest
   callPublic: () => Promise<T>
+  onFallback?: (reason: MemoryFallbackReason) => void
   usePersistentMemory: boolean
   options?: AgentInternalClientOptions
 }): Promise<PersistentChatCallResult<T>> {
@@ -133,7 +135,10 @@ export async function callChatWithPersistentFallback<T> (input: {
   try {
     return { source: 'internal', value: await callInternalChat(input.internalRequest, input.options) }
   } catch (error) {
-    if (error instanceof AgentInternalClientError && error.code === 'persistent_memory_disabled') {
+    if (error instanceof AgentInternalClientError && error.code !== 'agent_internal_configuration') {
+      input.onFallback?.(
+        error.code === 'persistent_memory_disabled' ? 'agent_disabled' : 'internal_error'
+      )
       return { source: 'public', value: await input.callPublic() }
     }
     throw error

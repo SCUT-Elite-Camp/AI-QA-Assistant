@@ -77,19 +77,37 @@ describe('Agent internal client', () => {
     })).resolves.toMatchObject({ source: 'internal', value: { response: { answer: 'Answer.' } } })
   })
 
-  it('does not downgrade other internal errors or allow anonymous persistent selection', async () => {
+  it('uses the public callback exactly once for a safe internal HTTP downgrade', async () => {
+    const callPublic = vi.fn()
+    const onFallback = vi.fn()
+    callPublic.mockResolvedValue({ status: 'success', answer: 'Public answer' })
+    await expect(callChatWithPersistentFallback({
+      usePersistentMemory: true,
+      internalRequest: request(),
+      callPublic,
+      onFallback,
+      options: {
+        environment,
+        fetchFn: vi.fn().mockResolvedValue(new Response('', { status: 500 }))
+      }
+    })).resolves.toEqual({
+      source: 'public',
+      value: { status: 'success', answer: 'Public answer' }
+    })
+    expect(callPublic).toHaveBeenCalledTimes(1)
+    expect(onFallback).toHaveBeenCalledWith('internal_error')
+    expect(isPersistentMemoryEnabled(environment)).toBe(true)
+    expect(shouldUsePersistentMemory(false, environment)).toBe(false)
+  })
+
+  it('keeps missing internal credentials fail-closed instead of calling public chat', async () => {
     const callPublic = vi.fn()
     await expect(callChatWithPersistentFallback({
       usePersistentMemory: true,
       internalRequest: request(),
       callPublic,
-      options: {
-        environment,
-        fetchFn: vi.fn().mockResolvedValue(new Response('', { status: 500 }))
-      }
-    })).rejects.toMatchObject({ code: 'agent_internal_http_error' })
+      options: { environment: { AGENT_BASE_URL: 'http://agent.test' } }
+    })).rejects.toMatchObject({ code: 'agent_internal_configuration' })
     expect(callPublic).not.toHaveBeenCalled()
-    expect(isPersistentMemoryEnabled(environment)).toBe(true)
-    expect(shouldUsePersistentMemory(false, environment)).toBe(false)
   })
 })

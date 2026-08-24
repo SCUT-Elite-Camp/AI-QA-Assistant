@@ -68,6 +68,18 @@ function successfulPlanResponse (request: {
 }
 
 describe('post-turn compaction', () => {
+  it('does not read or call Agent compaction when persistent Memory is disabled', async () => {
+    const fixture = await createPersistedTurnFixture()
+    const { compactAfterSuccessfulAssistantPersistence } = await import('../../server/utils/postTurnCompaction')
+    const fetchFn = vi.fn()
+
+    await expect(compactAfterSuccessfulAssistantPersistence(fixture.db, fixture.handoff, {
+      environment: { PERSISTENT_MEMORY_ENABLED: 'false' },
+      fetchFn
+    })).resolves.toBe('not_needed')
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
   it('applies the Agent plan after the assistant turn is already persisted', async () => {
     const fixture = await createPersistedTurnFixture()
     const { compactAfterSuccessfulAssistantPersistence } = await import('../../server/utils/postTurnCompaction')
