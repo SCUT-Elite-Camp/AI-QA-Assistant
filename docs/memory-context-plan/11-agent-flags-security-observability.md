@@ -65,6 +65,7 @@ settings 注入相应 resolver/planner；不得散落硬编码 8/12/1000。所�
 memory_resolve { source: disabled|trusted_context|legacy, outcome: success|fallback|rejected, duration_ms }
 memory_compaction { outcome: skipped|planned|conflict|failed, tail_count, snapshot_version? }
 memory_fact { action: proposed|suppressed|recalled, outcome: success|disabled|sensitive|empty|failed }
+memory_prompt { model_history_chars }
 ```
 
 禁止参数：Fact value、Snapshot summary、Tail、query、完整 prompt、source message ID、token、原始 chat ID。
@@ -78,8 +79,8 @@ memory_fact { action: proposed|suppressed|recalled, outcome: success|disabled|se
 2. 将已有 Resolver/Planner 的 8/12/1000 改为显式 settings 注入；禁止改变 07 算法与 summary 内容。
 3. 将 Session Fact gate 接到 candidate policy、Fact recall 和 memory brief 三处，确保关闭时 Facts 不可见但
    Snapshot/Tail 不被误关。
-4. 新建无正文 observability helper；在 Agent Memory 的成功/安全降级边界调用，不修改 Runner 日志格式。
-5. 针对关闭、错误、cache 误开、Fact/recall gate、config 边界和事件 payload 写测试。
+4. 新建无正文 observability helper；在 Agent Memory 的成功/安全降级边界调用，不修改 Runner 日志格式。`memory_prompt` 只能记录实际送往 Runner 的持久 Memory `model_history` 字符数，必须是非负整数；不得记录 query、完整 Prompt 或任意正文。
+5. 针对关闭、错误、cache 误开、Fact/recall gate、config 边界和事件 payload 写测试；其中必须验证 `memory_prompt` 只在 Runner 实际执行、且 trusted persistent Context 存在时发出。
 
 ## 测试、检查与停止条件
 
