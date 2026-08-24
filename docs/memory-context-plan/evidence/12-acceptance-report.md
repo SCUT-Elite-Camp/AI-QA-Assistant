@@ -6,12 +6,12 @@
 
 | 项目 | 值 |
 | --- | --- |
-| Web 工作区 / 分支 / HEAD | `D:\project\AI-QA-Assistant` / `web-dev` / `49efbfacd10afb5aea0e5988de2d01bdbcee5f55` |
-| Agent 工作区 / 分支 / HEAD | `D:\project\AI-QA-Assistant-agent-memory` / `agent-dev-infra` / `d381d9e8515ade1fbe7c0c60220e2540901fff45` |
+| Web 工作区 / 分支 / HEAD | `D:\project\AI-QA-Assistant` / `web-dev` / `eef49621c064362cd318aef2deaa00b60c1d9462` |
+| Agent 工作区 / 分支 / HEAD | `D:\project\AI-QA-Assistant-agent-memory` / `agent-dev-infra` / `4b3f333e213d0a60a78b32ba0a3781bb0aab3343` |
 | Node package manager | pnpm `11.19.0` |
 | Agent interpreter | Python `3.11.9` (`.venv`) |
 
-两个工作区在验收时都包含尚未提交的已审查 Memory 实现与本单元的测试/fixture 变更。因此上述 HEAD 只能标识共同父基线，复现本报告必须同时使用对应工作区的未提交 diff；不得将它误写为仅凭 commit 可复现的发布证据。
+Web 的可信 recall 标签和 SSE 取消修复已在 `eef4962` 独立提交；本报告随后以独立证据提交保存。Agent 未为本次手工 smoke 修改源码；其本地 `data-persistence/data/chat_history.db` 是服务运行产生的数据变化，不属于代码或证据提交。复现本报告应使用这两个确定的提交及下述本地开关，而不得将结果表述为生产发布证据。
 
 ## 2. 共享跨层 Fixture
 
@@ -41,7 +41,7 @@
 | --- | --- |
 | `pnpm run db:generate` | 通过；9 tables；无 schema change、无新 migration。 |
 | `pnpm run db:migrate` | 通过；本地 migration 成功应用。 |
-| `pnpm exec vitest run` | 通过；17 files、105 tests。 |
+| `pnpm exec vitest run` | 通过；17 files、108 tests。 |
 | `pnpm run typecheck` | 已执行，退出 `2`；仅复现既有 Vue UI 类型错误（`src/components/chat/**`、`src/components/ModalSelectTopic.vue`、`src/pages/topics/index.vue`），依据已授权基线豁免记录为非本单元 Memory 回归。 |
 | `pnpm run lint` | 通过；0 errors、219 existing warnings。 |
 
@@ -65,24 +65,21 @@
 | 跨层合同 | 共享 request/response fixture 在 Web schema/BFF client 与 Agent private endpoint 三处验证；实际数据库到真实 HTTP 服务的端到端进程编排尚未执行。 |
 | 隔离 | Web public schema 与 Agent endpoint tests 证明 browser/public request 不接收 trusted Memory；Agent production-lifespan test 覆盖 Chat/Memory 不加载 Deep Research。 |
 
-## 5. 手工 Smoke 与已知限制
+## 5. 真实本地 Smoke 与已知限制
 
-### 已完成的匿名入口检查（部分证据）
+所有步骤于 2026-08-24 在受控本地环境完成：`PERSISTENT_MEMORY_ENABLED=true`、`SESSION_FACT_ENABLED=true`，Web 为 `localhost:3000`，Agent private service 为 `localhost:8000`。GitHub OAuth 已由用户在本机浏览器完成；验收自动化未读取、导出或记录密码、Cookie、token 或真实 Fact 值。DOM 断言和无凭据 HTTP 命令的原始结果均在本次 Codex 运行输出中，以下仅保留脱敏的可复现结论。
 
-- 时间：2026-08-24；地址：`http://127.0.0.1:3000/`。
-- 使用当前 Codex in-app browser 的真实 DOM 与页面截图检查：页面显示“Sign in with GitHub”，未显示 SESSION Fact 面板或“保存为记忆”入口。
-- 此结果只证明当前未登录首页不会暴露 Fact UI；它不覆盖匿名访问 private/public chat URL、Fact API 的 HTTP 响应或任何已认证行为。截图仅作为本次受控 Codex 任务的内联证据，尚无可归档的本地录屏/截图文件。
+| 场景 | 自动化步骤与结果 |
+| --- | --- |
+| proposal / confirm / revoke | 已认证私有 chat 中，以受控非敏感文本创建 proposal、确认 SESSION Fact、撤销并刷新；卡片、到期日与撤销后的不可见性均符合预期。 |
+| 敏感拒绝 | 对受控敏感模式文本执行“保存为记忆”，页面显示“该内容不能保存为记忆”；未创建 Fact。 |
+| exact recall 标签 | 已确认的 SESSION Fact 后发送明确回忆请求。private `/api/internal/chat` 返回 `recall.handled=true`，页面显示正确的确定性回忆文本及“来自已确认会话记忆”标签。`chat-memory-flow.test.ts` 同时验证 public fallback 即使伪造同形字段也不能发出该标签。 |
+| SSE 取消 | 发送受控请求后，按钮在 `submitted` 状态为 `type=button`（stop），自动点击后恢复为 `type=submit`（send）；页面最后仅有该用户消息、无对应 assistant 消息且无错误提示。修复前页面错误地将 `submitted` 映射为 `ready`，导致无法取消；修复已在 `eef4962`。 |
+| 跨 chat 隔离 | 在含已确认 SESSION Fact 的旧私有 chat 后，新建第二个私有 chat 并请求回忆。新 chat 的 DOM 不含旧 Fact 文本、不含“本会话记忆”面板，也不含“来自已确认会话记忆”标签。 |
+| 匿名隔离 | 不携带任何凭据，对旧 chat、新 chat 的 `GET /api/chats/:id/memory/facts` 及对旧 chat 的 proposal `POST` 均返回 `404`；匿名调用既不能读取也不能创建 Fact。 |
 
-`web/tests/manual/10-fact-web-experience.md` 的真实浏览器/OAuth 手工 smoke **未完成**：2026-08-24 已按用户授权点击本地页面的 GitHub 登录入口，但该入口被桌面浏览器打开为 `http://localhost:3000/auth/github`，in-app browser 的 URL 安全策略拒绝接管该回调页；未进入 GitHub、未输入或传输凭据。独立本地 HTTP 检查确认 `http://127.0.0.1:3000/` 与 `http://localhost:3000/` 均返回 `200`，因此此记录不把问题归因为服务未启动。仍缺少已认证 Web + Agent 环境、单账号私有 chat、匿名窗口和可归档截图/录屏位置。不得将自动化 mock 结果描述为 OAuth、SSE UI 或真实本地模型端到端通过。
-
-补充实际复测（2026-08-24）：用户已在普通浏览器完成 GitHub OAuth；受控浏览器接管后的首页显示已认证状态。创建私有 chat、发送受控非敏感目标文本并等待正常 SSE 回答均成功，且 user message 的操作菜单显示“保存为会话记忆”。选择“保存为目标”后，页面显示“记忆操作失败”，未出现 PROPOSED 卡片、确认/撤销入口或 Fact ID。两个 Memory 开关均已配置为 `true`。该失败仍未取得可归档的本地 Network 截图或服务器响应码，因此只记录为**已认证 proposal smoke 失败**，不得将后续 confirm、revoke、敏感拒绝、SSE 取消、跨 chat/匿名隔离或 exact-recall 标签列为已验证。
-
-修复复测（2026-08-24）：临时本地服务日志将失败定位为 `memory_facts.user_id -> users.id` 的 SQLite 外键约束。应用的 GitHub provider ID 是 chat 的所有者标识，但不保证存在本地 `users` profile 行；`0007_luxuriant_captain_britain` 将 `memory_facts` 与 `memory_snapshots` 重建为仅保留 chat/source-message 外键的表。对本地开发数据库执行迁移后，同一已认证 chat 的手动“保存为目标”成功显示 PROPOSED 卡片，确认后显示会话 Fact 与到期日，撤销并刷新后不再显示；受控 `password=not-a-real-secret` 文本的手动保存被拒绝并显示“该内容不能保存为记忆”。因此 proposal、confirm、revoke、敏感拒绝四项已通过；SSE 取消、跨 chat/匿名隔离和 exact-recall 标签仍未完成手工验证。
-
-建议在受控本地环境补齐：使用 `PERSISTENT_MEMORY_ENABLED=true`、`SESSION_FACT_ENABLED=true`，以一个已授权 GitHub 账号和匿名窗口完成私有会话、跨 chat 与匿名隔离的真实浏览器检查。不同已认证用户之间的隔离不要求为本次手工 smoke 新增第二个 GitHub 账号，继续由已通过的仓储/API 自动化回归覆盖。严格执行该手工脚本的 proposal、confirm、revoke、敏感拒绝、取消 SSE、跨 chat/匿名隔离与 exact-recall 标签步骤；截图/录屏只存放在受控位置，不记录 token 或真实用户数据。
-
-当前 `pnpm run typecheck` 的 UI 基线错误也仍需由 UI owner 单独修复或再次明确豁免；本单元没有修改这些文件。
+局限：这是一个真实本地、单账号、受控数据的验收，不覆盖第二个已认证账号的浏览器会话；该隔离维度仍由 ownership/跨用户仓储与 API 自动化回归覆盖。Agent 本地日志中检索模型依赖的 warm-up 失败不影响本次确定性 Fact recall，但不能据此宣称 RAG 检索质量已验收。`pnpm run typecheck` 的既有 UI 错误仍按授权基线豁免，须由 UI owner 独立处理。
 
 ## 6. 进入 Unit 13 的判定
 
-自动化 Memory 矩阵已通过（Web typecheck 已按既有豁免记录），但缺少施工单要求的真实浏览器/OAuth 手工 smoke 证据。因此 **暂不允许执行 Unit 13**。完成并保存手工 smoke 证据后，再审查 Unit 12；两个工作区的当前未提交改动也应按工作区拆分提交，以使该证据能够由确定的 commit 复现。
+自动化 Memory 矩阵已通过（Web typecheck 按既有豁免记录），且真实本地 smoke 已覆盖 proposal、confirm、revoke、敏感拒绝、SSE 取消、跨 chat/匿名隔离与 exact-recall 标签。因此 **允许开始 Unit 13 发布就绪审查**；灰度或生产发布仍需 Unit 13 所列人工授权。
