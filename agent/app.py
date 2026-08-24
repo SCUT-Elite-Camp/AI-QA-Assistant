@@ -1,5 +1,6 @@
 # app.py
 import sys
+import asyncio
 from pathlib import Path
 
 agent_dir = Path(__file__).resolve().parent
@@ -16,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from agent.api.chat_routes import router as chat_router
 from agent.config.settings import settings
 from agent.logger.logger import get_logger, setup_logger
+from agent.runtime.lifecycle import get_application_container
 
 
 # 初始化日志
@@ -27,20 +29,19 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     logger.info(f"Starting {settings.APP_NAME}")
-    
-    logger.info("Preloading retrieval model weights and dictionary (cold-start prevention)...")
-    try:
-        from agent.agent import Agent
-        from agent.schemas.chat import ChatRequest
-        agent = Agent()
-        # Send a dummy request to trigger cold start loading of SearchTool
-        dummy_request = ChatRequest(query="预热", top_k=1, retrieval_mode="hybrid")
-        agent.chat(dummy_request)
-        logger.info("Retrieval model preloaded successfully!")
-    except Exception as e:
-        logger.error(f"Failed to preload retrieval model: {e}")
-        
+
+    container = get_application_container()
+    app.state.application_container = container
+    app.state.agent = container.startup()
+    logger.info("Application-scoped Agent, LLM client, registry and tools initialized")
+    warmup_task = asyncio.create_task(asyncio.to_thread(container.warmup_retrieval))
+    app.state.retrieval_warmup_task = warmup_task
+
     yield
+
+    if not warmup_task.done():
+        warmup_task.cancel()
+    container.shutdown()
     logger.info("Shutting down")
 
 
@@ -62,6 +63,19 @@ app.add_middleware(
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/ready")
+def readiness() -> dict[str, str | bool | int]:
+    snapshot = get_application_container().snapshot()
+    return {
+        "status": "ready" if snapshot.retrieval_ready else "degraded",
+        "initialized": snapshot.initialized,
+        "initialization_count": snapshot.initialization_count,
+        "initialization_ms": snapshot.initialization_ms,
+        "retrieval_ready": snapshot.retrieval_ready,
+        "detail": snapshot.retrieval_error,
+    }
 
 
 app.include_router(chat_router, prefix="/api")

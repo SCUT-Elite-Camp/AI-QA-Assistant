@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from contextvars import ContextVar, Token, copy_context
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from typing import Any, Callable
 
@@ -10,6 +11,12 @@ from agent.config.settings import settings
 from agent.schemas.tool_execution import Evidence, ToolExecutionResult
 from agent.tools.registry import ToolRegistryAdapter
 from toolset.tool_layer import BaseTool
+
+
+_request_tool_context: ContextVar[dict[str, Any]] = ContextVar(
+    "agent_request_tool_context",
+    default={},
+)
 
 
 class ToolExecutor:
@@ -133,12 +140,22 @@ class ToolExecutor:
         )
         return result
 
+    @staticmethod
+    def set_request_context(**context: Any) -> Token:
+        """Attach request-local search options without mutating shared tools."""
+        return _request_tool_context.set(dict(context))
+
+    @staticmethod
+    def reset_request_context(token: Token) -> None:
+        _request_tool_context.reset(token)
+
     def _run_with_timeout(
         self,
         operation: Callable[[], tuple[dict[str, Any] | None, list[Evidence]]],
     ) -> tuple[dict[str, Any] | None, list[Evidence]]:
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="agent-tool")
-        future = pool.submit(operation)
+        context = copy_context()
+        future = pool.submit(context.run, operation)
         try:
             return future.result(timeout=self.timeout_ms / 1000)
         finally:
@@ -168,14 +185,29 @@ class ToolExecutor:
         top_k = arguments.get("top_k", 5)
         filters = arguments.get("filters")
         min_score = float(getattr(tool, "min_score", 0.0))
+        request_context = _request_tool_context.get()
+
+        search_arguments: dict[str, Any] = {
+            "query": query,
+            "top_k": top_k,
+            "mode": mode,
+            "filters": filters,
+            "min_score": min_score,
+            "trace_id": trace_id,
+        }
+        if request_context.get("topic_doc_ids") is not None:
+            search_arguments["topic_doc_ids"] = request_context["topic_doc_ids"]
+        if request_context.get("topic_titles") is not None:
+            search_arguments["topic_titles"] = request_context["topic_titles"]
+        if request_context.get("weight_mode", "auto") != "auto":
+            search_arguments["weight_mode"] = request_context["weight_mode"]
+        if request_context.get("consecutive_no_new_docs_count", 0):
+            search_arguments["consecutive_no_new_docs_count"] = request_context[
+                "consecutive_no_new_docs_count"
+            ]
 
         rows = tool.search(
-            query=query,
-            top_k=top_k,
-            mode=mode,
-            filters=filters,
-            min_score=min_score,
-            trace_id=trace_id,
+            **search_arguments,
         )
         evidence = [
             Evidence(

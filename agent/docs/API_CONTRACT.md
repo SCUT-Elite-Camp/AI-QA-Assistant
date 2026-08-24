@@ -14,6 +14,12 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 -> memory write-back -> JSON response
 ```
 
+The Chat path is strictly Chat-only. Its internal `ChatRoutePolicy` exposes
+only bounded `chat_l0_direct`, `chat_l1_retrieval`, and
+`chat_l2_bounded_multi_step` routes. `/api/chat` never creates a Research Job;
+Research will use a separate manual entry point after its contract and approval
+flow are implemented. See `docs/cp2/chat_route_policy.md`.
+
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
 
 ## Request
@@ -163,6 +169,8 @@ production code contains no test-mode switch.
 
 ## Not Implemented In Current Version
 
+- Manual Local Research Job creation and execution; Week 1 only freezes its
+  versioned contract and deterministic plan fixtures.
 - Production-level real LLM streaming.
 - Cross-process or restart-persistent conversation memory.
 - ACL permission filtering.
@@ -202,3 +210,23 @@ read-only adapter:
 The OpenAI function-calling representation is available internally through
 `registry.to_openai_schemas()` and is intentionally separate from this public
 metadata response. See `docs/cp2/tool_registry.md` for the complete contract.
+
+## GET /ready
+
+Reports application-scoped resource initialization and retrieval warmup state.
+It does not create a Chat turn or a Research Job:
+
+```json
+{
+  "status": "ready",
+  "initialized": true,
+  "initialization_count": 1,
+  "initialization_ms": 18,
+  "retrieval_ready": true,
+  "detail": ""
+}
+```
+
+`status="degraded"` means the service remains alive for diagnostics but the
+shared retrieval tool did not complete warmup. `/api/chat` continues to use the
+existing public response contract.

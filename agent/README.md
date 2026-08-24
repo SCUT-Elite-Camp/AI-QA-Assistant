@@ -97,6 +97,10 @@ python scripts/check_contract.py
 python scripts/run_week4_acceptance.py
 ```
 
+CP2 Local Deep Research Week 1 的固定环境、单命令测试、Chat 基线和
+LangGraph Spike 说明见
+[`docs/cp2/week1_member_b_delivery.md`](docs/cp2/week1_member_b_delivery.md)。
+
 ## API 示例
 
 ```bash
@@ -154,6 +158,12 @@ CP2 澄清判断场景、失败降级和推荐接入顺序见
 
 CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
 [`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)。
+
+CP2 Chat-only L0/L1/L2 路由边界见
+[`docs/cp2/chat_route_policy.md`](docs/cp2/chat_route_policy.md)。
+
+手动启动 Local Research 的 `research.v1` 契约和 Planner Fixture 见
+[`docs/cp2/research_contract_v1.md`](docs/cp2/research_contract_v1.md)。
 
 CP2 意图分类组件、失败回退和 QueryPlan 映射约定见
 [`docs/cp2/intent_classifier.md`](docs/cp2/intent_classifier.md)。

@@ -6,7 +6,7 @@ from typing import Any
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
 from agent.memory import ConversationMemory
-from agent.policy import IntentPolicyRouter
+from agent.policy import ChatRouteDecision, ChatRoutePolicy, IntentPolicyRouter
 from agent.query import QueryUnderstanding
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
@@ -22,6 +22,7 @@ class OrchestrationResult:
     """All internal artifacts produced by one orchestrated request."""
 
     query_plan: QueryPlan
+    chat_route: ChatRouteDecision
     policy: IntentPolicy
     run_result: AgentRunResult
     history: list[dict[str, Any]]
@@ -48,6 +49,7 @@ class AgentOrchestrator:
         evidence_gate: EvidenceGate,
         corrective_retrieval: CorrectiveRetrievalPlanner,
         citation_checker: CitationChecker,
+        chat_route_policy: ChatRoutePolicy | None = None,
     ) -> None:
         self.memory = memory
         self.query_understanding = query_understanding
@@ -57,6 +59,7 @@ class AgentOrchestrator:
         self.evidence_gate = evidence_gate
         self.corrective_retrieval = corrective_retrieval
         self.citation_checker = citation_checker
+        self.chat_route_policy = chat_route_policy or ChatRoutePolicy()
 
     def run(
         self,
@@ -69,6 +72,7 @@ class AgentOrchestrator:
 
         history = self._read_history(request.session_id)
         plan = self._resolve_query_plan(request, query_plan, history)
+        chat_route = self.chat_route_policy.route(plan)
         policy = self.policy_router.route(plan)
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
@@ -87,6 +91,7 @@ class AgentOrchestrator:
         )
         return OrchestrationResult(
             query_plan=plan,
+            chat_route=chat_route,
             policy=policy,
             run_result=run_result,
             history=history,

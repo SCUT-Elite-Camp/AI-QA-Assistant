@@ -399,6 +399,13 @@ class AgentRunner:
                         )
 
                     state.evidence = self._merge_evidence([], evidence)
+                    if not state.evidence:
+                        return self._result(
+                            state,
+                            StopReason.NO_RELEVANT_CONTEXT,
+                            message="未检索到具体匹配的文档库片段，请尝试调整搜索关键词。",
+                            error_code="no_relevant_context",
+                        )
 
                 state.messages.append(
                     {
@@ -518,6 +525,8 @@ class AgentRunner:
     ) -> dict[str, Any]:
         constrained = dict(arguments)
         if tool_name == "search_documents":
+            # The model may suggest search wording, but the deterministic query
+            # analyzer owns the retrieval query used by the runtime.
             constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
             constrained["mode"] = mode
