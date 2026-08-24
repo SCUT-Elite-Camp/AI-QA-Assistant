@@ -19,9 +19,6 @@ import type { CurrentMessageHandoff } from './messageLifecycle'
 
 type Database = NonNullable<ReturnType<typeof useDrizzle>>
 
-export const COMPACTION_TAIL_SIZE = 8
-export const COMPACTION_MIN_COVERABLE_MESSAGES = 12
-export const COMPACTION_SOFT_TOKEN_BUDGET = 1000
 const MAX_COMPACTION_ATTEMPTS = 2
 
 function partsToText (parts: unknown): string {
@@ -78,10 +75,7 @@ export async function buildCompactionPlanRequest (
     chat_id: handoff.chatId,
     revision: handoff.historyRevision,
     active_snapshot: toActiveSnapshotInput(activeSnapshot),
-    messages: toCompactionMessages(messages),
-    tail_size: COMPACTION_TAIL_SIZE,
-    min_coverable_messages: COMPACTION_MIN_COVERABLE_MESSAGES,
-    soft_token_budget: COMPACTION_SOFT_TOKEN_BUDGET
+    messages: toCompactionMessages(messages)
   })
 }
 

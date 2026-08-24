@@ -5,9 +5,11 @@ import {
   callChatWithPersistentFallback,
   callInternalChat,
   isPersistentMemoryEnabled,
+  requestCompactionPlan,
   shouldUsePersistentMemory
 } from '../../server/utils/agentInternalClient'
 import {
+  compactionPlanRequestSchema,
   internalChatRequestSchema,
   internalChatResponseSchema
 } from '../../server/utils/memoryContract'
@@ -26,6 +28,10 @@ function request() {
   return internalChatRequestSchema.parse(readFixture('internal-chat-request.json'))
 }
 
+function compactionRequest() {
+  return compactionPlanRequestSchema.parse(readFixture('internal-compaction-plan-request.json'))
+}
+
 describe('Agent internal client', () => {
   it('sends only the token-protected internal request when persistent Memory is selected', async () => {
     const responseFixture = internalChatResponseSchema.parse(readFixture('internal-chat-response.json'))
@@ -36,6 +42,22 @@ describe('Agent internal client', () => {
     expect(fetchFn).toHaveBeenCalledWith('http://agent.test/api/internal/chat', expect.objectContaining({
       headers: expect.objectContaining({ 'X-Agent-Internal-Token': 'internal-token' })
     }))
+  })
+
+  it('sends the current compaction request without retired BFF thresholds', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify({ should_compact: false }), { status: 200 }))
+    const request = compactionRequest()
+
+    await expect(requestCompactionPlan(request, { environment, fetchFn })).resolves.toEqual({
+      should_compact: false
+    })
+
+    const sentRequest = JSON.parse(String(fetchFn.mock.calls[0]![1]?.body))
+    expect(sentRequest).toEqual(request)
+    expect(sentRequest).not.toHaveProperty('tail_size')
+    expect(sentRequest).not.toHaveProperty('min_coverable_messages')
+    expect(sentRequest).not.toHaveProperty('soft_token_budget')
+    expect(() => compactionPlanRequestSchema.parse({ ...request, tail_size: 8 })).toThrow()
   })
 
   it('uses the public callback exactly once only for persistent_memory_disabled', async () => {

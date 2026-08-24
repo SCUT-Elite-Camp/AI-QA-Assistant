@@ -206,10 +206,7 @@ export const compactionPlanRequestSchema = z.object({
   chat_id: z.string().min(1),
   revision: z.number().int().positive(),
   active_snapshot: memorySnapshotInputSchema.nullable(),
-  messages: z.array(memoryMessageSchema),
-  tail_size: z.number().int().positive(),
-  min_coverable_messages: z.number().int().positive(),
-  soft_token_budget: z.number().int().positive()
+  messages: z.array(memoryMessageSchema)
 }).strict().superRefine((request, issue) => {
   if (request.active_snapshot && request.active_snapshot.revision !== request.revision) {
     issue.addIssue({
