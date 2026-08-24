@@ -45,6 +45,8 @@ Web 的可信 recall 标签和 SSE 取消修复已在 `eef4962` 独立提交；�
 | `pnpm run typecheck` | 已执行，退出 `2`；仅复现既有 Vue UI 类型错误（`src/components/chat/**`、`src/components/ModalSelectTopic.vue`、`src/pages/topics/index.vue`），依据已授权基线豁免记录为非本单元 Memory 回归。 |
 | `pnpm run lint` | 通过；0 errors、219 existing warnings。 |
 
+受控执行环境中首次直接调用 `pnpm exec vitest run` 未将本地 `.bin` 加入 `PATH`，且 Vite 需要写入临时配置缓存；确认本地 `vitest` 二进制及依赖完整后，显式加入 `web/node_modules/.bin` 并允许该临时缓存写入，使用同一命令重跑并得到上述 108 项通过结果。未重装、升级或修改任何依赖。
+
 ### Agent
 
 | 命令 | 结果 |
