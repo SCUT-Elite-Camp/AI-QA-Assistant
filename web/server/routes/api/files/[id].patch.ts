@@ -4,8 +4,7 @@ import { readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
-import { isAdmin } from '../../../utils/admin'
-import { replaceFileGrants, type FileGrant } from '../../../utils/permission-service'
+import { requireFileAccess, replaceFileGrants, type FileGrant } from '../../../utils/permission-service'
 
 const updatePermissionSchema = z.object({
   visibility: z.enum(['private', 'shared']).optional(),
@@ -31,22 +30,15 @@ export default defineHandler(async (event) => {
   const session = await useUserSession(event)
   const userId = session.data.user?.id
 
-  if (!userId) {
-    throw new HTTPError({ statusCode: 401, statusMessage: 'Unauthorized' })
-  }
-
   const body = await readValidatedBody(event, updatePermissionSchema.parse)
   const db = useDrizzle()
 
-  const [file] = await db.select().from(tables.files).where(eq(tables.files.id, fileId))
-  if (!file) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'File not found' })
+  // 统一的文件访问控制（仅 owner 或 admin 可修改权限）
+  const access = await requireFileAccess(db, userId, fileId, { mode: 'manage' })
+  if (!access.ok || !access.file) {
+    throw new HTTPError({ statusCode: access.statusCode, statusMessage: access.statusCode === 404 ? 'File not found' : access.statusCode === 401 ? 'Unauthorized' : 'Only owner or admin can update permissions' })
   }
-
-  const isOwner = file.userId === userId
-  if (!isOwner && !(await isAdmin(userId))) {
-    throw new HTTPError({ statusCode: 403, statusMessage: 'Only owner or admin can update permissions' })
-  }
+  const file = access.file
 
   if (body.visibility !== undefined) {
     await db.update(tables.files).set({ visibility: body.visibility }).where(eq(tables.files.id, fileId))

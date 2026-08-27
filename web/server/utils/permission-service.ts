@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import path from 'node:path'
 import { useDrizzle, tables, eq, and, or, inArray } from './drizzle'
+import { isAdmin } from './admin'
 
 export type FileGrant = {
   grantType: 'user' | 'department' | 'public'
@@ -114,4 +115,66 @@ export async function canAccessFile(db: Db, userId: string | undefined, fileId: 
   }
 
   return false
+}
+
+export type FileAccessMode = 'access' | 'manage' | 'delete'
+
+export interface FileAccessResult {
+  ok: boolean
+  statusCode: 200 | 401 | 403 | 404
+  file?: typeof tables.files.$inferSelect
+  /** owner 或 admin，用于前端展示"可管理权限"等场景。 */
+  canManage?: boolean
+  isOwner?: boolean
+  isAdmin?: boolean
+}
+
+/**
+ * 统一的单文件访问入口。按模式校验权限，返回统一的访问结果。
+ * 规则与 Agent 层 PermissionService 保持一致：
+ *   - access：owner / shared / public / 显式用户授权 / 部门授权（复用 canAccessFile）
+ *   - manage：仅 owner 或 admin（用于修改权限）
+ *   - delete：仅 owner（沿用现有删除语义）
+ *
+ * 所有单文件路由（get / patch / delete）都应通过本入口校验，避免权限规则散落。
+ */
+export async function requireFileAccess(
+  db: Db,
+  userId: string | undefined,
+  fileId: string,
+  opts: { mode?: FileAccessMode } = {},
+): Promise<FileAccessResult> {
+  const mode = opts.mode ?? 'access'
+
+  const [file] = await db.select().from(tables.files).where(eq(tables.files.id, fileId))
+  if (!file) {
+    return { ok: false, statusCode: 404 }
+  }
+
+  const admin = userId ? await isAdmin(userId) : false
+  const isOwner = !!userId && file.userId === userId
+
+  if (mode === 'delete') {
+    if (!userId) return { ok: false, statusCode: 401, file, isOwner, isAdmin: admin }
+    if (!isOwner) return { ok: false, statusCode: 403, file, isOwner, isAdmin: admin }
+  } else if (mode === 'manage') {
+    if (!userId) return { ok: false, statusCode: 401, file, isOwner, isAdmin: admin }
+    if (!isOwner && !admin) {
+      return { ok: false, statusCode: 403, file, isOwner, isAdmin: admin }
+    }
+  } else {
+    // access
+    if (!(await canAccessFile(db, userId, fileId))) {
+      return { ok: false, statusCode: 403, file, isOwner, isAdmin: admin }
+    }
+  }
+
+  return {
+    ok: true,
+    statusCode: 200,
+    file,
+    canManage: isOwner || admin,
+    isOwner,
+    isAdmin: admin,
+  }
 }

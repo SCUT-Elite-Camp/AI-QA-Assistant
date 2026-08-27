@@ -106,9 +106,16 @@ pnpm preview
 | `SESSION_SECRET` | 会话加密密钥 | 必填 |
 | `TURSO_DATABASE_URL` | Turso 数据库地址 | 本地 SQLite |
 | `TURSO_AUTH_TOKEN` | Turso 认证 Token | - |
+| `AGENT_BASE_URL` | Agent 层服务地址 | `http://127.0.0.1:8000` |
+| `AGENT_API_KEY` | 调用 Agent 层业务接口的共享密钥（需与 Agent 层一致） | 必填 |
 
 - `VITE_USE_MOCK=true`：默认使用 Mock；设置为 `false` 时才请求真实 Agent
 - Mock 模式下无需配置 `AI_GATEWAY_API_KEY`
+
+> **Web → Agent 调用认证**：Web 调用 Agent 层 `/api/*` 业务接口时会自动附带
+> `Authorization: Bearer <AGENT_API_KEY>` 请求头。该密钥必须与
+> [`agent/README.md`](../agent/README.md) 中配置的 `AGENT_API_KEY` 一致，否则
+> Agent 层返回 `401`。
 
 ## Mock 测试场景
 

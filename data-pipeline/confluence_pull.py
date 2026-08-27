@@ -251,6 +251,21 @@ def main() -> None:
                       f"({len(d.content)} 字符, {len(d.content_blocks)} 块, id={d.doc_id[:8]})")
                 _run_pipeline(d)
 
+                # 3.1 ★ 空间级权限登记：把该文档登记到 Web 层 files/file_permissions 表，
+                #     使 Agent 层的 doc_id 白名单过滤能覆盖 Confluence 来源文档。
+                #     失败仅记日志，不阻断主流程。
+                try:
+                    from confluence_permission_register import register_doc_permissions
+                    register_doc_permissions(
+                        doc_id=d.doc_id,
+                        title=d.title,
+                        source_url=d.source_url,
+                        space_key=space,
+                        size=len(d.content.encode("utf-8")),
+                    )
+                except Exception as e:
+                    logger.warning("权限登记失败 (doc=%s): %s", d.doc_id, e)
+
                 # 4. 记录元数据（主文档与附件文档各一行，便于溯源）
                 metas.append({
                     "source_url": d.source_url,

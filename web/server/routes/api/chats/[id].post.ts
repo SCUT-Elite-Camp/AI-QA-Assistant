@@ -7,6 +7,7 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { MODELS } from '../../../../shared/utils/models'
 import { logger } from '../../../utils/logger'
+import { agentFetch } from '../../../utils/agent-client'
 import { recordAiCall } from '../../../utils/metrics'
 
 export default defineHandler(async (event) => {
@@ -75,11 +76,10 @@ export default defineHandler(async (event) => {
         }
 
         // 1. Call real Python Agent API (port 8000)
-        const agentUrl = "http://127.0.0.1:8000/api/chat"
         const aiCallStart = Date.now()
-        const agentRes = await fetch(agentUrl, {
+        const agentRes = await agentFetch("/api/chat", {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({

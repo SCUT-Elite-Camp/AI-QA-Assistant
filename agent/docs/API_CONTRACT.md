@@ -1,9 +1,25 @@
 # API Contract
 
+## Authentication (shared secret)
+
+All `/api/*` business endpoints require an `Authorization: Bearer <AGENT_API_KEY>`
+header. This prevents external clients from connecting directly to the Agent
+port and forging a `user_id` to bypass Web-layer permission isolation.
+
+- `AGENT_API_KEY` not configured -> `503 Service Unavailable`.
+- Missing or invalid key -> `401 Unauthorized`.
+- `GET /health` remains anonymous for health probes.
+- Validation uses `secrets.compare_digest` (constant-time comparison).
+
+The Agent trusts only the Web layer to forward a session-injected `user_id`;
+direct callers without a valid shared key are rejected.
+
 ## POST /api/chat
 
 Current stage: CP2 bounded Agent runtime with session memory, QueryPlan input,
 dynamic tool schemas, retrieval quality gates, and citation consistency checks.
+
+Endpoint requires header: `Authorization: Bearer <AGENT_API_KEY>`.
 
 The endpoint runs the CP2 orchestration flow:
 
@@ -161,11 +177,20 @@ The retrieval call always receives `standalone_query`, `top_k`,
 `trace_id`. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
+## Permission Filtering
+
+Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id` 可访问的
+`doc_id` 白名单，并注入检索过滤器（Milvus / BM25），实现文档级权限隔离。
+
+- 管理员（`users.role == 'admin'`）返回 `None`，表示不过滤全部文档。
+- 权限查询异常时的行为由 `PERMISSION_FAIL_OPEN` 控制：
+  - `false`（默认，fail-closed）：返回空列表，拒绝全部文档访问。
+  - `true`（fail-open）：返回 `None`（不过滤），仅用于排查/降级。
+
 ## Not Implemented In Current Version
 
 - Production-level real LLM streaming.
 - Cross-process or restart-persistent conversation memory.
-- ACL permission filtering.
 - Production-level retrieval quality tuning.
 - Production secret management.
 
