@@ -31,6 +31,7 @@ from agent.schemas.research import (
     SourceScope,
     VerificationResult,
     VerifiedEvidence,
+    VerifiedClaim,
 )
 from agent.schemas.tool_execution import Evidence, ToolExecutionResult
 
@@ -70,4 +71,5 @@ __all__ = [
     "ResearchReport",
     "VerificationResult",
     "VerifiedEvidence",
+    "VerifiedClaim",
 ]
