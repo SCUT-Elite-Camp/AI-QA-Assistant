@@ -1,23 +1,31 @@
-"""Versioned contracts for the manually-triggered, Local Research flow.
+"""Contracts for the manually-triggered, Local Research flow.
 
-This module intentionally contains contracts and deterministic validation only.
-It does not create jobs, call an LLM, access the web, or execute tools.  The
-Research runtime will consume these models in a later week after the manual
-entry point and approval flow are implemented.
+The original ``research.v1`` models remain compatible with the Week 1
+fixtures.  The runtime objects added below are the smallest v2 control-plane
+contracts required by the Core Vertical Slice: a durable Job owns one frozen
+SourceManifest and one versioned Plan, and an Approval binds both before a
+future Worker may execute.
+
+This module still contains data contracts and deterministic validation only.
+It does not access the network or silently expand a research source scope.
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from enum import StrEnum
+import hashlib
+import json
 import re
-from typing import Literal
+from typing import Iterable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 RESEARCH_SCHEMA_VERSION = "research.v1"
+RESEARCH_RUNTIME_SCHEMA_VERSION = "research.v2"
 
 # The Week 1 contract is deliberately Local-only and read-only.  This allowlist
 # is the first boundary that prevents a future Planner from smuggling in a
@@ -46,6 +54,27 @@ class ResearchPlanStatus(StrEnum):
     AWAITING_APPROVAL = "awaiting_approval"
     APPROVED = "approved"
     SUPERSEDED = "superseded"
+
+
+class ResearchJobStatus(StrEnum):
+    """Small execution state machine shared by the API and the dispatcher."""
+
+    CREATED = "created"
+    PLANNING = "planning"
+    AWAITING_APPROVAL = "awaiting_approval"
+    READY = "ready"
+    RESEARCHING = "researching"
+    SYNTHESIZING = "synthesizing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class ResearchResultStatus(StrEnum):
+    """Quality of a successfully completed workflow, separate from lifecycle."""
+
+    COMPLETE = "complete"
+    DEGRADED = "degraded"
 
 
 class ResearchTaskPriority(StrEnum):
@@ -143,7 +172,9 @@ class ReportSpec(ResearchContractModel):
 class ResearchRequest(ResearchContractModel):
     """User-supplied request for a manually started Local Research run."""
 
-    schema_version: Literal[RESEARCH_SCHEMA_VERSION] = RESEARCH_SCHEMA_VERSION
+    schema_version: Literal[RESEARCH_SCHEMA_VERSION, RESEARCH_RUNTIME_SCHEMA_VERSION] = (
+        RESEARCH_SCHEMA_VERSION
+    )
     query: str = Field(min_length=1, max_length=4000)
     source_scope: SourceScope
     report_spec: ReportSpec = Field(default_factory=ReportSpec)
@@ -187,16 +218,34 @@ class AcceptanceCriterion(ResearchContractModel):
     """One deterministic condition used to decide whether a task is complete."""
 
     criterion_id: str = Field(min_length=1, max_length=80)
-    description: str = Field(min_length=1, max_length=500)
+    # ``description`` and ``requires_evidence`` are retained for v1 fixture
+    # compatibility.  v2 callers should prefer the structured dimension /
+    # target / required fields below.
+    description: str = Field(default="", max_length=500)
     requires_evidence: bool = True
+    dimension: str = Field(default="general", min_length=1, max_length=80)
+    target: str = Field(default="", max_length=200)
+    required: bool = True
 
-    @field_validator("criterion_id", "description")
+    @field_validator("criterion_id", "dimension", "target", "description")
     @classmethod
     def normalize_text(cls, value: str) -> str:
         normalized = " ".join(value.strip().split())
-        if not normalized:
+        if not normalized and value:
             raise ValueError("acceptance_criterion_empty")
         return normalized
+
+    @model_validator(mode="after")
+    def normalize_structured_fields(self) -> "AcceptanceCriterion":
+        """Allow old descriptive fixtures while exposing a deterministic v2 shape."""
+
+        if not self.target and self.description:
+            self.target = self.description
+        if not self.description and self.target:
+            self.description = f"{self.dimension}: {self.target}"
+        if not self.target and not self.description:
+            raise ValueError("acceptance_criterion_empty")
+        return self
 
 
 class ResearchTask(ResearchContractModel):
@@ -233,13 +282,16 @@ class ResearchTask(ResearchContractModel):
 class ResearchPlan(ResearchContractModel):
     """Versioned Planner output consumed by the future Research runtime."""
 
-    schema_version: Literal[RESEARCH_SCHEMA_VERSION] = RESEARCH_SCHEMA_VERSION
+    schema_version: Literal[RESEARCH_SCHEMA_VERSION, RESEARCH_RUNTIME_SCHEMA_VERSION] = (
+        RESEARCH_SCHEMA_VERSION
+    )
     research_id: str = Field(min_length=1, max_length=100)
     version: int = Field(default=1, ge=1, le=1000)
     objective: str = Field(min_length=1, max_length=4000)
     out_of_scope: list[str] = Field(default_factory=list, max_length=20)
     source_scope: SourceScope
     report_spec: ReportSpec = Field(default_factory=ReportSpec)
+    manifest_hash: str | None = Field(default=None, min_length=8, max_length=128)
     tasks: list[ResearchTask] = Field(default_factory=list, max_length=20)
     budget: ResearchBudget = Field(default_factory=ResearchBudget)
     status: ResearchPlanStatus = ResearchPlanStatus.DRAFT
@@ -256,6 +308,264 @@ class ResearchPlan(ResearchContractModel):
     @classmethod
     def normalize_out_of_scope(cls, values: list[str]) -> list[str]:
         return _normalize_unique_strings(values, "out_of_scope")
+
+
+class SourceManifestDocument(ResearchContractModel):
+    """One immutable local document snapshot allowed in a Research Job."""
+
+    doc_id: str = Field(min_length=1, max_length=200)
+    version: str | None = Field(default=None, max_length=200)
+    content_hash: str = Field(min_length=8, max_length=128)
+
+    @field_validator("doc_id", "version", "content_hash")
+    @classmethod
+    def normalize_manifest_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.strip().split())
+        if not normalized:
+            raise ValueError("source_manifest_value_empty")
+        return normalized
+
+
+class SourceManifest(ResearchContractModel):
+    """Frozen source set used by Planning and all later execution stages."""
+
+    schema_version: Literal[RESEARCH_RUNTIME_SCHEMA_VERSION] = (
+        RESEARCH_RUNTIME_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    documents: list[SourceManifestDocument] = Field(min_length=1, max_length=100)
+    manifest_hash: str = Field(min_length=8, max_length=128)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @model_validator(mode="after")
+    def validate_unique_documents(self) -> "SourceManifest":
+        doc_ids = [document.doc_id for document in self.documents]
+        if len(doc_ids) != len(set(doc_ids)):
+            raise ValueError("source_manifest_duplicate_document_id")
+        if self.manifest_hash != self.calculate_hash(self.documents):
+            raise ValueError("source_manifest_hash_mismatch")
+        return self
+
+    @staticmethod
+    def calculate_hash(documents: Iterable[SourceManifestDocument]) -> str:
+        """Calculate the canonical hash used by Approval snapshots."""
+
+        payload = [
+            {
+                "doc_id": document.doc_id,
+                "version": document.version,
+                "content_hash": document.content_hash,
+            }
+            for document in sorted(documents, key=lambda item: item.doc_id)
+        ]
+        return hashlib.sha256(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+
+    @classmethod
+    def from_documents(
+        cls,
+        research_id: str,
+        documents: Iterable[SourceManifestDocument],
+    ) -> "SourceManifest":
+        """Build a stable hash from document identity and version metadata."""
+
+        ordered = sorted(documents, key=lambda document: document.doc_id)
+        if not ordered:
+            raise ValueError("source_manifest_empty")
+        manifest_hash = cls.calculate_hash(ordered)
+        return cls(
+            research_id=research_id,
+            documents=ordered,
+            manifest_hash=manifest_hash,
+        )
+
+
+class ResearchApproval(ResearchContractModel):
+    """Auditable approval snapshot binding one Plan to one Manifest."""
+
+    schema_version: Literal[RESEARCH_RUNTIME_SCHEMA_VERSION] = (
+        RESEARCH_RUNTIME_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    plan_version: int = Field(ge=1)
+    manifest_hash: str = Field(min_length=8, max_length=128)
+    approved_by: str = Field(min_length=1, max_length=200)
+    approved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @field_validator("approved_by")
+    @classmethod
+    def normalize_approver(cls, value: str) -> str:
+        normalized = " ".join(value.strip().split())
+        if not normalized:
+            raise ValueError("research_approval_actor_required")
+        return normalized
+
+
+class Observation(ResearchContractModel):
+    """A search observation that has not yet been promoted to evidence."""
+
+    observation_id: str = Field(min_length=1, max_length=100)
+    research_id: str = Field(min_length=1, max_length=100)
+    task_id: str = Field(min_length=1, max_length=80)
+    tool_name: str = Field(min_length=1, max_length=100)
+    doc_id: str | None = Field(default=None, max_length=200)
+    locator_hint: str | None = Field(default=None, max_length=300)
+    snippet: str = Field(min_length=1, max_length=10_000)
+    query: str = Field(min_length=1, max_length=2_000)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class VerifiedEvidence(ResearchContractModel):
+    """Original-source excerpt with a stable location inside the Manifest."""
+
+    evidence_id: str = Field(min_length=1, max_length=100)
+    research_id: str = Field(min_length=1, max_length=100)
+    task_id: str = Field(min_length=1, max_length=80)
+    doc_id: str = Field(min_length=1, max_length=200)
+    document_version: str | None = Field(default=None, max_length=200)
+    locator: str = Field(min_length=1, max_length=500)
+    excerpt: str = Field(min_length=1, max_length=20_000)
+    content_hash: str = Field(min_length=8, max_length=128)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class Finding(ResearchContractModel):
+    """A bounded research finding backed by persisted Evidence IDs."""
+
+    finding_id: str = Field(min_length=1, max_length=100)
+    research_id: str = Field(min_length=1, max_length=100)
+    task_id: str = Field(min_length=1, max_length=80)
+    statement: str = Field(min_length=1, max_length=4_000)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+    covers: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("evidence_ids", "covers")
+    @classmethod
+    def normalize_finding_ids(cls, values: list[str], info) -> list[str]:
+        return _normalize_unique_strings(values, info.field_name)
+
+
+class CriterionCoverage(ResearchContractModel):
+    """Deterministic result for one required or optional criterion."""
+
+    criterion_id: str = Field(min_length=1, max_length=80)
+    covered: bool
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def normalize_coverage_ids(cls, values: list[str]) -> list[str]:
+        return _normalize_unique_strings(values, "evidence_ids")
+
+
+class CoverageResult(ResearchContractModel):
+    """Basic criterion coverage, intentionally not a multidimensional matrix."""
+
+    research_id: str = Field(min_length=1, max_length=100)
+    covered: list[str] = Field(default_factory=list, max_length=100)
+    missing: list[str] = Field(default_factory=list, max_length=100)
+    sufficient: bool
+    criteria: list[CriterionCoverage] = Field(default_factory=list, max_length=100)
+
+    @field_validator("covered", "missing")
+    @classmethod
+    def normalize_coverage_criteria(cls, values: list[str], info) -> list[str]:
+        return _normalize_unique_strings(values, info.field_name)
+
+
+class ClaimVerificationStatus(StrEnum):
+    SUPPORTED = "supported"
+    PARTIAL = "partial"
+    UNSUPPORTED = "unsupported"
+    CONFLICTING = "conflicting"
+
+
+class ClaimDraft(ResearchContractModel):
+    """A factual statement that must be verified before rendering."""
+
+    claim_id: str = Field(min_length=1, max_length=100)
+    research_id: str = Field(min_length=1, max_length=100)
+    claim_text: str = Field(min_length=1, max_length=4_000)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+    criterion_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("evidence_ids", "criterion_ids")
+    @classmethod
+    def normalize_claim_ids(cls, values: list[str], info) -> list[str]:
+        return _normalize_unique_strings(values, info.field_name)
+
+
+class VerificationResult(ResearchContractModel):
+    """Structural and semantic verification result for one ClaimDraft."""
+
+    claim_id: str = Field(min_length=1, max_length=100)
+    status: ClaimVerificationStatus
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+    reason: str = Field(default="", max_length=2_000)
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def normalize_verification_ids(cls, values: list[str]) -> list[str]:
+        return _normalize_unique_strings(values, "evidence_ids")
+
+
+class ResearchReport(ResearchContractModel):
+    """Persisted Markdown output produced only from verified Claims."""
+
+    report_id: str = Field(min_length=1, max_length=100)
+    research_id: str = Field(min_length=1, max_length=100)
+    markdown: str = Field(min_length=1, max_length=100_000)
+    result_status: ResearchResultStatus
+    claim_ids: list[str] = Field(default_factory=list, max_length=200)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=200)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @field_validator("claim_ids", "evidence_ids")
+    @classmethod
+    def normalize_report_ids(cls, values: list[str], info) -> list[str]:
+        return _normalize_unique_strings(values, info.field_name)
+
+
+class ResearchJob(ResearchContractModel):
+    """Durable business state for one manually started Local Research run."""
+
+    schema_version: Literal[RESEARCH_RUNTIME_SCHEMA_VERSION] = (
+        RESEARCH_RUNTIME_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    user_id: str = Field(min_length=1, max_length=200)
+    request: ResearchRequest
+    status: ResearchJobStatus = ResearchJobStatus.CREATED
+    result_status: ResearchResultStatus | None = None
+    plan_version: int | None = Field(default=None, ge=1)
+    manifest_hash: str | None = Field(default=None, min_length=8, max_length=128)
+    current_stage: str = Field(default="created", min_length=1, max_length=80)
+    current_task_id: str | None = Field(default=None, max_length=80)
+    task_total: int = Field(default=0, ge=0)
+    task_completed: int = Field(default=0, ge=0)
+    evidence_count: int = Field(default=0, ge=0)
+    failure_stage: str | None = Field(default=None, max_length=80)
+    error_code: str | None = Field(default=None, max_length=120)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @field_validator("user_id", "current_stage", "current_task_id", "failure_stage", "error_code")
+    @classmethod
+    def normalize_job_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.strip().split())
+        if not normalized:
+            raise ValueError("research_job_value_empty")
+        return normalized
 
 
 @dataclass(frozen=True)
@@ -417,6 +727,51 @@ class ResearchPlanValidator:
             raise ResearchPlanValidationError(issue)
         return plan
 
+    @classmethod
+    def topological_sort(
+        cls,
+        plan_or_tasks: ResearchPlan | list[ResearchTask],
+    ) -> list[ResearchTask]:
+        """Return a stable dependency order for the single Worker runtime.
+
+        The order preserves the Planner's task order whenever multiple tasks
+        are ready.  This is deliberately only a topological sort; it does not
+        introduce a parallel scheduler.
+        """
+
+        tasks = (
+            plan_or_tasks.tasks
+            if isinstance(plan_or_tasks, ResearchPlan)
+            else plan_or_tasks
+        )
+        task_map = {task.task_id: task for task in tasks}
+        indegree = {task.task_id: len(task.dependencies) for task in tasks}
+        children: dict[str, list[str]] = {task.task_id: [] for task in tasks}
+        for task in tasks:
+            for dependency in task.dependencies:
+                if dependency in children:
+                    children[dependency].append(task.task_id)
+
+        ready = [task.task_id for task in tasks if indegree[task.task_id] == 0]
+        ordered_ids: list[str] = []
+        while ready:
+            current = ready.pop(0)
+            ordered_ids.append(current)
+            for child in children[current]:
+                indegree[child] -= 1
+                if indegree[child] == 0:
+                    ready.append(child)
+
+        if len(ordered_ids) != len(tasks):
+            cycle = cls._find_dependency_cycle(tasks)
+            issue = PlanIssue(
+                "research_plan_dependency_cycle",
+                "tasks.dependencies",
+                f"dependency cycle detected: {' -> '.join(cycle)}",
+            )
+            raise ResearchPlanValidationError(issue)
+        return [task_map[task_id] for task_id in ordered_ids]
+
     @staticmethod
     def _duplicates(values: list[str]) -> list[str]:
         seen: set[str] = set()
@@ -462,20 +817,36 @@ class ResearchPlanValidator:
 
 __all__ = [
     "AcceptanceCriterion",
+    "ClaimDraft",
+    "ClaimVerificationStatus",
+    "CriterionCoverage",
+    "CoverageResult",
+    "Finding",
     "LOCAL_RESEARCH_TOOLS",
+    "Observation",
     "PlanIssue",
     "ReportSpec",
     "ResearchBudget",
     "ResearchContractModel",
+    "ResearchApproval",
+    "ResearchJob",
     "ResearchPlan",
     "ResearchPlanStatus",
     "ResearchPlanValidationError",
     "ResearchPlanValidator",
+    "ResearchJobStatus",
+    "ResearchResultStatus",
+    "ResearchReport",
     "ResearchProfile",
     "ResearchRequest",
     "ResearchTask",
     "ResearchTaskPriority",
     "ResearchTaskStatus",
+    "SourceManifest",
+    "SourceManifestDocument",
     "SourceScope",
+    "VerificationResult",
+    "VerifiedEvidence",
     "RESEARCH_SCHEMA_VERSION",
+    "RESEARCH_RUNTIME_SCHEMA_VERSION",
 ]

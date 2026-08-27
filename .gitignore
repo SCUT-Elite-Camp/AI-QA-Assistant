@@ -9,3 +9,4 @@ web/.env
 web/auto-imports.d.ts
 web/components.d.ts
 data-persistence/volumes/
+data-persistence/data/research_jobs.db*
