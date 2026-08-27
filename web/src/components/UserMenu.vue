@@ -4,6 +4,7 @@ import { useColorMode } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useUserSession } from '../composables/useUserSession'
+import { useCsrf } from '../composables/useCsrf'
 
 defineProps<{
   collapsed?: boolean
@@ -12,7 +13,33 @@ defineProps<{
 const router = useRouter()
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
-const { user, clearSession } = useUserSession()
+const { user, clearSession, fetchSession } = useUserSession()
+const { csrf, headerName } = useCsrf()
+
+/**
+ * 开发环境身份切换器。
+ * 复用后端已有的 POST /api/auth/dev-login，以指定身份登录（自动建号）。
+ * 仅用于开发/演示（服务端要求 NODE_ENV=development 或 ALLOW_DEV_LOGIN=true）。
+ */
+const DEV_ACCOUNTS = [
+  { userId: 'admin', username: 'admin', name: '管理员 (admin)', role: 'admin' as const },
+  { userId: 'group-a', username: 'group-a', name: '项目组A用户', role: 'user' as const },
+  { userId: 'group-b', username: 'group-b', name: '项目组B用户', role: 'user' as const },
+]
+
+async function switchIdentity (account: { userId: string, username: string, name: string, role: 'admin' | 'user' }) {
+  await $fetch('/api/auth/dev-login', {
+    method: 'POST',
+    headers: { [headerName]: csrf() },
+    body: {
+      userId: account.userId,
+      username: account.username,
+      name: account.name,
+      role: account.role,
+    },
+  })
+  await fetchSession()
+}
 
 const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
@@ -134,6 +161,18 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   to: 'https://github.com/nuxt-ui-templates/chat-vue',
   target: '_blank'
 }], [{
+  type: 'label',
+  label: '开发者 · 切换身份'
+}, ...DEV_ACCOUNTS.map(account => ({
+  label: account.name,
+  icon: 'i-lucide-user-switch',
+  type: 'checkbox' as const,
+  checked: user.value?.id === account.userId,
+  onSelect: (e: Event) => {
+    e.preventDefault()
+    switchIdentity(account)
+  }
+}))], [{
   label: 'Log out',
   icon: 'i-lucide-log-out',
   onSelect() {
