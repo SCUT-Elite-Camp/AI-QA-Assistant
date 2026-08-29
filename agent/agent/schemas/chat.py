@@ -22,12 +22,6 @@ class ChatRequest(BaseModel):
     filters: Optional[dict[str, Any]] = None
     stream: bool = False
     retrieval_mode: Literal["vector", "bm25", "hybrid"] = "hybrid"
-    topic_id: Optional[str] = None
-    weight_mode: Optional[Literal["deeper", "auto", "wider"]] = "auto"
-    topic_doc_ids: Optional[list[str]] = None
-    topic_titles: Optional[list[str]] = None
-    consecutive_no_new_docs_count: int = 0
-    is_first_message: Optional[bool] = None
 
 
 class Citation(BaseModel):
@@ -46,7 +40,6 @@ class ChatResponse(BaseModel):
     answer: str
     message: str
     citations: list[Citation]
-    chat_title: Optional[str] = None
 
 
 class InternalActor(_InternalMemoryContractModel):

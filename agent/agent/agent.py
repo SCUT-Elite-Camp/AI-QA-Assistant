@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, EvidenceGate
@@ -218,23 +218,11 @@ class Agent:
             )
 
         try:
-            context_token = self.tool_executor.set_request_context(
-                topic_doc_ids=request.topic_doc_ids,
-                topic_titles=request.topic_titles,
-                weight_mode=request.weight_mode or "auto",
-                consecutive_no_new_docs_count=(
-                    request.consecutive_no_new_docs_count or 0
-                ),
+            orchestration = self.orchestrator.run(
+                request,
+                trace_id=trace_id,
+                query_plan=query_plan,
             )
-            try:
-                orchestration = self.orchestrator.run(
-                    request,
-                    trace_id=trace_id,
-                    query_plan=query_plan,
-                )
-            finally:
-                self.tool_executor.reset_request_context(context_token)
-
         except ValueError as exc:
             return (
                 self._error_response(
@@ -302,25 +290,6 @@ class Agent:
             retrieval_mode=orchestration.retrieval_mode,
             top_k=orchestration.top_k,
         )
-
-        is_first = request.is_first_message
-        if is_first is None:
-            if self._is_persistent_memory_request(request):
-                is_first = not any(
-                    message.get("role") in {"user", "assistant"}
-                    for message in orchestration.history
-                )
-            else:
-                history_msgs = self.memory.get_messages(request.session_id) if request.session_id else []
-                is_first = (len(history_msgs) == 0)
-
-        extracted_title, clean_answer = self._separate_title_and_answer(response.answer)
-        if extracted_title:
-            response.chat_title = extracted_title
-            response.answer = clean_answer
-        elif is_first:
-            response.chat_title = self._generate_fallback_title(request.query)
-
         self.last_citation_check = self.orchestrator.validate_citations(
             response.answer,
             response.citations,
@@ -379,42 +348,6 @@ class Agent:
             # Candidate generation is optional and must not expose user data in logs.
             self.memory_observability.fact(action="suppressed", outcome="failed")
             return []
-
-    @staticmethod
-    def _separate_title_and_answer(answer_text: str) -> tuple[Optional[str], str]:
-        """
-        Extracts title if present in [TITLE: ...] format at the beginning of LLM response,
-        and returns (extracted_title, clean_answer_text).
-        """
-        if not answer_text:
-            return None, answer_text
-
-        import re
-        match = re.search(r"^\s*\[TITLE:\s*(.*?)\]\s*\n?", answer_text, re.IGNORECASE)
-        if match:
-            raw_title = match.group(1).strip()
-            clean_title = raw_title.replace("'", "").replace('"', "").replace("`", "").replace("。", "").replace("！", "").replace("？", "").strip()
-            clean_title = clean_title.replace("标题：", "").replace("Title:", "").replace("我想知道", "").strip()
-            clean_answer = answer_text[match.end():].strip()
-            if clean_title and 2 <= len(clean_title) <= 25:
-                return clean_title, clean_answer
-
-        return None, answer_text
-
-    def _generate_fallback_title(self, query: str) -> str:
-        """Fallback smart title generation via fast LLM call or clean query slice."""
-        try:
-            prompt = f"请根据用户第一次提问，总结提取一个极简对话标题（3-10字，绝对不要聊天标点或无用词如'我想知道'）：\n问题：{query}"
-            raw_res = self.llm.chat([{"role": "user", "content": prompt}], max_tokens=30, temperature=0.2)
-            raw = raw_res.get("content", "") if isinstance(raw_res, dict) else str(raw_res)
-            clean = raw.strip().replace("'", "").replace('"', "").replace("`", "").replace("。", "").replace("！", "").replace("？", "").strip()
-            clean = clean.replace("标题：", "").replace("Title:", "").replace("我想知道", "").strip()
-            if clean and 2 <= len(clean) <= 20:
-                return clean
-        except Exception as e:
-            logger.warning(f"[AgentTitle] Fallback title generation error: {e}")
-        clean_query = query.replace("我想知道", "").replace("请问", "").strip()
-        return clean_query[:15] if len(clean_query) > 15 else clean_query
 
     def run_plan(
         self,
@@ -578,6 +511,16 @@ class Agent:
 
         retrieval_results = self._to_retrieval_results(run_result.evidence)
         if run_result.stop_reason == StopReason.FINAL_ANSWER:
+            if run_result.retrieval_attempts and not retrieval_results:
+                return self._error_response(
+                    trace_id=trace_id,
+                    query=query,
+                    status=StatusCode.NO_RELEVANT_CONTEXT,
+                    message="当前知识库没有足够信息回答该问题。",
+                    stage="quality_gate",
+                    retrieval_mode=retrieval_mode,
+                    top_k=top_k,
+                )
             response = self.answer_formatter.format_success(
                 trace_id=trace_id,
                 answer=run_result.answer,

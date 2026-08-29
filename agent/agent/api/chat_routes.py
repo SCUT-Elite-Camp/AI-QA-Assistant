@@ -1,4 +1,3 @@
-from typing import Optional
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
@@ -19,7 +18,6 @@ def get_agent() -> Agent:
 @router.post(
     "/chat",
     response_model=ChatResponse,
-    response_model_exclude={"chat_title"},
 )
 def chat(
     request: ChatRequest,
@@ -66,7 +64,6 @@ def chat_stream(
                 "status": response.status,
                 "message": response.message,
                 "citations_count": len(response.citations),
-                "chat_title": response.chat_title,
             },
         )
 
@@ -75,29 +72,3 @@ def chat_stream(
 
 def _chunk_answer(answer: str, chunk_size: int = 24) -> list[str]:
     return [answer[index:index + chunk_size] for index in range(0, len(answer), chunk_size)]
-
-
-from pydantic import BaseModel
-from services.summarizer.topic_summarizer import TopicSummarizer
-
-class SummarizeTopicRequest(BaseModel):
-    topic_id: str
-    discussion_text: str
-    custom_title: Optional[str] = None
-    existing_info: Optional[dict] = None
-
-@router.post("/topics/summarize")
-def summarize_topic(req: SummarizeTopicRequest):
-    """
-    Triggers Data Persistence Layer Summarizer Service.
-    Generates Title, Description, Soul Cognition (Soul.md), and Content Tags,
-    and directly writes artifacts into data-persistence/data/topics/<topic_id>/
-    """
-    result = TopicSummarizer.summarize_and_persist(
-        topic_id=req.topic_id,
-        discussion_text=req.discussion_text,
-        custom_title=req.custom_title,
-        existing_info=req.existing_info
-    )
-    return result
-

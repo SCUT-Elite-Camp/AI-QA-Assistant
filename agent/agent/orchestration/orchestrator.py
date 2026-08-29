@@ -9,7 +9,12 @@ from agent.memory import ConversationMemory
 from agent.memory.context_resolver import ContextResolver
 from agent.memory.memory_response_policy import MemoryResponsePolicy
 from agent.memory.persistent_models import PersistentMemoryContext
-from agent.policy import IntentPolicyRouter
+from agent.policy import (
+    ChatRoute,
+    ChatRouteDecision,
+    ChatRoutePolicy,
+    IntentPolicyRouter,
+)
 from agent.query import QueryUnderstanding
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
@@ -31,6 +36,7 @@ class OrchestrationResult:
     """All internal artifacts produced by one orchestrated request."""
 
     query_plan: QueryPlan
+    chat_route: ChatRouteDecision
     policy: IntentPolicy
     run_result: AgentRunResult | None
     history: list[dict[str, Any]]
@@ -59,6 +65,7 @@ class AgentOrchestrator:
         evidence_gate: EvidenceGate,
         corrective_retrieval: CorrectiveRetrievalPlanner,
         citation_checker: CitationChecker,
+        chat_route_policy: ChatRoutePolicy | None = None,
         context_resolver: ContextResolver | None = None,
         memory_response_policy: MemoryResponsePolicy | None = None,
     ) -> None:
@@ -70,6 +77,7 @@ class AgentOrchestrator:
         self.evidence_gate = evidence_gate
         self.corrective_retrieval = corrective_retrieval
         self.citation_checker = citation_checker
+        self.chat_route_policy = chat_route_policy or ChatRoutePolicy()
         self.context_resolver = context_resolver or ContextResolver()
         self.memory_response_policy = memory_response_policy or MemoryResponsePolicy()
 
@@ -94,6 +102,10 @@ class AgentOrchestrator:
             retrieval_mode, top_k = self._effective_retrieval_options(request, policy)
             return OrchestrationResult(
                 query_plan=plan,
+                chat_route=ChatRouteDecision(
+                    route=ChatRoute.L0_DIRECT,
+                    reason="persistent_memory_exact_recall",
+                ),
                 policy=policy,
                 run_result=None,
                 history=history,
@@ -104,12 +116,12 @@ class AgentOrchestrator:
             )
 
         plan = self._resolve_query_plan(request, query_plan, history)
+        chat_route = self.chat_route_policy.route(plan)
         policy = self.policy_router.route(plan)
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
         )
-        is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
         run_result = self.runner.run(
             plan,
             policy=policy,
@@ -120,10 +132,10 @@ class AgentOrchestrator:
             trace_id=trace_id,
             mode=retrieval_mode,
             top_k=top_k,
-            is_first_message=is_first,
         )
         return OrchestrationResult(
             query_plan=plan,
+            chat_route=chat_route,
             policy=policy,
             run_result=run_result,
             history=history,
