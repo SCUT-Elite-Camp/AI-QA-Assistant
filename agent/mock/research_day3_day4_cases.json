@@ -1,0 +1,80 @@
+{
+  "schema_version": "research.v2",
+  "cases": {
+    "single_document_fact": {
+      "request": {
+        "query": "提取文档 A 的收入",
+        "source_scope": {"document_ids": ["doc-a"]}
+      },
+      "manifest_documents": [
+        {"doc_id": "doc-a", "version": "v1", "content_hash": "fixture-doc-a-v1"}
+      ],
+      "plan_tasks": [
+        {"task_id": "task-1", "dependencies": [], "criterion_ids": ["c-revenue"]}
+      ],
+      "evidence": [
+        {
+          "evidence_id": "e-a-revenue",
+          "doc_id": "doc-a",
+          "locator": "page:1",
+          "excerpt": "2025 revenue was 10 million."
+        }
+      ],
+      "expected_coverage": {"covered": ["c-revenue"], "missing": [], "sufficient": true},
+      "expected_claim_status": {"claim-fact": "supported"}
+    },
+    "two_document_comparison": {
+      "request": {
+        "query": "比较文档 A 和 B 的收入",
+        "source_scope": {"document_ids": ["doc-a", "doc-b"]}
+      },
+      "manifest_documents": [
+        {"doc_id": "doc-a", "version": "v1", "content_hash": "fixture-doc-a-v1"},
+        {"doc_id": "doc-b", "version": "v1", "content_hash": "fixture-doc-b-v1"}
+      ],
+      "plan_tasks": [
+        {"task_id": "task-a", "dependencies": [], "criterion_ids": ["c-a"]},
+        {"task_id": "task-b", "dependencies": ["task-a"], "criterion_ids": ["c-b"]}
+      ],
+      "evidence": [
+        {"evidence_id": "e-a", "doc_id": "doc-a", "locator": "page:1", "excerpt": "A revenue: 10 million."},
+        {"evidence_id": "e-b", "doc_id": "doc-b", "locator": "page:1", "excerpt": "B revenue: 20 million."}
+      ],
+      "expected_coverage": {"covered": ["c-a", "c-b"], "missing": [], "sufficient": true},
+      "expected_claim_status": {"claim-comparison": "supported"}
+    },
+    "insufficient_material": {
+      "request": {
+        "query": "寻找文档中的经营风险",
+        "source_scope": {"document_ids": ["doc-a"]}
+      },
+      "manifest_documents": [
+        {"doc_id": "doc-a", "version": "v1", "content_hash": "fixture-doc-a-v1"}
+      ],
+      "plan_tasks": [
+        {"task_id": "task-risk", "dependencies": [], "criterion_ids": ["c-risk"]}
+      ],
+      "evidence": [],
+      "expected_coverage": {"covered": [], "missing": ["c-risk"], "sufficient": false},
+      "expected_claim_status": {}
+    },
+    "conflicting_evidence": {
+      "request": {
+        "query": "核验文档中的收入数字",
+        "source_scope": {"document_ids": ["doc-a"]}
+      },
+      "manifest_documents": [
+        {"doc_id": "doc-a", "version": "v1", "content_hash": "fixture-doc-a-v1"}
+      ],
+      "plan_tasks": [
+        {"task_id": "task-revenue", "dependencies": [], "criterion_ids": ["c-revenue"]}
+      ],
+      "evidence": [
+        {"evidence_id": "e-a-1", "doc_id": "doc-a", "locator": "page:1", "excerpt": "2025 revenue was 10 million."},
+        {"evidence_id": "e-a-2", "doc_id": "doc-a", "locator": "page:2", "excerpt": "2025 revenue was 20 million."}
+      ],
+      "expected_coverage": {"covered": ["c-revenue"], "missing": [], "sufficient": true},
+      "expected_claim_status": {"claim-conflict": "conflicting"}
+    }
+  }
+}
