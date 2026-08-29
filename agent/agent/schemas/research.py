@@ -534,6 +534,18 @@ class ResearchReport(ResearchContractModel):
         return _normalize_unique_strings(values, info.field_name)
 
 
+class WorkflowCheckpoint(ResearchContractModel):
+    """Small workflow cursor; complete business entities stay in Repository."""
+
+    research_id: str = Field(min_length=1, max_length=100)
+    current_stage: str = Field(min_length=1, max_length=80)
+    current_task_id: str | None = Field(default=None, max_length=80)
+    plan_version: int | None = Field(default=None, ge=1)
+    attempt: int = Field(default=0, ge=0)
+    entity_ids: list[str] = Field(default_factory=list, max_length=500)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class ResearchJob(ResearchContractModel):
     """Durable business state for one manually started Local Research run."""
 
@@ -847,6 +859,7 @@ __all__ = [
     "SourceScope",
     "VerificationResult",
     "VerifiedEvidence",
+    "WorkflowCheckpoint",
     "RESEARCH_SCHEMA_VERSION",
     "RESEARCH_RUNTIME_SCHEMA_VERSION",
 ]

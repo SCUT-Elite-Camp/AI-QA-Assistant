@@ -13,6 +13,10 @@ from .repository import (
     SQLiteResearchRepository,
 )
 from .service import ApprovedResearchContext, ResearchControlPlane, ResearchControlPlaneError
+from .evidence import EvidenceLedger
+from .runtime import ResearchGraphRuntime
+from .structural_verifier import StructuralVerifier
+from .tools import LocalResearchToolAdapter
 
 __all__ = [
     "ApprovedResearchContext",
@@ -27,5 +31,9 @@ __all__ = [
     "ResearchControlPlaneError",
     "ResearchNotFoundError",
     "SQLiteResearchRepository",
+    "EvidenceLedger",
+    "LocalResearchToolAdapter",
+    "ResearchGraphRuntime",
+    "StructuralVerifier",
 ]
 
