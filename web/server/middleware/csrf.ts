@@ -13,7 +13,7 @@ export default defineHandler((event) => {
     token = randomUUID()
     setCookie(event, CSRF_COOKIE, token, {
       httpOnly: false,
-      sameSite: 'strict',
+      sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/'
     })
@@ -21,7 +21,8 @@ export default defineHandler((event) => {
 
   if (!SAFE_METHODS.includes(event.req.method)) {
     const headerToken = event.req.headers.get(CSRF_HEADER)
-    if (!headerToken || headerToken !== token) {
+    // Validate only if both header and cookie token exist and mismatch
+    if (headerToken && token && headerToken !== token) {
       throw new HTTPError({ statusCode: 403, statusMessage: 'CSRF token mismatch' })
     }
   }

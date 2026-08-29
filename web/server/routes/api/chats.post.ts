@@ -12,8 +12,11 @@ export default defineHandler(async (event) => {
   }).parse)
   const db = useDrizzle()
 
+  const cleanInput = input.trim()
+  const initialTitle = cleanInput.length > 20 ? cleanInput.slice(0, 20) + '...' : (cleanInput || '新对话')
+
   const [chat] = await db.insert(tables.chats).values({
-    title: '',
+    title: initialTitle,
     userId: session.data.user?.id || session.id!
   }).returning()
   if (!chat) {

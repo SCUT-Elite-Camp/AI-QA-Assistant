@@ -21,6 +21,17 @@ class InMemoryConversationMemory(ConversationMemory):
     def get_messages(self, session_id: str) -> list[dict[str, Any]]:
         key = self._normalize_session_id(session_id)
         with self._lock:
+            if key not in self._sessions:
+                try:
+                    from storage.chat_history_store import ChatHistoryStore
+                    store = ChatHistoryStore()
+                    db_messages = store.get_session_messages(key, limit=self.max_messages)
+                    if db_messages:
+                        d = deque(maxlen=self.max_messages)
+                        d.extend(db_messages)
+                        self._sessions[key] = d
+                except Exception:
+                    pass
             return deepcopy(list(self._sessions.get(key, ())))
 
     def add_message(
@@ -49,6 +60,12 @@ class InMemoryConversationMemory(ConversationMemory):
         key = self._normalize_session_id(session_id)
         with self._lock:
             self._sessions.pop(key, None)
+            try:
+                from storage.chat_history_store import ChatHistoryStore
+                ChatHistoryStore().clear_session(key)
+            except Exception:
+                pass
+
 
     @staticmethod
     def _normalize_session_id(session_id: str) -> str:

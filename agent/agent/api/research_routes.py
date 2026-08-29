@@ -13,7 +13,7 @@ from deep_research.repository import (
     ResearchNotFoundError,
 )
 from deep_research.service import ResearchControlPlane, ResearchControlPlaneError
-from agent.schemas.research import ResearchJob, ResearchPlan, ResearchRequest
+from agent.schemas.research import ResearchJob, ResearchPlan, ResearchReport, ResearchRequest
 
 
 router = APIRouter(prefix="/research", tags=["research"])
@@ -123,6 +123,18 @@ def cancel_research_job(
 ) -> ResearchJob:
     try:
         return control_plane.cancel_job(research_id)
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.get("/jobs/{research_id}/report", response_model=ResearchReport)
+def get_research_report(
+    research_id: str,
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+) -> ResearchReport:
+    try:
+        return control_plane.repository.get_report(research_id)
     except Exception as exc:
         _raise_http_error(exc)
         raise AssertionError("unreachable")

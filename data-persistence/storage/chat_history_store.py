@@ -66,3 +66,35 @@ class ChatHistoryStore:
                 (limit,)
             )
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_session_records(self, session_id: str, limit: int = 50) -> list[dict]:
+        """Retrieves history records for a specific session_id."""
+        if not session_id:
+            return []
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT * FROM chat_history WHERE session_id = ? ORDER BY id ASC LIMIT ?",
+                (session_id, limit)
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_session_messages(self, session_id: str, limit: int = 10) -> list[dict[str, str]]:
+        """Extracts alternating user and assistant message dicts for short-term memory recovery."""
+        records = self.get_session_records(session_id, limit=limit)
+        messages: list[dict[str, str]] = []
+        for record in records:
+            if record.get("user_query"):
+                messages.append({"role": "user", "content": record["user_query"]})
+            if record.get("assistant_answer"):
+                messages.append({"role": "assistant", "content": record["assistant_answer"]})
+        return messages
+
+    def clear_session(self, session_id: str) -> None:
+        """Deletes all persistent chat records associated with session_id."""
+        if not session_id:
+            return
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("DELETE FROM chat_history WHERE session_id = ?", (session_id,))
+            conn.commit()
+

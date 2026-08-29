@@ -13,8 +13,8 @@ export default defineConfig({
       dts: 'src/route-map.d.ts'
     }),
     vueLayouts(),
-    vueDevtools(),
     vue(),
+
     ui({
       prose: true,
       ui: {
@@ -27,5 +27,10 @@ export default defineConfig({
     nitro({
       serverDir: './server'
     })
-  ]
+  ],
+  server: {
+    host: '0.0.0.0',
+    port: 3000
+  }
 })
+

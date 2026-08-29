@@ -6,13 +6,16 @@ import { useChats } from '../composables/useChats'
 import { useCsrf } from '../composables/useCsrf'
 import { useUserSession } from '../composables/useUserSession'
 import Navbar from '../components/Navbar.vue'
+import WeightModeSelect from '../components/chat/WeightModeSelect.vue'
 
 const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { user } = useUserSession()
 const input = ref('')
+const currentWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
 const loading = ref(false)
 const router = useRouter()
+
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -62,6 +65,37 @@ const quickChats = [
   { label: 'How to optimize RAG retrieval?', icon: 'i-lucide-search' },
   { label: 'Explain the Transformer architecture', icon: 'i-lucide-brain' },
 ]
+
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const deepResearchMode = ref(false)
+
+function triggerFileUpload() {
+  fileInputRef.value?.click()
+}
+
+function handleFileUpload(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const content = e.target?.result as string
+    input.value = (input.value ? input.value + '\n\n' : '') + `[Attached: ${file.name}]\n${content.slice(0, 500)}`
+  }
+  reader.readAsText(file)
+}
+
+const plusMenuItems = computed(() => [[
+  {
+    label: 'Upload File',
+    icon: 'i-lucide-paperclip',
+    onSelect: () => triggerFileUpload()
+  },
+  {
+    label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
+    icon: 'i-lucide-telescope',
+    onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
+  }
+]])
 </script>
 
 <template>
@@ -90,9 +124,30 @@ const quickChats = [
           @submit="onSubmit"
         >
           <template #footer>
-            <UChatPromptSubmit color="neutral" size="sm" class="ms-auto" />
+            <!-- + Menu: Upload File / Deep Research -->
+            <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                icon="i-lucide-plus"
+                :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
+              />
+            </UDropdownMenu>
+
+            <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+
+            <!-- Right: WeightMode + Submit -->
+            <div class="ms-auto flex items-center gap-1">
+              <WeightModeSelect v-model="currentWeightMode" />
+              <UChatPromptSubmit color="neutral" size="sm" class="cursor-pointer" />
+            </div>
           </template>
         </UChatPrompt>
+
+        <!-- Hidden file input -->
+        <input ref="fileInputRef" type="file" accept=".txt,.md,.pdf,.docx,.json" class="hidden" @change="handleFileUpload" />
+
 
         <div class="flex flex-wrap gap-2">
           <UButton

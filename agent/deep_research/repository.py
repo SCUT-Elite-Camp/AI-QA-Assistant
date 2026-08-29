@@ -17,6 +17,14 @@ from agent.schemas.research import (
     ResearchPlanStatus,
     ResearchTask,
     SourceManifest,
+    Observation,
+    VerifiedEvidence,
+    Finding,
+    CoverageResult,
+    ClaimDraft,
+    VerificationResult,
+    ResearchReport,
+    WorkflowCheckpoint,
 )
 
 
@@ -117,6 +125,26 @@ class SQLiteResearchRepository:
 
                 CREATE INDEX IF NOT EXISTS idx_research_approvals_lookup
                     ON research_approvals(research_id, plan_version, approved_at);
+
+                CREATE TABLE IF NOT EXISTS research_entities (
+                    kind TEXT NOT NULL,
+                    entity_id TEXT NOT NULL,
+                    research_id TEXT NOT NULL,
+                    task_id TEXT,
+                    payload_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    PRIMARY KEY(kind, entity_id),
+                    FOREIGN KEY(research_id) REFERENCES research_jobs(research_id)
+                );
+                CREATE INDEX IF NOT EXISTS idx_research_entities_job
+                    ON research_entities(research_id, kind, task_id);
+
+                CREATE TABLE IF NOT EXISTS research_checkpoints (
+                    research_id TEXT PRIMARY KEY,
+                    payload_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY(research_id) REFERENCES research_jobs(research_id)
+                );
                 """
             )
 
@@ -600,6 +628,144 @@ class SQLiteResearchRepository:
         if row is None:
             raise ResearchNotFoundError(f"approval for '{research_id}' not found")
         return ResearchApproval.model_validate_json(row["payload_json"])
+
+    _ENTITY_MODELS = {
+        "observation": Observation,
+        "evidence": VerifiedEvidence,
+        "finding": Finding,
+        "coverage": CoverageResult,
+        "claim": ClaimDraft,
+        "verification": VerificationResult,
+        "report": ResearchReport,
+    }
+
+    def _save_entity(self, kind: str, entity_id: str, research_id: str, payload_json: str, task_id: str | None = None):
+        if kind not in self._ENTITY_MODELS:
+            raise ValueError(f"unsupported research entity kind: {kind}")
+        with self._lock, self._connection:
+            existing = self._connection.execute(
+                "SELECT payload_json FROM research_entities WHERE kind=? AND entity_id=?",
+                (kind, entity_id),
+            ).fetchone()
+            if existing is not None:
+                model = self._ENTITY_MODELS[kind]
+                previous = model.model_validate_json(existing["payload_json"])
+                incoming = model.model_validate_json(payload_json)
+                exclude = {"created_at"} if kind in {"observation", "evidence"} else set()
+                if previous.model_dump(exclude=exclude) != incoming.model_dump(exclude=exclude):
+                    raise ResearchConflictError(f"{kind} '{entity_id}' is immutable")
+                return previous
+            self._connection.execute(
+                "INSERT INTO research_entities VALUES (?, ?, ?, ?, ?, ?)",
+                (kind, entity_id, research_id, task_id, payload_json, _now().isoformat()),
+            )
+        return self._ENTITY_MODELS[kind].model_validate_json(payload_json)
+
+    def _list_entities(self, kind: str, research_id: str, task_id: str | None = None):
+        model = self._ENTITY_MODELS[kind]
+        query = "SELECT payload_json FROM research_entities WHERE kind=? AND research_id=?"
+        params: tuple = (kind, research_id)
+        if task_id is not None:
+            query += " AND task_id=?"
+            params = (kind, research_id, task_id)
+        query += " ORDER BY created_at, entity_id"
+        with self._lock:
+            rows = self._connection.execute(query, params).fetchall()
+        return [model.model_validate_json(row["payload_json"]) for row in rows]
+
+    def save_observation(self, item: Observation) -> Observation:
+        return self._save_entity("observation", item.observation_id, item.research_id, item.model_dump_json(), item.task_id)
+
+    def list_observations(self, research_id: str, task_id: str | None = None) -> list[Observation]:
+        return self._list_entities("observation", research_id, task_id)
+
+    def save_evidence(self, item: VerifiedEvidence) -> VerifiedEvidence:
+        saved = self._save_entity("evidence", item.evidence_id, item.research_id, item.model_dump_json(), item.task_id)
+        job = self.get_job(item.research_id)
+        evidence_count = len(self.list_evidence(item.research_id))
+        if job.evidence_count != evidence_count:
+            self.update_job(ResearchJob.model_validate({**job.model_dump(), "evidence_count": evidence_count}))
+        return saved
+
+    def list_evidence(self, research_id: str, task_id: str | None = None) -> list[VerifiedEvidence]:
+        return self._list_entities("evidence", research_id, task_id)
+
+    def get_evidence(self, evidence_id: str) -> VerifiedEvidence:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT payload_json FROM research_entities WHERE kind='evidence' AND entity_id=?",
+                (evidence_id,),
+            ).fetchone()
+        if row is None:
+            raise ResearchNotFoundError(f"evidence '{evidence_id}' not found")
+        return VerifiedEvidence.model_validate_json(row["payload_json"])
+
+    def save_finding(self, item: Finding) -> Finding:
+        return self._save_entity("finding", item.finding_id, item.research_id, item.model_dump_json(), item.task_id)
+
+    def list_findings(self, research_id: str) -> list[Finding]:
+        return self._list_entities("finding", research_id)
+
+    def save_coverage(self, item: CoverageResult) -> CoverageResult:
+        return self._save_entity("coverage", f"coverage-{item.research_id}", item.research_id, item.model_dump_json())
+
+    def get_coverage(self, research_id: str) -> CoverageResult:
+        items = self._list_entities("coverage", research_id)
+        if not items:
+            raise ResearchNotFoundError(f"coverage for '{research_id}' not found")
+        return items[-1]
+
+    def save_claim(self, item: ClaimDraft) -> ClaimDraft:
+        return self._save_entity("claim", item.claim_id, item.research_id, item.model_dump_json())
+
+    def list_claims(self, research_id: str) -> list[ClaimDraft]:
+        return self._list_entities("claim", research_id)
+
+    def save_verification(self, item: VerificationResult, *, phase: str = "semantic") -> VerificationResult:
+        if phase not in {"structural", "semantic"}:
+            raise ValueError("verification phase must be structural or semantic")
+        key = f"{phase}-{item.claim_id}"
+        return self._save_entity("verification", key, self.get_job_for_claim(item.claim_id).research_id, item.model_dump_json())
+
+    def get_job_for_claim(self, claim_id: str) -> ResearchJob:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT research_id FROM research_entities WHERE kind='claim' AND entity_id=?", (claim_id,)
+            ).fetchone()
+        if row is None:
+            raise ResearchNotFoundError(f"claim '{claim_id}' not found")
+        return self.get_job(row["research_id"])
+
+    def list_verifications(self, research_id: str) -> list[VerificationResult]:
+        return self._list_entities("verification", research_id)
+
+    def save_report(self, item: ResearchReport) -> ResearchReport:
+        return self._save_entity("report", item.report_id, item.research_id, item.model_dump_json())
+
+    def get_report(self, research_id: str) -> ResearchReport:
+        items = self._list_entities("report", research_id)
+        if not items:
+            raise ResearchNotFoundError(f"report for '{research_id}' not found")
+        return items[-1]
+
+    def save_checkpoint(self, checkpoint: WorkflowCheckpoint) -> WorkflowCheckpoint:
+        with self._lock, self._connection:
+            self._connection.execute(
+                """INSERT INTO research_checkpoints VALUES (?, ?, ?)
+                   ON CONFLICT(research_id) DO UPDATE SET payload_json=excluded.payload_json,
+                   updated_at=excluded.updated_at""",
+                (checkpoint.research_id, checkpoint.model_dump_json(), checkpoint.updated_at.isoformat()),
+            )
+        return checkpoint
+
+    def get_checkpoint(self, research_id: str) -> WorkflowCheckpoint:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT payload_json FROM research_checkpoints WHERE research_id=?", (research_id,)
+            ).fetchone()
+        if row is None:
+            raise ResearchNotFoundError(f"checkpoint for '{research_id}' not found")
+        return WorkflowCheckpoint.model_validate_json(row["payload_json"])
 
     def close(self) -> None:
         with self._lock:

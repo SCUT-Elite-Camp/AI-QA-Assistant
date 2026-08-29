@@ -9,7 +9,7 @@ class MilvusStore:
 
     def connect(self) -> None:
         if not self._connected:
-            connections.connect("default", host=self.host, port=self.port)
+            connections.connect("default", host=self.host, port=self.port, timeout=0.5)
             self._connected = True
 
     def init_collection(self, collection_name: str = "doc_chunks", dim: int = 384) -> Collection:
@@ -18,7 +18,7 @@ class MilvusStore:
         if utility.has_collection(collection_name):
             self.collection = Collection(collection_name)
         else:
-            # 字段定义：id(自增), embedding(向量), chunk_id(全局分块ID), chunk_text(原始文本), doc_id(文档ID), chunk_index(分块序号), source_url(链接)
+            # Fields: generated id, embedding, chunk metadata, and source URL.
             fields = [
                 FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
                 FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=dim),
@@ -43,7 +43,16 @@ class MilvusStore:
         self.collection.load()
         return self.collection
 
-    def insert_chunks(self, embeddings: list, chunk_ids: list, chunk_texts: list, doc_ids: list, chunk_indices: list, source_urls: list = None, collection_name: str = "doc_chunks"):
+    def insert_chunks(
+        self,
+        embeddings: list,
+        chunk_ids: list,
+        chunk_texts: list,
+        doc_ids: list,
+        chunk_indices: list,
+        source_urls: list = None,
+        collection_name: str = "doc_chunks",
+    ):
         self.connect()
         if not embeddings:
             return None
@@ -68,7 +77,14 @@ class MilvusStore:
         self.collection.flush()
         return insert_result
 
-    def search_similar(self, query_vector: list, top_k: int = 5, doc_ids_filter: list = None, collection_name: str = "doc_chunks"):
+    def search_similar(
+        self,
+        query_vector: list,
+        top_k: int = 5,
+        doc_ids_filter: list = None,
+        collection_name: str = "doc_chunks",
+        timeout_seconds: float = 2.0,
+    ):
         self.connect()
   
         dim = len(query_vector)
@@ -85,7 +101,8 @@ class MilvusStore:
             param={"metric_type": "IP", "params": {"nprobe": 10}},
             limit=top_k,
             expr=expr,
-            output_fields=["chunk_id", "chunk_text", "doc_id", "chunk_index", "source_url"]
+            output_fields=["chunk_id", "chunk_text", "doc_id", "chunk_index", "source_url"],
+            timeout=timeout_seconds,
         )
         return results[0] if results else []
 

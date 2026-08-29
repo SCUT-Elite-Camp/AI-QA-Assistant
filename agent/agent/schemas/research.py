@@ -517,6 +517,23 @@ class VerificationResult(ResearchContractModel):
         return _normalize_unique_strings(values, "evidence_ids")
 
 
+class VerifiedClaim(ResearchContractModel):
+    """ClaimDraft enriched with its verification outcome for the Renderer."""
+
+    claim_id: str = Field(min_length=1, max_length=100)
+    research_id: str = Field(min_length=1, max_length=100)
+    claim_text: str = Field(min_length=1, max_length=4_000)
+    status: ClaimVerificationStatus
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+    criterion_ids: list[str] = Field(default_factory=list, max_length=20)
+    reason: str = Field(default="", max_length=2_000)
+
+    @field_validator("evidence_ids", "criterion_ids")
+    @classmethod
+    def normalize_verified_claim_ids(cls, values: list[str], info) -> list[str]:
+        return _normalize_unique_strings(values, info.field_name)
+
+
 class ResearchReport(ResearchContractModel):
     """Persisted Markdown output produced only from verified Claims."""
 
@@ -532,6 +549,18 @@ class ResearchReport(ResearchContractModel):
     @classmethod
     def normalize_report_ids(cls, values: list[str], info) -> list[str]:
         return _normalize_unique_strings(values, info.field_name)
+
+
+class WorkflowCheckpoint(ResearchContractModel):
+    """Small workflow cursor; complete business entities stay in Repository."""
+
+    research_id: str = Field(min_length=1, max_length=100)
+    current_stage: str = Field(min_length=1, max_length=80)
+    current_task_id: str | None = Field(default=None, max_length=80)
+    plan_version: int | None = Field(default=None, ge=1)
+    attempt: int = Field(default=0, ge=0)
+    entity_ids: list[str] = Field(default_factory=list, max_length=500)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ResearchJob(ResearchContractModel):
@@ -847,6 +876,8 @@ __all__ = [
     "SourceScope",
     "VerificationResult",
     "VerifiedEvidence",
+    "WorkflowCheckpoint",
+    "VerifiedClaim",
     "RESEARCH_SCHEMA_VERSION",
     "RESEARCH_RUNTIME_SCHEMA_VERSION",
 ]

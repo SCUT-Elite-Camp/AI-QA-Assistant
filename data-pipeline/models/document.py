@@ -91,6 +91,7 @@ class Document(BaseModel):
     chunks: list[Chunk] = Field(default_factory=list)
     source_url: str = ""
     content_blocks: list[ContentBlock] = Field(default_factory=list)  # 结构化内容块
+    metadata: dict = Field(default_factory=dict)                      # 侧车溯源元数据（如 Confluence）
 
     @staticmethod
     def generate_doc_id(file_path: str) -> str:
@@ -110,16 +111,40 @@ class Document(BaseModel):
         content: str,
         content_blocks: list[ContentBlock] | None = None,
     ) -> "Document":
-        """从文件路径、已提取文本、可选结构化块构建 Document"""
+        """从文件路径、已提取文本、可选结构化块构建 Document
+
+        若存在同名侧车文件 ``<file>.meta.json``（如 Confluence 连接器写入），
+        则读取其中的 source_url / title / last_updated / metadata 以补全溯源信息。
+        """
+        import json
+
         abs_path = os.path.abspath(file_path)
         title = os.path.splitext(os.path.basename(file_path))[0]
         space = os.path.basename(os.path.dirname(abs_path))
+        last_updated = cls.generate_last_updated(abs_path)
+        source_url = ""
+        metadata: dict = {}
+
+        meta_path = abs_path + ".meta.json"
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, encoding="utf-8") as _mf:
+                    _meta = json.load(_mf)
+                source_url = _meta.get("source_url", "") or source_url
+                title = _meta.get("title", title) or title
+                last_updated = _meta.get("last_updated", last_updated) or last_updated
+                metadata = _meta
+            except Exception as _e:  # noqa: BLE001
+                print(f"  ⚠ 读取侧车元数据失败: {meta_path}，错误: {_e}")
+
         return cls(
             doc_id=cls.generate_doc_id(abs_path),
             title=title,
             content=content,
             space=space,
             address=abs_path,
-            last_updated=cls.generate_last_updated(abs_path),
+            last_updated=last_updated,
+            source_url=source_url,
             content_blocks=content_blocks or [],
+            metadata=metadata,
         )

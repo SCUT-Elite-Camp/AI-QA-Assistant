@@ -1,0 +1,319 @@
+Date: Wed, 5 Aug 2026 03:29:45 +0000 (UTC)
+Message-ID: <978255842.5.1785900585674@3c53bb23da5b>
+Subject: Exported From Confluence
+MIME-Version: 1.0
+Content-Type: multipart/related; 
+	boundary="----=_Part_4_704982021.1785900585674"
+
+------=_Part_4_704982021.1785900585674
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/exported.html
+
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office'
+      xmlns:w=3D'urn:schemas-microsoft-com:office:word'
+      xmlns:v=3D'urn:schemas-microsoft-com:vml'
+      xmlns=3D'urn:w3-org-ns:HTML'>
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+    <title>Meeting Minutes of 2026/05/18 - Plan Sharing</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:TargetScreenSize>1024x640</o:TargetScreenSize>
+            <o:PixelsPerInch>72</o:PixelsPerInch>
+            <o:AllowPNG/>
+        </o:OfficeDocumentSettings>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+                <!--
+        @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in;
+            mso-header-margin: .5in;
+            mso-footer-margin: .5in;
+            mso-paper-source: 0;
+        }
+
+        table {
+            border: solid 1px;
+            border-collapse: collapse;
+        }
+
+        table td, table th {
+            border: solid 1px;
+            padding: 5px;
+        }
+
+        td {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-after: avoid;
+        }
+
+        div.Section1 {
+            page: Section1;
+        }
+
+        /* Confluence print stylesheet. Common to all themes for print medi=
+a */
+/* Full of !important until we improve batching for print CSS */
+
+@media print {
+    #main {
+        padding-bottom: 1em !important; /* The default padding of 6em is to=
+o much for printouts */
+    }
+
+    body {
+        font: var(--ds-font-body-small, Arial, Helvetica, FreeSans, sans-se=
+rif);
+    }
+
+    body, #full-height-container, #main, #page, #content, .has-personal-sid=
+ebar #content {
+        background: var(--ds-surface, #fff) !important;
+        color: var(--ds-text, #000) !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    a, a:link, a:visited, a:focus, a:hover, a:active {
+        color: var(--ds-text, #000);
+    }
+
+    #content h1,
+    #content h2,
+    #content h3,
+    #content h4,
+    #content h5,
+    #content h6 {
+        page-break-after: avoid;
+    }
+
+    pre {
+        font: var(--ds-font-code, Monaco, "Courier New", monospace);
+    }
+
+    #header,
+    .aui-header-inner,
+    #navigation,
+    #sidebar,
+    .sidebar,
+    #personal-info-sidebar,
+    .ia-fixed-sidebar,
+    .page-actions,
+    .navmenu,
+    .ajs-menu-bar,
+    .noprint,
+    .inline-control-link,
+    .inline-control-link a,
+    a.show-labels-editor,
+    .global-comment-actions,
+    .comment-actions,
+    .quick-comment-container,
+    #addcomment {
+        display: none !important;
+    }
+
+    /* CONF-28544 cannot print multiple pages in IE */
+    #splitter-content {
+        position: relative !important;
+    }
+
+    .comment .date::before {
+        content: none !important; /* remove middot for print view */
+    }
+
+    h1.pagetitle img {
+        height: auto;
+        width: auto;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    #footer {
+        position: relative !important; /* CONF-17506 Place the footer at en=
+d of the content */
+        margin: 0;
+        padding: 0;
+        background: none;
+        clear: both;
+    }
+
+    #poweredby {
+        border-top: none;
+        background: none;
+    }
+
+    #poweredby li.print-only {
+        display: list-item;
+        font-style: italic;
+    }
+
+    #poweredby li.noprint {
+        display: none;
+    }
+
+    /* no width controls in print */
+    .wiki-content .table-wrap,
+    .wiki-content p,
+    .panel .codeContent,
+    .panel .codeContent pre,
+    .image-wrap {
+        overflow: visible !important;
+    }
+
+    /* TODO - should this work? */
+    #children-section,
+    #comments-section .comment,
+    #comments-section .comment .comment-body,
+    #comments-section .comment .comment-content,
+    #comments-section .comment p {
+        page-break-inside: avoid;
+    }
+
+    #page-children a {
+        text-decoration: none;
+    }
+
+    /**
+     hide twixies
+
+     the specificity here is a hack because print styles
+     are getting loaded before the base styles. */
+    #comments-section.pageSection .section-header,
+    #comments-section.pageSection .section-title,
+    #children-section.pageSection .section-header,
+    #children-section.pageSection .section-title,
+    .children-show-hide {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .children-show-hide.icon {
+        display: none;
+    }
+
+    /* personal sidebar */
+    .has-personal-sidebar #content {
+        margin-right: 0px;
+    }
+
+    .has-personal-sidebar #content .pageSection {
+        margin-right: 0px;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+}
+-->
+    </style>
+</head>
+<body>
+    <h1>Meeting Minutes of 2026/05/18 - Plan Sharing</h1>
+    <div class=3D"Section1">
+        <p local-id=3D"789429891717">Hi all,</p>
+<p local-id=3D"1dcc288a1883">Thank you all for attending this meeting. Belo=
+w are the meeting minutes and future work arrangements.</p>
+<p local-id=3D"9ec1375f817d"><strong>Quick Recap</strong></p>
+<p local-id=3D"36215538c3c5">This meeting is the second meeting of the =E6=
+=B1=87=E4=B8=B0=E7=A7=91=E6=8A=80=E8=8F=81=E8=8B=B1=E8=AE=AD=E7=BB=83=E8=90=
+=A5 =E2=80=93 AI=E6=99=BA=E8=83=BD=E9=97=AE=E7=AD=94=E5=8A=A9=E6=89=8B. Thi=
+s meeting was an architecture sharing session for the team=E2=80=99s AI ass=
+istant system development, mainly discussing the system design plans propos=
+ed by each member. Team members presented different system architecture sch=
+emes, including components such as the user layer, security layer, core age=
+nt layer and data persistence layer, and put forward their suggestions and =
+opinions on the system. Everyone shared their respective design ideas. In t=
+he next step, the team needs to improve the details of each module and conf=
+irm a unified plan.</p>
+<p local-id=3D"c624113b91d6"><strong>Plan Sharing</strong></p>
+<ul local-id=3D"e8917f154dc8">
+<li local-id=3D"9458c77b6fa3">
+<p local-id=3D"7a18012ce64d">=E7=A9=86=E5=85=89=E8=BF=9C=EF=BC=9AShared the=
+ design ideas of Agent system, including memory retrieval system, multi-age=
+nt communication mechanism and other technologies.</p></li>
+<li local-id=3D"eddf3ec6f910">
+<p local-id=3D"cdc4f2ba2b35">=E7=8E=8B=E9=80=B8=E6=9B=A6=EF=BC=9AShared the=
+ overall system architecture, including user layer, gateway and security la=
+yer, core agent layer, data persistence storage layer and infrastructure la=
+yer. The architecture is clear and can be taken as the foundation. Priority=
+ needs to be sorted out and work promoted by functional points in the follo=
+w-up.</p></li>
+<li local-id=3D"ae277edf6c30">
+<p local-id=3D"0105b243b65c">=E9=92=9F=E5=AE=B6=E8=BF=9B=EF=BC=9AMade discu=
+ssions based on user layer and data layer. In user layer, he considered que=
+stion interface, multi-person dialogue and exception handling; in data laye=
+r, he focused on chunking, database construction and retrieval.</p></li>
+<li local-id=3D"741d3fd76668">
+<p local-id=3D"0439ec876c88">=E8=B0=A2=E5=B2=B1=E6=B1=9F=E5=92=8C=E6=88=B4=
+=E5=98=89=E5=85=B4=EF=BC=9ADesigned Confluence knowledge base to achieve co=
+ntent structuring, answer generation and citation, and set up evaluation an=
+d testing criteria. It also covers modules such as data access, data cleani=
+ng, chunking, metadata indexing and permission filtering.</p></li>
+<li local-id=3D"35103ea1bd68">
+<p local-id=3D"e9a5cd4cc22c">=E5=88=98=E6=85=A7=E8=8A=B3=EF=BC=9AProposed t=
+o build a user feedback collection system, and optimize model retrieval str=
+ategies and prompt templates.</p></li>
+<li local-id=3D"c2566d3ec315">
+<p local-id=3D"92de004c6132">=E5=AE=8B=E7=A9=97=E6=9D=B0=EF=BC=9ASuggested =
+realizing the complete RAG closed loop first. Adopt Apache Tika technology =
+for document warehousing links, and keep user question-and-answer links con=
+sistent with existing designs.</p></li>
+<li local-id=3D"64e7d244f741">
+<p local-id=3D"9be033870fef">=E6=88=90=E6=BE=8D=EF=BC=9APut forward adding =
+audit logs, IP whitelist and role management functions. Apply the shortest =
+job first strategy to multi-agent collaboration, and add dialogue export fu=
+nction.</p></li>
+</ul>
+<p local-id=3D"dcd97d77fe7a"><strong>Discussion Summary</strong></p>
+<ul local-id=3D"3ec4cdc6c2f3">
+<li local-id=3D"aad64bc439ea">
+<p local-id=3D"f6e505881753">Agreed to hold regular meetings weekly at the =
+start of the project, with a move to a bi-weekly cadence later. Each meetin=
+g will follow a three-part agenda: AI knowledge sharing, project progress u=
+pdates, and issue discussion.</p></li>
+</ul>
+<p local-id=3D"9463a1178a3d">Action Items:</p>
+<ol start=3D"1" local-id=3D"9d794bb57201">
+<li local-id=3D"cf752722d771">
+<p local-id=3D"5b2339577db7"><strong>All team members</strong>: Before the =
+next meeting, refine the functions of the original architecture solutions, =
+confirm the specific function list to be delivered for the July demo, and w=
+ork out relevant implementation plans.</p></li>
+<li local-id=3D"07014e99fec3">
+<p local-id=3D"9c7a098fc4d4"><strong>All team members:</strong> Upload the =
+discussed solutions and meeting minutes to the Confluence platform.</p></li=
+>
+<li local-id=3D"5feeacba8c3c">
+<p local-id=3D"f745dc4487a3"><strong>All team members:</strong> Compile a C=
+onfluence usage guide to standardize document uploading for other teams in =
+follow-up work.</p></li>
+<li local-id=3D"2802d2a0ac8f">
+<p local-id=3D"8493338dd730"><strong>All team members:</strong> Independent=
+ly explore AI coding and prepare the sharing.</p></li>
+</ol>
+<p local-id=3D"fece3ec3e05a">Kind regards,</p>
+<p local-id=3D"22e09ef3ea15"><strong>Yixi Wang</strong></p>
+    </div>
+</body>
+</html>
+------=_Part_4_704982021.1785900585674--

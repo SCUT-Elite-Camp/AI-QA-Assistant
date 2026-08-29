@@ -17,10 +17,18 @@ pymilvus==2.3.7
 # RAG & Document Pipeline (Data Pipeline Layer)
 rank-bm25
 jieba
+nltk
+scikit-learn
 PyMuPDF
 python-docx
+pywin32
+olefile
+python-pptx
+beautifulsoup4
+openpyxl
 sentence-transformers
 modelscope
+python-dotenv>=1.0,<2
 
 # Testing
 pytest
