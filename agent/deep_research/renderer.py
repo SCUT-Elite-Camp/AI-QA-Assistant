@@ -29,7 +29,15 @@ class MarkdownReportRenderer:
         title: str | None = None,
         report_id: str | None = None,
     ) -> ResearchReport:
-        claim_list = [claim for claim in claims if claim.research_id == research_id]
+        # Repository insertion timestamps are operational metadata, not a
+        # presentation order.  Recovery/replay can persist otherwise identical
+        # entities in a different temporal order, so canonicalize the report
+        # inputs before rendering.  This keeps fixed-fixture reports byte-for-
+        # byte repeatable across fresh runs and process restarts.
+        claim_list = sorted(
+            (claim for claim in claims if claim.research_id == research_id),
+            key=lambda claim: (claim.claim_text, claim.claim_id),
+        )
         evidence_map = (
             dict(evidence)
             if isinstance(evidence, Mapping)
@@ -66,7 +74,7 @@ class MarkdownReportRenderer:
                 limitation_list.append(
                     f"{claim.claim_id} 未进入确定性正文：{claim.reason or '缺少充分证据'}"
                 )
-            for evidence_id in claim.evidence_ids:
+            for evidence_id in sorted(claim.evidence_ids):
                 if evidence_id not in referenced_evidence:
                     referenced_evidence.append(evidence_id)
 
@@ -128,7 +136,7 @@ class MarkdownReportRenderer:
 
     @staticmethod
     def _citation(evidence_ids: Iterable[str]) -> str:
-        ids = list(evidence_ids)
+        ids = sorted(evidence_ids)
         return " " + " ".join(f"[E:{evidence_id}]" for evidence_id in ids) if ids else ""
 
     @staticmethod

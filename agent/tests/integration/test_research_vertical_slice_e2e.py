@@ -210,6 +210,46 @@ def test_manual_api_entry_dispatches_to_traceable_report(tmp_path: Path) -> None
     service.close()
 
 
+def test_cancelled_job_is_terminal_and_not_dispatched(tmp_path: Path) -> None:
+    service = ResearchRuntimeService.from_local_catalog(
+        database_path=tmp_path / "cancel.db",
+        documents_dir=FIXTURE_DOCUMENTS,
+        id_factory=lambda: "research-cancelled",
+    )
+    application = FastAPI()
+    application.include_router(router, prefix="/api")
+    application.dependency_overrides[get_research_control_plane] = (
+        lambda: service.control_plane
+    )
+
+    with TestClient(application) as client:
+        created = client.post(
+            "/api/research/jobs",
+            headers={"X-User-ID": "alice"},
+            json={
+                "query": "取消这次本地研究",
+                "source_scope": {"document_ids": ["project-alpha"]},
+            },
+        )
+        assert created.status_code == 201
+
+        cancelled = client.post(
+            "/api/research/jobs/research-cancelled/cancel"
+        )
+        assert cancelled.status_code == 200
+        assert cancelled.json()["status"] == "cancelled"
+        assert service.scan_once() == []
+
+        current = client.get(
+            "/api/research/jobs/research-cancelled"
+        ).json()
+        assert current["status"] == "cancelled"
+        assert client.get(
+            "/api/research/jobs/research-cancelled/report"
+        ).status_code == 404
+    service.close()
+
+
 def test_mock_full_vertical_slice_reaches_complete_report(tmp_path: Path) -> None:
     documents = {
         "mock-doc": {
