@@ -63,6 +63,42 @@ class Settings(BaseModel):
         gt=0,
     )
 
+    RESEARCH_DATABASE_PATH: str = os.getenv(
+        "RESEARCH_DATABASE_PATH",
+        str(
+            Path(__file__).resolve().parents[3]
+            / "data-persistence"
+            / "data"
+            / "research_jobs.db"
+        ),
+    )
+    RESEARCH_CHECKPOINT_PATH: str = os.getenv(
+        "RESEARCH_CHECKPOINT_PATH",
+        str(
+            Path(__file__).resolve().parents[3]
+            / "data-persistence"
+            / "data"
+            / "research_jobs.db.checkpoints"
+        ),
+    )
+    RESEARCH_DOCUMENTS_DIR: str = os.getenv(
+        "RESEARCH_DOCUMENTS_DIR",
+        str(
+            Path(__file__).resolve().parents[3]
+            / "data-persistence"
+            / "data"
+            / "documents"
+        ),
+    )
+    RESEARCH_DISPATCH_INTERVAL_SECONDS: float = Field(
+        default_factory=lambda: _env_float(
+            "RESEARCH_DISPATCH_INTERVAL_SECONDS",
+            2.0,
+        ),
+        ge=0.25,
+        le=60.0,
+    )
+
 
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
     MAX_MEMORY_MESSAGES: int = Field(

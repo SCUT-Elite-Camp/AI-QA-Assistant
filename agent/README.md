@@ -16,6 +16,12 @@
 - `AgentOrchestrator` 编排 Memory、Query Understanding、IntentPolicy、工具
   执行、Evidence Gate、纠偏检索和 Citation 校验。
 - CP1 Web `ChatResponse` 字段保持不变。
+- 手动启动、与 Chat 隔离的 Local Deep Research API。
+- SQLite 持久化 Job／Manifest／Plan／Approval／Evidence／Claim／Report，
+  由低频 Durable Dispatcher 调度和恢复。
+- 单 Worker 顺序完成 Search → Observation → Original Read → Evidence →
+  Finding → Coverage → Claim Verification → Markdown Report。
+- 支持资料充分的 `complete` 与资料不足或冲突的 `degraded` 结果。
 
 共享契约：
 
@@ -100,6 +106,8 @@ python scripts/run_week4_acceptance.py
 CP2 Local Deep Research Week 1 的固定环境、单命令测试、Chat 基线和
 LangGraph Spike 说明见
 [`docs/cp2/week1_member_b_delivery.md`](docs/cp2/week1_member_b_delivery.md)。
+Deep Research Core Vertical Slice 的链路、恢复策略和场景验收见
+[`docs/cp2/day5_vertical_slice_delivery.md`](docs/cp2/day5_vertical_slice_delivery.md)。
 
 ## API 示例
 

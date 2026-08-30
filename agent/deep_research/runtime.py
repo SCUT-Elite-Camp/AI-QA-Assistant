@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Protocol, TypedDict
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -39,16 +40,23 @@ class IntelligencePipeline(Protocol):
     def render_report(self, research_id: str) -> ResearchReport: ...
 
 
+class ResearchRecoveryError(RuntimeError):
+    """An interrupted Job does not have a trustworthy replay boundary."""
+
+
 class ResearchGraphRuntime:
     def __init__(
         self,
         control_plane: ResearchControlPlane,
         pipeline: IntelligencePipeline,
         checkpointer: BaseCheckpointSaver,
+        *,
+        stage_hook: Callable[[str, str], None] | None = None,
     ) -> None:
         self.control_plane = control_plane
         self.repository: SQLiteResearchRepository = control_plane.repository
         self.pipeline = pipeline
+        self.stage_hook = stage_hook
         self.structural = StructuralVerifier(self.repository)
         self.graph = self._build(checkpointer)
 
@@ -65,6 +73,8 @@ class ResearchGraphRuntime:
         self.repository.save_checkpoint(checkpoint)
         job = self.repository.get_job(state["research_id"])
         self.repository.update_job(ResearchJob.model_validate({**job.model_dump(), "current_stage": stage}))
+        if self.stage_hook is not None:
+            self.stage_hook(state["research_id"], f"checkpoint:{stage}")
         return {"current_stage": stage, "entity_ids": ids}
 
     def _prepare(self, state: RuntimeState) -> RuntimeState:
@@ -106,6 +116,8 @@ class ResearchGraphRuntime:
     def _render(self, state: RuntimeState) -> RuntimeState:
         report = self.pipeline.render_report(state["research_id"])
         self.repository.save_report(report)
+        if self.stage_hook is not None:
+            self.stage_hook(state["research_id"], "report_persisted")
         return self._stage(state, "finalize", [report.report_id])
 
     def _finalize(self, state: RuntimeState) -> RuntimeState:
@@ -140,10 +152,48 @@ class ResearchGraphRuntime:
         job = self.repository.get_job(research_id)
         if job.status != ResearchJobStatus.RESEARCHING or job.plan_version is None:
             raise RuntimeError("research_job_must_be_claimed_before_run")
+        return self._invoke_with_failure_policy(research_id, attempt=0)
+
+    def resume(self, research_id: str) -> dict:
+        """Replay an interrupted Job from durable, idempotent stage data."""
+
+        job = self.repository.get_job(research_id)
+        if job.status not in {
+            ResearchJobStatus.RESEARCHING,
+            ResearchJobStatus.SYNTHESIZING,
+        }:
+            raise ResearchRecoveryError("research_job_is_not_interrupted")
+        try:
+            checkpoint = self.repository.get_checkpoint(research_id)
+        except Exception as exc:
+            self._fail_recovery(job, "research_checkpoint_missing")
+            raise ResearchRecoveryError("research_checkpoint_missing") from exc
+        safe_stages = {
+            "execute_tasks",
+            "coverage",
+            "generate_claims",
+            "structural_verification",
+            "semantic_verification",
+            "render_report",
+            "finalize",
+        }
+        if checkpoint.current_stage not in safe_stages:
+            self._fail_recovery(job, "research_checkpoint_unsafe")
+            raise ResearchRecoveryError("research_checkpoint_unsafe")
+        if checkpoint.plan_version != job.plan_version:
+            self._fail_recovery(job, "research_checkpoint_plan_mismatch")
+            raise ResearchRecoveryError("research_checkpoint_plan_mismatch")
+        return self._invoke_with_failure_policy(
+            research_id,
+            attempt=checkpoint.attempt + 1,
+        )
+
+    def _invoke_with_failure_policy(self, research_id: str, *, attempt: int) -> dict:
+        job = self.repository.get_job(research_id)
         try:
             return self.graph.invoke(
                 {"research_id": research_id, "current_stage": "prepare", "current_task_id": None,
-                 "plan_version": job.plan_version, "attempt": 0, "entity_ids": []},
+                 "plan_version": job.plan_version, "attempt": attempt, "entity_ids": []},
                 self.config(research_id),
             )
         except Exception as exc:
@@ -156,8 +206,23 @@ class ResearchGraphRuntime:
                 )
             raise
 
+    def _fail_recovery(self, job: ResearchJob, error_code: str) -> None:
+        self.repository.transition_job(
+            job.research_id,
+            expected_statuses=[job.status],
+            status=ResearchJobStatus.FAILED,
+            current_stage=job.current_stage,
+            failure_stage=job.current_stage,
+            error_code=error_code,
+        )
+
     def state(self, research_id: str):
         return self.graph.get_state(self.config(research_id))
 
 
-__all__ = ["IntelligencePipeline", "ResearchGraphRuntime", "RuntimeState"]
+__all__ = [
+    "IntelligencePipeline",
+    "ResearchGraphRuntime",
+    "ResearchRecoveryError",
+    "RuntimeState",
+]

@@ -7,7 +7,8 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
-from typing import Protocol
+import re
+from typing import Any, Protocol
 
 from agent.schemas.research import SourceManifest
 from .manifest import LocalDocumentResolver
@@ -15,6 +16,72 @@ from .manifest import LocalDocumentResolver
 
 class SearchBackend(Protocol):
     def search(self, query: str, **kwargs) -> list[dict]: ...
+
+
+class LocalJsonSearchBackend:
+    """Deterministic local fallback used by the fixed-fixture vertical slice.
+
+    It deliberately implements only bounded lexical discovery over the JSON
+    document catalog.  It does not replace the Tool Layer search backend in
+    production, but gives Local Research a repeatable, network-free adapter
+    for demos and recovery tests.
+    """
+
+    def __init__(self, documents_dir: str | Path) -> None:
+        self.documents_dir = Path(documents_dir).resolve()
+
+    def search(self, query: str, **kwargs: Any) -> list[dict]:
+        top_k = max(1, int(kwargs.get("top_k", 5)))
+        filters = kwargs.get("filters") or {}
+        allowed_ids = {str(item) for item in filters.get("doc_ids", [])}
+        query_tokens = self._tokens(query)
+        rows: list[dict] = []
+        for path in sorted(self.documents_dir.glob("*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            doc_id = str(payload.get("doc_id") or path.stem)
+            if allowed_ids and doc_id not in allowed_ids:
+                continue
+            lines = self._lines(payload)
+            if not lines:
+                continue
+            best_index, best_line, overlap = max(
+                (
+                    (index, line, len(query_tokens & self._tokens(line)))
+                    for index, line in enumerate(lines)
+                ),
+                key=lambda item: (item[2], -item[0]),
+            )
+            score = overlap / max(1, len(query_tokens))
+            rows.append(
+                {
+                    "doc_id": doc_id,
+                    "chunk_id": f"line:{best_index + 1}-{best_index + 1}",
+                    "chunk_index": best_index,
+                    "chunk_text": best_line,
+                    "score": score,
+                }
+            )
+        rows.sort(key=lambda item: (-float(item["score"]), str(item["doc_id"])))
+        return rows[:top_k]
+
+    @staticmethod
+    def _lines(payload: dict[str, Any]) -> list[str]:
+        content = LocalDocumentResolver._searchable_text(payload)
+        return [line.strip() for line in content.splitlines() if line.strip()]
+
+    @staticmethod
+    def _tokens(text: str) -> set[str]:
+        return set(
+            re.findall(
+                r"[A-Za-z][A-Za-z0-9_-]*|\d+(?:\.\d+)?%?|[\u4e00-\u9fff]",
+                text.casefold(),
+            )
+        )
 
 
 class LocalToolError(RuntimeError):
@@ -79,8 +146,30 @@ class LocalResearchToolAdapter:
     def list_documents(self, context: ToolCallContext) -> list[dict]:
         return [item.model_dump(mode="json") for item in context.source_manifest.documents]
 
-    def search(self, query: str, context: ToolCallContext, *, mode: str = "hybrid", top_k: int = 5) -> list[SearchHit]:
-        allowed = self._allowed(context)
+    def search(
+        self,
+        query: str,
+        context: ToolCallContext,
+        *,
+        mode: str = "hybrid",
+        top_k: int = 5,
+        source_ids: list[str] | None = None,
+    ) -> list[SearchHit]:
+        manifest_allowed = self._allowed(context)
+        if source_ids is None:
+            allowed = manifest_allowed
+        else:
+            requested = set(source_ids)
+            outside = requested - set(manifest_allowed)
+            if outside:
+                raise ManifestAccessError(
+                    "document_outside_manifest:" + ",".join(sorted(outside))
+                )
+            allowed = {
+                doc_id: manifest_allowed[doc_id]
+                for doc_id in source_ids
+                if doc_id in manifest_allowed
+            }
         rows = self._run(
             lambda: self.search_backend.search(
                 query=query, top_k=top_k, mode=mode,
@@ -150,6 +239,6 @@ class LocalResearchToolAdapter:
 
 
 __all__ = [
-    "LocalResearchToolAdapter", "LocalToolError", "LocalToolTimeout", "ManifestAccessError",
+    "LocalJsonSearchBackend", "LocalResearchToolAdapter", "LocalToolError", "LocalToolTimeout", "ManifestAccessError",
     "OriginalRead", "SearchHit", "ToolCallContext",
 ]

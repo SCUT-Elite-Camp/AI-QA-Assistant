@@ -49,10 +49,11 @@ class ApprovedResearchContext:
 class ResearchControlPlane:
     """Create and approve durable Local Research Jobs.
 
-    Planning is intentionally synchronous in this Day 1–2 slice so the API
-    can expose a simple control-plane contract.  The Job is inserted before
-    source resolution and planning, so a later durable dispatcher can recover
-    an interrupted ``created`` or ``planning`` Job.
+    The API inserts a Job before source resolution or planning and returns it
+    immediately.  A durable dispatcher calls :meth:`resume_planning_job`, so
+    interrupted ``created`` or ``planning`` Jobs are discoverable after a
+    process restart.  ``create_job`` remains as a synchronous composition
+    helper for unit tests and non-HTTP callers.
     """
 
     def __init__(
@@ -79,27 +80,58 @@ class ResearchControlPlane:
         *,
         user_id: str = "local-user",
     ) -> ResearchJob:
+        job = self.enqueue_job(request, user_id=user_id)
+        return self.resume_planning_job(job.research_id)
+
+    def enqueue_job(
+        self,
+        request: ResearchRequest,
+        *,
+        user_id: str = "local-user",
+    ) -> ResearchJob:
+        """Persist a durable created Job before any planning work starts."""
+
         research_id = self.id_factory()
         job = ResearchJob(
             research_id=research_id,
             user_id=user_id,
             request=request,
         )
-        self.repository.create_job(job)
+        return self.repository.create_job(job)
+
+    def resume_planning_job(self, research_id: str) -> ResearchJob:
+        """Idempotently finish planning for a created/planning Job.
+
+        This is the restart boundary used by the Durable Dispatcher.  A
+        persisted Manifest or Plan is reused as-is, so source versions never
+        drift during recovery.
+        """
 
         try:
-            planning_job = self.repository.transition_job(
-                research_id,
-                expected_statuses=[ResearchJobStatus.CREATED],
-                status=ResearchJobStatus.PLANNING,
-            )
+            job = self.repository.get_job(research_id)
+            if job.status == ResearchJobStatus.CREATED:
+                planning_job = self.repository.transition_job(
+                    research_id,
+                    expected_statuses=[ResearchJobStatus.CREATED],
+                    status=ResearchJobStatus.PLANNING,
+                )
+            elif job.status == ResearchJobStatus.PLANNING:
+                planning_job = job
+            else:
+                planning_job = None
             if planning_job is None:
                 raise ResearchControlPlaneError(
                     "research_job_state_conflict",
-                    "new Research Job could not enter planning",
+                    "Research Job is not in a resumable planning state",
                 )
 
-            manifest = self.source_resolver.resolve(research_id, request.source_scope)
+            try:
+                manifest = self.repository.get_manifest(research_id)
+            except ResearchNotFoundError:
+                manifest = self.source_resolver.resolve(
+                    research_id,
+                    planning_job.request.source_scope,
+                )
             if manifest.research_id != research_id:
                 raise ResearchControlPlaneError(
                     "research_manifest_identity_mismatch",
@@ -119,7 +151,14 @@ class ResearchControlPlane:
                     "Research Job changed while its SourceManifest was being saved",
                 )
 
-            plan = self.planner.create_plan(request, manifest, version=1)
+            try:
+                plan = self.repository.get_plan(research_id, version=1)
+            except ResearchNotFoundError:
+                plan = self.planner.create_plan(
+                    planning_job.request,
+                    manifest,
+                    version=1,
+                )
             if plan.research_id != research_id:
                 raise ResearchControlPlaneError(
                     "research_plan_identity_mismatch",

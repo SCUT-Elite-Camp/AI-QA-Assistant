@@ -17,8 +17,8 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 The Chat path is strictly Chat-only. Its internal `ChatRoutePolicy` exposes
 only bounded `chat_l0_direct`, `chat_l1_retrieval`, and
 `chat_l2_bounded_multi_step` routes. `/api/chat` never creates a Research Job;
-Research will use a separate manual entry point after its contract and approval
-flow are implemented. See `docs/cp2/chat_route_policy.md`.
+Local Deep Research uses the separate manual `/api/research/jobs` entry and an
+explicit Plan + SourceManifest approval flow. See `docs/cp2/chat_route_policy.md`.
 
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
 
@@ -259,10 +259,64 @@ The retrieval call always receives `standalone_query`, `top_k`,
 `trace_id`. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
+## Local Deep Research API
+
+Deep Research is local-source-only and must be started explicitly. Creating a
+Job only persists `status=created`; the application-scoped durable dispatcher
+then freezes the `SourceManifest` and creates the approval Plan. Clients poll
+the Job endpoint instead of holding the create request open.
+
+```text
+POST /api/research/jobs
+GET  /api/research/jobs/{research_id}
+GET  /api/research/jobs/{research_id}/plan
+POST /api/research/jobs/{research_id}/approve
+POST /api/research/jobs/{research_id}/cancel
+GET  /api/research/jobs/{research_id}/report
+```
+
+Create request:
+
+```json
+{
+  "query": "比较 Alpha 与 Beta 的部署状态",
+  "source_scope": {
+    "document_ids": ["project-alpha", "project-beta"]
+  },
+  "report_spec": {
+    "format": "markdown",
+    "include_citations": true
+  }
+}
+```
+
+Approval is an immutable snapshot of exactly the Plan and sources the user
+reviewed:
+
+```json
+{
+  "plan_version": 1,
+  "manifest_hash": "<hash returned by the Job and Plan views>"
+}
+```
+
+The dispatcher only executes approved `ready` Jobs. Execution and result state
+are independent: a workflow may finish with `status=completed` and
+`result_status=degraded` when required evidence is missing or conflicting.
+Reports are Markdown and preserve Evidence IDs plus original document locators.
+
+Runtime configuration:
+
+- `RESEARCH_DATABASE_PATH`: authoritative SQLite business store.
+- `RESEARCH_CHECKPOINT_PATH`: LangGraph cursor/checkpoint store.
+- `RESEARCH_DOCUMENTS_DIR`: local processed JSON document catalog.
+- `RESEARCH_DISPATCH_INTERVAL_SECONDS`: bounded polling interval; default `2.0`.
+
+Web sources, parallel workers, Replan, SSE replay, and report export are outside
+this Core Vertical Slice.
+
 ## Not Implemented In Current Version
 
-- Manual Local Research Job creation and execution; Week 1 only freezes its
-  versioned contract and deterministic plan fixtures.
 - Production-level real LLM streaming.
 - Cross-process or restart-persistent conversation memory.
 - ACL permission filtering.

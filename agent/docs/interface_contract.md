@@ -1,5 +1,28 @@
 # Web-Agent Interface Contract
 
+## Local Deep Research
+
+Local Deep Research is separate from Chat and must be manually started.
+
+```text
+POST /api/research/jobs
+GET  /api/research/jobs/{research_id}
+GET  /api/research/jobs/{research_id}/plan
+POST /api/research/jobs/{research_id}/approve
+POST /api/research/jobs/{research_id}/cancel
+GET  /api/research/jobs/{research_id}/report
+```
+
+`POST /api/research/jobs` durably creates a Job and immediately returns it with
+`status=created`. The Web client polls the Job endpoint until
+`awaiting_approval`, displays the current Plan, and approves using both
+`plan_version` and `manifest_hash`. A stale version or changed source snapshot
+returns HTTP 409. The final execution status is `completed`, `failed`, or
+`cancelled`; a completed report separately declares `complete` or `degraded`.
+
+This API does not accept Web URLs. The Worker can only search and read document
+IDs frozen into the approved `SourceManifest`.
+
 ## POST `/api/chat`
 
 Request:

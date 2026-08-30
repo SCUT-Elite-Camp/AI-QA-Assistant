@@ -76,7 +76,7 @@ class MockResearchPlanner:
                 question="读取并核验候选事实对应的原始文档位置。",
                 purpose="将搜索观察转换为可定位的原文证据。",
                 dependencies=["task-1"],
-                allowed_tools=["read_document_range"],
+                allowed_tools=["keyword_search", "read_document_range"],
                 source_ids=scoped_ids,
                 acceptance_criteria=[
                     AcceptanceCriterion(
@@ -94,14 +94,14 @@ class MockResearchPlanner:
                 question="整理研究结论，并标记资料范围内无法确认的内容。",
                 purpose="为后续 Coverage 和报告生成提供结论与局限。",
                 dependencies=["task-2"],
-                allowed_tools=["read_document_range"],
+                allowed_tools=["keyword_search", "read_document_range"],
                 source_ids=scoped_ids,
                 acceptance_criteria=[
                     AcceptanceCriterion(
                         criterion_id="criterion-3",
                         dimension="limitation",
                         target="资料限制",
-                        required=True,
+                        required=False,
                     )
                 ],
                 priority=ResearchTaskPriority.NORMAL,

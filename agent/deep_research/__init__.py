@@ -3,12 +3,14 @@
 from .claims import ClaimGenerator, generate_claims
 from .coverage import CoverageEngine, compute_coverage
 from .dispatcher import DurableDispatcher
+from .execution import ResearchRuntimeService
 from .manifest import (
     InMemoryDocumentResolver,
     LocalDocumentResolver,
     ManifestResolutionError,
 )
 from .planner import MockResearchPlanner, PlannerError
+from .pipeline import ManifestScopedWorkerTools, ResearchIntelligencePipeline
 from .repository import (
     ResearchConflictError,
     ResearchNotFoundError,
@@ -42,6 +44,7 @@ __all__ = [
     "InMemoryDocumentResolver",
     "InMemoryResearchLedger",
     "LocalDocumentResolver",
+    "ManifestScopedWorkerTools",
     "LocalResearchWorker",
     "ManifestResolutionError",
     "MockResearchPlanner",
@@ -51,7 +54,9 @@ __all__ = [
     "ResearchConflictError",
     "ResearchControlPlane",
     "ResearchControlPlaneError",
+    "ResearchIntelligencePipeline",
     "ResearchNotFoundError",
+    "ResearchRuntimeService",
     "SQLiteResearchRepository",
     "EvidenceLedger",
     "LocalResearchToolAdapter",
