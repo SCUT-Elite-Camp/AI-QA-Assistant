@@ -28,37 +28,97 @@ class DurableDispatcher:
         control_plane: ResearchControlPlane,
         *,
         executor: Callable[[ApprovedResearchContext], None] | None = None,
+        recovery_executor: Callable[[str], None] | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
         self.control_plane = control_plane
         self.executor = executor
+        self.recovery_executor = recovery_executor
         self.logger = logger or logging.getLogger("agent-layer.research.dispatcher")
 
     def scan_once(self) -> list[str]:
         """Claim and hand off ready Jobs, returning the IDs handed off."""
 
-        if self.executor is None:
-            return []
-
         dispatched: list[str] = []
-        jobs = self.control_plane.repository.list_jobs([ResearchJobStatus.READY])
-        for job in jobs:
+
+        planning_jobs = self.control_plane.repository.list_jobs(
+            [ResearchJobStatus.CREATED, ResearchJobStatus.PLANNING]
+        )
+        for job in planning_jobs:
+            try:
+                self.control_plane.resume_planning_job(job.research_id)
+                dispatched.append(job.research_id)
+            except Exception:
+                self.logger.exception(
+                    "research planning recovery failed for research_id=%s",
+                    job.research_id,
+                )
+
+        ready_jobs = (
+            self.control_plane.repository.list_jobs([ResearchJobStatus.READY])
+            if self.executor is not None
+            else []
+        )
+        for job in ready_jobs:
             try:
                 context = self.control_plane.claim_for_execution(job.research_id)
                 self.executor(context)
                 dispatched.append(job.research_id)
-            except Exception:
+            except Exception as exc:
+                self._fail_running_job(job.research_id, exc)
                 self.logger.exception(
                     "research dispatcher failed for research_id=%s",
                     job.research_id,
                 )
+
+        interrupted_jobs = (
+            self.control_plane.repository.list_jobs(
+                [ResearchJobStatus.RESEARCHING, ResearchJobStatus.SYNTHESIZING]
+            )
+            if self.recovery_executor is not None
+            else []
+        )
+        for job in interrupted_jobs:
+            if job.research_id in dispatched:
+                continue
+            try:
+                self.recovery_executor(job.research_id)
+                dispatched.append(job.research_id)
+            except Exception as exc:
+                self._fail_running_job(job.research_id, exc)
+                self.logger.exception(
+                    "research recovery failed for research_id=%s",
+                    job.research_id,
+                )
         return dispatched
+
+    def _fail_running_job(self, research_id: str, exc: Exception) -> None:
+        job = self.control_plane.repository.get_job(research_id)
+        if job.status not in {
+            ResearchJobStatus.RESEARCHING,
+            ResearchJobStatus.SYNTHESIZING,
+        }:
+            return
+        self.control_plane.repository.transition_job(
+            research_id,
+            expected_statuses=[job.status],
+            status=ResearchJobStatus.FAILED,
+            current_stage=job.current_stage,
+            failure_stage=job.current_stage,
+            error_code=exc.__class__.__name__,
+        )
 
     def pending_job_ids(self) -> list[str]:
         """Expose durable queue visibility without claiming any Job."""
 
         jobs = self.control_plane.repository.list_jobs(
-            [ResearchJobStatus.CREATED, ResearchJobStatus.READY]
+            [
+                ResearchJobStatus.CREATED,
+                ResearchJobStatus.PLANNING,
+                ResearchJobStatus.READY,
+                ResearchJobStatus.RESEARCHING,
+                ResearchJobStatus.SYNTHESIZING,
+            ]
         )
         return [job.research_id for job in jobs]
 

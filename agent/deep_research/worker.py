@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 import hashlib
 import re
 from typing import Any, Callable, Iterable, Mapping, Protocol
-import uuid
 
 from agent.schemas.research import (
     Finding,
@@ -300,6 +299,13 @@ class LocalResearchWorker:
             )
 
         trace_id = self.trace_id_factory(context.job.research_id)
+        if not ({"keyword_search", "semantic_search"} & set(task.allowed_tools)):
+            return TaskExecutionResult(
+                task_id=task.task_id,
+                status=ResearchTaskStatus.FAILED,
+                actions_used=0,
+                stop_reason="search_tool_not_allowed",
+            )
         actions_used = 1
         observation_ids: list[str] = []
         evidence_ids: list[str] = []
@@ -324,7 +330,15 @@ class LocalResearchWorker:
 
         for index, hit in enumerate(hits[: self.max_candidates_per_task]):
             observation = Observation(
-                observation_id=self._new_id("observation", task.task_id, index),
+                observation_id=self._stable_id(
+                    "observation",
+                    context.job.research_id,
+                    task.task_id,
+                    task.question,
+                    hit.doc_id,
+                    hit.locator_hint or "",
+                    str(index),
+                ),
                 research_id=context.job.research_id,
                 task_id=task.task_id,
                 tool_name="search",
@@ -341,6 +355,8 @@ class LocalResearchWorker:
             if hit.doc_id not in manifest_ids:
                 continue
             if not hit.locator_hint:
+                continue
+            if "read_document_range" not in task.allowed_tools:
                 continue
 
             actions_used += 1
@@ -365,7 +381,14 @@ class LocalResearchWorker:
                 if document.doc_id == original.doc_id
             )
             evidence = VerifiedEvidence(
-                evidence_id=self._new_id("evidence", task.task_id, len(verified)),
+                evidence_id=self._stable_id(
+                    "evidence",
+                    context.job.research_id,
+                    task.task_id,
+                    original.doc_id,
+                    original.locator,
+                    original.content_hash or manifest_document.content_hash,
+                ),
                 research_id=context.job.research_id,
                 task_id=task.task_id,
                 doc_id=original.doc_id,
@@ -373,7 +396,7 @@ class LocalResearchWorker:
                 locator=original.locator,
                 excerpt=original.excerpt,
                 content_hash=original.content_hash
-                or hashlib.sha256(original.excerpt.encode("utf-8")).hexdigest(),
+                or manifest_document.content_hash,
             )
             self.ledger.save_evidence(evidence)
             verified.append(evidence)
@@ -431,7 +454,9 @@ class LocalResearchWorker:
         # retain these Evidence IDs and criterion mappings.
         statement = evidence[0].excerpt
         return Finding(
-            finding_id=f"finding-{task.task_id}",
+            finding_id=LocalResearchWorker._stable_id(
+                "finding", context.job.research_id, task.task_id
+            ),
             research_id=context.job.research_id,
             task_id=task.task_id,
             statement=statement,
@@ -486,8 +511,9 @@ class LocalResearchWorker:
         return [context_by_id[task.task_id] for task in ordered_plan_tasks]
 
     @staticmethod
-    def _new_id(prefix: str, task_id: str, index: int) -> str:
-        return f"{prefix}-{task_id}-{index + 1}-{uuid.uuid4().hex[:8]}"
+    def _stable_id(prefix: str, *parts: str) -> str:
+        payload = "\x1f".join(parts).encode("utf-8")
+        return f"{prefix}-{hashlib.sha256(payload).hexdigest()[:24]}"
 
 
 __all__ = [

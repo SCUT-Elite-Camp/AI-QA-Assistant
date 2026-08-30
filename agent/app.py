@@ -20,11 +20,32 @@ from agent.api.research_routes import router as research_router
 from agent.config.settings import settings
 from agent.logger.logger import get_logger, setup_logger
 from agent.runtime.lifecycle import get_application_container
+from deep_research.execution import ResearchRuntimeService
 
 
 # 初始化日志
 setup_logger(level=settings.LOG_LEVEL, log_file=settings.LOG_FILE)
 logger = get_logger(__name__)
+
+
+async def _run_research_dispatcher(
+    runtime: ResearchRuntimeService,
+    stop_event: asyncio.Event,
+) -> None:
+    """Run bounded durable scans away from the latency-sensitive Chat path."""
+
+    while not stop_event.is_set():
+        try:
+            await asyncio.to_thread(runtime.scan_once)
+        except Exception:
+            logger.exception("Deep Research dispatcher scan failed")
+        try:
+            await asyncio.wait_for(
+                stop_event.wait(),
+                timeout=settings.RESEARCH_DISPATCH_INTERVAL_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            continue
 
 
 @asynccontextmanager
@@ -39,8 +60,24 @@ async def lifespan(app: FastAPI):
     warmup_task = asyncio.create_task(asyncio.to_thread(container.warmup_retrieval))
     app.state.retrieval_warmup_task = warmup_task
 
+    research_runtime = ResearchRuntimeService.from_local_catalog(
+        database_path=settings.RESEARCH_DATABASE_PATH,
+        checkpoint_path=settings.RESEARCH_CHECKPOINT_PATH,
+        documents_dir=settings.RESEARCH_DOCUMENTS_DIR,
+    )
+    app.state.research_runtime_service = research_runtime
+    research_stop_event = asyncio.Event()
+    research_dispatcher_task = asyncio.create_task(
+        _run_research_dispatcher(research_runtime, research_stop_event)
+    )
+    app.state.research_dispatcher_task = research_dispatcher_task
+    logger.info("Durable Deep Research dispatcher initialized")
+
     yield
 
+    research_stop_event.set()
+    await research_dispatcher_task
+    research_runtime.close()
     if not warmup_task.done():
         warmup_task.cancel()
     container.shutdown()

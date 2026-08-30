@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from deep_research.manifest import ManifestResolutionError
@@ -28,12 +28,18 @@ class ResearchApprovalRequest(BaseModel):
     manifest_hash: str = Field(min_length=8, max_length=128)
 
 
-_default_control_plane = ResearchControlPlane()
+_default_control_plane: ResearchControlPlane | None = None
 
 
-def get_research_control_plane() -> ResearchControlPlane:
-    """Dependency seam for tests and future application lifecycle wiring."""
+def get_research_control_plane(request: Request) -> ResearchControlPlane:
+    """Return the application-scoped durable control plane when available."""
 
+    global _default_control_plane
+    runtime = getattr(request.app.state, "research_runtime_service", None)
+    if runtime is not None:
+        return runtime.control_plane
+    if _default_control_plane is None:
+        _default_control_plane = ResearchControlPlane()
     return _default_control_plane
 
 
@@ -64,10 +70,10 @@ def create_research_job(
     user_id: Annotated[str, Header(alias="X-User-ID")] = "local-user",
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
 ) -> ResearchJob:
-    """Persist a Job, freeze its local sources, and produce an approval plan."""
+    """Persist a Job and return before durable planning starts."""
 
     try:
-        return control_plane.create_job(request, user_id=user_id)
+        return control_plane.enqueue_job(request, user_id=user_id)
     except Exception as exc:
         _raise_http_error(exc)
         raise AssertionError("unreachable")

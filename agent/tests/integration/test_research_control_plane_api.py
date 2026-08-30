@@ -11,7 +11,7 @@ from deep_research.repository import SQLiteResearchRepository
 from deep_research.service import ResearchControlPlane
 
 
-def _client(tmp_path: Path) -> TestClient:
+def _client(tmp_path: Path) -> tuple[TestClient, ResearchControlPlane]:
     control_plane = ResearchControlPlane(
         SQLiteResearchRepository(tmp_path / "research.db"),
         source_resolver=InMemoryDocumentResolver(
@@ -32,11 +32,11 @@ def _client(tmp_path: Path) -> TestClient:
     application = FastAPI()
     application.include_router(router, prefix="/api")
     application.dependency_overrides[get_research_control_plane] = lambda: control_plane
-    return TestClient(application)
+    return TestClient(application), control_plane
 
 
 def test_api_create_view_and_approve_real_control_plane_entities(tmp_path: Path) -> None:
-    client = _client(tmp_path)
+    client, control_plane = _client(tmp_path)
     response = client.post(
         "/api/research/jobs",
         headers={"X-User-ID": "alice"},
@@ -48,15 +48,21 @@ def test_api_create_view_and_approve_real_control_plane_entities(tmp_path: Path)
 
     assert response.status_code == 201
     job = response.json()
-    assert job["status"] == "awaiting_approval"
-    assert job["plan_version"] == 1
-    assert job["manifest_hash"]
+    assert job["status"] == "created"
+    assert job["plan_version"] is None
+    assert job["manifest_hash"] is None
+
+    control_plane.resume_planning_job(job["research_id"])
+    planned_job = client.get(f"/api/research/jobs/{job['research_id']}").json()
+    assert planned_job["status"] == "awaiting_approval"
+    assert planned_job["plan_version"] == 1
+    assert planned_job["manifest_hash"]
 
     plan_response = client.get(f"/api/research/jobs/{job['research_id']}/plan")
     assert plan_response.status_code == 200
     plan = plan_response.json()
     assert plan["research_id"] == job["research_id"]
-    assert plan["manifest_hash"] == job["manifest_hash"]
+    assert plan["manifest_hash"] == planned_job["manifest_hash"]
     assert len(plan["tasks"]) == 3
 
     wrong = client.post(
@@ -71,7 +77,7 @@ def test_api_create_view_and_approve_real_control_plane_entities(tmp_path: Path)
         headers={"X-User-ID": "alice"},
         json={
             "plan_version": 1,
-            "manifest_hash": job["manifest_hash"],
+            "manifest_hash": planned_job["manifest_hash"],
         },
     )
     assert approved.status_code == 200
@@ -79,7 +85,7 @@ def test_api_create_view_and_approve_real_control_plane_entities(tmp_path: Path)
 
 
 def test_api_cannot_create_job_from_external_source_scope(tmp_path: Path) -> None:
-    client = _client(tmp_path)
+    client, _ = _client(tmp_path)
     response = client.post(
         "/api/research/jobs",
         json={
