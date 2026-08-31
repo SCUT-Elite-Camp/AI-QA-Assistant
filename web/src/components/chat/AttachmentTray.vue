@@ -47,6 +47,23 @@ function controlledMime(file: File): string {
   return MIME_BY_EXTENSION[extension] || 'application/octet-stream'
 }
 
+function statusText(item: TrayAttachment): string {
+  const image = item.mimeType.startsWith('image/')
+  const labels: Record<string, string> = {
+    uploading: '正在上传',
+    scanning: '安全扫描中',
+    parsing: image ? '正在识别图片内容' : '正在解析内容',
+    ready: image ? '图片内容已识别' : '内容已解析',
+    needs_review: '识别结果需要确认',
+    failed: '处理失败',
+    quarantined: '文件未通过安全检查',
+    expired: '文件已过期',
+    deleted: '文件已删除',
+    cancelled: '上传已取消',
+  }
+  return labels[item.status] || item.status
+}
+
 const selectedIds = computed(() => items.value.filter(item => item.id && (item.status === 'ready' || (item.status === 'needs_review' && item.acceptedReview))).map(item => item.id!))
 
 function notify() {
@@ -188,14 +205,18 @@ defineExpose({
 
 <template>
   <div class="w-full" @dragover.prevent @drop.prevent="addFiles($event.dataTransfer?.files || [])">
-    <UButton icon="i-lucide-paperclip" color="neutral" variant="ghost" size="sm" :disabled="disabled || !serviceEnabled" :title="serviceEnabled ? '添加附件' : '附件服务不可用'" aria-label="添加附件" @click="inputRef?.click()" />
+    <UButton icon="i-lucide-paperclip" color="neutral" variant="ghost" size="sm" :disabled="disabled || !serviceEnabled" :title="serviceEnabled ? '上传图片或文件' : '附件服务不可用'" aria-label="上传图片或文件" @click="inputRef?.click()" />
     <input ref="inputRef" class="hidden" type="file" multiple
       accept=".png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.pdf,.doc,.docx,.ppt,.pptx,.html,.htm,.xls,.xlsx,.csv,.txt,.md,.json"
       @change="addFiles(($event.target as HTMLInputElement).files || [])">
     <div v-if="items.length" class="mt-2 flex flex-wrap gap-2">
       <div v-for="item in items" :key="item.id || item.filename" class="max-w-64 rounded-lg border border-default px-2 py-1 text-xs">
-        <div class="flex items-center gap-1"><span class="truncate">{{ item.filename }}</span><UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" @click="remove(item)" /></div>
-        <div class="text-muted">{{ item.status }} · {{ Math.ceil(item.sizeBytes / 1024) }} KB<span v-if="item.status === 'uploading'"> · {{ item.progress }}%</span></div>
+        <div class="flex items-center gap-1">
+          <UIcon :name="item.mimeType.startsWith('image/') ? 'i-lucide-image' : 'i-lucide-file'" class="size-3.5 shrink-0" aria-hidden="true" />
+          <span class="truncate">{{ item.filename }}</span>
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="`移除 ${item.filename}`" @click="remove(item)" />
+        </div>
+        <div class="text-muted" role="status" aria-live="polite">{{ statusText(item) }} · {{ Math.ceil(item.sizeBytes / 1024) }} KB<span v-if="item.status === 'uploading'"> · {{ item.progress }}%</span></div>
         <div v-if="item.expiresAt" class="text-muted">到期：{{ new Date(item.expiresAt * 1000).toLocaleString() }}</div>
         <div v-if="item.errorCode" class="text-error">{{ item.errorCode }}</div>
         <div v-if="item.status === 'needs_review'" class="mt-1 flex items-center gap-1">

@@ -37,6 +37,7 @@ class ChatRequest(BaseModel):
     topic_titles: Optional[list[str]] = None
     consecutive_no_new_docs_count: int = 0
     is_first_message: Optional[bool] = None
+    knowledge_base_retrieval_enabled: bool = True
     attachment_context: Optional[AttachmentContext] = None
     personal_library_context: Optional[PersonalLibraryContext] = None
 

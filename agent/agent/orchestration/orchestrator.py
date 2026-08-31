@@ -91,6 +91,7 @@ class AgentOrchestrator:
             trace_id,
         )
         policy = self._apply_source_policy(request, policy, effective_intent)
+        policy = self._apply_knowledge_base_policy(request, policy)
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
@@ -101,7 +102,11 @@ class AgentOrchestrator:
             policy=policy,
             tool_executor=self.tool_executor,
             evidence_gate=self.evidence_gate,
-            corrective_retrieval=self.corrective_retrieval,
+            corrective_retrieval=(
+                self.corrective_retrieval
+                if request.knowledge_base_retrieval_enabled
+                else None
+            ),
             history=history,
             trace_id=trace_id,
             mode=retrieval_mode,
@@ -300,6 +305,45 @@ class AgentOrchestrator:
             enterprise_default=policy.retrieval_strategy != "none",
         )
         return AgentOrchestrator._apply_source_policy(request, policy, intent)
+
+    @staticmethod
+    def _apply_knowledge_base_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+    ) -> IntentPolicy:
+        """Honor the caller's per-turn enterprise/library retrieval choice."""
+        if request.knowledge_base_retrieval_enabled:
+            return policy
+
+        knowledge_tools = {
+            "search_documents",
+            "find_documents",
+            "get_document",
+            "search_library",
+        }
+        candidates = tuple(
+            tool for tool in policy.candidate_tools if tool not in knowledge_tools
+        )
+        if any(
+            tool in {"search_attachments", "inspect_attachment"}
+            for tool in candidates
+        ):
+            return policy.model_copy(update={"candidate_tools": candidates})
+
+        return policy.model_copy(
+            update={
+                "candidate_tools": candidates,
+                "retrieval_strategy": "none",
+                "evidence_policy": "none",
+                "assembly_strategy": "none",
+                "answer_style": "direct_chat",
+                "top_k": 0,
+                "max_iterations": 1,
+                "max_tool_calls": 0,
+                "max_retrieval_attempts": 0,
+                "requires_citations": False,
+            }
+        )
 
     @staticmethod
     def _log_source_routing(

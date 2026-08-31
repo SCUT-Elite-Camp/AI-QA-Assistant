@@ -12,10 +12,16 @@ export default defineHandler(async (event) => {
   requireCsrf(event)
   const userId = await requirePrincipal(event)
 
-  const { input: rawInput, attachment_ids: attachmentIds, accepted_needs_review_ids: acceptedReviewIds } = await readValidatedBody(event, z.object({
+  const {
+    input: rawInput,
+    attachment_ids: attachmentIds,
+    accepted_needs_review_ids: acceptedReviewIds,
+    knowledge_base_retrieval_enabled: useKnowledgeBase,
+  } = await readValidatedBody(event, z.object({
     input: z.string().default(''),
     attachment_ids: z.array(z.string()).max(10).default([]),
-    accepted_needs_review_ids: z.array(z.string()).max(10).default([])
+    accepted_needs_review_ids: z.array(z.string()).max(10).default([]),
+    knowledge_base_retrieval_enabled: z.boolean().default(true),
   }).parse)
   const db = useDrizzle()
 
@@ -56,7 +62,13 @@ export default defineHandler(async (event) => {
       id: messageId,
       chatId: created.id,
       role: 'user',
-      parts: mergeSafeAttachmentParts([{ type: 'text', text: input }], selected, acceptedReview)
+      parts: mergeSafeAttachmentParts([
+        { type: 'text', text: input },
+        {
+          type: 'data-chat-preferences',
+          data: { knowledge_base_retrieval_enabled: useKnowledgeBase }
+        }
+      ], selected, acceptedReview)
     })
     if (selected.length) {
       await tx.insert(tables.messageAttachments).values(selected.map(item => ({ messageId, attachmentId: item.id, evidenceVersion: item.evidenceVersion })))

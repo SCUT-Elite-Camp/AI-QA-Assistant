@@ -23,7 +23,10 @@ import DocumentModal from '../../components/chat/DocumentModal.vue'
 import SoulModal from '../../components/chat/SoulModal.vue'
 import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
+import AttachmentTray from '../../components/chat/AttachmentTray.vue'
 import type { Vote } from '../../../server/utils/drizzle'
+import { extractAttachmentSelection } from '../../../shared/utils/attachmentParts'
+import { knowledgeBaseRetrievalEnabled } from '../../../shared/utils/chatRetrieval'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
@@ -65,6 +68,14 @@ if (isOwner.value) {
 }
 
 const input = ref('')
+const attachmentIds = ref<string[]>([])
+const acceptedNeedsReviewIds = ref<string[]>([])
+const attachmentTray = ref<InstanceType<typeof AttachmentTray> | null>(null)
+const latestUserMessage = [...(data?.messages || [])].reverse().find(message => message.role === 'user')
+const useKnowledgeBase = ref(knowledgeBaseRetrievalEnabled(
+  (latestUserMessage as any)?.metadata,
+  (latestUserMessage as any)?.parts,
+))
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -78,29 +89,18 @@ const visibleMessages = computed(() => {
   return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant') || []
 })
 
-const fileInputRef = ref<HTMLInputElement | null>(null)
 const deepResearchMode = ref(false)
-
-function triggerFileUpload() {
-  fileInputRef.value?.click()
-}
-
-async function handleFileUpload(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const content = e.target?.result as string
-    input.value = (input.value ? input.value + '\n\n' : '') + `[Attached: ${file.name}]\n${content.slice(0, 500)}`
-  }
-  reader.readAsText(file)
-}
 
 const plusMenuItems = computed(() => [[
   {
-    label: 'Upload File',
+    label: '上传图片或文件',
     icon: 'i-lucide-paperclip',
-    onSelect: () => triggerFileUpload()
+    onSelect: () => attachmentTray.value?.open()
+  },
+  {
+    label: '企业知识库检索',
+    icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
+    onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
   {
     label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
@@ -143,9 +143,28 @@ const chat = new Chat({
 
 function handleSubmit(e: Event) {
   e.preventDefault()
-  if (input.value.trim()) {
-    chat.sendMessage({ text: input.value })
+  if (attachmentTray.value?.hasBlockingAttachments()) {
+    toast.add({
+      description: '请等待附件解析完成；低置信度附件需要确认后才能发送。',
+      icon: 'i-lucide-alert-circle',
+      color: 'warning',
+    })
+    return
+  }
+  if (input.value.trim() || attachmentIds.value.length) {
+    const text = input.value.trim() || '请分析这些附件'
+    chat.sendMessage({
+      text,
+      metadata: {
+        attachmentIds: attachmentIds.value,
+        acceptedNeedsReviewIds: acceptedNeedsReviewIds.value,
+        knowledgeBaseRetrievalEnabled: useKnowledgeBase.value,
+      },
+    } as any)
     input.value = ''
+    attachmentTray.value?.resetAfterSend()
+    attachmentIds.value = []
+    acceptedNeedsReviewIds.value = []
   }
 }
 
@@ -177,7 +196,19 @@ async function saveEdit(message: UIMessage, text: string) {
   }
 
   editingMessageId.value = null
-  chat.sendMessage({ text, messageId: message.id })
+  const retained = extractAttachmentSelection(message.parts, (message as any).metadata)
+  chat.sendMessage({
+    text,
+    messageId: message.id,
+    metadata: {
+      attachmentIds: retained.attachmentIds,
+      acceptedNeedsReviewIds: retained.acceptedNeedsReviewIds,
+      knowledgeBaseRetrievalEnabled: knowledgeBaseRetrievalEnabled(
+        (message as any).metadata,
+        message.parts,
+      ),
+    },
+  } as any)
 }
 
 async function regenerateMessage(message: UIMessage) {
@@ -468,16 +499,27 @@ onMounted(() => {
               @submit="handleSubmit"
             >
               <template #footer>
-                <!-- + Menu: Upload File / Deep Research -->
+                <AttachmentTray
+                  ref="attachmentTray"
+                  scope="chat"
+                  :chat-id="data?.id"
+                  :topic-id="topic?.id"
+                  :disabled="chat.status === 'streaming'"
+                  @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
+                />
+                <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
                 <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
                   <UButton
                     color="neutral"
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-plus"
+                    aria-label="打开更多功能"
                     :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
                   />
                 </UDropdownMenu>
+
+                <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
 
                 <!-- Deep Research Indicator Badge -->
                 <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
@@ -500,8 +542,6 @@ onMounted(() => {
               </template>
             </UChatPrompt>
 
-            <!-- Hidden file input for Upload File -->
-            <input ref="fileInputRef" type="file" accept=".txt,.md,.pdf,.docx,.json" class="hidden" @change="handleFileUpload" />
           </UContainer>
 
           <!-- Active Chat Messages View -->
@@ -586,16 +626,27 @@ onMounted(() => {
               @submit="handleSubmit"
             >
               <template #footer>
-                <!-- + Menu: Upload File / Deep Research -->
+                <AttachmentTray
+                  ref="attachmentTray"
+                  scope="chat"
+                  :chat-id="data?.id"
+                  :topic-id="topic?.id"
+                  :disabled="chat.status === 'streaming'"
+                  @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
+                />
+                <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
                 <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
                   <UButton
                     color="neutral"
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-plus"
+                    aria-label="打开更多功能"
                     :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
                   />
                 </UDropdownMenu>
+
+                <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
 
                 <!-- Deep Research Indicator Badge -->
                 <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>

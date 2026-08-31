@@ -18,6 +18,7 @@ import { extractAttachmentSelection, mergeSafeAttachmentParts } from '../../../.
 import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
 import { createAgentStreamError, getAgentFailureMessage } from '../../../utils/agentResponse'
 import { getOrCreateDefaultLibrary } from '../../../utils/library'
+import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
 
 
 
@@ -106,6 +107,10 @@ export default defineHandler(async (event) => {
   const lastMessage = messages[messages.length - 1]
   const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
   const messageMetadata = (lastMessage as any)?.metadata || {}
+  const useKnowledgeBase = knowledgeBaseRetrievalEnabled(
+    messageMetadata,
+    (lastMessage as any)?.parts,
+  )
   const attachmentSelection = extractAttachmentSelection((lastMessage as any)?.parts, messageMetadata)
   const selectedAttachmentIds = attachmentSelection.attachmentIds
   for (const attachmentId of selectedAttachmentIds) await requireAttachmentAccess(event, attachmentId)
@@ -128,7 +133,16 @@ export default defineHandler(async (event) => {
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
   if (lastMessage?.role === 'user' && messages.length > 1) {
-    const safeParts = mergeSafeAttachmentParts(lastMessage.parts, selectedAttachments, acceptedReviewIds)
+    const preferenceParts = [
+      ...(Array.isArray(lastMessage.parts)
+        ? lastMessage.parts.filter(part => part.type !== 'data-chat-preferences')
+        : []),
+      {
+        type: 'data-chat-preferences',
+        data: { knowledge_base_retrieval_enabled: useKnowledgeBase }
+      }
+    ]
+    const safeParts = mergeSafeAttachmentParts(preferenceParts, selectedAttachments, acceptedReviewIds)
     await db.insert(tables.messages).values({
       id: lastMessage.id,
       chatId: id as string,
@@ -198,7 +212,8 @@ export default defineHandler(async (event) => {
             topic_doc_ids: topicDocIds,
             topic_titles: topicTitles,
             consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
-            is_first_message: needsTitle
+            is_first_message: needsTitle,
+            knowledge_base_retrieval_enabled: useKnowledgeBase
             ,personal_library_context: personalLibraryContext
             ,attachment_context: {
               selected_attachment_ids: selectedAttachmentIds,
