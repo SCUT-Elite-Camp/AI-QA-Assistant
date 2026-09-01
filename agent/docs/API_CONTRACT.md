@@ -32,6 +32,79 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
 
+## Frozen internal persistent-Memory contract (Unit 04)
+
+The token-protected `/api/internal/*` routes are enabled for BFF-to-Agent
+transport only. The public `/api/chat` route rejects browser-supplied
+`memory_context`, and its response remains unchanged.
+
+`InternalChatRequest` inherits the existing `ChatRequest` fields and adds a
+required `memory_context`. It is deliberately a separate model so the public
+route never consumes browser-provided Memory fields.
+
+```json
+{
+  "query": "继续刚才的话题",
+  "memory_context": {
+    "actor": { "user_id": "user-a", "authenticated": true },
+    "chat_id": "chat-a",
+    "revision": 2,
+    "current_message_id": "message-3",
+    "current_sequence": 3,
+    "snapshot": null,
+    "facts": [
+      {
+        "id": "fact-1",
+        "category": "PREFERENCE",
+        "value": "使用简洁中文回复",
+        "expires_at": null
+      }
+    ],
+    "tail": []
+  }
+}
+```
+
+- `actor.authenticated` is literal `true`; the browser never supplies this DTO.
+- `role` is `user`, `assistant`, or `system`; Fact categories are `GOAL`,
+  `PREFERENCE`, or `PLAN_CONSTRAINT`.
+- `snapshot` is nullable. `facts` and `tail` are arrays. `expires_at` is either
+  `null` or a non-negative Unix epoch-millisecond timestamp in UTC.
+- Snapshot and Tail revisions must equal `memory_context.revision`; Tail is
+  strictly sequence-ordered, follows `snapshot.covered_to_sequence` when a
+  Snapshot exists, precedes the current message, and cannot repeat it.
+- All internal DTOs reject unknown fields. `InternalChatResponse` wraps the
+  unchanged `ChatResponse` as `response` and places `MemoryDecision` only in
+  `memory_decision`; it must never be forwarded to the browser.
+- Every `/api/internal/*` request requires `X-Agent-Internal-Token` and returns
+  `403` for missing or incorrect tokens. `POST /api/internal/chat` and
+  `POST /api/internal/memory/compaction-plan` return
+  `409 {"code":"persistent_memory_disabled"}` when the Agent flag is off.
+- `POST /api/internal/memory/compaction-plan` accepts only BFF-supplied,
+  already-persisted messages, the current ACTIVE Snapshot (or `null`), and the
+  fixed Tail/threshold/token limits. It returns either
+  `{"should_compact": false}` or a pure optimistic plan:
+
+  ```json
+  {
+    "should_compact": true,
+    "expected_active_snapshot": { "id": "...", "version": 2, "revision": 1 },
+    "new_snapshot": {
+      "covered_from_sequence": 1,
+      "covered_to_sequence": 24,
+      "covered_from_message_id": "...",
+      "covered_to_message_id": "...",
+      "summary": "..."
+    }
+  }
+  ```
+
+  For an initial Snapshot, `expected_active_snapshot` is `null`. The Agent
+  performs neither database I/O nor LLM calls for this plan; Web applies it
+  atomically only after the assistant message is durable. `POST
+  /api/internal/memory/reset-short-window` clears only the legacy process-local
+  `ConversationMemory` after a successful Web history mutation.
+
 ## Request
 
 ```json
@@ -227,3 +300,30 @@ read-only adapter:
 The OpenAI function-calling representation is available internally through
 `registry.to_openai_schemas()` and is intentionally separate from this public
 metadata response. See `docs/cp2/tool_registry.md` for the complete contract.
+
+## Service Health And Readiness
+
+`GET /health` remains the lightweight liveness endpoint and returns:
+
+```json
+{"status": "ok"}
+```
+
+`GET /ready` reports whether the Tool Layer completed retrieval cold-start
+loading. Startup invokes `SearchTool.search()` directly, so this internal
+preload does not enter intent classification, clarification, query planning, or
+answer generation and does not consume a conversation turn.
+
+Ready response:
+
+```json
+{
+  "status": "ready",
+  "retrieval_ready": true,
+  "detail": ""
+}
+```
+
+If local embedding, BM25, or Milvus initialization fails, the service remains
+available for diagnostics and returns `status="degraded"`,
+`retrieval_ready=false`, and a non-secret error summary in `detail`.

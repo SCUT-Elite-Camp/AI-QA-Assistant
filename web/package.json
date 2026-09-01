@@ -8,6 +8,8 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "typecheck": "vue-tsc -p ./tsconfig.app.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
@@ -53,6 +55,7 @@
     "vite": "^7.3.5",
     "vite-plugin-vue-devtools": "^8.1.3",
     "vite-plugin-vue-layouts": "^0.11.0",
+    "vitest": "^4.1.10",
     "vue-tsc": "^3.3.5"
   }
 }

@@ -1,12 +1,10 @@
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
-import { useUserSession } from '../../../utils/session'
 import { useDrizzle } from '../../../utils/drizzle'
 import { z } from 'zod'
+import { getOptionalChatActor, isChatOwnedByActor } from '../../../utils/chatAccess'
 
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
-
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
@@ -15,7 +13,7 @@ export default defineHandler(async (event) => {
     where: (chat, { eq }) => eq(chat.id, id as string),
     with: {
       messages: {
-        orderBy: (message, { asc }) => asc(message.createdAt)
+        orderBy: (message, { asc }) => asc(message.sequence)
       }
     }
   })
@@ -24,9 +22,8 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
-  const userId = session.data.user?.id || session.id!
-  // In local unauthenticated environment, allow opening all local chats smoothly
-  const isOwner = chat.userId === userId || !session.data.user
+  const actor = await getOptionalChatActor(event)
+  const isOwner = actor ? isChatOwnedByActor(chat.userId, actor) : false
 
   if (chat.visibility === 'private' && !isOwner) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
@@ -34,5 +31,5 @@ export default defineHandler(async (event) => {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { userId: _, ...rest } = chat
-  return { ...rest, isOwner: true }
+  return { ...rest, isOwner }
 })

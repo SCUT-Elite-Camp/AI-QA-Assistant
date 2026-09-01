@@ -27,6 +27,12 @@ class EvidenceGate:
             raise ValueError("retrieval_attempt must be one or two")
 
         eligible = self._filter_and_deduplicate(evidence)
+        covered = self._covered_targets(eligible)
+        counts = {
+            "candidate_evidence_count": len(evidence),
+            "eligible_evidence_count": len(eligible),
+            "rejected_evidence_count": max(0, len(evidence) - len(eligible)),
+        }
 
         if policy.evidence_policy == "none":
             return self._result(
@@ -35,20 +41,26 @@ class EvidenceGate:
                 reason="evidence_not_required",
                 policy=policy,
                 retrieval_attempt=retrieval_attempt,
+                **counts,
             )
 
         if policy.evidence_policy in {"single_fact", "document_identity"}:
             accepted = bool(eligible)
+            missing = [] if accepted else self._missing_targets(query_plan, covered)
             return self._result(
                 accepted=accepted,
                 evidence=eligible if accepted else [],
                 reason="evidence_accepted" if accepted else "no_valid_evidence",
+                covered_targets=covered,
+                missing_targets=missing,
                 policy=policy,
                 retrieval_attempt=retrieval_attempt,
+                **counts,
             )
 
         if policy.evidence_policy == "topic_coverage":
             accepted = len(eligible) >= 2
+            missing = [] if accepted else self._missing_targets(query_plan, covered)
             return self._result(
                 accepted=accepted,
                 evidence=eligible if accepted else [],
@@ -57,8 +69,11 @@ class EvidenceGate:
                     if accepted
                     else "topic_coverage_insufficient"
                 ),
+                covered_targets=covered,
+                missing_targets=missing,
                 policy=policy,
                 retrieval_attempt=retrieval_attempt,
+                **counts,
             )
 
         if policy.evidence_policy == "bilateral_coverage":
@@ -82,9 +97,11 @@ class EvidenceGate:
                 accepted=accepted,
                 evidence=eligible if accepted else [],
                 reason=reason,
+                covered_targets=covered,
                 missing_targets=missing,
                 policy=policy,
                 retrieval_attempt=retrieval_attempt,
+                **counts,
             )
 
         raise ValueError(f"unsupported evidence policy: {policy.evidence_policy}")
@@ -112,6 +129,19 @@ class EvidenceGate:
         return [query.strip() for query in query_plan.sub_queries if query.strip()]
 
     @staticmethod
+    def _covered_targets(evidence: list[Evidence]) -> list[str]:
+        return list(dict.fromkeys(item.retrieval_query for item in evidence))
+
+    @staticmethod
+    def _missing_targets(query_plan: QueryPlan, covered: list[str]) -> list[str]:
+        targets = [query.strip() for query in query_plan.sub_queries if query.strip()]
+        if not targets:
+            return [query_plan.standalone_query]
+        covered_normalized = {value.casefold() for value in covered}
+        missing = [target for target in targets if target.casefold() not in covered_normalized]
+        return missing or [query_plan.standalone_query]
+
+    @staticmethod
     def _has_retrieval_for(target: str, evidence: list[Evidence]) -> bool:
         normalized_target = target.casefold()
         return any(
@@ -127,13 +157,21 @@ class EvidenceGate:
         reason: str,
         policy: IntentPolicy,
         retrieval_attempt: int,
+        covered_targets: list[str] | None = None,
         missing_targets: list[str] | None = None,
+        candidate_evidence_count: int = 0,
+        eligible_evidence_count: int = 0,
+        rejected_evidence_count: int = 0,
     ) -> EvidenceGateResult:
         return EvidenceGateResult(
             accepted=accepted,
             evidence=evidence,
             reason=reason,
+            covered_targets=covered_targets or [],
             missing_targets=missing_targets or [],
+            candidate_evidence_count=candidate_evidence_count,
+            eligible_evidence_count=eligible_evidence_count,
+            rejected_evidence_count=rejected_evidence_count,
             should_retry=(
                 not accepted
                 and retrieval_attempt < policy.max_retrieval_attempts

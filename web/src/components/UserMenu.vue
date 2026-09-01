@@ -6,6 +6,15 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { useUserSession } from '../composables/useUserSession'
 import { useCsrf } from '../composables/useCsrf'
 
+declare const useAppConfig: () => {
+  ui: {
+    colors: {
+      primary: string
+      neutral: string
+    }
+  }
+}
+
 defineProps<{
   collapsed?: boolean
 }>()

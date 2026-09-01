@@ -28,6 +28,8 @@
       "version": "6",
       "when": 1785718314357,
       "tag": "0003_short_mother_askani",
+      "when": 1786639898498,
+      "tag": "0003_mute_mole_man",
       "breakpoints": true
     },
     {
@@ -35,6 +37,8 @@
       "version": "6",
       "when": 1786674479235,
       "tag": "0004_mixed_stone_men",
+      "when": 1786684359198,
+      "tag": "0004_omniscient_red_wolf",
       "breakpoints": true
     },
     {
@@ -42,6 +46,29 @@
       "version": "6",
       "when": 1786675110332,
       "tag": "0005_remarkable_gamora",
+      "when": 1786694382012,
+      "tag": "0005_dizzy_paibok",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786723402132,
+      "tag": "0006_productive_rockslide",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787537550325,
+      "tag": "0007_luxuriant_captain_britain",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787550396923,
+      "tag": "0008_lazy_madame_web",
       "breakpoints": true
     }
   ]

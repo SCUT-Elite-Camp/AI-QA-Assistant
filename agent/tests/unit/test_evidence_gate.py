@@ -76,6 +76,25 @@ def test_low_score_evidence_is_rejected() -> None:
     assert result.evidence == []
     assert result.reason == "no_valid_evidence"
     assert result.should_retry is True
+    assert result.candidate_evidence_count == 1
+    assert result.eligible_evidence_count == 0
+    assert result.rejected_evidence_count == 1
+    assert result.covered_targets == []
+    assert result.missing_targets == ["test"]
+
+
+def test_missing_knowledge_evidence_targets_planned_sub_queries() -> None:
+    result = _evaluate(
+        QueryIntent.KNOWLEDGE_QA,
+        [],
+        sub_queries=["Boeing commercial airline customers", "Boeing US government revenue share"],
+    )
+
+    assert result.accepted is False
+    assert result.missing_targets == [
+        "Boeing commercial airline customers",
+        "Boeing US government revenue share",
+    ]
 
 
 def test_duplicate_chunks_keep_the_highest_score() -> None:
@@ -133,6 +152,9 @@ def test_comparison_accepts_bilateral_coverage() -> None:
     assert result.accepted is True
     assert result.missing_targets == []
     assert len(result.evidence) == 2
+    assert result.covered_targets == ["agent cp1", "Agent CP2"]
+    assert result.candidate_evidence_count == 2
+    assert result.eligible_evidence_count == 2
 
 
 def test_comparison_without_sub_queries_is_rejected() -> None:

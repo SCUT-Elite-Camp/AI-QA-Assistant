@@ -4,13 +4,17 @@ import { z } from 'zod'
 import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq, and, asc, inArray } from '../../../../utils/drizzle'
 import { agentFetch } from '../../../../utils/agent-client'
+import { useDrizzle } from '../../../../utils/drizzle'
+import { requireOwnedChat } from '../../../../utils/chatAccess'
+import { resetShortWindow } from '../../../../utils/agentInternalClient'
+import { HistoryMutationError, truncateHistoryAndInvalidateMemory } from '../../../../utils/memoryRepository'
 
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
-
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+
+  const { actor } = await requireOwnedChat(event, id)
 
   const { messageId, type } = await readValidatedBody(event, z.object({
     messageId: z.string(),
@@ -19,22 +23,19 @@ export default defineHandler(async (event) => {
 
   const db = useDrizzle()
 
-  const chat = await db.query.chats.findFirst({
-    where: (chat, { eq }) => and(eq(chat.id, id as string), eq(chat.userId, session.data.user?.id || session.id!))
-  })
-
-  if (!chat) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
-  }
-
-  const allMessages = await db.select({ id: tables.messages.id, role: tables.messages.role })
-    .from(tables.messages)
-    .where(eq(tables.messages.chatId, id as string))
-    .orderBy(asc(tables.messages.createdAt), asc(tables.messages.id))
-
-  const targetIndex = allMessages.findIndex(m => m.id === messageId)
-  if (targetIndex === -1) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'Message not found' })
+  let result
+  try {
+    result = await truncateHistoryAndInvalidateMemory(db, {
+      actorUserId: actor.userId,
+      chatId: id,
+      messageId,
+      type
+    })
+  } catch (error) {
+    if (error instanceof HistoryMutationError) {
+      throw new HTTPError({ statusCode: error.statusCode, statusMessage: error.message })
+    }
+    throw error
   }
 
   const targetRole = allMessages[targetIndex]!.role
@@ -53,6 +54,9 @@ export default defineHandler(async (event) => {
     // Clear Agent in-memory history so regenerate/edit rebuilds clean context
     agentFetch(`/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
   }
+  // The history transaction has committed; reset failure must not undo it.
+  // This is only the legacy short-window compatibility path.
+  void resetShortWindow(id).catch(() => {})
 
-  return { success: true }
+  return { success: true, historyRevision: result.historyRevision }
 })

@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 
@@ -64,3 +64,100 @@ class QueryEnrichment(BaseModel):
     @classmethod
     def strip_enrichment_reason(cls, value: str) -> str:
         return value.strip()
+
+
+class UnifiedQueryResult(BaseModel):
+    """Internal one-call result for Query Understanding."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    intent: QueryIntent
+    confidence: float = Field(ge=0.0, le=1.0)
+    is_follow_up: bool = False
+    is_clarification_reply: bool = False
+    needs_clarification: bool = False
+    clarification_question: str = ""
+    ambiguity_reason: str = ""
+    standalone_query: str
+    sub_queries: list[str] = Field(default_factory=list)
+    filters: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def normalize_confidence(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            named = {"high": 0.9, "medium": 0.6, "low": 0.3}
+            return named.get(value.strip().lower(), value)
+        return value
+
+    @field_validator("clarification_question", "ambiguity_reason", mode="before")
+    @classmethod
+    def normalize_optional_text(cls, value: Any) -> Any:
+        return "" if value is None else value
+
+    @field_validator("clarification_question", "ambiguity_reason", "standalone_query")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("sub_queries")
+    @classmethod
+    def normalize_unified_sub_queries(cls, values: list[str]) -> list[str]:
+        return QueryEnrichment.normalize_sub_queries(values)
+
+
+class SubTaskProposal(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
+    suggested_intent: QueryIntent
+
+    @field_validator("query")
+    @classmethod
+    def normalize_query(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("sub-task query must not be empty")
+        return value.strip()
+
+
+class QueryPreparationResult(BaseModel):
+    """Internal combined rewrite and retrieval-planning result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    standalone_query: str
+    sub_queries: list[str] = Field(default_factory=list)
+    sub_tasks: list[SubTaskProposal] = Field(default_factory=list)
+    filters: dict[str, Any] = Field(default_factory=dict)
+    reason: str = ""
+
+    @field_validator("filters", mode="before")
+    @classmethod
+    def normalize_empty_filters(cls, value: Any) -> Any:
+        if value is None or value == []:
+            return {}
+        return value
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def normalize_optional_reason(cls, value: Any) -> Any:
+        return "" if value is None else value
+
+    @field_validator("standalone_query", "reason")
+    @classmethod
+    def strip_preparation_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("sub_queries")
+    @classmethod
+    def normalize_preparation_sub_queries(cls, values: list[str]) -> list[str]:
+        return QueryEnrichment.normalize_sub_queries(values)
+
+    @model_validator(mode="after")
+    def synchronize_sub_tasks(self) -> "QueryPreparationResult":
+        if self.sub_tasks:
+            self.sub_tasks = self.sub_tasks[:4]
+            self.sub_queries = QueryEnrichment.normalize_sub_queries(
+                [task.query for task in self.sub_tasks]
+            )
+        return self

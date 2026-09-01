@@ -1,6 +1,7 @@
 import { defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
+import { useOverlay, useToast } from '@nuxt/ui/composables'
 import { useChats } from './useChats'
 import { useCsrf } from './useCsrf'
 

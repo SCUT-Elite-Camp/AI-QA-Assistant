@@ -1,6 +1,7 @@
 import json
 from typing import List, Dict, Any, Optional
 
+from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
@@ -21,7 +22,38 @@ class Agent:
         tools: List[BaseTool] | None = None,
         answer_formatter: AnswerFormatter | None = None,
     ) -> None:
+        custom_llm_supplied = llm is not None
         self.llm = llm or LLMClient()
+        self.runtime_llm = ObservedLLM(self.llm, "agent_runtime")
+        self.answer_llm = ObservedLLM(self.llm, "answer_generation_complex")
+        self.fast_answer_llm: BaseLLM | None = None
+        if (
+            not custom_llm_supplied
+            and settings.ANSWER_FAST_MODEL
+            and settings.ANSWER_FAST_MODEL != settings.LLM_MODEL
+        ):
+            self.fast_answer_llm = ObservedLLM(
+                LLMClient(
+                    model=settings.ANSWER_FAST_MODEL,
+                    enable_thinking=settings.ANSWER_FAST_MODEL_THINKING,
+                ),
+                "answer_generation_fast",
+            )
+        self.title_llm = ObservedLLM(self.llm, "title_generation")
+        completeness_llm: BaseLLM = self.llm
+        if (
+            not custom_llm_supplied
+            and settings.ANSWER_COMPLETENESS_MODEL
+            and settings.ANSWER_COMPLETENESS_MODEL != settings.LLM_MODEL
+        ):
+            completeness_llm = LLMClient(
+                model=settings.ANSWER_COMPLETENESS_MODEL,
+                enable_thinking=settings.ANSWER_COMPLETENESS_MODEL_THINKING,
+            )
+        self.completeness_llm = ObservedLLM(
+            completeness_llm,
+            "answer_completeness",
+        )
         self.answer_formatter = answer_formatter or AnswerFormatter()
 
         # Load auxiliary services
@@ -51,7 +83,12 @@ class Agent:
 
         """Main entry point. Handles trace_id binding, latency profiling, and SQLite history saving."""
         start_time = self.audit_service.start_timer()
+        metrics_token = start_llm_metrics()
         trace_id = self.trace_service.start_trace()
+        self.last_run_result = None
+        self.last_orchestration = None
+        self.last_citation_check = None
+        persistent_memory_request = self._is_persistent_memory_request(request)
 
         try:
             response = self._chat_internal(request, trace_id)
@@ -69,6 +106,7 @@ class Agent:
 
             return response
         finally:
+            clear_llm_metrics(metrics_token)
             self.trace_service.clear_trace()
 
     def _chat_internal(self, request: ChatRequest, trace_id: str) -> ChatResponse:

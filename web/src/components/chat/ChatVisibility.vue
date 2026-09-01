@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { $fetch } from 'ofetch'
 import { useClipboard } from '@vueuse/core'
+import { useToast } from '@nuxt/ui/composables'
 import { useCsrf } from '../../composables/useCsrf'
 
 const props = defineProps<{

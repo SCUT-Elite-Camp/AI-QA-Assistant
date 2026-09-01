@@ -30,6 +30,7 @@ Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为�
 
 - FastAPI 服务入口
 - `GET /health`
+- `GET /ready` 检索冷启动就绪状态
 - `POST /api/chat`
 - ChatRequest / ChatResponse / Citation 接口契约
 - Mock Retrieval
@@ -131,7 +132,18 @@ DEFAULT_RETRIEVAL_MODE=hybrid
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
+# Optional: use a faster model only for rewrite + retrieval planning.
+# Empty or omitted keeps the existing single-model behavior.
+QUERY_PREPARATION_MODEL=
+ANSWER_FAST_MODEL=
+ANSWER_FAST_MODEL_THINKING=false
 QUERY_UNDERSTANDING_ENABLED=true
+UNIFIED_QUERY_UNDERSTANDING_ENABLED=false
+CASCADED_QUERY_UNDERSTANDING_ENABLED=false
+HYBRID_INTENT_ROUTER_ENABLED=false
+INTENT_EMBEDDING_MODEL_PATH=
+INTENT_EMBEDDING_THRESHOLD=0.72
+INTENT_EMBEDDING_MARGIN=0.08
 QUERY_REWRITE_ENABLED=true
 CLARIFICATION_ENABLED=true
 MEMORY_ENABLED=true

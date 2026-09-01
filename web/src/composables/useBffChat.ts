@@ -1,7 +1,9 @@
 import { ref, shallowRef } from 'vue'
 import type { UIMessage } from 'ai'
-import { $fetch } from 'ofetch'
-import { getErrorMessage } from '../mock/errorMap'
+
+function getErrorMessage(_status?: string, message?: string): string {
+  return message || 'Unable to complete this request.'
+}
 
 function getTextFromParts(parts: UIMessage['parts']): string {
   for (const part of parts) {
