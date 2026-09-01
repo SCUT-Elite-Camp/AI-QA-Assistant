@@ -5,6 +5,7 @@ import { defineHandler } from 'nitro'
 import { readValidatedBody } from 'nitro/h3'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
+import { agentFetch } from '../../../utils/agent-client'
 import { logger } from '../../../utils/logger'
 
 export default defineHandler(async (event) => {
@@ -94,10 +95,9 @@ export default defineHandler(async (event) => {
     },
     execute: async ({ writer }) => {
       // 1. Send query directly to Python Agent layer (identical to standard chat)
-      const agentUrl = "http://127.0.0.1:8000/api/chat"
       let agentRes: Response
       try {
-        agentRes = await fetch(agentUrl, {
+        agentRes = await agentFetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

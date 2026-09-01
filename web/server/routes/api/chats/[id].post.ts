@@ -1,11 +1,13 @@
-import fs from 'fs'
-import path from 'path'
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
+import { MODELS } from '../../../../shared/utils/models'
+import { logger } from '../../../utils/logger'
+import { agentFetch } from '../../../utils/agent-client'
+import { recordAiCall } from '../../../utils/metrics'
 import {
   recordAiCall,
   recordMemoryCompaction,
@@ -148,6 +150,13 @@ export default defineHandler(async (event) => {
     id: z.string()
   }).parse)
 
+  const { model, messages } = await readValidatedBody(event, z.object({
+    model: z.string().refine(value => MODELS.some(m => m.value === value), {
+      message: 'Invalid model'
+    }),
+    messages: z.array(z.custom<UIMessage>())
+  }).parse)
+
   // Authorize before reading the request body, writing a user message, or
   // calling the Agent so a supplied chat ID can never cross ownership bounds.
   const { actor } = await requireOwnedChat(event, id)
@@ -162,7 +171,7 @@ export default defineHandler(async (event) => {
   const db = useDrizzle()
 
   const chat = await db.query.chats.findFirst({
-    where: (chat, { eq }) => eq(chat.id, id as string),
+    where: (chat, { eq }) => and(eq(chat.id, id as string), eq(chat.userId, session.data.user?.id || session.id!)),
     with: {
       messages: {
         orderBy: (message, { asc }) => asc(message.sequence)
@@ -173,8 +182,21 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
+  // Generate title locally from first message to avoid external API calls
+  if (!chat.title) {
+    const firstMsgText = messages[0]?.content || 'New Chat'
+    const title = firstMsgText.length > 25 ? firstMsgText.slice(0, 25) + '...' : firstMsgText
+    await db.update(tables.chats).set({ title }).where(eq(tables.chats.id, id as string))
+  }
 
   const lastMessage = messages[messages.length - 1]
+  if (lastMessage?.role === 'user' && messages.length > 1) {
+    await db.insert(tables.messages).values({
+      id: lastMessage.id,
+      chatId: id as string,
+      role: 'user',
+      parts: lastMessage.parts
+    }).onConflictDoUpdate({ target: tables.messages.id, set: { parts: lastMessage.parts } })
   if (!lastMessage || lastMessage.role !== 'user') {
     throw new HTTPError({ statusCode: 400, statusMessage: 'The last message must be a user message' })
   }
@@ -220,6 +242,15 @@ export default defineHandler(async (event) => {
     },
     execute: async ({ writer }) => {
       try {
+        const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+        console.log("[DEBUG queryText]", queryText)
+        
+        // Write a transient status so the user knows RAG is searching
+        if (!chat.title) {
+          writer.write({
+            type: 'data-chat-title',
+            data: { message: 'Generating title...' },
+            transient: true
         // Fetch Topic Space context if chat is linked to a topic
         let topicInfo: any = null
         let topicDocIds: string[] = []
@@ -228,18 +259,22 @@ export default defineHandler(async (event) => {
           topicInfo = await db.query.topics.findFirst({
             where: eq(tables.topics.id, chat.topicId)
           })
-          if (topicInfo) {
-            const topicDocs = await db.query.topicDocuments.findMany({
-              where: and(
-                eq(tables.topicDocuments.topicId, topicInfo.id),
-                eq(tables.topicDocuments.isRemoved, false)
-              )
-            })
-            topicDocIds = topicDocs.map(d => d.docId)
-            topicTitles = topicDocs.map(d => d.title)
-          }
         }
 
+        // 1. Call real Python Agent API (port 8000)
+        const aiCallStart = Date.now()
+        const agentRes = await agentFetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            query: queryText,
+            top_k: 5,
+            retrieval_mode: "hybrid",
+            user_id: session.data.user?.id || session.id
+          }),
+          signal: abortController.signal
         // 1. Call the public Agent API, or the token-protected Memory API only
         // after an authenticated user's exact current message is persisted.
         const aiCallStart = Date.now()
@@ -319,6 +354,9 @@ export default defineHandler(async (event) => {
         const responseData = agentCall.source === 'internal' ? agentData.response : agentData
         recordAiCall(Date.now() - aiCallStart)
 
+        if (agentData.status !== "success") {
+          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
+          const responseId = `err-msg-${Date.now()}`
         if (responseData.chat_title) {
           await db.update(tables.chats).set({ title: responseData.chat_title }).where(eq(tables.chats.id, id as string))
           writer.write({
@@ -340,6 +378,8 @@ export default defineHandler(async (event) => {
           return
         }
 
+        const rawAnswer = agentData.answer || ""
+        const citationsList: any[] = agentData.citations || []
         const rawAnswer = responseData.answer || responseData.message
           || (isNoRelevantContext ? '未找到可用的知识库内容，请补充问题或调整检索范围。' : '')
         // NO_RELEVANT_CONTEXT is a safe user-visible retrieval outcome, not
@@ -356,78 +396,10 @@ export default defineHandler(async (event) => {
           })
         }
 
-        // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
-        if (chat.topicId && citationsList.length > 0) {
-          try {
-            let hasNewDocs = false
-            for (const cit of citationsList) {
-              const docId = cit.doc_id || `doc_${Date.now()}`
-              const title = cit.title || docId
-              const snippet = cit.snippet || ''
-
-              const existingDoc = await db.query.topicDocuments.findFirst({
-                where: and(
-                  eq(tables.topicDocuments.topicId, chat.topicId),
-                  eq(tables.topicDocuments.docId, docId)
-                )
-              })
-
-              if (existingDoc) {
-                await db.update(tables.topicDocuments).set({
-                  recallCount: existingDoc.recallCount + 1,
-                  lastRecalledAt: new Date(),
-                  snippet: snippet || existingDoc.snippet
-                }).where(eq(tables.topicDocuments.id, existingDoc.id))
-              } else {
-                hasNewDocs = true
-                await db.insert(tables.topicDocuments).values({
-                  topicId: chat.topicId,
-                  docId,
-                  title,
-                  sourceUrl: cit.source_url || null,
-                  snippet,
-                  recallCount: 1,
-                  score: cit.score ? Math.round(cit.score * 100) : null
-                })
-              }
-
-              // Physical document file persistence directly to data-persistence/data/topics/<topicId>/documents/
-              try {
-                const topicDir = ensureTopicDir(chat.topicId)
-                const docsFolder = path.join(topicDir, 'documents')
-                if (!fs.existsSync(docsFolder)) {
-                  fs.mkdirSync(docsFolder, { recursive: true })
-                }
-                const safeTitle = title.replace(/[^a-zA-Z0-9_\-\.\u4e00-\u9fa5]/g, '_')
-                const filePath = path.join(docsFolder, `${docId}_${safeTitle}.txt`)
-                const fileText = `Title: ${title}\nSource: ${cit.source_url || 'RAG Retrieval'}\nScore: ${cit.score || ''}\n\nContent:\n${snippet}`
-                fs.writeFileSync(filePath, fileText, 'utf-8')
-              } catch (fileErr) {
-                console.error('[TopicDocFileSaveError]', fileErr)
-              }
-            }
-
-
-            // Update anti-echo-chamber counter & sync to disk folder
-            if (topicInfo) {
-              const newCount = hasNewDocs ? 0 : (topicInfo.consecutiveNoNewDocsCount || 0) + 1
-              await db.update(tables.topics)
-                .set({ consecutiveNoNewDocsCount: newCount })
-                .where(eq(tables.topics.id, chat.topicId))
-
-              const latestTopic = await db.query.topics.findFirst({ where: eq(tables.topics.id, chat.topicId) })
-              const latestDocs = await db.query.topicDocuments.findMany({ where: eq(tables.topicDocuments.topicId, chat.topicId) })
-              if (latestTopic) {
-                syncTopicToDisk(latestTopic.id, latestTopic, latestTopic.soulContent, latestDocs)
-              }
-            }
-          } catch (docErr) {
-            console.error('[TopicDocPoolUpdateError]', docErr)
-          }
-        }
-
-
         // 2. Replace [N] markers with :cite-mark{index="N"} — only pass index.
+        //    Complex attribute values (chunk text) break MDC {…} parsing when
+        //    they contain }, ", or other special characters. Chunk details are
+        //    delivered via tool-output and picked up by provide/inject instead.
         let processedAnswer = rawAnswer
         for (let i = 0; i < citationsList.length; i++) {
           const idx = i + 1
@@ -435,6 +407,15 @@ export default defineHandler(async (event) => {
         }
 
 
+        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
+        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
+        const toolCallId = `call_${Date.now()}`
+        writer.write({
+          type: 'tool-input-available',
+          toolCallId,
+          toolName: 'rag_search',
+          input: { query: queryText }
+        })
 
         // 3. Expose a RAG tool invocation only when the Agent supplied
         //    citations. In particular, a deterministic Fact recall must not

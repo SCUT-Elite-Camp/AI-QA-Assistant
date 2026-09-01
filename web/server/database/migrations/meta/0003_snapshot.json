@@ -1,6 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
+  "id": "f88cb7fb-bdd7-4e67-9c26-3066328b6659",
+  "prevId": "5a606151-51d9-40cc-a6d1-c1e44a4f347f",
+  "tables": {
+    "audit_logs": {
+      "name": "audit_logs",
   "id": "6bd4355e-69ff-4900-bad4-59ca34542ba9",
   "prevId": "5a606151-51d9-40cc-a6d1-c1e44a4f347f",
   "tables": {
@@ -14,6 +19,8 @@
           "notNull": true,
           "autoincrement": false
         },
+        "user_id": {
+          "name": "user_id",
         "title": {
           "name": "title",
           "type": "text",
@@ -21,6 +28,8 @@
           "notNull": false,
           "autoincrement": false
         },
+        "action": {
+          "name": "action",
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -28,6 +37,15 @@
           "notNull": true,
           "autoincrement": false
         },
+        "resource_type": {
+          "name": "resource_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "resource_id": {
+          "name": "resource_id",
         "visibility": {
           "name": "visibility",
           "type": "text",
@@ -43,6 +61,15 @@
           "notNull": false,
           "autoincrement": false
         },
+        "detail": {
+          "name": "detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "ip": {
+          "name": "ip",
         "is_branch": {
           "name": "is_branch",
           "type": "integer",
@@ -58,6 +85,8 @@
           "notNull": false,
           "autoincrement": false
         },
+        "user_agent": {
+          "name": "user_agent",
         "parent_message_id": {
           "name": "parent_message_id",
           "type": "text",
@@ -74,6 +103,8 @@
         }
       },
       "indexes": {
+        "audit_logs_user_id_idx": {
+          "name": "audit_logs_user_id_idx",
         "chats_user_id_idx": {
           "name": "chats_user_id_idx",
           "columns": [
@@ -81,6 +112,22 @@
           ],
           "isUnique": false
         },
+        "audit_logs_action_idx": {
+          "name": "audit_logs_action_idx",
+          "columns": [
+            "action"
+          ],
+          "isUnique": false
+        },
+        "audit_logs_created_at_idx": {
+          "name": "audit_logs_created_at_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
         "chats_topic_id_idx": {
           "name": "chats_topic_id_idx",
           "columns": [
@@ -108,6 +155,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "chats": {
+      "name": "chats",
     "message_feedbacks": {
       "name": "message_feedbacks",
       "columns": {
@@ -118,6 +167,15 @@
           "notNull": true,
           "autoincrement": false
         },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
         "chat_id": {
           "name": "chat_id",
           "type": "text",
@@ -132,6 +190,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'private'"
         "is_favorite": {
           "name": "is_favorite",
           "type": "integer",
@@ -156,6 +221,10 @@
         }
       },
       "indexes": {
+        "chats_user_id_idx": {
+          "name": "chats_user_id_idx",
+          "columns": [
+            "user_id"
         "msg_feedbacks_chat_id_idx": {
           "name": "msg_feedbacks_chat_id_idx",
           "columns": [
@@ -171,6 +240,7 @@
           "isUnique": false
         }
       },
+      "foreignKeys": {},
       "foreignKeys": {
         "message_feedbacks_chat_id_chats_id_fk": {
           "name": "message_feedbacks_chat_id_chats_id_fk",
@@ -203,6 +273,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "files": {
+      "name": "files",
     "messages": {
       "name": "messages",
       "columns": {
@@ -213,6 +285,15 @@
           "notNull": true,
           "autoincrement": false
         },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
         "chat_id": {
           "name": "chat_id",
           "type": "text",
@@ -220,12 +301,43 @@
           "notNull": true,
           "autoincrement": false
         },
+        "original_name": {
+          "name": "original_name",
         "role": {
           "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "storage_path": {
+          "name": "storage_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'private'"
         },
         "parts": {
           "name": "parts",
@@ -258,6 +370,17 @@
         }
       },
       "indexes": {
+        "files_user_id_idx": {
+          "name": "files_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "files_visibility_idx": {
+          "name": "files_visibility_idx",
+          "columns": [
+            "visibility"
         "messages_chat_id_idx": {
           "name": "messages_chat_id_idx",
           "columns": [
@@ -267,6 +390,12 @@
         }
       },
       "foreignKeys": {
+        "files_user_id_users_id_fk": {
+          "name": "files_user_id_users_id_fk",
+          "tableFrom": "files",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
         "messages_chat_id_chats_id_fk": {
           "name": "messages_chat_id_chats_id_fk",
           "tableFrom": "messages",
@@ -285,6 +414,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "messages": {
+      "name": "messages",
     "topic_documents": {
       "name": "topic_documents",
       "columns": {
@@ -295,6 +426,8 @@
           "notNull": true,
           "autoincrement": false
         },
+        "chat_id": {
+          "name": "chat_id",
         "topic_id": {
           "name": "topic_id",
           "type": "text",
@@ -302,11 +435,20 @@
           "notNull": true,
           "autoincrement": false
         },
+        "role": {
+          "name": "role",
         "doc_id": {
           "name": "doc_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "parts": {
+          "name": "parts",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "title": {
@@ -369,6 +511,21 @@
         }
       },
       "indexes": {
+        "messages_chat_id_idx": {
+          "name": "messages_chat_id_idx",
+          "columns": [
+            "chat_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "messages_chat_id_chats_id_fk": {
+          "name": "messages_chat_id_chats_id_fk",
+          "tableFrom": "messages",
+          "tableTo": "chats",
+          "columnsFrom": [
+            "chat_id"
         "topic_docs_topic_id_idx": {
           "name": "topic_docs_topic_id_idx",
           "columns": [
@@ -404,6 +561,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "user_settings": {
+      "name": "user_settings",
     "topics": {
       "name": "topics",
       "columns": {
@@ -414,6 +573,8 @@
           "notNull": true,
           "autoincrement": false
         },
+        "user_id": {
+          "name": "user_id",
         "title": {
           "name": "title",
           "type": "text",
@@ -421,6 +582,16 @@
           "notNull": true,
           "autoincrement": false
         },
+        "theme": {
+          "name": "theme",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'system'"
+        },
+        "primary_color": {
+          "name": "primary_color",
         "main_chat_id": {
           "name": "main_chat_id",
           "type": "text",
@@ -434,6 +605,18 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
+          "default": "'blue'"
+        },
+        "neutral_color": {
+          "name": "neutral_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'zinc'"
+        },
+        "language": {
+          "name": "language",
           "default": "''"
         },
         "description": {
@@ -449,6 +632,26 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
+          "default": "'zh-CN'"
+        },
+        "notifications_enabled": {
+          "name": "notifications_enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "auto_save_chats": {
+          "name": "auto_save_chats",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "font_size": {
+          "name": "font_size",
           "default": "'auto'"
         },
         "tags": {
@@ -464,6 +667,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
+          "default": "'medium'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
           "default": "'ready'"
         },
         "consecutive_no_new_docs_count": {
@@ -480,6 +691,30 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        }
+      },
+      "indexes": {
+        "user_settings_user_id_idx": {
+          "name": "user_settings_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "user_settings_user_id_users_id_fk": {
+          "name": "user_settings_user_id_users_id_fk",
+          "tableFrom": "user_settings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "indexes": {},

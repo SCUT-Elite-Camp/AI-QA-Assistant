@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   title: string
   description: string
@@ -6,10 +8,18 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ close: [boolean] }>()
+
+const open = ref(true)
+
+function onOpenChange(v: boolean) {
+  if (!v) emit('close', false)
+}
 </script>
 
 <template>
   <UModal
+    v-model:open="open"
+    @update:open="onOpenChange"
     :title="title"
     :description="description"
     :ui="{

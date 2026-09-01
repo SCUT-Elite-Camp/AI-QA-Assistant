@@ -102,6 +102,7 @@ python scripts/run_week4_acceptance.py
 
 ```bash
 curl -X POST "http://localhost:8000/api/chat" \
+  -H "Authorization: Bearer <AGENT_API_KEY>" \
   -H "Content-Type: application/json" \
   -d "{\"query\":\"项目 Q1 阶段需要完成哪些功能？\",\"stream\":false,\"retrieval_mode\":\"hybrid\"}"
 ```
@@ -149,24 +150,36 @@ MEMORY_ENABLED=true
 MAX_MEMORY_MESSAGES=10
 MAX_AGENT_ITERATIONS=5
 MAX_REPEATED_TOOL_CALLS=2
+
+# 接口共享密钥（必配）：Web 可信端调用 /api/* 业务接口时携带
+# `Authorization: Bearer <AGENT_API_KEY>`。未配置时业务接口返回 503，
+# 防止外部直连 agent 端口伪造 user_id 绕过权限隔离。
+AGENT_API_KEY=
+
+# 权限查询异常策略（默认 false = fail-closed，拒绝全部文档；故障时避免权限全开）
+PERMISSION_FAIL_OPEN=false
 ```
 
-`UNIFIED_QUERY_UNDERSTANDING_ENABLED` 默认关闭。开启后，Agent 会用一次
-LLM 调用联合生成意图、澄清判断、独立查询和检索子查询；解析、超时或契约
-校验失败时自动回退到原有的 IntentClassifier → Clarifier → QueryRewriter →
-QueryPlanner 链路。
+### 接口认证说明
 
-`CASCADED_QUERY_UNDERSTANDING_ENABLED` 默认关闭。开启后，意图识别保持独立；
-明确问题由规则化 ClarificationGate 放行，疑似缺少指代来源的问题才调用
-Clarifier；检索意图再由一次 QueryPreparation 调用联合完成指代消解、查询
-重写和子查询规划。准备阶段失败时只回退 QueryRewriter 与 QueryPlanner。
-如果级联与四合一开关同时开启，级联模式优先。
+Agent 服务仅接受 Web 可信端的调用（内网单向可信链路）。所有 `/api/*` 业务接口
+（`/api/chat`、`/api/chat/history`、`/api/chat/stream`、`/api/tools`、
+`/api/chat/memory/{id}`、`/api/topics/summarize`）都要求携带共享密钥：
 
-`HYBRID_INTENT_ROUTER_ENABLED` 默认关闭。开启后，无历史的首轮问题依次经过
-高精度规则、Embedding样例分类和原LLM分类器兜底；带历史的问题直接使用原
-LLM分类器，以保留follow-up和clarification reply判断。Embedding模型只从
-`INTENT_EMBEDDING_MODEL_PATH` 本地路径加载，不会隐式下载。最高相似度和
-第一、第二名差值必须分别达到threshold与margin，否则回退LLM。
+```bash
+curl -X POST "http://localhost:8000/api/chat" \
+  -H "Authorization: Bearer <AGENT_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\":\"...\",\"retrieval_mode\":\"hybrid\",\"user_id\":\"...\"}"
+```
+
+- `AGENT_API_KEY` 未配置：业务接口返回 `503`（拒绝服务）。
+- 缺少/错误的密钥：返回 `401`。
+- `GET /health` 保持匿名（供探活）。
+- 校验使用 `secrets.compare_digest` 恒定时间比较，防时序攻击。
+
+`AGENT_API_KEY` 需与 Web 层 `web/.env` 中配置的值保持一致（Web 转发 session 注入的
+`user_id` 并附带相同的 Bearer 密钥）。
 
 本地 Ollama 启动后，可通过兼容 OpenAI Chat Completions 的
 `/v1/chat/completions` 接口接入 `llama3.1`，通常不需要配置

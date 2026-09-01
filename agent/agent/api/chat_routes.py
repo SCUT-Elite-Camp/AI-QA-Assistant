@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 
 from agent.schemas.chat import ChatRequest, ChatResponse
 from agent.agent import Agent
+from agent.auth import verify_agent_key
 from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
 
@@ -19,6 +20,7 @@ def get_agent() -> Agent:
 def chat(
     request: ChatRequest,
     agent: Agent = Depends(get_agent),
+    _: None = Depends(verify_agent_key),
 ) -> ChatResponse:
     return agent.chat(request)
 
@@ -27,13 +29,27 @@ def chat(
 def chat_history(
     limit: int = 50,
     agent: Agent = Depends(get_agent),
+    _: None = Depends(verify_agent_key),
 ) -> list[dict]:
     return agent.get_history(limit)
+
+
+@router.delete("/chat/memory/{session_id}")
+def clear_chat_memory(
+    session_id: str,
+    agent: Agent = Depends(get_agent),
+    _: None = Depends(verify_agent_key),
+) -> dict[str, str]:
+    """Clears conversation memory for the given session_id."""
+    agent.memory.clear(session_id)
+    return {"status": "ok", "session_id": session_id}
+
 
 
 @router.get("/tools")
 def list_available_tools(
     agent: Agent = Depends(get_agent),
+    _: None = Depends(verify_agent_key),
 ) -> list[dict]:
     """Returns public metadata for all tools registered with the Agent."""
     return agent.registry.list_tool_metadata()
@@ -42,6 +58,7 @@ def list_available_tools(
 def chat_stream(
     request: ChatRequest,
     agent: Agent = Depends(get_agent),
+    _: None = Depends(verify_agent_key),
 ) -> StreamingResponse:
     response = agent.chat(request)
 
@@ -82,7 +99,10 @@ class SummarizeTopicRequest(BaseModel):
     existing_info: Optional[dict] = None
 
 @router.post("/topics/summarize")
-def summarize_topic(req: SummarizeTopicRequest):
+def summarize_topic(
+    req: SummarizeTopicRequest,
+    _: None = Depends(verify_agent_key),
+):
     """
     Triggers Data Persistence Layer Summarizer Service.
     Generates Title, Description, Soul Cognition (Soul.md), and Content Tags,

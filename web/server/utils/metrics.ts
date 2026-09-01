@@ -243,6 +243,133 @@ export function getMetrics() {
   }
 }
 
+// ==================== Prometheus 格式导出 ====================
+
+/** 辅助：转义 Prometheus label 值中的特殊字符 */
+function escapeLabelValue(v: string): string {
+  return v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')
+}
+
+/** 将内部 Metrics 转换为 Prometheus 文本格式 */
+export function getPrometheusMetrics(): string {
+  const now = Date.now()
+  const uptime = (now - store.startTime) / 1000
+  const lines: string[] = []
+
+  // --- 帮助信息 ---
+  lines.push('# HELP http_requests_total Total number of HTTP requests.')
+  lines.push('# TYPE http_requests_total counter')
+  lines.push(`http_requests_total ${store.requests.total}`)
+
+  lines.push('# HELP http_request_duration_ms HTTP request latency in milliseconds.')
+  lines.push('# TYPE http_request_duration_ms histogram')
+
+  // 按端点 + 状态码输出指标
+  for (const [key, ep] of Object.entries(store.requests.byEndpoint)) {
+    const [method, path] = key.split(' ')
+    const labels = `method="${escapeLabelValue(method)}",path="${escapeLabelValue(path)}"`
+    lines.push(`http_requests_total{${labels}} ${ep.count}`)
+
+    if (ep.latency.count > 0) {
+      const sorted = [...ep.latency.samples].sort((a, b) => a - b)
+      const avg = Math.round(ep.latency.totalMs / ep.latency.count)
+      lines.push(`http_request_duration_ms_sum{${labels}} ${ep.latency.totalMs}`)
+      lines.push(`http_request_duration_ms_count{${labels}} ${ep.latency.count}`)
+      lines.push(`http_request_duration_ms_avg{${labels}} ${avg}`)
+      lines.push(`http_request_duration_ms_p50{${labels}} ${calcPercentile(sorted, 50)}`)
+      lines.push(`http_request_duration_ms_p95{${labels}} ${calcPercentile(sorted, 95)}`)
+      lines.push(`http_request_duration_ms_p99{${labels}} ${calcPercentile(sorted, 99)}`)
+    }
+
+    // 按状态码
+    for (const [code, count] of Object.entries(ep.statusCodes)) {
+      lines.push(`http_requests_total{${labels},status_code="${code}"} ${count}`)
+    }
+  }
+
+  // --- 全局延迟 ---
+  const allLatencies: number[] = []
+  for (const ep of Object.values(store.requests.byEndpoint)) {
+    allLatencies.push(...ep.latency.samples)
+  }
+  allLatencies.sort((a, b) => a - b)
+
+  lines.push('# HELP http_request_duration_overall_ms Overall HTTP request latency percentiles.')
+  lines.push('# TYPE http_request_duration_overall_ms summary')
+  lines.push(`http_request_duration_overall_ms{quantile="0.50"} ${calcPercentile(allLatencies, 50)}`)
+  lines.push(`http_request_duration_overall_ms{quantile="0.95"} ${calcPercentile(allLatencies, 95)}`)
+  lines.push(`http_request_duration_overall_ms{quantile="0.99"} ${calcPercentile(allLatencies, 99)}`)
+
+  // --- 错误率 ---
+  let totalErrors = 0
+  for (const ep of Object.values(store.requests.byEndpoint)) {
+    for (const [code, count] of Object.entries(ep.statusCodes)) {
+      if (Number(code) >= 400) totalErrors += count
+    }
+  }
+  lines.push('# HELP http_errors_total Total HTTP error responses (4xx, 5xx).')
+  lines.push('# TYPE http_errors_total counter')
+  lines.push(`http_errors_total ${totalErrors}`)
+
+  // --- 吞吐量 (req/s 近似) ---
+  if (uptime > 0) {
+    const throughput = store.requests.total / uptime
+    lines.push('# HELP http_throughput_requests_per_second Approximate requests per second.')
+    lines.push('# TYPE http_throughput_requests_per_second gauge')
+    lines.push(`http_throughput_requests_per_second ${throughput.toFixed(4)}`)
+  }
+
+  // --- DB 指标 ---
+  lines.push('# HELP db_queries_total Total database queries.')
+  lines.push('# TYPE db_queries_total counter')
+  lines.push(`db_queries_total ${store.db.totalQueries}`)
+
+  lines.push('# HELP db_query_duration_ms_total Total database query duration in ms.')
+  lines.push('# TYPE db_query_duration_ms_total counter')
+  lines.push(`db_query_duration_ms_total ${Math.round(store.db.totalDurationMs)}`)
+
+  if (store.db.totalQueries > 0) {
+    const dbAvg = Math.round(store.db.totalDurationMs / store.db.totalQueries)
+    lines.push('# HELP db_query_duration_avg_ms Average database query duration in ms.')
+    lines.push('# TYPE db_query_duration_avg_ms gauge')
+    lines.push(`db_query_duration_avg_ms ${dbAvg}`)
+  }
+
+  lines.push('# HELP db_slow_queries_total Slow database queries (>100ms).')
+  lines.push('# TYPE db_slow_queries_total counter')
+  lines.push(`db_slow_queries_total ${store.db.slowQueries}`)
+
+  // --- AI 指标 ---
+  lines.push('# HELP ai_calls_total Total AI model calls.')
+  lines.push('# TYPE ai_calls_total counter')
+  lines.push(`ai_calls_total ${store.ai.totalCalls}`)
+
+  lines.push('# HELP ai_tokens_total Total tokens consumed.')
+  lines.push('# TYPE ai_tokens_total counter')
+  lines.push(`ai_tokens_total ${store.ai.totalTokens}`)
+
+  if (store.ai.totalCalls > 0) {
+    const aiAvg = Math.round(store.ai.totalDurationMs / store.ai.totalCalls)
+    lines.push('# HELP ai_call_duration_avg_ms Average AI call duration in ms.')
+    lines.push('# TYPE ai_call_duration_avg_ms gauge')
+    lines.push(`ai_call_duration_avg_ms ${aiAvg}`)
+  }
+
+  const aiSorted = [...store.ai.ttftBuckets.samples].sort((a, b) => a - b)
+  lines.push('# HELP ai_ttft_ms Time-to-first-token in ms.')
+  lines.push('# TYPE ai_ttft_ms summary')
+  lines.push(`ai_ttft_ms{quantile="0.50"} ${calcPercentile(aiSorted, 50)}`)
+  lines.push(`ai_ttft_ms{quantile="0.95"} ${calcPercentile(aiSorted, 95)}`)
+  lines.push(`ai_ttft_ms{quantile="0.99"} ${calcPercentile(aiSorted, 99)}`)
+
+  // --- 运行时 ---
+  lines.push('# HELP process_uptime_seconds Application uptime in seconds.')
+  lines.push('# TYPE process_uptime_seconds gauge')
+  lines.push(`process_uptime_seconds ${uptime}`)
+
+  return lines.join('\n') + '\n'
+}
+
 /** 重置 Metrics（用于测试） */
 export function resetMetrics() {
   store.startTime = Date.now()
