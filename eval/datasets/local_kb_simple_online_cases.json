@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "name": "CP2 Agent Local KB Simple Online Cases",
+    "version": "1.0",
+    "description": "Single-target questions for the fast answer path."
+  },
+  "cases": [
+    {
+      "id": "local_simple_query_plan_original_query",
+      "query": "Which QueryPlan field stores the user's original question?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["original_query"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["query_plan_contract"],
+      "target_stages": ["query_understanding", "tool_execution", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_tool_registry_owner",
+      "query": "Which system layer owns the ToolRegistry?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["Toolset", "工具层"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["tool_registry"],
+      "target_stages": ["query_understanding", "tool_registry_adapter", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_tool_executor_name_field",
+      "query": "Which field tells ToolExecutor the name of the tool to execute?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["tool_name"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["tool_executor"],
+      "target_stages": ["query_understanding", "tool_execution", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_evidence_dedup_keys",
+      "query": "Which identifiers does Evidence Gate use to deduplicate evidence?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["doc_id"], ["chunk_id"]],
+      "min_fact_groups": 2,
+      "min_citations": 1,
+      "expected_doc_names": ["evidence_gate"],
+      "target_stages": ["query_understanding", "evidence_gate", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_corrective_retrieval_limit",
+      "query": "How many Corrective Retrieval attempts are allowed per request?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["at most once", "only one", "single corrective retrieval", "最多一次", "仅一次"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["corrective_retrieval", "evidence_gate"],
+      "target_stages": ["query_understanding", "tool_execution", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_citation_marker",
+      "query": "What citation-marker format does CitationChecker recognize in an answer?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["[n]", "方括号"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["citation_check"],
+      "target_stages": ["query_understanding", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_memory_session_field",
+      "query": "Which ConversationMemory field distinguishes one session from another?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["session_id"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["conversation_memory_contract"],
+      "target_stages": ["conversation_memory", "query_understanding", "answer_generation", "citation_check"]
+    },
+    {
+      "id": "local_simple_api_citation_stage",
+      "query": "Which module performs the final citation validation in the CP2 API question-answering flow?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [["CitationChecker", "Citation Check", "引用检查"]],
+      "min_fact_groups": 1,
+      "min_citations": 1,
+      "expected_doc_names": ["API_CONTRACT", "citation_check"],
+      "target_stages": ["query_understanding", "answer_generation", "citation_check"]
+    }
+  ]
+}

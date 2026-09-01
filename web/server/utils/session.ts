@@ -9,11 +9,21 @@ export interface UserSession extends Session {
   }
 }
 
+export function getSessionSecret (environment: Record<string, string | undefined> = process.env): string {
+  const configuredSecret = environment.SESSION_SECRET?.trim()
+  if (configuredSecret) return configuredSecret
+
+  if (environment.NODE_ENV === 'development') {
+    return 'development_only_session_secret_key_qa_assistant_2026'
+  }
+
+  throw new Error('SESSION_SECRET must be configured outside development')
+}
+
 export function useUserSession (event: HTTPEvent) {
-  const secret = process.env.SESSION_SECRET || 'default_fallback_session_secret_key_qa_assistant_2026'
   return useSession<UserSession>(event, {
     name: 'qa_session',
-    password: secret,
+    password: getSessionSecret(),
     cookie: {
       sameSite: 'lax',
       secure: false,

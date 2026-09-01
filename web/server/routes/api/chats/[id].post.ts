@@ -3,81 +3,170 @@ import path from 'path'
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
-import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { MODELS } from '../../../../shared/utils/models'
-import { logger } from '../../../utils/logger'
-import { recordAiCall } from '../../../utils/metrics'
+import {
+  recordAiCall,
+  recordMemoryCompaction,
+  recordMemoryDuration,
+  recordMemoryFact,
+  recordMemoryFallback,
+  recordMemoryResolve
+} from '../../../utils/metrics'
 import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
+import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
+import { callChatWithPersistentFallback, shouldUsePersistentMemory } from '../../../utils/agentInternalClient'
+import { compactAfterSuccessfulAssistantPersistence } from '../../../utils/postTurnCompaction'
+import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
+import {
+  createFactProposal,
+  readCurrentRevisionFactSource
+} from '../../../utils/memoryRepository'
+import { isSensitiveMemoryValue } from '../../../utils/sensitiveMemoryValue'
+import { isSessionFactEnabled } from '../../../utils/sessionFactGate'
+import { logMemoryEvent } from '../../../utils/logger'
+import type { FactProposal } from '../../../utils/memoryContract'
+import {
+  appendMessage,
+  createAssistantMessageId,
+  createAssistantStreamState,
+  createCurrentMessageHandoff,
+  persistCurrentUserMessage,
+  shouldPersistAssistantMessage
+} from '../../../utils/messageLifecycle'
 
+type Database = NonNullable<ReturnType<typeof useDrizzle>>
 
-
-async function generateSmartTitle(userQuery: string): Promise<string> {
-  const cleanQuery = userQuery.trim().replace(/^[\s\n\r]+/, '')
-  if (!cleanQuery) return '新对话'
-
-  try {
-    const apiKey = process.env.LLM_API_KEY || ''
-    const apiBase = process.env.LLM_API_BASE || 'https://api.longcat.chat/openai/v1'
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 4000)
-
-    const res = await fetch(`${apiBase}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: process.env.LLM_MODEL || 'LongCat-2.0',
-        messages: [
-          { role: 'system', content: '你是对话标题生成器。根据用户第一次提出的问题，总结生成一个简短、精炼的主题标题（15字以内，绝对不要包含标点符号、引号或多余文字）。' },
-          { role: 'user', content: cleanQuery }
-        ],
-        max_tokens: 30,
-        temperature: 0.3
-      }),
-      signal: controller.signal
-    })
-    clearTimeout(timeoutId)
-    if (res.ok) {
-      const data = await res.json()
-      const title = data?.choices?.[0]?.message?.content?.trim()
-        ?.replace(/['"“”`\.\!\?。！？]/g, '')
-      if (title && title.length >= 2 && title.length <= 25) {
-        return title
-      }
-    }
-  } catch (e) {
-    console.warn('[TitleGen] LLM title gen fallback:', e)
-  }
-
-  return cleanQuery.length > 20 ? cleanQuery.slice(0, 20) + '...' : cleanQuery
+interface PersistAgentFactProposalsInput {
+  actorUserId: string
+  chatId: string
+  currentMessageId: string
+  historyRevision: number
+  proposals: FactProposal[]
 }
 
-export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
+const FACT_CATEGORIES = new Set<FactProposal['category']>([
+  'GOAL',
+  'PREFERENCE',
+  'PLAN_CONSTRAINT'
+])
 
+/**
+ * This server-only best-effort branch runs only after the assistant row is
+ * durable. It intentionally absorbs malformed Agent candidates and storage
+ * errors so neither condition can change an already successful chat response.
+ */
+export async function persistAgentFactProposalsAfterAssistantPersistence (
+  db: Database,
+  input: PersistAgentFactProposalsInput
+): Promise<void> {
+  if (!isSessionFactEnabled()) {
+    recordMemoryFact('suppressed', 'disabled')
+    return
+  }
+  if (input.proposals.length === 0) {
+    recordMemoryFact('suppressed', 'empty')
+    return
+  }
+
+  let source
+  try {
+    source = await readCurrentRevisionFactSource(db, {
+      actorUserId: input.actorUserId,
+      chatId: input.chatId,
+      historyRevision: input.historyRevision,
+      sourceMessageId: input.currentMessageId
+    })
+  } catch {
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
+    return
+  }
+
+  if (!source || source.role !== 'user') {
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
+    return
+  }
+
+  if (input.proposals.length > 1) {
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
+  }
+
+  const proposal = input.proposals[0]
+  if (!proposal) return
+  if (proposal.source_message_id !== input.currentMessageId) {
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
+    return
+  }
+  if (!FACT_CATEGORIES.has(proposal.category)) {
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
+    return
+  }
+  if (!proposal.value.trim()) {
+    recordMemoryFact('suppressed', 'empty')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'empty' })
+    return
+  }
+  if (isSensitiveMemoryValue(proposal.value)) {
+    recordMemoryFact('suppressed', 'sensitive')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'sensitive' })
+    return
+  }
+
+  try {
+    // expires_at from the internal envelope is deliberately ignored. The
+    // Repository is the only component that assigns expiry on confirmation.
+    await createFactProposal(db, {
+      actorUserId: input.actorUserId,
+      category: proposal.category,
+      chatId: input.chatId,
+      historyRevision: input.historyRevision,
+      sourceMessageId: input.currentMessageId,
+      value: proposal.value
+    })
+    recordMemoryFact('proposed', 'success')
+    logMemoryEvent({ event: 'memory_fact', action: 'proposed', outcome: 'success' })
+  } catch {
+    recordMemoryFact('suppressed', 'failed')
+    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
+  }
+}
+
+const uiMessageSchema = z.object({
+  id: z.string().min(1),
+  parts: z.array(z.unknown()),
+  role: z.enum(['user', 'assistant', 'system'])
+}).passthrough()
+
+export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
 
+  // Authorize before reading the request body, writing a user message, or
+  // calling the Agent so a supplied chat ID can never cross ownership bounds.
+  const { actor } = await requireOwnedChat(event, id)
+
   const body = await readValidatedBody(event, z.object({
     model: z.string().optional(),
-    messages: z.array(z.custom<UIMessage>())
+    messages: z.array(uiMessageSchema).min(1)
   }).parse)
 
-  const selectedModel = (body.model && MODELS.some(m => m.value === body.model)) ? body.model : MODELS[0].value
-  const messages = body.messages
+  const messages = body.messages as UIMessage[]
 
   const db = useDrizzle()
 
   const chat = await db.query.chats.findFirst({
     where: (chat, { eq }) => eq(chat.id, id as string),
     with: {
-      messages: true
+      messages: {
+        orderBy: (message, { asc }) => asc(message.sequence)
+      }
     }
   })
   if (!chat) {
@@ -86,33 +175,51 @@ export default defineHandler(async (event) => {
 
 
   const lastMessage = messages[messages.length - 1]
-  const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+  if (!lastMessage || lastMessage.role !== 'user') {
+    throw new HTTPError({ statusCode: 400, statusMessage: 'The last message must be a user message' })
+  }
+
+  const queryText = lastMessage.content || (lastMessage as any)?.parts?.[0]?.text || ''
 
   // Detect if chat needs title (first message turn or placeholder title)
   const messageCount = (chat.messages || []).length
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
-  if (lastMessage?.role === 'user' && messages.length > 1) {
-    await db.insert(tables.messages).values({
-      id: lastMessage.id,
-      chatId: id as string,
-      role: 'user',
-      parts: lastMessage.parts
-    }).onConflictDoUpdate({ target: tables.messages.id, set: { parts: lastMessage.parts } })
+  // Always resolve the Agent handoff from the exact body message. For the
+  // initial hydrated turn this returns the existing row; for a direct or
+  // retried request it persists or reuses that same UI message ID.
+  const currentMessage = await persistCurrentUserMessage(db, {
+    chatId: id as string,
+    id: lastMessage.id,
+    parts: lastMessage.parts
+  })
+
+  if (!currentMessage || currentMessage.role !== 'user') {
+    throw new HTTPError({ statusCode: 409, statusMessage: 'Current user message was not persisted' })
   }
 
+  // This trusted handoff stays server-only until Unit 04/04a maps it to the
+  // token-protected memory_context contract. It must not enter public /api/chat.
+  const currentAgentInput = createCurrentMessageHandoff(actor.userId, currentMessage)
+
   const abortController = new AbortController()
-  event.runtime?.node?.req?.on('close', () => abortController.abort())
+  const assistantState = createAssistantStreamState()
+  let assistantMessageId: string | undefined
+  let agentFactProposals: FactProposal[] = []
+  let shouldAttemptCompaction = false
+  event.runtime?.node?.req?.on('close', () => {
+    assistantState.clientAborted = true
+    abortController.abort()
+  })
 
   const stream = createUIMessageStream({
-    onError: (err: any) => {
-      console.error('[web-stream] onError occurred:', err)
-      return err.message || 'An error occurred.'
+    onError: () => {
+      assistantState.streamFailed = true
+      console.error('[web-stream] onError occurred')
+      return 'Request failed.'
     },
     execute: async ({ writer }) => {
       try {
-        console.log("[DEBUG queryText]", queryText)
-
         // Fetch Topic Space context if chat is linked to a topic
         let topicInfo: any = null
         let topicDocIds: string[] = []
@@ -133,67 +240,121 @@ export default defineHandler(async (event) => {
           }
         }
 
-        // 1. Call real Python Agent API (port 8000)
-        const agentUrl = "http://127.0.0.1:8000/api/chat"
+        // 1. Call the public Agent API, or the token-protected Memory API only
+        // after an authenticated user's exact current message is persisted.
         const aiCallStart = Date.now()
-        const agentRes = await fetch(agentUrl, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            query: queryText,
-            session_id: id,
-            top_k: 5,
-            retrieval_mode: "hybrid",
-            topic_id: chat.topicId || undefined,
-            weight_mode: topicInfo?.weightMode || "auto",
-            soul_content: topicInfo?.soulContent || undefined,
-            topic_doc_ids: topicDocIds,
-            topic_titles: topicTitles,
-            consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
-            is_first_message: needsTitle
-          }),
-          signal: abortController.signal
-        })
-
-        if (!agentRes.ok) {
-          throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+        const publicAgentRequest = {
+          query: queryText,
+          session_id: currentAgentInput.chatId,
+          top_k: 5,
+          stream: false,
+          retrieval_mode: 'hybrid',
+          topic_id: chat.topicId || undefined,
+          weight_mode: topicInfo?.weightMode || 'auto',
+          soul_content: topicInfo?.soulContent || undefined,
+          topic_doc_ids: topicDocIds,
+          topic_titles: topicTitles,
+          consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
+          is_first_message: needsTitle
+        }
+        const callPublicAgent = async () => {
+          const agentRes = await fetch(`${getAgentBaseUrl()}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(publicAgentRequest),
+            signal: abortController.signal
+          })
+          if (!agentRes.ok) {
+            throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+          }
+          return agentRes.json()
         }
 
-        const agentData = await agentRes.json()
+        let usePersistentMemory = shouldUsePersistentMemory(actor.isAuthenticated)
+        let memoryContext
+        if (usePersistentMemory) {
+          const contextStartedAt = Date.now()
+          try {
+            memoryContext = await buildPersistentMemoryContext(db, currentAgentInput)
+            recordMemoryResolve('trusted_context', 'success')
+            logMemoryEvent({ event: 'memory_resolve', source: 'trusted_context', outcome: 'success' })
+          } catch {
+            usePersistentMemory = false
+            recordMemoryResolve('trusted_context', 'rejected')
+            recordMemoryFallback('context_error')
+            logMemoryEvent({ event: 'memory_resolve', source: 'trusted_context', outcome: 'rejected' })
+            logMemoryEvent({ event: 'memory_fallback', reason: 'context_error' })
+          } finally {
+            recordMemoryDuration('context', Date.now() - contextStartedAt)
+          }
+        } else {
+          recordMemoryResolve(actor.isAuthenticated ? 'legacy' : 'disabled', 'fallback')
+          logMemoryEvent({ event: 'memory_resolve', source: actor.isAuthenticated ? 'legacy' : 'disabled', outcome: 'fallback' })
+        }
+        const { soul_content: _soulContent, ...internalAgentFields } = publicAgentRequest
+        const agentCall = await callChatWithPersistentFallback({
+          usePersistentMemory,
+          internalRequest: {
+            ...internalAgentFields,
+            memory_context: memoryContext!
+          },
+          callPublic: callPublicAgent,
+          onFallback: (reason) => {
+            recordMemoryFallback(reason)
+            logMemoryEvent({ event: 'memory_fallback', reason })
+          },
+          options: { signal: abortController.signal }
+        })
+        recordMemoryDuration('internal_chat', Date.now() - aiCallStart)
+        const agentData = agentCall.value
+        shouldAttemptCompaction = agentCall.source === 'internal'
+          && agentData.response.status === 'success'
+        if (agentCall.source === 'internal' && agentData.response.status === 'success') {
+          agentFactProposals = agentData.memory_decision.fact_proposals
+        }
+        // A recall label is a trusted UI signal, never a model-generated
+        // citation. Only the token-protected internal response may set it.
+        const isTrustedMemoryRecall = agentCall.source === 'internal'
+          && agentData.memory_decision.recall?.handled === true
+        const responseData = agentCall.source === 'internal' ? agentData.response : agentData
         recordAiCall(Date.now() - aiCallStart)
 
-        if (agentData.chat_title) {
-          await db.update(tables.chats).set({ title: agentData.chat_title }).where(eq(tables.chats.id, id as string))
+        if (responseData.chat_title) {
+          await db.update(tables.chats).set({ title: responseData.chat_title }).where(eq(tables.chats.id, id as string))
           writer.write({
             type: 'data-chat-title',
-            data: { title: agentData.chat_title }
+            data: { title: responseData.chat_title }
           })
         }
 
-        const isValidResponse = agentData.status === "success" || agentData.status === "clarification_required"
+        const isNoRelevantContext = responseData.status === 'no_relevant_context'
+        const isValidResponse = responseData.status === 'success'
+          || responseData.status === 'clarification_required'
+          || isNoRelevantContext
         if (!isValidResponse) {
-          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
-          const responseId = `err-msg-${Date.now()}`
+          assistantState.streamFailed = true
           writer.write({
-            type: 'text-start',
-            id: responseId
-          })
-          writer.write({
-            type: 'text-delta',
-            id: responseId,
-            delta: `Error: ${errMsg}`
-          })
-          writer.write({
-            type: 'text-end',
-            id: responseId
+            type: 'error',
+            errorText: 'Agent request failed.'
           })
           return
         }
 
-        const rawAnswer = agentData.answer || agentData.message || ""
-        const citationsList: any[] = agentData.citations || []
+        const rawAnswer = responseData.answer || responseData.message
+          || (isNoRelevantContext ? '未找到可用的知识库内容，请补充问题或调整检索范围。' : '')
+        // NO_RELEVANT_CONTEXT is a safe user-visible retrieval outcome, not
+        // evidence. It must not produce RAG, Fact, recall, or compaction side effects.
+        const citationsList: any[] = isNoRelevantContext ? [] : (responseData.citations || [])
+        assistantState.agentSucceeded = true
+        const currentAssistantMessageId = createAssistantMessageId()
+        assistantMessageId = currentAssistantMessageId
+
+        if (isTrustedMemoryRecall && !isNoRelevantContext) {
+          writer.write({
+            type: 'data-memory-recall',
+            data: { messageId: currentAssistantMessageId }
+          })
+        }
 
         // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter
         if (chat.topicId && citationsList.length > 0) {
@@ -275,83 +436,133 @@ export default defineHandler(async (event) => {
 
 
 
-        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
-        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
-        const toolCallId = `call_${Date.now()}`
-        writer.write({
-          type: 'tool-input-available',
-          toolCallId,
-          toolName: 'rag_search',
-          input: { query: queryText }
-        })
+        // 3. Expose a RAG tool invocation only when the Agent supplied
+        //    citations. In particular, a deterministic Fact recall must not
+        //    be presented as a knowledge-base search.
+        if (citationsList.length > 0) {
+          const toolCallId = `call_${Date.now()}`
+          writer.write({
+            type: 'tool-input-available',
+            toolCallId,
+            toolName: 'rag_search',
+            input: { query: queryText }
+          })
 
-        writer.write({
-          type: 'tool-output-available',
-          toolCallId,
-          output: citationsList.map((cit: any, i: number) => ({
-            index: i + 1,
-            doc_id: cit.doc_id || `doc_${i}`,
-            chunk_id: cit.chunk_id || `chunk_${i}`,
-            title: cit.title || cit.doc_id || `Document ${i + 1}`,
-            source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
-            chunk_text: cit.snippet || '',
-            score: cit.score ?? null,
-          }))
-        })
+          writer.write({
+            type: 'tool-output-available',
+            toolCallId,
+            output: citationsList.map((cit: any, i: number) => ({
+              index: i + 1,
+              doc_id: cit.doc_id || `doc_${i}`,
+              chunk_id: cit.chunk_id || `chunk_${i}`,
+              title: cit.title || cit.doc_id || `Document ${i + 1}`,
+              source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+              chunk_text: cit.snippet || '',
+              score: cit.score ?? null,
+            }))
+          })
+        }
 
 
         // 4. Stream answer text chunk-by-chunk to simulate real-time typing
-        const responseId = `assistant-msg-${Date.now()}`
         writer.write({
           type: 'text-start',
-          id: responseId
+          id: currentAssistantMessageId
         })
 
         const chunkSize = 2
         for (let i = 0; i < processedAnswer.length; i += chunkSize) {
+          if (abortController.signal.aborted) {
+            assistantState.clientAborted = true
+            return
+          }
+
           const chunk = processedAnswer.slice(i, i + chunkSize)
           writer.write({
             type: 'text-delta',
-            id: responseId,
+            id: currentAssistantMessageId,
             delta: chunk
           })
+          assistantState.assistantContent += chunk
           // Small delay for natural streaming pacing
           await new Promise((resolve) => setTimeout(resolve, 20))
         }
 
+        if (abortController.signal.aborted) {
+          assistantState.clientAborted = true
+          return
+        }
         writer.write({
           type: 'text-end',
-          id: responseId
+          id: currentAssistantMessageId
         })
+        assistantState.streamCompleted = true
 
-      } catch (err: any) {
-        console.error('[web-post] error in agent call:', err)
-        const responseId = `err-msg-${Date.now()}`
-        writer.write({
-          type: 'text-start',
-          id: responseId
-        })
-        writer.write({
-          type: 'text-delta',
-          id: responseId,
-          delta: `Failed to retrieve answer from Agent Layer: ${err.message}`
-        })
-        writer.write({
-          type: 'text-end',
-          id: responseId
-        })
+      } catch {
+        assistantState.streamFailed = true
+        console.error('[web-post] error in agent call')
+        if (abortController.signal.aborted) {
+          assistantState.clientAborted = true
+          return
+        }
+
+        try {
+          writer.write({
+            type: 'error',
+            errorText: 'Failed to retrieve an answer from the Agent layer.'
+          })
+        } catch {
+          console.error('[web-post] unable to write stream error')
+        }
       }
     },
-    onFinish: async ({ messages }) => {
+    onFinish: async ({ isAborted }) => {
+      if (isAborted || abortController.signal.aborted) {
+        assistantState.clientAborted = true
+      }
+
+      if (!assistantMessageId || !shouldPersistAssistantMessage(assistantState)) {
+        return
+      }
+
       try {
-        await db.insert(tables.messages).values(messages.map(message => ({
-          id: message.id,
+        const persistedAssistant = await appendMessage(db, {
+          id: assistantMessageId,
           chatId: chat.id,
-          role: message.role as 'user' | 'assistant',
-          parts: message.parts
-        }))).onConflictDoNothing()
-      } catch (dbErr) {
-        console.error('[web-onFinish] DB save error:', dbErr)
+          parts: [{ type: 'text', text: assistantState.assistantContent }],
+          role: 'assistant'
+        })
+        if (shouldAttemptCompaction) {
+          await persistAgentFactProposalsAfterAssistantPersistence(db, {
+            actorUserId: actor.userId,
+            chatId: chat.id,
+            currentMessageId: currentAgentInput.currentMessageId,
+            historyRevision: persistedAssistant.historyRevision,
+            proposals: agentFactProposals
+          })
+        }
+        if (shouldAttemptCompaction) {
+          const compactionStartedAt = Date.now()
+          try {
+            const compactionResult = await compactAfterSuccessfulAssistantPersistence(db, currentAgentInput)
+            recordMemoryCompaction(
+              compactionResult === 'applied'
+                ? 'planned'
+                : compactionResult === 'conflict_exhausted'
+                  ? 'conflict'
+                  : 'skipped'
+            )
+          } catch {
+            // Snapshot planning is best-effort and must never affect this answer.
+            recordMemoryCompaction('failed')
+            logMemoryEvent({ event: 'memory_compaction', outcome: 'failed' })
+          } finally {
+            recordMemoryDuration('compaction', Date.now() - compactionStartedAt)
+          }
+        }
+      } catch {
+        assistantState.streamFailed = true
+        console.error('[web-onFinish] assistant message persistence failed')
       }
     }
   })

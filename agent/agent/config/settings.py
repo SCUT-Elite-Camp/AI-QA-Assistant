@@ -56,6 +56,32 @@ class Settings(BaseModel):
         "QUERY_UNDERSTANDING_ENABLED",
         True,
     )
+    UNIFIED_QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
+        "UNIFIED_QUERY_UNDERSTANDING_ENABLED",
+        False,
+    )
+    CASCADED_QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
+        "CASCADED_QUERY_UNDERSTANDING_ENABLED",
+        False,
+    )
+    HYBRID_INTENT_ROUTER_ENABLED: bool = _env_bool(
+        "HYBRID_INTENT_ROUTER_ENABLED",
+        False,
+    )
+    INTENT_EMBEDDING_MODEL_PATH: str = os.getenv(
+        "INTENT_EMBEDDING_MODEL_PATH",
+        "",
+    )
+    INTENT_EMBEDDING_THRESHOLD: float = Field(
+        default_factory=lambda: _env_float("INTENT_EMBEDDING_THRESHOLD", 0.72),
+        ge=-1.0,
+        le=1.0,
+    )
+    INTENT_EMBEDDING_MARGIN: float = Field(
+        default_factory=lambda: _env_float("INTENT_EMBEDDING_MARGIN", 0.08),
+        ge=0.0,
+        le=2.0,
+    )
     QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
     TOOL_TIMEOUT_MS: int = Field(
@@ -65,6 +91,24 @@ class Settings(BaseModel):
 
 
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
+    PERSISTENT_MEMORY_ENABLED: bool = _env_bool("PERSISTENT_MEMORY_ENABLED", False)
+    SESSION_FACT_ENABLED: bool = _env_bool("SESSION_FACT_ENABLED", False)
+    AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
+    MEMORY_TAIL_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
+        ge=1,
+        le=100,
+    )
+    MEMORY_BRIEF_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_BRIEF_MAX_CHARS", 1200),
+        ge=128,
+        le=12000,
+    )
+    MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
+        ge=256,
+        le=60000,
+    )
     MAX_MEMORY_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
         ge=1,
@@ -84,6 +128,17 @@ class Settings(BaseModel):
         os.getenv("OPENAI_API_BASE", "http://127.0.0.1:11434/v1"),
     )
     LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.1")
+    QUERY_PREPARATION_MODEL: str = os.getenv("QUERY_PREPARATION_MODEL", "").strip()
+    ANSWER_COMPLETENESS_MODEL: str = os.getenv("ANSWER_COMPLETENESS_MODEL", "").strip()
+    ANSWER_COMPLETENESS_MODEL_THINKING: bool = _env_bool(
+        "ANSWER_COMPLETENESS_MODEL_THINKING",
+        False,
+    )
+    ANSWER_FAST_MODEL: str = os.getenv("ANSWER_FAST_MODEL", "").strip()
+    ANSWER_FAST_MODEL_THINKING: bool = _env_bool(
+        "ANSWER_FAST_MODEL_THINKING",
+        False,
+    )
     LLM_TEMPERATURE: float = _env_float("LLM_TEMPERATURE", 0.1)
     LLM_MAX_TOKENS: int = _env_int("LLM_MAX_TOKENS", 2000)
     LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)

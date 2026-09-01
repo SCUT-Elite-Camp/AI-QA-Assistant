@@ -53,3 +53,40 @@ export function createLogger(name: string) {
  */
 export const logger = createLogger('web')
 
+type MemoryLogEvent =
+  | { event: 'memory_resolve', source: 'disabled' | 'trusted_context' | 'legacy', outcome: 'success' | 'fallback' | 'rejected' }
+  | { event: 'memory_compaction', outcome: 'skipped' | 'planned' | 'conflict' | 'failed' }
+  | { event: 'memory_fact', action: 'proposed' | 'suppressed' | 'recalled', outcome: 'success' | 'disabled' | 'sensitive' | 'empty' | 'failed' }
+  | { event: 'memory_fallback', reason: 'agent_disabled' | 'internal_error' | 'context_error' }
+
+const MEMORY_LOG_EVENTS = new Set(['memory_resolve', 'memory_compaction', 'memory_fact', 'memory_fallback'])
+
+/**
+ * Strip unknown keys before Memory observability reaches the logger. This
+ * deliberately rejects query, Fact, Snapshot, Tail, ID and Error payloads.
+ */
+export function createSafeMemoryLogPayload (input: Record<string, unknown>): Record<string, string> | undefined {
+  if (!MEMORY_LOG_EVENTS.has(String(input.event))) return undefined
+  switch (input.event) {
+    case 'memory_resolve':
+      if (typeof input.source !== 'string' || typeof input.outcome !== 'string') return undefined
+      return { event: input.event, source: input.source, outcome: input.outcome }
+    case 'memory_compaction':
+      if (typeof input.outcome !== 'string') return undefined
+      return { event: input.event, outcome: input.outcome }
+    case 'memory_fact':
+      if (typeof input.action !== 'string' || typeof input.outcome !== 'string') return undefined
+      return { event: input.event, action: input.action, outcome: input.outcome }
+    case 'memory_fallback':
+      if (typeof input.reason !== 'string') return undefined
+      return { event: input.event, reason: input.reason }
+    default:
+      return undefined
+  }
+}
+
+export function logMemoryEvent (event: MemoryLogEvent) {
+  const payload = createSafeMemoryLogPayload(event)
+  if (payload) logger.info(payload, 'memory event')
+}
+

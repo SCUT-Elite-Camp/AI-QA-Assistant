@@ -3,10 +3,10 @@ import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { $fetch } from 'ofetch'
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { defineShortcuts, useToast } from '@nuxt/ui/composables'
 import { useChats } from '../composables/useChats'
 import { useUserSession } from '../composables/useUserSession'
 import { useChatActions } from '../composables/useChatActions'
-import { useFavorites } from '../composables/useFavorites'
 import { useCsrf } from '../composables/useCsrf'
 import ModalSelectTopic from '../components/ModalSelectTopic.vue'
 
@@ -24,7 +24,7 @@ const topics = ref<any[]>([])
 async function loadTopics() {
   try {
     topics.value = await $fetch('/api/topics')
-  } catch (e) {
+  } catch {
     topics.value = []
   }
 }
@@ -43,8 +43,6 @@ const dragOverTopicId = ref<string | null>(null)
 const showSelectTopicModal = ref(false)
 const targetChatIdForTopicModal = ref<string | null>(null)
 
-const { favoriteChats, loadFavorites } = useFavorites()
-
 watch(loggedIn, () => {
   fetchChats()
   loadTopics()
@@ -53,7 +51,7 @@ watch(loggedIn, () => {
 
 // Auto-expand topic if current route chat belongs to that topic
 watch(() => [route.path, chats.value], () => {
-  const currentChatId = route.params.id as string
+  const currentChatId = (route.params as { id?: string }).id
   if (currentChatId && chats.value.length) {
     const chat = chats.value.find(c => c.id === currentChatId)
     if (chat && (chat as any).topicId) {
@@ -116,6 +114,7 @@ function handleDragOver(topicId: string, event: DragEvent) {
 }
 
 function handleDragLeave(topicId: string, event: DragEvent) {
+  void event
   if (dragOverTopicId.value === topicId) {
     dragOverTopicId.value = null
   }
@@ -143,6 +142,7 @@ function handleDragOverStandalone(event: DragEvent) {
 }
 
 function handleDragLeaveStandalone(event: DragEvent) {
+  void event
   dragOverStandalone.value = false
 }
 

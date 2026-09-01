@@ -12,6 +12,19 @@ def test_health_endpoint_for_web_smoke() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_readiness_reports_retrieval_preload() -> None:
+    with TestClient(app) as client:
+        response = client.get("/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ready",
+        "retrieval_ready": True,
+        "intent_ready": True,
+        "detail": "",
+    }
+
+
 def test_chat_response_has_web_required_fields() -> None:
     client = TestClient(app)
 
@@ -27,7 +40,14 @@ def test_chat_response_has_web_required_fields() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert set(body.keys()) == {"trace_id", "status", "answer", "message", "citations"}
+    assert set(body.keys()) == {
+        "trace_id",
+        "status",
+        "answer",
+        "message",
+        "citations",
+        "chat_title",
+    }
     assert body["status"] == "success"
     assert body["trace_id"].startswith("trace-")
     assert isinstance(body["citations"], list)
@@ -49,6 +69,7 @@ def test_chat_error_response_keeps_web_contract() -> None:
         "answer": "",
         "message": "请输入有效问题。",
         "citations": [],
+        "chat_title": None,
     }
 
 

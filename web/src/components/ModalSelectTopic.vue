@@ -34,7 +34,7 @@ function handleSelect(topicId: string) {
 <template>
   <UModal
     :open="open"
-    :ui="{ width: 'sm:max-w-md' }"
+    :ui="{ content: 'sm:max-w-md' }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>
@@ -75,7 +75,7 @@ function handleSelect(topicId: string) {
           <UIcon name="i-heroicons-squares-2x2" class="w-8 h-8 text-zinc-600 mx-auto" />
           <p class="text-xs text-zinc-400">No topics space created yet.</p>
           <UButton
-            color="emerald"
+            color="success"
             variant="soft"
             size="xs"
             icon="i-heroicons-plus"

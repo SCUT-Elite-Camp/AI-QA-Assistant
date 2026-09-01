@@ -5,6 +5,15 @@ import { useRouter } from 'vue-router'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useUserSession } from '../composables/useUserSession'
 
+declare const useAppConfig: () => {
+  ui: {
+    colors: {
+      primary: string
+      neutral: string
+    }
+  }
+}
+
 defineProps<{
   collapsed?: boolean
 }>()

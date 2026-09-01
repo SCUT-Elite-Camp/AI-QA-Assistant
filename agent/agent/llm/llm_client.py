@@ -8,6 +8,15 @@ from agent.llm.base import BaseLLM
 
 
 class LLMClient(BaseLLM):
+    def __init__(
+        self,
+        *,
+        model: str | None = None,
+        enable_thinking: bool | None = None,
+    ) -> None:
+        self.model = model.strip() if isinstance(model, str) and model.strip() else settings.LLM_MODEL
+        self.enable_thinking = enable_thinking
+
     def generate(self, prompt: str) -> str:
         """Helper to generate a response for a single text prompt."""
         messages = [{"role": "user", "content": prompt}]
@@ -18,13 +27,15 @@ class LLMClient(BaseLLM):
         """Calls the OpenAI-compatible chat/completions endpoint with messages and tools."""
         endpoint = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
         payload = {
-            "model": settings.LLM_MODEL,
+            "model": self.model,
             "messages": messages,
             "temperature": settings.LLM_TEMPERATURE,
             "max_tokens": settings.LLM_MAX_TOKENS,
         }
         if tools:
             payload["tools"] = tools
+        if self.enable_thinking is not None:
+            payload["enable_thinking"] = self.enable_thinking
 
         headers = {
             "Content-Type": "application/json",

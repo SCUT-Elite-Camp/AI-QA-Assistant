@@ -40,14 +40,14 @@ watch(() => props.open, (val) => {
 
 <template>
   <UModal :model-value="open" @update:model-value="emit('update:open', $event)">
-    <UCard :ui="{ ring: '', divide: 'divide-y divide-zinc-200 dark:divide-zinc-800' }">
+    <UCard :ui="{ root: 'divide-y divide-zinc-200 dark:divide-zinc-800' }">
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
             <UIcon name="i-heroicons-git-branch" class="w-5 h-5 text-emerald-500" />
             <span>话题对话树脉络</span>
           </div>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" size="xs" @click="emit('update:open', false)" />
+          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="xs" @click="emit('update:open', false)" />
         </div>
       </template>
 
@@ -75,7 +75,7 @@ watch(() => props.open, (val) => {
                 <div class="font-medium text-sm truncate">{{ mainChat.title || '主对话' }}</div>
                 <div class="text-xs text-zinc-400 mt-0.5">{{ mainChat.messages?.length || 0 }} 条消息</div>
               </div>
-              <UBadge v-if="mainChat.id === currentChatId" color="emerald" variant="subtle" size="xs">当前</UBadge>
+              <UBadge v-if="mainChat.id === currentChatId" color="success" variant="subtle" size="xs">当前</UBadge>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ watch(() => props.open, (val) => {
                     {{ new Date(branch.createdAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
                   </div>
                 </div>
-                <UBadge v-if="branch.id === currentChatId" color="emerald" variant="subtle" size="xs">当前</UBadge>
+                <UBadge v-if="branch.id === currentChatId" color="success" variant="subtle" size="xs">当前</UBadge>
               </div>
             </div>
           </div>
