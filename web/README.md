@@ -150,3 +150,21 @@ pnpm preview
 - 真实流式对话需要配置 AI Gateway API Key
 - 对话历史默认使用本地 SQLite，部署时建议使用 Turso
 - Web Layer 不包含真实 RAG、LLM、PDF 解析、embedding 或 Milvus 集成
+
+## Deep Research 接入
+
+Deep Research 使用独立的长任务流程，不会由普通 Chat 自动触发。启动 Agent：
+
+```bash
+cd ../agent
+uvicorn app:app --reload --port 8000
+```
+
+Web 环境变量：
+
+```env
+VITE_RESEARCH_API_BASE=http://127.0.0.1:8000
+VITE_RESEARCH_USE_MOCK=false
+```
+
+前端独立开发时可以设置 `VITE_RESEARCH_USE_MOCK=true`，在不启动 Agent 的情况下验收创建、审批、执行进度和报告页面。正式联调必须切回 `false`。

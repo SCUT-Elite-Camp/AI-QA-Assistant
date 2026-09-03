@@ -52,6 +52,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/research/[id]': RouteRecordInfo<
+      '/research/[id]',
+      '/research/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
+    '/research/new': RouteRecordInfo<
+      '/research/new',
+      '/research/new',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/topics/': RouteRecordInfo<
       '/topics/',
       '/topics',
@@ -91,6 +105,22 @@ declare module 'vue-router/auto-routes' {
     'src/pages/favorites/index.vue': {
       routes:
         | '/favorites/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/research/[id].vue': {
+      routes:
+        | '/research/[id]'
+      views:
+        | never
+      pathParamNames:
+        | 'id'
+    }
+    'src/pages/research/new.vue': {
+      routes:
+        | '/research/new'
       views:
         | never
       pathParamNames:
