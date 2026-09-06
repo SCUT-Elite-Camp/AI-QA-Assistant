@@ -168,3 +168,7 @@ VITE_RESEARCH_USE_MOCK=false
 ```
 
 前端独立开发时可以设置 `VITE_RESEARCH_USE_MOCK=true`，在不启动 Agent 的情况下验收创建、审批、执行进度和报告页面。正式联调必须切回 `false`。
+
+正式 Research 详情页会同时读取 Job、`/progress` 和 `/events`。阶段、百分比、
+任务状态及 Evidence/Claim 计数以 Agent 的 `research.progress.v1` 为准；最近活动
+通过 `after_event_id` 增量游标更新，终态后停止轮询。

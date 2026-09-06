@@ -24,6 +24,8 @@ from agent.schemas.research import (
     ClaimDraft,
     VerificationResult,
     ResearchReport,
+    ResearchEvent,
+    ResearchEventType,
     WorkflowCheckpoint,
 )
 
@@ -145,6 +147,24 @@ class SQLiteResearchRepository:
                     updated_at TEXT NOT NULL,
                     FOREIGN KEY(research_id) REFERENCES research_jobs(research_id)
                 );
+
+                CREATE TABLE IF NOT EXISTS research_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    research_id TEXT NOT NULL,
+                    event_key TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    stage TEXT,
+                    task_id TEXT,
+                    message TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE(research_id, event_key),
+                    FOREIGN KEY(research_id) REFERENCES research_jobs(research_id)
+                );
+                CREATE INDEX IF NOT EXISTS idx_research_events_job_cursor
+                    ON research_events(research_id, event_id);
+                CREATE INDEX IF NOT EXISTS idx_research_events_job_stage
+                    ON research_events(research_id, stage, event_type);
                 """
             )
 
@@ -673,6 +693,25 @@ class SQLiteResearchRepository:
             rows = self._connection.execute(query, params).fetchall()
         return [model.model_validate_json(row["payload_json"]) for row in rows]
 
+    def count_entities(
+        self,
+        kind: str,
+        research_id: str,
+        task_id: str | None = None,
+    ) -> int:
+        """Count entities without loading Evidence excerpts or Report bodies."""
+
+        if kind not in self._ENTITY_MODELS:
+            raise ValueError(f"unsupported research entity kind: {kind}")
+        query = "SELECT COUNT(*) AS count FROM research_entities WHERE kind=? AND research_id=?"
+        params: tuple = (kind, research_id)
+        if task_id is not None:
+            query += " AND task_id=?"
+            params = (kind, research_id, task_id)
+        with self._lock:
+            row = self._connection.execute(query, params).fetchone()
+        return int(row["count"])
+
     def save_observation(self, item: Observation) -> Observation:
         return self._save_entity("observation", item.observation_id, item.research_id, item.model_dump_json(), item.task_id)
 
@@ -766,6 +805,90 @@ class SQLiteResearchRepository:
         if row is None:
             raise ResearchNotFoundError(f"checkpoint for '{research_id}' not found")
         return WorkflowCheckpoint.model_validate_json(row["payload_json"])
+
+    def append_event(
+        self,
+        *,
+        research_id: str,
+        event_key: str,
+        event_type: ResearchEventType,
+        message: str,
+        stage: str | None = None,
+        task_id: str | None = None,
+        payload: dict[str, str | int | float | bool | None] | None = None,
+        created_at: datetime | None = None,
+    ) -> ResearchEvent:
+        """Append one idempotent event and return the persisted row."""
+
+        occurred_at = created_at or _now()
+        event_payload = payload or {}
+        with self._lock, self._connection:
+            self._connection.execute(
+                """
+                INSERT INTO research_events(
+                    research_id, event_key, event_type, stage, task_id,
+                    message, payload_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(research_id, event_key) DO NOTHING
+                """,
+                (
+                    research_id,
+                    event_key,
+                    event_type.value,
+                    stage,
+                    task_id,
+                    message,
+                    json.dumps(event_payload, ensure_ascii=False, sort_keys=True),
+                    occurred_at.isoformat(),
+                ),
+            )
+            row = self._connection.execute(
+                """
+                SELECT * FROM research_events
+                WHERE research_id = ? AND event_key = ?
+                """,
+                (research_id, event_key),
+            ).fetchone()
+        if row is None:
+            raise ResearchRepositoryError("research event insert was not persisted")
+        return self._event_from_row(row)
+
+    def list_events(
+        self,
+        research_id: str,
+        *,
+        after_event_id: int = 0,
+        limit: int = 50,
+    ) -> list[ResearchEvent]:
+        if after_event_id < 0:
+            raise ValueError("after_event_id must be non-negative")
+        if not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM research_events
+                WHERE research_id = ? AND event_id > ?
+                ORDER BY event_id ASC
+                LIMIT ?
+                """,
+                (research_id, after_event_id, limit),
+            ).fetchall()
+        return [self._event_from_row(row) for row in rows]
+
+    @staticmethod
+    def _event_from_row(row: sqlite3.Row) -> ResearchEvent:
+        return ResearchEvent(
+            event_id=row["event_id"],
+            research_id=row["research_id"],
+            event_key=row["event_key"],
+            event_type=row["event_type"],
+            stage=row["stage"],
+            task_id=row["task_id"],
+            message=row["message"],
+            payload=json.loads(row["payload_json"]),
+            created_at=row["created_at"],
+        )
 
     def close(self) -> None:
         with self._lock:

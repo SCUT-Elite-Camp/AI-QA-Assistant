@@ -151,6 +151,22 @@ class ResearchLedger(ObservationSink, EvidenceSink, FindingSink, Protocol):
     pass
 
 
+class ResearchTaskEventSink(Protocol):
+    """Optional durable event sink used by the production Worker."""
+
+    def task_started(self, research_id: str, task_id: str) -> Any: ...
+
+    def task_finished(
+        self,
+        research_id: str,
+        task_id: str,
+        *,
+        status: ResearchTaskStatus,
+        evidence_count: int,
+        actions_used: int,
+    ) -> Any: ...
+
+
 @dataclass
 class InMemoryResearchLedger:
     """Small deterministic ledger for A-side tests and local demos.
@@ -236,6 +252,7 @@ class LocalResearchWorker:
         criterion_mapper: CriterionMapper | None = None,
         finding_builder: FindingBuilder | None = None,
         trace_id_factory: Callable[[str], str] | None = None,
+        event_sink: ResearchTaskEventSink | None = None,
     ) -> None:
         if max_candidates_per_task < 1:
             raise ValueError("max_candidates_per_task must be positive")
@@ -247,6 +264,7 @@ class LocalResearchWorker:
         self.trace_id_factory = trace_id_factory or (
             lambda research_id: f"research-{research_id}"
         )
+        self.event_sink = event_sink
 
     def run(self, context: ApprovedResearchContext) -> ResearchRunResult:
         """Run the real approved context in stable dependency order."""
@@ -266,14 +284,28 @@ class LocalResearchWorker:
                 None,
             )
             if blocked_dependency is not None:
-                outcomes[task.task_id] = TaskExecutionResult(
+                outcome = TaskExecutionResult(
                     task_id=task.task_id,
                     status=ResearchTaskStatus.BLOCKED,
                     actions_used=0,
                     stop_reason=f"dependency_not_succeeded:{blocked_dependency}",
                 )
-                continue
-            outcomes[task.task_id] = self._execute_task(context, task)
+            else:
+                if self.event_sink is not None:
+                    self.event_sink.task_started(
+                        context.job.research_id,
+                        task.task_id,
+                    )
+                outcome = self._execute_task(context, task)
+            outcomes[task.task_id] = outcome
+            if self.event_sink is not None:
+                self.event_sink.task_finished(
+                    context.job.research_id,
+                    task.task_id,
+                    status=outcome.status,
+                    evidence_count=len(outcome.evidence_ids),
+                    actions_used=outcome.actions_used,
+                )
 
         # Keep output in the same deterministic order as the validated plan.
         return ResearchRunResult(
@@ -524,6 +556,7 @@ __all__ = [
     "LocalResearchWorker",
     "OriginalRead",
     "ResearchLedger",
+    "ResearchTaskEventSink",
     "ResearchRunResult",
     "ResearchToolError",
     "SearchHit",

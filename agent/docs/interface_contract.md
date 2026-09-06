@@ -11,6 +11,8 @@ GET  /api/research/jobs/{research_id}/plan
 POST /api/research/jobs/{research_id}/approve
 POST /api/research/jobs/{research_id}/cancel
 GET  /api/research/jobs/{research_id}/report
+GET  /api/research/jobs/{research_id}/progress
+GET  /api/research/jobs/{research_id}/events?after_event_id={event_id}&limit={limit}
 ```
 
 `POST /api/research/jobs` durably creates a Job and immediately returns it with
@@ -22,6 +24,17 @@ returns HTTP 409. The final execution status is `completed`, `failed`, or
 
 This API does not accept Web URLs. The Worker can only search and read document
 IDs frozen into the approved `SourceManifest`.
+
+The Research detail page polls three independent views at low frequency:
+
+- `GET /jobs/{id}` for lifecycle controls;
+- `GET /jobs/{id}/progress` for the authoritative percentage, stage timeline,
+  task states, counts, and safe terminal error;
+- `GET /jobs/{id}/events` with `after_event_id` for recent incremental activity.
+
+The frontend must render `progress_percent`, `stages`, and `tasks` as returned;
+it must not infer a second state machine from Job status or array position.
+Polling stops when `status` is `completed`, `failed`, or `cancelled`.
 
 ## POST `/api/chat`
 

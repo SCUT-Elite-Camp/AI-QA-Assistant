@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from deep_research.manifest import ManifestResolutionError
@@ -12,8 +12,16 @@ from deep_research.repository import (
     ResearchConflictError,
     ResearchNotFoundError,
 )
+from deep_research.progress import ResearchProgressService
 from deep_research.service import ResearchControlPlane, ResearchControlPlaneError
-from agent.schemas.research import ResearchJob, ResearchPlan, ResearchReport, ResearchRequest
+from agent.schemas.research import (
+    ResearchEventsResponse,
+    ResearchJob,
+    ResearchPlan,
+    ResearchProgress,
+    ResearchReport,
+    ResearchRequest,
+)
 
 
 router = APIRouter(prefix="/research", tags=["research"])
@@ -41,6 +49,14 @@ def get_research_control_plane(request: Request) -> ResearchControlPlane:
     if _default_control_plane is None:
         _default_control_plane = ResearchControlPlane()
     return _default_control_plane
+
+
+def get_research_progress_service(
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+) -> ResearchProgressService:
+    """Build a lightweight read service over the application repository."""
+
+    return ResearchProgressService(control_plane.repository)
 
 
 def _raise_http_error(exc: Exception) -> None:
@@ -146,4 +162,46 @@ def get_research_report(
         raise AssertionError("unreachable")
 
 
-__all__ = ["get_research_control_plane", "router"]
+@router.get("/jobs/{research_id}/progress", response_model=ResearchProgress)
+def get_research_progress(
+    research_id: str,
+    progress_service: ResearchProgressService = Depends(
+        get_research_progress_service
+    ),
+) -> ResearchProgress:
+    """Return the authoritative persisted progress read model."""
+
+    try:
+        return progress_service.get_progress(research_id)
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.get("/jobs/{research_id}/events", response_model=ResearchEventsResponse)
+def get_research_events(
+    research_id: str,
+    after_event_id: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    progress_service: ResearchProgressService = Depends(
+        get_research_progress_service
+    ),
+) -> ResearchEventsResponse:
+    """Return append-only events after a stable cursor for low-cost polling."""
+
+    try:
+        return progress_service.get_events(
+            research_id,
+            after_event_id=after_event_id,
+            limit=limit,
+        )
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+__all__ = [
+    "get_research_control_plane",
+    "get_research_progress_service",
+    "router",
+]

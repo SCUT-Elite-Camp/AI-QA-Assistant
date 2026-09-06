@@ -19,7 +19,11 @@ const report = ref<ResearchReport | null>(null)
 const actionLoading = ref(false)
 const actionError = ref('')
 
-const { job, loading, error: pollingError, restart, stop } = useResearchPolling(() => api.getJob(researchId.value))
+const { job, progress, events, loading, error: pollingError, restart, stop } = useResearchPolling(
+  () => api.getJob(researchId.value),
+  () => api.getProgress(researchId.value),
+  afterEventId => api.getEvents(researchId.value, afterEventId),
+)
 
 watch(() => job.value?.status, async (status) => {
   if (!status) return
@@ -44,7 +48,11 @@ async function approve() {
 async function cancel() {
   actionLoading.value = true
   actionError.value = ''
-  try { job.value = await api.cancelJob(researchId.value); stop() }
+  try {
+    job.value = await api.cancelJob(researchId.value)
+    progress.value = await api.getProgress(researchId.value)
+    stop()
+  }
   catch (reason) { actionError.value = formatResearchError(reason) }
   finally { actionLoading.value = false }
 }
@@ -147,9 +155,10 @@ const statusTitle = computed(() => {
           />
 
           <ResearchProgress
-            v-else-if="['ready', 'researching', 'synthesizing'].includes(job.status)"
+            v-else-if="['ready', 'researching', 'synthesizing'].includes(job.status) && progress"
             :job="job"
-            :plan="plan"
+            :progress="progress"
+            :events="events"
             @cancel="cancel"
           />
 
@@ -180,8 +189,10 @@ const statusTitle = computed(() => {
             /><h1 class="mt-4 text-2xl font-bold text-highlighted">
               研究执行失败
             </h1><p class="mt-3 text-sm text-muted">
-              失败阶段：{{ job.failure_stage || job.current_stage }}
-            </p><code class="mt-3 inline-block rounded bg-default px-3 py-1 text-xs text-error">{{ job.error_code || 'research_failed' }}</code><div class="mt-6 flex justify-center gap-2">
+              失败阶段：{{ progress?.error?.stage || job.failure_stage || job.current_stage }}
+            </p><p class="mt-3 text-sm text-error">
+              {{ progress?.error?.message || '研究任务执行失败，请稍后重试。' }}
+            </p><div class="mt-6 flex justify-center gap-2">
               <UButton
                 to="/research/new"
                 color="neutral"

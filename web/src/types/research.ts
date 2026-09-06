@@ -11,6 +11,20 @@ export type ResearchJobStatus =
 
 export type ResearchResultStatus = 'complete' | 'degraded'
 export type ResearchTaskStatus = 'pending' | 'ready' | 'running' | 'succeeded' | 'failed' | 'blocked'
+export type ResearchStageStatus = 'pending' | 'running' | 'completed' | 'failed'
+export type ResearchEventType =
+  | 'job_created'
+  | 'plan_approved'
+  | 'stage_started'
+  | 'stage_completed'
+  | 'task_started'
+  | 'task_completed'
+  | 'task_failed'
+  | 'task_blocked'
+  | 'report_ready'
+  | 'job_completed'
+  | 'job_failed'
+  | 'job_cancelled'
 
 export interface SourceScope {
   knowledge_base_ids: string[]
@@ -116,17 +130,62 @@ export interface ResearchApprovalRequest {
   manifest_hash: string
 }
 
-export interface ResearchStageDefinition {
+export interface ResearchStageProgress {
   key: string
   label: string
-  description: string
-  progress: number
+  status: ResearchStageStatus
+  started_at: string | null
+  completed_at: string | null
 }
 
-export type ResearchStageViewStatus = 'pending' | 'running' | 'completed' | 'failed'
+export interface ResearchTaskProgress {
+  task_id: string
+  question: string
+  status: ResearchTaskStatus
+  evidence_count: number
+}
 
-export interface ResearchStageView extends ResearchStageDefinition {
-  status: ResearchStageViewStatus
+export interface ResearchProgressError {
+  stage: string
+  code: string
+  message: string
+}
+
+export interface ResearchProgress {
+  schema_version: 'research.progress.v1'
+  research_id: string
+  status: ResearchJobStatus
+  result_status: ResearchResultStatus | null
+  current_stage: string
+  progress_percent: number
+  task_total: number
+  task_completed: number
+  evidence_count: number
+  claim_count: number
+  started_at: string
+  updated_at: string
+  stages: ResearchStageProgress[]
+  tasks: ResearchTaskProgress[]
+  error: ResearchProgressError | null
+}
+
+export interface ResearchEvent {
+  event_id: number
+  research_id: string
+  event_key: string
+  event_type: ResearchEventType
+  stage: string | null
+  task_id: string | null
+  message: string
+  payload: Record<string, string | number | boolean | null>
+  created_at: string
+}
+
+export interface ResearchEventsResponse {
+  schema_version: 'research.events.v1'
+  research_id: string
+  events: ResearchEvent[]
+  next_after_event_id: number
 }
 
 export interface ResearchApiError {

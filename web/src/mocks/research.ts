@@ -1,4 +1,4 @@
-import type { ResearchJob, ResearchPlan, ResearchReport, ResearchRequest } from '../types/research'
+import type { ResearchEvent, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchProgress, ResearchReport, ResearchRequest, ResearchStageStatus, ResearchTaskStatus } from '../types/research'
 
 interface MockRecord {
   job: ResearchJob
@@ -108,5 +108,62 @@ export function mockGetReport(researchId: string): ResearchReport {
     claim_ids: ['claim-1', 'claim-2'], evidence_ids: ['ev-alpha', 'ev-beta'], generated_at: now(),
     markdown: `# ${record.job.request.report_spec.title || 'Deep Research 报告'}\n\n## 研究结论\n\nAlpha 与 Beta 的部署状态均为已完成。[E:ev-alpha][E:ev-beta]\n\n## 原文依据\n\n- **Alpha**：部署状态为已完成，验收记录已归档。\n- **Beta**：部署状态为已完成，验收记录已归档。\n\n## 资料限制\n\n本报告仅基于用户审批时冻结的本地资料，不包含范围外信息。`,
   }
+}
+
+const stageLabels: Array<[string, string]> = [
+  ['created', '已创建研究任务'],
+  ['planning', '正在生成研究计划'],
+  ['awaiting_approval', '等待确认研究计划'],
+  ['ready', '研究任务等待执行'],
+  ['execute_tasks', '正在执行研究任务'],
+  ['coverage', '正在检查资料覆盖度'],
+  ['generate_claims', '正在整理研究结论'],
+  ['structural_verification', '正在检查引用完整性'],
+  ['semantic_verification', '正在验证研究结论'],
+  ['render_report', '正在生成研究报告'],
+  ['finalize', '正在完成研究任务'],
+  ['completed', '研究已完成'],
+]
+const stagePercent: Record<string, number> = { created: 2, planning: 10, awaiting_approval: 15, ready: 20, execute_tasks: 48, coverage: 58, generate_claims: 68, structural_verification: 76, semantic_verification: 86, render_report: 95, finalize: 98, completed: 100 }
+
+export function mockGetProgress(researchId: string): ResearchProgress {
+  const record = records.get(researchId)
+  if (!record) throw new Error('Research Progress 不存在。')
+  advance(record)
+  const currentIndex = Math.max(0, stageLabels.findIndex(([key]) => key === record.job.current_stage))
+  const stages = stageLabels.map(([key, label], index) => {
+    let status: ResearchStageStatus = index < currentIndex ? 'completed' : index === currentIndex ? 'running' : 'pending'
+    if (record.job.status === 'completed') status = 'completed'
+    if (record.job.status === 'failed' && index === currentIndex) status = 'failed'
+    return { key, label, status, started_at: index <= currentIndex ? record.job.updated_at : null, completed_at: status === 'completed' ? record.job.updated_at : null }
+  })
+  const tasks = record.plan.tasks.map((task, index) => {
+    let status: ResearchTaskStatus = index < record.job.task_completed ? 'succeeded' : 'pending'
+    if (record.job.current_task_id === task.task_id) status = 'running'
+    return { task_id: task.task_id, question: task.question, status, evidence_count: status === 'succeeded' ? 2 : 0 }
+  })
+  const basePercent = stagePercent[record.job.current_stage] ?? 2
+  const progressPercent = record.job.current_stage === 'execute_tasks' && record.job.task_total
+    ? Math.round(20 + (record.job.task_completed / record.job.task_total) * 28)
+    : basePercent
+  return {
+    schema_version: 'research.progress.v1', research_id: researchId, status: record.job.status,
+    result_status: record.job.result_status, current_stage: record.job.current_stage,
+    progress_percent: progressPercent, task_total: record.job.task_total,
+    task_completed: record.job.task_completed, evidence_count: record.job.evidence_count,
+    claim_count: record.job.current_stage === 'completed' ? 2 : 0,
+    started_at: record.job.created_at, updated_at: record.job.updated_at, stages, tasks, error: null,
+  }
+}
+
+export function mockGetEvents(researchId: string, afterEventId = 0, limit = 50): ResearchEventsResponse {
+  const progress = mockGetProgress(researchId)
+  const stageIndex = stageLabels.findIndex(([key]) => key === progress.current_stage)
+  const all: ResearchEvent[] = stageLabels.slice(0, stageIndex + 1).map(([stage, label], index) => ({
+    event_id: index + 1, research_id: researchId, event_key: `${researchId}:stage:${stage}:started`,
+    event_type: 'stage_started', stage, task_id: null, message: label, payload: {}, created_at: progress.updated_at,
+  }))
+  const events = all.filter(item => item.event_id > afterEventId).slice(0, limit)
+  return { schema_version: 'research.events.v1', research_id: researchId, events, next_after_event_id: events[events.length - 1]?.event_id ?? afterEventId }
 }
 

@@ -512,6 +512,13 @@ def test_restart_after_evidence_does_not_duplicate_evidence(tmp_path: Path) -> N
     assert restarted.control_plane.get_job(
         "research-evidence-restart"
     ).status == ResearchJobStatus.COMPLETED
+    events = restarted.control_plane.repository.list_events(
+        "research-evidence-restart", limit=100
+    )
+    assert len(events) == len({event.event_key for event in events})
+    assert len(
+        [event for event in events if event.event_type.value == "task_completed"]
+    ) == 3
     restarted.close()
 
 
@@ -561,5 +568,12 @@ def test_restart_after_report_persistence_finishes_finalize(tmp_path: Path) -> N
                 "report", "research-report-restart"
             )
         ]
+    ) == 1
+    events = restarted.control_plane.repository.list_events(
+        "research-report-restart", limit=100
+    )
+    assert len(events) == len({event.event_key for event in events})
+    assert len(
+        [event for event in events if event.event_type.value == "report_ready"]
     ) == 1
     restarted.close()

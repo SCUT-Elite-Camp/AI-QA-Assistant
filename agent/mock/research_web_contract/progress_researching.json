@@ -1,0 +1,23 @@
+{
+  "schema_version": "research.progress.v1",
+  "research_id": "research-fixture",
+  "status": "researching",
+  "result_status": null,
+  "current_stage": "execute_tasks",
+  "progress_percent": 34,
+  "task_total": 2,
+  "task_completed": 1,
+  "evidence_count": 2,
+  "claim_count": 0,
+  "started_at": "2026-09-01T10:00:00Z",
+  "updated_at": "2026-09-01T10:00:08Z",
+  "stages": [
+    { "key": "created", "label": "已创建研究任务", "status": "completed", "started_at": "2026-09-01T10:00:00Z", "completed_at": "2026-09-01T10:00:01Z" },
+    { "key": "execute_tasks", "label": "正在执行研究任务", "status": "running", "started_at": "2026-09-01T10:00:05Z", "completed_at": null }
+  ],
+  "tasks": [
+    { "task_id": "task-1", "question": "定位核心事实", "status": "succeeded", "evidence_count": 2 },
+    { "task_id": "task-2", "question": "核验原始资料", "status": "running", "evidence_count": 0 }
+  ],
+  "error": null
+}

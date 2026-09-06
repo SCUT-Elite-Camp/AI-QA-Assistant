@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ResearchJob, ResearchPlan } from '../../types/research'
-import { normalizedResearchStage, researchProgress, researchStageViews } from '../../utils/research'
+import type { ResearchEvent, ResearchJob, ResearchProgress } from '../../types/research'
 
-const props = defineProps<{ job: ResearchJob, plan?: ResearchPlan | null }>()
+const props = defineProps<{ job: ResearchJob, progress: ResearchProgress, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ cancel: [] }>()
-const progress = computed(() => researchProgress(props.job))
-const stages = computed(() => researchStageViews(props.job))
-const activeLabel = computed(() => stages.value.find(item => item.status === 'running')?.label ?? '研究处理中')
-const tasks = computed(() => props.plan?.tasks ?? [])
+const activeLabel = computed(() => props.progress.stages.find(item => item.key === props.progress.current_stage)?.label ?? '研究处理中')
+const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0, 5))
 </script>
 
 <template>
@@ -28,7 +25,7 @@ const tasks = computed(() => props.plan?.tasks ?? [])
             </p>
           </div>
           <div class="text-right">
-            <span class="text-3xl font-bold text-primary">{{ progress }}%</span><p class="text-xs text-muted">
+            <span class="text-3xl font-bold text-primary">{{ progress.progress_percent }}%</span><p class="text-xs text-muted">
               整体进度
             </p>
           </div>
@@ -36,7 +33,7 @@ const tasks = computed(() => props.plan?.tasks ?? [])
         <div class="mt-6 h-2 overflow-hidden rounded-full bg-accented">
           <div
             class="h-full rounded-full bg-primary transition-all duration-700"
-            :style="{ width: `${progress}%` }"
+            :style="{ width: `${progress.progress_percent}%` }"
           />
         </div>
       </div>
@@ -49,12 +46,12 @@ const tasks = computed(() => props.plan?.tasks ?? [])
         </h3>
         <ol class="mt-5 space-y-0">
           <li
-            v-for="(stage, index) in stages"
+            v-for="(stage, index) in progress.stages"
             :key="stage.key"
             class="relative flex gap-4 pb-5 last:pb-0"
           >
             <div
-              v-if="index < stages.length - 1"
+              v-if="index < progress.stages.length - 1"
               class="absolute left-[13px] top-7 h-full w-px bg-default"
             />
             <span
@@ -73,7 +70,7 @@ const tasks = computed(() => props.plan?.tasks ?? [])
               >
                 {{ stage.label }}
               </p><p class="mt-0.5 text-xs text-muted">
-                {{ stage.description }}
+                {{ stage.completed_at ? '已完成' : stage.started_at ? '执行中' : '等待执行' }}
               </p>
             </div>
           </li>
@@ -88,21 +85,21 @@ const tasks = computed(() => props.plan?.tasks ?? [])
           <div class="mt-4 grid grid-cols-3 gap-3">
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
-                {{ job.task_completed }}/{{ job.task_total }}
+                {{ progress.task_completed }}/{{ progress.task_total }}
               </p><p class="mt-1 text-xs text-muted">
                 任务
               </p>
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
-                {{ job.evidence_count }}
+                {{ progress.evidence_count }}
               </p><p class="mt-1 text-xs text-muted">
                 证据
               </p>
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
-                {{ job.claim_count ?? '—' }}
+                {{ progress.claim_count }}
               </p><p class="mt-1 text-xs text-muted">
                 结论
               </p>
@@ -111,7 +108,7 @@ const tasks = computed(() => props.plan?.tasks ?? [])
         </section>
 
         <section
-          v-if="tasks.length"
+          v-if="progress.tasks.length"
           class="rounded-xl border border-default bg-default p-5"
         >
           <h3 class="font-semibold text-highlighted">
@@ -119,15 +116,34 @@ const tasks = computed(() => props.plan?.tasks ?? [])
           </h3>
           <ul class="mt-4 space-y-3">
             <li
-              v-for="(task, index) in tasks"
+              v-for="task in progress.tasks"
               :key="task.task_id"
               class="flex items-start gap-3 text-sm"
             >
               <UIcon
-                :name="index < job.task_completed ? 'i-lucide-circle-check' : job.current_task_id === task.task_id ? 'i-lucide-loader-circle' : 'i-lucide-circle'"
-                :class="index < job.task_completed ? 'text-success' : job.current_task_id === task.task_id ? 'animate-spin text-primary' : 'text-muted'"
+                :name="task.status === 'succeeded' ? 'i-lucide-circle-check' : task.status === 'running' ? 'i-lucide-loader-circle' : task.status === 'failed' || task.status === 'blocked' ? 'i-lucide-circle-x' : 'i-lucide-circle'"
+                :class="task.status === 'succeeded' ? 'text-success' : task.status === 'running' ? 'animate-spin text-primary' : task.status === 'failed' || task.status === 'blocked' ? 'text-error' : 'text-muted'"
               />
-              <span :class="index < job.task_completed ? 'text-muted line-through' : 'text-highlighted'">{{ task.question }}</span>
+              <span :class="task.status === 'succeeded' ? 'text-muted line-through' : 'text-highlighted'">{{ task.question }}</span>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          v-if="recentEvents.length"
+          class="rounded-xl border border-default bg-default p-5"
+        >
+          <h3 class="font-semibold text-highlighted">
+            最近活动
+          </h3>
+          <ul class="mt-4 space-y-3">
+            <li
+              v-for="event in recentEvents"
+              :key="event.event_id"
+              class="flex items-start gap-3 text-sm"
+            >
+              <span class="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+              <span class="text-muted">{{ event.message }}</span>
             </li>
           </ul>
         </section>
@@ -136,9 +152,10 @@ const tasks = computed(() => props.plan?.tasks ?? [])
 
     <div class="flex items-center justify-between gap-3 rounded-xl border border-default bg-elevated/30 p-4">
       <p class="text-xs text-muted">
-        当前阶段：<span class="font-mono">{{ normalizedResearchStage(job) }}</span>。页面刷新后会从服务端恢复进度。
+        当前阶段：<span class="font-mono">{{ progress.current_stage }}</span>。页面刷新后会从服务端恢复进度。
       </p>
       <UButton
+        v-if="job.status === 'ready'"
         color="error"
         variant="soft"
         size="sm"

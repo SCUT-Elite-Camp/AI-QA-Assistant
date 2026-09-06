@@ -19,6 +19,7 @@ from agent.schemas.research import (
 )
 
 from .manifest import LocalDocumentResolver, ManifestResolutionError, SourceResolver
+from .events import ResearchEventRecorder
 from .planner import MockResearchPlanner, ResearchPlanner
 from .repository import (
     ResearchConflictError,
@@ -63,6 +64,7 @@ class ResearchControlPlane:
         source_resolver: SourceResolver | None = None,
         planner: ResearchPlanner | None = None,
         id_factory=None,
+        event_recorder: ResearchEventRecorder | None = None,
     ) -> None:
         if repository is None:
             project_root = Path(__file__).resolve().parents[2]
@@ -73,6 +75,7 @@ class ResearchControlPlane:
         self.source_resolver = source_resolver or LocalDocumentResolver()
         self.planner = planner or MockResearchPlanner()
         self.id_factory = id_factory or self._new_research_id
+        self.events = event_recorder or ResearchEventRecorder(repository)
 
     def create_job(
         self,
@@ -97,7 +100,9 @@ class ResearchControlPlane:
             user_id=user_id,
             request=request,
         )
-        return self.repository.create_job(job)
+        saved = self.repository.create_job(job)
+        self.events.job_created(research_id)
+        return saved
 
     def resume_planning_job(self, research_id: str) -> ResearchJob:
         """Idempotently finish planning for a created/planning Job.
@@ -115,8 +120,12 @@ class ResearchControlPlane:
                     expected_statuses=[ResearchJobStatus.CREATED],
                     status=ResearchJobStatus.PLANNING,
                 )
+                if planning_job is not None:
+                    self.events.stage_completed(research_id, "created")
+                    self.events.stage_started(research_id, "planning")
             elif job.status == ResearchJobStatus.PLANNING:
                 planning_job = job
+                self.events.stage_started(research_id, "planning")
             else:
                 planning_job = None
             if planning_job is None:
@@ -184,6 +193,8 @@ class ResearchControlPlane:
                     "research_job_state_conflict",
                     "Research Job changed while its Plan was being saved",
                 )
+            self.events.stage_completed(research_id, "planning")
+            self.events.stage_started(research_id, "awaiting_approval")
             return awaiting_job
         except (ManifestResolutionError, ResearchControlPlaneError):
             self._mark_failed_if_possible(research_id, "planning", "planning_failed")
@@ -267,7 +278,15 @@ class ResearchControlPlane:
             }
         )
         try:
-            return self.repository.commit_approval(approval, approved_plan, ready_job)
+            committed = self.repository.commit_approval(
+                approval,
+                approved_plan,
+                ready_job,
+            )
+            self.events.plan_approved(research_id, plan_version)
+            self.events.stage_completed(research_id, "awaiting_approval")
+            self.events.stage_started(research_id, "ready")
+            return committed
         except ResearchConflictError as exc:
             raise ResearchControlPlaneError(
                 "research_approval_state_conflict",
@@ -275,6 +294,7 @@ class ResearchControlPlane:
             ) from exc
 
     def cancel_job(self, research_id: str) -> ResearchJob:
+        job = self.get_job(research_id)
         cancelled = self.repository.transition_job(
             research_id,
             expected_statuses=[
@@ -287,11 +307,11 @@ class ResearchControlPlane:
             current_stage="cancelled",
         )
         if cancelled is None:
-            job = self.get_job(research_id)
             raise ResearchControlPlaneError(
                 "research_cancel_not_allowed",
                 f"Job is '{job.status.value}' and cannot be cancelled now",
             )
+        self.events.job_cancelled(research_id, job.current_stage)
         return cancelled
 
     def approved_context(self, research_id: str) -> ApprovedResearchContext:
@@ -364,6 +384,8 @@ class ResearchControlPlane:
                 "research_execution_claim_conflict",
                 "another dispatcher already claimed this Job",
             )
+        self.events.stage_completed(research_id, "ready")
+        self.events.stage_started(research_id, "execute_tasks")
         return ApprovedResearchContext(
             job=claimed,
             plan=context.plan,
@@ -394,6 +416,7 @@ class ResearchControlPlane:
                 }
             )
             self.repository.update_job(failed)
+            self.events.job_failed(research_id, failure_stage, error_code)
         except Exception:
             # The original error is more useful to the API caller.  A later
             # dispatcher/reconciliation pass can inspect the durable record.

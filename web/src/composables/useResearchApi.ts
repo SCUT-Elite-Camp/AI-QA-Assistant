@@ -1,6 +1,6 @@
 import { $fetch } from 'ofetch'
-import type { ResearchApprovalRequest, ResearchJob, ResearchPlan, ResearchReport, ResearchRequest } from '../types/research'
-import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetPlan, mockGetReport, mockGetResearch } from '../mocks/research'
+import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
+import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetEvents, mockGetPlan, mockGetProgress, mockGetReport, mockGetResearch } from '../mocks/research'
 
 const useMock = import.meta.env.VITE_RESEARCH_USE_MOCK === 'true'
 const configuredBase = (import.meta.env.VITE_RESEARCH_API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '')
@@ -37,6 +37,18 @@ export function useResearchApi() {
     return $fetch<ResearchReport>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/report`)
   }
 
-  return { createJob, getJob, getPlan, approveJob, cancelJob, getReport, useMock, apiBase }
+  async function getProgress(researchId: string): Promise<ResearchProgress> {
+    if (useMock) return mockGetProgress(researchId)
+    return $fetch<ResearchProgress>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/progress`)
+  }
+
+  async function getEvents(researchId: string, afterEventId = 0, limit = 50): Promise<ResearchEventsResponse> {
+    if (useMock) return mockGetEvents(researchId, afterEventId, limit)
+    return $fetch<ResearchEventsResponse>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/events`, {
+      query: { after_event_id: afterEventId, limit },
+    })
+  }
+
+  return { createJob, getJob, getPlan, approveJob, cancelJob, getReport, getProgress, getEvents, useMock, apiBase }
 }
 

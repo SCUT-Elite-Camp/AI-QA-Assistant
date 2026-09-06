@@ -155,6 +155,7 @@ class ResearchIntelligencePipeline:
         self.renderer = renderer or MarkdownReportRenderer()
         self.ledger = ledger or self.repository
         self.max_candidates_per_task = max_candidates_per_task
+        self.events = control_plane.events
 
     def execute_tasks(self, research_id: str) -> list[str]:
         context = self.control_plane.approved_context(research_id)
@@ -162,12 +163,24 @@ class ResearchIntelligencePipeline:
         completed_task_ids = {item.task_id for item in existing}
         if completed_task_ids == {task.task_id for task in context.tasks}:
             completed = len(completed_task_ids)
+            for task in context.tasks:
+                self.events.task_started(research_id, task.task_id)
+                self.events.task_finished(
+                    research_id,
+                    task.task_id,
+                    status=ResearchTaskStatus.SUCCEEDED,
+                    evidence_count=self.repository.count_entities(
+                        "evidence", research_id, task.task_id
+                    ),
+                    actions_used=0,
+                )
         else:
             worker_tools = ManifestScopedWorkerTools(self.tool_adapter, context)
             result = LocalResearchWorker(
                 worker_tools,
                 self.ledger,
                 max_candidates_per_task=self.max_candidates_per_task,
+                event_sink=self.events,
             ).run(context)
             completed = sum(
                 item.status == ResearchTaskStatus.SUCCEEDED

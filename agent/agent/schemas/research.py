@@ -26,6 +26,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 RESEARCH_SCHEMA_VERSION = "research.v1"
 RESEARCH_RUNTIME_SCHEMA_VERSION = "research.v2"
+RESEARCH_PROGRESS_SCHEMA_VERSION = "research.progress.v1"
+RESEARCH_EVENTS_SCHEMA_VERSION = "research.events.v1"
 
 # The Week 1 contract is deliberately Local-only and read-only.  This allowlist
 # is the first boundary that prevents a future Planner from smuggling in a
@@ -90,6 +92,28 @@ class ResearchTaskStatus(StrEnum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     BLOCKED = "blocked"
+
+
+class ResearchStageStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class ResearchEventType(StrEnum):
+    JOB_CREATED = "job_created"
+    PLAN_APPROVED = "plan_approved"
+    STAGE_STARTED = "stage_started"
+    STAGE_COMPLETED = "stage_completed"
+    TASK_STARTED = "task_started"
+    TASK_COMPLETED = "task_completed"
+    TASK_FAILED = "task_failed"
+    TASK_BLOCKED = "task_blocked"
+    REPORT_READY = "report_ready"
+    JOB_COMPLETED = "job_completed"
+    JOB_FAILED = "job_failed"
+    JOB_CANCELLED = "job_cancelled"
 
 
 class ResearchContractModel(BaseModel):
@@ -597,6 +621,75 @@ class ResearchJob(ResearchContractModel):
         return normalized
 
 
+class ResearchEvent(ResearchContractModel):
+    """One append-only, user-safe event in a Research execution timeline."""
+
+    event_id: int = Field(ge=1)
+    research_id: str = Field(min_length=1, max_length=100)
+    event_key: str = Field(min_length=1, max_length=300)
+    event_type: ResearchEventType
+    stage: str | None = Field(default=None, max_length=80)
+    task_id: str | None = Field(default=None, max_length=80)
+    message: str = Field(min_length=1, max_length=500)
+    payload: dict[str, str | int | float | bool | None] = Field(
+        default_factory=dict,
+        max_length=30,
+    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ResearchEventsResponse(ResearchContractModel):
+    schema_version: Literal[RESEARCH_EVENTS_SCHEMA_VERSION] = (
+        RESEARCH_EVENTS_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    events: list[ResearchEvent] = Field(default_factory=list, max_length=100)
+    next_after_event_id: int = Field(ge=0)
+
+
+class ResearchStageProgress(ResearchContractModel):
+    key: str = Field(min_length=1, max_length=80)
+    label: str = Field(min_length=1, max_length=100)
+    status: ResearchStageStatus
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class ResearchTaskProgress(ResearchContractModel):
+    task_id: str = Field(min_length=1, max_length=80)
+    question: str = Field(min_length=1, max_length=1000)
+    status: ResearchTaskStatus
+    evidence_count: int = Field(ge=0)
+
+
+class ResearchProgressError(ResearchContractModel):
+    stage: str = Field(min_length=1, max_length=80)
+    code: str = Field(min_length=1, max_length=120)
+    message: str = Field(min_length=1, max_length=500)
+
+
+class ResearchProgress(ResearchContractModel):
+    """Persistent read model returned to the Web progress timeline."""
+
+    schema_version: Literal[RESEARCH_PROGRESS_SCHEMA_VERSION] = (
+        RESEARCH_PROGRESS_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    status: ResearchJobStatus
+    result_status: ResearchResultStatus | None = None
+    current_stage: str = Field(min_length=1, max_length=80)
+    progress_percent: int = Field(ge=0, le=100)
+    task_total: int = Field(ge=0)
+    task_completed: int = Field(ge=0)
+    evidence_count: int = Field(ge=0)
+    claim_count: int = Field(ge=0)
+    started_at: datetime
+    updated_at: datetime
+    stages: list[ResearchStageProgress]
+    tasks: list[ResearchTaskProgress]
+    error: ResearchProgressError | None = None
+
+
 @dataclass(frozen=True)
 class PlanIssue:
     """Stable, machine-readable Planner validation issue."""
@@ -855,6 +948,9 @@ __all__ = [
     "Observation",
     "PlanIssue",
     "ReportSpec",
+    "ResearchEvent",
+    "ResearchEventsResponse",
+    "ResearchEventType",
     "ResearchBudget",
     "ResearchContractModel",
     "ResearchApproval",
@@ -863,6 +959,10 @@ __all__ = [
     "ResearchPlanStatus",
     "ResearchPlanValidationError",
     "ResearchPlanValidator",
+    "ResearchProgress",
+    "ResearchProgressError",
+    "ResearchStageProgress",
+    "ResearchStageStatus",
     "ResearchJobStatus",
     "ResearchResultStatus",
     "ResearchReport",
@@ -870,6 +970,7 @@ __all__ = [
     "ResearchRequest",
     "ResearchTask",
     "ResearchTaskPriority",
+    "ResearchTaskProgress",
     "ResearchTaskStatus",
     "SourceManifest",
     "SourceManifestDocument",
@@ -880,4 +981,6 @@ __all__ = [
     "VerifiedClaim",
     "RESEARCH_SCHEMA_VERSION",
     "RESEARCH_RUNTIME_SCHEMA_VERSION",
+    "RESEARCH_PROGRESS_SCHEMA_VERSION",
+    "RESEARCH_EVENTS_SCHEMA_VERSION",
 ]

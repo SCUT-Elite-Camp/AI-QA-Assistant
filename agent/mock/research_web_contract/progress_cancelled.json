@@ -1,0 +1,19 @@
+{
+  "schema_version": "research.progress.v1",
+  "research_id": "research-cancelled",
+  "status": "cancelled",
+  "result_status": null,
+  "current_stage": "awaiting_approval",
+  "progress_percent": 15,
+  "task_total": 2,
+  "task_completed": 0,
+  "evidence_count": 0,
+  "claim_count": 0,
+  "started_at": "2026-09-01T13:00:00Z",
+  "updated_at": "2026-09-01T13:00:05Z",
+  "stages": [
+    { "key": "awaiting_approval", "label": "等待确认研究计划", "status": "pending", "started_at": "2026-09-01T13:00:03Z", "completed_at": null }
+  ],
+  "tasks": [],
+  "error": null
+}
