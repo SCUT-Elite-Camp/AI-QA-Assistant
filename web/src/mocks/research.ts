@@ -165,4 +165,3 @@ export function mockGetEvents(researchId: string, afterEventId = 0, limit = 50):
   const events = all.filter(item => item.event_id > afterEventId).slice(0, limit)
   return { schema_version: 'research.events.v1', research_id: researchId, events, next_after_event_id: events[events.length - 1]?.event_id ?? afterEventId }
 }
-
