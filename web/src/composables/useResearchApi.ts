@@ -51,4 +51,3 @@ export function useResearchApi() {
 
   return { createJob, getJob, getPlan, approveJob, cancelJob, getReport, getProgress, getEvents, useMock, apiBase }
 }
-

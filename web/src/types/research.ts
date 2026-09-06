@@ -31,7 +31,6 @@ export interface SourceScope {
   document_ids: string[]
   topic: string
 }
-
 export interface ReportSpec {
   format: 'markdown'
   language: 'zh-CN' | 'en-US'

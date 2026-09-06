@@ -5,7 +5,6 @@ interface MockRecord {
   plan: ResearchPlan
   approvedAt: number | null
 }
-
 const records = new Map<string, MockRecord>()
 const manifestHash = '8a5599e8d44944d6e4d1d563aea17ab79b8a4d18e75287adf3ad1f90b073e0a1'
 

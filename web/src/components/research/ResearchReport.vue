@@ -115,4 +115,3 @@ function downloadMarkdown() {
     </div>
   </div>
 </template>
-

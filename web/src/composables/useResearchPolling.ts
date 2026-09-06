@@ -59,4 +59,3 @@ export function useResearchPolling(
 
   return { job, progress, events, loading, error, refresh, restart, stop }
 }
-

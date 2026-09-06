@@ -165,4 +165,3 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
     </div>
   </div>
 </template>
-

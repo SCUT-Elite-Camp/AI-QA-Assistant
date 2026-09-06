@@ -3,7 +3,6 @@ import type { ResearchJob } from '../types/research'
 export function isResearchTerminal(job: ResearchJob): boolean {
   return ['completed', 'failed', 'cancelled'].includes(job.status)
 }
-
 export function formatResearchError(error: unknown): string {
   if (typeof error === 'object' && error !== null) {
     const candidate = error as { data?: { detail?: string | { message?: string } }, message?: string }

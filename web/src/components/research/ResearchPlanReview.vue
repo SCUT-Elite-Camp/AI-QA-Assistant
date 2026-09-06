@@ -127,4 +127,3 @@ const emit = defineEmits<{ approve: [], cancel: [] }>()
     </div>
   </div>
 </template>
-
