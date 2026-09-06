@@ -13,4 +13,3 @@ export function formatResearchError(error: unknown): string {
   }
   return 'Research 服务暂时不可用，请稍后重试。'
 }
-
