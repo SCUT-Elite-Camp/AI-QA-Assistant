@@ -10,11 +10,10 @@ from PIL import Image
 
 from attachment_service.config import AttachmentSettings
 from attachment_service.vision import LocalVisionBackend
+from attachment_service.vision_input import prepare_vision_image
 
 
 def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path) -> None:
-    from attachment_service.app import _prepare_vision_image
-
     source = tmp_path / "source.pdf"
     document = fitz.open()
     document.new_page(width=120, height=80)
@@ -24,7 +23,7 @@ def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path
     document.close()
 
     output = tmp_path / "page.png"
-    locator = _prepare_vision_image(source, ".pdf", 2, [0.0, 0.0, 0.5, 1.0], output)
+    locator = prepare_vision_image(source, ".pdf", 2, [0.0, 0.0, 0.5, 1.0], output)
     with Image.open(output) as image:
         assert image.width == 200
         assert image.height == 200
@@ -32,14 +31,12 @@ def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path
 
 
 def test_prepare_vision_image_rejects_invalid_locator(tmp_path: Path) -> None:
-    from attachment_service.app import _prepare_vision_image
-
     source = tmp_path / "source.png"
     Image.new("RGB", (20, 20), "white").save(source)
     with pytest.raises(ValueError, match="invalid_bbox"):
-        _prepare_vision_image(source, ".png", None, [0.8, 0.1, 0.2, 0.9], tmp_path / "out.png")
+        prepare_vision_image(source, ".png", None, [0.8, 0.1, 0.2, 0.9], tmp_path / "out.png")
     with pytest.raises(ValueError, match="page_out_of_range"):
-        _prepare_vision_image(source, ".png", 2, None, tmp_path / "out.png")
+        prepare_vision_image(source, ".png", 2, None, tmp_path / "out.png")
 
 
 def test_vision_model_load_is_local_quantized_and_does_not_run_remote_code(

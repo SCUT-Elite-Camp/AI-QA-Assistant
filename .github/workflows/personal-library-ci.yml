@@ -26,9 +26,9 @@ jobs:
       PYTHONPATH: ${{ github.workspace }};${{ github.workspace }}\attachment-service;${{ github.workspace }}\data-pipeline;${{ github.workspace }}\data-persistence;${{ github.workspace }}\toolset;${{ github.workspace }}\agent
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -47,11 +47,11 @@ jobs:
           agent/tests/unit/test_personal_library_tool.py
           -q
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: pnpm

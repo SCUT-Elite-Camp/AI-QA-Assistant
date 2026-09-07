@@ -36,6 +36,7 @@ from .store import AttachmentStore
 from .structure import build_document_sections
 from .validation import AttachmentValidationError, safe_filename, validate_file
 from .vision import LocalVisionBackend
+from .vision_input import prepare_vision_image
 from .vector_index import AttachmentVectorIndex
 from .previews import build_encrypted_previews
 
@@ -155,42 +156,6 @@ def _authorize(authorization: str = Header(default="")) -> None:
 def _public_record(record: dict[str, Any]) -> dict[str, Any]:
     excluded = {"blob_path", "key_id", "dedupe_domain", "deleted_at"}
     return {key: value for key, value in record.items() if key not in excluded}
-
-
-def _prepare_vision_image(source: Path, extension: str, page: int | None, bbox: list[float] | None, output: Path) -> dict[str, Any]:
-    locator: dict[str, Any] = {"page": page, "bbox": bbox}
-    if bbox is not None:
-        if len(bbox) != 4 or any(value < 0 or value > 1 for value in bbox) or bbox[0] >= bbox[2] or bbox[1] >= bbox[3]:
-            raise ValueError("invalid_bbox")
-    if extension == ".pdf":
-        import fitz
-        document = fitz.open(source)
-        try:
-            page_number = page or 1
-            if page_number > len(document):
-                raise ValueError("page_out_of_range")
-            pixmap = document[page_number - 1].get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
-            pixmap.save(output)
-            locator["page"] = page_number
-        finally:
-            document.close()
-    else:
-        if page not in {None, 1}:
-            raise ValueError("page_out_of_range")
-        from PIL import Image
-        with Image.open(source) as image:
-            image.convert("RGB").save(output, format="PNG")
-        locator["page"] = None
-    if bbox is not None:
-        from PIL import Image
-        with Image.open(output) as image:
-            width, height = image.size
-            crop = (
-                round(bbox[0] * width), round(bbox[1] * height),
-                round(bbox[2] * width), round(bbox[3] * height),
-            )
-            image.crop(crop).save(output, format="PNG")
-    return locator
 
 
 def _persist_uploaded_file(
@@ -919,7 +884,7 @@ async def inspect(attachment_id: str, body: InspectRequest) -> dict[str, Any]:
         decrypt_file(Path(record["blob_path"]), temporary, SETTINGS.encryption_key, _blob_aad(record))
         try:
             locator = await asyncio.to_thread(
-                _prepare_vision_image, temporary, record["extension"], body.page, body.bbox, vision_image,
+                prepare_vision_image, temporary, record["extension"], body.page, body.bbox, vision_image,
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
