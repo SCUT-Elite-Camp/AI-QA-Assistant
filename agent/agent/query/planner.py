@@ -76,11 +76,15 @@ class QueryPlanner:
         """Return optional retrieval planning data with a safe empty fallback."""
         query = standalone_query.strip()
         if not query or not self.enabled or intent not in self.RETRIEVAL_INTENTS:
+            navigation_mode = self._heuristic_navigation_mode(query, intent)
             return QueryEnrichment(
                 source_intent=heuristic_source_intent(
                     query,
                     enterprise_default=intent in self.RETRIEVAL_INTENTS,
                 ),
+                navigation_mode=navigation_mode,
+                needs_structure=navigation_mode != "direct",
+                needs_version_reasoning=self._needs_version_reasoning(query),
                 reason="query_planning_skipped",
             )
 
@@ -103,8 +107,12 @@ class QueryPlanner:
                 exc.__class__.__name__,
                 query,
             )
+            navigation_mode = self._heuristic_navigation_mode(query, intent)
             return QueryEnrichment(
                 source_intent=heuristic_source_intent(query),
+                navigation_mode=navigation_mode,
+                needs_structure=navigation_mode != "direct",
+                needs_version_reasoning=self._needs_version_reasoning(query),
                 reason="query_planning_failed",
             )
 
@@ -116,6 +124,11 @@ class QueryPlanner:
                 if result.source_intent.sources
                 else heuristic_source_intent(query)
             ),
+            navigation_mode=result.navigation_mode,
+            scope=result.scope,
+            needs_structure=result.needs_structure,
+            needs_knowledge=False,
+            needs_version_reasoning=result.needs_version_reasoning,
             reason=result.reason,
         )
 
@@ -123,7 +136,12 @@ class QueryPlanner:
     def _system_prompt() -> str:
         return (
             "Plan retrieval for an enterprise knowledge Agent. "
-            "Return JSON only with keys sub_queries, filters, source_intent, and reason. "
+            "Return JSON only with keys sub_queries, filters, source_intent, "
+            "navigation_mode, scope, needs_structure, needs_knowledge, "
+            "needs_version_reasoning, and reason. navigation_mode is direct for exact "
+            "facts and explicit clauses, hierarchical for long cross-section or version "
+            "reasoning, and hybrid for ambiguous, cross-document, or complex questions. "
+            "scope is single_doc, multi_doc, or kb. needs_knowledge must be false in P0. "
             "source_intent has sources (any of personal_library, enterprise_kb, "
             "conversation_attachment, web), mode (explicit or inferred), and optional "
             "confidence. It may contain multiple sources for comparison. Source intent "
@@ -142,8 +160,31 @@ class QueryPlanner:
             "identifier. Example shape: "
             '{"sub_queries":[],"filters":{},"source_intent":{"sources":'
             '["enterprise_kb"],"mode":"inferred","confidence":0.8},'
+            '"navigation_mode":"direct","scope":"kb","needs_structure":false,'
+            '"needs_knowledge":false,"needs_version_reasoning":false,'
             '"reason":"not needed"}'
         )
+
+    @staticmethod
+    def _needs_version_reasoning(query: str) -> bool:
+        lowered = query.casefold()
+        return any(token in lowered for token in (
+            "版本", "修订", "变更", "变化", "历史", "previous version",
+            "latest version", "revision", "changed between",
+        ))
+
+    @classmethod
+    def _heuristic_navigation_mode(cls, query: str, intent: QueryIntent) -> str:
+        lowered = query.casefold()
+        complex_tokens = (
+            "跨章节", "跨文档", "综合", "比较", "演变", "版本", "全文",
+            "across sections", "across documents", "compare", "summarize",
+        )
+        if intent in {QueryIntent.COMPARISON, QueryIntent.SUMMARIZATION}:
+            return "hybrid"
+        if any(token in lowered for token in complex_tokens):
+            return "hybrid"
+        return "direct"
 
     @staticmethod
     def _parse_response(response: dict[str, Any]) -> QueryEnrichment:

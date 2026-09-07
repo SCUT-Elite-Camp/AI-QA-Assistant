@@ -1,6 +1,6 @@
 """Frozen public QueryPlan contract shared by CP2 Agent components."""
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -65,6 +65,11 @@ class QueryPlan(BaseModel):
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
     source_intent: SourceIntent = Field(default_factory=SourceIntent)
+    navigation_mode: Literal["direct", "hierarchical", "hybrid"] = "direct"
+    scope: Literal["single_doc", "multi_doc", "kb"] = "kb"
+    needs_structure: bool = False
+    needs_knowledge: bool = False
+    needs_version_reasoning: bool = False
 
     @field_validator("original_query")
     @classmethod

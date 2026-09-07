@@ -658,6 +658,12 @@ class AgentRunner:
             constrained["top_k"] = top_k
             constrained["mode"] = mode
             constrained["filters"] = dict(query_plan.filters)
+            constrained["navigation_mode"] = query_plan.navigation_mode
+        elif tool_name == "search_library":
+            constrained["query"] = query_plan.standalone_query
+            constrained["top_k"] = top_k
+            constrained["mode"] = mode
+            constrained["navigation_mode"] = query_plan.navigation_mode
         elif tool_name == "find_documents":
             if not constrained.get("query") and not constrained.get("filters"):
                 constrained["query"] = query_plan.standalone_query

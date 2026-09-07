@@ -192,6 +192,7 @@ class ToolExecutor:
         top_k = arguments.get("top_k", 5)
         filters = arguments.get("filters")
         include_neighbors = arguments.get("include_neighbors", False)
+        navigation_mode = arguments.get("navigation_mode", "direct")
         min_score = float(getattr(tool, "min_score", 0.0))
 
         search_arguments = dict(
@@ -202,6 +203,11 @@ class ToolExecutor:
             min_score=min_score,
             trace_id=trace_id,
         )
+        # Keep the legacy call shape for direct retrieval so older adapters and
+        # third-party search tools remain compatible. Hierarchical navigation is
+        # opt-in and its argument is forwarded only when it changes behavior.
+        if navigation_mode != "direct":
+            search_arguments["navigation_mode"] = navigation_mode
         if include_neighbors:
             search_arguments["include_neighbors"] = True
         rows = tool.search(**search_arguments)
@@ -217,6 +223,9 @@ class ToolExecutor:
                 retrieval_query=query,
                 retrieval_mode=mode,
                 retrieval_attempt=retrieval_attempt,
+                knowledge_base_id=row.get("knowledge_base_id") or None,
+                document_id=row.get("document_id") or None,
+                version_id=row.get("version_id") or None,
             )
             for row in rows
         ]
@@ -349,7 +358,10 @@ class ToolExecutor:
                 document_id=document_id,
                 version_id=version_id,
             ))
-        return {"result_count": len(evidence)}, evidence
+        return {
+            "result_count": len(evidence),
+            "navigation": data.get("navigation") or {},
+        }, evidence
 
     @staticmethod
     def _content_with_neighbors(row: dict[str, Any]) -> str:
