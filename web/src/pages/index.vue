@@ -53,6 +53,10 @@ async function createChat(prompt: string) {
 function onSubmit() {
   const text = input.value
   input.value = ''
+  if (deepResearchMode.value && text.trim()) {
+    router.push({ path: '/research/new', query: { q: text.trim() } })
+    return
+  }
   createChat(text)
 }
 

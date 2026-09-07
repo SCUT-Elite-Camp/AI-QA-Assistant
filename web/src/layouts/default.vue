@@ -271,6 +271,10 @@ defineShortcuts({
             label: 'Favorites',
             to: '/favorites',
             icon: 'i-lucide-star'
+          }, {
+            label: 'Deep Research',
+            to: '/research/new',
+            icon: 'i-lucide-telescope'
           }]"
           :collapsed="collapsed"
           orientation="vertical"

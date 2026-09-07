@@ -154,6 +154,11 @@ const chat = new Chat({
 function handleSubmit(e: Event) {
   e.preventDefault()
   if (input.value.trim()) {
+    if (deepResearchMode.value) {
+      router.push({ path: '/research/new', query: { q: input.value.trim() } })
+      input.value = ''
+      return
+    }
     chat.sendMessage({ text: input.value })
     input.value = ''
   }
