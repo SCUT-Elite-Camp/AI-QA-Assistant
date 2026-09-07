@@ -25,6 +25,7 @@ from agent.schemas.research import (
 from deep_research.execution import ResearchRuntimeService
 from deep_research.manifest import InMemoryDocumentResolver
 from deep_research.planner import ResearchPlanner
+from deep_research.progress import ResearchProgressService
 from deep_research.repository import SQLiteResearchRepository
 from deep_research.service import ResearchControlPlane
 from deep_research.tools import OriginalRead as AdapterOriginalRead
@@ -205,8 +206,8 @@ def test_manual_api_entry_dispatches_to_traceable_report(tmp_path: Path) -> None
         assert completed["status"] == "completed"
         assert completed["result_status"] == "complete"
         assert report.status_code == 200
-        assert "project-alpha / line:" in report.json()["markdown"]
-        assert "project-beta / line:" in report.json()["markdown"]
+        assert "**项目 Alpha 状态**" in report.json()["markdown"]
+        assert "**项目 Beta 状态**" in report.json()["markdown"]
     service.close()
 
 
@@ -285,8 +286,8 @@ def test_mock_full_vertical_slice_reaches_complete_report(tmp_path: Path) -> Non
     assert adapter.search_calls == adapter.read_calls == 3
     assert len(repository.list_observations(job.research_id)) == 3
     assert len(repository.list_evidence(job.research_id)) == 3
-    assert "[E:evidence-" in report.markdown
-    assert "## 证据索引" in report.markdown
+    assert "[1]" in report.markdown
+    assert "## 来源" in report.markdown
     service.close()
 
 
@@ -319,8 +320,9 @@ def test_fixed_local_fixture_e2e_is_repeatable_and_traceable(tmp_path: Path) -> 
             "project-beta",
         }
         assert all(item.locator.startswith("line:") for item in evidence)
-        assert "project-alpha / line:" in report.markdown
-        assert "project-beta / line:" in report.markdown
+        assert "**项目 Alpha 状态**" in report.markdown
+        assert "**项目 Beta 状态**" in report.markdown
+        assert "line:" in report.markdown
         reports.append(report.markdown)
         service.close()
 
@@ -347,7 +349,8 @@ def test_insufficient_material_completes_as_degraded(tmp_path: Path) -> None:
     assert job.status == ResearchJobStatus.COMPLETED
     assert job.result_status == ResearchResultStatus.DEGRADED
     assert coverage.missing == ["criterion-required"]
-    assert "缺失必需验收条件：criterion-required" in report.markdown
+    assert "部分研究要求尚未获得足够证据支持" in report.markdown
+    assert "criterion-required" not in report.markdown
     service.close()
 
 
@@ -370,7 +373,8 @@ def test_conflicting_evidence_is_disclosed_not_selected(tmp_path: Path) -> None:
     report = control.repository.get_report(job.research_id)
     assert job.result_status == ResearchResultStatus.DEGRADED
     assert semantic.status == ClaimVerificationStatus.CONFLICTING
-    assert "证据存在冲突，无法形成确定结论" in report.markdown
+    assert "## 资料冲突" in report.markdown
+    assert "以下来源对同一问题给出了不一致的信息" in report.markdown
     assert "100 万元" in report.markdown
     assert "确定结论：2026 年度预算为 100 万元" not in report.markdown
     service.close()
@@ -519,6 +523,14 @@ def test_restart_after_evidence_does_not_duplicate_evidence(tmp_path: Path) -> N
     assert len(
         [event for event in events if event.event_type.value == "task_completed"]
     ) == 3
+    assert len(
+        [event for event in events if event.event_type.value == "job_recovered"]
+    ) == 1
+    progress = ResearchProgressService(
+        restarted.control_plane.repository
+    ).get_progress("research-evidence-restart")
+    assert progress.metrics.recovery_count == 1
+    assert progress.metrics.actions_used > 0
     restarted.close()
 
 

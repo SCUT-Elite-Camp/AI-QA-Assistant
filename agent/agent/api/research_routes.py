@@ -18,6 +18,7 @@ from agent.schemas.research import (
     ResearchEventsResponse,
     ResearchJob,
     ResearchPlan,
+    ResearchPlanRevisionRequest,
     ResearchProgress,
     ResearchReport,
     ResearchRequest,
@@ -114,6 +115,26 @@ def get_research_plan(
 ) -> ResearchPlan:
     try:
         return control_plane.get_plan(research_id)
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.post("/jobs/{research_id}/plan/revisions", response_model=ResearchPlan)
+def revise_research_plan(
+    research_id: str,
+    revision: ResearchPlanRevisionRequest,
+    user_id: Annotated[str, Header(alias="X-User-ID")] = "local-user",
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+) -> ResearchPlan:
+    """Persist a new Plan version and invalidate execution until re-approved."""
+
+    try:
+        return control_plane.revise_plan(
+            research_id,
+            revision,
+            revised_by=user_id,
+        )
     except Exception as exc:
         _raise_http_error(exc)
         raise AssertionError("unreachable")

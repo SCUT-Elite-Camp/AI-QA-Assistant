@@ -1,4 +1,4 @@
-import type { ResearchEvent, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchProgress, ResearchReport, ResearchRequest, ResearchStageStatus, ResearchTaskStatus } from '../types/research'
+import type { ResearchEvent, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest, ResearchStageStatus, ResearchTaskStatus } from '../types/research'
 
 interface MockRecord {
   job: ResearchJob
@@ -91,6 +91,30 @@ export function mockApproveResearch(researchId: string): ResearchJob {
   return structuredClone(record.job)
 }
 
+export function mockReviseResearchPlan(researchId: string, revision: ResearchPlanRevisionRequest): ResearchPlan {
+  const record = records.get(researchId)
+  if (!record) throw new Error('Research Job 不存在。')
+  record.plan = {
+    ...record.plan,
+    version: record.plan.version + 1,
+    objective: revision.objective,
+    tasks: structuredClone(revision.tasks),
+    report_spec: structuredClone(revision.report_spec),
+    status: 'awaiting_approval',
+  }
+  record.approvedAt = null
+  Object.assign(record.job, {
+    status: 'awaiting_approval',
+    plan_version: record.plan.version,
+    current_stage: 'awaiting_approval',
+    task_total: record.plan.tasks.length,
+    task_completed: 0,
+    evidence_count: 0,
+    updated_at: now(),
+  })
+  return structuredClone(record.plan)
+}
+
 export function mockCancelResearch(researchId: string): ResearchJob {
   const record = records.get(researchId)
   if (!record) throw new Error('Research Job 不存在。')
@@ -105,6 +129,7 @@ export function mockGetReport(researchId: string): ResearchReport {
   return {
     report_id: `report-${researchId}`, research_id: researchId, result_status: record.job.result_status ?? 'complete',
     claim_ids: ['claim-1', 'claim-2'], evidence_ids: ['ev-alpha', 'ev-beta'], generated_at: now(),
+    citations: [], conflicts: [], limitations: [],
     markdown: `# ${record.job.request.report_spec.title || 'Deep Research 报告'}\n\n## 研究结论\n\nAlpha 与 Beta 的部署状态均为已完成。[E:ev-alpha][E:ev-beta]\n\n## 原文依据\n\n- **Alpha**：部署状态为已完成，验收记录已归档。\n- **Beta**：部署状态为已完成，验收记录已归档。\n\n## 资料限制\n\n本报告仅基于用户审批时冻结的本地资料，不包含范围外信息。`,
   }
 }
@@ -151,6 +176,16 @@ export function mockGetProgress(researchId: string): ResearchProgress {
     progress_percent: progressPercent, task_total: record.job.task_total,
     task_completed: record.job.task_completed, evidence_count: record.job.evidence_count,
     claim_count: record.job.current_stage === 'completed' ? 2 : 0,
+    metrics: {
+      elapsed_ms: Math.max(0, Date.now() - new Date(record.job.created_at).getTime()),
+      actions_used: record.job.task_completed * 4,
+      tool_calls: record.job.task_completed * 4,
+      documents_read: record.job.evidence_count ? 2 : 0,
+      evidence_accepted: record.job.evidence_count,
+      evidence_rejected: 0,
+      retry_count: 0,
+      recovery_count: 0,
+    },
     started_at: record.job.created_at, updated_at: record.job.updated_at, stages, tasks, error: null,
   }
 }

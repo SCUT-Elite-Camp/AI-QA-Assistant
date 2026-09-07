@@ -484,7 +484,21 @@ class LocalResearchWorker:
         # This deterministic fallback is deliberately conservative.  A future
         # model-backed Finding builder may rewrite the statement, but it must
         # retain these Evidence IDs and criterion mappings.
-        statement = evidence[0].excerpt
+        number_sets = [
+            set(re.findall(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?%?", item.excerpt))
+            for item in evidence
+        ]
+        has_numeric_difference = (
+            any(number_sets)
+            and len({tuple(sorted(numbers)) for numbers in number_sets}) > 1
+        )
+        if "冲突" in task.question and len(evidence) > 1 and has_numeric_difference:
+            compared = "；".join(
+                f"{item.doc_id}：{item.excerpt.rstrip('。；; ')}" for item in evidence
+            )
+            statement = f"候选资料的关键数值存在差异：{compared}"
+        else:
+            statement = evidence[0].excerpt
         return Finding(
             finding_id=LocalResearchWorker._stable_id(
                 "finding", context.job.research_id, task.task_id

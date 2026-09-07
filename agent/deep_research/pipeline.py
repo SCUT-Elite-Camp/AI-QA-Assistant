@@ -273,6 +273,7 @@ class ResearchIntelligencePipeline:
             claims=verified,
             coverage=coverage,
             evidence=self.repository.list_evidence(research_id),
+            manifest=self.control_plane.get_manifest(research_id),
             limitations=limitations,
             title=plan.report_spec.title or None,
         )

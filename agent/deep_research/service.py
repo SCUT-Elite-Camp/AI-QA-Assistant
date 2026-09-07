@@ -12,9 +12,12 @@ from agent.schemas.research import (
     ResearchJob,
     ResearchJobStatus,
     ResearchPlan,
+    ResearchPlanRevisionRequest,
     ResearchPlanStatus,
+    ResearchPlanValidator,
     ResearchRequest,
     ResearchTask,
+    ResearchTaskStatus,
     SourceManifest,
 )
 
@@ -214,6 +217,81 @@ class ResearchControlPlane:
 
     def get_plan(self, research_id: str, version: int | None = None) -> ResearchPlan:
         return self.repository.get_plan(research_id, version)
+
+    def revise_plan(
+        self,
+        research_id: str,
+        revision: ResearchPlanRevisionRequest,
+        *,
+        revised_by: str,
+    ) -> ResearchPlan:
+        """Create a new immutable Plan version and require a fresh Approval."""
+
+        job = self.get_job(research_id)
+        if job.status not in {
+            ResearchJobStatus.AWAITING_APPROVAL,
+            ResearchJobStatus.READY,
+        }:
+            raise ResearchControlPlaneError(
+                "research_plan_revision_not_allowed",
+                f"Job is '{job.status.value}' and its Plan can no longer be revised",
+            )
+        if job.plan_version != revision.base_version:
+            raise ResearchControlPlaneError(
+                "research_plan_version_conflict",
+                "revision must reference the current plan_version",
+            )
+        current = self.get_plan(research_id, revision.base_version)
+        reset_tasks = [
+            ResearchTask.model_validate(
+                {**task.model_dump(), "status": ResearchTaskStatus.PENDING}
+            )
+            for task in revision.tasks
+        ]
+        revised = ResearchPlan.model_validate(
+            {
+                **current.model_dump(),
+                "version": current.version + 1,
+                "objective": revision.objective,
+                "tasks": reset_tasks,
+                "report_spec": revision.report_spec,
+                "status": ResearchPlanStatus.AWAITING_APPROVAL,
+            }
+        )
+        try:
+            revised = ResearchPlanValidator.validate_or_raise(revised)
+        except ValueError as exc:
+            issue = getattr(exc, "issue", None)
+            code = getattr(issue, "code", "research_plan_invalid")
+            raise ResearchControlPlaneError(code, str(exc)) from exc
+
+        superseded = ResearchPlan.model_validate(
+            {**current.model_dump(), "status": ResearchPlanStatus.SUPERSEDED}
+        )
+        revised_job = ResearchJob.model_validate(
+            {
+                **job.model_dump(),
+                "status": ResearchJobStatus.AWAITING_APPROVAL,
+                "result_status": None,
+                "plan_version": revised.version,
+                "current_stage": "awaiting_approval",
+                "current_task_id": None,
+                "task_total": len(revised.tasks),
+                "task_completed": 0,
+                "evidence_count": 0,
+                "failure_stage": None,
+                "error_code": None,
+            }
+        )
+        self.repository.commit_plan_revision(superseded, revised, revised_job)
+        self.events.plan_revised(
+            research_id,
+            from_version=current.version,
+            to_version=revised.version,
+            revised_by=revised_by,
+            revision_note=revision.revision_note,
+        )
+        return revised
 
     def approve_job(
         self,

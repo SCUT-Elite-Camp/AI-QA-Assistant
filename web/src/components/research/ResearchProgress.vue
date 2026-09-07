@@ -6,10 +6,30 @@ const props = defineProps<{ job: ResearchJob, progress: ResearchProgress, events
 const emit = defineEmits<{ cancel: [] }>()
 const activeLabel = computed(() => props.progress.stages.find(item => item.key === props.progress.current_stage)?.label ?? '研究处理中')
 const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0, 5))
+const latestRecovery = computed(() => [...(props.events ?? [])].reverse().find(event => event.event_type === 'job_recovered'))
+const elapsedLabel = computed(() => {
+  const seconds = Math.round(props.progress.metrics.elapsed_ms / 1000)
+  return seconds < 60 ? `${seconds} 秒` : `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`
+})
 </script>
 
 <template>
   <div class="space-y-6">
+    <section
+      v-if="latestRecovery"
+      class="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4"
+      role="status"
+    >
+      <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><UIcon name="i-lucide-history" /></span>
+      <div>
+        <p class="text-sm font-semibold text-highlighted">
+          任务已从检查点恢复
+        </p>
+        <p class="mt-1 text-xs leading-5 text-muted">
+          {{ latestRecovery.message }}，已复用此前保存的任务、证据和报告数据。
+        </p>
+      </div>
+    </section>
     <section class="overflow-hidden rounded-2xl border border-default bg-default shadow-sm">
       <div class="bg-gradient-to-br from-primary/10 via-default to-default p-6 sm:p-8">
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -82,7 +102,7 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
           <h3 class="font-semibold text-highlighted">
             研究统计
           </h3>
-          <div class="mt-4 grid grid-cols-3 gap-3">
+          <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
                 {{ progress.task_completed }}/{{ progress.task_total }}
@@ -104,7 +124,44 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
                 结论
               </p>
             </div>
+            <div class="rounded-lg bg-elevated p-3 text-center">
+              <p class="text-xl font-bold text-highlighted">
+                {{ progress.metrics.documents_read }}
+              </p><p class="mt-1 text-xs text-muted">
+                已读资料
+              </p>
+            </div>
           </div>
+          <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-default pt-4 text-xs">
+            <div>
+              <dt class="text-muted">
+                已用时间
+              </dt><dd class="mt-1 font-medium text-highlighted">
+                {{ elapsedLabel }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                动作使用
+              </dt><dd class="mt-1 font-medium text-highlighted">
+                {{ progress.metrics.actions_used }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                工具调用
+              </dt><dd class="mt-1 font-medium text-highlighted">
+                {{ progress.metrics.tool_calls }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                恢复次数
+              </dt><dd class="mt-1 font-medium text-highlighted">
+                {{ progress.metrics.recovery_count }}
+              </dd>
+            </div>
+          </dl>
         </section>
 
         <section

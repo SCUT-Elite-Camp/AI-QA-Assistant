@@ -445,6 +445,145 @@ class SQLiteResearchRepository:
             )
         return plan
 
+    def commit_plan_revision(
+        self,
+        previous_plan: ResearchPlan,
+        revised_plan: ResearchPlan,
+        revised_job: ResearchJob,
+    ) -> ResearchPlan:
+        """Atomically supersede one Plan and bind its Job to the next version."""
+
+        if previous_plan.status != ResearchPlanStatus.SUPERSEDED:
+            raise ValueError("previous Plan must be superseded")
+        if revised_plan.status != ResearchPlanStatus.AWAITING_APPROVAL:
+            raise ValueError("revised Plan must await approval")
+        if revised_plan.version != previous_plan.version + 1:
+            raise ValueError("revised Plan version must increment by one")
+        if revised_job.status != ResearchJobStatus.AWAITING_APPROVAL:
+            raise ValueError("revised Job must await approval")
+
+        with self._lock, self._connection:
+            job_row = self._connection.execute(
+                "SELECT payload_json, status, plan_version FROM research_jobs WHERE research_id = ?",
+                (revised_job.research_id,),
+            ).fetchone()
+            if job_row is None:
+                raise ResearchNotFoundError(
+                    f"research job '{revised_job.research_id}' not found"
+                )
+            if job_row["status"] not in {
+                ResearchJobStatus.AWAITING_APPROVAL.value,
+                ResearchJobStatus.READY.value,
+            }:
+                raise ResearchConflictError(
+                    "Research Job can no longer revise its Plan"
+                )
+            if job_row["plan_version"] != previous_plan.version:
+                raise ResearchConflictError("Research Job Plan version changed")
+
+            plan_row = self._connection.execute(
+                """
+                SELECT payload_json FROM research_plans
+                WHERE research_id = ? AND version = ?
+                """,
+                (previous_plan.research_id, previous_plan.version),
+            ).fetchone()
+            if plan_row is None:
+                raise ResearchNotFoundError(
+                    f"ResearchPlan v{previous_plan.version} for "
+                    f"'{previous_plan.research_id}' not found"
+                )
+            existing = ResearchPlan.model_validate_json(plan_row["payload_json"])
+            if existing.model_dump(exclude={"status"}) != previous_plan.model_dump(
+                exclude={"status"}
+            ):
+                raise ResearchConflictError("ResearchPlan content is immutable")
+
+            duplicate = self._connection.execute(
+                """
+                SELECT 1 FROM research_plans
+                WHERE research_id = ? AND version = ?
+                """,
+                (revised_plan.research_id, revised_plan.version),
+            ).fetchone()
+            if duplicate is not None:
+                raise ResearchConflictError("revised ResearchPlan version already exists")
+
+            now = _now().isoformat()
+            self._connection.execute(
+                """
+                UPDATE research_plans
+                SET status = ?, payload_json = ?, updated_at = ?
+                WHERE research_id = ? AND version = ?
+                """,
+                (
+                    previous_plan.status.value,
+                    previous_plan.model_dump_json(),
+                    now,
+                    previous_plan.research_id,
+                    previous_plan.version,
+                ),
+            )
+            self._connection.execute(
+                """
+                INSERT INTO research_plans(
+                    research_id, version, status, payload_json, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    revised_plan.research_id,
+                    revised_plan.version,
+                    revised_plan.status.value,
+                    revised_plan.model_dump_json(),
+                    now,
+                    now,
+                ),
+            )
+            self._connection.executemany(
+                """
+                INSERT INTO research_tasks(
+                    research_id, plan_version, task_id, payload_json
+                ) VALUES (?, ?, ?, ?)
+                """,
+                [
+                    (
+                        revised_plan.research_id,
+                        revised_plan.version,
+                        task.task_id,
+                        task.model_dump_json(),
+                    )
+                    for task in revised_plan.tasks
+                ],
+            )
+            committed_job = ResearchJob.model_validate(
+                {**revised_job.model_dump(), "updated_at": _now()}
+            )
+            cursor = self._connection.execute(
+                """
+                UPDATE research_jobs
+                SET status = ?, plan_version = ?, manifest_hash = ?,
+                    payload_json = ?, updated_at = ?
+                WHERE research_id = ? AND plan_version = ?
+                  AND status IN (?, ?)
+                """,
+                (
+                    committed_job.status.value,
+                    committed_job.plan_version,
+                    committed_job.manifest_hash,
+                    committed_job.model_dump_json(),
+                    committed_job.updated_at.isoformat(),
+                    committed_job.research_id,
+                    previous_plan.version,
+                    ResearchJobStatus.AWAITING_APPROVAL.value,
+                    ResearchJobStatus.READY.value,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise ResearchConflictError(
+                    "Research Job changed while Plan revision was committed"
+                )
+        return revised_plan
+
     def commit_approval(
         self,
         approval: ResearchApproval,

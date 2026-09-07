@@ -1,6 +1,6 @@
 import { $fetch } from 'ofetch'
-import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
-import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetEvents, mockGetPlan, mockGetProgress, mockGetReport, mockGetResearch } from '../mocks/research'
+import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
+import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetEvents, mockGetPlan, mockGetProgress, mockGetReport, mockGetResearch, mockReviseResearchPlan } from '../mocks/research'
 
 const useMock = import.meta.env.VITE_RESEARCH_USE_MOCK === 'true'
 const configuredBase = (import.meta.env.VITE_RESEARCH_API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '')
@@ -27,6 +27,15 @@ export function useResearchApi() {
     return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/approve`, { method: 'POST', headers: { 'X-User-ID': 'web-user' }, body: approval })
   }
 
+  async function revisePlan(researchId: string, revision: ResearchPlanRevisionRequest): Promise<ResearchPlan> {
+    if (useMock) return mockReviseResearchPlan(researchId, revision)
+    return $fetch<ResearchPlan>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/plan/revisions`, {
+      method: 'POST',
+      headers: { 'X-User-ID': 'web-user' },
+      body: revision,
+    })
+  }
+
   async function cancelJob(researchId: string): Promise<ResearchJob> {
     if (useMock) return mockCancelResearch(researchId)
     return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/cancel`, { method: 'POST' })
@@ -49,5 +58,5 @@ export function useResearchApi() {
     })
   }
 
-  return { createJob, getJob, getPlan, approveJob, cancelJob, getReport, getProgress, getEvents, useMock, apiBase }
+  return { createJob, getJob, getPlan, revisePlan, approveJob, cancelJob, getReport, getProgress, getEvents, useMock, apiBase }
 }

@@ -39,6 +39,45 @@ class ResearchEventRecorder:
             payload={"plan_version": plan_version},
         )
 
+    def plan_revised(
+        self,
+        research_id: str,
+        *,
+        from_version: int,
+        to_version: int,
+        revised_by: str,
+        revision_note: str = "",
+    ) -> ResearchEvent:
+        return self._append(
+            research_id,
+            f"plan:{to_version}:revised",
+            ResearchEventType.PLAN_REVISED,
+            f"研究计划已更新为 v{to_version}，需要重新确认",
+            stage="awaiting_approval",
+            payload={
+                "from_version": from_version,
+                "to_version": to_version,
+                "revised_by": revised_by,
+                "revision_note": revision_note,
+            },
+        )
+
+    def job_recovered(
+        self,
+        research_id: str,
+        *,
+        attempt: int,
+        stage: str,
+    ) -> ResearchEvent:
+        return self._append(
+            research_id,
+            f"recovery:{attempt}",
+            ResearchEventType.JOB_RECOVERED,
+            f"已从检查点恢复，继续执行{STAGE_LABELS.get(stage, '研究任务')}",
+            stage=stage,
+            payload={"attempt": attempt, "resumed_stage": stage},
+        )
+
     def stage_started(self, research_id: str, stage: str) -> ResearchEvent:
         return self._append(
             research_id,

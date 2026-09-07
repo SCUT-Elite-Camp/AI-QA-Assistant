@@ -5,9 +5,27 @@ import type { ResearchRequest } from '../../types/research'
 const props = defineProps<{ initialQuery?: string, submitting?: boolean }>()
 const emit = defineEmits<{ submit: [request: ResearchRequest] }>()
 
+const demo = {
+  query: '核验上海酒店 650 元/晚能否报销，比较正式办法和财务 FAQ 的 500 元、700 元住宿限额。员工出差日期为 2026 年 9 月 10 日，已取得直属经理审批。',
+  documentIds: [
+    'demo-travel-policy-v1',
+    'demo-travel-policy-v2',
+    'demo-travel-faq-legacy',
+  ],
+  topic: '差旅报销政策版本核验',
+  title: '上海差旅住宿报销政策核验报告',
+  notes: '优先判断规则的生效日期和版本效力；明确披露旧 FAQ 与正式办法的冲突，不要推断资料中未说明的报销条件。',
+}
+
+const demoSources = [
+  { id: 'demo-travel-policy-v1', title: '差旅管理办法 v1.0', meta: '旧版 · 截止 2026-07-31', fact: '上海限额 500 元/晚' },
+  { id: 'demo-travel-policy-v2', title: '差旅管理办法 v2.0', meta: '现行 · 2026-08-01 生效', fact: '上海限额 700 元/晚；超过 600 元需审批' },
+  { id: 'demo-travel-faq-legacy', title: '财务 FAQ', meta: '待同步 · 2026-07-15 更新', fact: '页面仍写 500 元/晚' },
+]
+
 const form = reactive({
   query: props.initialQuery ?? '',
-  documentIds: 'project-alpha\nproject-beta',
+  documentIds: '',
   topic: '',
   title: '',
   language: 'zh-CN' as 'zh-CN' | 'en-US',
@@ -18,6 +36,17 @@ const form = reactive({
 
 const documentIds = computed(() => form.documentIds.split(/[\n,]/).map(item => item.trim()).filter(Boolean))
 const valid = computed(() => form.query.trim().length > 0 && (documentIds.value.length > 0 || form.topic.trim().length > 0))
+const isDemoLoaded = computed(() => demo.documentIds.every(id => documentIds.value.includes(id)))
+
+function loadDemo() {
+  form.query = demo.query
+  form.documentIds = demo.documentIds.join('\n')
+  form.topic = demo.topic
+  form.title = demo.title
+  form.notes = demo.notes
+  form.includeCitations = true
+  form.includeLimitations = true
+}
 
 function submit() {
   if (!valid.value || props.submitting) return
@@ -39,6 +68,18 @@ function submit() {
     class="space-y-6"
     @submit.prevent="submit"
   >
+    <div class="flex justify-end">
+      <UButton
+        type="button"
+        icon="i-lucide-file-input"
+        :label="isDemoLoaded ? '示例已载入' : '载入政策核验示例'"
+        color="neutral"
+        variant="soft"
+        class="cursor-pointer"
+        @click="loadDemo"
+      />
+    </div>
+
     <div>
       <label
         for="research-query"
@@ -53,8 +94,41 @@ function submit() {
         placeholder="描述你希望研究的问题、比较对象和期望结论。"
       />
       <p class="mt-2 text-xs text-muted">
-        Deep Research 只使用你明确选择的本地资料，不会自动访问互联网。
+        仅使用所选本地资料。
       </p>
+    </div>
+
+    <div
+      v-if="isDemoLoaded"
+      class="rounded-xl border border-default bg-elevated/30 p-4"
+    >
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm font-semibold text-highlighted">
+          已选资料
+        </p>
+        <UBadge
+          color="neutral"
+          variant="soft"
+          label="3 份"
+        />
+      </div>
+      <div class="mt-3 grid gap-3 lg:grid-cols-3">
+        <div
+          v-for="source in demoSources"
+          :key="source.id"
+          class="rounded-lg border border-default bg-default p-3"
+        >
+          <p class="text-sm font-semibold text-highlighted">
+            {{ source.title }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            {{ source.meta }}
+          </p>
+          <p class="mt-3 text-xs leading-5 text-toned">
+            {{ source.fact }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <div class="grid gap-5 md:grid-cols-2">
@@ -71,7 +145,7 @@ function submit() {
           placeholder="每行一个文档 ID"
         />
         <p class="mt-2 text-xs text-muted">
-          当前演示资料：project-alpha、project-beta。
+          只允许填写本地文档目录中存在的 ID；未列入清单的资料不会被执行阶段访问。
         </p>
       </div>
       <div>

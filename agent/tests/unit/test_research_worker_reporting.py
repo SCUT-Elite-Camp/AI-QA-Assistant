@@ -248,6 +248,8 @@ def test_claim_verification_and_renderer_never_promote_unsupported_fact() -> Non
         evidence=evidence,
     )
     assert "2025 revenue was 99 million." not in report.markdown
-    assert "未进入确定性正文" in report.markdown
-    assert "证据存在冲突" in report.markdown
-    assert "E:e1" in report.markdown
+    assert "部分候选结论因证据不足，未写入结论" in report.markdown
+    assert "## 资料冲突" in report.markdown
+    assert "[1]" in report.markdown
+    assert "claim-f-" not in report.markdown
+    assert "evidence_contains_" not in report.markdown

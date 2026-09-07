@@ -7,7 +7,7 @@ import ResearchProgress from '../../components/research/ResearchProgress.vue'
 import ResearchReportView from '../../components/research/ResearchReport.vue'
 import { useResearchApi } from '../../composables/useResearchApi'
 import { useResearchPolling } from '../../composables/useResearchPolling'
-import type { ResearchPlan, ResearchReport } from '../../types/research'
+import type { ResearchPlan, ResearchPlanRevisionRequest, ResearchReport } from '../../types/research'
 import { formatResearchError } from '../../utils/research'
 
 const route = useRoute()
@@ -18,6 +18,8 @@ const plan = ref<ResearchPlan | null>(null)
 const report = ref<ResearchReport | null>(null)
 const actionLoading = ref(false)
 const actionError = ref('')
+let planLoadInFlight = false
+let reportLoadInFlight = false
 
 const { job, progress, events, loading, error: pollingError, restart, stop } = useResearchPolling(
   () => api.getJob(researchId.value),
@@ -25,13 +27,16 @@ const { job, progress, events, loading, error: pollingError, restart, stop } = u
   afterEventId => api.getEvents(researchId.value, afterEventId),
 )
 
-watch(() => job.value?.status, async (status) => {
+watch(job, async (nextJob) => {
+  const status = nextJob?.status
   if (!status) return
-  if (['awaiting_approval', 'ready', 'researching', 'synthesizing', 'completed'].includes(status) && !plan.value) {
-    try { plan.value = await api.getPlan(researchId.value) } catch { /* planning may not have persisted the plan yet */ }
+  if (['awaiting_approval', 'ready', 'researching', 'synthesizing', 'completed'].includes(status) && !plan.value && !planLoadInFlight) {
+    planLoadInFlight = true
+    try { plan.value = await api.getPlan(researchId.value) } catch { /* polling retries after transient failures */ } finally { planLoadInFlight = false }
   }
-  if (status === 'completed' && !report.value) {
-    try { report.value = await api.getReport(researchId.value) } catch (reason) { actionError.value = formatResearchError(reason) }
+  if (status === 'completed' && !report.value && !reportLoadInFlight) {
+    reportLoadInFlight = true
+    try { report.value = await api.getReport(researchId.value) } catch (reason) { actionError.value = formatResearchError(reason) } finally { reportLoadInFlight = false }
   }
 }, { immediate: true })
 
@@ -41,6 +46,16 @@ async function approve() {
   actionError.value = ''
   try {
     job.value = await api.approveJob(researchId.value, { plan_version: plan.value.version, manifest_hash: plan.value.manifest_hash })
+    restart()
+  } catch (reason) { actionError.value = formatResearchError(reason) } finally { actionLoading.value = false }
+}
+
+async function revise(revision: ResearchPlanRevisionRequest) {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    plan.value = await api.revisePlan(researchId.value, revision)
+    job.value = await api.getJob(researchId.value)
     restart()
   } catch (reason) { actionError.value = formatResearchError(reason) } finally { actionLoading.value = false }
 }
@@ -150,8 +165,10 @@ const statusTitle = computed(() => {
             v-else-if="job.status === 'awaiting_approval' && plan"
             :plan="plan"
             :approving="actionLoading"
+            :revising="actionLoading"
             @approve="approve"
             @cancel="cancel"
+            @revise="revise"
           />
 
           <ResearchProgress
@@ -166,6 +183,9 @@ const statusTitle = computed(() => {
             v-else-if="job.status === 'completed' && report"
             :job="job"
             :report="report"
+            :plan="plan"
+            :progress="progress"
+            :events="events"
             @restart="router.push('/research/new')"
           />
 

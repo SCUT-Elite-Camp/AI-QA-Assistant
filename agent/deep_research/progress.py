@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import re
 
 from agent.schemas.research import (
@@ -11,6 +12,7 @@ from agent.schemas.research import (
     ResearchJobStatus,
     ResearchProgress,
     ResearchProgressError,
+    ResearchRunMetrics,
     ResearchStageProgress,
     ResearchStageStatus,
     ResearchTaskProgress,
@@ -91,6 +93,7 @@ class ResearchProgressService:
         )
         completed = min(completed, job.task_total)
         current_stage = self._current_stage(job, events)
+        evidence = self.repository.list_evidence(research_id)
         return ResearchProgress(
             research_id=research_id,
             status=job.status,
@@ -99,13 +102,55 @@ class ResearchProgressService:
             progress_percent=self._progress_percent(job, current_stage, completed),
             task_total=job.task_total,
             task_completed=completed,
-            evidence_count=self.repository.count_entities("evidence", research_id),
+            evidence_count=len(evidence),
             claim_count=self.repository.count_entities("claim", research_id),
             started_at=job.created_at,
             updated_at=job.updated_at,
             stages=self._stage_progress(job, current_stage, events),
             tasks=tasks,
+            metrics=self._metrics(job, events, evidence),
             error=self._safe_error(job),
+        )
+
+    @staticmethod
+    def _metrics(job: ResearchJob, events, evidence) -> ResearchRunMetrics:
+        terminal = job.status in {
+            ResearchJobStatus.COMPLETED,
+            ResearchJobStatus.FAILED,
+            ResearchJobStatus.CANCELLED,
+        }
+        end = job.updated_at if terminal else datetime.now(timezone.utc)
+        execution_start = next(
+            (
+                event.created_at
+                for event in events
+                if event.event_type == ResearchEventType.STAGE_STARTED
+                and event.stage == "ready"
+            ),
+            job.created_at,
+        )
+        actions = sum(
+            int(event.payload.get("actions_used", 0))
+            for event in events
+            if event.event_type
+            in {
+                ResearchEventType.TASK_COMPLETED,
+                ResearchEventType.TASK_FAILED,
+                ResearchEventType.TASK_BLOCKED,
+            }
+        )
+        recoveries = sum(
+            event.event_type == ResearchEventType.JOB_RECOVERED for event in events
+        )
+        return ResearchRunMetrics(
+            elapsed_ms=max(0, round((end - execution_start).total_seconds() * 1000)),
+            actions_used=actions,
+            tool_calls=actions,
+            documents_read=len({item.doc_id for item in evidence}),
+            evidence_accepted=len(evidence),
+            evidence_rejected=0,
+            retry_count=recoveries,
+            recovery_count=recoveries,
         )
 
     def get_events(

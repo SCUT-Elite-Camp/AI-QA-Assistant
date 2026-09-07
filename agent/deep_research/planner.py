@@ -69,12 +69,15 @@ class MockResearchPlanner:
                     )
                 ],
                 priority=ResearchTaskPriority.CRITICAL,
-                max_actions=4,
+                max_actions=2,
             ),
             ResearchTask(
                 task_id="task-2",
-                question="读取并核验候选事实对应的原始文档位置。",
-                purpose="将搜索观察转换为可定位的原文证据。",
+                question=(
+                    "比较正式办法与FAQ页面中的关键数值和适用日期，识别待同步的冲突："
+                    f"{request.query}"
+                ),
+                purpose="将搜索观察转换为可定位的原文证据，并显式保留版本冲突。",
                 dependencies=["task-1"],
                 allowed_tools=["keyword_search", "read_document_range"],
                 source_ids=scoped_ids,
@@ -91,7 +94,7 @@ class MockResearchPlanner:
             ),
             ResearchTask(
                 task_id="task-3",
-                question="整理研究结论，并标记资料范围内无法确认的内容。",
+                question="核对资料边界、缺失条件、过期内容和无法确认事项，再整理结论。",
                 purpose="为后续 Coverage 和报告生成提供结论与局限。",
                 dependencies=["task-2"],
                 allowed_tools=["keyword_search", "read_document_range"],
@@ -105,7 +108,7 @@ class MockResearchPlanner:
                     )
                 ],
                 priority=ResearchTaskPriority.NORMAL,
-                max_actions=4,
+                max_actions=2,
             ),
         ]
 

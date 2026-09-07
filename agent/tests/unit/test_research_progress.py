@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 import json
 
@@ -153,3 +154,26 @@ def test_cancelled_job_keeps_last_real_stage(tmp_path: Path) -> None:
     assert progress.current_stage == "created"
     assert progress.progress_percent == 2
     assert progress.error is None
+
+
+def test_run_metrics_exclude_manual_approval_wait(tmp_path: Path) -> None:
+    repository, control = _control(tmp_path)
+    waiting = control.create_job(_request())
+    repository.update_job(
+        ResearchJob.model_validate(
+            {
+                **waiting.model_dump(),
+                "created_at": waiting.created_at - timedelta(hours=1),
+            }
+        )
+    )
+    ready = control.approve_job(
+        waiting.research_id,
+        plan_version=waiting.plan_version or 1,
+        manifest_hash=waiting.manifest_hash or "",
+        approved_by="alice",
+    )
+
+    progress = ResearchProgressService(repository).get_progress(ready.research_id)
+
+    assert progress.metrics.elapsed_ms < 60_000

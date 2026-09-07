@@ -7,6 +7,7 @@ import pytest
 from agent.schemas.research import (
     ResearchJobStatus,
     ResearchPlanStatus,
+    ResearchPlanRevisionRequest,
     ResearchRequest,
     SourceScope,
 )
@@ -123,3 +124,55 @@ def test_dispatcher_does_not_claim_unapproved_jobs(tmp_path: Path) -> None:
 
     assert DurableDispatcher(control_plane, executor=received.append).scan_once() == []
     assert control_plane.get_job(job.research_id).status == ResearchJobStatus.AWAITING_APPROVAL
+
+
+def test_plan_revision_supersedes_old_version_and_requires_fresh_approval(
+    tmp_path: Path,
+) -> None:
+    control_plane = _control_plane(tmp_path / "research.db")
+    job = control_plane.create_job(_request("doc-a", "doc-b"), user_id="alice")
+    control_plane.approve_job(
+        job.research_id,
+        plan_version=1,
+        manifest_hash=job.manifest_hash or "",
+        approved_by="alice",
+    )
+    current = control_plane.get_plan(job.research_id)
+    edited_tasks = [task.model_copy(deep=True) for task in current.tasks]
+    edited_tasks[0].question = "先核验 A 的收入原文和文档版本"
+
+    revised = control_plane.revise_plan(
+        job.research_id,
+        ResearchPlanRevisionRequest(
+            base_version=1,
+            objective="比较 A、B 收入并核验版本",
+            tasks=edited_tasks,
+            report_spec=current.report_spec,
+            revision_note="增加版本核验",
+        ),
+        revised_by="alice",
+    )
+
+    refreshed = control_plane.get_job(job.research_id)
+    assert revised.version == refreshed.plan_version == 2
+    assert refreshed.status == ResearchJobStatus.AWAITING_APPROVAL
+    assert control_plane.get_plan(job.research_id, 1).status == ResearchPlanStatus.SUPERSEDED
+    assert control_plane.repository.get_approval(job.research_id, 1).approved_by == "alice"
+
+    with pytest.raises(ResearchControlPlaneError) as old_snapshot:
+        control_plane.approve_job(
+            job.research_id,
+            plan_version=1,
+            manifest_hash=job.manifest_hash or "",
+            approved_by="alice",
+        )
+    assert old_snapshot.value.code == "research_plan_version_conflict"
+
+    ready = control_plane.approve_job(
+        job.research_id,
+        plan_version=2,
+        manifest_hash=job.manifest_hash or "",
+        approved_by="alice",
+    )
+    assert ready.status == ResearchJobStatus.READY
+    assert control_plane.approved_context(job.research_id).plan.version == 2

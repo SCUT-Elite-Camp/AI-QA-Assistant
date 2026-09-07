@@ -14,7 +14,9 @@ export type ResearchTaskStatus = 'pending' | 'ready' | 'running' | 'succeeded' |
 export type ResearchStageStatus = 'pending' | 'running' | 'completed' | 'failed'
 export type ResearchEventType =
   | 'job_created'
+  | 'plan_revised'
   | 'plan_approved'
+  | 'job_recovered'
   | 'stage_started'
   | 'stage_completed'
   | 'task_started'
@@ -93,6 +95,14 @@ export interface ResearchPlan {
   status: 'draft' | 'awaiting_approval' | 'approved' | 'superseded'
 }
 
+export interface ResearchPlanRevisionRequest {
+  base_version: number
+  objective: string
+  tasks: ResearchTask[]
+  report_spec: ReportSpec
+  revision_note: string
+}
+
 export interface ResearchJob {
   schema_version: 'research.v2'
   research_id: string
@@ -121,7 +131,52 @@ export interface ResearchReport {
   result_status: ResearchResultStatus
   claim_ids: string[]
   evidence_ids: string[]
+  citations: ResearchCitation[]
+  conflicts: ResearchConflict[]
+  limitations: ResearchLimitation[]
   generated_at: string
+}
+
+export interface ResearchCitation {
+  number: number
+  evidence_id: string
+  evidence_ids: string[]
+  doc_id: string
+  title: string
+  source_type: string
+  authority: string
+  authority_rank: number
+  document_version: string | null
+  effective_at: string | null
+  updated_at: string | null
+  locator: string
+  excerpt: string
+  content_hash: string
+}
+
+export interface ResearchConflictAlternative {
+  citation_number: number
+  evidence_id: string
+  source_title: string
+  value_summary: string
+  document_version: string | null
+  effective_at: string | null
+}
+
+export interface ResearchConflict {
+  conflict_id: string
+  subject: string
+  conflict_type: 'numeric' | 'version' | 'source'
+  summary: string
+  alternatives: ResearchConflictAlternative[]
+  resolution_status: 'unresolved' | 'resolved_by_authority'
+  resolution: string
+}
+
+export interface ResearchLimitation {
+  code: string
+  message: string
+  evidence_ids: string[]
 }
 
 export interface ResearchApprovalRequest {
@@ -165,7 +220,19 @@ export interface ResearchProgress {
   updated_at: string
   stages: ResearchStageProgress[]
   tasks: ResearchTaskProgress[]
+  metrics: ResearchRunMetrics
   error: ResearchProgressError | null
+}
+
+export interface ResearchRunMetrics {
+  elapsed_ms: number
+  actions_used: number
+  tool_calls: number
+  documents_read: number
+  evidence_accepted: number
+  evidence_rejected: number
+  retry_count: number
+  recovery_count: number
 }
 
 export interface ResearchEvent {

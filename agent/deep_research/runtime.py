@@ -195,9 +195,15 @@ class ResearchGraphRuntime:
         if checkpoint.plan_version != job.plan_version:
             self._fail_recovery(job, "research_checkpoint_plan_mismatch")
             raise ResearchRecoveryError("research_checkpoint_plan_mismatch")
+        next_attempt = checkpoint.attempt + 1
+        self.events.job_recovered(
+            research_id,
+            attempt=next_attempt,
+            stage=checkpoint.current_stage,
+        )
         return self._invoke_with_failure_policy(
             research_id,
-            attempt=checkpoint.attempt + 1,
+            attempt=next_attempt,
         )
 
     def _invoke_with_failure_policy(self, research_id: str, *, attempt: int) -> dict:
