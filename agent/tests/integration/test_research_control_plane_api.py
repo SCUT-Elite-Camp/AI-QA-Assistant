@@ -94,3 +94,47 @@ def test_api_cannot_create_job_from_external_source_scope(tmp_path: Path) -> Non
         },
     )
     assert response.status_code == 422
+
+
+def test_api_revision_creates_v2_and_rejects_old_approval(tmp_path: Path) -> None:
+    client, control_plane = _client(tmp_path)
+    created = client.post(
+        "/api/research/jobs",
+        json={
+            "query": "比较 A 和 B 的收入",
+            "source_scope": {"document_ids": ["doc-a", "doc-b"]},
+        },
+    ).json()
+    control_plane.resume_planning_job(created["research_id"])
+    plan = client.get(
+        f"/api/research/jobs/{created['research_id']}/plan"
+    ).json()
+    plan["tasks"][0]["question"] = "先核验 A 的收入和版本"
+
+    revised = client.post(
+        f"/api/research/jobs/{created['research_id']}/plan/revisions",
+        headers={"X-User-ID": "alice"},
+        json={
+            "base_version": 1,
+            "objective": "比较 A、B 收入并核验版本",
+            "tasks": plan["tasks"],
+            "report_spec": plan["report_spec"],
+            "revision_note": "增加版本核验",
+        },
+    )
+    assert revised.status_code == 200
+    assert revised.json()["version"] == 2
+
+    old_approval = client.post(
+        f"/api/research/jobs/{created['research_id']}/approve",
+        json={"plan_version": 1, "manifest_hash": plan["manifest_hash"]},
+    )
+    assert old_approval.status_code == 409
+    assert old_approval.json()["detail"]["code"] == "research_plan_version_conflict"
+
+    approved = client.post(
+        f"/api/research/jobs/{created['research_id']}/approve",
+        json={"plan_version": 2, "manifest_hash": plan["manifest_hash"]},
+    )
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "ready"

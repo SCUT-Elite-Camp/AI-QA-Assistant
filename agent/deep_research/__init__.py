@@ -4,6 +4,7 @@ from .claims import ClaimGenerator, generate_claims
 from .coverage import CoverageEngine, compute_coverage
 from .dispatcher import DurableDispatcher
 from .execution import ResearchRuntimeService
+from .events import ResearchEventRecorder
 from .manifest import (
     InMemoryDocumentResolver,
     LocalDocumentResolver,
@@ -16,6 +17,7 @@ from .repository import (
     ResearchNotFoundError,
     SQLiteResearchRepository,
 )
+from .progress import ResearchProgressService
 from .service import (
     ApprovedResearchContext,
     ResearchControlPlane,
@@ -61,6 +63,8 @@ __all__ = [
     "EvidenceLedger",
     "LocalResearchToolAdapter",
     "ResearchGraphRuntime",
+    "ResearchEventRecorder",
+    "ResearchProgressService",
     "StructuralVerifier",
     "SearchHit",
     "compute_coverage",

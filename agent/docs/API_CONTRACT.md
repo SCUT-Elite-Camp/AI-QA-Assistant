@@ -273,6 +273,8 @@ GET  /api/research/jobs/{research_id}/plan
 POST /api/research/jobs/{research_id}/approve
 POST /api/research/jobs/{research_id}/cancel
 GET  /api/research/jobs/{research_id}/report
+GET  /api/research/jobs/{research_id}/progress
+GET  /api/research/jobs/{research_id}/events?after_event_id={event_id}&limit={limit}
 ```
 
 Create request:
@@ -305,6 +307,36 @@ are independent: a workflow may finish with `status=completed` and
 `result_status=degraded` when required evidence is missing or conflicting.
 Reports are Markdown and preserve Evidence IDs plus original document locators.
 
+`GET /progress` is the authoritative UI read model. It returns
+`research.progress.v1`, including the fixed stage timeline, backend-computed
+percentage, task status, Evidence/Claim counts, timestamps, and a user-safe
+error. The Web client must not reconstruct these values from `ResearchJob`.
+
+`GET /events` returns append-only `research.events.v1` activity. Clients pass
+the last `next_after_event_id` as `after_event_id`; `limit` must be between 1
+and 100. Stable `event_key` values make stage and task replay idempotent after
+a process restart.
+
+```json
+{
+  "schema_version": "research.progress.v1",
+  "research_id": "research-example",
+  "status": "researching",
+  "result_status": null,
+  "current_stage": "execute_tasks",
+  "progress_percent": 34,
+  "task_total": 2,
+  "task_completed": 1,
+  "evidence_count": 2,
+  "claim_count": 0,
+  "started_at": "2026-09-01T10:00:00Z",
+  "updated_at": "2026-09-01T10:00:08Z",
+  "stages": [],
+  "tasks": [],
+  "error": null
+}
+```
+
 Runtime configuration:
 
 - `RESEARCH_DATABASE_PATH`: authoritative SQLite business store.
@@ -312,7 +344,7 @@ Runtime configuration:
 - `RESEARCH_DOCUMENTS_DIR`: local processed JSON document catalog.
 - `RESEARCH_DISPATCH_INTERVAL_SECONDS`: bounded polling interval; default `2.0`.
 
-Web sources, parallel workers, Replan, SSE replay, and report export are outside
+Web sources, parallel workers, Replan, and SSE replay are outside
 this Core Vertical Slice.
 
 ## Not Implemented In Current Version

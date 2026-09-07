@@ -50,6 +50,8 @@ GET  /api/research/jobs/{research_id}/plan
 POST /api/research/jobs/{research_id}/approve
 POST /api/research/jobs/{research_id}/cancel
 GET  /api/research/jobs/{research_id}/report
+GET  /api/research/jobs/{research_id}/progress
+GET  /api/research/jobs/{research_id}/events?after_event_id={event_id}&limit={limit}
 ```
 
 通过以下环境变量配置：
@@ -128,7 +130,9 @@ plan_version + manifest_hash
 - Cancel；
 - 刷新后按 `research_id` 恢复。
 
-当前后端尚未提供独立 `/progress` 和 `/events` Endpoint，因此本轮以权威 `ResearchJob.current_stage`、Task 计数和 Evidence 计数生成视图。未来新增 Progress API 时，不需要修改页面主流程。
+正式集成后，页面直接消费 `/progress` 返回的百分比、Stage、Task 和实体计数，
+并使用 `/events` 的 `after_event_id` 游标增量展示最近活动。前端不再根据
+`ResearchJob` 自行重建状态机。
 
 ### 2.7 Polling
 
@@ -267,7 +271,7 @@ PASS
 
 ## 5. 当前边界
 
-- 后端没有 `/progress` 聚合接口；
+- `/progress` 和 `/events` 已由 A 侧提供并完成真实接口接入；
 - 后端没有 Research Event API；
 - Claim Count 当前没有进入 `ResearchJob`，页面使用兼容占位；
 - 当前资料选择使用 Document ID / Topic 输入，尚未连接可浏览的文档目录 API；

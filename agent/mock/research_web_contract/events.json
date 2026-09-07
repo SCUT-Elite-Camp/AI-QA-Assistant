@@ -1,0 +1,18 @@
+{
+  "schema_version": "research.events.v1",
+  "research_id": "research-fixture",
+  "events": [
+    {
+      "event_id": 12,
+      "research_id": "research-fixture",
+      "event_key": "research-fixture:stage:semantic_verification:started",
+      "event_type": "stage_started",
+      "stage": "semantic_verification",
+      "task_id": null,
+      "message": "正在验证研究结论",
+      "payload": {},
+      "created_at": "2026-09-01T10:00:11Z"
+    }
+  ],
+  "next_after_event_id": 12
+}

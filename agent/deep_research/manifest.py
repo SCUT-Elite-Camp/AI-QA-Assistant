@@ -114,9 +114,29 @@ class LocalDocumentResolver:
             content.encode("utf-8")
         ).hexdigest()
         version = record.get("version") or record.get("last_updated")
+        supersedes = record.get("supersedes") or []
+        if isinstance(supersedes, str):
+            supersedes = [supersedes]
+        if not isinstance(supersedes, list):
+            supersedes = []
         return SourceManifestDocument(
             doc_id=doc_id,
+            title=str(record.get("title") or doc_id),
+            source_type=str(record.get("source_type") or "local_document"),
+            authority=str(record.get("authority") or "internal"),
+            authority_rank=int(record.get("authority_rank") or 0),
             version=str(version) if version is not None else None,
+            effective_at=(
+                str(record["effective_at"])
+                if record.get("effective_at") is not None
+                else None
+            ),
+            updated_at=(
+                str(record["last_updated"])
+                if record.get("last_updated") is not None
+                else None
+            ),
+            supersedes=[str(item) for item in supersedes],
             content_hash=content_hash,
         )
 

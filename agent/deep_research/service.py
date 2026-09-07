@@ -12,13 +12,17 @@ from agent.schemas.research import (
     ResearchJob,
     ResearchJobStatus,
     ResearchPlan,
+    ResearchPlanRevisionRequest,
     ResearchPlanStatus,
+    ResearchPlanValidator,
     ResearchRequest,
     ResearchTask,
+    ResearchTaskStatus,
     SourceManifest,
 )
 
 from .manifest import LocalDocumentResolver, ManifestResolutionError, SourceResolver
+from .events import ResearchEventRecorder
 from .planner import MockResearchPlanner, ResearchPlanner
 from .repository import (
     ResearchConflictError,
@@ -63,6 +67,7 @@ class ResearchControlPlane:
         source_resolver: SourceResolver | None = None,
         planner: ResearchPlanner | None = None,
         id_factory=None,
+        event_recorder: ResearchEventRecorder | None = None,
     ) -> None:
         if repository is None:
             project_root = Path(__file__).resolve().parents[2]
@@ -73,6 +78,7 @@ class ResearchControlPlane:
         self.source_resolver = source_resolver or LocalDocumentResolver()
         self.planner = planner or MockResearchPlanner()
         self.id_factory = id_factory or self._new_research_id
+        self.events = event_recorder or ResearchEventRecorder(repository)
 
     def create_job(
         self,
@@ -97,7 +103,9 @@ class ResearchControlPlane:
             user_id=user_id,
             request=request,
         )
-        return self.repository.create_job(job)
+        saved = self.repository.create_job(job)
+        self.events.job_created(research_id)
+        return saved
 
     def resume_planning_job(self, research_id: str) -> ResearchJob:
         """Idempotently finish planning for a created/planning Job.
@@ -115,8 +123,12 @@ class ResearchControlPlane:
                     expected_statuses=[ResearchJobStatus.CREATED],
                     status=ResearchJobStatus.PLANNING,
                 )
+                if planning_job is not None:
+                    self.events.stage_completed(research_id, "created")
+                    self.events.stage_started(research_id, "planning")
             elif job.status == ResearchJobStatus.PLANNING:
                 planning_job = job
+                self.events.stage_started(research_id, "planning")
             else:
                 planning_job = None
             if planning_job is None:
@@ -184,6 +196,8 @@ class ResearchControlPlane:
                     "research_job_state_conflict",
                     "Research Job changed while its Plan was being saved",
                 )
+            self.events.stage_completed(research_id, "planning")
+            self.events.stage_started(research_id, "awaiting_approval")
             return awaiting_job
         except (ManifestResolutionError, ResearchControlPlaneError):
             self._mark_failed_if_possible(research_id, "planning", "planning_failed")
@@ -203,6 +217,81 @@ class ResearchControlPlane:
 
     def get_plan(self, research_id: str, version: int | None = None) -> ResearchPlan:
         return self.repository.get_plan(research_id, version)
+
+    def revise_plan(
+        self,
+        research_id: str,
+        revision: ResearchPlanRevisionRequest,
+        *,
+        revised_by: str,
+    ) -> ResearchPlan:
+        """Create a new immutable Plan version and require a fresh Approval."""
+
+        job = self.get_job(research_id)
+        if job.status not in {
+            ResearchJobStatus.AWAITING_APPROVAL,
+            ResearchJobStatus.READY,
+        }:
+            raise ResearchControlPlaneError(
+                "research_plan_revision_not_allowed",
+                f"Job is '{job.status.value}' and its Plan can no longer be revised",
+            )
+        if job.plan_version != revision.base_version:
+            raise ResearchControlPlaneError(
+                "research_plan_version_conflict",
+                "revision must reference the current plan_version",
+            )
+        current = self.get_plan(research_id, revision.base_version)
+        reset_tasks = [
+            ResearchTask.model_validate(
+                {**task.model_dump(), "status": ResearchTaskStatus.PENDING}
+            )
+            for task in revision.tasks
+        ]
+        revised = ResearchPlan.model_validate(
+            {
+                **current.model_dump(),
+                "version": current.version + 1,
+                "objective": revision.objective,
+                "tasks": reset_tasks,
+                "report_spec": revision.report_spec,
+                "status": ResearchPlanStatus.AWAITING_APPROVAL,
+            }
+        )
+        try:
+            revised = ResearchPlanValidator.validate_or_raise(revised)
+        except ValueError as exc:
+            issue = getattr(exc, "issue", None)
+            code = getattr(issue, "code", "research_plan_invalid")
+            raise ResearchControlPlaneError(code, str(exc)) from exc
+
+        superseded = ResearchPlan.model_validate(
+            {**current.model_dump(), "status": ResearchPlanStatus.SUPERSEDED}
+        )
+        revised_job = ResearchJob.model_validate(
+            {
+                **job.model_dump(),
+                "status": ResearchJobStatus.AWAITING_APPROVAL,
+                "result_status": None,
+                "plan_version": revised.version,
+                "current_stage": "awaiting_approval",
+                "current_task_id": None,
+                "task_total": len(revised.tasks),
+                "task_completed": 0,
+                "evidence_count": 0,
+                "failure_stage": None,
+                "error_code": None,
+            }
+        )
+        self.repository.commit_plan_revision(superseded, revised, revised_job)
+        self.events.plan_revised(
+            research_id,
+            from_version=current.version,
+            to_version=revised.version,
+            revised_by=revised_by,
+            revision_note=revision.revision_note,
+        )
+        return revised
 
     def approve_job(
         self,
@@ -267,7 +356,15 @@ class ResearchControlPlane:
             }
         )
         try:
-            return self.repository.commit_approval(approval, approved_plan, ready_job)
+            committed = self.repository.commit_approval(
+                approval,
+                approved_plan,
+                ready_job,
+            )
+            self.events.plan_approved(research_id, plan_version)
+            self.events.stage_completed(research_id, "awaiting_approval")
+            self.events.stage_started(research_id, "ready")
+            return committed
         except ResearchConflictError as exc:
             raise ResearchControlPlaneError(
                 "research_approval_state_conflict",
@@ -275,6 +372,7 @@ class ResearchControlPlane:
             ) from exc
 
     def cancel_job(self, research_id: str) -> ResearchJob:
+        job = self.get_job(research_id)
         cancelled = self.repository.transition_job(
             research_id,
             expected_statuses=[
@@ -287,11 +385,11 @@ class ResearchControlPlane:
             current_stage="cancelled",
         )
         if cancelled is None:
-            job = self.get_job(research_id)
             raise ResearchControlPlaneError(
                 "research_cancel_not_allowed",
                 f"Job is '{job.status.value}' and cannot be cancelled now",
             )
+        self.events.job_cancelled(research_id, job.current_stage)
         return cancelled
 
     def approved_context(self, research_id: str) -> ApprovedResearchContext:
@@ -364,6 +462,8 @@ class ResearchControlPlane:
                 "research_execution_claim_conflict",
                 "another dispatcher already claimed this Job",
             )
+        self.events.stage_completed(research_id, "ready")
+        self.events.stage_started(research_id, "execute_tasks")
         return ApprovedResearchContext(
             job=claimed,
             plan=context.plan,
@@ -394,6 +494,7 @@ class ResearchControlPlane:
                 }
             )
             self.repository.update_job(failed)
+            self.events.job_failed(research_id, failure_stage, error_code)
         except Exception:
             # The original error is more useful to the API caller.  A later
             # dispatcher/reconciliation pass can inspect the durable record.

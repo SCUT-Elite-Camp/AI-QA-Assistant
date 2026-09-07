@@ -26,6 +26,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 RESEARCH_SCHEMA_VERSION = "research.v1"
 RESEARCH_RUNTIME_SCHEMA_VERSION = "research.v2"
+RESEARCH_PROGRESS_SCHEMA_VERSION = "research.progress.v1"
+RESEARCH_EVENTS_SCHEMA_VERSION = "research.events.v1"
 
 # The Week 1 contract is deliberately Local-only and read-only.  This allowlist
 # is the first boundary that prevents a future Planner from smuggling in a
@@ -90,6 +92,30 @@ class ResearchTaskStatus(StrEnum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     BLOCKED = "blocked"
+
+
+class ResearchStageStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class ResearchEventType(StrEnum):
+    JOB_CREATED = "job_created"
+    PLAN_REVISED = "plan_revised"
+    PLAN_APPROVED = "plan_approved"
+    JOB_RECOVERED = "job_recovered"
+    STAGE_STARTED = "stage_started"
+    STAGE_COMPLETED = "stage_completed"
+    TASK_STARTED = "task_started"
+    TASK_COMPLETED = "task_completed"
+    TASK_FAILED = "task_failed"
+    TASK_BLOCKED = "task_blocked"
+    REPORT_READY = "report_ready"
+    JOB_COMPLETED = "job_completed"
+    JOB_FAILED = "job_failed"
+    JOB_CANCELLED = "job_cancelled"
 
 
 class ResearchContractModel(BaseModel):
@@ -310,14 +336,45 @@ class ResearchPlan(ResearchContractModel):
         return _normalize_unique_strings(values, "out_of_scope")
 
 
+class ResearchPlanRevisionRequest(ResearchContractModel):
+    """Editable Plan fields submitted against one immutable base version."""
+
+    base_version: int = Field(ge=1)
+    objective: str = Field(min_length=1, max_length=4_000)
+    tasks: list[ResearchTask] = Field(min_length=1, max_length=20)
+    report_spec: ReportSpec = Field(default_factory=ReportSpec)
+    revision_note: str = Field(default="", max_length=500)
+
+    @field_validator("objective", "revision_note")
+    @classmethod
+    def normalize_revision_text(cls, value: str) -> str:
+        return " ".join(value.strip().split())
+
+
 class SourceManifestDocument(ResearchContractModel):
     """One immutable local document snapshot allowed in a Research Job."""
 
     doc_id: str = Field(min_length=1, max_length=200)
+    title: str = Field(default="", max_length=500)
+    source_type: str = Field(default="local_document", min_length=1, max_length=80)
+    authority: str = Field(default="internal", min_length=1, max_length=80)
+    authority_rank: int = Field(default=0, ge=0, le=100)
     version: str | None = Field(default=None, max_length=200)
+    effective_at: str | None = Field(default=None, max_length=100)
+    updated_at: str | None = Field(default=None, max_length=100)
+    supersedes: list[str] = Field(default_factory=list, max_length=20)
     content_hash: str = Field(min_length=8, max_length=128)
 
-    @field_validator("doc_id", "version", "content_hash")
+    @field_validator(
+        "doc_id",
+        "title",
+        "source_type",
+        "authority",
+        "version",
+        "effective_at",
+        "updated_at",
+        "content_hash",
+    )
     @classmethod
     def normalize_manifest_text(cls, value: str | None) -> str | None:
         if value is None:
@@ -326,6 +383,11 @@ class SourceManifestDocument(ResearchContractModel):
         if not normalized:
             raise ValueError("source_manifest_value_empty")
         return normalized
+
+    @field_validator("supersedes")
+    @classmethod
+    def normalize_supersedes(cls, values: list[str]) -> list[str]:
+        return _normalize_unique_strings(values, "supersedes")
 
 
 class SourceManifest(ResearchContractModel):
@@ -534,6 +596,66 @@ class VerifiedClaim(ResearchContractModel):
         return _normalize_unique_strings(values, info.field_name)
 
 
+class ResearchCitation(ResearchContractModel):
+    """Human-readable citation backed by one persisted Evidence object."""
+
+    number: int = Field(ge=1)
+    evidence_id: str = Field(min_length=1, max_length=100)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=50)
+    doc_id: str = Field(min_length=1, max_length=200)
+    title: str = Field(min_length=1, max_length=500)
+    source_type: str = Field(default="local_document", min_length=1, max_length=80)
+    authority: str = Field(default="internal", min_length=1, max_length=80)
+    authority_rank: int = Field(default=0, ge=0, le=100)
+    document_version: str | None = Field(default=None, max_length=200)
+    effective_at: str | None = Field(default=None, max_length=100)
+    updated_at: str | None = Field(default=None, max_length=100)
+    locator: str = Field(min_length=1, max_length=500)
+    excerpt: str = Field(min_length=1, max_length=20_000)
+    content_hash: str = Field(min_length=8, max_length=128)
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def normalize_citation_ids(cls, values: list[str]) -> list[str]:
+        return _normalize_unique_strings(values, "evidence_ids")
+
+
+class ResearchConflictAlternative(ResearchContractModel):
+    """One source-backed alternative participating in a conflict."""
+
+    citation_number: int = Field(ge=1)
+    evidence_id: str = Field(min_length=1, max_length=100)
+    source_title: str = Field(min_length=1, max_length=500)
+    value_summary: str = Field(min_length=1, max_length=2_000)
+    document_version: str | None = Field(default=None, max_length=200)
+    effective_at: str | None = Field(default=None, max_length=100)
+
+
+class ResearchConflict(ResearchContractModel):
+    """Structured disclosure of incompatible source-backed alternatives."""
+
+    conflict_id: str = Field(min_length=1, max_length=100)
+    subject: str = Field(min_length=1, max_length=1_000)
+    conflict_type: Literal["numeric", "version", "source"] = "source"
+    summary: str = Field(min_length=1, max_length=2_000)
+    alternatives: list[ResearchConflictAlternative] = Field(min_length=2, max_length=20)
+    resolution_status: Literal["unresolved", "resolved_by_authority"] = "unresolved"
+    resolution: str = Field(default="", max_length=2_000)
+
+
+class ResearchLimitation(ResearchContractModel):
+    """A user-readable reason why a report requires additional verification."""
+
+    code: str = Field(min_length=1, max_length=120)
+    message: str = Field(min_length=1, max_length=2_000)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def normalize_limitation_ids(cls, values: list[str]) -> list[str]:
+        return _normalize_unique_strings(values, "evidence_ids")
+
+
 class ResearchReport(ResearchContractModel):
     """Persisted Markdown output produced only from verified Claims."""
 
@@ -543,6 +665,9 @@ class ResearchReport(ResearchContractModel):
     result_status: ResearchResultStatus
     claim_ids: list[str] = Field(default_factory=list, max_length=200)
     evidence_ids: list[str] = Field(default_factory=list, max_length=200)
+    citations: list[ResearchCitation] = Field(default_factory=list, max_length=200)
+    conflicts: list[ResearchConflict] = Field(default_factory=list, max_length=100)
+    limitations: list[ResearchLimitation] = Field(default_factory=list, max_length=100)
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @field_validator("claim_ids", "evidence_ids")
@@ -595,6 +720,89 @@ class ResearchJob(ResearchContractModel):
         if not normalized:
             raise ValueError("research_job_value_empty")
         return normalized
+
+
+class ResearchEvent(ResearchContractModel):
+    """One append-only, user-safe event in a Research execution timeline."""
+
+    event_id: int = Field(ge=1)
+    research_id: str = Field(min_length=1, max_length=100)
+    event_key: str = Field(min_length=1, max_length=300)
+    event_type: ResearchEventType
+    stage: str | None = Field(default=None, max_length=80)
+    task_id: str | None = Field(default=None, max_length=80)
+    message: str = Field(min_length=1, max_length=500)
+    payload: dict[str, str | int | float | bool | None] = Field(
+        default_factory=dict,
+        max_length=30,
+    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ResearchEventsResponse(ResearchContractModel):
+    schema_version: Literal[RESEARCH_EVENTS_SCHEMA_VERSION] = (
+        RESEARCH_EVENTS_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    events: list[ResearchEvent] = Field(default_factory=list, max_length=100)
+    next_after_event_id: int = Field(ge=0)
+
+
+class ResearchStageProgress(ResearchContractModel):
+    key: str = Field(min_length=1, max_length=80)
+    label: str = Field(min_length=1, max_length=100)
+    status: ResearchStageStatus
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class ResearchTaskProgress(ResearchContractModel):
+    task_id: str = Field(min_length=1, max_length=80)
+    question: str = Field(min_length=1, max_length=1000)
+    status: ResearchTaskStatus
+    evidence_count: int = Field(ge=0)
+
+
+class ResearchProgressError(ResearchContractModel):
+    stage: str = Field(min_length=1, max_length=80)
+    code: str = Field(min_length=1, max_length=120)
+    message: str = Field(min_length=1, max_length=500)
+
+
+class ResearchRunMetrics(ResearchContractModel):
+    """Small persisted-event-derived baseline shown in the progress UI."""
+
+    elapsed_ms: int = Field(default=0, ge=0)
+    actions_used: int = Field(default=0, ge=0)
+    tool_calls: int = Field(default=0, ge=0)
+    documents_read: int = Field(default=0, ge=0)
+    evidence_accepted: int = Field(default=0, ge=0)
+    evidence_rejected: int = Field(default=0, ge=0)
+    retry_count: int = Field(default=0, ge=0)
+    recovery_count: int = Field(default=0, ge=0)
+
+
+class ResearchProgress(ResearchContractModel):
+    """Persistent read model returned to the Web progress timeline."""
+
+    schema_version: Literal[RESEARCH_PROGRESS_SCHEMA_VERSION] = (
+        RESEARCH_PROGRESS_SCHEMA_VERSION
+    )
+    research_id: str = Field(min_length=1, max_length=100)
+    status: ResearchJobStatus
+    result_status: ResearchResultStatus | None = None
+    current_stage: str = Field(min_length=1, max_length=80)
+    progress_percent: int = Field(ge=0, le=100)
+    task_total: int = Field(ge=0)
+    task_completed: int = Field(ge=0)
+    evidence_count: int = Field(ge=0)
+    claim_count: int = Field(ge=0)
+    started_at: datetime
+    updated_at: datetime
+    stages: list[ResearchStageProgress]
+    tasks: list[ResearchTaskProgress]
+    metrics: ResearchRunMetrics = Field(default_factory=ResearchRunMetrics)
+    error: ResearchProgressError | None = None
 
 
 @dataclass(frozen=True)
@@ -855,21 +1063,35 @@ __all__ = [
     "Observation",
     "PlanIssue",
     "ReportSpec",
+    "ResearchEvent",
+    "ResearchEventsResponse",
+    "ResearchEventType",
     "ResearchBudget",
     "ResearchContractModel",
     "ResearchApproval",
     "ResearchJob",
     "ResearchPlan",
+    "ResearchPlanRevisionRequest",
     "ResearchPlanStatus",
     "ResearchPlanValidationError",
     "ResearchPlanValidator",
+    "ResearchProgress",
+    "ResearchProgressError",
+    "ResearchRunMetrics",
+    "ResearchStageProgress",
+    "ResearchStageStatus",
     "ResearchJobStatus",
     "ResearchResultStatus",
     "ResearchReport",
+    "ResearchCitation",
+    "ResearchConflict",
+    "ResearchConflictAlternative",
+    "ResearchLimitation",
     "ResearchProfile",
     "ResearchRequest",
     "ResearchTask",
     "ResearchTaskPriority",
+    "ResearchTaskProgress",
     "ResearchTaskStatus",
     "SourceManifest",
     "SourceManifestDocument",
@@ -880,4 +1102,6 @@ __all__ = [
     "VerifiedClaim",
     "RESEARCH_SCHEMA_VERSION",
     "RESEARCH_RUNTIME_SCHEMA_VERSION",
+    "RESEARCH_PROGRESS_SCHEMA_VERSION",
+    "RESEARCH_EVENTS_SCHEMA_VERSION",
 ]

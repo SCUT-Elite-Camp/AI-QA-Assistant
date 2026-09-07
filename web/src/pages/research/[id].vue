@@ -7,7 +7,7 @@ import ResearchProgress from '../../components/research/ResearchProgress.vue'
 import ResearchReportView from '../../components/research/ResearchReport.vue'
 import { useResearchApi } from '../../composables/useResearchApi'
 import { useResearchPolling } from '../../composables/useResearchPolling'
-import type { ResearchPlan, ResearchReport } from '../../types/research'
+import type { ResearchPlan, ResearchPlanRevisionRequest, ResearchReport } from '../../types/research'
 import { formatResearchError } from '../../utils/research'
 
 const route = useRoute()
@@ -18,16 +18,25 @@ const plan = ref<ResearchPlan | null>(null)
 const report = ref<ResearchReport | null>(null)
 const actionLoading = ref(false)
 const actionError = ref('')
+let planLoadInFlight = false
+let reportLoadInFlight = false
 
-const { job, loading, error: pollingError, restart, stop } = useResearchPolling(() => api.getJob(researchId.value))
+const { job, progress, events, loading, error: pollingError, restart, stop } = useResearchPolling(
+  () => api.getJob(researchId.value),
+  () => api.getProgress(researchId.value),
+  afterEventId => api.getEvents(researchId.value, afterEventId),
+)
 
-watch(() => job.value?.status, async (status) => {
+watch(job, async (nextJob) => {
+  const status = nextJob?.status
   if (!status) return
-  if (['awaiting_approval', 'ready', 'researching', 'synthesizing', 'completed'].includes(status) && !plan.value) {
-    try { plan.value = await api.getPlan(researchId.value) } catch { /* planning may not have persisted the plan yet */ }
+  if (['awaiting_approval', 'ready', 'researching', 'synthesizing', 'completed'].includes(status) && !plan.value && !planLoadInFlight) {
+    planLoadInFlight = true
+    try { plan.value = await api.getPlan(researchId.value) } catch { /* polling retries after transient failures */ } finally { planLoadInFlight = false }
   }
-  if (status === 'completed' && !report.value) {
-    try { report.value = await api.getReport(researchId.value) } catch (reason) { actionError.value = formatResearchError(reason) }
+  if (status === 'completed' && !report.value && !reportLoadInFlight) {
+    reportLoadInFlight = true
+    try { report.value = await api.getReport(researchId.value) } catch (reason) { actionError.value = formatResearchError(reason) } finally { reportLoadInFlight = false }
   }
 }, { immediate: true })
 
@@ -41,10 +50,24 @@ async function approve() {
   } catch (reason) { actionError.value = formatResearchError(reason) } finally { actionLoading.value = false }
 }
 
+async function revise(revision: ResearchPlanRevisionRequest) {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    plan.value = await api.revisePlan(researchId.value, revision)
+    job.value = await api.getJob(researchId.value)
+    restart()
+  } catch (reason) { actionError.value = formatResearchError(reason) } finally { actionLoading.value = false }
+}
+
 async function cancel() {
   actionLoading.value = true
   actionError.value = ''
-  try { job.value = await api.cancelJob(researchId.value); stop() }
+  try {
+    job.value = await api.cancelJob(researchId.value)
+    progress.value = await api.getProgress(researchId.value)
+    stop()
+  }
   catch (reason) { actionError.value = formatResearchError(reason) }
   finally { actionLoading.value = false }
 }
@@ -142,14 +165,17 @@ const statusTitle = computed(() => {
             v-else-if="job.status === 'awaiting_approval' && plan"
             :plan="plan"
             :approving="actionLoading"
+            :revising="actionLoading"
             @approve="approve"
             @cancel="cancel"
+            @revise="revise"
           />
 
           <ResearchProgress
-            v-else-if="['ready', 'researching', 'synthesizing'].includes(job.status)"
+            v-else-if="['ready', 'researching', 'synthesizing'].includes(job.status) && progress"
             :job="job"
-            :plan="plan"
+            :progress="progress"
+            :events="events"
             @cancel="cancel"
           />
 
@@ -157,6 +183,9 @@ const statusTitle = computed(() => {
             v-else-if="job.status === 'completed' && report"
             :job="job"
             :report="report"
+            :plan="plan"
+            :progress="progress"
+            :events="events"
             @restart="router.push('/research/new')"
           />
 
@@ -180,8 +209,10 @@ const statusTitle = computed(() => {
             /><h1 class="mt-4 text-2xl font-bold text-highlighted">
               研究执行失败
             </h1><p class="mt-3 text-sm text-muted">
-              失败阶段：{{ job.failure_stage || job.current_stage }}
-            </p><code class="mt-3 inline-block rounded bg-default px-3 py-1 text-xs text-error">{{ job.error_code || 'research_failed' }}</code><div class="mt-6 flex justify-center gap-2">
+              失败阶段：{{ progress?.error?.stage || job.failure_stage || job.current_stage }}
+            </p><p class="mt-3 text-sm text-error">
+              {{ progress?.error?.message || '研究任务执行失败，请稍后重试。' }}
+            </p><div class="mt-6 flex justify-center gap-2">
               <UButton
                 to="/research/new"
                 color="neutral"

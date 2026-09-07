@@ -173,6 +173,9 @@ CP2 Chat-only L0/L1/L2 路由边界见
 手动启动 Local Research 的 `research.v1` 契约和 Planner Fixture 见
 [`docs/cp2/research_contract_v1.md`](docs/cp2/research_contract_v1.md)。
 
+CP2 Research Progress/Event 后端与前后端正式接入交付见
+[`docs/cp2/week_research_progress_member_a_delivery.md`](docs/cp2/week_research_progress_member_a_delivery.md)。
+
 CP2 意图分类组件、失败回退和 QueryPlan 映射约定见
 [`docs/cp2/intent_classifier.md`](docs/cp2/intent_classifier.md)。
 
