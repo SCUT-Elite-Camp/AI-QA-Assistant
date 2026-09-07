@@ -36,11 +36,34 @@ def test_signed_context_is_injected_and_doc_ids_remain_scoped(monkeypatch):
     token = hmac.new(secret.encode(), b"user-a:kb-a", hashlib.sha256).hexdigest()
     tool = SearchLibraryTool()
     tool.set_request_context("user-a", "kb-a", token)
-    tool.execute(query="risk", mode="bm25", doc_ids=["doc-from-model"])
+    tool.execute(
+        query="risk", mode="bm25", doc_ids=["doc-from-model"],
+        navigation_mode="hierarchical",
+    )
 
     assert captured["owner_id"] == "user-a"
     assert captured["knowledge_base_id"] == "kb-a"
     assert captured["doc_ids"] == ["doc-from-model"]
+    assert captured["navigation_mode"] == "direct"
+
+
+def test_navigation_mode_is_forwarded_only_when_rollout_gate_is_enabled(monkeypatch):
+    secret = "test-secret"
+    monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", secret)
+    monkeypatch.setenv("HIERARCHICAL_NAVIGATION_ENABLED", "true")
+    captured = {}
+
+    def fake_open(request, timeout):
+        captured.update(json.loads(request.data.decode("utf-8")))
+        return _Response()
+
+    monkeypatch.setattr("tool_layer.search_library_tool.urlopen", fake_open)
+    token = hmac.new(secret.encode(), b"user-a:kb-a", hashlib.sha256).hexdigest()
+    tool = SearchLibraryTool()
+    tool.set_request_context("user-a", "kb-a", token)
+    tool.execute(query="risk", mode="bm25", navigation_mode="hierarchical")
+
+    assert captured["navigation_mode"] == "hierarchical"
 
 
 def test_invalid_context_fails_closed(monkeypatch):

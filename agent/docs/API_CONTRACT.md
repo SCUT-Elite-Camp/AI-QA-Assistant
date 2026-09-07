@@ -144,8 +144,15 @@ SearchTool().search(
     filters=filters,
     min_score=min_score,
     trace_id=trace_id,
+    navigation_mode=navigation_mode,
 )
 ```
+
+`navigation_mode` is independent from `retrieval_mode` and accepts `direct`,
+`hierarchical`, or `hybrid`. The Agent planner may select it internally. The
+runtime keeps the legacy call shape when the value is `direct`, and the feature
+gate `HIERARCHICAL_NAVIGATION_ENABLED` defaults to disabled. Section metadata
+only guides retrieval; returned chunk Evidence remains the citation authority.
 
 The Agent trust boundary converts Tool Layer `dict` results into
 `RetrievalResult` with:
@@ -162,7 +169,7 @@ Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
 The retrieval call always receives `standalone_query`, `top_k`,
 `retrieval_mode`, hard `filters`, `MIN_RETRIEVAL_SCORE`, and the request
-`trace_id`. Tests replace the LLM and search method with deterministic fakes;
+`trace_id`. Non-direct calls additionally receive `navigation_mode`. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
 ## Not Implemented In Current Version

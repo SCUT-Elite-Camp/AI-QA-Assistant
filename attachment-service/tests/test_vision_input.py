@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -119,8 +120,11 @@ def test_isolated_vision_worker_failure_keeps_parent_backend_available(
     backend = LocalVisionBackend(settings)
     image = tmp_path / "image.png"
     Image.new("RGB", (20, 20), "white").save(image)
+    original_run = subprocess.run
 
     def crashed_worker(command, **kwargs):
+        if not isinstance(command, (list, tuple)):
+            return original_run(command, **kwargs)
         result_path = Path(command[-1])
         result_path.write_text(json.dumps({"error": "vision_unavailable"}), encoding="utf-8")
         return SimpleNamespace(returncode=1)
