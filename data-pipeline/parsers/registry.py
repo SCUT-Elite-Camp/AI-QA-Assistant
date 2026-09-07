@@ -6,6 +6,7 @@ from parsers.doc_parser import DocParser
 from parsers.pptx_parser import PptxParser
 from parsers.html_parser import HtmlParser
 from parsers.xlsx_parser import XlsxParser
+from parsers.markdown_parser import MarkdownParser
 from models.document import Document
 
 class DocumentParser:
@@ -19,7 +20,7 @@ class DocumentParser:
         # 默认注册全部解析器
         if parsers is None:
             parsers = [PDFParser(), DocxParser(), DocParser(), PptxParser(),
-                       HtmlParser(), XlsxParser()]
+                       HtmlParser(), XlsxParser(), MarkdownParser()]
             
         for p in parsers:
             self.register_parser(p)

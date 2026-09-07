@@ -23,6 +23,7 @@ class ContentBlock(BaseModel):
     headers: list[str] = Field(default_factory=list)        # 表格列头
     bold: bool = False
     italic: bool = False
+    locator: dict = Field(default_factory=dict)
 
     @property
     def is_empty(self) -> bool:
@@ -80,6 +81,23 @@ class Chunk(BaseModel):
     chunk_id: str  # 全局唯一分块 ID，格式: "{doc_id}_chunk_{index}"
 
 
+class DocumentSection(BaseModel):
+    """Version-derived navigation node; Evidence chunks remain authoritative."""
+
+    id: str
+    version_id: str
+    parent_id: str | None = None
+    level: int = 0
+    title: str
+    section_path: list[str] = Field(default_factory=list)
+    page_start: int | None = None
+    page_end: int | None = None
+    summary: str = ""
+    evidence_ids: list[str] = Field(default_factory=list)
+    quality: str = "low"
+    ordinal: int = 0
+
+
 class Document(BaseModel):
     """解析后的文档模型，与 storage/document_store.py 的 JSON 格式对齐"""
     doc_id: str          # 文件 MD5 哈希，保证幂等
@@ -93,6 +111,9 @@ class Document(BaseModel):
     content_blocks: list[ContentBlock] = Field(default_factory=list)  # 结构化内容块
     metadata: dict = Field(default_factory=dict)                      # 侧车溯源元数据（如 Confluence）
     doc_type: str = ""
+    version_id: str = ""
+    active_version: bool = True
+    sections: list[DocumentSection] = Field(default_factory=list)
 
     @staticmethod
     def generate_doc_id(file_path: str) -> str:
@@ -104,6 +125,14 @@ class Document(BaseModel):
         """读取文件修改时间，返回 ISO 格式字符串"""
         ts = os.path.getmtime(file_path)
         return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+
+    @staticmethod
+    def generate_version_id(file_path: str) -> str:
+        digest = hashlib.sha256()
+        with open(file_path, "rb") as source:
+            for block in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(block)
+        return f"ver_{digest.hexdigest()}"
 
     @classmethod
     def from_file_path(
@@ -157,4 +186,5 @@ class Document(BaseModel):
             content_blocks=content_blocks or [],
             metadata=metadata,
             doc_type=doc_type,
+            version_id=cls.generate_version_id(abs_path),
         )

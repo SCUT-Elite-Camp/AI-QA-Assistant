@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -11,6 +12,7 @@ from tool_layer.base_tool import BaseTool
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+_DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 class RetrievalError(Exception):
@@ -302,6 +304,12 @@ class SearchTool(BaseTool):
                     "type": "boolean",
                     "description": "Add the previous and next chunk as context after ranking.",
                     "default": False,
+                },
+                "navigation_mode": {
+                    "type": "string",
+                    "description": "Evidence path: direct, hierarchical, or hybrid.",
+                    "enum": ["direct", "hierarchical", "hybrid"],
+                    "default": "direct",
                 }
             },
             "required": ["query"],
@@ -314,6 +322,7 @@ class SearchTool(BaseTool):
         mode = kwargs.get("mode", "hybrid")
         filters = kwargs.get("filters")
         include_neighbors = kwargs.get("include_neighbors", False)
+        navigation_mode = kwargs.get("navigation_mode", "direct")
 
         results = self.search(
             query=query,
@@ -325,6 +334,7 @@ class SearchTool(BaseTool):
             topic_doc_ids=getattr(self, "topic_doc_ids", None),
             weight_mode=getattr(self, "weight_mode", "auto"),
             consecutive_no_new_docs_count=getattr(self, "consecutive_no_new_docs_count", 0),
+            navigation_mode=navigation_mode,
         )
         self.latest_results = results
 
@@ -358,8 +368,17 @@ class SearchTool(BaseTool):
         weight_mode: str = "auto",
         consecutive_no_new_docs_count: int = 0,
         include_neighbors: bool = False,
+        navigation_mode: str = "direct",
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
+        if navigation_mode not in {"direct", "hierarchical", "hybrid"}:
+            raise RetrievalParameterError(
+                "invalid_navigation_mode: expected direct, hierarchical, or hybrid"
+            )
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            navigation_mode = "direct"
         started = time.perf_counter()
         trace = trace_id or "-"
         filters = _normalize_public_filters(filters)
@@ -399,6 +418,46 @@ class SearchTool(BaseTool):
             results = self._normalize_results(
                 raw_results, filters, float(min_score)
             )
+            section_hits = []
+            navigation_fallback = "none"
+            if navigation_mode in {"hierarchical", "hybrid"}:
+                section_hits = self._search_sections(
+                    normalized_query, filters, top_k=8,
+                )
+                scoped_ids = {
+                    str(evidence_id)
+                    for section in section_hits
+                    if section.get("quality") != "low"
+                    and int(section.get("level") or 0) > 0
+                    for evidence_id in section.get("evidence_ids", [])
+                }
+                scoped = self._load_section_evidence(
+                    section_hits, filters, float(min_score), candidate_k,
+                )
+                # New indexes can load every authoritative chunk in the chosen
+                # sections. During rolling upgrades, retain candidates already
+                # returned by the legacy index when stored chunk bodies are absent.
+                scoped_by_id = {
+                    str(item.get("chunk_id") or ""): item for item in scoped
+                }
+                for item in results:
+                    chunk_id = str(item.get("chunk_id") or "")
+                    if chunk_id in scoped_ids and chunk_id not in scoped_by_id:
+                        scoped.append(item)
+                        scoped_by_id[chunk_id] = item
+                scoped = list(scoped_by_id.values())
+                if scoped:
+                    results = self._fuse_navigation(
+                        results,
+                        scoped,
+                        direct_weight=0.35 if navigation_mode == "hierarchical" else 1.0,
+                        scoped_weight=1.0 if navigation_mode == "hierarchical" else 1.2,
+                    )
+                else:
+                    navigation_fallback = "no_reliable_sections"
+                observation["navigation_mode"] = navigation_mode
+                observation["section_hits"] = len(section_hits)
+                observation["navigation_fallback_reason"] = navigation_fallback
             if use_reranker and results:
                 rerank_query = observation.get("preferred_rerank_query") or normalized_query
                 results = self._rerank(rerank_query, results, trace)
@@ -440,6 +499,124 @@ class SearchTool(BaseTool):
             observation, normalized_query,
         )
         return results
+
+    def _search_sections(
+        self,
+        query: str,
+        filters: Dict,
+        *,
+        top_k: int,
+    ) -> List[Dict]:
+        """Search version-aware derived sections stored with enterprise documents."""
+        tokens = [token.casefold() for token in query.split() if token][:20]
+        hits: List[Dict] = []
+        if not self.documents_dir.exists():
+            return hits
+        for path in self.documents_dir.glob("*.json"):
+            try:
+                with path.open("r", encoding="utf-8") as source:
+                    document = json.load(source)
+            except (OSError, ValueError, TypeError):
+                continue
+            if not isinstance(document, dict) or document.get("active_version", True) is not True:
+                continue
+            document_id = str(document.get("doc_id") or path.stem)
+            if not _DOC_ID_PATTERN.fullmatch(document_id):
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            for section in document.get("sections") or []:
+                if not isinstance(section, dict):
+                    continue
+                text = " ".join([
+                    str(section.get("title") or ""),
+                    " / ".join(str(value) for value in section.get("section_path") or []),
+                    str(section.get("summary") or ""),
+                ]).casefold()
+                score = sum(text.count(token) for token in tokens)
+                if score:
+                    item = dict(section)
+                    item["doc_id"] = document_id
+                    item["score"] = float(score)
+                    hits.append(item)
+        hits.sort(key=lambda item: (-float(item["score"]), str(item.get("id") or "")))
+        for rank, item in enumerate(hits[:top_k], 1):
+            item["score"] = round(1.0 / (1.0 + 0.12 * (rank - 1)), 6)
+        return hits[:top_k]
+
+    def _load_section_evidence(
+        self,
+        section_hits: List[Dict],
+        filters: Dict,
+        min_score: float,
+        limit: int,
+    ) -> List[Dict]:
+        """Load authoritative chunks mapped by selected version-local sections."""
+        selected: Dict[str, set[str]] = {}
+        for section in section_hits:
+            if section.get("quality") == "low" or int(section.get("level") or 0) <= 0:
+                continue
+            doc_id = str(section.get("doc_id") or "")
+            if doc_id:
+                selected.setdefault(doc_id, set()).update(
+                    str(value) for value in section.get("evidence_ids") or []
+                )
+        raw: List[Dict] = []
+        for doc_id, chunk_ids in selected.items():
+            document = self._load_document_meta(doc_id)
+            if not document or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            for chunk in document.get("chunks") or []:
+                if not isinstance(chunk, dict):
+                    continue
+                chunk_id = str(chunk.get("chunk_id") or "")
+                if chunk_id not in chunk_ids:
+                    continue
+                raw.append({
+                    "doc_id": doc_id,
+                    "chunk_id": chunk_id,
+                    "chunk_index": chunk.get("index", 0),
+                    "text": chunk.get("text", ""),
+                    "score": 1.0,
+                    "title": document.get("title", ""),
+                    "source_url": document.get("source_url", ""),
+                    "version_id": document.get("version_id", ""),
+                    "knowledge_base_id": document.get("knowledge_base_id") or document.get("space", ""),
+                })
+                if len(raw) >= limit:
+                    break
+            if len(raw) >= limit:
+                break
+        return self._normalize_results(raw, filters, min_score)
+
+    @staticmethod
+    def _fuse_navigation(
+        direct: List[Dict],
+        scoped: List[Dict],
+        *,
+        direct_weight: float,
+        scoped_weight: float,
+        rrf_k: int = 60,
+    ) -> List[Dict]:
+        by_id: Dict[str, Dict] = {}
+        scores: Dict[str, float] = {}
+        for weight, rows in ((direct_weight, direct), (scoped_weight, scoped)):
+            for rank, item in enumerate(rows, 1):
+                key = str(item.get("chunk_id") or "")
+                if not key:
+                    continue
+                by_id.setdefault(key, dict(item))
+                scores[key] = scores.get(key, 0.0) + weight / (rrf_k + rank)
+        ordered = sorted(scores, key=lambda key: (-scores[key], key))
+        maximum = max(scores.values(), default=1.0)
+        result = []
+        for key in ordered:
+            item = dict(by_id[key])
+            item["score"] = min(1.0, scores[key] / maximum) if maximum else 0.0
+            result.append(item)
+        return result
 
     def _expand_neighbors(self, results: List[Dict]) -> List[Dict]:
         """Attach adjacent context without changing core ranking or scores."""
@@ -756,6 +933,8 @@ class SearchTool(BaseTool):
             chunk_index = int(chunk_index)
 
             doc_meta = self._load_document_meta(doc_id)
+            if doc_meta and doc_meta.get("active_version", True) is not True:
+                continue
             if not _matches_filters(item, filters, doc_meta):
                 continue
 
@@ -780,6 +959,16 @@ class SearchTool(BaseTool):
                     "doc_type": str(
                         item.get("doc_type")
                         or doc_meta.get("doc_type")
+                        or ""
+                    ),
+                    "document_id": str(item.get("document_id") or doc_id),
+                    "version_id": str(
+                        item.get("version_id") or doc_meta.get("version_id") or ""
+                    ),
+                    "knowledge_base_id": str(
+                        item.get("knowledge_base_id")
+                        or doc_meta.get("knowledge_base_id")
+                        or doc_meta.get("space")
                         or ""
                     ),
                 }
@@ -819,7 +1008,8 @@ class SearchTool(BaseTool):
             "query_count=%s selected_route=%s retriever_paths=%s "
             "candidate_count_by_path=%s unique_candidate_count=%s "
             "fallback_reason=%s rerank_used=%s protected_original_count=%s "
-            "protected_variant_unique_count=%s total_latency_ms=%s",
+            "protected_variant_unique_count=%s navigation_mode=%s section_hits=%s "
+            "navigation_fallback_reason=%s total_latency_ms=%s",
             trace_id,
             mode,
             top_k,
@@ -838,5 +1028,8 @@ class SearchTool(BaseTool):
             observation["rerank_used"],
             observation["protected_original_count"],
             observation["protected_variant_unique_count"],
+            observation.get("navigation_mode", "direct"),
+            observation.get("section_hits", 0),
+            observation.get("navigation_fallback_reason", "none"),
             latency_ms,
         )

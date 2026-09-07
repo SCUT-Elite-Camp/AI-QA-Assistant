@@ -119,6 +119,7 @@ class PptxParser(BaseParser):
                         block_type=BlockType.HEADING,
                         text=f"Slide {idx}: {title_text}",
                         level=1,
+                        locator={"slide": idx},
                     )
                 )
             elif slide_blocks:
@@ -127,8 +128,11 @@ class PptxParser(BaseParser):
                         block_type=BlockType.HEADING,
                         text=f"Slide {idx}",
                         level=1,
+                        locator={"slide": idx},
                     )
                 )
+            for block in slide_blocks:
+                block.locator = {**block.locator, "slide": idx}
             all_blocks.extend(slide_blocks)
 
         # 渲染为 Markdown 全文

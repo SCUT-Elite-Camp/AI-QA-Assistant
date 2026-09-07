@@ -35,6 +35,11 @@ class SearchLibraryTool(BaseTool):
                 "top_k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
                 "doc_ids": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
                 "mode": {"type": "string", "enum": ["hybrid", "vector", "bm25"], "default": "hybrid"},
+                "navigation_mode": {
+                    "type": "string",
+                    "enum": ["direct", "hierarchical", "hybrid"],
+                    "default": "direct",
+                },
             },
             "required": ["query"],
             "additionalProperties": False,
@@ -60,12 +65,17 @@ class SearchLibraryTool(BaseTool):
             return {"error": "library_context_unavailable", "items": []}
         query = str(kwargs.get("query") or "")
         mode = str(kwargs.get("mode") or "hybrid")
+        requested_navigation = str(kwargs.get("navigation_mode") or "direct")
+        navigation_enabled = os.getenv(
+            "HIERARCHICAL_NAVIGATION_ENABLED", "false"
+        ).lower() in {"1", "true", "yes"}
         payload: dict[str, Any] = {
             "owner_id": self._owner_id,
             "knowledge_base_id": self._knowledge_base_id,
             "query": query,
             "top_k": min(20, max(1, int(kwargs.get("top_k", 5)))),
             "mode": mode,
+            "navigation_mode": requested_navigation if navigation_enabled else "direct",
         }
         doc_ids = kwargs.get("doc_ids")
         if doc_ids is not None:
