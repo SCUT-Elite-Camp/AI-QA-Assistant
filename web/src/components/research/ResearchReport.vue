@@ -1,23 +1,31 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import type { ResearchCitation, ResearchEvent, ResearchJob, ResearchPlan, ResearchProgress, ResearchReport } from '../../types/research'
+import { computed, provide, ref } from 'vue'
+import type { ResearchEvent, ResearchJob, ResearchPlan, ResearchProgress, ResearchReport } from '../../types/research'
 import ChatComark from '../chat/Comark'
+import ResearchMessageActions from './ResearchMessageActions.vue'
+import ResearchSources from './ResearchSources.vue'
+import type { ChunkCitation } from '../chat/tool/Sources.vue'
 
 const props = defineProps<{ job: ResearchJob, report: ResearchReport, plan?: ResearchPlan | null, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
-const emit = defineEmits<{ restart: [] }>()
-const citationOpen = ref(false)
-const selectedCitation = ref<ResearchCitation | null>(null)
+const emit = defineEmits<{ restart: [], askSelectedText: [text: string], regenerate: [] }>()
+const selectedText = ref('')
+const selectionPosition = ref<{ x: number, y: number } | null>(null)
 const latestRecovery = computed(() => [...(props.events ?? [])].reverse().find(event => event.event_type === 'job_recovered'))
+const reportMarkdown = computed(() => props.report.markdown
+  .replace(/^#\s+[^\n]+\n+/, '')
+  .replace(/\n##\s+来源\s*\n[\s\S]*$/u, '')
+  .replace(/\[(\d+)]/g, '<cite-mark index="$1"></cite-mark>'))
+const sourceCitations = computed<ChunkCitation[]>(() => props.report.citations.map(citation => ({
+    index: citation.number,
+    doc_id: citation.doc_id,
+    chunk_id: citation.evidence_id,
+    title: citation.title,
+    source_url: citation.source_url ?? undefined,
+    chunk_text: citation.excerpt,
+})))
+const citationMap = computed(() => new Map(sourceCitations.value.map(citation => [citation.index, citation])))
 
-function openCitation(citation: ResearchCitation) {
-  selectedCitation.value = citation
-  citationOpen.value = true
-}
-
-async function copyReport() {
-  await navigator.clipboard.writeText(props.report.markdown)
-  useToast().add({ title: '报告已复制', color: 'success' })
-}
+provide('ragCitationMap', citationMap)
 
 function downloadMarkdown() {
   const blob = new Blob([props.report.markdown], { type: 'text/markdown;charset=utf-8' })
@@ -28,73 +36,85 @@ function downloadMarkdown() {
   link.click()
   URL.revokeObjectURL(url)
 }
+
+function handleTextSelection() {
+  window.setTimeout(() => {
+    const selection = window.getSelection()
+    const text = selection?.toString().trim() ?? ''
+    const range = text && selection?.rangeCount ? selection.getRangeAt(0) : null
+    const rect = range?.getBoundingClientRect()
+    if (text.length > 1 && rect) {
+      selectedText.value = text
+      selectionPosition.value = { x: rect.left + rect.width / 2, y: rect.top - 8 }
+    } else selectionPosition.value = null
+  }, 20)
+}
+
+async function copySelectedText() {
+  if (!selectedText.value) return
+  await navigator.clipboard.writeText(selectedText.value)
+  selectionPosition.value = null
+  window.getSelection()?.removeAllRanges()
+}
+
+function askSelectedText() {
+  if (!selectedText.value) return
+  emit('askSelectedText', selectedText.value)
+  selectionPosition.value = null
+  window.getSelection()?.removeAllRanges()
+}
 </script>
 
 <template>
   <div class="space-y-6">
-    <section
-      class="rounded-2xl border p-6 sm:p-8"
-      :class="report.result_status === 'complete' ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'"
-    >
-      <div class="flex flex-wrap items-start justify-between gap-4">
-        <div class="flex items-start gap-3">
-          <span
-            class="flex size-11 shrink-0 items-center justify-center rounded-full"
-            :class="report.result_status === 'complete' ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning'"
-          >
-            <UIcon
-              :name="report.result_status === 'complete' ? 'i-lucide-check-check' : 'i-lucide-triangle-alert'"
-              class="size-6"
-            />
-          </span>
-          <div>
-            <p
-              class="text-xs font-semibold uppercase tracking-wider"
-              :class="report.result_status === 'complete' ? 'text-success' : 'text-warning'"
-            >
-              {{ report.result_status === 'complete' ? '研究完成' : '研究完成 · 需要复核' }}
-            </p><h2 class="mt-1 text-2xl font-bold text-highlighted">
-              {{ job.request.report_spec.title || 'Deep Research 报告' }}
-            </h2><p class="mt-2 text-sm text-muted">
-              {{ job.request.query }}
-            </p>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <UButton
-            color="neutral"
-            variant="soft"
-            icon="i-lucide-copy"
-            label="复制"
-            @click="copyReport"
-          /><UButton
-            color="neutral"
-            variant="soft"
-            icon="i-lucide-download"
-            label="下载 Markdown"
-            @click="downloadMarkdown"
-          />
-        </div>
-      </div>
-      <div class="mt-5">
-        <UBadge
-          color="neutral"
-          variant="soft"
-          :label="new Date(report.generated_at).toLocaleString()"
-        />
-      </div>
-    </section>
+    <p class="max-w-[72ch] text-base leading-7 text-highlighted">
+      研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.result_status !== 'complete'">；其中仍有资料冲突，需要你结合实际情况复核</span>。
+    </p>
 
-    <article class="rounded-xl border border-default bg-default p-6 shadow-sm sm:p-8">
+    <article
+      class="research-answer max-w-[72ch] text-base leading-7 text-highlighted"
+      @mouseup="handleTextSelection"
+    >
       <ChatComark
-        :markdown="report.markdown"
+        :markdown="reportMarkdown"
         :streaming="false"
       />
     </article>
 
+    <div
+      v-if="selectionPosition && selectedText"
+      class="float-selection-pill fixed z-50 flex -translate-x-1/2 -translate-y-full items-center gap-1 rounded-full border border-zinc-700/60 bg-zinc-900/95 p-1 text-white shadow-xl"
+      :style="{ left: `${selectionPosition.x}px`, top: `${selectionPosition.y}px` }"
+      @pointerdown.stop
+    >
+      <button
+        type="button"
+        class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-700/60 hover:text-white"
+        @pointerdown.stop="copySelectedText"
+      >
+        <UIcon
+          name="i-lucide-copy"
+          class="size-3.5"
+        />
+        复制
+      </button>
+      <span class="h-3.5 w-px bg-zinc-700/60" />
+      <button
+        type="button"
+        class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-zinc-200 transition-colors hover:bg-zinc-700/60 hover:text-white"
+        @pointerdown.stop="askSelectedText"
+      >
+        <UIcon
+          name="i-lucide-message-circle-question"
+          class="size-3.5"
+        />
+        划词提问
+      </button>
+    </div>
+
     <section
       v-if="report.conflicts?.length"
-      class="rounded-xl border border-warning/30 bg-warning/5 p-5 sm:p-6"
+      class="border-y border-default py-5 sm:py-6"
     >
       <div class="flex items-start gap-3">
         <UIcon
@@ -114,7 +134,7 @@ function downloadMarkdown() {
         <article
           v-for="conflict in report.conflicts"
           :key="conflict.conflict_id"
-          class="rounded-lg border border-default bg-default p-4"
+          class="border-t border-default py-4 first:border-t-0"
         >
           <div class="flex flex-wrap items-center gap-2">
             <UBadge
@@ -123,22 +143,49 @@ function downloadMarkdown() {
               :label="conflict.conflict_type === 'version' ? '版本冲突' : conflict.conflict_type === 'numeric' ? '数值冲突' : '来源冲突'"
             />
             <UBadge
-              :color="conflict.resolution_status === 'resolved_by_authority' ? 'success' : 'neutral'"
+              :color="conflict.resolution_status !== 'unresolved' ? 'success' : 'neutral'"
               variant="soft"
-              :label="conflict.resolution_status === 'resolved_by_authority' ? '已有处理依据' : '需要人工复核'"
+              :label="conflict.resolution_status === 'resolved_by_user' ? '已由你确认' : conflict.resolution_status === 'resolved_by_authority' ? '已有处理依据' : '需要人工复核'"
             />
           </div>
           <p class="mt-3 text-sm leading-6 text-highlighted">
             {{ conflict.summary }}
           </p>
-          <ul class="mt-3 space-y-2">
+          <ul class="mt-3 grid gap-3 sm:grid-cols-2">
             <li
               v-for="alternative in conflict.alternatives"
               :key="alternative.evidence_id"
-              class="rounded-md bg-elevated px-3 py-2 text-sm text-muted"
+              class="min-w-0 rounded-lg border border-default bg-elevated px-4 py-3 text-sm text-muted"
             >
-              <span class="font-medium text-highlighted">[{{ alternative.citation_number }}] {{ alternative.source_title }}</span>
-              <span v-if="alternative.document_version"> · {{ alternative.document_version }}</span>
+              <p class="font-medium text-highlighted">
+                [{{ alternative.citation_number }}] {{ alternative.source_title }}
+              </p>
+              <p class="mt-2 whitespace-pre-wrap break-words leading-6 text-highlighted">
+                {{ alternative.value_summary }}
+              </p>
+              <dl class="mt-3 space-y-1 text-xs">
+                <div>
+                  <dt class="inline">
+                    版本：
+                  </dt><dd class="inline">
+                    {{ alternative.document_version || '未标注' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="inline">
+                    更新时间：
+                  </dt><dd class="inline">
+                    {{ alternative.updated_at || alternative.effective_at || '未标注' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="inline">
+                    权威等级：
+                  </dt><dd class="inline">
+                    {{ alternative.authority }}（{{ alternative.authority_rank }}）
+                  </dd>
+                </div>
+              </dl>
             </li>
           </ul>
           <p
@@ -151,46 +198,20 @@ function downloadMarkdown() {
       </div>
     </section>
 
-    <section
-      v-if="report.citations?.length"
-      class="rounded-xl border border-default bg-default p-5 sm:p-6"
+    <UChatTool
+      v-if="sourceCitations.length"
+      text="已检索知识库"
+      :suffix="`${sourceCitations.length} 条证据`"
+      :streaming="false"
+      chevron="leading"
+      class="max-w-[72ch]"
     >
-      <div class="flex items-end justify-between gap-4">
-        <div>
-          <h2 class="font-semibold text-highlighted">
-            引用与原文
-          </h2>
-          <p class="mt-1 text-sm text-muted">
-            打开引用可核对原始段落、版本和生效时间。
-          </p>
-        </div>
-        <span class="text-xs text-muted">{{ report.citations.length }} 条</span>
-      </div>
-      <div class="mt-4 grid gap-3 sm:grid-cols-2">
-        <button
-          v-for="citation in report.citations"
-          :key="citation.evidence_id"
-          type="button"
-          class="min-h-20 rounded-lg border border-default p-4 text-left transition hover:border-primary/40 hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          @click="openCitation(citation)"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <span class="font-medium text-highlighted">[{{ citation.number }}] {{ citation.title }}</span>
-            <UIcon
-              name="i-lucide-external-link"
-              class="mt-0.5 shrink-0 text-muted"
-            />
-          </div>
-          <p class="mt-2 text-xs text-muted">
-            {{ citation.document_version || '未标注版本' }} · {{ citation.locator }}
-          </p>
-        </button>
-      </div>
-    </section>
+      <ResearchSources :citations="report.citations" />
+    </UChatTool>
 
     <section
       v-if="progress"
-      class="rounded-xl border border-default bg-elevated/30 p-5"
+      class="border-t border-default pt-5"
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="font-semibold text-highlighted">
@@ -242,65 +263,67 @@ function downloadMarkdown() {
       </p>
     </section>
 
-    <div class="flex justify-end">
+    <div class="flex flex-wrap items-center gap-3 border-t border-default pt-4">
+      <div class="flex items-center gap-1">
+        <ResearchMessageActions
+          :chat-id="job.research_id"
+          :message-id="`research-report-${report.report_id}`"
+          :text="report.markdown"
+          :created-at="report.generated_at"
+          @regenerate="emit('regenerate')"
+        />
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          icon="i-lucide-download"
+          label="下载"
+          @click="downloadMarkdown"
+        />
+      </div>
+      <div class="ml-auto flex items-center gap-1 text-xs text-muted">
+        <span>{{ report.result_status === 'complete' ? '研究完成' : '需要复核' }}</span>
+        <span aria-hidden="true">·</span>
+        <time :datetime="report.generated_at">{{ new Date(report.generated_at).toLocaleString() }}</time>
+      </div>
       <UButton
+        class="basis-full justify-start"
         color="neutral"
-        variant="outline"
+        variant="ghost"
+        size="sm"
         icon="i-lucide-rotate-ccw"
         label="发起新的研究"
         @click="emit('restart')"
       />
     </div>
-
-    <UModal
-      v-model:open="citationOpen"
-      :title="selectedCitation ? `[${selectedCitation.number}] ${selectedCitation.title}` : '引用原文'"
-    >
-      <template #content>
-        <div
-          v-if="selectedCitation"
-          class="space-y-5 p-6"
-        >
-          <div class="flex flex-wrap gap-2">
-            <UBadge
-              color="neutral"
-              variant="soft"
-              :label="selectedCitation.source_type"
-            />
-            <UBadge
-              color="neutral"
-              variant="soft"
-              :label="selectedCitation.document_version || '未标注版本'"
-            />
-            <UBadge
-              v-if="selectedCitation.effective_at"
-              color="primary"
-              variant="soft"
-              :label="`生效：${selectedCitation.effective_at}`"
-            />
-          </div>
-          <div>
-            <p class="text-xs font-medium text-muted">
-              原文位置
-            </p>
-            <p class="mt-1 text-sm text-highlighted">
-              {{ selectedCitation.doc_id }} · {{ selectedCitation.locator }}
-            </p>
-          </div>
-          <blockquote class="rounded-lg border-l-4 border-primary bg-elevated p-4 text-sm leading-7 text-highlighted">
-            {{ selectedCitation.excerpt }}
-          </blockquote>
-          <div class="grid gap-3 text-xs text-muted sm:grid-cols-2">
-            <div><span class="block">来源级别</span><strong class="mt-1 block text-highlighted">{{ selectedCitation.authority }}</strong></div>
-            <div>
-              <span class="block">内容校验</span><strong
-                class="mt-1 block truncate font-mono text-highlighted"
-                :title="selectedCitation.content_hash"
-              >{{ selectedCitation.content_hash.slice(0, 16) }}…</strong>
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
   </div>
 </template>
+
+<style scoped>
+.research-answer :deep(.markdown-body) {
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.research-answer :deep(.markdown-body h1) {
+  margin: 0 0 1rem;
+  font-size: 1.375rem;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+.research-answer :deep(.markdown-body h2) {
+  margin-top: 1.75rem;
+  margin-bottom: 0.625rem;
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.research-answer :deep(.markdown-body h3) {
+  margin-top: 1.375rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+</style>

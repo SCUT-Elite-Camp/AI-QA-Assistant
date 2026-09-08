@@ -23,6 +23,8 @@ import DocumentModal from '../../components/chat/DocumentModal.vue'
 import SoulModal from '../../components/chat/SoulModal.vue'
 import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
+import ResearchModeNotice from '../../components/research/ResearchModeNotice.vue'
+import { useResearchLaunch } from '../../composables/useResearchLaunch'
 import type { Vote } from '../../../server/utils/drizzle'
 
 const route = useRoute<'/chat/[id]'>()
@@ -32,6 +34,7 @@ const currentWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
+const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
 
 
 const data = await $fetch(`/api/chats/${route.params.id}`).catch((e) => {
@@ -90,6 +93,7 @@ const quickChats = [
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const deepResearchMode = ref(false)
+const selectedResearchDocumentIds = ref<string[]>([])
 
 function triggerFileUpload() {
   fileInputRef.value?.click()
@@ -112,11 +116,6 @@ const plusMenuItems = computed(() => [[
     icon: 'i-lucide-paperclip',
     onSelect: () => triggerFileUpload()
   },
-  {
-    label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
-    icon: 'i-lucide-telescope',
-    onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
-  }
 ]])
 
 
@@ -151,12 +150,12 @@ const chat = new Chat({
   },
 })
 
-function handleSubmit(e: Event) {
+async function handleSubmit(e: Event) {
   e.preventDefault()
   if (input.value.trim()) {
     if (deepResearchMode.value) {
-      router.push({ path: '/research/new', query: { q: input.value.trim() } })
-      input.value = ''
+      const launched = await launchResearch(input.value, selectedResearchDocumentIds.value)
+      if (launched) input.value = ''
       return
     }
     chat.sendMessage({ text: input.value })
@@ -490,8 +489,8 @@ onMounted(() => {
               v-if="isOwner"
               v-model="input"
               :error="chat.error"
-              :status="chat.status === 'streaming' ? 'streaming' : 'ready'"
-              placeholder="Ask me anything..."
+              :status="chat.status === 'streaming' || launchingResearch ? 'streaming' : 'ready'"
+              :placeholder="deepResearchMode ? '输入研究问题，并添加本地知识库文件…' : 'Ask me anything...'"
               variant="subtle"
               class="rounded-2xl shadow-lg"
               :ui="{ base: 'px-1.5' }"
@@ -509,8 +508,15 @@ onMounted(() => {
                   />
                 </UDropdownMenu>
 
-                <!-- Deep Research Indicator Badge -->
-                <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+                <UButton
+                  :color="deepResearchMode ? 'primary' : 'neutral'"
+                  :variant="deepResearchMode ? 'soft' : 'ghost'"
+                  size="sm"
+                  icon="i-lucide-telescope"
+                  :label="deepResearchMode ? '深度研究' : '研究'"
+                  class="rounded-lg"
+                  @click="deepResearchMode = !deepResearchMode"
+                />
 
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
@@ -529,6 +535,11 @@ onMounted(() => {
                 </div>
               </template>
             </UChatPrompt>
+            <ResearchModeNotice
+              v-if="deepResearchMode"
+              v-model="selectedResearchDocumentIds"
+            />
+            <p v-if="researchLaunchError" class="text-sm text-error" role="alert">{{ researchLaunchError }}</p>
 
             <!-- Hidden file input for Upload File -->
             <input ref="fileInputRef" type="file" accept=".txt,.md,.pdf,.docx,.json" class="hidden" @change="handleFileUpload" />
@@ -608,8 +619,8 @@ onMounted(() => {
               v-if="isOwner"
               v-model="input"
               :error="chat.error"
-              :status="chat.status === 'streaming' ? 'streaming' : 'ready'"
-              placeholder="Ask me anything..."
+              :status="chat.status === 'streaming' || launchingResearch ? 'streaming' : 'ready'"
+              :placeholder="deepResearchMode ? '输入研究问题，并添加本地知识库文件…' : 'Ask me anything...'"
               variant="subtle"
               class="sticky bottom-6 mb-6 [view-transition-name:chat-prompt] rounded-2xl shadow-lg z-10"
               :ui="{ base: 'px-1.5' }"
@@ -627,8 +638,15 @@ onMounted(() => {
                   />
                 </UDropdownMenu>
 
-                <!-- Deep Research Indicator Badge -->
-                <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+                <UButton
+                  :color="deepResearchMode ? 'primary' : 'neutral'"
+                  :variant="deepResearchMode ? 'soft' : 'ghost'"
+                  size="sm"
+                  icon="i-lucide-telescope"
+                  :label="deepResearchMode ? '深度研究' : '研究'"
+                  class="rounded-lg"
+                  @click="deepResearchMode = !deepResearchMode"
+                />
 
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
@@ -647,6 +665,12 @@ onMounted(() => {
                 </div>
               </template>
             </UChatPrompt>
+            <ResearchModeNotice
+              v-if="deepResearchMode"
+              v-model="selectedResearchDocumentIds"
+              class="mb-6"
+            />
+            <p v-if="researchLaunchError" class="mb-6 text-sm text-error" role="alert">{{ researchLaunchError }}</p>
 
           </UContainer>
         </div>

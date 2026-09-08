@@ -1,5 +1,5 @@
 import { $fetch } from 'ofetch'
-import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
+import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchInteractionResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
 import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetEvents, mockGetPlan, mockGetProgress, mockGetReport, mockGetResearch, mockReviseResearchPlan } from '../mocks/research'
 
 const useMock = import.meta.env.VITE_RESEARCH_USE_MOCK === 'true'
@@ -41,6 +41,14 @@ export function useResearchApi() {
     return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/cancel`, { method: 'POST' })
   }
 
+  async function sendMessage(researchId: string, message: string): Promise<ResearchInteractionResponse> {
+    return $fetch<ResearchInteractionResponse>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/messages`, {
+      method: 'POST',
+      headers: { 'X-User-ID': 'web-user' },
+      body: { message },
+    })
+  }
+
   async function getReport(researchId: string): Promise<ResearchReport> {
     if (useMock) return mockGetReport(researchId)
     return $fetch<ResearchReport>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/report`)
@@ -58,5 +66,5 @@ export function useResearchApi() {
     })
   }
 
-  return { createJob, getJob, getPlan, revisePlan, approveJob, cancelJob, getReport, getProgress, getEvents, useMock, apiBase }
+  return { createJob, getJob, getPlan, revisePlan, approveJob, cancelJob, sendMessage, getReport, getProgress, getEvents, useMock, apiBase }
 }

@@ -276,6 +276,7 @@ class ResearchIntelligencePipeline:
             manifest=self.control_plane.get_manifest(research_id),
             limitations=limitations,
             title=plan.report_spec.title or None,
+            language=plan.report_spec.language,
         )
 
     @staticmethod
