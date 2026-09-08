@@ -17,7 +17,7 @@ const elapsedLabel = computed(() => {
   <div class="space-y-6">
     <section
       v-if="latestRecovery"
-      class="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4"
+      class="flex items-start gap-3 border-b border-default pb-4"
       role="status"
     >
       <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><UIcon name="i-lucide-history" /></span>
@@ -30,14 +30,14 @@ const elapsedLabel = computed(() => {
         </p>
       </div>
     </section>
-    <section class="overflow-hidden rounded-2xl border border-default bg-default shadow-sm">
-      <div class="bg-gradient-to-br from-primary/10 via-default to-default p-6 sm:p-8">
+    <section class="border-b border-default pb-5">
+      <div>
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-primary">
-              Deep Research 正在执行
+            <p class="text-sm text-muted">
+              正在研究
             </p>
-            <h2 class="mt-2 text-2xl font-bold text-highlighted">
+            <h2 class="mt-1 text-lg font-semibold text-highlighted">
               {{ activeLabel }}
             </h2>
             <p class="mt-2 text-sm text-muted">
@@ -45,7 +45,7 @@ const elapsedLabel = computed(() => {
             </p>
           </div>
           <div class="text-right">
-            <span class="text-3xl font-bold text-primary">{{ progress.progress_percent }}%</span><p class="text-xs text-muted">
+            <span class="text-base font-semibold text-highlighted">{{ progress.progress_percent }}%</span><p class="text-xs text-muted">
               整体进度
             </p>
           </div>
@@ -59,8 +59,8 @@ const elapsedLabel = computed(() => {
       </div>
     </section>
 
-    <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <section class="rounded-xl border border-default bg-default p-5">
+    <div class="space-y-5">
+      <section>
         <h3 class="font-semibold text-highlighted">
           执行流程
         </h3>
@@ -97,8 +97,8 @@ const elapsedLabel = computed(() => {
         </ol>
       </section>
 
-      <div class="space-y-6">
-        <section class="rounded-xl border border-default bg-default p-5">
+      <div class="space-y-5">
+        <section class="border-t border-default pt-5">
           <h3 class="font-semibold text-highlighted">
             研究统计
           </h3>
@@ -166,7 +166,7 @@ const elapsedLabel = computed(() => {
 
         <section
           v-if="progress.tasks.length"
-          class="rounded-xl border border-default bg-default p-5"
+          class="border-t border-default pt-5"
         >
           <h3 class="font-semibold text-highlighted">
             研究任务
@@ -188,7 +188,7 @@ const elapsedLabel = computed(() => {
 
         <section
           v-if="recentEvents.length"
-          class="rounded-xl border border-default bg-default p-5"
+          class="border-t border-default pt-5"
         >
           <h3 class="font-semibold text-highlighted">
             最近活动
@@ -207,7 +207,7 @@ const elapsedLabel = computed(() => {
       </div>
     </div>
 
-    <div class="flex items-center justify-between gap-3 rounded-xl border border-default bg-elevated/30 p-4">
+    <div class="flex items-center justify-between gap-3 border-t border-default pt-4">
       <p class="text-xs text-muted">
         当前阶段：<span class="font-mono">{{ progress.current_stage }}</span>。页面刷新后会从服务端恢复进度。
       </p>

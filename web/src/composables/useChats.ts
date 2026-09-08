@@ -1,4 +1,3 @@
-import { isToday, isYesterday, subMonths } from 'date-fns'
 import { computed, ref } from 'vue'
 import { createSharedComposable } from '@vueuse/core'
 import { $fetch } from 'ofetch'
@@ -20,8 +19,8 @@ export const useChats = createSharedComposable(() => {
     chats.value = await $fetch('/api/chats').then((data: ChatData[]) => data.map(chat => ({
       id: chat.id,
       label: chat.title || 'Untitled',
-      to: `/chat/${chat.id}`,
-      icon: 'i-lucide-message-circle',
+      to: chat.id.startsWith('research-') ? `/research/${chat.id}` : `/chat/${chat.id}`,
+      icon: chat.id.startsWith('research-') ? 'i-lucide-telescope' : 'i-lucide-message-circle',
       createdAt: String(chat.createdAt),
       topicId: (chat as any).topicId ?? null
     }) as Chat)).catch(error => {

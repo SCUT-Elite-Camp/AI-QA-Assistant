@@ -122,6 +122,7 @@ class LocalDocumentResolver:
         return SourceManifestDocument(
             doc_id=doc_id,
             title=str(record.get("title") or doc_id),
+            source_url=(str(record["source_url"]) if record.get("source_url") else None),
             source_type=str(record.get("source_type") or "local_document"),
             authority=str(record.get("authority") or "internal"),
             authority_rank=int(record.get("authority_rank") or 0),

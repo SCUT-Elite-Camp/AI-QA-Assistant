@@ -396,7 +396,7 @@ class LocalResearchWorker:
                 original = OriginalRead.from_value(
                     self.tools.read_document_range(
                         doc_id=hit.doc_id,
-                        locator_hint=hit.locator_hint,
+                        locator_hint=self._expand_locator(hit.locator_hint),
                         research_id=context.job.research_id,
                         task_id=task.task_id,
                         trace_id=trace_id,
@@ -475,6 +475,14 @@ class LocalResearchWorker:
         )
 
     @staticmethod
+    def _expand_locator(locator: str, context_lines: int = 4) -> str:
+        match = re.fullmatch(r"line:(\d+)-(\d+)", locator.strip())
+        if not match:
+            return locator
+        start, end = (int(value) for value in match.groups())
+        return f"line:{max(1, start - context_lines)}-{end + context_lines}"
+
+    @staticmethod
     def _default_finding_builder(
         context: ApprovedResearchContext,
         task: ResearchTask,
@@ -492,13 +500,16 @@ class LocalResearchWorker:
             any(number_sets)
             and len({tuple(sorted(numbers)) for numbers in number_sets}) > 1
         )
-        if "冲突" in task.question and len(evidence) > 1 and has_numeric_difference:
+        substantive = [item for item in evidence if LocalResearchWorker._is_substantive(item.excerpt)]
+        if not substantive:
+            statement = "资料片段不足以形成完整结论，仍需读取更多上下文。"
+        elif "冲突" in task.question and len(substantive) > 1 and has_numeric_difference:
             compared = "；".join(
-                f"{item.doc_id}：{item.excerpt.rstrip('。；; ')}" for item in evidence
+                f"{item.doc_id}：{item.excerpt.rstrip('。；; ')}" for item in substantive
             )
             statement = f"候选资料的关键数值存在差异：{compared}"
         else:
-            statement = evidence[0].excerpt
+            statement = substantive[0].excerpt
         return Finding(
             finding_id=LocalResearchWorker._stable_id(
                 "finding", context.job.research_id, task.task_id
@@ -509,6 +520,18 @@ class LocalResearchWorker:
             evidence_ids=[item.evidence_id for item in evidence],
             covers=covers,
         )
+
+    @staticmethod
+    def _is_substantive(text: str) -> bool:
+        normalized = " ".join(text.split()).strip()
+        if len(normalized) < 32:
+            return False
+        if re.fullmatch(r"[A-Z0-9_\-. ]+", normalized):
+            return False
+        non_empty_lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if non_empty_lines and all(line.startswith("|") for line in non_empty_lines):
+            return False
+        return True
 
     @staticmethod
     def _validate_context(context: ApprovedResearchContext) -> None:

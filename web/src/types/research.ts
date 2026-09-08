@@ -27,6 +27,9 @@ export type ResearchEventType =
   | 'job_completed'
   | 'job_failed'
   | 'job_cancelled'
+  | 'user_message'
+  | 'assistant_message'
+  | 'conflict_resolved'
 
 export interface SourceScope {
   knowledge_base_ids: string[]
@@ -103,6 +106,13 @@ export interface ResearchPlanRevisionRequest {
   revision_note: string
 }
 
+export interface ResearchInteractionResponse {
+  action: string
+  message: string
+  job: ResearchJob
+  plan: ResearchPlan | null
+}
+
 export interface ResearchJob {
   schema_version: 'research.v2'
   research_id: string
@@ -143,6 +153,7 @@ export interface ResearchCitation {
   evidence_ids: string[]
   doc_id: string
   title: string
+  source_url?: string | null
   source_type: string
   authority: string
   authority_rank: number
@@ -161,6 +172,9 @@ export interface ResearchConflictAlternative {
   value_summary: string
   document_version: string | null
   effective_at: string | null
+  updated_at: string | null
+  authority: string
+  authority_rank: number
 }
 
 export interface ResearchConflict {
@@ -169,7 +183,7 @@ export interface ResearchConflict {
   conflict_type: 'numeric' | 'version' | 'source'
   summary: string
   alternatives: ResearchConflictAlternative[]
-  resolution_status: 'unresolved' | 'resolved_by_authority'
+  resolution_status: 'unresolved' | 'resolved_by_authority' | 'resolved_by_user'
   resolution: string
 }
 
