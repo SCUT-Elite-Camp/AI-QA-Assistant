@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { UIMessage } from 'ai'
-import { isFileUIPart } from 'ai'
+import { isFileUIPart, isReasoningUIPart, isToolUIPart, getToolName } from 'ai'
 import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 import type { FactCategory } from '../../../types/memory'
@@ -36,9 +36,13 @@ const emit = defineEmits<{
   vote: [message: UIMessage, isUpvoted: boolean]
   favorite: [message: UIMessage, isFav: boolean]
   saveMemory: [message: UIMessage, category: FactCategory]
+  viewReasoning: [message: UIMessage]
 }>()
 
 const hasFiles = computed(() => props.message.parts.some(isFileUIPart))
+const hasReasoningOrSearch = computed(() => {
+  return props.message.parts?.some(p => isReasoningUIPart(p) || (isToolUIPart(p) && (getToolName(p) === 'rag_search' || getToolName(p) === 'web_search' || getToolName(p) === 'google_search')))
+})
 
 const clipboard = useClipboard()
 
@@ -191,6 +195,17 @@ const earliestDataDate = computed<string | null>(() => {
             icon="i-lucide-rotate-cw"
             aria-label="Regenerate response"
             @click="emit('regenerate', message)"
+          />
+        </UTooltip>
+
+        <UTooltip v-if="hasReasoningOrSearch" text="查看推理过程">
+          <UButton
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-brain"
+            aria-label="查看推理过程"
+            @click="emit('viewReasoning', message)"
           />
         </UTooltip>
       </div>

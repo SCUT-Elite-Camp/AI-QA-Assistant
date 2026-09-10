@@ -7,7 +7,6 @@ import ChatComark from '../Comark'
 import ChatToolChart from '../tool/Chart.vue'
 import ChatToolWeather from '../tool/Weather.vue'
 import ChatMessageEdit from './MessageEdit.vue'
-import ThinkingProcess from '../ThinkingProcess.vue'
 import { getMergedParts } from '../../../utils/ai'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
@@ -84,9 +83,6 @@ provide('ragCitationMap', citationMap)
 
   <!-- Assistant Message -->
   <template v-else-if="message.role === 'assistant'">
-    <!-- Grok-style Step-by-Step Thinking Process & Timeline -->
-    <ThinkingProcess :message="message" />
-
     <!-- Other Assistant Parts (Charts, Weather, and Main Text) -->
     <template
       v-for="(part, index) in otherParts"
