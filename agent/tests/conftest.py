@@ -74,7 +74,12 @@ def mock_llm_client_chat(monkeypatch):
             )
         }
 
+    def mock_stream_chat(self, messages, tools=None, **kwargs):
+        yield {"reasoning_content": "正在思考知识库检索到的内容..."}
+        yield {"content": "根据检索到的文档，我们发现以下规则：\n[1] 这是第一个文档段落。\n[2] 这是第二个测试说明段落。\n这些文档非常清晰地展示了项目要求。"}
+
     monkeypatch.setattr(LLMClient, "chat", mock_chat)
+    monkeypatch.setattr(LLMClient, "stream_chat", mock_stream_chat)
 
 
 @pytest.fixture(autouse=True)
@@ -130,4 +135,17 @@ def mock_sqlite_db_path(monkeypatch, tmp_path, request):
         original_init(self, db_path=str(db_file))
         
     monkeypatch.setattr(ChatHistoryStore, "__init__", patched_init)
+
+
+@pytest.fixture(autouse=True)
+def mock_agent_auth():
+    """Bypass auth dependency for general integration tests on the main FastAPI app."""
+    try:
+        from app import app
+        from agent.auth import verify_agent_key
+        app.dependency_overrides[verify_agent_key] = lambda: None
+        yield
+        app.dependency_overrides.pop(verify_agent_key, None)
+    except Exception:
+        yield
 

@@ -34,15 +34,7 @@ def chat_history(
     return agent.get_history(limit)
 
 
-@router.delete("/chat/memory/{session_id}")
-def clear_chat_memory(
-    session_id: str,
-    agent: Agent = Depends(get_agent),
-    _: None = Depends(verify_agent_key),
-) -> dict[str, str]:
-    """Clears conversation memory for the given session_id."""
-    agent.memory.clear(session_id)
-    return {"status": "ok", "session_id": session_id}
+
 
 
 

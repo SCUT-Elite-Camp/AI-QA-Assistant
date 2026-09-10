@@ -25,7 +25,14 @@ export default defineConfig({
       }
     }),
     nitro({
-      serverDir: './server'
+      serverDir: './server',
+      rollupConfig: {
+        output: {
+          chunkFileNames: 'chunks/[name]-[hash].mjs',
+          entryFileNames: '[name].mjs',
+          sanitizeFileName: (name: string) => name.replace(/[\[\]]/g, '_')
+        }
+      }
     })
   ],
   server: {

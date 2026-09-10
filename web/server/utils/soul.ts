@@ -37,6 +37,7 @@ export async function requestTopicSummarizerFromPersistence(
         soulContent: res.soul_content,
         tags: res.tags || []
       }
+    }
   } catch (err) {
     logger.warn('[PersistenceSummarizer] Failed to invoke data persistence summarizer service:', err)
   }
