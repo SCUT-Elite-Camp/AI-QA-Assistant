@@ -168,7 +168,10 @@ function getStatusBadge(status: string) {
   <UModal
     :open="open"
     prevent-close
-    :ui="{ width: 'sm:max-w-5xl' }"
+    :ui="{
+      content: 'sm:max-w-5xl w-full rounded-3xl p-0 overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950',
+      width: 'sm:max-w-5xl'
+    }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
 import { useChats } from '../composables/useChats'
@@ -12,7 +12,23 @@ const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { user } = useUserSession()
 const input = ref('')
-const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('thinking')
+
+function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = localStorage.getItem('preferred_weight_mode')
+    if (saved === 'fast' || saved === 'auto' || saved === 'thinking') return saved
+  }
+  return 'thinking'
+}
+
+const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>(getStoredWeightMode())
+
+watch(currentWeightMode, (newMode) => {
+  if (typeof window !== 'undefined' && window.localStorage && newMode) {
+    localStorage.setItem('preferred_weight_mode', newMode)
+  }
+})
+
 const loading = ref(false)
 const router = useRouter()
 
@@ -30,6 +46,7 @@ const greeting = computed(() => {
 
 async function createChat(prompt: string) {
   if (loading.value || !prompt.trim()) return
+  const chosenMode = currentWeightMode.value
   input.value = ''
   loading.value = true
   try {
@@ -40,7 +57,7 @@ async function createChat(prompt: string) {
     })
     await fetchChats()
     if (chat?.id) {
-      router.push(`/chat/${chat.id}`)
+      router.push(`/chat/${chat.id}?mode=${chosenMode}`)
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to create chat'

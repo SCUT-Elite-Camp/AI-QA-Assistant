@@ -26,8 +26,8 @@ const { chats, groups, fetchChats } = useChats()
 const { renameChat, deleteChat, createTopicForChat, addChatToTopic } = useChatActions()
 const { csrf, headerName } = useCsrf()
 
-await fetchSession()
-await fetchChats()
+fetchSession().catch(() => {})
+fetchChats().catch(() => {})
 
 const topics = ref<any[]>([])
 async function loadTopics() {
@@ -37,7 +37,7 @@ async function loadTopics() {
     topics.value = []
   }
 }
-await loadTopics()
+loadTopics().catch(() => {})
 
 const sidebarOpen = ref(false)
 const searchOpen = ref(false)

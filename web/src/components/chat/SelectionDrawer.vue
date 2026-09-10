@@ -183,7 +183,8 @@ async function handleSaveStandalone() {
           :messages="messages"
           :status="status"
           :spacing-offset="0"
-          class="pt-2 pb-4 px-2"
+          :ui="{ actions: 'w-full flex items-center' }"
+          class="pt-2 pb-4 px-2 w-full"
         >
           <template #indicator>
             <div class="flex items-center gap-1.5">
@@ -245,5 +246,21 @@ async function handleSaveStandalone() {
 .panel-leave-to {
   opacity: 0;
   transform: translateX(100%);
+}
+
+:deep([data-slot="container"]) {
+  width: 100% !important;
+}
+
+:deep([data-slot="body"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+:deep([data-slot="actions"]) {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
 }
 </style>

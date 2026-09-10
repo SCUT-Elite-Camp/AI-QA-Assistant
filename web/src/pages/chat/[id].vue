@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, provide } from 'vue'
 import { $fetch } from 'ofetch'
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
@@ -32,7 +32,25 @@ const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
 const toast = useToast()
 const showHitRateDrawer = ref(false)
-const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('thinking')
+
+function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = localStorage.getItem('preferred_weight_mode')
+    if (saved === 'fast' || saved === 'auto' || saved === 'thinking') return saved
+  }
+  return 'thinking'
+}
+
+const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>(
+  (route.query.mode as any) || getStoredWeightMode()
+)
+
+watch(currentWeightMode, (newMode) => {
+  if (typeof window !== 'undefined' && window.localStorage && newMode) {
+    localStorage.setItem('preferred_weight_mode', newMode)
+  }
+})
+
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
@@ -50,8 +68,11 @@ const title = ref<string | null>(data?.title ?? null)
 // Topic Space State
 const topic = ref<any>(null)
 if (data?.topicId) {
-  $fetch(`/api/topics/${data.topicId}`).then((t) => {
+  $fetch(`/api/topics/${data.topicId}`).then((t: any) => {
     topic.value = t
+    if (t?.weightMode && !route.query.mode) {
+      currentWeightMode.value = t.weightMode
+    }
   }).catch(() => {})
 }
 
@@ -130,7 +151,10 @@ const chat = new Chat({
   transport: new DefaultChatTransport({
     api: `/api/chats/${data?.id}`,
     headers: { [headerName]: csrf() },
-    body: { model: model.value },
+    body: {
+      get model() { return model.value },
+      get weightMode() { return currentWeightMode.value }
+    },
   }),
   onData: (dataPart) => {
     if (dataPart.type === 'data-chat-title') {
@@ -154,6 +178,8 @@ const chat = new Chat({
     })
   },
 })
+
+provide('is-chat-streaming', computed(() => chat.status === 'streaming'))
 
 function handleSubmit(e: Event) {
   e.preventDefault()
@@ -338,7 +364,11 @@ function openSelectionDrawer() {
 
 
 
-async function handleUpdateWeightMode(mode: 'deeper' | 'auto' | 'wider') {
+async function handleUpdateWeightMode(mode: 'thinking' | 'auto' | 'fast') {
+  currentWeightMode.value = mode
+  if (topic.value) {
+    topic.value.weightMode = mode
+  }
   if (!topic.value?.id) return
   try {
     const updated: any = await $fetch(`/api/topics/${topic.value.id}`, {
@@ -347,13 +377,8 @@ async function handleUpdateWeightMode(mode: 'deeper' | 'auto' | 'wider') {
       body: { weightMode: mode }
     })
     topic.value = updated
-    toast.add({
-      title: '检索加权模式已切换',
-      description: `当前模式: ${mode.toUpperCase()}`,
-      color: 'success'
-    })
   } catch (err: any) {
-    toast.add({ description: err.message, color: 'error' })
+    console.warn('Failed to patch topic weight mode:', err)
   }
 }
 
@@ -530,7 +555,7 @@ onMounted(() => {
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
                   <WeightModeSelect
-                    :model-value="topic?.weightMode || currentWeightMode"
+                    v-model="currentWeightMode"
                     @change="handleUpdateWeightMode"
                   />
                   <UChatPromptSubmit
@@ -557,7 +582,8 @@ onMounted(() => {
               :messages="chat.messages"
               :status="chat.status"
               :spacing-offset="isOwner ? 160 : 0"
-              class="pt-(--ui-header-height) pb-4 sm:pb-6"
+              :ui="{ actions: 'w-full flex items-center' }"
+              class="pt-(--ui-header-height) pb-4 sm:pb-6 w-full"
             >
               <template #indicator>
                 <ProgressIndicator :status="chat.status" :messages="chat.messages" />
@@ -647,7 +673,7 @@ onMounted(() => {
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
                   <WeightModeSelect
-                    :model-value="topic?.weightMode || currentWeightMode"
+                    v-model="currentWeightMode"
                     @change="handleUpdateWeightMode"
                   />
                   <UChatPromptSubmit
@@ -734,3 +760,21 @@ onMounted(() => {
   />
 
 </template>
+
+<style scoped>
+:deep([data-slot="container"]) {
+  width: 100% !important;
+}
+
+:deep([data-slot="body"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+:deep([data-slot="actions"]) {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+</style>

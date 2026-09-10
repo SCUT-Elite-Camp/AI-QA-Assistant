@@ -66,7 +66,8 @@ export default defineHandler(async (event) => {
 
   const body = await readValidatedBody(event, z.object({
     model: z.string().optional(),
-    messages: z.array(z.custom<UIMessage>())
+    messages: z.array(z.custom<UIMessage>()),
+    weightMode: z.string().optional()
   }).parse)
 
   const selectedModel = (body.model && MODELS.some(m => m.value === body.model)) ? body.model : MODELS[0].value
@@ -166,7 +167,7 @@ export default defineHandler(async (event) => {
             top_k: 5,
             retrieval_mode: "hybrid",
             topic_id: chat.topicId || undefined,
-            weight_mode: topicInfo?.weightMode || "auto",
+            weight_mode: body.weightMode || topicInfo?.weightMode || "thinking",
             soul_content: soulContent || undefined,
             topic_doc_ids: topicDocIds,
             topic_titles: topicTitles,
@@ -219,17 +220,30 @@ export default defineHandler(async (event) => {
                   writer.write({
                     type: 'tool-output-available',
                     toolCallId,
-                    output: citationsList.map((cit: any, i: number) => ({
-                      index: i + 1,
-                      doc_id: cit.doc_id || `doc_${i}`,
-                      chunk_id: cit.chunk_id || `chunk_${i}`,
-                      title: cit.title || cit.doc_id || `Document ${i + 1}`,
-                      source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
-                      chunk_text: cit.snippet || '',
-                      score: cit.score ?? null,
-                      similarity: cit.vector_score ?? cit.similarity_score ?? null,
-                      vector_score: cit.vector_score ?? null
-                    }))
+                    output: citationsList.map((cit: any, i: number) => {
+                      let docUpdated = cit.last_updated || null
+                      if (!docUpdated && cit.doc_id) {
+                        try {
+                          const docPath = path.resolve(process.cwd(), `../data-persistence/data/documents/${cit.doc_id}.json`)
+                          if (fs.existsSync(docPath)) {
+                            const dJson = JSON.parse(fs.readFileSync(docPath, 'utf-8'))
+                            docUpdated = dJson.last_updated || null
+                          }
+                        } catch {}
+                      }
+                      return {
+                        index: i + 1,
+                        doc_id: cit.doc_id || `doc_${i}`,
+                        chunk_id: cit.chunk_id || `chunk_${i}`,
+                        title: cit.title || cit.doc_id || `Document ${i + 1}`,
+                        source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+                        chunk_text: cit.snippet || '',
+                        score: cit.score ?? null,
+                        similarity: cit.vector_score ?? cit.similarity_score ?? null,
+                        vector_score: cit.vector_score ?? null,
+                        last_updated: docUpdated
+                      }
+                    })
                   })
 
                   // If chat belongs to a topic, accumulate citations into topic_documents pool & update anti-echo-chamber counter

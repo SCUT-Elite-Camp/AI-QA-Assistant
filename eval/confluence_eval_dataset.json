@@ -1,0 +1,58 @@
+[
+  {
+    "id": "conf_001",
+    "category": "simple",
+    "question": "项目的 CP1 阶段核心目标和交付范围是什么？",
+    "ground_truth": "CP1 阶段实现端到端单轮 RAG 核心闭环，包含文档解析、向量检索与 BM25 混合搜索、Agent 编排与 Citation 引用校验。",
+    "expected_keywords": ["CP1", "RAG", "单轮", "混合检索", "Citation"]
+  },
+  {
+    "id": "conf_002",
+    "category": "simple",
+    "question": "Tools Layer 在整体架构中承担什么职责？",
+    "ground_truth": "Tools Layer 负责对底层检索工具与外部 API 进行解耦封装，向 Agent 层提供标准化的 SearchTool 接口与参数契约。",
+    "expected_keywords": ["Tools Layer", "SearchTool", "解耦", "接口"]
+  },
+  {
+    "id": "conf_003",
+    "category": "simple",
+    "question": "Data Persistence Layer 采用什么数据库存储向量数据与元数据？",
+    "ground_truth": "Data Persistence Layer 采用 Milvus 向量数据库存储切片 Embedding 向量，采用 SQLite 存储会话历史与文档元数据。",
+    "expected_keywords": ["Milvus", "SQLite", "向量", "元数据"]
+  },
+  {
+    "id": "conf_004",
+    "category": "multi_hop",
+    "question": "从用户在前端发起提问到最终返回带引用的回答，系统经过了哪些层级的流转？",
+    "ground_truth": "用户请求先经 Web 层转发至 Agent 层，Agent 层解析 QueryPlan 并调用 Tools Layer 检索，检索层访问 Data Persistence（Milvus/BM25）获取文档，经 Evidence Gate 校验后由 LLM 生成回答并完成 Citation 标注渲染返回。",
+    "expected_keywords": ["Web", "Agent", "Tools", "Data Persistence", "Evidence Gate", "Citation"]
+  },
+  {
+    "id": "conf_005",
+    "category": "multi_hop",
+    "question": "Confluence 知识库同步与本地文件解析在数据处理管道（Pipeline）上有何异同？",
+    "ground_truth": "相同点是两者最终都经过统一的 Chunker 切片、Embedder 向量化并写入 Milvus；不同点是 Confluence 采用 Stream 直连模式由 HtmlParser 解析 HTML 且不落盘临时文件，而本地文件支持 PDF、DOCX、PPTX 等多格式解析。",
+    "expected_keywords": ["Stream", "HtmlParser", "Chunker", "Embedder", "Milvus", "不落盘"]
+  },
+  {
+    "id": "conf_006",
+    "category": "condition",
+    "question": "如果检索出来的相关文档片段不足或存在冲突，Agent 层会如何处理？",
+    "ground_truth": "Agent 层的 Evidence Gate 会对检索上下文进行置信度评估，如果相关度过低或无上下文则触发兜底澄清 Prompt，防止模型凭空捏造产生幻觉。",
+    "expected_keywords": ["Evidence Gate", "置信度", "兜底", "澄清", "幻觉"]
+  },
+  {
+    "id": "conf_007",
+    "category": "condition",
+    "question": "在切换不同语言模型（如 Claude 或 GPT）时，系统各模块需要做哪些调整？",
+    "ground_truth": "仅需在 .env 中调整 LLM API 配置或通过前端模型选择器切换模型参数，底层 Tools Layer 和 Data Persistence Layer 保持无感知解耦。",
+    "expected_keywords": [".env", "模型选择", "解耦", "无感知"]
+  },
+  {
+    "id": "conf_008",
+    "category": "simple",
+    "question": "文档解析模块支持哪些文件格式的提取？",
+    "ground_truth": "支持 PDF (PyMuPDF)、Word (docx)、PowerPoint (pptx)、Excel (openpyxl) 以及 Confluence HTML 网页正文与附件的解析。",
+    "expected_keywords": ["PDF", "docx", "pptx", "openpyxl", "HTML", "附件"]
+  }
+]

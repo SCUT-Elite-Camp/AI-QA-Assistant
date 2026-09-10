@@ -25,13 +25,13 @@ const isCurrentAssistantPresent = computed(() => {
         <div class="absolute -left-6 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-950 text-amber-400">
           <UIcon name="i-lucide-lightbulb" class="w-4 h-4 text-amber-400 animate-pulse" />
         </div>
-        <span class="text-neutral-200 font-normal">分析用户提问与意图...</span>
+        <span class="text-neutral-200 font-normal">Analyzing the query intent...</span>
       </div>
     </div>
 
-    <!-- Bottom: 思考中... like Grok -->
+    <!-- Bottom: Thinking... like Grok -->
     <div class="mt-2.5 flex items-center gap-3">
-      <span class="text-xs text-neutral-400 font-sans animate-pulse">思考中...</span>
+      <span class="text-xs text-neutral-400 font-sans animate-pulse">Thinking...</span>
     </div>
   </div>
 </template>
