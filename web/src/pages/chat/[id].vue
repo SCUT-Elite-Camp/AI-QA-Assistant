@@ -262,29 +262,9 @@ const chat = new Chat({
 
 provide('is-chat-streaming', computed(() => chat.status === 'streaming'))
 
-const selectedReasoningMessageId = ref<string | null>(null)
-const reasoningWindowRef = ref<any>(null)
-
 const activeReasoningMessage = computed(() => {
-  if (selectedReasoningMessageId.value) {
-    const found = chat.messages.find(m => m.id === selectedReasoningMessageId.value)
-    if (found) return found
-  }
   const assistantMessages = chat.messages.filter(m => m.role === 'assistant')
   return assistantMessages.length > 0 ? assistantMessages[assistantMessages.length - 1] : null
-})
-
-function handleViewReasoning(message: UIMessage) {
-  selectedReasoningMessageId.value = message.id
-  if (reasoningWindowRef.value) {
-    reasoningWindowRef.value.openWindow()
-  }
-}
-
-watch(() => chat.status, (status) => {
-  if (status === 'streaming' || status === 'submitted') {
-    selectedReasoningMessageId.value = null
-  }
 })
 
 function handleSubmit(e: Event) {
@@ -617,7 +597,6 @@ onBeforeUnmount(() => {
         <div class="flex-1 flex flex-col min-w-0 h-full overflow-y-auto relative">
           <!-- Top-Right Floating Reasoning Window -->
           <ReasoningFloatingWindow
-            ref="reasoningWindowRef"
             :message="activeReasoningMessage"
             :status="chat.status"
           />
@@ -726,7 +705,6 @@ onBeforeUnmount(() => {
                   @favorite="handleFavoriteMessage"
                   @suggest="openSuggestModal"
                   @save-memory="saveMessageAsFact"
-                  @view-reasoning="handleViewReasoning"
                 />
               </template>
             </UChatMessages>

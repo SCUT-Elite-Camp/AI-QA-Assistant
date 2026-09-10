@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import type { UIMessage } from 'ai'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
@@ -432,28 +432,26 @@ defineExpose({
     v-if="hasReasoningOrSearch && isWindowOpen"
     class="absolute top-4 right-4 z-30 select-none font-sans transition-all duration-300 pointer-events-auto"
   >
-    <!-- Collapsed Pill View (Compact Floating Badge) -->
+    <!-- Collapsed Pill View while Active Streaming -->
     <div
-      v-if="isWindowMinimized"
-      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 hover:bg-neutral-800/90 border border-neutral-700/80 shadow-lg backdrop-blur-md text-xs cursor-pointer transition-all hover:scale-105 active:scale-95"
-      :class="isAnyActive ? 'border-emerald-500/60 shadow-emerald-900/20' : 'border-neutral-700/70'"
+      v-if="isWindowMinimized && isAnyActive"
+      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 hover:bg-neutral-800/90 border border-emerald-500/60 shadow-lg shadow-emerald-950/30 backdrop-blur-md text-xs cursor-pointer transition-all hover:scale-105 active:scale-95"
       title="点击展开实时推理小窗"
       @click="toggleMinimize"
     >
       <UIcon
-        :name="isAnyActive ? 'i-lucide-sparkles' : 'i-lucide-brain'"
-        class="w-3.5 h-3.5"
-        :class="isAnyActive ? 'text-emerald-400 animate-spin' : 'text-amber-400'"
+        name="i-lucide-sparkles"
+        class="w-3.5 h-3.5 text-emerald-400 animate-spin"
       />
       <span class="font-medium text-neutral-200">
-        {{ isAnyActive ? '思考中...' : 推理完成 () }}
+        思考中...
       </span>
       <UIcon name="i-lucide-maximize-2" class="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
     </div>
 
     <!-- Expanded Floating Small Window -->
     <div
-      v-else
+      v-else-if="!isWindowMinimized"
       class="w-80 sm:w-96 max-h-[calc(100vh-160px)] flex flex-col rounded-2xl bg-neutral-950/95 border border-neutral-800 shadow-2xl backdrop-blur-xl overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95"
     >
       <!-- Top Window Header Bar -->
@@ -471,19 +469,14 @@ defineExpose({
             class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            {{ liveTimer > 0 ? ${liveTimer}s : '思考中' }}
-          </span>
-          <span
-            v-else
-            class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-neutral-800 text-neutral-400"
-          >
-            {{ displayDuration }}
+            {{ liveTimer > 0 ? `${liveTimer}s` : '思考中' }}
           </span>
         </div>
 
         <!-- Window Controls -->
         <div class="flex items-center gap-1 shrink-0">
           <button
+            v-if="isAnyActive"
             type="button"
             class="p-1 rounded-md text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors cursor-pointer"
             title="最小化"
