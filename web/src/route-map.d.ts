@@ -80,6 +80,27 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dashboard': RouteRecordInfo<
+      '/dashboard',
+      '/dashboard',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/documents/': RouteRecordInfo<
+      '/documents/',
+      '/documents',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/favorites/': RouteRecordInfo<
+      '/favorites/',
+      '/favorites',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/settings': RouteRecordInfo<
       '/settings',
       '/settings',
@@ -151,6 +172,30 @@ declare module 'vue-router/auto-routes' {
     'src/pages/files.vue': {
       routes:
         | '/files'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard.vue': {
+      routes:
+        | '/dashboard'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/documents/index.vue': {
+      routes:
+        | '/documents/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/favorites/index.vue': {
+      routes:
+        | '/favorites/'
       views:
         | never
       pathParamNames:

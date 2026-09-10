@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { defineHandler } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq, and } from '../../../../utils/drizzle'
-import { getTopicDocumentsFromDisk } from '../../../../utils/topicStorage'
+import { getTopicDocumentsFromDisk, syncAllTopicDocuments } from '../../../../utils/topicStorage'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -10,6 +10,9 @@ export default defineHandler(async (event) => {
   }).parse)
 
   const db = useDrizzle()
+
+  // Ensure all document chunks across ALL chats under this topic are consolidated and recorded
+  await syncAllTopicDocuments(db, id)
 
   // 1. Fetch DB documents
   const dbDocs = await db.query.topicDocuments.findMany({

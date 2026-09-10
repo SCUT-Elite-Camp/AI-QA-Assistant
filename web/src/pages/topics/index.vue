@@ -174,11 +174,11 @@ async function openSettingsModal(topic: any) {
   topicTags.value = Array.isArray(topic.tags) ? [...topic.tags] : []
   showSettingsModal.value = true
 
-  // Fetch Topic Documents
+  // Fetch Topic Documents (User-uploaded reference files only)
   loadingDocs.value = true
   try {
     const topicData: any = await $fetch(`/api/topics/${topic.id}`)
-    topicDocs.value = (topicData?.documents || []).filter((d: any) => !d.isRemoved)
+    topicDocs.value = (topicData?.documents || []).filter((d: any) => !d.isRemoved && (d.isUserUploaded || d.isUserUploaded === undefined))
     if (topicData?.description) {
       editedDescription.value = topicData.description
     }
@@ -275,7 +275,7 @@ async function handleFileUpload(event: Event) {
     })
     // Refresh doc list
     const topicData: any = await $fetch(`/api/topics/${selectedTopic.value.id}`)
-    topicDocs.value = (topicData?.documents || []).filter((d: any) => !d.isRemoved)
+    topicDocs.value = (topicData?.documents || []).filter((d: any) => !d.isRemoved && (d.isUserUploaded || d.isUserUploaded === undefined))
   } catch (e: any) {
     toast.add({ title: 'Failed to upload document', description: e.message, color: 'error' })
   } finally {

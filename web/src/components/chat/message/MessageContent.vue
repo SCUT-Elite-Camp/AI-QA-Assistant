@@ -2,17 +2,16 @@
 import { computed, provide } from 'vue'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
-import { isPartStreaming, isToolStreaming } from '@nuxt/ui/utils/ai'
+import { isPartStreaming } from '@nuxt/ui/utils/ai'
 import ChatComark from '../Comark'
 import ChatToolChart from '../tool/Chart.vue'
 import ChatToolWeather from '../tool/Weather.vue'
-import ChatToolSources from '../tool/Sources.vue'
-import type { ChunkCitation } from '../tool/Sources.vue'
 import ChatMessageEdit from './MessageEdit.vue'
+import ThinkingProcess from '../ThinkingProcess.vue'
 import { getMergedParts } from '../../../utils/ai'
-import { getSearchQuery } from '../../../utils/tool'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
+import type { ChunkCitation } from '../tool/Sources.vue'
 
 const props = defineProps<{
   message: UIMessage
@@ -33,6 +32,15 @@ function getChunkCitations(part: Parameters<typeof getToolName>[0]): ChunkCitati
   }
   return []
 }
+
+/** Other parts to render sequentially (charts, weather, text markdown) */
+const otherParts = computed(() => {
+  return getMergedParts(props.message.parts ?? []).filter(part => {
+    if (isReasoningUIPart(part)) return false
+    if (isToolUIPart(part) && (getToolName(part) === 'rag_search' || getToolName(part) === 'web_search' || getToolName(part) === 'google_search')) return false
+    return true
+  })
+})
 
 /**
  * Build a Map<index, ChunkCitation> from all rag_search tool parts.
@@ -55,63 +63,48 @@ provide('ragCitationMap', citationMap)
 </script>
 
 <template>
-  <template
-    v-for="(part, index) in getMergedParts(message.parts)"
-    :key="`${message.id}-${part.type}-${index}`"
-  >
-    <UChatReasoning
-      v-if="isReasoningUIPart(part)"
-      :text="part.text"
-      :streaming="isPartStreaming(part)"
-      chevron="leading"
-    >
-      <ChatComark
-        :markdown="part.text"
-        :streaming="isPartStreaming(part)"
+  <!-- User Message -->
+  <template v-if="message.role === 'user'">
+    <template v-for="(part, index) in getMergedParts(message.parts)" :key="`${message.id}-${part.type}-${index}`">
+      <ChatMessageEdit
+        v-if="editing && isTextUIPart(part)"
+        :message="message"
+        :text="part.text"
+        @save="(msg, text) => emit('save', msg, text)"
+        @cancel="emit('cancelEdit')"
       />
-    </UChatReasoning>
+      <p
+        v-else-if="isTextUIPart(part)"
+        class="whitespace-pre-wrap"
+      >
+        {{ part.text }}
+      </p>
+    </template>
+  </template>
 
-    <template v-else-if="isToolUIPart(part)">
+  <!-- Assistant Message -->
+  <template v-else-if="message.role === 'assistant'">
+    <!-- Grok-style Step-by-Step Thinking Process & Timeline -->
+    <ThinkingProcess :message="message" />
+
+    <!-- Other Assistant Parts (Charts, Weather, and Main Text) -->
+    <template
+      v-for="(part, index) in otherParts"
+      :key="`${message.id}-${part.type}-${index}`"
+    >
       <ChatToolChart
-        v-if="getToolName(part) === 'chart'"
+        v-if="isToolUIPart(part) && getToolName(part) === 'chart'"
         :invocation="{ ...(part as ChartUIToolInvocation) }"
       />
       <ChatToolWeather
-        v-else-if="getToolName(part) === 'weather'"
+        v-else-if="isToolUIPart(part) && getToolName(part) === 'weather'"
         :invocation="{ ...(part as WeatherUIToolInvocation) }"
       />
-      <UChatTool
-        v-else-if="getToolName(part) === 'rag_search' || getToolName(part) === 'web_search' || getToolName(part) === 'google_search'"
-        :text="isToolStreaming(part) ? '正在检索知识库...' : '已检索知识库'"
-        :suffix="getSearchQuery(part)"
-        :streaming="isToolStreaming(part)"
-        chevron="leading"
-      >
-        <ChatToolSources :citations="getChunkCitations(part)" />
-      </UChatTool>
-    </template>
-
-    <template v-else-if="isTextUIPart(part)">
       <ChatComark
-        v-if="message.role === 'assistant'"
+        v-else-if="isTextUIPart(part)"
         :markdown="part.text"
         :streaming="isPartStreaming(part)"
       />
-      <template v-else-if="message.role === 'user'">
-        <ChatMessageEdit
-          v-if="editing"
-          :message="message"
-          :text="part.text"
-          @save="(msg, text) => emit('save', msg, text)"
-          @cancel="emit('cancelEdit')"
-        />
-        <p
-          v-else
-          class="whitespace-pre-wrap"
-        >
-          {{ part.text }}
-        </p>
-      </template>
     </template>
   </template>
 </template>

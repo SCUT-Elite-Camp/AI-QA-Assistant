@@ -2,9 +2,10 @@ import { z } from 'zod'
 import { defineHandler } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
-import { generateTopicTitle, generateInitialSoul } from '../../../../utils/soul'
 import { requireOwnedChat } from '../../../../utils/chatAccess'
 import { appendMessage } from '../../../../utils/messageLifecycle'
+import { requestTopicSummarizerFromPersistence } from '../../../../utils/soul'
+import { copyChatCitationsToTopic } from '../../../../utils/topicStorage'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -48,9 +49,15 @@ export default defineHandler(async (event) => {
 
     void (async () => {
       try {
-        const title = await generateTopicTitle(parentChat.title || rawTitle)
-        const soulContent = await generateInitialSoul(title, parentChat.title || rawTitle, [])
-        await db.update(tables.topics).set({ title, soulContent }).where(eq(tables.topics.id, topicId!))
+        const summary = await requestTopicSummarizerFromPersistence(topicId!, parentChat.title || rawTitle)
+        if (summary) {
+          await db.update(tables.topics).set({
+            title: summary.title,
+            soulContent: summary.soulContent,
+            description: summary.description,
+            tags: summary.tags
+          }).where(eq(tables.topics.id, topicId!))
+        }
       } catch (err) {
         console.error('[AsyncSoul] Error updating topic soul in background:', err)
       }
