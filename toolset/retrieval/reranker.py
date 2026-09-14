@@ -49,7 +49,10 @@ class CrossEncoderReranker:
 
         limit = min(max(int(top_n), 1), len(candidates))
         prefix = candidates[:limit]
-        pairs = [(query, str(item.get("chunk_text", ""))) for item in prefix]
+        pairs = [(
+            query,
+            str(item.get("rerank_text") or item.get("chunk_text", "")),
+        ) for item in prefix]
         raw_scores = self.model.predict(
             pairs,
             batch_size=self.batch_size,

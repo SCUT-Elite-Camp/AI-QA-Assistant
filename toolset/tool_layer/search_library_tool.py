@@ -35,11 +35,6 @@ class SearchLibraryTool(BaseTool):
                 "top_k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
                 "doc_ids": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
                 "mode": {"type": "string", "enum": ["hybrid", "vector", "bm25"], "default": "hybrid"},
-                "navigation_mode": {
-                    "type": "string",
-                    "enum": ["direct", "hierarchical", "hybrid"],
-                    "default": "direct",
-                },
             },
             "required": ["query"],
             "additionalProperties": False,
@@ -65,17 +60,13 @@ class SearchLibraryTool(BaseTool):
             return {"error": "library_context_unavailable", "items": []}
         query = str(kwargs.get("query") or "")
         mode = str(kwargs.get("mode") or "hybrid")
-        requested_navigation = str(kwargs.get("navigation_mode") or "direct")
-        navigation_enabled = os.getenv(
-            "HIERARCHICAL_NAVIGATION_ENABLED", "false"
-        ).lower() in {"1", "true", "yes"}
         payload: dict[str, Any] = {
             "owner_id": self._owner_id,
             "knowledge_base_id": self._knowledge_base_id,
             "query": query,
             "top_k": min(20, max(1, int(kwargs.get("top_k", 5)))),
             "mode": mode,
-            "navigation_mode": requested_navigation if navigation_enabled else "direct",
+            "navigation_mode": "direct",
         }
         doc_ids = kwargs.get("doc_ids")
         if doc_ids is not None:
@@ -89,8 +80,53 @@ class SearchLibraryTool(BaseTool):
             except (ImportError, RuntimeError, OSError, ValueError):
                 if mode == "vector":
                     return {"error": "library_vector_unavailable", "items": []}
+        return self._post("/v1/library/search", payload)
+
+    def browse_outline(self, **kwargs: Any) -> dict[str, Any]:
+        payload = self._navigation_payload(kwargs, include_sections=False)
+        if "error" in payload:
+            return payload
+        return self._post("/v1/library/outline", payload)
+
+    def search_evidence_in_scope(self, **kwargs: Any) -> dict[str, Any]:
+        payload = self._navigation_payload(kwargs, include_sections=True)
+        if "error" in payload:
+            return payload
+        payload["mode"] = str(kwargs.get("mode") or "hybrid")
+        return self._post("/v1/library/search-scoped", payload)
+
+    def _navigation_payload(
+        self,
+        kwargs: dict[str, Any],
+        *,
+        include_sections: bool,
+    ) -> dict[str, Any]:
+        if not os.getenv("ATTACHMENT_INTERNAL_SECRET", "") or not self._owner_id or not self._knowledge_base_id:
+            return {"error": "library_context_unavailable", "items": [], "sections": []}
+        query = str(kwargs.get("query") or "").strip()
+        payload: dict[str, Any] = {
+            "owner_id": self._owner_id,
+            "knowledge_base_id": self._knowledge_base_id,
+            "query": query,
+            "top_k": min(20 if include_sections else 12, max(1, int(kwargs.get("top_k", 8)))),
+        }
+        if kwargs.get("doc_ids") is not None:
+            payload["doc_ids"] = [str(value) for value in kwargs["doc_ids"]]
+        if include_sections:
+            payload["section_ids"] = [str(value) for value in kwargs.get("section_ids") or []]
+        if query and os.getenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "false").lower() in {"1", "true", "yes"}:
+            try:
+                from pipeline.embedder import embed_texts
+                payload["query_vector"] = embed_texts([query])[0]
+            except (ImportError, RuntimeError, OSError, ValueError):
+                pass
+        return payload
+
+    @staticmethod
+    def _post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "")
         request = Request(
-            f"{os.getenv('ATTACHMENT_SERVICE_URL', 'http://127.0.0.1:8200').rstrip('/')}/v1/library/search",
+            f"{os.getenv('ATTACHMENT_SERVICE_URL', 'http://127.0.0.1:8200').rstrip('/')}{path}",
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
             method="POST",

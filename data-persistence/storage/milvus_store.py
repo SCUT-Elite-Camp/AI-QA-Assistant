@@ -161,9 +161,11 @@ class MilvusStore:
             combined_filters["doc_ids"] = doc_ids_filter
         normalized_filters = normalize_filters(combined_filters)
         available_fields = self._field_names(self.collection)
-        required_fields = set(normalized_filters) - {"doc_ids"}
+        required_fields = set(normalized_filters) - {"doc_ids", "chunk_ids"}
         if normalized_filters.get("doc_ids"):
             required_fields.add("doc_id")
+        if normalized_filters.get("chunk_ids"):
+            required_fields.add("chunk_id")
         missing_fields = required_fields - available_fields
         if missing_fields:
             raise ValueError(

@@ -15,7 +15,9 @@ from parsers.registry import parse_file, supported_extensions
 from pipeline.chunker import chunk_text, chunk_from_blocks
 from pipeline.embedder import embed_texts
 from pipeline.structure import build_document_sections
+from pipeline.confluence_snapshot import deduplicate_confluence_paths
 from retrieval.bm25_index import BM25Index
+from retrieval.section_bm25_index import SectionBM25Index
 from storage.document_store import save_document
 from storage.milvus_store import MilvusStore
 
@@ -32,7 +34,7 @@ def _scan_folder(folder_path: str) -> list[str]:
             ext = os.path.splitext(fname)[1].lower()
             if ext in exts:
                 files.append(os.path.abspath(os.path.join(root, fname)))
-    return files
+    return deduplicate_confluence_paths(files)
 
 def get_new_or_modified_files(raw_files: list[str]) -> list[str]:
     """根据已经保存的文档 JSON 和文件修改时间，筛选出新增或修改的文件"""
@@ -62,6 +64,74 @@ def get_new_or_modified_files(raw_files: list[str]) -> list[str]:
             to_process.append(file_path)
             
     return to_process
+
+
+def _index_document(
+    doc: Document,
+    *,
+    chunk_size: int,
+    overlap: int,
+    evidence_milvus: MilvusStore,
+    section_milvus: MilvusStore | None,
+    has_milvus: bool,
+) -> bool:
+    if doc.content_blocks:
+        chunks = chunk_from_blocks(
+            doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap,
+        )
+    else:
+        chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
+    doc.chunks = chunks
+    doc.sections = build_document_sections(doc)
+    print(f"  → 分块完成，共 {len(chunks)} 个分块、{len(doc.sections)} 个章节")
+    if not chunks:
+        print("  [Warning] 分块内容为空，跳过该文档")
+        return False
+
+    chunk_texts = [chunk.text for chunk in chunks]
+    section_texts = [section.navigation_text for section in doc.sections if section.navigation_text]
+    print(f"  → 正在生成 {len(chunk_texts)} 个 Evidence 向量")
+    embeddings = embed_texts(chunk_texts)
+    section_embeddings = embed_texts(section_texts) if has_milvus and section_texts else []
+
+    if has_milvus:
+        # Section and Evidence use different collections and ID namespaces.
+        assert section_milvus is not None
+        section_milvus.init_collection(dim=len(section_embeddings[0]))
+        section_milvus.collection.delete(expr=f'doc_id == "{doc.doc_id}"')
+        section_milvus.collection.flush()
+        section_rows = [section for section in doc.sections if section.navigation_text]
+        section_milvus.insert_chunks(
+            embeddings=section_embeddings,
+            chunk_ids=[section.id for section in section_rows],
+            chunk_texts=[section.navigation_text for section in section_rows],
+            doc_ids=[doc.doc_id] * len(section_rows),
+            chunk_indices=list(range(len(section_rows))),
+            source_urls=[doc.source_url] * len(section_rows),
+            titles=[section.title for section in section_rows],
+            spaces=[doc.space] * len(section_rows),
+            doc_types=["section"] * len(section_rows),
+            collection_name=section_milvus.collection_name,
+        )
+        evidence_milvus.init_collection(dim=len(embeddings[0]))
+        evidence_milvus.collection.delete(expr=f'doc_id == "{doc.doc_id}"')
+        evidence_milvus.collection.flush()
+        evidence_milvus.insert_chunks(
+            embeddings=embeddings,
+            chunk_ids=[chunk.chunk_id for chunk in chunks],
+            chunk_texts=chunk_texts,
+            doc_ids=[doc.doc_id] * len(chunks),
+            chunk_indices=[chunk.index for chunk in chunks],
+            source_urls=[doc.source_url] * len(chunks),
+            titles=[doc.title] * len(chunks),
+            spaces=[doc.space] * len(chunks),
+            doc_types=[doc.doc_type] * len(chunks),
+        )
+
+    # The active JSON projection is switched only after all enabled indexes succeed.
+    save_document(doc.doc_id, doc.model_dump(mode="json"))
+    print(f"  → JSON 元数据已保存至: data-persistence/data/documents/{doc.doc_id}.json")
+    return True
 
 def auto_process_raws(
     milvus_host: str = "localhost",
@@ -99,8 +169,16 @@ def auto_process_raws(
     # 初始化 Milvus 连接并测试是否能够连接
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
     has_milvus = False
+    section_milvus: MilvusStore | None = None
     try:
         milvus.connect()
+        section_collection = os.getenv("SECTION_MILVUS_COLLECTION", "document_sections_bgem3")
+        if section_collection.casefold() == milvus.collection_name.casefold():
+            raise RuntimeError("SECTION_MILVUS_COLLECTION must differ from Evidence collection")
+        section_milvus = MilvusStore(
+            host=milvus_host, port=milvus_port, collection_name=section_collection,
+        )
+        section_milvus.connect()
         has_milvus = True
         print(" [Milvus] 成功连接到 Milvus 向量库")
     except Exception as e:
@@ -111,68 +189,15 @@ def auto_process_raws(
     for i, file_path in enumerate(files_to_process, 1):
         print(f"\n [Ingest] [{i}/{len(files_to_process)}] 正在处理: {file_path}")
         try:
-            # 1. 文档解析
-            doc = parse_file(file_path)
-            print(f"  → 解析完成，全文 {len(doc.content)} 字符")
-            
-            # 2. 智能切片（优先使用 ContentBlock，否则按普通文本切）
-            if doc.content_blocks:
-                chunks = chunk_from_blocks(doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-            else:
-                chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-            doc.chunks = chunks
-            doc.sections = build_document_sections(doc)
-            print(f"  → 分块完成，共 {len(chunks)} 个分块")
-            
-            if not chunks:
-                print(f"  [Warning] 分块内容为空，跳过该文件")
-                continue
-                
-            # 3. 文本向量化（Section 是可重建的导航派生物）
-            chunk_texts = [ch.text for ch in chunks]
-            print(f"  → 正在对 {len(chunk_texts)} 个分块生成语义向量...")
-            embeddings = embed_texts(chunk_texts)
-            print(f"  → 向量生成完毕")
-            
-            # 4. 保存 JSON 元数据
-            json_data = doc.model_dump(mode="json")
-            save_document(doc.doc_id, json_data)
-            print(f"  → JSON 元数据已保存至: data-persistence/data/documents/{doc.doc_id}.json")
-            
-            # 5. 写入向量数据到 Milvus（若可用）
-            if has_milvus:
-                dim = len(embeddings[0])
-                milvus.init_collection(dim=dim)
-                
-                # 若文件为修改过的，先清理旧分块
-                try:
-                    delete_expr = f"doc_id == '{doc.doc_id}'"
-                    milvus.collection.delete(expr=delete_expr)
-                    print(f"  → 已清理旧向量分块 (doc_id: {doc.doc_id})")
-                except Exception as de:
-                    print(f"  [Warning] 清理旧向量分块失败或集合为空: {de}")
-                    
-                chunk_ids = [ch.chunk_id for ch in chunks]
-                doc_ids = [doc.doc_id] * len(chunks)
-                chunk_indices = [ch.index for ch in chunks]
-                source_urls = [doc.source_url] * len(chunks)
-                titles = [doc.title] * len(chunks)
-                spaces = [doc.space] * len(chunks)
-                doc_types = [doc.doc_type] * len(chunks)
-                
-                milvus.insert_chunks(
-                    embeddings=embeddings,
-                    chunk_ids=chunk_ids,
-                    chunk_texts=chunk_texts,
-                    doc_ids=doc_ids,
-                    chunk_indices=chunk_indices,
-                    source_urls=source_urls,
-                    titles=titles,
-                    spaces=spaces,
-                    doc_types=doc_types,
-                )
-                print(f"  → 向量数据已成功写入 Milvus 向量库")
-            processed_count += 1
+            docs = parse_file(file_path)
+            print(f"  → 解析完成，共 {len(docs)} 个文档")
+            for doc in docs:
+                if _index_document(
+                    doc, chunk_size=chunk_size, overlap=overlap,
+                    evidence_milvus=milvus, section_milvus=section_milvus,
+                    has_milvus=has_milvus,
+                ):
+                    processed_count += 1
             
         except Exception as e:
             print(f"  [Error] 处理文件时发生错误: {file_path}，错误详情: {e}")
@@ -185,6 +210,10 @@ def auto_process_raws(
         bm25_index_path = BM25Index.default_index_path()
         bm25.save(bm25_index_path)
         print(f"  → BM25 索引已更新并保存至: {bm25_index_path}")
+        section_bm25 = SectionBM25Index()
+        section_bm25.build_from_documents(str(DOCS_DIR))
+        section_bm25.save(SectionBM25Index.default_index_path())
+        print("  → Section BM25 索引已更新")
         print(f"\n [Finish] 自动解析入库任务完成！成功入库 {processed_count} 个文档。")
     else:
         print("\n [Info] 未有任何新文档成功处理入库。")

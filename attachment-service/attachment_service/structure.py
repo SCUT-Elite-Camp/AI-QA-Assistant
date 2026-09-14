@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import hashlib
 import re
 from pathlib import Path
 from typing import Any, Iterable, Protocol
+
+from shared_runtime.document_sections import normalize_section, stable_section_id
 
 
 class DocumentStructureProvider(Protocol):
@@ -16,9 +17,7 @@ class DocumentStructureProvider(Protocol):
 
 
 def _section_id(version_id: str, path: Iterable[str]) -> str:
-    value = " / ".join(path)
-    digest = hashlib.sha256(f"{version_id}:{value}".encode("utf-8")).hexdigest()[:20]
-    return f"sec_{digest}"
+    return stable_section_id(version_id, path)
 
 
 def _summary(items: list[dict[str, Any]], limit: int = 800) -> str:
@@ -236,4 +235,20 @@ def build_document_sections(
     provider: DocumentStructureProvider | None = None,
 ) -> list[dict[str, Any]]:
     """Build version-derived navigation rows without changing Evidence authority."""
-    return (provider or NativeStructureProvider()).build(path, attachment, evidence)
+    selected_provider = provider or NativeStructureProvider()
+    rows = selected_provider.build(path, attachment, evidence)
+    version_id = str(attachment.get("version_id") or attachment["id"])
+    title = str(attachment.get("filename") or attachment["id"])
+    metadata = attachment.get("metadata") if isinstance(attachment.get("metadata"), dict) else {}
+    ancestors = metadata.get("ancestor_path") or metadata.get("ancestors") or []
+    aliases = metadata.get("aliases") or []
+    return [
+        normalize_section(
+            row,
+            version_id=version_id,
+            document_title=title,
+            page_ancestor_path=ancestors if isinstance(ancestors, list) else [],
+            aliases=aliases if isinstance(aliases, list) else [],
+        )
+        for row in rows
+    ]

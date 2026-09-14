@@ -79,23 +79,27 @@ def chunk_from_blocks(
     if not blocks:
         return []
 
-    # 预渲染每个块为 Markdown
-    block_texts: list[str] = []
-    for cb in blocks:
+    # Keep original block positions so Evidence can be mapped to a Section
+    # without searching for a heading string inside arbitrary chunk text.
+    rendered_blocks: list[tuple[int, ContentBlock, str]] = []
+    for block_index, cb in enumerate(blocks):
         md = cb.to_markdown()
         if md:
-            block_texts.append(md)
+            rendered_blocks.append((block_index, cb, md))
 
-    if not block_texts:
+    if not rendered_blocks:
         return []
 
     chunks: list[Chunk] = []
     buffer: list[str] = []    # 当前累积的块文本列表
+    buffer_indices: list[int] = []
     buffer_len = 0            # 当前缓冲区的总字符数
+    heading_stack: list[tuple[int, str]] = []
+    current_section_path: list[str] = []
 
     def _flush(prefix: str = "") -> str:
         """将当前缓冲 flush 为一个 chunk，返回尾部 overlap 文本"""
-        nonlocal buffer, buffer_len
+        nonlocal buffer, buffer_indices, buffer_len
         if not buffer:
             return prefix or ""
         body = "\n\n".join(buffer)
@@ -104,17 +108,31 @@ def chunk_from_blocks(
             index=len(chunks),
             text=full_text,
             chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+            section_path=list(current_section_path),
+            block_start=min(buffer_indices) if buffer_indices else None,
+            block_end=max(buffer_indices) if buffer_indices else None,
         )
         chunks.append(chunk)
         # 计算重叠尾部
         tail = full_text[-overlap:] if len(full_text) > overlap else full_text
         buffer = []
+        buffer_indices = []
         buffer_len = 0
         return tail
 
     overlap_prefix = ""
 
-    for i, bt in enumerate(block_texts):
+    for block_index, content_block, bt in rendered_blocks:
+        if content_block.block_type.value == "heading":
+            # A heading starts a new semantic section. Never carry body text or
+            # overlap from its previous sibling into the new Evidence chunk.
+            _flush(overlap_prefix)
+            overlap_prefix = ""
+            level = max(1, min(6, int(content_block.level or 1)))
+            heading_stack = [entry for entry in heading_stack if entry[0] < level]
+            heading_stack.append((level, content_block.text.strip()))
+            current_section_path = [title for _, title in heading_stack]
+
         bt_len = len(bt)
         sep_len = 2 if buffer else 0  # "\n\n" 分隔符
 
@@ -122,14 +140,29 @@ def chunk_from_blocks(
         if bt_len > chunk_size:
             # 先 flush 当前缓冲
             overlap_prefix = _flush(overlap_prefix)
-            # 大块独立成 chunk
-            chunk = Chunk(
-                index=len(chunks),
-                text=bt,
-                chunk_id=f"{doc_id}_chunk_{len(chunks)}",
-            )
-            chunks.append(chunk)
-            overlap_prefix = bt[-overlap:] if len(bt) > overlap else bt
+            if content_block.block_type.value == "table":
+                # Tables remain atomic even when they exceed the target size.
+                chunks.append(Chunk(
+                    index=len(chunks),
+                    text=bt,
+                    chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+                    section_path=list(current_section_path),
+                    block_start=block_index,
+                    block_end=block_index,
+                ))
+                overlap_prefix = bt[-overlap:] if len(bt) > overlap else bt
+            else:
+                # Long prose is split only inside its current Section.
+                for part in chunk_text(bt, doc_id, chunk_size=chunk_size, overlap=overlap):
+                    chunks.append(Chunk(
+                        index=len(chunks),
+                        text=part.text,
+                        chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+                        section_path=list(current_section_path),
+                        block_start=block_index,
+                        block_end=block_index,
+                    ))
+                overlap_prefix = bt[-overlap:] if len(bt) > overlap else bt
             continue
 
         # 情况 2：加入当前块后可能超过限制 → flush
@@ -140,9 +173,11 @@ def chunk_from_blocks(
         # 情况 3：正常累积
         if buffer:
             buffer.append(bt)
+            buffer_indices.append(block_index)
             buffer_len += 2 + bt_len
         else:
             buffer.append(bt)
+            buffer_indices.append(block_index)
             buffer_len = bt_len
 
     # flush 剩余

@@ -18,6 +18,8 @@ from .document_tools import FindDocumentsTool, GetDocumentTool
 from .search_tool import SearchTool
 from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
 from .search_library_tool import SearchLibraryTool
+from .navigation_tools import BrowseDocumentOutlineTool, SearchEvidenceInScopeTool
+from .knowledge_graph_tool import SearchKnowledgeGraphTool
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -117,6 +119,7 @@ def _build_default_search_tool() -> SearchTool:
 
 def _build_default_tools() -> List[BaseTool]:
     search_tool = _build_default_search_tool()
+    library_tool = SearchLibraryTool() if _env_bool("PERSONAL_LIBRARY_ENABLED", False) else None
     tools: List[BaseTool] = [
         search_tool,
         FindDocumentsTool(search_tool),
@@ -124,8 +127,24 @@ def _build_default_tools() -> List[BaseTool]:
     ]
     if _env_bool("ATTACHMENTS_ENABLED"):
         tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
-    if _env_bool("PERSONAL_LIBRARY_ENABLED", False):
-        tools.append(SearchLibraryTool())
+    if library_tool is not None:
+        tools.append(library_tool)
+    if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool("HIERARCHICAL_NAVIGATION_ENABLED"):
+        tools.extend([
+            BrowseDocumentOutlineTool(search_tool, library_tool),
+            SearchEvidenceInScopeTool(search_tool, library_tool),
+        ])
+    if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool("KNOWLEDGE_NAVIGATION_ENABLED"):
+        from storage.knowledge_graph_store import KnowledgeGraphStore
+
+        graph_path = Path(os.getenv(
+            "KNOWLEDGE_GRAPH_DB_PATH",
+            str(PROJECT_ROOT / "data-persistence" / "data" / "knowledge_graph.sqlite3"),
+        ))
+        tools.append(SearchKnowledgeGraphTool(
+            KnowledgeGraphStore(graph_path),
+            enterprise_knowledge_base_id=os.getenv("ENTERPRISE_KNOWLEDGE_BASE_ID", "default"),
+        ))
     return tools
 
 

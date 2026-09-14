@@ -37,7 +37,7 @@ class FakeBackend:
 
 
 class SearchToolTest(unittest.TestCase):
-    def test_navigation_boosts_section_evidence_without_dropping_direct_reserve(self):
+    def test_legacy_navigation_mode_does_not_auto_search_sections(self):
         class NavigationBackend:
             def search(self, query, top_k, mode, filters=None):
                 return [
@@ -66,14 +66,16 @@ class SearchToolTest(unittest.TestCase):
                 rows = tool.search(
                     "special control", top_k=2, navigation_mode="hybrid",
                 )
-        self.assertEqual(rows[0]["chunk_id"], "c_scoped")
-        self.assertEqual({row["chunk_id"] for row in rows}, {"c_direct", "c_scoped"})
+        self.assertEqual([row["chunk_id"] for row in rows], ["c_direct"])
 
     def test_navigation_is_direct_when_feature_flag_is_disabled(self):
         tool = SearchTool(backend=FakeBackend())
         with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "false"}):
             rows = tool.search("query", top_k=2, navigation_mode="hierarchical")
         self.assertEqual(rows[0]["doc_id"], "doc_001")
+
+    def test_search_schema_does_not_advertise_automatic_navigation(self):
+        self.assertNotIn("navigation_mode", SearchTool(backend=FakeBackend()).parameters["properties"])
 
     def test_accepts_all_cp1_modes(self):
         backend = FakeBackend()

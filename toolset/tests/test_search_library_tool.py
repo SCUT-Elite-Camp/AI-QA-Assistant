@@ -47,7 +47,7 @@ def test_signed_context_is_injected_and_doc_ids_remain_scoped(monkeypatch):
     assert captured["navigation_mode"] == "direct"
 
 
-def test_navigation_mode_is_forwarded_only_when_rollout_gate_is_enabled(monkeypatch):
+def test_legacy_navigation_mode_is_never_forwarded_as_automatic_navigation(monkeypatch):
     secret = "test-secret"
     monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", secret)
     monkeypatch.setenv("HIERARCHICAL_NAVIGATION_ENABLED", "true")
@@ -63,7 +63,8 @@ def test_navigation_mode_is_forwarded_only_when_rollout_gate_is_enabled(monkeypa
     tool.set_request_context("user-a", "kb-a", token)
     tool.execute(query="risk", mode="bm25", navigation_mode="hierarchical")
 
-    assert captured["navigation_mode"] == "hierarchical"
+    assert captured["navigation_mode"] == "direct"
+    assert "navigation_mode" not in tool.parameters["properties"]
 
 
 def test_invalid_context_fails_closed(monkeypatch):
