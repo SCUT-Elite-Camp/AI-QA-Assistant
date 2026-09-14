@@ -106,16 +106,16 @@ function saveRevision() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="rounded-xl border border-primary/25 bg-primary/5 p-5">
+  <div class="space-y-5">
+    <div class="border-b border-default pb-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-wider text-primary">
-            等待你的确认
-          </p>
-          <h2 class="mt-1 text-xl font-bold text-highlighted">
-            研究计划 v{{ plan.version }}
+          <h2 class="text-lg font-semibold text-highlighted">
+            研究计划
           </h2>
+          <p class="mt-1 text-sm text-muted">
+            开始前，你可以检查或修改以下步骤。
+          </p>
         </div>
         <UBadge
           color="primary"
@@ -146,7 +146,7 @@ function saveRevision() {
       <article
         v-for="(task, index) in (editing ? tasks : plan.tasks)"
         :key="task.task_id"
-        class="rounded-xl border border-default bg-default p-4 shadow-sm"
+        class="border-b border-default py-4 last:border-b-0"
       >
         <div class="flex items-start gap-3">
           <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{{ index + 1 }}</span>
@@ -286,7 +286,7 @@ function saveRevision() {
 
     <div
       v-else
-      class="grid gap-3 rounded-xl border border-default bg-elevated/30 p-4 text-sm sm:grid-cols-3"
+      class="grid gap-3 border-y border-default py-4 text-sm sm:grid-cols-3"
     >
       <div>
         <p class="text-xs text-muted">

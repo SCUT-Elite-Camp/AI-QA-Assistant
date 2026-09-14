@@ -8,6 +8,7 @@ const props = defineProps<{
 }>()
 
 const citationMap = inject<ComputedRef<Map<number, ChunkCitation>>>('ragCitationMap')
+const openCitation = inject<((index: number) => void) | null>('openCitation', null)
 
 const citation = computed(() =>
   citationMap?.value?.get(Number(props.index)) ?? null
@@ -72,7 +73,10 @@ function keepOpen() {
 </script>
 
 <template>
-  <span ref="anchorRef" class="inline-block align-middle select-none">
+  <span
+    ref="anchorRef"
+    class="inline-block align-middle select-none"
+  >
     <!-- Circle badge matching UButton neutral outline rounded-full -->
     <UButton
       size="xs"
@@ -83,6 +87,7 @@ function keepOpen() {
       @mouseleave="hide"
       @focusin="show"
       @focusout="hide"
+      @click="openCitation?.(Number(index))"
     >
       {{ index }}
     </UButton>

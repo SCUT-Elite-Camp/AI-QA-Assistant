@@ -64,6 +64,9 @@ async def lifespan(app: FastAPI):
         database_path=settings.RESEARCH_DATABASE_PATH,
         checkpoint_path=settings.RESEARCH_CHECKPOINT_PATH,
         documents_dir=settings.RESEARCH_DOCUMENTS_DIR,
+        report_api_base=settings.LLM_API_BASE,
+        report_api_key=settings.LLM_API_KEY,
+        report_model=settings.LLM_MODEL,
     )
     app.state.research_runtime_service = research_runtime
     research_stop_event = asyncio.Event()

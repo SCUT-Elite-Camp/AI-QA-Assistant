@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scut-elite-camp.local/schemas/deep-research-run-record.v1.json",
+  "title": "CP2 Deep Research six-layer run record",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "run_id", "group", "case_id", "repeat", "environment", "request", "plan", "retrieval_hits", "observations", "verified_evidence", "claims", "report", "citations", "events", "runtime_metrics", "terminal_status", "failure_stage", "error"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "group": {"enum": ["G1", "G2", "G3"]},
+    "case_id": {"type": "string", "pattern": "^DR-A-[0-9]{3}$"},
+    "repeat": {"type": "integer", "minimum": 1},
+    "environment": {
+      "type": "object",
+      "required": ["git_commit", "git_dirty", "python_version", "docker_version", "provider", "model", "model_revision", "generation_config_hash", "prompt_hashes", "embedding_revision"],
+      "properties": {
+        "git_commit": {"type": "string"}, "git_dirty": {"type": "boolean"},
+        "python_version": {"type": "string"}, "docker_version": {"type": "string"},
+        "provider": {"type": "string"}, "model": {"type": "string"},
+        "model_revision": {"type": "string"}, "generation_config_hash": {"type": "string"},
+        "prompt_hashes": {"type": "object"}, "embedding_revision": {"type": "string"}
+      }
+    },
+    "request": {
+      "type": "object",
+      "required": ["question", "question_sha256", "manifest_hash", "allowed_document_ids", "forbidden_document_ids"],
+      "properties": {
+        "question": {"type": "string"}, "question_sha256": {"type": "string"},
+        "manifest_hash": {"type": "string"},
+        "allowed_document_ids": {"type": "array", "items": {"type": "string"}},
+        "forbidden_document_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "plan": {
+      "type": "object",
+      "required": ["tasks"],
+      "properties": {
+        "tasks": {"type": "array", "items": {"type": "object", "required": ["task_id", "query", "covers", "depends_on"], "properties": {"task_id": {"type": "string"}, "query": {"type": "string"}, "covers": {"type": "array", "items": {"type": "string"}}, "depends_on": {"type": "array", "items": {"type": "string"}}}}}
+      }
+    },
+    "retrieval_hits": {"type": "array", "items": {"type": "object", "required": ["rank", "doc_id"], "properties": {"rank": {"type": "integer", "minimum": 1}, "doc_id": {"type": "string"}, "chunk_id": {"type": ["string", "null"]}, "score": {"type": ["number", "null"]}, "search_path": {"type": ["string", "null"]}}}},
+    "observations": {"type": "array", "items": {"type": "object"}},
+    "verified_evidence": {"type": "array", "items": {"type": "object", "required": ["evidence_id", "doc_id", "document_version", "content_hash", "locator", "excerpt", "source_method", "supports_fact_ids"], "properties": {"evidence_id": {"type": "string"}, "doc_id": {"type": "string"}, "document_version": {"type": ["string", "null"]}, "content_hash": {"type": "string"}, "locator": {"type": "string"}, "excerpt": {"type": "string"}, "source_method": {"enum": ["read_document_range", "local_original_read", "unverified_search_hit"]}, "supports_fact_ids": {"type": "array", "items": {"type": "string"}}, "conflict_status": {"enum": ["none", "conflict", "version_evolution", "unknown"]}}}},
+    "claims": {"type": "array", "items": {"type": "object", "required": ["claim_id", "text", "factual", "evidence_ids"], "properties": {"claim_id": {"type": "string"}, "text": {"type": "string"}, "factual": {"type": "boolean"}, "evidence_ids": {"type": "array", "items": {"type": "string"}}}}},
+    "report": {"type": "object", "required": ["text", "behavior", "limitations_disclosed"], "properties": {"text": {"type": "string"}, "behavior": {"enum": ["answer", "degraded", "refuse", "request_more_information", "conflict_review"]}, "limitations_disclosed": {"type": "boolean"}}},
+    "citations": {"type": "array", "items": {"type": "object", "required": ["citation_id", "claim_ids", "evidence_ids", "doc_id", "locator", "source_url", "link_status", "supports_claim"], "properties": {"citation_id": {"type": "string"}, "claim_ids": {"type": "array", "items": {"type": "string"}}, "evidence_ids": {"type": "array", "items": {"type": "string"}}, "doc_id": {"type": "string"}, "locator": {"type": "string"}, "source_url": {"type": ["string", "null"]}, "link_status": {"enum": ["open", "not_applicable", "broken", "unchecked"]}, "supports_claim": {"type": "boolean"}}}},
+    "events": {"type": "array", "items": {"type": "object"}},
+    "runtime_metrics": {
+      "type": "object",
+      "required": ["total_latency_ms", "stage_latency_ms", "search_calls", "read_calls", "tool_calls", "input_tokens", "output_tokens", "retries", "fallbacks", "checkpoint_recoveries", "provider_failures"],
+      "properties": {
+        "total_latency_ms": {"type": "number", "minimum": 0}, "stage_latency_ms": {"type": "object"},
+        "search_calls": {"type": "integer", "minimum": 0}, "read_calls": {"type": "integer", "minimum": 0}, "tool_calls": {"type": "integer", "minimum": 0},
+        "input_tokens": {"type": "integer", "minimum": 0}, "output_tokens": {"type": "integer", "minimum": 0},
+        "retries": {"type": "integer", "minimum": 0}, "fallbacks": {"type": "integer", "minimum": 0},
+        "checkpoint_recoveries": {"type": "integer", "minimum": 0}, "provider_failures": {"type": "integer", "minimum": 0}
+      }
+    },
+    "model_judge": {"type": ["object", "null"]},
+    "terminal_status": {"enum": ["completed", "degraded", "refused", "failed", "timeout", "cancelled"]},
+    "failure_stage": {"type": ["string", "null"]},
+    "error": {"type": ["object", "null"]}
+  }
+}

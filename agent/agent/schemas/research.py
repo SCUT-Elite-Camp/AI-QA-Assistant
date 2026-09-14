@@ -116,6 +116,9 @@ class ResearchEventType(StrEnum):
     JOB_COMPLETED = "job_completed"
     JOB_FAILED = "job_failed"
     JOB_CANCELLED = "job_cancelled"
+    USER_MESSAGE = "user_message"
+    ASSISTANT_MESSAGE = "assistant_message"
+    CONFLICT_RESOLVED = "conflict_resolved"
 
 
 class ResearchContractModel(BaseModel):
@@ -356,6 +359,7 @@ class SourceManifestDocument(ResearchContractModel):
 
     doc_id: str = Field(min_length=1, max_length=200)
     title: str = Field(default="", max_length=500)
+    source_url: str | None = Field(default=None, max_length=2000)
     source_type: str = Field(default="local_document", min_length=1, max_length=80)
     authority: str = Field(default="internal", min_length=1, max_length=80)
     authority_rank: int = Field(default=0, ge=0, le=100)
@@ -368,6 +372,7 @@ class SourceManifestDocument(ResearchContractModel):
     @field_validator(
         "doc_id",
         "title",
+        "source_url",
         "source_type",
         "authority",
         "version",
@@ -604,6 +609,7 @@ class ResearchCitation(ResearchContractModel):
     evidence_ids: list[str] = Field(default_factory=list, max_length=50)
     doc_id: str = Field(min_length=1, max_length=200)
     title: str = Field(min_length=1, max_length=500)
+    source_url: str | None = Field(default=None, max_length=2000)
     source_type: str = Field(default="local_document", min_length=1, max_length=80)
     authority: str = Field(default="internal", min_length=1, max_length=80)
     authority_rank: int = Field(default=0, ge=0, le=100)
@@ -629,6 +635,9 @@ class ResearchConflictAlternative(ResearchContractModel):
     value_summary: str = Field(min_length=1, max_length=2_000)
     document_version: str | None = Field(default=None, max_length=200)
     effective_at: str | None = Field(default=None, max_length=100)
+    updated_at: str | None = Field(default=None, max_length=100)
+    authority: str = Field(default="internal", min_length=1, max_length=80)
+    authority_rank: int = Field(default=0, ge=0, le=100)
 
 
 class ResearchConflict(ResearchContractModel):
@@ -639,7 +648,9 @@ class ResearchConflict(ResearchContractModel):
     conflict_type: Literal["numeric", "version", "source"] = "source"
     summary: str = Field(min_length=1, max_length=2_000)
     alternatives: list[ResearchConflictAlternative] = Field(min_length=2, max_length=20)
-    resolution_status: Literal["unresolved", "resolved_by_authority"] = "unresolved"
+    resolution_status: Literal[
+        "unresolved", "resolved_by_authority", "resolved_by_user"
+    ] = "unresolved"
     resolution: str = Field(default="", max_length=2_000)
 
 

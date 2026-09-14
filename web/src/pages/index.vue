@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
 import { useChats } from '../composables/useChats'
 import { useCsrf } from '../composables/useCsrf'
 import { useUserSession } from '../composables/useUserSession'
 import Navbar from '../components/Navbar.vue'
 import WeightModeSelect from '../components/chat/WeightModeSelect.vue'
+import ResearchModeNotice from '../components/research/ResearchModeNotice.vue'
+import { useResearchLaunch } from '../composables/useResearchLaunch'
 
 const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
@@ -15,6 +17,8 @@ const input = ref('')
 const currentWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
 const loading = ref(false)
 const router = useRouter()
+const route = useRoute()
+const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
 
 
 const greeting = computed(() => {
@@ -50,13 +54,14 @@ async function createChat(prompt: string) {
   }
 }
 
-function onSubmit() {
+async function onSubmit() {
   const text = input.value
-  input.value = ''
   if (deepResearchMode.value && text.trim()) {
-    router.push({ path: '/research/new', query: { q: text.trim() } })
+    const launched = await launchResearch(text, selectedResearchDocumentIds.value)
+    if (launched) input.value = ''
     return
   }
+  input.value = ''
   createChat(text)
 }
 
@@ -71,7 +76,8 @@ const quickChats = [
 ]
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const deepResearchMode = ref(false)
+const deepResearchMode = ref(route.query.mode === 'research')
+const selectedResearchDocumentIds = ref<string[]>([])
 
 function triggerFileUpload() {
   fileInputRef.value?.click()
@@ -93,11 +99,6 @@ const plusMenuItems = computed(() => [[
     label: 'Upload File',
     icon: 'i-lucide-paperclip',
     onSelect: () => triggerFileUpload()
-  },
-  {
-    label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
-    icon: 'i-lucide-telescope',
-    onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
 ]])
 </script>
@@ -120,11 +121,11 @@ const plusMenuItems = computed(() => [[
 
         <UChatPrompt
           v-model="input"
-          :status="loading ? 'streaming' : 'ready'"
+          :status="loading || launchingResearch ? 'streaming' : 'ready'"
           class="[view-transition-name:chat-prompt] rounded-2xl shadow-md"
           variant="subtle"
           :ui="{ base: 'px-1.5' }"
-          placeholder="Ask me anything..."
+          :placeholder="deepResearchMode ? '输入研究问题，并添加本地知识库文件…' : 'Ask me anything...'"
           @submit="onSubmit"
         >
           <template #footer>
@@ -139,7 +140,15 @@ const plusMenuItems = computed(() => [[
               />
             </UDropdownMenu>
 
-            <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+            <UButton
+              :color="deepResearchMode ? 'primary' : 'neutral'"
+              :variant="deepResearchMode ? 'soft' : 'ghost'"
+              size="sm"
+              icon="i-lucide-telescope"
+              :label="deepResearchMode ? '深度研究' : '研究'"
+              class="rounded-lg"
+              @click="deepResearchMode = !deepResearchMode"
+            />
 
             <!-- Right: WeightMode + Submit -->
             <div class="ms-auto flex items-center gap-1">
@@ -148,6 +157,14 @@ const plusMenuItems = computed(() => [[
             </div>
           </template>
         </UChatPrompt>
+
+        <ResearchModeNotice
+          v-if="deepResearchMode"
+          v-model="selectedResearchDocumentIds"
+        />
+        <p v-if="researchLaunchError" class="text-sm text-error" role="alert">
+          {{ researchLaunchError }}
+        </p>
 
         <!-- Hidden file input -->
         <input ref="fileInputRef" type="file" accept=".txt,.md,.pdf,.docx,.json" class="hidden" @change="handleFileUpload" />

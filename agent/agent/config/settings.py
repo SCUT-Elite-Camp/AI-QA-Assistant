@@ -98,8 +98,6 @@ class Settings(BaseModel):
         ge=0.25,
         le=60.0,
     )
-
-
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
     MAX_MEMORY_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),

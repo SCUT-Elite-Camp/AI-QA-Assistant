@@ -1,0 +1,830 @@
+{
+  "schema_version": "1.0",
+  "manifest_set_id": "cp2-deep-research-manifests.v1",
+  "hash_contract": "research.v2 LocalDocumentResolver searchable_text + SourceManifest.calculate_hash",
+  "source_metadata": "data-pipeline/confluence_metadata_RAG.json",
+  "document_catalog": {
+    "049bdab7d5def55be3494f69a32e4432": {
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "title": "Sprint+2026-W28+Master+Delivery+Report",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:40:37.439Z",
+      "supersedes": [],
+      "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "page_id": "33980662"
+    },
+    "1e65fa842d26d7e7b9259d749ace380a": {
+      "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+      "title": "M4+-+Toolset+Module+Lifecycle+Archive",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:42:04.696Z",
+      "supersedes": [],
+      "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive",
+      "page_id": "34046257"
+    },
+    "2130586138d434591e7edf6d7580ee16": {
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "title": "Agent+Layer+CP2+Optimization+Plan",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "2",
+      "effective_at": null,
+      "updated_at": "2026-08-01T09:16:32.464Z",
+      "supersedes": [],
+      "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+      "page_id": "21135422"
+    },
+    "4789bcf073830a8985e95e33cde47767": {
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "title": "Sprint+2026-W30+Master+Delivery+Report",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:40:50.703Z",
+      "supersedes": [],
+      "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "page_id": "33980711"
+    },
+    "5206845e81108d7e4fd77581f0bf7bc5": {
+      "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+      "title": "M1+-+Agent+Module+Lifecycle+Archive",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:41:57.826Z",
+      "supersedes": [],
+      "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+      "page_id": "33947889"
+    },
+    "54892d2bcaa53239e12a0013a309806a": {
+      "doc_id": "54892d2bcaa53239e12a0013a309806a",
+      "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:41:46.172Z",
+      "supersedes": [],
+      "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+      "page_id": "34046225"
+    },
+    "6beeab4852cb7fb253d44fa305ff510f": {
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "title": "Sprint+2026-W34+Master+Delivery+Report",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:41:44.062Z",
+      "supersedes": [],
+      "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "page_id": "33947857"
+    },
+    "7a046574e728d8449133f24f98fbbbde": {
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "title": "CP2+-+Goals",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "17",
+      "effective_at": null,
+      "updated_at": "2026-09-03T12:02:06.459Z",
+      "supersedes": [],
+      "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "page_id": "26607617"
+    },
+    "7ac2cf3c61a7c81bb8acf2a43c45b10a": {
+      "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+      "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:42:02.690Z",
+      "supersedes": [],
+      "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+      "page_id": "34013443"
+    },
+    "833ac861944160a33080f47f6a0d0302": {
+      "doc_id": "833ac861944160a33080f47f6a0d0302",
+      "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:40:52.925Z",
+      "supersedes": [],
+      "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+      "page_id": "33947729"
+    },
+    "9d88faa9d3ccdde23ba29206a5487857": {
+      "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+      "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:41:33.344Z",
+      "supersedes": [],
+      "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+      "page_id": "33947825"
+    },
+    "a0f35f4075be8b80576727e78756952d": {
+      "doc_id": "a0f35f4075be8b80576727e78756952d",
+      "title": "Meeting+Minutes+of+2026+09+08",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-13T07:52:26.734Z",
+      "supersedes": [],
+      "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+      "page_id": "36339729"
+    },
+    "ce3e78a4ea9fe78044ad69ae4559f26f": {
+      "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+      "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-07-26T15:52:12.520Z",
+      "supersedes": [],
+      "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+      "page_id": "21495830"
+    },
+    "f592494c2ca41c77bfa2daafb223f679": {
+      "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+      "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+      "source_type": "confluence",
+      "authority": "internal",
+      "authority_rank": 100,
+      "version": "1",
+      "effective_at": null,
+      "updated_at": "2026-09-04T08:39:01.582Z",
+      "supersedes": [],
+      "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+      "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+      "page_id": "34045953"
+    }
+  },
+  "manifests": {
+    "DR-A-001": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-001",
+      "question_sha256": "10805c711f1651599fab70d6018cbb7ecebbc0bbc5225c96b46950b4d311bfae",
+      "manifest_hash": "ca61fddd4e4b7c75b03dd5cbd2727beead5851915c72c6edb24b9c1400bbd68b",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:46.172Z",
+          "supersedes": [],
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "page_id": "34046225"
+        },
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "supersedes": [],
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "page_id": "33947729"
+        }
+      ]
+    },
+    "DR-A-002": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-002",
+      "question_sha256": "16c84fcfea7a9baa4fcdd59696dad92cb41c4e6a2f2c3417b8d7e1eec52a429c",
+      "manifest_hash": "894bdc13b7ed75095af1f3475777d34d19b10c5d8659b1ab8c3057eb4530593c",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:46.172Z",
+          "supersedes": [],
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "page_id": "34046225"
+        },
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "supersedes": [],
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "page_id": "33947857"
+        }
+      ]
+    },
+    "DR-A-003": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-003",
+      "question_sha256": "b4dfb22f6f08fc896a91352a394b4093f711aaa0ec33e2313ead901ccf12c2ef",
+      "manifest_hash": "4d76d1cbf9a01bd2d476acf782dd44d029cb574790a79d8b18551fa092963303",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "supersedes": [],
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "page_id": "33947729"
+        }
+      ]
+    },
+    "DR-A-004": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-004",
+      "question_sha256": "1ee5597021223f89adedae897f327af7d2a39c39d7e0405cdc71b4d72e770891",
+      "manifest_hash": "159b9025799eaca8661c1d0811c6fd2ffc51a788ff99467cd53babf22aadcf37",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "title": "M1+-+Agent+Module+Lifecycle+Archive",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:57.826Z",
+          "supersedes": [],
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+          "page_id": "33947889"
+        },
+        {
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:39:01.582Z",
+          "supersedes": [],
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "page_id": "34045953"
+        }
+      ]
+    },
+    "DR-A-005": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-005",
+      "question_sha256": "76aaa9131b98fd950e9a6a31262ce50e235d1c82e1f15ff329bb5bd98a57877f",
+      "manifest_hash": "01a413d1c135431cf75543a6d85051d2171cedac5b805b56cee7a3409bab71f9",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "supersedes": [],
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "page_id": "36339729"
+        },
+        {
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-07-26T15:52:12.520Z",
+          "supersedes": [],
+          "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+          "page_id": "21495830"
+        }
+      ]
+    },
+    "DR-A-006": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-006",
+      "question_sha256": "31b8e57f472d3c707fd40989b5e4b491668036c14f835b0d49eddc640b170f26",
+      "manifest_hash": "692bfcd644b0a2b34bd8a76b9c962429987f47bbcdf7a65e3f3831856cf98df7",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "title": "Agent+Layer+CP2+Optimization+Plan",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "2",
+          "effective_at": null,
+          "updated_at": "2026-08-01T09:16:32.464Z",
+          "supersedes": [],
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+          "page_id": "21135422"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "17",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "supersedes": [],
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "page_id": "26607617"
+        }
+      ]
+    },
+    "DR-A-007": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-007",
+      "question_sha256": "d6b4bb9c9122322e4c94cd0c122b74636a03d701ab48bab8f67afb18100953e7",
+      "manifest_hash": "0f46f66c05a02b9e1e922254e94c025b85b023f029bcc701571541e09ec11ece",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "supersedes": [],
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "page_id": "33947857"
+        }
+      ]
+    },
+    "DR-A-008": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-008",
+      "question_sha256": "01729758f6b2eb75a8042ffaba8c3cecea7fc84d93ab6abd9763154ee0a50b33",
+      "manifest_hash": "50cb19d92fc2458f1521e809c0ed10db20a7da49dabdac8b65a6587d1c1f129b",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "title": "Agent+Layer+CP2+Optimization+Plan",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "2",
+          "effective_at": null,
+          "updated_at": "2026-08-01T09:16:32.464Z",
+          "supersedes": [],
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+          "page_id": "21135422"
+        },
+        {
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "title": "M1+-+Agent+Module+Lifecycle+Archive",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:57.826Z",
+          "supersedes": [],
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+          "page_id": "33947889"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "supersedes": [],
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "page_id": "36339729"
+        }
+      ]
+    },
+    "DR-A-009": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-009",
+      "question_sha256": "e09a978bcc3041726d822618a85fdf7777a65161675c7b9bafcf5be879f8de0b",
+      "manifest_hash": "e2116745c202c73d926e84fb9b8c2692233d0ae2e3125ae1e82b6b01947a055e",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "title": "Sprint+2026-W28+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:37.439Z",
+          "supersedes": [],
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+          "page_id": "33980662"
+        },
+        {
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "title": "Sprint+2026-W30+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:50.703Z",
+          "supersedes": [],
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+          "page_id": "33980711"
+        },
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "supersedes": [],
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "page_id": "33947857"
+        }
+      ]
+    },
+    "DR-A-010": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-010",
+      "question_sha256": "0900129e8e78cd5caf5bd88491f78c54bea7242120043a119f5e4c0944b4408c",
+      "manifest_hash": "4d76d1cbf9a01bd2d476acf782dd44d029cb574790a79d8b18551fa092963303",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "supersedes": [],
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "page_id": "33947729"
+        }
+      ]
+    },
+    "DR-A-011": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-011",
+      "question_sha256": "771d9f8e80e8fa50590be3aaee9456f5afab983ca6436212eecc5ee711bca19e",
+      "manifest_hash": "0f46f66c05a02b9e1e922254e94c025b85b023f029bcc701571541e09ec11ece",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "supersedes": [],
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "page_id": "33947857"
+        }
+      ]
+    },
+    "DR-A-012": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-012",
+      "question_sha256": "fef459f7508c5893c7ea1f2eb1027b0041e1907738f0ec58dc3b5a7b7fb9dec2",
+      "manifest_hash": "d1ee72e0f1a21a8af6bb1f27322c09209cb9f862f4f673ffa88adbec1430b07c",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "17",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "supersedes": [],
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "page_id": "26607617"
+        }
+      ]
+    },
+    "DR-A-013": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-013",
+      "question_sha256": "f4374201797130d7bc5cd338c939b9f3d9928b72ee48f10e113c2fa5b1d1e405",
+      "manifest_hash": "4d76d1cbf9a01bd2d476acf782dd44d029cb574790a79d8b18551fa092963303",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "supersedes": [],
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "page_id": "33947729"
+        }
+      ]
+    },
+    "DR-A-014": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-014",
+      "question_sha256": "a7f2755667b4754455e24c5f9bb258b1874d19dc17194c8e08216246ee401f04",
+      "manifest_hash": "cc49244926b657646138b31400ac3fa62ec4e9a97bfb7d764a9955bb5235226c",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "title": "Sprint+2026-W28+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:37.439Z",
+          "supersedes": [],
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+          "page_id": "33980662"
+        },
+        {
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "title": "Sprint+2026-W30+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:50.703Z",
+          "supersedes": [],
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+          "page_id": "33980711"
+        },
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "supersedes": [],
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "page_id": "33947857"
+        },
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "supersedes": [],
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "page_id": "33947729"
+        }
+      ]
+    },
+    "DR-A-015": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-015",
+      "question_sha256": "92d855c044ee6dfe8bf83536063e87c1c609f8c6b849e56a3d88ab445b8a1c2f",
+      "manifest_hash": "bf54bfa240a8e38c4da2a16cc27b0300420641ca204623b37ec9ad5398864778",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:33.344Z",
+          "supersedes": [],
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "page_id": "33947825"
+        }
+      ]
+    },
+    "DR-A-016": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-016",
+      "question_sha256": "209c229a820431b2230b53946fe0e77250804ca13fa0471b77ac18218144c64c",
+      "manifest_hash": "159b9025799eaca8661c1d0811c6fd2ffc51a788ff99467cd53babf22aadcf37",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "title": "M1+-+Agent+Module+Lifecycle+Archive",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:57.826Z",
+          "supersedes": [],
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+          "page_id": "33947889"
+        },
+        {
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:39:01.582Z",
+          "supersedes": [],
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "page_id": "34045953"
+        }
+      ]
+    },
+    "DR-A-017": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-017",
+      "question_sha256": "698a9db4e4307d72a1f34d629d0a93340dcad84aec74ca083b268a62a76381fe",
+      "manifest_hash": "77edd8f09d93a65dd15e4af3b135345c77e1e4d17ac938fd3210bc36692cf0d7",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "title": "M4+-+Toolset+Module+Lifecycle+Archive",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:42:04.696Z",
+          "supersedes": [],
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive",
+          "page_id": "34046257"
+        },
+        {
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:42:02.690Z",
+          "supersedes": [],
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+          "page_id": "34013443"
+        }
+      ]
+    },
+    "DR-A-018": {
+      "schema_version": "research.v2",
+      "research_id": "DR-A-018",
+      "question_sha256": "e87a76060dfd7d41fa80b79021517d7fde12680c5bf7bc1dcc78df11c46c5f86",
+      "manifest_hash": "a2f718181a05e2192cfcc6cf9bd5cba7b525a5ca2fd34e19a5ec4050b651ff92",
+      "created_at": "2026-09-14T19:49:53+08:00",
+      "documents": [
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "17",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "supersedes": [],
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "page_id": "26607617"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_type": "confluence",
+          "authority": "internal",
+          "authority_rank": 100,
+          "version": "1",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "supersedes": [],
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "source_url": "https://huifengagent.atlassian.net/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "page_id": "36339729"
+        }
+      ]
+    }
+  }
+}

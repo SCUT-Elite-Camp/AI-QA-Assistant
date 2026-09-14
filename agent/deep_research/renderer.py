@@ -47,6 +47,7 @@ class MarkdownReportRenderer:
         limitations: Iterable[str] = (),
         title: str | None = None,
         report_id: str | None = None,
+        language: str | None = None,
     ) -> ResearchReport:
         # Repository insertion timestamps are operational metadata, not a
         # presentation order.  Recovery/replay can persist otherwise identical
@@ -231,8 +232,13 @@ class MarkdownReportRenderer:
                 version = f" · {item.document_version}" if item.document_version else ""
                 metadata = source_metadata.get(item.doc_id)
                 display_title = metadata.title if metadata and metadata.title else item.doc_id
+                display_link = (
+                    f"[{display_title}]({metadata.source_url})"
+                    if metadata and metadata.source_url
+                    else f"**{display_title}**"
+                )
                 lines.append(
-                    f"{number}. **{display_title}**{version} · {item.locator}"
+                    f"{number}. {display_link}{version} · {item.locator}"
                 )
         else:
             lines.append("- 未记录可引用来源。")
@@ -289,6 +295,7 @@ class MarkdownReportRenderer:
             evidence_ids=evidence_ids,
             doc_id=evidence.doc_id,
             title=(metadata.title if metadata and metadata.title else evidence.doc_id),
+            source_url=(metadata.source_url if metadata else None),
             source_type=(metadata.source_type if metadata else "local_document"),
             authority=(metadata.authority if metadata else "internal"),
             authority_rank=(metadata.authority_rank if metadata else 0),
@@ -331,6 +338,9 @@ class MarkdownReportRenderer:
                         value_summary=cls._clean_display_text(item.excerpt),
                         document_version=item.document_version,
                         effective_at=(metadata.effective_at if metadata else None),
+                        updated_at=(metadata.updated_at if metadata else None),
+                        authority=(metadata.authority if metadata else "internal"),
+                        authority_rank=(metadata.authority_rank if metadata else 0),
                     )
                 )
             if len(alternatives) < 2:
@@ -349,6 +359,12 @@ class MarkdownReportRenderer:
                 if len(number_sets) > 1
                 else "source"
             )
+            source_names = "与".join(
+                f"《{item.source_title}》" for item in alternatives[:2]
+            )
+            type_label = {"version": "版本", "numeric": "数值", "source": "表述"}[
+                conflict_type
+            ]
             ranked = sorted(
                 (
                     (metadata.authority_rank if metadata else 0, item, metadata)
@@ -370,7 +386,7 @@ class MarkdownReportRenderer:
                         "conflict-"
                         + hashlib.sha256(claim.claim_id.encode("utf-8")).hexdigest()[:16]
                     ),
-                    subject=cls._clean_display_text(claim.claim_text),
+                    subject=f"{source_names}的{type_label}差异",
                     conflict_type=conflict_type,
                     summary="多个来源对同一研究问题给出了不一致的信息。",
                     alternatives=alternatives,

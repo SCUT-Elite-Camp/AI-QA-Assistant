@@ -13,10 +13,10 @@ export const useFavorites = createSharedComposable(() => {
       favoriteChats.value = data.map(c => ({
         id: c.id,
         label: c.title || 'Untitled',
-        to: `/chat/${c.id}`,
+        to: c.id.startsWith('research-') ? `/research/${c.id}` : `/chat/${c.id}`,
         lastFavoritedAt: c.lastFavoritedAt || c.updatedAt || ''
       }))
-    } catch (e) {
+    } catch {
       favoriteChats.value = []
     } finally {
       loading.value = false

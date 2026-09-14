@@ -13,8 +13,9 @@ from agent.schemas.research import ClaimVerificationStatus
 
 from .dispatcher import DurableDispatcher
 from .manifest import LocalDocumentResolver
+from .model_report import EvidenceReportSynthesizer
 from .pipeline import ResearchIntelligencePipeline
-from .planner import ResearchPlanner
+from .planner import ModelResearchPlanner, ResearchPlanner
 from .repository import SQLiteResearchRepository
 from .runtime import ResearchGraphRuntime
 from .service import ApprovedResearchContext, ResearchControlPlane
@@ -35,6 +36,7 @@ class ResearchRuntimeService:
         semantic_verifier: SemanticVerifier | None = None,
         ledger: ResearchLedger | None = None,
         stage_hook: Callable[[str, str], None] | None = None,
+        renderer=None,
         checkpoint_connection: sqlite3.Connection | None = None,
         owns_repository: bool = False,
     ) -> None:
@@ -46,6 +48,7 @@ class ResearchRuntimeService:
             control_plane,
             tool_adapter,
             semantic_verifier=semantic_verifier,
+            renderer=renderer,
             ledger=ledger,
         )
         self.runtime = ResearchGraphRuntime(
@@ -72,6 +75,9 @@ class ResearchRuntimeService:
         semantic_statuses: dict[str, ClaimVerificationStatus | str] | None = None,
         ledger: ResearchLedger | None = None,
         stage_hook: Callable[[str, str], None] | None = None,
+        report_api_base: str = "",
+        report_api_key: str = "",
+        report_model: str = "",
     ) -> "ResearchRuntimeService":
         """Build a durable, network-free runtime over fixed local documents."""
 
@@ -80,10 +86,19 @@ class ResearchRuntimeService:
         checkpoint_path = Path(checkpoint_path or database_path.with_suffix(".graph.db"))
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         repository = SQLiteResearchRepository(database_path)
+        active_planner = planner or (
+            ModelResearchPlanner(
+                api_base=report_api_base,
+                api_key=report_api_key,
+                model=report_model,
+            )
+            if report_api_base and report_model
+            else None
+        )
         control_plane = ResearchControlPlane(
             repository,
             source_resolver=LocalDocumentResolver(documents_dir),
-            planner=planner,
+            planner=active_planner,
             id_factory=id_factory,
         )
         adapter = LocalResearchToolAdapter(
@@ -107,6 +122,15 @@ class ResearchRuntimeService:
             semantic_verifier=verifier,
             ledger=ledger,
             stage_hook=stage_hook,
+            renderer=(
+                EvidenceReportSynthesizer(
+                    api_base=report_api_base,
+                    api_key=report_api_key,
+                    model=report_model,
+                )
+                if report_api_base and report_model
+                else None
+            ),
             checkpoint_connection=checkpoint_connection,
             owns_repository=True,
         )

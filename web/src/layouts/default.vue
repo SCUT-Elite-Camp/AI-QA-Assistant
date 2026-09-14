@@ -271,10 +271,6 @@ defineShortcuts({
             label: 'Favorites',
             to: '/favorites',
             icon: 'i-lucide-star'
-          }, {
-            label: 'Deep Research',
-            to: '/research/new',
-            icon: 'i-lucide-telescope'
           }]"
           :collapsed="collapsed"
           orientation="vertical"
@@ -340,11 +336,11 @@ defineShortcuts({
                   :key="chat.id"
                   draggable="true"
                   class="group relative flex items-center ml-5 rounded-lg px-2 py-1.5 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
-                  :class="{ 'bg-accented': route.path === `/chat/${chat.id}` }"
-                  @click="router.push(`/chat/${chat.id}`)"
+                  :class="{ 'bg-accented': route.path === chat.to }"
+                  @click="router.push(chat.to)"
                   @dragstart="handleDragStart(chat.id, $event)"
                 >
-                  <UIcon name="i-lucide-message-circle" class="w-3 h-3 text-muted shrink-0 mr-1.5" />
+                  <UIcon :name="chat.icon" class="w-3 h-3 text-muted shrink-0 mr-1.5" />
                   <span class="flex-1 truncate text-xs" :class="chat.label === 'Untitled' ? 'text-muted' : ''">
                     {{ chat.label || 'Untitled' }}
                   </span>
@@ -387,10 +383,11 @@ defineShortcuts({
               :key="chat.id"
               draggable="true"
               class="group relative flex items-center rounded-lg px-1.5 py-1.5 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
-              :class="{ 'bg-accented': route.path === `/chat/${chat.id}` }"
-              @click="router.push(`/chat/${chat.id}`)"
+              :class="{ 'bg-accented': route.path === chat.to }"
+              @click="router.push(chat.to)"
               @dragstart="handleDragStart(chat.id, $event)"
             >
+              <UIcon :name="chat.icon" class="mr-1.5 size-3.5 shrink-0 text-muted" />
               <span class="flex-1 truncate" :class="chat.label === 'Untitled' ? 'text-muted' : ''">
                 {{ chat.label?.replace(/^🌱\s*/, '') || 'Untitled' }}
               </span>

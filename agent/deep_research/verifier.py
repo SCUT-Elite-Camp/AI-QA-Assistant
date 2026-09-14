@@ -76,6 +76,7 @@ class DeterministicSemanticVerifier:
         if (
             claim_numbers
             and len(selected) > 1
+            and self._same_subject(selected)
             and any(claim_numbers & numbers for numbers in evidence_number_sets)
             and len({tuple(sorted(numbers)) for numbers in evidence_number_sets}) > 1
         ):
@@ -113,6 +114,16 @@ class DeterministicSemanticVerifier:
             evidence_ids=[item.evidence_id for item in selected],
             reason=reason,
         )
+
+    @classmethod
+    def _same_subject(cls, evidence: list[VerifiedEvidence]) -> bool:
+        token_sets = [cls._tokens(item.excerpt) for item in evidence]
+        for index, left in enumerate(token_sets):
+            for right in token_sets[index + 1:]:
+                smaller = min(len(left), len(right))
+                if smaller >= 4 and len(left & right) / smaller >= 0.35:
+                    return True
+        return False
 
     def verify_many(
         self,
