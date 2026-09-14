@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "baseline_id": "cp2-deep-research-a-v1",
+  "frozen_at": "2026-09-14T19:49:53+08:00",
+  "dataset_version": "cases.v1",
+  "generation_config_sha256": "e239f3dd0c00ae78fc68370a92f32ae409c1735766e050f9565ca77930229e1f",
+  "repository": {
+    "url": "https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/",
+    "branch": "agent-dev",
+    "head_commit": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
+    "working_tree_dirty_at_freeze": false,
+    "note": "A-side assets are based on origin/agent-dev immediately before their own commit.",
+    "working_tree_status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "implementation": {
+    "g1": {
+      "entry": "Fast Chat",
+      "required_path": "agent/agent/api/chat_routes.py",
+      "available_on_frozen_head": true
+    },
+    "g2": {
+      "entry": "Current Deep Research",
+      "required_path": "agent/deep_research",
+      "available_on_frozen_head": true
+    },
+    "g3": {
+      "entry": "Deep Research + Page Index",
+      "required_path": "agent/deep_research",
+      "available_on_frozen_head": false
+    },
+    "research_reference": {
+      "git_ref": "origin/agent-dev",
+      "commit": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
+      "contract_schema": "research.v2"
+    }
+  },
+  "generation": {
+    "provider": "openai-compatible",
+    "api_base": "http://127.0.0.1:11434/v1",
+    "model": "llama3.1",
+    "model_revision": "provider-reported-required-per-run",
+    "temperature": 0.1,
+    "top_p": 1.0,
+    "top_p_source": "provider_default_not_sent_by_current_client",
+    "max_tokens": 2000,
+    "timeout_seconds": 60,
+    "fallback_policy": "no_silent_provider_or_model_substitution; record any fallback and exclude mixed-provider aggregates"
+  },
+  "prompts": {
+    "g1_answer": {
+      "path": "agent/agent/prompt/templates.py",
+      "sha256": "e66ae8f3400c82e11949d34d43d88fce8fe2bb24fed3799fcd5643ba081cacce",
+      "assembly_path": "agent/agent/runtime/runner.py",
+      "assembly_sha256": "f6ea239b71631e18dce6046f9b8edc06f877abdb83d9e01971c651876073f516"
+    },
+    "planner": {
+      "path": "agent/deep_research/planner.py",
+      "git_ref": "origin/agent-dev",
+      "sha256": "4e6603c72bae1351fcbfcef69ac89c8d7f09b31073cc1df216688cbc81b8f0c5"
+    },
+    "worker": {
+      "path": "agent/deep_research/worker.py",
+      "git_ref": "origin/agent-dev",
+      "sha256": "b8064a8d88a29a47f3d060363798d08d77aefb394f52999b66ab3b471810d1fb"
+    },
+    "report": {
+      "path": "agent/deep_research/renderer.py",
+      "git_ref": "origin/agent-dev",
+      "sha256": "c4384ea5c47b3ee2ded367b675233d5a616ce1b56e1de038bf001e562ddf9552"
+    },
+    "judge": {
+      "path": "eval/deep_research_a/prompts/model_judge.v1.md",
+      "version": "judge.v1"
+    }
+  },
+  "retrieval": {
+    "mode": "hybrid",
+    "top_k": 5,
+    "candidate_limit": "max(top_k*5,20)",
+    "rrf_k": 60,
+    "min_score": 0.0,
+    "chunk_size_chars": 500,
+    "chunk_overlap_chars": 100,
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "embedding_revision": "local-cache-revision-required-per-run",
+    "rerank": {
+      "enabled": false,
+      "note": "Current default SearchTool uses hybrid BM25+Milvus RRF without reranker injection."
+    },
+    "fallback": {
+      "g1_g2": "none_silent",
+      "g3": "page_index_unavailable_must_be_recorded_as_fallback"
+    },
+    "permission_filter": "SourceManifest document_ids must be injected as the hard doc_ids allowlist"
+  },
+  "experiment": {
+    "groups": [
+      {
+        "id": "G1",
+        "name": "Fast Chat",
+        "page_index": false
+      },
+      {
+        "id": "G2",
+        "name": "Current Deep Research",
+        "page_index": false
+      },
+      {
+        "id": "G3",
+        "name": "Deep Research + Page Index",
+        "page_index": true
+      }
+    ],
+    "repeats_per_case": 3,
+    "invariants": [
+      "question_sha256",
+      "manifest_hash",
+      "allowed_document_ids",
+      "forbidden_document_ids",
+      "generation_config_hash",
+      "source_versions"
+    ],
+    "provider_failure_policy": "retain failed run; never silently reroute into the same aggregate"
+  },
+  "environment": {
+    "os": "Windows",
+    "shell": "PowerShell",
+    "python": "3.x-record-exact-version-per-run",
+    "docker_required": true,
+    "milvus": "2.3.15",
+    "confluence_space": "RAG",
+    "confluence_snapshot_metadata": "data-pipeline/confluence_metadata_RAG.json",
+    "document_catalog": "data-persistence/data/documents"
+  }
+}
