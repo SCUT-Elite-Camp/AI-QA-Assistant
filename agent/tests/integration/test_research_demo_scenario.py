@@ -46,7 +46,7 @@ def test_policy_conflict_demo_exercises_the_cp2_core_chain(tmp_path: Path) -> No
         assert planned.status == ResearchJobStatus.AWAITING_APPROVAL
         assert plan.manifest_hash == manifest.manifest_hash == planned.manifest_hash
         assert [task.max_actions for task in plan.tasks] == [2, 4, 2]
-        assert "FAQ页面" in plan.tasks[1].question
+        assert "财务 FAQ" in plan.tasks[1].question
 
         service.control_plane.approve_job(
             job.research_id,
