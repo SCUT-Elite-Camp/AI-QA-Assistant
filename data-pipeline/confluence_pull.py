@@ -54,6 +54,30 @@ logger = logging.getLogger("confluence_pull")
 
 # ───────────────────────────── 配置加载 ─────────────────────────────
 
+def normalize_confluence_base(base: str) -> str:
+    """Normalize a Confluence Cloud site root to its REST/UI ``/wiki`` base."""
+    normalized = base.strip().rstrip("/")
+    if normalized.endswith(".atlassian.net"):
+        return f"{normalized}/wiki"
+    return normalized
+
+
+def build_source_url(base: str, webui: str | None, page_id: str) -> str:
+    """Build a browser URL without dropping Confluence Cloud's ``/wiki`` prefix."""
+    normalized_base = normalize_confluence_base(base)
+    site_root = normalized_base.removesuffix("/wiki")
+    if not webui:
+        return f"{normalized_base}/pages/{page_id}"
+
+    normalized_webui = webui.strip()
+    if normalized_webui.startswith("http://") or normalized_webui.startswith("https://"):
+        return normalized_webui
+    if normalized_webui.startswith("/wiki/"):
+        return f"{site_root}{normalized_webui}"
+    if normalized_webui.startswith("/"):
+        return f"{normalized_base}{normalized_webui}"
+    return f"{normalized_base}/{normalized_webui}"
+
 def load_creds() -> dict:
     """从 .confluence.env 加载 Confluence API 凭据"""
     creds: dict = {}
@@ -65,7 +89,7 @@ def load_creds() -> dict:
             k, v = line.split("=", 1)
             creds[k.strip()] = v.strip().strip('"').strip("'")
     return {
-        "base": creds["CONFLUENCE_BASE"],
+        "base": normalize_confluence_base(creds["CONFLUENCE_BASE"]),
         "email": creds["CONFLUENCE_EMAIL"],
         "token": creds["CONFLUENCE_TOKEN"],
     }
@@ -187,7 +211,6 @@ def main() -> None:
 
     creds = load_creds()
     base = creds["base"]
-    domain = base.split("/wiki")[0]
 
     session = requests.Session()
     session.auth = (creds["email"], creds["token"])
@@ -220,6 +243,7 @@ def main() -> None:
                 session, base, f"/rest/api/content/{pid}",
                 {"expand": "body.view,version,history"},
             )
+            title = detail.get("title") or title
             body_html = detail.get("body", {}).get("view", {}).get("value", "")
             version = detail.get("version", {}).get("number")
             last_updated = (
@@ -230,7 +254,7 @@ def main() -> None:
                 detail.get("_links", {}).get("webui")
                 or pg.get("_links", {}).get("webui")
             )
-            source_url = (domain + webui) if webui else f"{domain}/wiki/pages/{pid}"
+            source_url = build_source_url(base, webui, pid)
 
             # 2. ★ Stream 直连：HtmlParser.parse_string() 直接解析 HTML → [主文档, *附件文档]
             from parsers.html_parser import HtmlParser
