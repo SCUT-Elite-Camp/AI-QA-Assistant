@@ -74,10 +74,9 @@ class DeterministicSemanticVerifier:
         # numeric Claim, preserve the conflict before checking whether one
         # excerpt happens to contain the claimed value.
         if (
-            claim_numbers
-            and len(selected) > 1
+            len(selected) > 1
+            and all(evidence_number_sets)
             and self._same_subject(selected)
-            and any(claim_numbers & numbers for numbers in evidence_number_sets)
             and len({tuple(sorted(numbers)) for numbers in evidence_number_sets}) > 1
         ):
             return VerificationResult(
