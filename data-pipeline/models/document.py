@@ -1,9 +1,11 @@
 import hashlib
+import html
 import os
 from datetime import datetime, timezone
 from enum import StrEnum
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class BlockType(StrEnum):
@@ -14,6 +16,108 @@ class BlockType(StrEnum):
     LIST = "list"
 
 
+class BoundingBox(BaseModel):
+    """Page-relative table or cell coordinates."""
+
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+    @model_validator(mode="after")
+    def validate_extents(self) -> "BoundingBox":
+        if self.x1 < self.x0 or self.y1 < self.y0:
+            raise ValueError("bbox maximum coordinates must not precede minimum coordinates")
+        return self
+
+
+class TableCell(BaseModel):
+    row_index: int = Field(ge=0)
+    column_index: int = Field(ge=0)
+    text: str = ""
+    row_span: int = Field(default=1, ge=1)
+    column_span: int = Field(default=1, ge=1)
+    is_header: bool = False
+    bbox: BoundingBox | None = None
+
+
+class TableArtifact(BaseModel):
+    """Canonical table representation, preserving parser provenance."""
+
+    table_id: str
+    cells: list[TableCell] = Field(default_factory=list)
+    row_count: int = Field(ge=0)
+    column_count: int = Field(ge=0)
+    header_row_count: int = Field(default=0, ge=0)
+    caption: str = ""
+    page_number: int | None = Field(default=None, ge=1)
+    source_pages: list[int] = Field(default_factory=list)
+    source_table_ids: list[str] = Field(default_factory=list)
+    bbox: BoundingBox | None = None
+    parser_name: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    backend_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    quality_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    quality_evidence: dict[str, float] = Field(default_factory=dict)
+    acceptance: Literal["accepted", "review", "rejected"] = "review"
+    image_path: str = ""
+    warnings: list[str] = Field(default_factory=list)
+    elapsed_ms: float | None = Field(default=None, ge=0.0)
+
+    @model_validator(mode="after")
+    def validate_shape(self) -> "TableArtifact":
+        if self.header_row_count > self.row_count:
+            raise ValueError("header_row_count cannot exceed row_count")
+        for cell in self.cells:
+            if cell.row_index + cell.row_span > self.row_count:
+                raise ValueError("cell row span exceeds table bounds")
+            if cell.column_index + cell.column_span > self.column_count:
+                raise ValueError("cell column span exceeds table bounds")
+        if not self.source_pages and self.page_number is not None:
+            self.source_pages = [self.page_number]
+        if not self.source_table_ids:
+            self.source_table_ids = [self.table_id]
+        return self
+
+    def to_matrix(self) -> list[list[str]]:
+        matrix = [["" for _ in range(self.column_count)] for _ in range(self.row_count)]
+        for cell in self.cells:
+            for row_index in range(cell.row_index, cell.row_index + cell.row_span):
+                for column_index in range(cell.column_index, cell.column_index + cell.column_span):
+                    matrix[row_index][column_index] = cell.text
+        return matrix
+
+    def header_rows(self) -> list[list[str]]:
+        return self.to_matrix()[: self.header_row_count]
+
+    def body_rows(self) -> list[list[str]]:
+        return self.to_matrix()[self.header_row_count :]
+
+    def legacy_headers(self) -> list[str]:
+        return [" / ".join(part for part in column if part) for column in zip(*self.header_rows())] if self.header_row_count else []
+
+    def to_markdown(self) -> str:
+        return _table_to_markdown(self.body_rows(), self.legacy_headers())
+
+    def to_html(self) -> str:
+        lines = [f'<table data-table-id="{html.escape(self.table_id, quote=True)}">']
+        if self.caption:
+            lines.append(f"  <caption>{html.escape(self.caption)}</caption>")
+        for row_index in range(self.row_count):
+            lines.append("  <tr>")
+            for cell in sorted((item for item in self.cells if item.row_index == row_index), key=lambda item: item.column_index):
+                tag = "th" if cell.is_header or row_index < self.header_row_count else "td"
+                spans = (f' rowspan="{cell.row_span}"' if cell.row_span > 1 else "") + (f' colspan="{cell.column_span}"' if cell.column_span > 1 else "")
+                lines.append(f"    <{tag}{spans}>{html.escape(cell.text).replace(chr(10), '<br>')}</{tag}>")
+            lines.append("  </tr>")
+        lines.append("</table>")
+        return "\n".join(lines)
+
+    def to_row_chunks(self) -> list[str]:
+        headers = self.legacy_headers()
+        return [" | ".join(f"{headers[index]}: {value.strip()}" if index < len(headers) and headers[index] else value.strip() for index, value in enumerate(row) if value.strip()) for row in self.body_rows()]
+
+
 class ContentBlock(BaseModel):
     """文档中的一个结构化内容块：段落、标题、表格、列表等"""
     block_type: BlockType
@@ -21,15 +125,25 @@ class ContentBlock(BaseModel):
     text: str = ""                 # 段落/标题/列表项的纯文本
     rows: list[list[str]] = Field(default_factory=list)    # 表格数据
     headers: list[str] = Field(default_factory=list)        # 表格列头
+    table: TableArtifact | None = None
     bold: bool = False
     italic: bool = False
     locator: dict = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def derive_legacy_table_fields(self) -> "ContentBlock":
+        if self.block_type == BlockType.TABLE and self.table is not None:
+            if not self.headers:
+                self.headers = self.table.legacy_headers()
+            if not self.rows:
+                self.rows = self.table.body_rows()
+        return self
 
     @property
     def is_empty(self) -> bool:
         """判断该块是否无有效内容"""
         if self.block_type == BlockType.TABLE:
-            return not self.rows and not self.headers
+            return self.table is None and not self.rows and not self.headers
         return not self.text.strip()
 
     def to_markdown(self) -> str:
@@ -38,7 +152,7 @@ class ContentBlock(BaseModel):
             level = max(1, min(6, self.level))
             return f"{'#' * level} {self.text}"
         elif self.block_type == BlockType.TABLE:
-            return _table_to_markdown(self.rows, self.headers)
+            return self.table.to_markdown() if self.table is not None else _table_to_markdown(self.rows, self.headers)
         elif self.block_type == BlockType.LIST:
             return f"- {self.text}"
         elif self.block_type == BlockType.PARAGRAPH:
@@ -83,6 +197,8 @@ class Chunk(BaseModel):
     block_start: int | None = None
     block_end: int | None = None
     overlap_prefix_length: int = 0  # duplicated retrieval context, not source content
+    chunk_type: str = "text"
+    table_id: str = ""
 
 
 class DocumentSection(BaseModel):

@@ -10,9 +10,16 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 
 import re
 
-import fitz  # pymupdf
-from models.document import Document, ContentBlock, BlockType
+import pymupdf as fitz
+from models.document import Document, ContentBlock, BlockType, TableArtifact
 from parsers.base import BaseParser
+from parsers.table_backends import (
+    CamelotTableBackend,
+    GMFTTableBackend,
+    PaddleOCRTableBackend,
+    PyMuPDFTableBackend,
+)
+from parsers.table_router import TableRouter
 
 # ── 配置常量 ──
 HEADER_FOOTER_RATIO = 0.15       # 页面上/下边缘区域比例
@@ -23,20 +30,40 @@ HEADING_MIN_LEVEL_2_RATIO = 1.3  # 二级标题的最低字号比例
 class PDFParser(BaseParser):
     """使用 PyMuPDF 解析 PDF 文件，提取表格、结构信息并去除页眉页脚"""
 
+    def __init__(self, router: TableRouter | None = None):
+        self.table_router = router or TableRouter(
+            PyMuPDFTableBackend(),
+            CamelotTableBackend(),
+            PaddleOCRTableBackend(),
+            complex_fallback=GMFTTableBackend(),
+        )
+
     def parse(self, file_path: str) -> Document:
         pdf_doc = fitz.open(file_path)
         all_blocks: list[ContentBlock] = []
         body_font_sizes: list[float] = []
+        page_heights: dict[int, float] = {}
 
         # ── 第一轮：逐页提取内容块和正文字号 ──
-        for page_number, page in enumerate(pdf_doc, 1):
+        for page_index, page in enumerate(pdf_doc, start=1):
             page_height = page.rect.height
+            page_heights[page_index] = float(page_height)
             header_y = page_height * HEADER_FOOTER_RATIO
             footer_y = page_height * (1 - HEADER_FOOTER_RATIO)
 
-            # 1. 提取表格区域（用于后续排除文本块中的表格文字）
-            tables = page.find_tables()
-            table_regions = self._extract_table_regions(tables)
+            # 1. 先提取并验证候选；只有已接受表格才允许排除重叠正文。
+            text_coverage = self._text_coverage(page)
+            artifacts = self.table_router.route_page(
+                page,
+                page_number=page_index,
+                text_coverage=text_coverage,
+                file_path=file_path,
+            )
+            table_regions = [
+                (artifact.bbox.x0, artifact.bbox.y0, artifact.bbox.x1, artifact.bbox.y1)
+                for artifact in artifacts
+                if artifact.bbox is not None and artifact.acceptance == "accepted"
+            ]
 
             # 2. 提取结构化文本块
             text_dict = page.get_text("dict")
@@ -61,7 +88,6 @@ class PDFParser(BaseParser):
 
                 cb = self._block_to_content_block(block)
                 if cb:
-                    cb.locator = {"page": page_number, "bbox": list(bbox)}
                     positioned.append((y_mid, cb))
                     # 收集字号用于后续标题判定
                     for line in block.get("lines", []):
@@ -70,22 +96,21 @@ class PDFParser(BaseParser):
                             if size > 0:
                                 body_font_sizes.append(size)
 
-            # 3. 提取表格内容块（用表格顶部作为 y 位置）
-            for table in tables:
-                cb = self._table_to_content_block(table)
-                if cb:
-                    cb.locator = {"page": page_number, "bbox": list(table.bbox)}
-                    try:
-                        table_y = table.bbox[1]  # 表格顶部 y 坐标
-                    except Exception:
-                        table_y = 0.0
-                    positioned.append((table_y, cb))
+            # 3. 插入已经过评分和路由选择的统一表格对象。
+            for artifact in artifacts:
+                cb = ContentBlock(block_type=BlockType.TABLE, table=artifact)
+                table_y = artifact.bbox.y0 if artifact.bbox is not None else 0.0
+                positioned.append((table_y, cb))
 
             # 4. 按垂直位置排序，保持阅读顺序
             positioned.sort(key=lambda item: item[0])
             all_blocks.extend(cb for _, cb in positioned)
 
         pdf_doc.close()
+
+        # Merge only strict, high-signal continuations: adjacent pages, same
+        # columns/headers, previous table at page bottom and next at page top.
+        all_blocks = self._stitch_table_blocks(all_blocks, page_heights)
 
         # ── 第二轮：基于字号统计判定标题 ──
         if body_font_sizes:
@@ -196,29 +221,6 @@ class PDFParser(BaseParser):
         cb.block_type = BlockType.HEADING
         cb.bold = False  # Markdown 标题自带加粗
 
-    # ── 表格转换 ──
-
-    @staticmethod
-    def _table_to_content_block(table) -> ContentBlock | None:
-        """将 PyMuPDF Table 对象转为 ContentBlock"""
-        try:
-            extracted = table.extract()
-            if not extracted or len(extracted) == 0:
-                return None
-            # 首行作表头
-            headers = [str(c or "") for c in extracted[0]]
-            body = [[str(c or "") for c in row] for row in extracted[1:]]
-            if not body:
-                body = [[str(c or "") for c in row] for row in extracted]
-                headers = []
-            return ContentBlock(
-                block_type=BlockType.TABLE,
-                headers=headers,
-                rows=body,
-            )
-        except Exception:
-            return None
-
     # ── 工具方法 ──
 
     @staticmethod
@@ -231,4 +233,139 @@ class PDFParser(BaseParser):
         text = re.sub(r"\n{3,}", "\n\n", text)
         text = re.sub(r"[ \t]{2,}", " ", text)
         return text.strip()
+
+    @staticmethod
+    def _stitch_table_blocks(
+        blocks: list[ContentBlock],
+        page_heights: dict[int, float],
+    ) -> list[ContentBlock]:
+        originals = [
+            block.table
+            for block in blocks
+            if block.block_type == BlockType.TABLE and block.table is not None
+        ]
+        stitched = _stitch_cross_page_tables(originals, page_heights)
+        if len(stitched) == len(originals):
+            return blocks
+
+        replacements = {table.source_table_ids[0]: table for table in stitched}
+        consumed = {
+            table_id
+            for table in stitched
+            for table_id in table.source_table_ids[1:]
+        }
+        result: list[ContentBlock] = []
+        for block in blocks:
+            if block.block_type != BlockType.TABLE or block.table is None:
+                result.append(block)
+                continue
+            table_id = block.table.table_id
+            if table_id in consumed:
+                continue
+            replacement = replacements.get(table_id)
+            result.append(
+                ContentBlock(block_type=BlockType.TABLE, table=replacement)
+                if replacement is not None
+                else block
+            )
+        return result
+
+    @staticmethod
+    def _text_coverage(page) -> float:
+        """Estimate usable text density; scanned pages approach zero."""
+        try:
+            character_count = len(page.get_text("text").strip())
+            area_units = max(1.0, float(page.rect.width * page.rect.height) / 1000.0)
+            return min(1.0, character_count / area_units)
+        except Exception:
+            return 0.0
+
+
+def _stitch_cross_page_tables(
+    tables: list[TableArtifact],
+    page_heights: dict[int, float],
+) -> list[TableArtifact]:
+    if not tables:
+        return []
+    ordered = sorted(
+        tables,
+        key=lambda table: (
+            table.page_number or 0,
+            table.bbox.y0 if table.bbox else 0.0,
+        ),
+    )
+    stitched: list[TableArtifact] = []
+    previous_original: TableArtifact | None = None
+    for table in ordered:
+        if (
+            stitched
+            and previous_original is not None
+            and _looks_like_continuation(previous_original, table, page_heights)
+        ):
+            stitched[-1] = _merge_continuation(stitched[-1], table)
+        else:
+            stitched.append(table)
+        previous_original = table
+    return stitched
+
+
+def _looks_like_continuation(
+    previous: TableArtifact,
+    current: TableArtifact,
+    page_heights: dict[int, float],
+) -> bool:
+    if previous.page_number is None or current.page_number != previous.page_number + 1:
+        return False
+    if previous.bbox is None or current.bbox is None:
+        return False
+    if previous.column_count != current.column_count:
+        return False
+    previous_height = page_heights.get(previous.page_number)
+    current_height = page_heights.get(current.page_number)
+    if not previous_height or not current_height:
+        return False
+    if previous.bbox.y1 < previous_height * 0.80 or current.bbox.y0 > current_height * 0.20:
+        return False
+    previous_headers = tuple(value.strip().casefold() for value in previous.legacy_headers())
+    current_headers = tuple(value.strip().casefold() for value in current.legacy_headers())
+    return bool(previous_headers and previous_headers == current_headers)
+
+
+def _merge_continuation(first: TableArtifact, second: TableArtifact) -> TableArtifact:
+    skip_rows = second.header_row_count
+    shifted_cells = list(first.cells)
+    for cell in second.cells:
+        if cell.row_index < skip_rows:
+            continue
+        shifted_cells.append(cell.model_copy(update={
+            "row_index": first.row_count + cell.row_index - skip_rows,
+            "is_header": False,
+        }))
+    backend_scores = [
+        score
+        for score in (first.backend_confidence, second.backend_confidence)
+        if score is not None
+    ]
+    return first.model_copy(update={
+        "cells": shifted_cells,
+        "row_count": first.row_count + second.row_count - skip_rows,
+        "confidence": min(first.confidence, second.confidence),
+        "backend_confidence": min(backend_scores) if backend_scores else None,
+        "quality_score": min(
+            score
+            for score in (first.quality_score or first.confidence, second.quality_score or second.confidence)
+        ),
+        "quality_evidence": {
+            **first.quality_evidence,
+            "cross_page_parts": float(len(first.source_table_ids) + len(second.source_table_ids)),
+        },
+        "acceptance": (
+            "accepted"
+            if first.acceptance == second.acceptance == "accepted"
+            else "review"
+        ),
+        "source_pages": list(dict.fromkeys(first.source_pages + second.source_pages)),
+        "source_table_ids": first.source_table_ids + second.source_table_ids,
+        "warnings": list(dict.fromkeys(first.warnings + second.warnings + ["cross_page_stitched"])),
+    })
 

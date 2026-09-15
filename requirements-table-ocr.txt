@@ -1,0 +1,5 @@
+# Optional scanned-document table fallback (CPU runtime).
+# Install only on workers that need OCR/table-structure recovery.
+paddleocr>=3.0,<4.0
+paddlepaddle>=3.0,<4.0
+

@@ -1,1 +1,10 @@
-from models.document import Chunk, Document, DocumentSection, ContentBlock, BlockType
+from models.document import (
+    BlockType,
+    BoundingBox,
+    Chunk,
+    ContentBlock,
+    Document,
+    DocumentSection,
+    TableArtifact,
+    TableCell,
+)

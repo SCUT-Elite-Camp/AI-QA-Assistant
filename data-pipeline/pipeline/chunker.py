@@ -192,6 +192,38 @@ def chunk_from_blocks(
             heading_stack.append((level, content_block.text.strip()))
             current_section_path = [title for _, title in heading_stack]
 
+        if content_block.block_type == BlockType.TABLE and content_block.table is not None:
+            # A scored table is both a source object and a set of row-level
+            # retrieval facts.  Keep uncertain review candidates out of the
+            # index: PDFParser retains their native text instead.
+            if content_block.table.acceptance != "accepted":
+                continue
+            overlap_prefix = _flush(overlap_prefix)
+            chunks.append(Chunk(
+                index=len(chunks),
+                text=bt,
+                chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+                section_path=list(current_section_path),
+                block_start=block_index,
+                block_end=block_index,
+                chunk_type="table",
+                table_id=content_block.table.table_id,
+            ))
+            prefix = f"表格：{content_block.table.caption}\n" if content_block.table.caption else ""
+            for row_text in content_block.table.to_row_chunks():
+                chunks.append(Chunk(
+                    index=len(chunks),
+                    text=prefix + row_text,
+                    chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+                    section_path=list(current_section_path),
+                    block_start=block_index,
+                    block_end=block_index,
+                    chunk_type="table_row",
+                    table_id=content_block.table.table_id,
+                ))
+            overlap_prefix = ""
+            continue
+
         bt_len = len(bt)
         sep_len = 2 if buffer else 0  # "\n\n" 分隔符
 
