@@ -131,6 +131,7 @@ class ContentBlock(BaseModel):
     rotation: float = 0.0
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     source: Literal["native", "ocr", "table"] = "native"
+    extraction_method: str = ""
     rows: list[list[str]] = Field(default_factory=list)    # 表格数据
     headers: list[str] = Field(default_factory=list)        # 表格列头
     table: TableArtifact | None = None

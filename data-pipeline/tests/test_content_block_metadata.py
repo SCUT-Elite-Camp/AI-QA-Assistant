@@ -47,6 +47,7 @@ def test_content_block_round_trips_pdf_provenance():
         rotation=0.0,
         confidence=0.95,
         source="native",
+        extraction_method="pymupdf",
     )
 
     assert block.block_id == "page-2-block-3"
@@ -57,6 +58,7 @@ def test_content_block_round_trips_pdf_provenance():
     assert block.rotation == 0.0
     assert block.confidence == 0.95
     assert block.source == "native"
+    assert block.extraction_method == "pymupdf"
     assert ContentBlock.model_validate(block.model_dump()) == block
 
 
