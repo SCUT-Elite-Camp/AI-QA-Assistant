@@ -123,6 +123,14 @@ class ContentBlock(BaseModel):
     block_type: BlockType
     level: int = 0                 # 标题层级 (1-6)，非标题为 0
     text: str = ""                 # 段落/标题/列表项的纯文本
+    block_id: str = ""
+    page_number: int | None = Field(default=None, ge=1)
+    bbox: BoundingBox | None = None
+    font_name: str = ""
+    font_size: float = Field(default=0.0, ge=0.0)
+    rotation: float = 0.0
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    source: Literal["native", "ocr", "table"] = "native"
     rows: list[list[str]] = Field(default_factory=list)    # 表格数据
     headers: list[str] = Field(default_factory=list)        # 表格列头
     table: TableArtifact | None = None
@@ -146,6 +154,15 @@ class ContentBlock(BaseModel):
             return self.table is None and not self.rows and not self.headers
         return not self.text.strip()
 
+    @property
+    def is_indexable(self) -> bool:
+        """Whether this block belongs in the primary index/rendered content."""
+        return not (
+            self.block_type == BlockType.TABLE
+            and self.table is not None
+            and self.table.acceptance != "accepted"
+        )
+
     def to_markdown(self) -> str:
         """将内容块渲染为 Markdown 片段"""
         if self.block_type == BlockType.HEADING:
@@ -161,11 +178,16 @@ class ContentBlock(BaseModel):
             return self.text
         return ""
 
+    def to_index_markdown(self) -> str:
+        """Render this block for indexing, omitting review-only tables."""
+        return self.to_markdown() if self.is_indexable else ""
+
 
 def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
     """将表格行和可选的表头转为 GitHub 风格 Markdown 表格"""
     if not rows:
         return ""
+
     # 确保列数一致
     col_count = max(
         max((len(r) for r in rows), default=0),
@@ -199,6 +221,12 @@ class Chunk(BaseModel):
     overlap_prefix_length: int = 0  # duplicated retrieval context, not source content
     chunk_type: str = "text"
     table_id: str = ""
+    block_id: str = ""
+    page_number: int | None = Field(default=None, ge=1)
+    bbox: BoundingBox | None = None
+    source: Literal["native", "ocr", "table"] = "native"
+    source_pages: list[int] = Field(default_factory=list)
+    metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class DocumentSection(BaseModel):
@@ -247,6 +275,22 @@ class Document(BaseModel):
     version_id: str = ""
     active_version: bool = True
     sections: list[DocumentSection] = Field(default_factory=list)
+
+    def render_index_content(self) -> str:
+        """Render the compatibility/index view from indexable content blocks.
+
+        Documents created by older parsers may not have structured blocks; in
+        that case their already-rendered ``content`` remains the fallback.
+        """
+        if not self.content_blocks:
+            return self.content
+        return "\n\n".join(
+            rendered
+            for block in self.content_blocks
+            if not block.is_empty
+            for rendered in (block.to_index_markdown(),)
+            if rendered
+        )
 
     @staticmethod
     def generate_doc_id(file_path: str) -> str:

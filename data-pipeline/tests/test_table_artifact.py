@@ -87,6 +87,27 @@ def test_legacy_table_block_without_artifact_still_renders():
     assert block.to_markdown() == "| 名称 | 数量 |\n| --- | --- |\n| A | 2 |"
 
 
+def test_review_table_block_is_excluded_from_index_rendering():
+    artifact = TableArtifact(
+        table_id="review-table",
+        cells=[
+            TableCell(row_index=0, column_index=0, text="字段", is_header=True),
+            TableCell(row_index=1, column_index=0, text="候选值"),
+        ],
+        row_count=2,
+        column_count=1,
+        header_row_count=1,
+        parser_name="pymupdf",
+        confidence=0.4,
+        acceptance="review",
+    )
+
+    block = ContentBlock(block_type=BlockType.TABLE, table=artifact)
+
+    assert block.is_indexable is False
+    assert block.to_index_markdown() == ""
+
+
 def test_header_only_table_is_not_silently_dropped():
     artifact = TableArtifact(
         table_id="header-only",
