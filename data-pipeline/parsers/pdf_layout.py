@@ -38,6 +38,7 @@ class LayoutBlock:
     direction: tuple[float, float] = (1.0, 0.0)
     confidence: float = 1.0
     extraction_method: str = "pymupdf"
+    source: str = "native"
 
     @property
     def bold(self) -> bool:
@@ -60,7 +61,7 @@ class LayoutBlock:
             font_size=self.font_size,
             rotation=self.rotation,
             confidence=self.confidence,
-            source="native",
+            source=self.source,
             extraction_method=self.extraction_method,
             bold=self.bold,
             italic=self.italic,
@@ -72,6 +73,13 @@ class LayoutDiagnostics:
     removed_headers: int = 0
     removed_footers: int = 0
     partial_table_overlaps: int = 0
+    ocr_attempted_pages: list[int] = field(default_factory=list)
+    ocr_applied_pages: list[int] = field(default_factory=list)
+    ocr_unavailable_pages: list[int] = field(default_factory=list)
+    ocr_failed_pages: list[int] = field(default_factory=list)
+    ocr_empty_pages: list[int] = field(default_factory=list)
+    ocr_not_improved_pages: list[int] = field(default_factory=list)
+    ocr_messages: list[str] = field(default_factory=list)
 
 
 def extract_layout_blocks(page, page_number: int) -> list[LayoutBlock]:
@@ -79,6 +87,25 @@ def extract_layout_blocks(page, page_number: int) -> list[LayoutBlock]:
     page_width = float(page.rect.width)
     page_height = float(page.rect.height)
     text_dict = page.get_text("dict", sort=False)
+    return extract_layout_blocks_from_dict(
+        text_dict,
+        page_number=page_number,
+        page_width=page_width,
+        page_height=page_height,
+    )
+
+
+def extract_layout_blocks_from_dict(
+    text_dict: dict,
+    *,
+    page_number: int,
+    page_width: float,
+    page_height: float,
+    source: str = "native",
+    confidence: float = 1.0,
+    extraction_method: str = "pymupdf",
+) -> list[LayoutBlock]:
+    """Build layout blocks from a PyMuPDF dictionary extraction."""
     result: list[LayoutBlock] = []
 
     for raw_block in text_dict.get("blocks", []):
@@ -92,6 +119,9 @@ def extract_layout_blocks(page, page_number: int) -> list[LayoutBlock]:
                 ordinal=len(result),
                 page_width=page_width,
                 page_height=page_height,
+                source=source,
+                confidence=confidence,
+                extraction_method=extraction_method,
             )
             if block is not None:
                 result.append(block)
@@ -107,6 +137,9 @@ def _layout_block_from_lines(
     ordinal: int,
     page_width: float,
     page_height: float,
+    source: str = "native",
+    confidence: float = 1.0,
+    extraction_method: str = "pymupdf",
 ) -> LayoutBlock | None:
     line_texts: list[str] = []
     font_weights: dict[str, int] = defaultdict(int)
@@ -150,6 +183,9 @@ def _layout_block_from_lines(
         ordinal=ordinal,
         page_width=page_width,
         page_height=page_height,
+        source=source,
+        confidence=confidence,
+        extraction_method=extraction_method,
     )
 
 

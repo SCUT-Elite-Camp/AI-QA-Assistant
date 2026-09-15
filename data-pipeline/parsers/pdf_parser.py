@@ -13,6 +13,12 @@ import re
 import pymupdf as fitz
 from models.document import Document, ContentBlock, BlockType, TableArtifact
 from parsers.base import BaseParser
+from parsers.ocr_backends import (
+    PageOCRBackend,
+    PageTextQuality,
+    PyMuPDFOCRBackend,
+    evaluate_page_text_quality,
+)
 from parsers.pdf_layout import (
     LayoutBlock,
     LayoutDiagnostics,
@@ -38,13 +44,18 @@ HEADING_MIN_LEVEL_2_RATIO = 1.3  # 二级标题的最低字号比例
 class PDFParser(BaseParser):
     """使用 PyMuPDF 解析 PDF 文件，提取表格、结构信息并去除页眉页脚"""
 
-    def __init__(self, router: TableRouter | None = None):
+    def __init__(
+        self,
+        router: TableRouter | None = None,
+        ocr_backend: PageOCRBackend | None = None,
+    ):
         self.table_router = router or TableRouter(
             PyMuPDFTableBackend(),
             CamelotTableBackend(),
             PaddleOCRTableBackend(),
             complex_fallback=GMFTTableBackend(),
         )
+        self.ocr_backend = ocr_backend if ocr_backend is not None else PyMuPDFOCRBackend()
         self.last_layout_diagnostics = LayoutDiagnostics()
 
     def parse(self, file_path: str) -> Document:
@@ -55,15 +66,33 @@ class PDFParser(BaseParser):
         try:
             # Pass one gathers native text without deleting edge content so
             # repetition can be evaluated across the complete document.
-            layout_pages = [
-                extract_layout_blocks(page, page_number)
-                for page_number, page in enumerate(pdf_doc, start=1)
-            ]
+            layout_pages: list[list[LayoutBlock]] = []
+            ocr_diagnostics = LayoutDiagnostics()
+            for page_number, page in enumerate(pdf_doc, start=1):
+                native_blocks = extract_layout_blocks(page, page_number)
+                quality = evaluate_page_text_quality(page, native_blocks)
+                selected_blocks = native_blocks
+                if quality.needs_ocr:
+                    selected_blocks = self._select_page_text(
+                        page,
+                        page_number,
+                        native_blocks,
+                        quality,
+                        ocr_diagnostics,
+                    )
+                layout_pages.append(selected_blocks)
             repeated_edge_keys = find_repeated_edge_keys(layout_pages)
             layout_pages, diagnostics = filter_repeated_edge_blocks(
                 layout_pages,
                 repeated_edge_keys,
             )
+            diagnostics.ocr_attempted_pages = ocr_diagnostics.ocr_attempted_pages
+            diagnostics.ocr_applied_pages = ocr_diagnostics.ocr_applied_pages
+            diagnostics.ocr_unavailable_pages = ocr_diagnostics.ocr_unavailable_pages
+            diagnostics.ocr_failed_pages = ocr_diagnostics.ocr_failed_pages
+            diagnostics.ocr_empty_pages = ocr_diagnostics.ocr_empty_pages
+            diagnostics.ocr_not_improved_pages = ocr_diagnostics.ocr_not_improved_pages
+            diagnostics.ocr_messages = ocr_diagnostics.ocr_messages
             self.last_layout_diagnostics = diagnostics
 
             # Pass two reconciles accepted tables and reconstructs page order.
@@ -164,6 +193,54 @@ class PDFParser(BaseParser):
         return Document.from_file_path(file_path, content, content_blocks=all_blocks)
 
     # ── 区域与重叠判断 ──
+
+    def _select_page_text(
+        self,
+        page,
+        page_number: int,
+        native_blocks: list[LayoutBlock],
+        native_quality: PageTextQuality,
+        diagnostics: LayoutDiagnostics,
+    ) -> list[LayoutBlock]:
+        """Use OCR only for a weak page and keep native text on any failure."""
+        try:
+            available = self.ocr_backend.available()
+        except Exception as error:
+            diagnostics.ocr_failed_pages.append(page_number)
+            diagnostics.ocr_messages.append(
+                f"page {page_number}: OCR availability check failed: {error}"
+            )
+            return native_blocks
+        if not available:
+            diagnostics.ocr_unavailable_pages.append(page_number)
+            diagnostics.ocr_messages.append(
+                f"page {page_number}: OCR unavailable for low-quality native text "
+                f"({', '.join(native_quality.reasons)})"
+            )
+            return native_blocks
+
+        diagnostics.ocr_attempted_pages.append(page_number)
+        try:
+            ocr_blocks = self.ocr_backend.extract(page, page_number)
+        except Exception as error:
+            diagnostics.ocr_failed_pages.append(page_number)
+            diagnostics.ocr_messages.append(f"page {page_number}: OCR failed: {error}")
+            return native_blocks
+
+        selected = _ocr_content_to_layout_blocks(ocr_blocks, page, page_number)
+        if not selected:
+            diagnostics.ocr_empty_pages.append(page_number)
+            diagnostics.ocr_messages.append(f"page {page_number}: OCR returned no usable text")
+            return native_blocks
+        ocr_quality = evaluate_page_text_quality(page, selected)
+        if _page_text_rank(ocr_quality) <= _page_text_rank(native_quality):
+            diagnostics.ocr_not_improved_pages.append(page_number)
+            diagnostics.ocr_messages.append(
+                f"page {page_number}: OCR did not improve native text quality"
+            )
+            return native_blocks
+        diagnostics.ocr_applied_pages.append(page_number)
+        return selected
 
     @staticmethod
     def _extract_table_regions(tables) -> list[tuple[float, float, float, float]]:
@@ -309,6 +386,52 @@ class PDFParser(BaseParser):
             return min(1.0, character_count / area_units)
         except Exception:
             return 0.0
+
+
+def _ocr_content_to_layout_blocks(
+    blocks: list[ContentBlock],
+    page,
+    page_number: int,
+) -> list[LayoutBlock]:
+    """Normalize backend OCR output for shared filtering and page ordering."""
+    page_width = float(page.rect.width)
+    page_height = float(page.rect.height)
+    result: list[LayoutBlock] = []
+    for block in blocks:
+        if not block.text.strip() or block.bbox is None:
+            continue
+        flags = 0
+        if block.bold:
+            flags |= fitz.TEXT_FONT_BOLD
+        if block.italic:
+            flags |= fitz.TEXT_FONT_ITALIC
+        result.append(LayoutBlock(
+            text=block.text,
+            bbox=(block.bbox.x0, block.bbox.y0, block.bbox.x1, block.bbox.y1),
+            font_size=block.font_size,
+            font_name=block.font_name,
+            flags=flags,
+            rotation=block.rotation,
+            page_number=page_number,
+            ordinal=len(result),
+            page_width=page_width,
+            page_height=page_height,
+            confidence=block.confidence,
+            extraction_method="ocr",
+            source="ocr",
+        ))
+    return result
+
+
+def _page_text_rank(quality: PageTextQuality) -> tuple[bool, int, float]:
+    """Rank text streams deterministically, preferring valid then fuller text."""
+    invalid = {"replacement_characters", "control_characters"}
+    contains_invalid_characters = bool(invalid.intersection(quality.reasons))
+    return (
+        not contains_invalid_characters,
+        quality.usable_character_count,
+        quality.usable_character_density,
+    )
 
 
 def _overlap_ratio(
