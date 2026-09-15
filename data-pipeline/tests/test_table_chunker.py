@@ -6,7 +6,7 @@ PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
-from models.document import BlockType, ContentBlock, TableArtifact, TableCell  # noqa: E402
+from models.document import BoundingBox, BlockType, ContentBlock, TableArtifact, TableCell  # noqa: E402
 from pipeline.chunker import chunk_from_blocks  # noqa: E402
 
 
@@ -58,3 +58,35 @@ def test_chunker_does_not_index_review_table_cells():
     )
 
     assert chunks == []
+
+
+def test_text_chunks_aggregate_same_page_boxes_and_cross_page_sources():
+    first = ContentBlock(block_type="paragraph", text="First source block", block_id="b1",
+                         page_number=1, bbox=BoundingBox(x0=1, y0=2, x1=10, y1=20))
+    second = ContentBlock(block_type="paragraph", text="Second source block", block_id="b2",
+                          page_number=1, bbox=BoundingBox(x0=2, y0=30, x1=11, y1=40))
+    same = chunk_from_blocks([first, second], "doc", overlap=0)[0]
+    assert same.page_number == 1 and same.source_pages == [1]
+    assert same.bbox == BoundingBox(x0=1, y0=2, x1=11, y1=40)
+    assert same.metadata["block_ids"] == ["b1", "b2"]
+    cross = chunk_from_blocks([first, second.model_copy(update={"page_number": 2})], "doc", overlap=0)[0]
+    assert cross.page_number is None and cross.bbox is None
+    assert cross.source_pages == [1, 2]
+
+
+def test_overlap_tracks_sources_and_zero_overlap_repeats_no_text():
+    blocks = [ContentBlock(block_type="paragraph", text="first source", block_id="b1", page_number=1),
+              ContentBlock(block_type="paragraph", text="second source", block_id="b2", page_number=2)]
+    chunks = chunk_from_blocks(blocks, "doc", chunk_size=15, overlap=0)
+    assert [c.text for c in chunks] == ["first source", "second source"]
+    assert [c.page_number for c in chunks] == [1, 2]
+    overlapping = chunk_from_blocks(blocks, "doc", chunk_size=15, overlap=6)
+    assert overlapping[1].text == "source\n\nsecond source"
+    assert overlapping[1].source_pages == [1, 2]
+    assert overlapping[1].page_number is None
+
+
+def test_legacy_table_blocks_remain_first_class_tables():
+    chunks = chunk_from_blocks([ContentBlock(block_type="table", headers=["Name"], rows=[["East"]])], "doc")
+    assert chunks[0].chunk_type == "table"
+    assert "| East |" in chunks[0].text
