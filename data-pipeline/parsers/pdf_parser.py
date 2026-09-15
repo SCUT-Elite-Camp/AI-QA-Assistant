@@ -3,9 +3,9 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 
 特性:
 - 表格提取：page.find_tables() → Markdown 表格
-- 页眉页脚去除：按 y 坐标过滤（上下各 15%）
+- 页眉页脚去除：跨页重复边缘内容检测
 - 标题检测：基于字体大小和加粗的启发式推断（PDF 无语义标题信息）
-- 结构保留：输出 ContentBlock 列表 + 渲染 Markdown
+- 结构保留：输出带版面来源的 ContentBlock 列表 + 渲染 Markdown
 """
 
 import re
@@ -13,6 +13,14 @@ import re
 import pymupdf as fitz
 from models.document import Document, ContentBlock, BlockType, TableArtifact
 from parsers.base import BaseParser
+from parsers.pdf_layout import (
+    LayoutBlock,
+    LayoutDiagnostics,
+    extract_layout_blocks,
+    filter_repeated_edge_blocks,
+    find_repeated_edge_keys,
+    order_layout_blocks,
+)
 from parsers.table_backends import (
     CamelotTableBackend,
     GMFTTableBackend,
@@ -22,8 +30,8 @@ from parsers.table_backends import (
 from parsers.table_router import TableRouter
 
 # ── 配置常量 ──
-HEADER_FOOTER_RATIO = 0.15       # 页面上/下边缘区域比例
 HEADING_FONT_RATIO = 1.15        # 字号超过正文中位数此倍数视为候选标题
+HEADING_LARGE_FONT_RATIO = 1.25  # 非粗体大字号也可作为标题候选
 HEADING_MIN_LEVEL_1_RATIO = 1.5  # 一级标题的最低字号比例
 HEADING_MIN_LEVEL_2_RATIO = 1.3  # 二级标题的最低字号比例
 
@@ -37,76 +45,97 @@ class PDFParser(BaseParser):
             PaddleOCRTableBackend(),
             complex_fallback=GMFTTableBackend(),
         )
+        self.last_layout_diagnostics = LayoutDiagnostics()
 
     def parse(self, file_path: str) -> Document:
         pdf_doc = fitz.open(file_path)
         all_blocks: list[ContentBlock] = []
         body_font_sizes: list[float] = []
         page_heights: dict[int, float] = {}
-
-        # ── 第一轮：逐页提取内容块和正文字号 ──
-        for page_index, page in enumerate(pdf_doc, start=1):
-            page_height = page.rect.height
-            page_heights[page_index] = float(page_height)
-            header_y = page_height * HEADER_FOOTER_RATIO
-            footer_y = page_height * (1 - HEADER_FOOTER_RATIO)
-
-            # 1. 先提取并验证候选；只有已接受表格才允许排除重叠正文。
-            text_coverage = self._text_coverage(page)
-            artifacts = self.table_router.route_page(
-                page,
-                page_number=page_index,
-                text_coverage=text_coverage,
-                file_path=file_path,
-            )
-            table_regions = [
-                (artifact.bbox.x0, artifact.bbox.y0, artifact.bbox.x1, artifact.bbox.y1)
-                for artifact in artifacts
-                if artifact.bbox is not None and artifact.acceptance == "accepted"
+        try:
+            # Pass one gathers native text without deleting edge content so
+            # repetition can be evaluated across the complete document.
+            layout_pages = [
+                extract_layout_blocks(page, page_number)
+                for page_number, page in enumerate(pdf_doc, start=1)
             ]
+            repeated_edge_keys = find_repeated_edge_keys(layout_pages)
+            layout_pages, diagnostics = filter_repeated_edge_blocks(
+                layout_pages,
+                repeated_edge_keys,
+            )
+            self.last_layout_diagnostics = diagnostics
 
-            # 2. 提取结构化文本块
-            text_dict = page.get_text("dict")
-            blocks = text_dict.get("blocks", [])
+            # Pass two reconciles accepted tables and reconstructs page order.
+            for page_index, page in enumerate(pdf_doc, start=1):
+                page_width = float(page.rect.width)
+                page_height = float(page.rect.height)
+                page_heights[page_index] = page_height
+                artifacts = self.table_router.route_page(
+                    page,
+                    page_number=page_index,
+                    text_coverage=self._text_coverage(page),
+                    file_path=file_path,
+                )
+                table_regions = [
+                    (artifact.bbox.x0, artifact.bbox.y0, artifact.bbox.x1, artifact.bbox.y1)
+                    for artifact in artifacts
+                    if artifact.bbox is not None and artifact.acceptance == "accepted"
+                ]
 
-            # 用 (y_position, ContentBlock) 收集，便于按阅读顺序排序
-            positioned: list[tuple[float, ContentBlock]] = []
+                retained_layout: list[LayoutBlock] = []
+                for block in layout_pages[page_index - 1]:
+                    overlap = max(
+                        (_overlap_ratio(block.bbox, region) for region in table_regions),
+                        default=0.0,
+                    )
+                    if overlap >= 0.50:
+                        continue
+                    if overlap > 0.0:
+                        diagnostics.partial_table_overlaps += 1
+                    retained_layout.append(block)
+                    if block.font_size > 0:
+                        body_font_sizes.append(block.font_size)
 
-            for block in blocks:
-                if block["type"] != 0:  # 只处理文本块
-                    continue
-                bbox = block["bbox"]
-                y_mid = (bbox[1] + bbox[3]) / 2
+                ordered_inputs = list(retained_layout)
+                table_by_layout_id: dict[int, TableArtifact] = {}
+                next_ordinal = max((block.ordinal for block in ordered_inputs), default=-1) + 1
+                for artifact_index, artifact in enumerate(artifacts):
+                    if artifact.bbox is None:
+                        bbox = (0.0, 0.0, page_width, 0.0)
+                    else:
+                        bbox = (
+                            artifact.bbox.x0,
+                            artifact.bbox.y0,
+                            artifact.bbox.x1,
+                            artifact.bbox.y1,
+                        )
+                    table_layout = LayoutBlock(
+                        text="",
+                        bbox=bbox,
+                        font_size=0.0,
+                        font_name="",
+                        flags=0,
+                        rotation=0.0,
+                        page_number=page_index,
+                        ordinal=next_ordinal + artifact_index,
+                        page_width=page_width,
+                        page_height=page_height,
+                        confidence=artifact.confidence,
+                        extraction_method=artifact.parser_name,
+                    )
+                    ordered_inputs.append(table_layout)
+                    table_by_layout_id[id(table_layout)] = artifact
 
-                # 跳过页眉/页脚区域
-                if y_mid < header_y or y_mid > footer_y:
-                    continue
-
-                # 跳过与表格重叠的文本块
-                if self._overlaps_any_table(bbox, table_regions):
-                    continue
-
-                cb = self._block_to_content_block(block)
-                if cb:
-                    positioned.append((y_mid, cb))
-                    # 收集字号用于后续标题判定
-                    for line in block.get("lines", []):
-                        for span in line.get("spans", []):
-                            size = span.get("size", 0)
-                            if size > 0:
-                                body_font_sizes.append(size)
-
-            # 3. 插入已经过评分和路由选择的统一表格对象。
-            for artifact in artifacts:
-                cb = ContentBlock(block_type=BlockType.TABLE, table=artifact)
-                table_y = artifact.bbox.y0 if artifact.bbox is not None else 0.0
-                positioned.append((table_y, cb))
-
-            # 4. 按垂直位置排序，保持阅读顺序
-            positioned.sort(key=lambda item: item[0])
-            all_blocks.extend(cb for _, cb in positioned)
-
-        pdf_doc.close()
+                for block in order_layout_blocks(ordered_inputs, page_width):
+                    artifact = table_by_layout_id.get(id(block))
+                    all_blocks.append(
+                        _table_to_content_block(artifact)
+                        if artifact is not None
+                        else block.to_content_block()
+                    )
+        finally:
+            pdf_doc.close()
 
         # Merge only strict, high-signal continuations: adjacent pages, same
         # columns/headers, previous table at page bottom and next at page top.
@@ -124,7 +153,11 @@ class PDFParser(BaseParser):
 
         # ── 渲染为 Markdown 内容 ──
         content = "\n\n".join(
-            cb.to_markdown() for cb in all_blocks if not cb.is_empty
+            rendered
+            for cb in all_blocks
+            if not cb.is_empty
+            for rendered in (cb.to_index_markdown(),)
+            if rendered
         )
         content = self._clean_text(content)
 
@@ -145,14 +178,8 @@ class PDFParser(BaseParser):
 
     @staticmethod
     def _overlaps_any_table(bbox: tuple, regions: list[tuple[float, float, float, float]]) -> bool:
-        """判断一个矩形是否与任一表格区域重叠"""
-        if not regions:
-            return False
-        ax0, ay0, ax1, ay1 = bbox
-        for (tx0, ty0, tx1, ty1) in regions:
-            if not (ax1 <= tx0 or ax0 >= tx1 or ay1 <= ty0 or ay0 >= ty1):
-                return True
-        return False
+        """Return whether a table covers at least half of the text block."""
+        return max((_overlap_ratio(bbox, region) for region in regions), default=0.0) >= 0.50
 
     # ── 文本块转换 ──
 
@@ -202,11 +229,14 @@ class PDFParser(BaseParser):
         if median_size <= 0:
             return
 
-        font_size = cb.level / 100.0  # 恢复暂存的字号
+        font_size = cb.font_size or cb.level / 100.0
         ratio = font_size / median_size
 
-        # 标题条件：字号 ≥ 中位数 1.15 倍 且 加粗
-        if ratio < HEADING_FONT_RATIO or not cb.bold:
+        # Preserve the existing font-size-plus-bold signal while allowing a
+        # sufficiently large face to identify headings without a bold flag.
+        if ratio < HEADING_LARGE_FONT_RATIO and not (
+            cb.bold and ratio >= HEADING_FONT_RATIO
+        ):
             cb.level = 0
             return
 
@@ -264,7 +294,7 @@ class PDFParser(BaseParser):
                 continue
             replacement = replacements.get(table_id)
             result.append(
-                ContentBlock(block_type=BlockType.TABLE, table=replacement)
+                _table_to_content_block(replacement)
                 if replacement is not None
                 else block
             )
@@ -279,6 +309,36 @@ class PDFParser(BaseParser):
             return min(1.0, character_count / area_units)
         except Exception:
             return 0.0
+
+
+def _overlap_ratio(
+    block_bbox: tuple[float, float, float, float],
+    table_bbox: tuple[float, float, float, float],
+) -> float:
+    """Return the fraction of a text block covered by a table rectangle."""
+    bx0, by0, bx1, by1 = block_bbox
+    tx0, ty0, tx1, ty1 = table_bbox
+    x0 = max(bx0, tx0)
+    y0 = max(by0, ty0)
+    x1 = min(bx1, tx1)
+    y1 = min(by1, ty1)
+    intersection = max(0.0, x1 - x0) * max(0.0, y1 - y0)
+    block_area = max(1.0, (bx1 - bx0) * (by1 - by0))
+    return intersection / block_area
+
+
+def _table_to_content_block(table: TableArtifact) -> ContentBlock:
+    """Synchronize canonical table provenance onto its content block."""
+    return ContentBlock(
+        block_type=BlockType.TABLE,
+        block_id=table.table_id,
+        page_number=table.page_number,
+        bbox=table.bbox,
+        confidence=table.confidence,
+        source="table",
+        extraction_method=table.parser_name,
+        table=table,
+    )
 
 
 def _stitch_cross_page_tables(

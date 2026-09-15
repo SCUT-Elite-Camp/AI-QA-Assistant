@@ -10,7 +10,7 @@ if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
 from models.document import BlockType, BoundingBox, TableArtifact, TableCell  # noqa: E402
-from parsers.pdf_parser import PDFParser, _stitch_cross_page_tables  # noqa: E402
+from parsers.pdf_parser import PDFParser, _overlap_ratio, _stitch_cross_page_tables  # noqa: E402
 from parsers.table_backends import (  # noqa: E402
     CamelotTableBackend,
     GMFTTableBackend,
@@ -95,10 +95,30 @@ def test_accepted_table_excludes_only_overlapping_text_and_keeps_provenance(tmp_
     assert "Alice" in document.content
     table_blocks = [block for block in document.content_blocks if block.block_type == BlockType.TABLE]
     assert len(table_blocks) == 1
-    assert table_blocks[0].table.page_number == 1
-    assert table_blocks[0].table.parser_name == "test"
+    table_block = table_blocks[0]
+    assert table_block.table.page_number == 1
+    assert table_block.table.parser_name == "test"
+    assert table_block.block_id == "page-1-table-1"
+    assert table_block.page_number == 1
+    assert table_block.bbox == table_block.table.bbox
+    assert table_block.confidence == 0.9
+    assert table_block.source == "table"
+    assert table_block.extraction_method == "test"
     assert router.calls[0][0] == 1
     assert router.calls[0][2] == str(source)
+
+
+def test_accepted_table_keeps_text_when_overlap_is_less_than_half(tmp_path):
+    source = tmp_path / "partial-overlap.pdf"
+    make_pdf(source)
+    artifact = accepted_artifact().model_copy(update={
+        "bbox": BoundingBox(x0=40, y0=170, x1=75, y1=230),
+    })
+
+    document = PDFParser(router=StaticRouter([artifact])).parse(str(source))
+
+    assert "candidate text" in document.content
+    assert _overlap_ratio((60, 188, 140, 204), (40, 170, 75, 230)) < 0.50
 
 
 def test_review_table_keeps_overlapping_source_text(tmp_path):
@@ -116,6 +136,7 @@ def test_review_table_keeps_overlapping_source_text(tmp_path):
     table = next(block.table for block in document.content_blocks if block.table is not None)
     assert table.acceptance == "review"
     assert "needs_review" in table.warnings
+    assert "Alice" not in document.content
 
 
 def test_optional_backends_report_unavailable_without_importing_heavy_packages(monkeypatch):
