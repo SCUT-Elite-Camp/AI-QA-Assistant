@@ -16,6 +16,7 @@ from models.document import BlockType, BoundingBox, ContentBlock
 EDGE_RATIO = 0.12
 SPANNING_WIDTH_RATIO = 0.70
 MIN_COLUMN_GAP_RATIO = 0.08
+MIN_COLUMN_GUTTER_RATIO = 0.02
 _PAGE_NUMBER_KEY = "<page-number>"
 _PAGE_NUMBER_ONLY = re.compile(r"^(?:page\s*)?[-–—]?\s*\d+\s*[-–—]?$", re.IGNORECASE)
 
@@ -329,6 +330,7 @@ def _order_column_section(blocks: Iterable[LayoutBlock], page_width: float) -> l
         largest_gap < page_width * MIN_COLUMN_GAP_RATIO
         or len(left_column) < 2
         or len(right_column) < 2
+        or not _columns_are_spatially_parallel(left_column, right_column, page_width)
     ):
         return _fallback_sort(section)
     return _fallback_sort(left_column) + _fallback_sort(right_column)
@@ -336,6 +338,24 @@ def _order_column_section(blocks: Iterable[LayoutBlock], page_width: float) -> l
 
 def _fallback_sort(blocks: Iterable[LayoutBlock]) -> list[LayoutBlock]:
     return sorted(blocks, key=lambda block: (block.bbox[1], block.bbox[0], block.ordinal))
+
+
+def _columns_are_spatially_parallel(
+    left_column: Sequence[LayoutBlock],
+    right_column: Sequence[LayoutBlock],
+    page_width: float,
+) -> bool:
+    gutter = min(block.bbox[0] for block in right_column) - max(
+        block.bbox[2] for block in left_column
+    )
+    if gutter < page_width * MIN_COLUMN_GUTTER_RATIO:
+        return False
+
+    left_y0 = min(block.bbox[1] for block in left_column)
+    left_y1 = max(block.bbox[3] for block in left_column)
+    right_y0 = min(block.bbox[1] for block in right_column)
+    right_y1 = max(block.bbox[3] for block in right_column)
+    return min(left_y1, right_y1) > max(left_y0, right_y0)
 
 
 def _edge_kind(block: LayoutBlock) -> str | None:

@@ -71,6 +71,22 @@ def test_two_column_blocks_read_left_column_before_right_column():
     ]
 
 
+def test_indented_single_column_paragraphs_keep_vertical_reading_order():
+    blocks = [
+        layout("Heading 1", 40, 100, 130, 120, ordinal=0),
+        layout("Paragraph 1", 90, 125, 350, 145, ordinal=1),
+        layout("Heading 2", 40, 170, 130, 190, ordinal=2),
+        layout("Paragraph 2", 90, 195, 350, 215, ordinal=3),
+    ]
+
+    assert [block.text for block in order_layout_blocks(blocks, 520)] == [
+        "Heading 1",
+        "Paragraph 1",
+        "Heading 2",
+        "Paragraph 2",
+    ]
+
+
 def test_spanning_blocks_partition_two_column_sections():
     blocks = [
         layout("L1", 40, 100, 220, 120, ordinal=0),
