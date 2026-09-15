@@ -63,6 +63,7 @@ class PDFParser(BaseParser):
         all_blocks: list[ContentBlock] = []
         body_font_sizes: list[float] = []
         page_heights: dict[int, float] = {}
+        source_tables: dict[str, TableArtifact] = {}
         try:
             # Pass one gathers native text without deleting edge content so
             # repetition can be evaluated across the complete document.
@@ -106,27 +107,8 @@ class PDFParser(BaseParser):
                     text_coverage=self._text_coverage(page),
                     file_path=file_path,
                 )
-                table_regions = [
-                    (artifact.bbox.x0, artifact.bbox.y0, artifact.bbox.x1, artifact.bbox.y1)
-                    for artifact in artifacts
-                    if artifact.bbox is not None and artifact.acceptance == "accepted"
-                ]
-
-                retained_layout: list[LayoutBlock] = []
-                for block in layout_pages[page_index - 1]:
-                    overlap = max(
-                        (_overlap_ratio(block.bbox, region) for region in table_regions),
-                        default=0.0,
-                    )
-                    if overlap >= 0.50:
-                        continue
-                    if overlap > 0.0:
-                        diagnostics.partial_table_overlaps += 1
-                    retained_layout.append(block)
-                    if block.font_size > 0:
-                        body_font_sizes.append(block.font_size)
-
-                ordered_inputs = list(retained_layout)
+                source_tables.update({artifact.table_id: artifact for artifact in artifacts})
+                ordered_inputs = list(layout_pages[page_index - 1])
                 table_by_layout_id: dict[int, TableArtifact] = {}
                 next_ordinal = max((block.ordinal for block in ordered_inputs), default=-1) + 1
                 for artifact_index, artifact in enumerate(artifacts):
@@ -169,6 +151,16 @@ class PDFParser(BaseParser):
         # Merge only strict, high-signal continuations: adjacent pages, same
         # columns/headers, previous table at page bottom and next at page top.
         all_blocks = self._stitch_table_blocks(all_blocks, page_heights)
+        all_blocks = self._exclude_text_overlapping_accepted_tables(
+            all_blocks,
+            source_tables,
+            diagnostics,
+        )
+        body_font_sizes = [
+            block.font_size
+            for block in all_blocks
+            if block.block_type != BlockType.TABLE and block.font_size > 0
+        ]
 
         # ── 第二轮：基于字号统计判定标题 ──
         if body_font_sizes:
@@ -376,6 +368,48 @@ class PDFParser(BaseParser):
                 else block
             )
         return result
+
+    @staticmethod
+    def _exclude_text_overlapping_accepted_tables(
+        blocks: list[ContentBlock],
+        source_tables: dict[str, TableArtifact],
+        diagnostics: LayoutDiagnostics,
+    ) -> list[ContentBlock]:
+        """Drop text only for tables that remain accepted after stitching."""
+        regions_by_page: dict[int, list[tuple[float, float, float, float]]] = {}
+        for block in blocks:
+            table = block.table
+            if table is None or table.acceptance != "accepted":
+                continue
+            for table_id in table.source_table_ids:
+                source = source_tables.get(table_id)
+                if source is None or source.page_number is None or source.bbox is None:
+                    continue
+                regions_by_page.setdefault(source.page_number, []).append((
+                    source.bbox.x0,
+                    source.bbox.y0,
+                    source.bbox.x1,
+                    source.bbox.y1,
+                ))
+
+        retained: list[ContentBlock] = []
+        for block in blocks:
+            if block.block_type == BlockType.TABLE or block.bbox is None or block.page_number is None:
+                retained.append(block)
+                continue
+            overlap = max(
+                (_overlap_ratio(
+                    (block.bbox.x0, block.bbox.y0, block.bbox.x1, block.bbox.y1),
+                    region,
+                ) for region in regions_by_page.get(block.page_number, [])),
+                default=0.0,
+            )
+            if overlap >= 0.50:
+                continue
+            if overlap > 0.0:
+                diagnostics.partial_table_overlaps += 1
+            retained.append(block)
+        return retained
 
     @staticmethod
     def _text_coverage(page) -> float:

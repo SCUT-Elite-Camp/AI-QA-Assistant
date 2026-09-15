@@ -30,6 +30,14 @@ class StaticRouter:
         return self.artifacts
 
 
+class PerPageRouter:
+    def __init__(self, artifacts_by_page):
+        self.artifacts_by_page = artifacts_by_page
+
+    def route_page(self, page, *, page_number, text_coverage, file_path=None):
+        return self.artifacts_by_page.get(page_number, [])
+
+
 def make_pdf(path):
     document = fitz.open()
     page = document.new_page(width=500, height=600)
@@ -137,6 +145,46 @@ def test_review_table_keeps_overlapping_source_text(tmp_path):
     assert table.acceptance == "review"
     assert "needs_review" in table.warnings
     assert "Alice" not in document.content
+
+
+def test_stitched_review_table_keeps_source_text_from_previously_accepted_part(tmp_path):
+    source = tmp_path / "stitched-review.pdf"
+    pdf = fitz.open()
+    first_page = pdf.new_page(width=500, height=600)
+    first_page.insert_text((60, 520), "page one source text", fontsize=12)
+    second_page = pdf.new_page(width=500, height=600)
+    second_page.insert_text((60, 40), "page two source text", fontsize=12)
+    pdf.save(source)
+    pdf.close()
+
+    first = accepted_artifact().model_copy(update={
+        "bbox": BoundingBox(x0=40, y0=490, x1=260, y1=550),
+        "cells": [
+            TableCell(row_index=0, column_index=0, text="Name", is_header=True),
+            TableCell(row_index=1, column_index=0, text="Alice"),
+        ],
+    })
+    second = first.model_copy(update={
+        "table_id": "page-2-table-1",
+        "page_number": 2,
+        "source_pages": [2],
+        "source_table_ids": ["page-2-table-1"],
+        "bbox": BoundingBox(x0=40, y0=10, x1=260, y1=70),
+        "acceptance": "review",
+        "cells": [
+            TableCell(row_index=0, column_index=0, text="Name", is_header=True),
+            TableCell(row_index=1, column_index=0, text="Bob"),
+        ],
+    })
+
+    document = PDFParser(router=PerPageRouter({1: [first], 2: [second]})).parse(str(source))
+
+    assert "page one source text" in document.content
+    assert "page two source text" in document.content
+    tables = [block.table for block in document.content_blocks if block.table is not None]
+    assert len(tables) == 1
+    assert tables[0].acceptance == "review"
+    assert "Alice" not in document.content and "Bob" not in document.content
 
 
 def test_optional_backends_report_unavailable_without_importing_heavy_packages(monkeypatch):
