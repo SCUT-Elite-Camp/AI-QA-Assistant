@@ -86,6 +86,30 @@ def test_overlap_tracks_sources_and_zero_overlap_repeats_no_text():
     assert overlapping[1].page_number is None
 
 
+def test_overlap_provenance_includes_only_blocks_contributing_to_retained_tail():
+    blocks = [
+        ContentBlock(block_type="paragraph", text="page1-aaaa", block_id="b1", page_number=1),
+        ContentBlock(block_type="paragraph", text="page2-bbbb", block_id="b2", page_number=2),
+        ContentBlock(block_type="paragraph", text="page3-cccc", block_id="b3", page_number=3),
+    ]
+
+    chunks = chunk_from_blocks(blocks, "doc", chunk_size=10, overlap=4)
+
+    assert chunks[2].text == "bbbb\n\npage3-cccc"
+    assert chunks[2].source_pages == [2, 3]
+    assert chunks[2].metadata["block_ids"] == ["b2", "b3"]
+
+
+def test_mixed_extraction_sources_are_preserved_in_text_chunk_metadata():
+    chunks = chunk_from_blocks([
+        ContentBlock(block_type="paragraph", text="Native text", block_id="native", source="native"),
+        ContentBlock(block_type="paragraph", text="OCR text", block_id="ocr", source="ocr"),
+    ], "doc", overlap=0)
+
+    assert chunks[0].source == "native"
+    assert chunks[0].metadata["sources"] == ["native", "ocr"]
+
+
 def test_legacy_table_blocks_remain_first_class_tables():
     chunks = chunk_from_blocks([ContentBlock(block_type="table", headers=["Name"], rows=[["East"]])], "doc")
     assert chunks[0].chunk_type == "table"
