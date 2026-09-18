@@ -1,4 +1,4 @@
-from confluence_pull import build_source_url, normalize_confluence_base
+from confluence_pull import build_source_url, merge_metadata, normalize_confluence_base
 
 
 def test_normalize_confluence_cloud_site_root() -> None:
@@ -37,3 +37,19 @@ def test_build_source_url_has_safe_page_fallback() -> None:
         None,
         "123",
     ) == "https://example.atlassian.net/wiki/pages/123"
+
+
+def test_merge_metadata_replaces_only_targeted_pages() -> None:
+    existing = {
+        "pages": [
+            {"page_id": "1", "doc_id": "old-main"},
+            {"page_id": "1", "doc_id": "old-attachment"},
+            {"page_id": "2", "doc_id": "untouched"},
+        ]
+    }
+    incoming = [{"page_id": "1", "doc_id": "new-main"}]
+
+    assert merge_metadata(existing, incoming, {"1"}) == [
+        {"page_id": "2", "doc_id": "untouched"},
+        {"page_id": "1", "doc_id": "new-main"},
+    ]

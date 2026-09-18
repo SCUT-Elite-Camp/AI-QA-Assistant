@@ -21,6 +21,7 @@ Confluence 空间连接器（Stream 直连模式）。
 
 用法：
     python confluence_pull.py [space_key]
+    python confluence_pull.py RAG --pages=123,456 --versions=123:2 --skip-vector-store
 """
 
 import os
@@ -137,7 +138,7 @@ def get_all_pages(session: requests.Session, base: str, space: str) -> list:
 
 # ───────────────────────────── 管道接入 ─────────────────────────────
 
-def _run_pipeline(doc) -> None:
+def _run_pipeline(doc, *, write_vectors: bool = True) -> None:
     """将单个 Document 送入后续处理管道：切片 → 向量化 → 保存 JSON → 写入 Milvus
 
     此函数复用 process.py 的管道逻辑，确保 Confluence 来源文档与本地文件
@@ -145,9 +146,7 @@ def _run_pipeline(doc) -> None:
     """
     from models.document import Document
     from pipeline.chunker import chunk_from_blocks, chunk_text
-    from pipeline.embedder import embed_texts
     from storage.document_store import save_document
-    from storage.milvus_store import MilvusStore
 
     # 1. 切片
     if doc.content_blocks:
@@ -163,18 +162,23 @@ def _run_pipeline(doc) -> None:
         logger.warning(f"  跳过（无内容）")
         return
 
-    # 2. 向量化
     chunk_texts = [ch.text for ch in chunks]
-    logger.info(f"  正在向量化 {len(chunk_texts)} 个分块...")
-    embeddings = embed_texts(chunk_texts)
-    logger.info(f"  向量化完成")
-
-    # 3. 保存 JSON
+    # 2. 保存 JSON。即使向量库暂不可用，来源快照仍可独立恢复。
     json_data = doc.model_dump(mode="json")
     save_document(doc.doc_id, json_data)
     logger.info(f"  JSON 已保存: documents/{doc.doc_id}.json")
 
-    # 4. 写入 Milvus
+    if not write_vectors:
+        logger.info("  已跳过向量化与 Milvus 写入")
+        return
+
+    # 3. 向量化并写入 Milvus
+    from pipeline.embedder import embed_texts
+    from storage.milvus_store import MilvusStore
+
+    logger.info(f"  正在向量化 {len(chunk_texts)} 个分块...")
+    embeddings = embed_texts(chunk_texts)
+    logger.info(f"  向量化完成")
     milvus = MilvusStore(host="localhost", port="19530")
     chunk_ids = [ch.chunk_id for ch in chunks]
     doc_ids = [doc.doc_id] * len(chunks)
@@ -191,17 +195,34 @@ def _run_pipeline(doc) -> None:
     logger.info(f"  向量已写入 Milvus")
 
 
+def merge_metadata(existing: dict, incoming: list[dict], page_ids: set[str]) -> list[dict]:
+    """Replace targeted pages while preserving every unrelated metadata row."""
+    preserved = [
+        item for item in existing.get("pages", [])
+        if str(item.get("page_id", "")) not in page_ids
+    ]
+    return preserved + incoming
+
+
 # ───────────────────────────── 主流程 ─────────────────────────────
 
 def main() -> None:
-    # 参数解析：confluence_pull.py [space] [--pages id1,id2,...]
+    # 参数解析：confluence_pull.py [space] [--pages=id1,id2] [--versions=id:version]
     args = sys.argv[1:]
     space = "test"
     only_pages = None
+    page_versions: dict[str, int] = {}
+    skip_vector_store = False
     rest = []
     for a in args:
         if a.startswith("--pages="):
             only_pages = a.split("=", 1)[1].split(",")
+        elif a.startswith("--versions="):
+            for item in a.split("=", 1)[1].split(","):
+                page_id, version = item.split(":", 1)
+                page_versions[page_id] = int(version)
+        elif a == "--skip-vector-store":
+            skip_vector_store = True
         elif a.startswith("--"):
             pass  # 忽略未知 flag
         else:
@@ -221,6 +242,10 @@ def main() -> None:
     print(f"模式: Stream 直连 (HTML → HtmlParser → Document → 管道)")
     if only_pages:
         print(f"仅重跑指定页面: {only_pages}")
+    if page_versions:
+        print(f"指定历史版本: {page_versions}")
+    if skip_vector_store:
+        print("跳过向量化与 Milvus，仅恢复文档 JSON 和 metadata")
     print(f"{'='*60}\n")
 
     if only_pages:
@@ -239,11 +264,23 @@ def main() -> None:
 
         try:
             # 1. 获取页面详情（含 HTML 正文）
+            detail_params = {"expand": "body.view,version,history"}
+            if pid in page_versions:
+                detail_params.update({"status": "historical", "version": page_versions[pid]})
             detail = api_get(
                 session, base, f"/rest/api/content/{pid}",
-                {"expand": "body.view,version,history"},
+                detail_params,
             )
-            title = detail.get("title") or title
+            # Historical responses may expose an internal historical-content URL
+            # (and even a generic ``viewpage`` title). Keep the requested page's
+            # canonical identity while using the historical body/version.
+            identity = detail
+            if pid in page_versions:
+                identity = api_get(
+                    session, base, f"/rest/api/content/{pid}",
+                    {"expand": "version,history"},
+                )
+            title = identity.get("title") or detail.get("title") or title
             body_html = detail.get("body", {}).get("view", {}).get("value", "")
             version = detail.get("version", {}).get("number")
             last_updated = (
@@ -251,7 +288,7 @@ def main() -> None:
                 or detail.get("history", {}).get("lastUpdated", {}).get("when", "")
             )
             webui = (
-                detail.get("_links", {}).get("webui")
+                identity.get("_links", {}).get("webui")
                 or pg.get("_links", {}).get("webui")
             )
             source_url = build_source_url(base, webui, pid)
@@ -273,7 +310,7 @@ def main() -> None:
                 ctype = d.metadata.get("content_type", "?")
                 print(f"  → 文档[{ctype}]: {d.title} "
                       f"({len(d.content)} 字符, {len(d.content_blocks)} 块, id={d.doc_id[:8]})")
-                _run_pipeline(d)
+                _run_pipeline(d, write_vectors=not skip_vector_store)
 
                 # 4. 记录元数据（主文档与附件文档各一行，便于溯源）
                 metas.append({
@@ -309,14 +346,26 @@ def main() -> None:
 
     # ═══ 汇总元数据 ═══
     meta_path = os.path.join(HERE, f"confluence_metadata_{space}.json")
+    existing: dict = {}
+    if only_pages and os.path.isfile(meta_path):
+        with open(meta_path, encoding="utf-8") as f:
+            existing = json.load(f)
+        metas = merge_metadata(existing, metas, set(only_pages))
+
+    page_status: dict[str, bool] = {}
+    for item in metas:
+        page_id = str(item.get("page_id", ""))
+        page_status[page_id] = page_status.get(page_id, False) or item.get("content_type") != "error"
+    total_count = len(page_status)
+    successful_pages = sum(page_status.values())
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(
             {
                 "space_key": space,
                 "base": base,
-                "total": len(pages),
-                "success": success_count,
-                "failed": len(pages) - success_count,
+                "total": total_count,
+                "success": successful_pages,
+                "failed": total_count - successful_pages,
                 "pages": metas,
             },
             f, ensure_ascii=False, indent=2,

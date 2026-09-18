@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Protocol
 from urllib.request import Request, urlopen
 
@@ -54,19 +55,29 @@ class MockResearchPlanner:
             for doc_id in document_ids
             if doc_id in request.source_scope.allowed_source_ids()
         ]
+        if not scoped_ids:
+            scoped_ids = document_ids
+        scoped_documents = [
+            document for document in manifest.documents if document.doc_id in scoped_ids
+        ]
+        source_names = "、".join(f"《{document.title}》" for document in scoped_documents)
+        version_focus = "、".join(
+            f"《{document.title}》（{document.version or '未标注版本'}）"
+            for document in scoped_documents
+        )
 
         tasks = [
             ResearchTask(
                 task_id="task-1",
-                question=f"从已冻结来源中定位与问题直接相关的核心事实：{request.query}",
-                purpose="定位可引用的一手事实和原文。",
+                question=f"分别核验{source_names}中能回答“{request.query}”的具体事实、实现状态和原文位置。",
+                purpose=f"为{source_names}分别建立可追溯的证据摘要。",
                 allowed_tools=["keyword_search", "read_document_range"],
                 source_ids=scoped_ids,
                 acceptance_criteria=[
                     AcceptanceCriterion(
                         criterion_id="criterion-1",
                         dimension="evidence",
-                        target="核心事实",
+                        target=f"{source_names}的具体事实与原文",
                         required=True,
                     )
                 ],
@@ -75,8 +86,8 @@ class MockResearchPlanner:
             ),
             ResearchTask(
                 task_id="task-2",
-                question=f"交叉比较不同来源的关键事实、时间和口径，识别冲突：{request.query}",
-                purpose="交叉核验来源，并显式保留不一致信息。",
+                question=f"对照{version_focus}回答“{request.query}”时的一致点、版本差异和真正的语义冲突。",
+                purpose="区分版本演进、适用范围差异和需要用户裁决的事实冲突。",
                 dependencies=["task-1"],
                 allowed_tools=["keyword_search", "read_document_range"],
                 source_ids=scoped_ids,
@@ -84,7 +95,7 @@ class MockResearchPlanner:
                     AcceptanceCriterion(
                         criterion_id="criterion-2",
                         dimension="locator",
-                        target="原文位置",
+                        target="各文档的版本、一致点、差异点与完整原文",
                         required=True,
                     )
                 ],
@@ -93,8 +104,8 @@ class MockResearchPlanner:
             ),
             ResearchTask(
                 task_id="task-3",
-                question="核对资料边界、缺失条件、过期内容和无法确认事项，再整理结论。",
-                purpose="为后续 Coverage 和报告生成提供结论与局限。",
+                question=f"基于{source_names}列出问题中仍无法确认的事项、资料边界和需要补充的证据。",
+                purpose="阻止超出已选资料范围的推测进入最终报告。",
                 dependencies=["task-2"],
                 allowed_tools=["keyword_search", "read_document_range"],
                 source_ids=scoped_ids,
@@ -102,7 +113,7 @@ class MockResearchPlanner:
                     AcceptanceCriterion(
                         criterion_id="criterion-3",
                         dimension="limitation",
-                        target="资料限制",
+                        target=f"{source_names}未覆盖或无法确认的事项",
                         required=False,
                     )
                 ],
@@ -263,17 +274,27 @@ class ModelResearchPlanner:
         return tasks
 
     def _chat(self, payload: dict) -> dict:
-        request = Request(
-            f"{self.api_base}/chat/completions",
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urlopen(request, timeout=self.timeout_seconds) as response:
-            return json.loads(response.read().decode("utf-8"))
+        last_error: Exception | None = None
+        for attempt in range(2):
+            request = Request(
+                f"{self.api_base}/chat/completions",
+                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            try:
+                with urlopen(request, timeout=self.timeout_seconds) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except Exception as exc:
+                last_error = exc
+                if attempt == 0:
+                    logger.warning("Research planner request failed; retrying once: %s", exc)
+                    time.sleep(0.5)
+        assert last_error is not None
+        raise last_error
 
 
 __all__ = ["MockResearchPlanner", "ModelResearchPlanner", "PlannerError", "ResearchPlanner"]

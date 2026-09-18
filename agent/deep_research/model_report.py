@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import time
 from urllib.request import Request, urlopen
 
 from .renderer import MarkdownReportRenderer
+
+
+logger = logging.getLogger(__name__)
 
 
 class EvidenceReportSynthesizer(MarkdownReportRenderer):
@@ -14,7 +19,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
 
     _CITATION = re.compile(r"\[(\d+)\]")
 
-    def __init__(self, *, api_base: str, api_key: str, model: str, timeout_seconds: int = 120) -> None:
+    def __init__(self, *, api_base: str, api_key: str, model: str, timeout_seconds: int = 90) -> None:
         self.api_base = api_base.rstrip("/")
         self.api_key = api_key
         self.model = model
@@ -27,7 +32,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             return base_report
 
         evidence_text = "\n\n".join(
-            f"[{item.number}] {item.title}\n原文：{item.excerpt}"
+            f"[{item.number}] {item.title}（{item.document_version or '本地快照'}，{item.locator}）\n原文：{item.excerpt}"
             for item in base_report.citations
         )
         output_instruction = (
@@ -41,7 +46,8 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             "You are a rigorous research report writer. Use only the frozen, verified local evidence below. "
             "Do not browse, add facts from memory, or invent sources. "
             f"{output_instruction} Every factual paragraph or table row must include its matching [n] citation. "
-            "Do not output a title, source list, or code fence. If the evidence is insufficient, say exactly "
+            "Cover every part of the user's question that the evidence can support, synthesize rather than copy raw Markdown, "
+            "and distinguish confirmed facts from pending verification. Do not output a title, source list, or code fence. If the evidence is insufficient, say exactly "
             "what cannot be confirmed.\n\n"
             f"Question: {kwargs['objective']}\n\nEvidence:\n{evidence_text}"
         )
@@ -49,7 +55,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.1,
-            "max_tokens": 3500,
+            "max_tokens": 2600,
         }
         try:
             data = self._chat(payload)
@@ -58,9 +64,17 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 content = "\n".join(content.splitlines()[1:-1]).strip()
             content = self._normalize_section_headings(content, language)
             numbers = [int(value) for value in self._CITATION.findall(content)]
-            if not content or not numbers or max(numbers) > len(base_report.citations):
+            section_count = len(re.findall(r"(?m)^##\s+", content))
+            if (
+                len(content) < 240
+                or section_count < 2
+                or not numbers
+                or max(numbers) > len(base_report.citations)
+            ):
+                logger.warning("Research report model returned an incomplete report; using verified fallback")
                 return base_report
-        except Exception:
+        except Exception as exc:
+            logger.warning("Research report model failed; using verified fallback: %s", exc)
             return base_report
 
         source_lines = ["", "## 来源" if language == "zh-CN" else "## Sources", ""]
@@ -90,17 +104,27 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         return "\n".join(lines)
 
     def _chat(self, payload: dict) -> dict:
-        request = Request(
-            f"{self.api_base}/chat/completions",
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urlopen(request, timeout=self.timeout_seconds) as response:
-            return json.loads(response.read().decode("utf-8"))
+        last_error: Exception | None = None
+        for attempt in range(2):
+            request = Request(
+                f"{self.api_base}/chat/completions",
+                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            try:
+                with urlopen(request, timeout=self.timeout_seconds) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except Exception as exc:
+                last_error = exc
+                if attempt == 0:
+                    logger.warning("Research report request failed; retrying once: %s", exc)
+                    time.sleep(0.5)
+        assert last_error is not None
+        raise last_error
 
 
 __all__ = ["EvidenceReportSynthesizer"]

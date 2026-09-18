@@ -23,6 +23,8 @@ class LLMClient(BaseLLM):
             "temperature": settings.LLM_TEMPERATURE,
             "max_tokens": settings.LLM_MAX_TOKENS,
         }
+        if settings.LLM_THINKING_MODE in {"enabled", "disabled", "auto"}:
+            payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
         if tools:
             payload["tools"] = tools
 
@@ -42,7 +44,17 @@ class LLMClient(BaseLLM):
         try:
             with urlopen(request, timeout=settings.LLM_TIMEOUT) as response:
                 data = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+        except HTTPError as exc:
+            # OpenAI-compatible providers return the actionable error code in
+            # the response body. Preserve a bounded copy so model/parameter
+            # failures can be diagnosed without exposing request credentials.
+            try:
+                detail = exc.read().decode("utf-8", errors="replace")[:2000]
+            except Exception:
+                detail = ""
+            suffix = f"; response={detail}" if detail else ""
+            raise LLMError(f"LLM request failed: {exc}{suffix}") from exc
+        except (URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
             raise LLMError(f"LLM request failed: {exc}") from exc
 
         try:

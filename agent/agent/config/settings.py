@@ -159,6 +159,7 @@ class Settings(BaseModel):
     LLM_TEMPERATURE: float = _env_float("LLM_TEMPERATURE", 0.1)
     LLM_MAX_TOKENS: int = _env_int("LLM_MAX_TOKENS", 2000)
     LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)
+    LLM_THINKING_MODE: str = os.getenv("LLM_THINKING_MODE", "").strip().lower()
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")

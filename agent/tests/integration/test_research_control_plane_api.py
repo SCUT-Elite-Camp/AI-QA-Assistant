@@ -83,6 +83,13 @@ def test_api_create_view_and_approve_real_control_plane_entities(tmp_path: Path)
     assert approved.status_code == 200
     assert approved.json()["status"] == "ready"
 
+    trace = client.get(f"/api/research/jobs/{job['research_id']}/evaluation-trace")
+    assert trace.status_code == 200
+    assert trace.json() == {
+        "observations": [], "verified_evidence": [], "findings": [],
+        "claims": [], "verifications": [],
+    }
+
 
 def test_api_cannot_create_job_from_external_source_scope(tmp_path: Path) -> None:
     client, _ = _client(tmp_path)
@@ -94,6 +101,30 @@ def test_api_cannot_create_job_from_external_source_scope(tmp_path: Path) -> Non
         },
     )
     assert response.status_code == 422
+
+
+def test_api_opens_complete_source_only_inside_frozen_manifest(tmp_path: Path) -> None:
+    client, control_plane = _client(tmp_path)
+    created = client.post(
+        "/api/research/jobs",
+        json={
+            "query": "核验 A",
+            "source_scope": {"document_ids": ["doc-a"]},
+        },
+    ).json()
+    control_plane.resume_planning_job(created["research_id"])
+
+    source = client.get(
+        f"/api/research/jobs/{created['research_id']}/documents/doc-a/source"
+    )
+    assert source.status_code == 200
+    assert source.headers["content-type"].startswith("text/plain")
+    assert source.text == "A 的收入为 10。"
+
+    outside_manifest = client.get(
+        f"/api/research/jobs/{created['research_id']}/documents/doc-b/source"
+    )
+    assert outside_manifest.status_code == 404
 
 
 def test_api_revision_creates_v2_and_rejects_old_approval(tmp_path: Path) -> None:

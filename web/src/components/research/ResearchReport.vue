@@ -68,7 +68,7 @@ function askSelectedText() {
 <template>
   <div class="space-y-6">
     <p class="max-w-[72ch] text-base leading-7 text-highlighted">
-      研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.result_status !== 'complete'">；其中仍有资料冲突，需要你结合实际情况复核</span>。
+      研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.conflicts?.length">；其中仍有资料冲突，需要你结合实际情况复核</span><span v-else-if="report.result_status !== 'complete'">；部分结论的证据仍不足，已在报告中标明</span>。
     </p>
 
     <article
@@ -206,7 +206,10 @@ function askSelectedText() {
       chevron="leading"
       class="max-w-[72ch]"
     >
-      <ResearchSources :citations="report.citations" />
+      <ResearchSources
+        :citations="report.citations"
+        :research-id="job.research_id"
+      />
     </UChatTool>
 
     <section
