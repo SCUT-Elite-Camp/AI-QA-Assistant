@@ -30,6 +30,14 @@ PROJECT_ROOT = AGENT_ROOT.parent
 DOCUMENTS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "documents"
 DEFAULT_OUTPUT_ROOT = AGENT_ROOT / "outputs" / "deep_research_benchmark"
 TERMINAL_RESEARCH_STATUSES = {"completed", "failed", "cancelled"}
+
+
+class BenchmarkRunError(RuntimeError):
+    """A failed run that still carries its persisted partial artifacts."""
+
+    def __init__(self, message: str, *, partial_result: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.partial_result = partial_result
 GROUPS = ("fast_chat", "deep_research_current", "deep_research_page_index")
 
 
@@ -188,6 +196,22 @@ class ApiClient:
 
 def _case_scope(case: dict[str, Any]) -> dict[str, Any]:
     scope = case.get("source_scope") or case.get("source_manifest")
+    if isinstance(scope, str) and scope.startswith("manifest:"):
+        referenced_case = scope.split(":", 1)[1]
+        if referenced_case != str(case.get("case_id") or ""):
+            raise ValueError(
+                f"case {case.get('case_id')} references mismatched manifest {scope}"
+            )
+        document_ids = case.get("allowed_document_ids")
+        if not isinstance(document_ids, list) or not document_ids:
+            raise ValueError(
+                f"case {case.get('case_id')} has no allowed_document_ids"
+            )
+        return {
+            "document_ids": [str(item) for item in document_ids],
+            "knowledge_base_ids": [str(case.get("source_space") or "RAG")],
+            "topic": str(case.get("category") or ""),
+        }
     if not isinstance(scope, dict):
         raise ValueError(f"case {case.get('case_id')} has no source_scope object")
     return {
@@ -321,14 +345,33 @@ def _run_research(
                 "manifest_hash": plan["manifest_hash"],
             },
         )
-        job = _wait_for_status(
-            client,
-            research_id,
-            TERMINAL_RESEARCH_STATUSES,
-            deadline=deadline,
-        )
+        try:
+            job = _wait_for_status(
+                client,
+                research_id,
+                TERMINAL_RESEARCH_STATUSES,
+                deadline=deadline,
+            )
+        except TimeoutError as exc:
+            job = client.request("GET", f"/api/research/jobs/{research_id}")
+            progress = client.request("GET", f"/api/research/jobs/{research_id}/progress")
+            events = client.request("GET", f"/api/research/jobs/{research_id}/events?after_event_id=0&limit=100")
+            evaluation_trace = client.request("GET", f"/api/research/jobs/{research_id}/evaluation-trace")
+            raise BenchmarkRunError(
+                str(exc),
+                partial_result={
+                    "research_id": research_id, "job": job, "plan": plan,
+                    "progress": progress, "events": events,
+                    "evaluation_trace": evaluation_trace, "report": None,
+                    "citations": [], "source_checks": [],
+                    "retrieval_profile": profile, "timed_out": True,
+                },
+            ) from exc
 
     progress = client.request("GET", f"/api/research/jobs/{research_id}/progress")
+    evaluation_trace = client.request(
+        "GET", f"/api/research/jobs/{research_id}/evaluation-trace"
+    )
     events = client.request(
         "GET", f"/api/research/jobs/{research_id}/events?after_event_id=0&limit=100"
     )
@@ -342,6 +385,7 @@ def _run_research(
         "job": job,
         "plan": plan,
         "progress": progress,
+        "evaluation_trace": evaluation_trace,
         "events": events,
         "report": report,
         "citations": citations,
@@ -373,6 +417,13 @@ def run_benchmark(args: argparse.Namespace) -> int:
     cases = dataset.get("cases") if isinstance(dataset, dict) else dataset
     if not isinstance(cases, list) or not cases:
         raise ValueError("dataset must contain a non-empty cases list")
+    if args.case_ids:
+        requested_case_ids = set(args.case_ids)
+        cases = [case for case in cases if str(case.get("case_id")) in requested_case_ids]
+        found_case_ids = {str(case.get("case_id")) for case in cases}
+        missing_case_ids = requested_case_ids - found_case_ids
+        if missing_case_ids:
+            raise ValueError(f"unknown case ids: {sorted(missing_case_ids)}")
     unknown_groups = set(args.groups) - set(GROUPS)
     if unknown_groups:
         raise ValueError(f"unknown groups: {sorted(unknown_groups)}")
@@ -414,6 +465,7 @@ def run_benchmark(args: argparse.Namespace) -> int:
                         )
                 except Exception as exc:  # preserve every failed run
                     failures += 1
+                    result = getattr(exc, "partial_result", result)
                     error = {
                         "type": type(exc).__name__,
                         "message": str(exc),
@@ -481,6 +533,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_ROOT))
     run.add_argument("--base-url", default="http://127.0.0.1:8000")
     run.add_argument("--groups", nargs="+", choices=GROUPS, default=list(GROUPS))
+    run.add_argument("--case-ids", nargs="+", help="run only the selected frozen case IDs")
     run.add_argument("--repetitions", type=int, default=3)
     run.add_argument("--top-k", type=int, default=5)
     run.add_argument("--request-timeout", type=float, default=120.0)

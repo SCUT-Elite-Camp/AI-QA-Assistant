@@ -29,6 +29,22 @@ def test_case_scope_normalizes_explicit_document_scope() -> None:
     }
 
 
+def test_case_scope_accepts_frozen_a_side_manifest_reference() -> None:
+    scope = _case_scope(
+        {
+            "case_id": "DR-A-001",
+            "category": "multi_document_summary",
+            "source_manifest": "manifest:DR-A-001",
+            "allowed_document_ids": ["doc-1", "doc-2"],
+        }
+    )
+    assert scope == {
+        "document_ids": ["doc-1", "doc-2"],
+        "knowledge_base_ids": ["RAG"],
+        "topic": "multi_document_summary",
+    }
+
+
 def test_summary_keeps_failures_and_broken_links(tmp_path: Path) -> None:
     run_dir = tmp_path / "runs" / "deep_research_current" / "case-1"
     run_dir.mkdir(parents=True)

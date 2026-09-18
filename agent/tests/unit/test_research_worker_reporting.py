@@ -22,6 +22,11 @@ from deep_research.verifier import DeterministicSemanticVerifier
 from deep_research.worker import InMemoryResearchLedger, LocalResearchWorker
 
 
+def test_worker_expands_search_hit_to_a_substantive_context_window() -> None:
+    assert LocalResearchWorker._expand_locator("line:1-1") == "line:1-17"
+    assert LocalResearchWorker._expand_locator("line:20-20") == "line:4-36"
+
+
 def test_day3_day4_fixture_contains_the_four_required_quality_cases() -> None:
     fixture_path = Path(__file__).resolve().parents[2] / "mock" / "research_day3_day4_cases.json"
     payload = json.loads(fixture_path.read_text(encoding="utf-8"))
@@ -119,6 +124,7 @@ def test_worker_uses_approved_real_entities_and_separates_observation_from_evide
         assert outcome.finding_ids
 
     assert len(ledger.observations) == 3
+    assert all(item.score == 0.95 for item in ledger.observations)
     assert len(ledger.evidence) == 3
     assert all(item.locator == "page:1/paragraph:1" for item in ledger.evidence.values())
     assert all(
@@ -253,3 +259,67 @@ def test_claim_verification_and_renderer_never_promote_unsupported_fact() -> Non
     assert "[1]" in report.markdown
     assert "claim-f-" not in report.markdown
     assert "evidence_contains_" not in report.markdown
+
+
+def test_renderer_preserves_unclaimed_verified_evidence_as_supporting_material() -> None:
+    evidence = [
+        VerifiedEvidence(
+            evidence_id="e-used",
+            research_id="r-supporting",
+            task_id="t1",
+            doc_id="doc-a",
+            locator="line:1-3",
+            excerpt="The implemented workflow has durable checkpoints.",
+            content_hash="used-hash",
+        ),
+        VerifiedEvidence(
+            evidence_id="e-extra",
+            research_id="r-supporting",
+            task_id="t2",
+            doc_id="doc-b",
+            locator="line:8-12",
+            excerpt="The document does not provide production performance results.",
+            content_hash="extra-hash",
+        ),
+    ]
+    claims = ClaimGenerator().generate(
+        [
+            Finding(
+                finding_id="f-used",
+                research_id="r-supporting",
+                task_id="t1",
+                statement=evidence[0].excerpt,
+                evidence_ids=["e-used"],
+                covers=["c1"],
+            )
+        ],
+        research_id="r-supporting",
+    )
+    verified = DeterministicSemanticVerifier().verify_many(claims, evidence)
+    coverage = CoverageEngine().compute(
+        "r-supporting",
+        [AcceptanceCriterion(criterion_id="c1", target="workflow", required=True)],
+        [
+            Finding(
+                finding_id="f-used",
+                research_id="r-supporting",
+                task_id="t1",
+                statement=evidence[0].excerpt,
+                evidence_ids=["e-used"],
+                covers=["c1"],
+            )
+        ],
+    )
+
+    report = MarkdownReportRenderer().render(
+        research_id="r-supporting",
+        objective="Review the workflow",
+        claims=verified,
+        coverage=coverage,
+        evidence=evidence,
+    )
+
+    assert len(report.citations) == 2
+    assert report.evidence_ids == ["e-used", "e-extra"]
+    assert "## 补充核验证据" in report.markdown
+    assert "production performance results" in report.markdown

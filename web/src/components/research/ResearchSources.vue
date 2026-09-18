@@ -4,8 +4,11 @@ import type { ResearchCitation } from '../../types/research'
 
 const props = defineProps<{
   citations: ResearchCitation[]
+  researchId: string
   selectedCitation?: number | null
 }>()
+
+const researchApiBase = (import.meta.env.VITE_RESEARCH_API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '')
 
 const emit = defineEmits<{
   select: [citationNumber: number]
@@ -40,6 +43,12 @@ function formatDate(value: string | null) {
   if (!value) return null
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+}
+
+function sourceHref(citation: ResearchCitation) {
+  const sourceUrl = citation.source_url?.trim() ?? ''
+  if (/^https?:\/\//i.test(sourceUrl) && !sourceUrl.startsWith('https://local-document')) return sourceUrl
+  return `${researchApiBase}/api/research/jobs/${encodeURIComponent(props.researchId)}/documents/${encodeURIComponent(citation.doc_id)}/source`
 }
 </script>
 
@@ -107,8 +116,7 @@ function formatDate(value: string | null) {
             {{ citation.excerpt || '当前证据没有可显示的原文片段。' }}
           </div>
           <a
-            v-if="citation.source_url && !citation.source_url.startsWith('https://local-document')"
-            :href="citation.source_url"
+            :href="sourceHref(citation)"
             target="_blank"
             rel="noopener noreferrer"
             class="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"

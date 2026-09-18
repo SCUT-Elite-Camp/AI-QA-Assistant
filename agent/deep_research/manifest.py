@@ -22,6 +22,9 @@ class SourceResolver(Protocol):
     def resolve(self, research_id: str, scope: SourceScope) -> SourceManifest:
         """Resolve an explicit local scope into an immutable manifest."""
 
+    def read_document(self, doc_id: str) -> tuple[str, str]:
+        """Return the frozen catalog title and complete source text."""
+
 
 class LocalDocumentResolver:
     """Resolve source metadata from the repository's processed JSON documents.
@@ -92,6 +95,30 @@ class LocalDocumentResolver:
             doc_id = str(payload.get("doc_id") or path.stem)
             catalog[doc_id] = payload
         return catalog
+
+    def read_document(self, doc_id: str) -> tuple[str, str]:
+        """Read one catalog document without accepting a filesystem path."""
+
+        record = self._load_catalog().get(doc_id)
+        if record is None:
+            raise ManifestResolutionError(
+                "source_manifest_document_not_found",
+                f"document '{doc_id}' is not present in the local catalog",
+            )
+        content = str(record.get("content") or "").strip()
+        if not content:
+            chunks = record.get("chunks") or []
+            content = "\n\n".join(
+                str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+                for chunk in chunks
+                if isinstance(chunk, dict)
+            ).strip()
+        if not content:
+            raise ManifestResolutionError(
+                "source_document_content_unavailable",
+                f"document '{doc_id}' has no readable source content",
+            )
+        return str(record.get("title") or doc_id), content
 
     @staticmethod
     def _searchable_text(record: dict[str, Any]) -> str:
@@ -179,6 +206,28 @@ class InMemoryDocumentResolver:
             research_id,
             [LocalDocumentResolver._snapshot(doc_id, record) for doc_id, record in selected.items()],
         )
+
+    def read_document(self, doc_id: str) -> tuple[str, str]:
+        record = self.documents.get(doc_id)
+        if record is None:
+            raise ManifestResolutionError(
+                "source_manifest_document_not_found",
+                f"document '{doc_id}' is not present in the in-memory catalog",
+            )
+        content = str(record.get("content") or "").strip()
+        if not content:
+            chunks = record.get("chunks") or []
+            content = "\n\n".join(
+                str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+                for chunk in chunks
+                if isinstance(chunk, dict)
+            ).strip()
+        if not content:
+            raise ManifestResolutionError(
+                "source_document_content_unavailable",
+                f"document '{doc_id}' has no readable source content",
+            )
+        return str(record.get("title") or doc_id), content
 
 
 __all__ = [

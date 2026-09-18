@@ -3,14 +3,14 @@
   "baseline_id": "cp2-deep-research-a-v1",
   "frozen_at": "2026-09-14T19:49:53+08:00",
   "dataset_version": "cases.v1",
-  "generation_config_sha256": "e239f3dd0c00ae78fc68370a92f32ae409c1735766e050f9565ca77930229e1f",
+  "generation_config_sha256": "86ba7aecce20f07e0cd5b52a0c2e69da30dacf7d7675f56adacaef798dce63bc",
   "repository": {
     "url": "https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/",
     "branch": "agent-dev",
-    "head_commit": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
-    "working_tree_dirty_at_freeze": false,
+    "head_commit": "74f2d44e3eaf67739c87bb888db940051b30991b",
+    "working_tree_dirty_at_freeze": true,
     "note": "A-side assets are based on origin/agent-dev immediately before their own commit.",
-    "working_tree_status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    "working_tree_status_sha256": "bfa4f14e1ae0da553abf73e6770a5feaeba1059f817a2a66cd7829b1c12c72fd"
   },
   "implementation": {
     "g1": {
@@ -29,15 +29,15 @@
       "available_on_frozen_head": false
     },
     "research_reference": {
-      "git_ref": "origin/agent-dev",
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
       "commit": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
       "contract_schema": "research.v2"
     }
   },
   "generation": {
     "provider": "openai-compatible",
-    "api_base": "http://127.0.0.1:11434/v1",
-    "model": "llama3.1",
+    "api_base": "https://ark.cn-beijing.volces.com/api/v3",
+    "model": "doubao-seed-2-1-turbo-260628",
     "model_revision": "provider-reported-required-per-run",
     "temperature": 0.1,
     "top_p": 1.0,
@@ -55,17 +55,17 @@
     },
     "planner": {
       "path": "agent/deep_research/planner.py",
-      "git_ref": "origin/agent-dev",
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
       "sha256": "4e6603c72bae1351fcbfcef69ac89c8d7f09b31073cc1df216688cbc81b8f0c5"
     },
     "worker": {
       "path": "agent/deep_research/worker.py",
-      "git_ref": "origin/agent-dev",
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
       "sha256": "b8064a8d88a29a47f3d060363798d08d77aefb394f52999b66ab3b471810d1fb"
     },
     "report": {
       "path": "agent/deep_research/renderer.py",
-      "git_ref": "origin/agent-dev",
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
       "sha256": "c4384ea5c47b3ee2ded367b675233d5a616ce1b56e1de038bf001e562ddf9552"
     },
     "judge": {

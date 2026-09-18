@@ -182,10 +182,13 @@ def build_manifest_set() -> dict[str, Any]:
     }
 
 
-def command_freeze(write: bool) -> int:
+def command_freeze(write: bool, manifests_only: bool = False) -> int:
     manifest_set = build_manifest_set()
     if write:
         write_json(MANIFEST_PATH, manifest_set)
+        if manifests_only:
+            print(f"wrote {MANIFEST_PATH.relative_to(PROJECT_ROOT)}")
+            return 0
         baseline = load_json(BASELINE_PATH)
         code, commit = run_command("git", "rev-parse", "HEAD")
         if code == 0:
@@ -365,8 +368,16 @@ def command_preflight(require_all_groups: bool) -> int:
         "G3": (PROJECT_ROOT / "agent" / "deep_research").is_dir()
             and any((PROJECT_ROOT / "toolset").rglob("*page*index*.py")),
     }
-    ref_code, _ = run_command("git", "rev-parse", "--verify", "origin/feature/cp2-research-progress-backend")
-    checks["research_reference_available"] = ref_code == 0
+    baseline = load_json(BASELINE_PATH)
+    frozen_ref = str(
+        baseline.get("implementation", {}).get("research_reference", {}).get("git_ref", "")
+    )
+    ref_code, resolved_ref = run_command("git", "rev-parse", "--verify", frozen_ref)
+    checks["research_reference_available"] = (
+        ref_code == 0
+        and resolved_ref
+        == baseline.get("implementation", {}).get("research_reference", {}).get("commit")
+    )
     print(json.dumps(checks, ensure_ascii=False, indent=2))
     required_ok = checks["assets_valid"] and checks["docker"]["ready"] and checks["milvus"]["ready"]
     if require_all_groups:
@@ -701,7 +712,12 @@ def _csv_row(record: dict[str, Any], score: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: bool) -> int:
+def command_batch_score(
+    records_dir: Path,
+    output_dir: Path,
+    allow_incomplete: bool,
+    groups: list[str] | None = None,
+) -> int:
     records: list[dict[str, Any]] = []
     for path in sorted(records_dir.rglob("*.json")):
         try:
@@ -717,10 +733,12 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
     dataset = load_json(DATASET_PATH)
     baseline = load_json(BASELINE_PATH)
     repeats = int(baseline["experiment"]["repeats_per_case"])
+    selected_groups = groups or [group["id"] for group in baseline["experiment"]["groups"]]
     expected = {
         (case["case_id"], group["id"], repeat)
         for case in dataset["cases"]
         for group in baseline["experiment"]["groups"]
+        if group["id"] in selected_groups
         for repeat in range(1, repeats + 1)
     }
     seen: dict[tuple[str, str, int], dict[str, Any]] = {}
@@ -731,7 +749,7 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
             batch_errors.append(f"duplicate run coordinate: {key}")
         seen[key] = record
     missing = sorted(expected - set(seen))
-    unexpected = sorted(set(seen) - expected)
+    unexpected = sorted(key for key in set(seen) - expected if key[1] in selected_groups)
     if missing and not allow_incomplete:
         batch_errors.append(f"missing {len(missing)} required run coordinates")
     if unexpected:
@@ -786,7 +804,7 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
         "total_latency_ms": ("runtime", "total_latency_ms"),
         "tool_calls": ("runtime", "tool_calls"),
     }
-    for group in ("G1", "G2", "G3"):
+    for group in selected_groups:
         selected = [result for result in scored if result.get("group") == group]
         averages: dict[str, float | None] = {}
         for name, path in metric_paths.items():
@@ -814,6 +832,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     freeze_parser = subparsers.add_parser("freeze", help="check or refresh frozen manifests")
     freeze_parser.add_argument("--write", action="store_true", help="write the intentional new snapshot")
+    freeze_parser.add_argument(
+        "--manifests-only", action="store_true",
+        help="refresh SourceManifests without changing the frozen repository baseline",
+    )
     subparsers.add_parser("validate", help="validate all A-side assets and local source hashes")
     preflight_parser = subparsers.add_parser("preflight", help="check runtime prerequisites")
     preflight_parser.add_argument("--require-all-groups", action="store_true")
@@ -824,13 +846,14 @@ def build_parser() -> argparse.ArgumentParser:
     batch_parser.add_argument("records_dir", type=Path)
     batch_parser.add_argument("--output-dir", type=Path, required=True)
     batch_parser.add_argument("--allow-incomplete", action="store_true")
+    batch_parser.add_argument("--groups", nargs="+", choices=("G1", "G2", "G3"))
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
     if args.command == "freeze":
-        return command_freeze(args.write)
+        return command_freeze(args.write, args.manifests_only)
     if args.command == "validate":
         return command_validate()
     if args.command == "preflight":
@@ -838,7 +861,9 @@ def main() -> int:
     if args.command == "score":
         return command_score(args.record, args.output)
     if args.command == "batch-score":
-        return command_batch_score(args.records_dir, args.output_dir, args.allow_incomplete)
+        return command_batch_score(
+            args.records_dir, args.output_dir, args.allow_incomplete, args.groups
+        )
     raise AssertionError(args.command)
 
 

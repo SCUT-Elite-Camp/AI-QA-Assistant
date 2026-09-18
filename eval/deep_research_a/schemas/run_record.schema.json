@@ -52,7 +52,7 @@
       "properties": {
         "total_latency_ms": {"type": "number", "minimum": 0}, "stage_latency_ms": {"type": "object"},
         "search_calls": {"type": "integer", "minimum": 0}, "read_calls": {"type": "integer", "minimum": 0}, "tool_calls": {"type": "integer", "minimum": 0},
-        "input_tokens": {"type": "integer", "minimum": 0}, "output_tokens": {"type": "integer", "minimum": 0},
+        "input_tokens": {"type": ["integer", "null"], "minimum": 0}, "output_tokens": {"type": ["integer", "null"], "minimum": 0},
         "retries": {"type": "integer", "minimum": 0}, "fallbacks": {"type": "integer", "minimum": 0},
         "checkpoint_recoveries": {"type": "integer", "minimum": 0}, "provider_failures": {"type": "integer", "minimum": 0}
       }

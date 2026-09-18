@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from deep_research.manifest import ManifestResolutionError
@@ -54,6 +55,16 @@ class ResearchInteractionResponse(BaseModel):
     message: str
     job: ResearchJob
     plan: ResearchPlan | None = None
+
+
+class ResearchEvaluationTrace(BaseModel):
+    """Persisted internal artifacts required by the six-layer evaluation."""
+
+    observations: list[dict]
+    verified_evidence: list[dict]
+    findings: list[dict]
+    claims: list[dict]
+    verifications: list[dict]
 
 
 def _resolve_report_conflict(
@@ -317,6 +328,58 @@ def get_research_events(
             research_id,
             after_event_id=after_event_id,
             limit=limit,
+        )
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.get(
+    "/jobs/{research_id}/evaluation-trace",
+    response_model=ResearchEvaluationTrace,
+)
+def get_research_evaluation_trace(
+    research_id: str,
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+) -> ResearchEvaluationTrace:
+    """Expose persisted research artifacts; this never reruns retrieval."""
+
+    try:
+        repository = control_plane.repository
+        repository.get_job(research_id)
+        return ResearchEvaluationTrace(
+            observations=[item.model_dump(mode="json") for item in repository.list_observations(research_id)],
+            verified_evidence=[item.model_dump(mode="json") for item in repository.list_evidence(research_id)],
+            findings=[item.model_dump(mode="json") for item in repository.list_findings(research_id)],
+            claims=[item.model_dump(mode="json") for item in repository.list_claims(research_id)],
+            verifications=[item.model_dump(mode="json") for item in repository.list_verifications(research_id)],
+        )
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.get(
+    "/jobs/{research_id}/documents/{doc_id}/source",
+    response_class=PlainTextResponse,
+)
+def get_research_document_source(
+    research_id: str,
+    doc_id: str,
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+) -> PlainTextResponse:
+    """Open complete source text only for documents frozen into this Job."""
+
+    try:
+        manifest = control_plane.get_manifest(research_id)
+        if doc_id not in {item.doc_id for item in manifest.documents}:
+            raise ResearchNotFoundError(
+                f"document '{doc_id}' is not part of research job '{research_id}'"
+            )
+        _, content = control_plane.source_resolver.read_document(doc_id)
+        return PlainTextResponse(
+            content,
+            headers={"Content-Disposition": "inline"},
         )
     except Exception as exc:
         _raise_http_error(exc)

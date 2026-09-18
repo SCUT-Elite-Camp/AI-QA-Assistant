@@ -376,6 +376,7 @@ class LocalResearchWorker:
                 tool_name="search",
                 doc_id=hit.doc_id,
                 locator_hint=hit.locator_hint,
+                score=hit.score,
                 snippet=hit.snippet or "search result without snippet",
                 query=task.question,
             )
@@ -475,7 +476,7 @@ class LocalResearchWorker:
         )
 
     @staticmethod
-    def _expand_locator(locator: str, context_lines: int = 4) -> str:
+    def _expand_locator(locator: str, context_lines: int = 16) -> str:
         match = re.fullmatch(r"line:(\d+)-(\d+)", locator.strip())
         if not match:
             return locator

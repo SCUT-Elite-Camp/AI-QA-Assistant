@@ -485,6 +485,7 @@ class Observation(ResearchContractModel):
     tool_name: str = Field(min_length=1, max_length=100)
     doc_id: str | None = Field(default=None, max_length=200)
     locator_hint: str | None = Field(default=None, max_length=300)
+    score: float | None = None
     snippet: str = Field(min_length=1, max_length=10_000)
     query: str = Field(min_length=1, max_length=2_000)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

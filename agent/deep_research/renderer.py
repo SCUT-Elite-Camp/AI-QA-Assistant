@@ -134,6 +134,31 @@ class MarkdownReportRenderer:
                     source_numbers[key] = number
                 citation_by_evidence[evidence_id] = number
 
+        # Preserve every verified original read in the report payload.  Claims
+        # decide what may be asserted, but a report must not silently discard
+        # evidence collected for another approved task.  Unused evidence is
+        # presented as supporting material, never promoted to a conclusion.
+        for item in sorted(
+            evidence_map.values(),
+            key=lambda value: (value.doc_id, value.locator, value.evidence_id),
+        ):
+            if item.research_id != research_id:
+                continue
+            if item.evidence_id not in referenced_evidence:
+                referenced_evidence.append(item.evidence_id)
+            key = (
+                item.doc_id,
+                item.document_version or "",
+                item.locator,
+                item.content_hash,
+            )
+            number = source_numbers.get(key)
+            if number is None:
+                sources.append(item)
+                number = len(sources)
+                source_numbers[key] = number
+            citation_by_evidence[item.evidence_id] = number
+
         lines = [f"# {title or objective}", "", "## 结论", ""]
         if answer_groups:
             for status, claim_text, evidence_ids in answer_groups:
@@ -148,6 +173,24 @@ class MarkdownReportRenderer:
                 )
         else:
             lines.append("- 现有资料不足以支持确定结论。")
+
+        used_by_display_claims = {
+            evidence_id
+            for claim in display_claims
+            for evidence_id in claim.evidence_ids
+        }
+        supporting_sources = [
+            item for item in sources if item.evidence_id not in used_by_display_claims
+        ]
+        if supporting_sources:
+            lines.extend(["", "## 补充核验证据", ""])
+            lines.append("以下原文已完成读取，但没有被提升为确定结论：")
+            lines.append("")
+            for item in supporting_sources:
+                lines.append(
+                    f"- {self._clean_display_text(item.excerpt)}"
+                    f"{self._citation([item.evidence_id], citation_by_evidence)}"
+                )
 
         if conflict_claims:
             lines.extend(
@@ -454,7 +497,30 @@ class MarkdownReportRenderer:
 
     @staticmethod
     def _clean_display_text(text: str) -> str:
-        cleaned = " ".join(text.strip().split())
+        lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
+        table_rows = [
+            [cell.strip() for cell in line.strip("|").split("|")]
+            for line in lines
+            if line.startswith("|") and not re.fullmatch(r"[|:\- ]+", line)
+        ]
+        prose_lines = [
+            re.sub(r"^#{1,6}\s*", "", line)
+            for line in lines
+            if not line.startswith("|") and line != "```"
+        ]
+        if len(table_rows) >= 2:
+            headers = table_rows[0]
+            rendered_rows = []
+            for row in table_rows[1:]:
+                if len(row) == len(headers):
+                    rendered_rows.append(
+                        "，".join(
+                            f"{headers[index]}为{value}"
+                            for index, value in enumerate(row)
+                        )
+                    )
+            prose_lines.extend(rendered_rows)
+        cleaned = "；".join(" ".join(line.split()) for line in prose_lines)
         for marker in ("案例结论：", "资料边界：", "FAQ页面答复："):
             marker_index = cleaned.find(marker)
             if 0 <= marker_index < 80:
