@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Optional
 
 from agent.config.settings import settings
@@ -126,6 +127,18 @@ class Agent:
                     library_context.knowledge_base_id if library_context else "",
                     library_context.access_token if library_context else "",
                 )
+            for tool_name in (
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ):
+                wiki_tool = self.registry.get_tool(tool_name)
+                if wiki_tool is not None and hasattr(wiki_tool, "set_personal_context"):
+                    wiki_tool.set_personal_context(
+                        library_context.owner_user_id if library_context else "",
+                        library_context.knowledge_base_id if library_context else "",
+                        library_context.access_token if library_context else "",
+                        secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
+                    )
             response = self._chat_internal(request, trace_id, query_plan=query_plan)
             latency_ms = self.audit_service.stop_timer(start_time)
             self.audit_service.record(
@@ -149,7 +162,11 @@ class Agent:
             )
             raise exc
         finally:
-            for tool_name in ("search_attachments", "inspect_attachment", "search_library"):
+            for tool_name in (
+                "search_attachments", "inspect_attachment", "search_library",
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ):
                 tool = self.registry.get_tool(tool_name)
                 if tool is not None and hasattr(tool, "clear_request_context"):
                     tool.clear_request_context()
@@ -212,6 +229,22 @@ class Agent:
             retrieval_mode=orchestration.retrieval_mode,
             top_k=orchestration.top_k,
         )
+        if run_result.coverage_assessments or run_result.exploration_rounds:
+            response.diagnostics = {
+                "actual_path": [
+                    record.tool_name for record in run_result.tool_calls
+                    if record.tool_name in {
+                        "search_documents", "search_library", "wiki_search",
+                        "wiki_read_page", "wiki_read_sources", "wiki_search_evidence",
+                    }
+                ],
+                "exploration_rounds": run_result.exploration_rounds,
+                "evidence_count": len(run_result.evidence),
+                "coverage": (
+                    run_result.coverage_assessments[-1]
+                    if run_result.coverage_assessments else None
+                ),
+            }
 
         is_first = request.is_first_message
         if is_first is None:

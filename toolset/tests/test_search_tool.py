@@ -37,46 +37,6 @@ class FakeBackend:
 
 
 class SearchToolTest(unittest.TestCase):
-    def test_legacy_navigation_mode_does_not_auto_search_sections(self):
-        class NavigationBackend:
-            def search(self, query, top_k, mode, filters=None):
-                return [
-                    {"doc_id": "doc_1", "chunk_id": "c_direct", "chunk_index": 0,
-                     "text": "general risk", "score": 1.0},
-                ]
-
-        with tempfile.TemporaryDirectory() as tmp:
-            docs = Path(tmp)
-            (docs / "doc_1.json").write_text(json.dumps({
-                "doc_id": "doc_1", "active_version": True,
-                "title": "Policy", "version_id": "ver-1",
-                "chunks": [
-                    {"chunk_id": "c_direct", "index": 0, "text": "general risk"},
-                    {"chunk_id": "c_scoped", "index": 1, "text": "special control"},
-                ],
-                "sections": [{
-                    "id": "s1", "title": "Special controls",
-                    "section_path": ["Policy", "Special controls"],
-                    "summary": "special control", "evidence_ids": ["c_scoped"],
-                    "quality": "high", "level": 1,
-                }],
-            }), encoding="utf-8")
-            tool = SearchTool(backend=NavigationBackend(), documents_dir=str(docs))
-            with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "true"}):
-                rows = tool.search(
-                    "special control", top_k=2, navigation_mode="hybrid",
-                )
-        self.assertEqual([row["chunk_id"] for row in rows], ["c_direct"])
-
-    def test_navigation_is_direct_when_feature_flag_is_disabled(self):
-        tool = SearchTool(backend=FakeBackend())
-        with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "false"}):
-            rows = tool.search("query", top_k=2, navigation_mode="hierarchical")
-        self.assertEqual(rows[0]["doc_id"], "doc_001")
-
-    def test_search_schema_does_not_advertise_automatic_navigation(self):
-        self.assertNotIn("navigation_mode", SearchTool(backend=FakeBackend()).parameters["properties"])
-
     def test_accepts_all_cp1_modes(self):
         backend = FakeBackend()
         tool = SearchTool(backend=backend)

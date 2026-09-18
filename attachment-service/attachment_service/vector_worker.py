@@ -3,17 +3,13 @@ from __future__ import annotations
 import json
 import sys
 
-from .vector_index import AttachmentSectionVectorIndex, AttachmentVectorIndex
+from .vector_index import AttachmentVectorIndex
 
 
 def main() -> int:
     try:
         request = json.load(sys.stdin)
-        index = (
-            AttachmentSectionVectorIndex()
-            if request.get("kind") == "section"
-            else AttachmentVectorIndex()
-        )
+        index = AttachmentVectorIndex()
         index._replace_in_process(
             str(request["attachment_id"]),
             list(request["items"]),

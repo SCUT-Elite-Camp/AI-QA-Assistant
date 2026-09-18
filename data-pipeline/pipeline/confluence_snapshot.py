@@ -131,6 +131,25 @@ def deduplicate_confluence_paths(paths: list[str]) -> list[str]:
     return sorted(dict.fromkeys([*ordinary, *confluence]), key=str.casefold)
 
 
+def complete_confluence_export_pages(root: str | Path) -> dict[str, set[str]]:
+    """Return page IDs only from successful full-space Cloud exports."""
+    by_space: dict[str, set[str]] = {}
+    for path in sorted(Path(root).glob("*/manifest.json")):
+        raw = _read_object(path)
+        if raw.get("status") != "ok" or raw.get("full_sync") is not True:
+            continue
+        space_id = str(raw.get("space_id") or "").strip()
+        pages = raw.get("pages")
+        if (raw.get("source_type") != "confluence_cloud" or not space_id
+                or not isinstance(pages, dict)
+                or any(not isinstance(page_id, str) or not page_id.strip() for page_id in pages)):
+            raise ValueError(f"invalid complete Confluence export manifest: {path}")
+        if space_id in by_space:
+            raise ValueError(f"conflicting complete Confluence exports for space {space_id}")
+        by_space[space_id] = set(pages)
+    return by_space
+
+
 def _export_root(path: Path) -> Path:
     current = path.parent
     while current.parent != current and not (current / "manifest.json").is_file():

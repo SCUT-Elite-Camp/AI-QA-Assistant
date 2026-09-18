@@ -1,4 +1,5 @@
 import os
+import json
 
 from pymilvus import Collection, CollectionSchema, DataType, FieldSchema, connections, utility
 
@@ -34,6 +35,17 @@ class MilvusStore:
                 timeout = 5.0
             connections.connect("default", host=self.host, port=self.port, timeout=timeout)
             self._connected = True
+
+    def delete_document_chunks(self, doc_id: str) -> None:
+        """Remove one document without creating a missing collection."""
+        if not doc_id or len(doc_id) > 128:
+            raise ValueError("invalid Milvus document ID")
+        self.connect()
+        if not utility.has_collection(self.collection_name):
+            return
+        collection = Collection(self.collection_name)
+        collection.delete(expr=f"doc_id == {json.dumps(doc_id, ensure_ascii=False)}")
+        collection.flush()
 
     def init_collection(
         self,

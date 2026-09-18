@@ -40,6 +40,8 @@ class AgentState(BaseModel):
     iteration: int = 0
     retrieval_attempts: int = 0
     evidence: list[dict[str, Any]] = Field(default_factory=list)
+    coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
+    exploration_rounds: int = 0
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     stop_reason: StopReason | None = None
 
@@ -54,5 +56,7 @@ class AgentRunResult(BaseModel):
     retrieval_attempts: int = 0
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
+    coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
+    exploration_rounds: int = 0
     messages: list[dict[str, Any]] = Field(default_factory=list)
     error_code: str = ""

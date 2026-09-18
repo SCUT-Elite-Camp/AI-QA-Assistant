@@ -15,7 +15,7 @@ def _record(identifier: str = "ver_1", owner_id: str = "user-a") -> dict:
     }
 
 
-def test_section_rows_are_replaced_searched_and_purged(tmp_path: Path):
+def test_section_rows_are_replaced_listed_and_purged(tmp_path: Path):
     store = AttachmentStore(tmp_path / "store.sqlite3")
     store.create_attachment(_record())
     store.replace_evidence("ver_1", [{
@@ -28,15 +28,14 @@ def test_section_rows_are_replaced_searched_and_purged(tmp_path: Path):
         "summary": "risk control requirements", "evidence_ids": ["ev-1"],
         "quality": "high", "ordinal": 1,
     }])
-    hits = store.search_sections(["ver_1"], "risk", top_k=8)
-    assert len(hits) == 1
-    assert hits[0]["evidence_ids"] == ["ev-1"]
-    assert store.search_sections([], "risk") == []
+    rows = store.list_sections(["ver_1"])
+    assert len(rows) == 1
+    assert rows[0]["evidence_ids"] == ["ev-1"]
     store.purge("ver_1")
     assert store.list_sections(["ver_1"]) == []
 
 
-def test_section_search_never_expands_beyond_preauthorized_versions(tmp_path: Path):
+def test_section_listing_never_expands_beyond_requested_versions(tmp_path: Path):
     store = AttachmentStore(tmp_path / "store.sqlite3")
     store.create_attachment(_record("ver_a", "user-a"))
     store.create_attachment(_record("ver_b", "user-b"))
@@ -48,6 +47,6 @@ def test_section_search_never_expands_beyond_preauthorized_versions(tmp_path: Pa
             "quality": "high", "ordinal": 1,
         }])
 
-    hits = store.search_sections(["ver_a"], "retention")
+    hits = store.list_sections(["ver_a"])
 
     assert [item["version_id"] for item in hits] == ["ver_a"]

@@ -18,22 +18,8 @@ def embed_texts(*args: Any, **kwargs: Any):
 
 
 # process_folder remains available from pipeline.process.
-from .knowledge_graph import (
-    CompiledKnowledgeGraph,
-    KnowledgeAssertion,
-    KnowledgeExtractionProvider,
-    compile_knowledge_graph,
-)
-from .knowledge_extractor import LocalOpenAIKnowledgeExtractionProvider
-from .knowledge_graph_job import build_and_activate_knowledge_graph
 
 __all__ = [
     "chunk_text",
     "embed_texts",
-    "CompiledKnowledgeGraph",
-    "KnowledgeAssertion",
-    "KnowledgeExtractionProvider",
-    "compile_knowledge_graph",
-    "LocalOpenAIKnowledgeExtractionProvider",
-    "build_and_activate_knowledge_graph",
 ]

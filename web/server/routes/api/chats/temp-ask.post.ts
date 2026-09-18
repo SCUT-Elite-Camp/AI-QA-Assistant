@@ -106,6 +106,7 @@ export default defineHandler(async (event) => {
             session_id: `temp_${Date.now()}`,
             top_k: 5,
             retrieval_mode: "hybrid",
+            exploration_mode: "auto",
             topic_id: topicId || undefined,
             weight_mode: topicInfo?.weightMode || "auto",
             soul_content: topicInfo?.soulContent || undefined,

@@ -25,4 +25,9 @@ data-persistence/data-persistence/
 *.log
 *.db
 *.sqlite
+.pytest-*/
+.pytest_tmp/
+.pytest_tmp_*/
+.bt/
+eval/wiki/runs/
 tmp_test_chat.py

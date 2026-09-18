@@ -241,9 +241,7 @@ class SearchTool(BaseTool):
         self.neighbor_expansion_enabled = bool(neighbor_expansion_enabled)
 
         self._milvus_store = None
-        self._section_milvus_store = None
         self._bm25_index = None
-        self._section_bm25_index = None
 
     @property
     def milvus_store(self):
@@ -261,26 +259,6 @@ class SearchTool(BaseTool):
             else:
                 self._bm25_index = BM25Index()
         return self._bm25_index
-
-    @property
-    def section_milvus_store(self):
-        if self._section_milvus_store is None:
-            from storage.milvus_store import MilvusStore
-            self._section_milvus_store = MilvusStore(
-                collection_name=os.getenv("SECTION_MILVUS_COLLECTION", "document_sections_bgem3")
-            )
-        return self._section_milvus_store
-
-    @property
-    def section_bm25_index(self):
-        if self._section_bm25_index is None:
-            from retrieval.section_bm25_index import SectionBM25Index
-
-            path = Path(SectionBM25Index.default_index_path())
-            self._section_bm25_index = (
-                SectionBM25Index.load(str(path)) if path.is_file() else SectionBM25Index()
-            )
-        return self._section_bm25_index
 
     @property
     def name(self) -> str:
@@ -343,8 +321,6 @@ class SearchTool(BaseTool):
         mode = kwargs.get("mode", "hybrid")
         filters = kwargs.get("filters")
         include_neighbors = kwargs.get("include_neighbors", False)
-        navigation_mode = kwargs.get("navigation_mode", "direct")
-
         results = self.search(
             query=query,
             top_k=top_k,
@@ -355,7 +331,6 @@ class SearchTool(BaseTool):
             topic_doc_ids=getattr(self, "topic_doc_ids", None),
             weight_mode=getattr(self, "weight_mode", "auto"),
             consecutive_no_new_docs_count=getattr(self, "consecutive_no_new_docs_count", 0),
-            navigation_mode=navigation_mode,
         )
         self.latest_results = results
 
@@ -389,13 +364,8 @@ class SearchTool(BaseTool):
         weight_mode: str = "auto",
         consecutive_no_new_docs_count: int = 0,
         include_neighbors: bool = False,
-        navigation_mode: str = "direct",
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
-        if navigation_mode not in {"direct", "hierarchical", "hybrid"}:
-            raise RetrievalParameterError(
-                "invalid_navigation_mode: expected direct, hierarchical, or hybrid"
-            )
         started = time.perf_counter()
         trace = trace_id or "-"
         filters = _normalize_public_filters(filters)
@@ -434,11 +404,6 @@ class SearchTool(BaseTool):
                 )
             results = self._normalize_results(
                 raw_results, filters, float(min_score)
-            )
-            observation["navigation_mode"] = "direct"
-            observation["section_hits"] = 0
-            observation["navigation_fallback_reason"] = (
-                "explicit_exploration_only" if navigation_mode != "direct" else "none"
             )
             if use_reranker and results:
                 rerank_query = observation.get("preferred_rerank_query") or normalized_query
@@ -481,261 +446,6 @@ class SearchTool(BaseTool):
             observation, normalized_query,
         )
         return results
-
-    def _search_sections(
-        self,
-        query: str,
-        filters: Dict,
-        *,
-        top_k: int,
-    ) -> List[Dict]:
-        """Search version-aware derived sections stored with enterprise documents."""
-        tokens = [token.casefold() for token in query.split() if token][:20]
-        sparse_hits: List[Dict] = []
-        sections_by_id, authorized_doc_ids = self._load_authorized_sections(filters)
-        if not sections_by_id:
-            return []
-        for item in sections_by_id.values():
-            text = str(item.get("navigation_text") or " ".join([
-                str(item.get("title") or ""),
-                " / ".join(str(value) for value in item.get("section_path") or []),
-                str(item.get("extractive_summary") or item.get("summary") or ""),
-                str(item.get("llm_summary") or ""),
-            ])).casefold()
-            score = sum(text.count(token) for token in tokens)
-            if score:
-                hit = dict(item)
-                hit["score"] = float(score)
-                sparse_hits.append(hit)
-        sparse_hits.sort(key=lambda item: (-float(item["score"]), str(item.get("id") or "")))
-        try:
-            indexed_sparse = self.section_bm25_index.search(
-                query, top_k=max(top_k * 2, 20),
-                filters={"doc_ids": authorized_doc_ids},
-            )
-        except Exception as exc:
-            self.logger.warning("[SECTION_BM25_FALLBACK] %s", exc)
-            indexed_sparse = []
-        if indexed_sparse:
-            sparse_hits = [
-                {**sections_by_id[str(row["section_id"])], "score": row["score"]}
-                for row in indexed_sparse if str(row.get("section_id") or "") in sections_by_id
-            ]
-        vector_ids: List[str] = []
-        if authorized_doc_ids and os.getenv(
-            "SECTION_VECTOR_INDEX_ENABLED", "false"
-        ).lower() in {"1", "true", "yes"}:
-            try:
-                from pipeline.embedder import embed_texts
-
-                query_vector = embed_texts([query])[0]
-                vector_rows = self.section_milvus_store.search_similar(
-                    query_vector=query_vector,
-                    top_k=max(top_k * 2, 20),
-                    doc_ids_filter=authorized_doc_ids,
-                    timeout_seconds=self.backend_timeout_seconds,
-                )
-                vector_ids = [
-                    str(hit.entity.get("chunk_id") or "") for hit in vector_rows
-                    if str(hit.entity.get("chunk_id") or "") in sections_by_id
-                ]
-            except Exception as exc:
-                self.logger.warning("[SECTION_VECTOR_FALLBACK] %s", exc)
-        scores: Dict[str, float] = {}
-        for rank, item in enumerate(sparse_hits, 1):
-            section_id = str(item.get("id") or "")
-            scores[section_id] = scores.get(section_id, 0.0) + 1.0 / (60 + rank)
-        for rank, section_id in enumerate(vector_ids, 1):
-            scores[section_id] = scores.get(section_id, 0.0) + 1.0 / (60 + rank)
-        ordered = sorted(scores, key=lambda value: (-scores[value], value))[:top_k]
-        maximum = max((scores[value] for value in ordered), default=1.0)
-        result: List[Dict] = []
-        for section_id in ordered:
-            item = dict(sections_by_id[section_id])
-            item["score"] = round(scores[section_id] / maximum, 6) if maximum else 0.0
-            result.append(item)
-        return result
-
-    def _load_authorized_sections(self, filters: Dict) -> tuple[Dict[str, Dict], List[str]]:
-        """Resolve active documents and Sections before any navigation search."""
-        sections_by_id: Dict[str, Dict] = {}
-        authorized_doc_ids: List[str] = []
-        if not self.documents_dir.exists():
-            return sections_by_id, authorized_doc_ids
-        for path in self.documents_dir.glob("*.json"):
-            try:
-                with path.open("r", encoding="utf-8") as source:
-                    document = json.load(source)
-            except (OSError, ValueError, TypeError):
-                continue
-            if not isinstance(document, dict) or document.get("active_version", True) is not True:
-                continue
-            document_id = str(document.get("doc_id") or path.stem)
-            if not _DOC_ID_PATTERN.fullmatch(document_id):
-                continue
-            if not _matches_filters(document, filters, document):
-                continue
-            authorized_doc_ids.append(document_id)
-            for section in document.get("sections") or []:
-                if not isinstance(section, dict):
-                    continue
-                section_id = str(section.get("id") or "")
-                if section_id:
-                    item = dict(section)
-                    item["doc_id"] = document_id
-                    sections_by_id[section_id] = item
-        return sections_by_id, authorized_doc_ids
-
-    def browse_document_outline(
-        self,
-        query: str,
-        *,
-        doc_ids: Optional[List[str]] = None,
-        top_k: int = 8,
-    ) -> List[Dict]:
-        """Return navigation metadata only; rows are never citation Evidence."""
-        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
-            "1", "true", "yes",
-        }:
-            return []
-        self._validate_params(query, top_k, "bm25", None, 0.0)
-        filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
-        matched = self._search_sections(
-            query.strip(), filters, top_k=max(1, top_k // 2),
-        )
-        sections, _ = self._load_authorized_sections(filters)
-        from shared_runtime.document_sections import select_outline_candidates
-
-        return select_outline_candidates(
-            sections.values(), matched, limit=top_k,
-        )
-
-    def search_evidence_in_scope(
-        self,
-        query: str,
-        *,
-        section_ids: List[str],
-        top_k: int = 10,
-        mode: str = "hybrid",
-        doc_ids: Optional[List[str]] = None,
-    ) -> List[Dict]:
-        """Rerun authoritative Evidence retrieval inside explicit Sections."""
-        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
-            "1", "true", "yes",
-        }:
-            return []
-        self._validate_params(query, top_k, mode, None, 0.0)
-        requested = list(dict.fromkeys(str(value) for value in section_ids if str(value)))[:20]
-        if not requested:
-            raise RetrievalParameterError("section_ids must contain at least one Section ID")
-        filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
-        sections, _ = self._load_authorized_sections(filters)
-        selected = [sections[value] for value in requested if value in sections]
-        return self._search_scoped_evidence(
-            query.strip(), selected, filters, 0.0, max(top_k * 3, 20), mode,
-        )[:top_k]
-
-    def _search_scoped_evidence(
-        self,
-        query: str,
-        section_hits: List[Dict],
-        filters: Dict,
-        min_score: float,
-        limit: int,
-        mode: str,
-    ) -> List[Dict]:
-        """Rerun real Evidence retrieval under the selected Section chunk scope."""
-        selected: Dict[str, set[str]] = {}
-        context_by_chunk: Dict[str, list[str]] = {}
-        sections_by_chunk: Dict[str, list[str]] = {}
-        for section in section_hits:
-            if section.get("quality") == "low" or int(section.get("level") or 0) <= 0:
-                continue
-            doc_id = str(section.get("doc_id") or "")
-            if doc_id:
-                values = {str(value) for value in section.get("evidence_ids") or [] if str(value)}
-                selected.setdefault(doc_id, set()).update(values)
-                context = "\n".join(filter(None, [
-                    " / ".join(str(value) for value in section.get("section_path") or []),
-                    str(section.get("extractive_summary") or section.get("summary") or ""),
-                    str(section.get("llm_summary") or ""),
-                ]))
-                for chunk_id in values:
-                    sections_by_chunk.setdefault(chunk_id, []).append(str(section.get("id") or ""))
-                    if context:
-                        context_by_chunk.setdefault(chunk_id, []).append(context)
-        chunk_ids = sorted({value for values in selected.values() for value in values})
-        if not chunk_ids:
-            return []
-        authorized_docs = sorted(selected)
-        existing_docs = filters.get("doc_ids")
-        if existing_docs:
-            authorized_docs = [value for value in authorized_docs if value in set(existing_docs)]
-        if not authorized_docs:
-            return []
-        scoped_filters = dict(filters)
-        scoped_filters["doc_ids"] = authorized_docs
-        scoped_filters["chunk_ids"] = chunk_ids
-        try:
-            raw = self._search_internal(query, limit, mode, scoped_filters)
-        except Exception as exc:
-            self.logger.warning("[SECTION_SCOPE_FALLBACK] scoped backend search failed: %s", exc)
-            raw = []
-        normalized = self._normalize_results(raw, scoped_filters, min_score)
-        if not normalized and mode in {"bm25", "hybrid"}:
-            normalized = self._fallback_scoped_lexical(
-                query, selected, filters, min_score, limit,
-            )
-        for item in normalized:
-            chunk_id = str(item.get("chunk_id") or "")
-            contexts = context_by_chunk.get(chunk_id) or []
-            item["matched_section_ids"] = list(dict.fromkeys(
-                value for value in sections_by_chunk.get(chunk_id, []) if value
-            ))
-            if contexts:
-                item["section_context"] = contexts[:3]
-                item["rerank_text"] = "\n".join([*contexts[:3], str(item.get("chunk_text") or "")])
-        return normalized
-
-    def _fallback_scoped_lexical(
-        self,
-        query: str,
-        selected: Dict[str, set[str]],
-        filters: Dict,
-        min_score: float,
-        limit: int,
-    ) -> List[Dict]:
-        """Degraded exact-scope lexical search for rolling backend upgrades."""
-        tokens = [value.casefold() for value in re.findall(r"[\w\u3400-\u9fff]+", query) if value]
-        raw: List[Dict] = []
-        for doc_id, allowed in selected.items():
-            document = self._load_document_meta(doc_id)
-            if not document or document.get("active_version", True) is not True:
-                continue
-            if not _matches_filters(document, filters, document):
-                continue
-            for chunk in document.get("chunks") or []:
-                chunk_id = str(chunk.get("chunk_id") or "")
-                if chunk_id not in allowed:
-                    continue
-                text = str(chunk.get("text") or "")
-                folded = text.casefold()
-                score = sum(folded.count(token) for token in tokens)
-                if score:
-                    raw.append({
-                        "doc_id": doc_id, "chunk_id": chunk_id,
-                        "chunk_index": chunk.get("index", 0), "text": text,
-                        "score": float(score), "bm25_score": float(score),
-                        "title": document.get("title", ""),
-                        "source_url": document.get("source_url", ""),
-                        "version_id": document.get("version_id", ""),
-                        "knowledge_base_id": document.get("knowledge_base_id") or document.get("space", ""),
-                    })
-        raw.sort(key=lambda item: (-float(item["score"]), str(item["chunk_id"])))
-        internal_filters = dict(filters)
-        internal_filters["doc_ids"] = sorted(selected)
-        internal_filters["chunk_ids"] = sorted({value for values in selected.values() for value in values})
-        return self._normalize_results(raw[:limit], internal_filters, min_score)
 
     def _expand_neighbors(self, results: List[Dict]) -> List[Dict]:
         """Attach adjacent context without changing core ranking or scores."""
@@ -1129,8 +839,7 @@ class SearchTool(BaseTool):
             "query_count=%s selected_route=%s retriever_paths=%s "
             "candidate_count_by_path=%s unique_candidate_count=%s "
             "fallback_reason=%s rerank_used=%s protected_original_count=%s "
-            "protected_variant_unique_count=%s navigation_mode=%s section_hits=%s "
-            "navigation_fallback_reason=%s total_latency_ms=%s",
+            "protected_variant_unique_count=%s total_latency_ms=%s",
             trace_id,
             mode,
             top_k,
@@ -1149,8 +858,5 @@ class SearchTool(BaseTool):
             observation["rerank_used"],
             observation["protected_original_count"],
             observation["protected_variant_unique_count"],
-            observation.get("navigation_mode", "direct"),
-            observation.get("section_hits", 0),
-            observation.get("navigation_fallback_reason", "none"),
             latency_ms,
         )

@@ -3,6 +3,7 @@
 import json
 import os
 import pickle
+import tempfile
 
 from rank_bm25 import BM25Okapi
 from retrieval.english_analyzer import EnglishAnalyzer
@@ -58,6 +59,8 @@ class BM25Index:
                 with open(document_path, "r", encoding="utf-8") as handle:
                     data = json.load(handle)
             except (OSError, json.JSONDecodeError):
+                continue
+            if data.get("active_version", True) is not True:
                 continue
             for ch in data.get("chunks", []):
                 self._chunk_meta.append({
@@ -137,8 +140,15 @@ class BM25Index:
             "tokenized_corpus": self._tokenized_corpus,
             "chunk_meta": self._chunk_meta,
         }
-        with open(path, "wb") as f:
-            pickle.dump(data, f)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="wb", dir=parent_dir or ".", delete=False) as f:
+                temporary = f.name
+                pickle.dump(data, f)
+            os.replace(temporary, path)
+        finally:
+            if temporary and os.path.exists(temporary):
+                os.remove(temporary)
 
     def load(self, path: str):
         """Load an index only when it matches the active analyzer."""

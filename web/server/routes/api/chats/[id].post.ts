@@ -19,6 +19,7 @@ import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentS
 import { createAgentStreamError, getAgentFailureMessage } from '../../../utils/agentResponse'
 import { getOrCreateDefaultLibrary } from '../../../utils/library'
 import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
+import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
 
 
 
@@ -111,6 +112,10 @@ export default defineHandler(async (event) => {
     messageMetadata,
     (lastMessage as any)?.parts,
   )
+  const explorationMode = chatExplorationMode(
+    messageMetadata,
+    (lastMessage as any)?.parts,
+  )
   const attachmentSelection = extractAttachmentSelection((lastMessage as any)?.parts, messageMetadata)
   const selectedAttachmentIds = attachmentSelection.attachmentIds
   for (const attachmentId of selectedAttachmentIds) await requireAttachmentAccess(event, attachmentId)
@@ -139,7 +144,10 @@ export default defineHandler(async (event) => {
         : []),
       {
         type: 'data-chat-preferences',
-        data: { knowledge_base_retrieval_enabled: useKnowledgeBase }
+        data: {
+          knowledge_base_retrieval_enabled: useKnowledgeBase,
+          exploration_mode: explorationMode,
+        }
       }
     ]
     const safeParts = mergeSafeAttachmentParts(preferenceParts, selectedAttachments, acceptedReviewIds)
@@ -206,6 +214,7 @@ export default defineHandler(async (event) => {
             session_id: id,
             top_k: 5,
             retrieval_mode: "hybrid",
+            exploration_mode: explorationMode,
             topic_id: chat.topicId || undefined,
             weight_mode: topicInfo?.weightMode || "auto",
             soul_content: topicInfo?.soulContent || undefined,

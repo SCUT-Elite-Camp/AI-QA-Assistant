@@ -31,6 +31,7 @@ class ChatRequest(BaseModel):
     filters: Optional[dict[str, Any]] = None
     stream: bool = False
     retrieval_mode: Literal["vector", "bm25", "hybrid"] = "hybrid"
+    exploration_mode: Literal["auto", "off", "force"] = "auto"
     topic_id: Optional[str] = None
     weight_mode: Optional[Literal["deeper", "auto", "wider"]] = "auto"
     topic_doc_ids: Optional[list[str]] = None
@@ -68,3 +69,4 @@ class ChatResponse(BaseModel):
     message: str
     citations: list[Citation]
     chat_title: Optional[str] = None
+    diagnostics: Optional[dict[str, Any]] = None

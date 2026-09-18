@@ -4,6 +4,7 @@ from typing import Any
 
 from agent.config.settings import settings
 from agent.evidence.gate import EvidenceGate
+from agent.exploration import CoverageAssessor
 from agent.llm.base import BaseLLM
 from agent.prompt.templates import ANSWER_RULES, SYSTEM_ROLE
 from agent.retrieval.corrective import CorrectiveRetrievalPlanner
@@ -80,6 +81,8 @@ class AgentRunner:
         top_k: int = 5,
         max_iterations: int | None = None,
         is_first_message: bool = False,
+        exploration_mode: str = "auto",
+        navigation_scopes: tuple[str, ...] = (),
     ) -> AgentRunResult:
         """Execute a bounded Agent run.
 
@@ -123,15 +126,53 @@ class AgentRunner:
             ),
         )
         schemas = self._tool_schemas(policy)
+        if (
+            settings.AGENTIC_EXPLORATION_ENABLED
+            and exploration_mode != "off"
+            and policy is not None
+            and tool_executor is not None
+        ):
+            initial = CoverageAssessor().assess(
+                query_plan,
+                [],
+                exploration_mode=exploration_mode,
+                available_actions=(
+                    schema.get("function", {}).get("name", "")
+                    for schema in schemas if isinstance(schema, dict)
+                ),
+            )
+            wiki_available = any(
+                schema.get("function", {}).get("name") == "wiki_search"
+                for schema in schemas if isinstance(schema, dict)
+            )
+            if initial.complex_query or exploration_mode == "force" or wiki_available:
+                self._prefetch_direct(
+                    state=state,
+                    query_plan=query_plan,
+                    policy=policy,
+                    tool_executor=tool_executor,
+                    schemas=schemas,
+                    trace_id=trace_id,
+                    mode=mode,
+                    top_k=top_k,
+                    exploration_mode=exploration_mode,
+                    navigation_scopes=navigation_scopes,
+                )
         last_fingerprint: str | None = None
         repeated_count = 0
+        next_wiki_tool: str | None = None
 
         for iteration in range(1, limit + 1):
             state.iteration = iteration
             self.audit_service.log_step(iteration - 1, query_plan.original_query)
 
             try:
-                response = self.llm.chat(state.messages, tools=schemas)
+                turn_schemas = (
+                    [schema for schema in schemas
+                     if schema.get("function", {}).get("name") == next_wiki_tool]
+                    if next_wiki_tool else schemas
+                )
+                response = self.llm.chat(state.messages, tools=turn_schemas)
             except Exception as exc:
                 logger.exception(
                     "[AGENT_LLM_ERROR] trace_id=%s iteration=%s error=%s",
@@ -173,6 +214,26 @@ class AgentRunner:
                         message="模型服务暂时不可用，请稍后重试。",
                         error_code="empty_llm_response",
                     )
+                if next_wiki_tool:
+                    state.messages.append({
+                        "role": "system",
+                        "content": f"Wiki navigation has a pending source step: call {next_wiki_tool} before answering.",
+                    })
+                    continue
+                if (
+                    exploration_mode != "off"
+                    and state.exploration_rounds < settings.EXPLORATION_MAX_ROUNDS
+                    and self._latest_should_explore(state)
+                ):
+                    state.messages.append({
+                        "role": "system",
+                        "content": (
+                            "Coverage is still incomplete. Do not finalize yet; call one "
+                            "of the recommended navigation tools, then retrieve scoped "
+                            "Evidence before answering."
+                        ),
+                    })
+                    continue
                 if (
                     policy is not None
                     and policy.requires_citations
@@ -221,6 +282,7 @@ class AgentRunner:
                         query_plan=query_plan,
                         mode=mode,
                         top_k=top_k,
+                        navigation_scopes=navigation_scopes,
                     )
                 except ValueError as exc:
                     state.tool_calls.append(
@@ -237,6 +299,41 @@ class AgentRunner:
                         StopReason.TOOL_ERROR,
                         message="工具参数格式无效，无法继续执行。",
                         error_code=str(exc),
+                    )
+
+                if next_wiki_tool and tool_name != next_wiki_tool:
+                    state.tool_calls.append(ToolCallRecord(
+                        iteration=iteration, tool_call_id=call_id,
+                        tool_name=tool_name, arguments=arguments,
+                        success=False, error_code="navigation_step_out_of_order",
+                    ))
+                    state.messages.append({
+                        "role": "tool", "tool_call_id": call_id, "name": tool_name,
+                        "content": f"Complete the pending Wiki source step with {next_wiki_tool}.",
+                    })
+                    continue
+
+                exploration_tools = {
+                    "wiki_search",
+                    "wiki_read_page",
+                    "wiki_read_sources",
+                    "wiki_search_evidence",
+                }
+                if (
+                    tool_name in exploration_tools
+                    and state.exploration_rounds >= settings.EXPLORATION_MAX_ROUNDS
+                ):
+                    return self._fallback_final_answer(
+                        state, "Agent 已达到探索轮次预算。",
+                    )
+                if (
+                    tool_name in exploration_tools
+                    and exploration_mode != "force"
+                    and state.coverage_assessments
+                    and not self._latest_should_explore(state)
+                ):
+                    return self._fallback_final_answer(
+                        state, "当前 Evidence 覆盖已经充分，无需继续探索。",
                     )
 
                 fingerprint = self._fingerprint(tool_name, arguments)
@@ -257,6 +354,24 @@ class AgentRunner:
                             error_code="repeated_tool_call",
                         )
                     )
+                    if tool_name in exploration_tools:
+                        if repeated_count == self.max_repeated_tool_calls:
+                            next_action = {
+                                "wiki_search": "Select a page_id from the previous search result and call wiki_read_page.",
+                                "wiki_read_page": "Call wiki_read_sources for that page_id.",
+                                "wiki_read_sources": "Call wiki_search_evidence for that page_id.",
+                                "wiki_search_evidence": "Use the returned original Evidence for the answer.",
+                            }[tool_name]
+                            state.messages.append({
+                                "role": "tool", "tool_call_id": call_id, "name": tool_name,
+                                "content": "Duplicate navigation call suppressed. " + next_action,
+                            })
+                            continue
+                        return self._result(
+                            state, StopReason.REPEATED_TOOL_CALL,
+                            message="Wiki 探索重复调用，已安全停止。",
+                            error_code="repeated_tool_call",
+                        )
                     return self._fallback_final_answer(state, "检测到重复工具调用，Agent 已安全停止。")
 
                 if policy is not None and tool_name not in policy.candidate_tools:
@@ -284,6 +399,7 @@ class AgentRunner:
                     "search_attachments",
                     "inspect_attachment",
                     "search_library",
+                    "wiki_search_evidence",
                 }
                 if (
                     policy is not None
@@ -383,9 +499,14 @@ class AgentRunner:
                         success=True,
                     )
                 )
+                if tool_name in exploration_tools:
+                    state.exploration_rounds += 1
+                    next_wiki_tool = self._next_wiki_tool(tool_name, observation)
                 if is_retrieval:
                     state.retrieval_attempts += 1
                     state.evidence = self._merge_evidence(state.evidence, evidence)
+                    if settings.AGENTIC_EXPLORATION_ENABLED:
+                        state.evidence = state.evidence[:settings.EXPLORATION_MAX_EVIDENCE]
 
                     try:
                         evidence, corrective_observations = self._apply_evidence_policy(
@@ -418,12 +539,30 @@ class AgentRunner:
                         )
 
                     state.evidence = self._merge_evidence([], evidence)
+                    assessment = CoverageAssessor().assess(
+                        query_plan,
+                        self._typed_evidence(state.evidence),
+                        exploration_mode=exploration_mode,
+                        available_actions=(
+                            schema.get("function", {}).get("name", "")
+                            for schema in schemas
+                            if isinstance(schema, dict)
+                        ),
+                    )
+                    state.coverage_assessments.append(assessment.model_dump(mode="json"))
                     # Corrective retrieval is an internal orchestration step,
                     # not a model-requested tool call. Expose the accepted,
                     # merged evidence through the original tool response so
                     # every role=tool message still corresponds to an ID from
                     # the preceding assistant.tool_calls array.
                     observation = self._format_search_observation(state.evidence)
+                    if assessment.should_explore:
+                        actions = ", ".join(assessment.recommended_actions)
+                        gaps = ", ".join(assessment.missing_facets)
+                        observation += (
+                            "\n\n[COVERAGE] Direct Evidence is valid but incomplete. "
+                            f"Missing: {gaps}. Continue with one of: {actions}."
+                        )
                     if tool_name == "search_documents" and not state.evidence:
                         return self._result(
                             state,
@@ -497,6 +636,14 @@ class AgentRunner:
         if policy is None or not policy.candidate_tools:
             return ""
         tools = set(policy.candidate_tools)
+        if "wiki_search" in tools:
+            return (
+                "检索流程规则：系统会先执行普通知识库 Direct Evidence 检索。"
+                "工具结果出现 [COVERAGE] 跨文档缺口时，才依次用 wiki_search、wiki_read_page，"
+                "需要检查来源时用 wiki_read_sources，最后调用 wiki_search_evidence，"
+                "在 Wiki 指向的文档中运行普通 BM25/向量检索并取得可引用原文。"
+                "Wiki 页面和来源索引不得作为最终引用。\n\n"
+            )
         if "search_library" in tools and "search_attachments" not in tools:
             return (
                 "工具选择规则：用户提到‘我的资料库/个人文件/我保存的文档’时使用 search_library；"
@@ -649,6 +796,7 @@ class AgentRunner:
         query_plan: QueryPlan,
         mode: str,
         top_k: int,
+        navigation_scopes: tuple[str, ...] = (),
     ) -> dict[str, Any]:
         constrained = dict(arguments)
         if tool_name == "search_documents":
@@ -658,18 +806,43 @@ class AgentRunner:
             constrained["top_k"] = top_k
             constrained["mode"] = mode
             constrained["filters"] = dict(query_plan.filters)
-            constrained["navigation_mode"] = query_plan.navigation_mode
         elif tool_name == "search_library":
             constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
             constrained["mode"] = mode
-            constrained["navigation_mode"] = query_plan.navigation_mode
         elif tool_name == "find_documents":
             if not constrained.get("query") and not constrained.get("filters"):
                 constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
             constrained["filters"] = dict(query_plan.filters)
+        elif tool_name in {
+            "wiki_search", "wiki_read_page", "wiki_read_sources",
+            "wiki_search_evidence",
+        }:
+            AgentRunner._constrain_navigation_scope(constrained, navigation_scopes)
+            if tool_name == "wiki_search":
+                constrained["query"] = query_plan.standalone_query
+                constrained["top_k"] = min(
+                    12, max(top_k, int(constrained.get("top_k") or top_k))
+                )
+            elif tool_name == "wiki_search_evidence":
+                constrained["query"] = query_plan.standalone_query
+                constrained["top_k"] = min(
+                    20, max(top_k, int(constrained.get("top_k") or top_k))
+                )
+                constrained["mode"] = mode
         return constrained
+
+    @staticmethod
+    def _constrain_navigation_scope(
+        arguments: dict[str, Any],
+        allowed_scopes: tuple[str, ...],
+    ) -> None:
+        if not allowed_scopes:
+            raise ValueError("navigation source scope is not authorized")
+        requested = str(arguments.get("source_scope") or "")
+        if requested not in allowed_scopes:
+            arguments["source_scope"] = allowed_scopes[0]
 
     def _execute_tool(
         self,
@@ -710,9 +883,16 @@ class AgentRunner:
                 # Attachment evidence is optional. Keep the failure visible to
                 # the model and allow a subsequent knowledge-base retrieval.
                 return self._stringify_result(result.data or {}), [], False
-            if tool_name in {"search_documents", "search_library", "search_attachments", "inspect_attachment"}:
+            if tool_name in {
+                "search_documents", "search_library", "search_attachments",
+                "inspect_attachment", "wiki_search_evidence",
+            }:
                 return self._format_search_observation(evidence), evidence, True
-            is_retrieval = tool_name in {"find_documents", "get_document", "search_library", "search_attachments", "inspect_attachment"}
+            is_retrieval = tool_name in {
+                "find_documents", "get_document", "search_library",
+                "search_attachments", "inspect_attachment",
+                "wiki_search_evidence",
+            }
             return self._stringify_result(result.data or {}), evidence, is_retrieval
 
         if isinstance(tool, SearchTool) or tool_name == "search_documents":
@@ -828,6 +1008,112 @@ class AgentRunner:
             )
         return [item.model_dump() for item in second_gate.evidence], []
 
+    def _prefetch_direct(
+        self,
+        *,
+        state: AgentState,
+        query_plan: QueryPlan,
+        policy: IntentPolicy,
+        tool_executor: ToolExecutor,
+        schemas: list[dict[str, Any]],
+        trace_id: str,
+        mode: str,
+        top_k: int,
+        exploration_mode: str,
+        navigation_scopes: tuple[str, ...],
+    ) -> None:
+        """Execute the mandatory Direct pass before any Agent navigation."""
+        available = {
+            schema.get("function", {}).get("name", "")
+            for schema in schemas if isinstance(schema, dict)
+        }
+        direct_tools = [
+            name for name in ("search_documents", "search_library")
+            if name in available and name in policy.candidate_tools
+            and (
+                (name == "search_documents" and "enterprise" in navigation_scopes)
+                or (name == "search_library" and "personal" in navigation_scopes)
+            )
+        ]
+        for index, tool_name in enumerate(direct_tools, 1):
+            arguments: dict[str, Any] = {
+                "query": query_plan.standalone_query,
+                "top_k": top_k,
+                "mode": mode,
+            }
+            if tool_name == "search_documents":
+                arguments["filters"] = dict(query_plan.filters)
+            elif query_plan.filters.get("doc_ids"):
+                arguments["doc_ids"] = list(query_plan.filters["doc_ids"])
+            call_id = f"initial-direct-{index}"
+            result = tool_executor.execute(
+                tool_call_id=call_id,
+                tool_name=tool_name,
+                arguments=arguments,
+                trace_id=trace_id,
+                retrieval_attempt=state.retrieval_attempts + 1,
+            )
+            state.tool_calls.append(ToolCallRecord(
+                iteration=0,
+                tool_call_id=call_id,
+                tool_name=tool_name,
+                arguments=arguments,
+                success=result.success,
+                error_code=result.error_code,
+            ))
+            if result.success:
+                state.retrieval_attempts += 1
+                state.evidence = self._merge_evidence(
+                    state.evidence,
+                    [item.model_dump() for item in result.evidence],
+                )[:settings.EXPLORATION_MAX_EVIDENCE]
+
+        assessment = CoverageAssessor().assess(
+            query_plan,
+            self._typed_evidence(state.evidence),
+            exploration_mode=exploration_mode,
+            available_actions=available,
+        )
+
+        state.coverage_assessments.append(assessment.model_dump(mode="json"))
+        observation = self._format_search_observation(state.evidence)
+        if assessment.should_explore:
+            observation += (
+                "\n\n[COVERAGE] Direct Evidence is incomplete. Missing: "
+                + ", ".join(assessment.missing_facets)
+                + ". Continue with: "
+                + ", ".join(assessment.recommended_actions)
+                + "."
+            )
+        else:
+            observation += "\n\n[COVERAGE] Direct Evidence coverage is sufficient."
+        state.messages.append({
+            "role": "system",
+            "content": (
+                "The server has already completed the mandatory initial Direct retrieval. "
+                "Use only the Evidence below for claims and citations. Navigation metadata "
+                "from later graph/outline calls is not citation authority.\n\n" + observation
+            ),
+        })
+
+    @staticmethod
+    def _next_wiki_tool(tool_name: str, observation: str) -> str | None:
+        if tool_name == "wiki_search_evidence":
+            return None
+        try:
+            payload = json.loads(observation)
+        except (TypeError, ValueError):
+            return None
+        if not isinstance(payload, dict):
+            return None
+        if tool_name == "wiki_search" and payload.get("pages"):
+            return "wiki_read_page"
+        if tool_name == "wiki_read_page" and payload.get("page"):
+            return "wiki_read_sources"
+        if tool_name == "wiki_read_sources" and payload.get("sources"):
+            return "wiki_search_evidence"
+        return None
+
     @staticmethod
     def _typed_evidence(items: list[dict[str, Any]]) -> list[Evidence]:
         typed: list[Evidence] = []
@@ -837,6 +1123,12 @@ class AgentRunner:
             except (TypeError, ValueError):
                 continue
         return typed
+
+    @staticmethod
+    def _latest_should_explore(state: AgentState) -> bool:
+        if not state.coverage_assessments:
+            return False
+        return bool(state.coverage_assessments[-1].get("should_explore"))
 
     @staticmethod
     def _format_search_observation(results: list[dict[str, Any]]) -> str:
@@ -961,6 +1253,8 @@ class AgentRunner:
             retrieval_attempts=state.retrieval_attempts,
             tool_calls=state.tool_calls,
             evidence=state.evidence,
+            coverage_assessments=state.coverage_assessments,
+            exploration_rounds=state.exploration_rounds,
             messages=state.messages,
             error_code=error_code,
         )

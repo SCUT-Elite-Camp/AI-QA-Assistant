@@ -17,11 +17,13 @@ export default defineHandler(async (event) => {
     attachment_ids: attachmentIds,
     accepted_needs_review_ids: acceptedReviewIds,
     knowledge_base_retrieval_enabled: useKnowledgeBase,
+    exploration_mode: explorationMode,
   } = await readValidatedBody(event, z.object({
     input: z.string().default(''),
     attachment_ids: z.array(z.string()).max(10).default([]),
     accepted_needs_review_ids: z.array(z.string()).max(10).default([]),
     knowledge_base_retrieval_enabled: z.boolean().default(true),
+    exploration_mode: z.enum(['auto', 'off', 'force']).default('auto'),
   }).parse)
   const db = useDrizzle()
 
@@ -66,7 +68,10 @@ export default defineHandler(async (event) => {
         { type: 'text', text: input },
         {
           type: 'data-chat-preferences',
-          data: { knowledge_base_retrieval_enabled: useKnowledgeBase }
+          data: {
+            knowledge_base_retrieval_enabled: useKnowledgeBase,
+            exploration_mode: explorationMode,
+          }
         }
       ], selected, acceptedReview)
     })

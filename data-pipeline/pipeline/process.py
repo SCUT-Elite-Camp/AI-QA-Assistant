@@ -17,7 +17,6 @@ from parsers.registry import parse_file, supported_extensions
 from pipeline.confluence_snapshot import deduplicate_confluence_paths
 from pipeline.auto_process import _index_document
 from retrieval.bm25_index import BM25Index
-from retrieval.section_bm25_index import SectionBM25Index
 from storage.milvus_store import MilvusStore
 
 def _scan_folder(folder_path: str) -> list[str]:
@@ -65,14 +64,7 @@ def process_folder(
     print(f"找到 {len(files)} 个文件待处理")
 
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
-    section_collection = os.getenv("SECTION_MILVUS_COLLECTION", "document_sections_bgem3")
-    if section_collection.casefold() == milvus.collection_name.casefold():
-        raise RuntimeError("SECTION_MILVUS_COLLECTION must differ from Evidence collection")
-    section_milvus = MilvusStore(
-        host=milvus_host, port=milvus_port, collection_name=section_collection,
-    )
     milvus.connect()
-    section_milvus.connect()
     documents: list[Document] = []
 
     for i, file_path in enumerate(files, 1):
@@ -86,8 +78,7 @@ def process_folder(
             for doc in docs:
                 if _index_document(
                     doc, chunk_size=chunk_size, overlap=overlap,
-                    evidence_milvus=milvus, section_milvus=section_milvus,
-                    has_milvus=True,
+                    evidence_milvus=milvus, has_milvus=True,
                 ):
                     documents.append(doc)
         except Exception as e:
@@ -100,11 +91,6 @@ def process_folder(
     bm25_index_path = BM25Index.default_index_path()
     bm25.save(bm25_index_path)
     print(f"  → BM25 索引已保存: {bm25_index_path}")
-    section_bm25 = SectionBM25Index()
-    section_bm25.build_from_documents()
-    section_bm25.save(SectionBM25Index.default_index_path())
-    print(f"  → Section BM25 索引已保存: {SectionBM25Index.default_index_path()}")
-
     print(f"\n处理完成！共 {len(documents)} 个文档")
     return documents
 

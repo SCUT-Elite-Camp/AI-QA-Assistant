@@ -109,10 +109,6 @@ class AttachmentStore:
           ON document_sections(attachment_id, ordinal);
         CREATE INDEX IF NOT EXISTS document_sections_version_idx
           ON document_sections(version_id);
-        CREATE VIRTUAL TABLE IF NOT EXISTS document_sections_fts USING fts5(
-          section_id UNINDEXED, attachment_id UNINDEXED, search_text,
-          tokenize='unicode61'
-        );
         CREATE TABLE IF NOT EXISTS evidence_revisions (
           id TEXT PRIMARY KEY, evidence_id TEXT NOT NULL, attachment_id TEXT NOT NULL,
           previous_content TEXT NOT NULL, corrected_content TEXT NOT NULL,
@@ -406,7 +402,6 @@ class AttachmentStore:
         db = self.connection()
         now = int(time.time())
         db.execute("BEGIN IMMEDIATE")
-        db.execute("DELETE FROM document_sections_fts WHERE attachment_id=?", (attachment_id,))
         db.execute("DELETE FROM document_sections WHERE attachment_id=?", (attachment_id,))
         for item in items:
             path = json.dumps(item.get("section_path") or [], ensure_ascii=False)
@@ -433,16 +428,6 @@ class AttachmentStore:
                     item.get("provenance", "native"), int(item.get("ordinal", 0)), now,
                 ),
             )
-            search_text = str(item.get("navigation_text") or " ".join([
-                str(item.get("title") or ""),
-                " / ".join(str(value) for value in item.get("section_path") or []),
-                str(item.get("extractive_summary") or item.get("summary") or ""),
-                str(item.get("llm_summary") or ""),
-            ])).strip()
-            db.execute(
-                "INSERT INTO document_sections_fts(section_id,attachment_id,search_text) VALUES(?,?,?)",
-                (item["id"], attachment_id, search_text),
-            )
         db.commit()
 
     def list_sections(self, attachment_ids: list[str]) -> list[dict[str, Any]]:
@@ -461,53 +446,6 @@ class AttachmentStore:
             item["evidence_ids"] = json.loads(item["evidence_ids"] or "[]")
             item["own_block_ids"] = json.loads(item["own_block_ids"] or "[]")
             item["subtree_block_ids"] = json.loads(item["subtree_block_ids"] or "[]")
-            result.append(item)
-        return result
-
-    def search_sections(
-        self,
-        attachment_ids: list[str],
-        query: str,
-        top_k: int = 8,
-    ) -> list[dict[str, Any]]:
-        """Search only the caller-preauthorized version set."""
-        sections = {item["id"]: item for item in self.list_sections(attachment_ids)}
-        if not sections:
-            return []
-        terms = [term for term in query.replace('"', " ").split() if term][:20]
-        ranked: list[tuple[str, float]] = []
-        if terms:
-            expression = " OR ".join(f'"{term}"' for term in terms)
-            marks = ",".join("?" for _ in attachment_ids)
-            try:
-                rows = self.connection().execute(
-                    "SELECT section_id,bm25(document_sections_fts) AS rank "
-                    "FROM document_sections_fts WHERE document_sections_fts MATCH ? "
-                    f"AND attachment_id IN ({marks}) ORDER BY rank LIMIT ?",
-                    (expression, *attachment_ids, top_k),
-                ).fetchall()
-                ranked = [(str(row["section_id"]), -float(row["rank"])) for row in rows]
-            except sqlite3.OperationalError:
-                ranked = []
-        if not ranked:
-            tokens = [term.casefold() for term in terms]
-            for section in sections.values():
-                haystack = str(section.get("navigation_text") or " ".join([
-                    str(section.get("title") or ""),
-                    " / ".join(section.get("section_path") or []),
-                    str(section.get("extractive_summary") or section.get("summary") or ""),
-                    str(section.get("llm_summary") or ""),
-                ])).casefold()
-                hits = sum(haystack.count(token) for token in tokens)
-                if hits:
-                    ranked.append((str(section["id"]), float(hits)))
-            ranked.sort(key=lambda value: (-value[1], value[0]))
-        result = []
-        for rank, (section_id, _) in enumerate(ranked[:top_k], 1):
-            if section_id not in sections:
-                continue
-            item = dict(sections[section_id])
-            item["score"] = round(1.0 / (1.0 + 0.12 * (rank - 1)), 6)
             result.append(item)
         return result
 
@@ -691,7 +629,6 @@ class AttachmentStore:
     def purge(self, attachment_id: str) -> None:
         db = self.connection()
         db.execute("BEGIN IMMEDIATE")
-        db.execute("DELETE FROM document_sections_fts WHERE attachment_id=?", (attachment_id,))
         db.execute("DELETE FROM evidence_fts WHERE attachment_id=?", (attachment_id,))
         db.execute("DELETE FROM attachments WHERE id=?", (attachment_id,))
         db.commit()

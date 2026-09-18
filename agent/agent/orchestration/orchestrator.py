@@ -92,6 +92,16 @@ class AgentOrchestrator:
         )
         policy = self._apply_source_policy(request, policy, effective_intent)
         policy = self._apply_knowledge_base_policy(request, policy)
+        navigation_scopes = self._navigation_scopes(
+            request,
+            effective_intent,
+        )
+        policy = self._apply_exploration_policy(
+            request,
+            plan,
+            policy,
+            navigation_scopes=navigation_scopes,
+        )
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
@@ -112,6 +122,8 @@ class AgentOrchestrator:
             mode=retrieval_mode,
             top_k=top_k,
             is_first_message=is_first,
+            exploration_mode=request.exploration_mode,
+            navigation_scopes=navigation_scopes,
         )
         self._log_source_routing(
             request=request,
@@ -149,6 +161,60 @@ class AgentOrchestrator:
                 # The normal orchestrated path always returns typed Evidence.
                 continue
         return self.citation_checker.validate(answer, citations, typed_evidence)
+
+    @staticmethod
+    def _apply_exploration_policy(
+        request: ChatRequest,
+        plan: QueryPlan,
+        policy: IntentPolicy,
+        *,
+        navigation_scopes: tuple[str, ...] = (),
+    ) -> IntentPolicy:
+        if (
+            not settings.AGENTIC_EXPLORATION_ENABLED
+            or request.exploration_mode == "off"
+            or not policy_requires_retrieval(plan)
+            or not navigation_scopes
+        ):
+            return policy
+        candidates = list(policy.candidate_tools)
+        if settings.KNOWLEDGE_NAVIGATION_ENABLED:
+            candidates.extend((
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ))
+        return policy.model_copy(update={
+            "candidate_tools": tuple(dict.fromkeys(candidates)),
+            "max_iterations": max(policy.max_iterations, settings.EXPLORATION_MAX_ROUNDS + 2),
+            "max_tool_calls": max(policy.max_tool_calls, settings.EXPLORATION_MAX_TOOL_CALLS),
+            # Mandatory Direct retrieval is outside the exploration-round
+            # budget; leave room for enterprise/personal Direct plus 3 steps.
+            "max_retrieval_attempts": max(
+                policy.max_retrieval_attempts,
+                min(5, settings.EXPLORATION_MAX_ROUNDS + 2),
+            ),
+        })
+
+    @staticmethod
+    def _navigation_scopes(
+        request: ChatRequest,
+        source_intent: SourceIntent,
+    ) -> tuple[str, ...]:
+        """Resolve server-authorized exploration scopes for this request."""
+        selected = set(source_intent.sources)
+        scopes: list[str] = []
+        if (
+            request.knowledge_base_retrieval_enabled
+            and SourceKind.ENTERPRISE_KB in selected
+        ):
+            scopes.append("enterprise")
+        if (
+            request.knowledge_base_retrieval_enabled
+            and request.personal_library_context is not None
+            and SourceKind.PERSONAL_LIBRARY in selected
+        ):
+            scopes.append("personal")
+        return tuple(scopes)
 
     def _read_history(self, session_id: str | None) -> list[dict[str, Any]]:
         if not settings.MEMORY_ENABLED or not session_id:

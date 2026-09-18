@@ -1,0 +1,36 @@
+{
+  "evaluation_label": "PROBE",
+  "frozen_at": "2026-09-15",
+  "corpus": "MEETING_RECORD_FROZEN_COHORT",
+  "cohort_sha256": "56f42871495b12b9c45248e572a1e1777c8508106c6531e5b154d0c43a9659fe",
+  "source_pages": 12,
+  "revision": "wr_2c2465f4a24fd89d321d197a",
+  "published": false,
+  "metrics": {
+    "candidates": 250,
+    "identities": 61,
+    "pages": 74,
+    "invalid_evidence_bindings": 31,
+    "human_review": "NOT_RUN",
+    "formal_retrieval_evaluation": "NOT_RUN"
+  },
+  "artifacts": {
+    "cohort.json": "56f42871495b12b9c45248e572a1e1777c8508106c6531e5b154d0c43a9659fe",
+    "manifest.json": "3760229dba33901d14bb0bed8be5e29aed590188cfd6d333a15d7d74c3bd9e11",
+    "wiki.sqlite3": "55ba21213abe0ba6e1af4684513ab0503dc08b5b47d457fd1c2e57ad6c4cfec1",
+    "claim-review.csv": "57c4066c88ca576c98fc786e82b9a8d7da58514a54fb5df95f63176368f35ef4",
+    "review-bundle-v3.zip": "7f5348bb672325b9627b9e567c978b6ed20c20da8405c6c1ca68a1c198ad9b48"
+  },
+  "production_source_sha256": {
+    "domain.py": "27ed366a5f7013604b809076ae619fc9c67725ecf2dcb5c8b89458246e27d75f",
+    "source.py": "d3b0c9a75340c1ddb87bd4c7a02d3b47d574b9e9ee6493912a856321050f506f",
+    "extraction.py": "6df32c04fed0ac75e75f1fdbb27b6b92793ce895e0708c661a80c38d61bc6c6a",
+    "identity.py": "b717185a785e3d545b1b075cf39f48a34e57ecdc9dd11073358b9cb9b9c360b1",
+    "taxonomy.py": "5b75ea32e5d42db14e78af126504421f54b3b14a8f71498b8f61a1eeba430340",
+    "page.py": "cff77dc2ca57c2c297fc9975d202f8172bec24f22cd43d06f2a3acc5b766363b",
+    "quality.py": "0ccbc9727034fed5d298a68fc021a60b44a017e1394cd1e27b6a2ddb877f2569",
+    "job.py": "afdd9dc7426ef0aaa165534db2c415240fea573df9d7c7f8a37b944ec44a2125",
+    "cache.py": "99352c7c001452ddb96c6957f6fddf21a5ad1da97b157721934876468859aca1",
+    "wiki_store.py": "be3e16b05a22fa66cd63088454c39ba4478cf77c6aefd9b115d362071991ff02"
+  }
+}

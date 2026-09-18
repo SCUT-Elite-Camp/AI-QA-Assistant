@@ -94,6 +94,48 @@ class StructuredSearchTool(BaseTool):
         return self.rows
 
 
+class PersonalWikiEvidenceTool(BaseTool):
+    @property
+    def name(self) -> str:
+        return "wiki_search_evidence"
+
+    @property
+    def description(self) -> str:
+        return "Search Evidence from Wiki source documents."
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "page_id": {"type": "string"},
+                "source_scope": {"type": "string", "enum": ["personal", "enterprise"]},
+                "mode": {"type": "string"},
+            },
+            "required": ["query", "page_id", "source_scope"],
+            "additionalProperties": False,
+        }
+
+    def execute(self, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "citation_authority": True,
+            "items": [{
+                "attachment_id": "ver-1",
+                "evidence_id": "ev-1",
+                "content": "Agent runtime uses bounded tool execution.",
+                "score": 0.88,
+                "filename": "architecture.md",
+                "locator": {"section_path": ["Architecture", "Runtime"]},
+                "matched_section_ids": ["sec-1"],
+                "knowledge_base_id": "kb-personal",
+                "document_id": "doc-personal",
+                "version_id": "ver-1",
+                "source_scope": "personal",
+            }],
+        }
+
+
 def _executor(*tools: BaseTool, timeout_ms: int = 1000) -> ToolExecutor:
     registry = ToolRegistryAdapter(ToolsetRegistry(tools=list(tools)))
     return ToolExecutor(registry, timeout_ms=timeout_ms)
@@ -244,6 +286,31 @@ def test_invalid_search_row_returns_invalid_tool_result() -> None:
     assert result.success is False
     assert result.error_code == "invalid_tool_result"
     assert result.evidence == []
+
+
+def test_personal_wiki_result_becomes_authoritative_evidence() -> None:
+    result = _executor(PersonalWikiEvidenceTool()).execute(
+        tool_call_id="call-personal-wiki",
+        tool_name="wiki_search_evidence",
+        arguments={
+            "query": "Agent runtime",
+            "page_id": "wiki-page-1",
+            "source_scope": "personal",
+            "mode": "bm25",
+        },
+        trace_id="trace-personal-scoped",
+        retrieval_attempt=2,
+    )
+
+    assert result.success is True
+    assert len(result.evidence) == 1
+    evidence = result.evidence[0]
+    assert evidence.doc_id == "doc-personal"
+    assert evidence.chunk_id == "ev-1"
+    assert evidence.evidence_id == "ev-1"
+    assert evidence.source_scope == "personal"
+    assert evidence.source_type == "personal"
+    assert evidence.locator == {"section_path": ["Architecture", "Runtime"]}
 
 
 def test_execution_models_reject_shared_or_invalid_state() -> None:
