@@ -15,7 +15,12 @@ from deep_research.repository import SQLiteResearchRepository
 from deep_research.runtime import ResearchGraphRuntime
 from deep_research.service import ResearchControlPlane
 from deep_research.structural_verifier import StructuralVerifier
-from deep_research.tools import LocalResearchToolAdapter, ManifestAccessError, ToolCallContext
+from deep_research.tools import (
+    LocalJsonSearchBackend,
+    LocalResearchToolAdapter,
+    ManifestAccessError,
+    ToolCallContext,
+)
 
 
 DOCUMENT = {"doc_id": "doc-a", "title": "A", "content": "收入增长。\n利润稳定。", "version": "v1"}
@@ -74,6 +79,49 @@ def test_day3_search_is_observation_and_original_read_is_deduplicated_evidence(t
         assert first.locator == "line:1-1"
         with pytest.raises(ManifestAccessError, match="outside_manifest"):
             adapter.read_document_range("outside", tool_context)
+    finally:
+        adapter.close()
+
+
+def test_local_json_search_preserves_canonical_chunk_locator(tmp_path) -> None:
+    repository, _, documents_dir, _, tool_context = setup_research(tmp_path)
+    del repository
+    payload = {
+        **DOCUMENT,
+        "content_hash": tool_context.source_manifest.documents[0].content_hash,
+        "chunks": [
+            {
+                "index": 0,
+                "chunk_id": "doc-a::chunk_0",
+                "text": "收入增长。",
+            },
+            {
+                "index": 1,
+                "chunk_id": "doc-a_chunk_1",
+                "text": "利润保持稳定。",
+            },
+        ],
+    }
+    (documents_dir / "doc-a.json").write_text(
+        json.dumps(payload, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    adapter = LocalResearchToolAdapter(
+        LocalJsonSearchBackend(documents_dir),
+        documents_dir,
+    )
+    try:
+        hits = adapter.search("利润", tool_context)
+        assert len(hits) == 1
+        assert hits[0].locator_hint == "doc-a_chunk_1"
+
+        read = adapter.read_document_range(
+            "doc-a",
+            tool_context,
+            locator="doc-a::chunk_1",
+        )
+        assert read.locator == "doc-a_chunk_1"
+        assert read.excerpt == "利润保持稳定。"
     finally:
         adapter.close()
 

@@ -38,4 +38,4 @@ def test_real_tool_layer_smoke_path(monkeypatch) -> None:
     assert response.trace_id.startswith("trace-")
     assert response.citations
     assert response.citations[0].doc_id == "doc_001"
-    assert response.citations[0].chunk_id == "doc_001::chunk_0"
+    assert response.citations[0].chunk_id == "doc_001_chunk_0"

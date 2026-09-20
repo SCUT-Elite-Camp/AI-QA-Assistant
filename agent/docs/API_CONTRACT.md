@@ -59,7 +59,7 @@ Fields:
       "title": "Agent 层 Q1 范围",
       "source_url": "https://example.local/docs/agent-q1-plan",
       "doc_id": "agent-q1-plan",
-      "chunk_id": "chunk-001",
+      "chunk_id": "agent-q1-plan_chunk_0",
       "score": 0.96,
       "snippet": "Q1 只实现简化版单轮 RAG Agent，使用 Mock Retrieval 和 Mock LLM 打通最小闭环。"
     }
@@ -85,7 +85,9 @@ Fields:
 - `title`: Source chunk title.
 - `source_url`: Optional source URL.
 - `doc_id`: Source document ID.
-- `chunk_id`: Source chunk ID.
+- `chunk_id`: Stable source chunk ID in canonical
+  `{doc_id}_chunk_{zero_based_index}` form. Legacy Tool Layer values such as
+  `{doc_id}::chunk_{index}` are normalized at the Agent trust boundary.
 - `score`: Retrieval score.
 - `snippet`: Short excerpt from `chunk_text` for Web display.
 
@@ -205,6 +207,9 @@ been removed. Public `/api/chat` and its response remain unchanged.
   and retrieval strategy before the Runner executes.
 - Evidence is accepted by `EvidenceGate` before final answer generation; a
   failed first attempt may trigger one bounded corrective retrieval.
+- Semantically identical tool calls emitted in parallel in one model turn are
+  executed once and replayed with one matching tool response. An identical
+  call repeated in a later model turn still triggers the loop safety limit.
 - `CitationChecker` validates that exposed citations are backed by accepted
   request-local Evidence.
 - Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
@@ -251,6 +256,10 @@ The Agent trust boundary converts Tool Layer `dict` results into
 - `title`
 - `source_url`
 - `score`
+
+At this boundary, parseable legacy chunk IDs are normalized to
+`{doc_id}_chunk_{index}`. Unknown non-empty locator formats are preserved
+rather than guessed.
 
 Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
@@ -306,6 +315,10 @@ The dispatcher only executes approved `ready` Jobs. Execution and result state
 are independent: a workflow may finish with `status=completed` and
 `result_status=degraded` when required evidence is missing or conflicting.
 Reports are Markdown and preserve Evidence IDs plus original document locators.
+For documents that contain structured `chunks`, local search and original read
+use the exact canonical chunk locator and return that chunk's source text.
+The `line:start-end` locator remains a compatibility fallback only for
+documents without structured chunks.
 
 `GET /progress` is the authoritative UI read model. It returns
 `research.progress.v1`, including the fixed stage timeline, backend-computed

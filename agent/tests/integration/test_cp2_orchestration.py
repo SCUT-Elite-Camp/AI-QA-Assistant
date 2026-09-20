@@ -231,6 +231,17 @@ def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None
     assert agent.last_orchestration is not None
     assert agent.last_orchestration.run_result.retrieval_attempts == 2
     assert [call["query"] for call in search.calls] == ["A 和 B", "A", "B"]
+    runner_replay = [call for call in llm.calls if call["tools"]][-1]["messages"]
+    assistant_tool_ids = {
+        tool_call["id"]
+        for message in runner_replay
+        for tool_call in message.get("tool_calls", [])
+    }
+    tool_messages = [
+        message for message in runner_replay if message.get("role") == "tool"
+    ]
+    assert {message["tool_call_id"] for message in tool_messages} <= assistant_tool_ids
+    assert "[corrective retrieval]" in tool_messages[0]["content"]
     assert agent.last_citation_check is not None
     assert agent.last_citation_check.valid is True
 

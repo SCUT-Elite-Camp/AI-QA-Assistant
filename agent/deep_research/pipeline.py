@@ -120,6 +120,7 @@ class ManifestScopedWorkerTools:
             context,
             start_line=start_line,
             end_line=end_line,
+            locator=None if match else locator_hint,
         )
         return OriginalRead(
             doc_id=item.doc_id,

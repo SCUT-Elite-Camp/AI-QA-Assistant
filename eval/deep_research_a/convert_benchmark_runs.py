@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 
@@ -43,6 +44,24 @@ def contains_any(text: str, values: list[str]) -> bool:
     return any(" ".join(value.casefold().split()) in normalized for value in values)
 
 
+_CHUNK_SUFFIX = re.compile(r"(?:^|::|_)chunk(?::|_|-)(\d+)$", re.IGNORECASE)
+
+
+def canonical_locator(doc_id: str, value: Any, chunk_index: Any = None) -> str:
+    raw = str(value or "").strip()
+    if raw.startswith("line:"):
+        return raw
+    match = _CHUNK_SUFFIX.search(raw)
+    if match and doc_id:
+        return f"{doc_id}_chunk_{int(match.group(1))}"
+    if not raw and doc_id and chunk_index is not None:
+        try:
+            return f"{doc_id}_chunk_{int(chunk_index)}"
+        except (TypeError, ValueError):
+            pass
+    return raw
+
+
 def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
     result = envelope.get("result") or {}
     group = GROUPS[str(envelope["group"])]
@@ -52,17 +71,29 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     report_text = str(response.get("answer") or response.get("message") or report_payload.get("markdown") or "")
     api_citations = list(result.get("citations") or [])
     checks = {item.get("url"): item for item in result.get("source_checks") or []}
+    manifest_by_doc = {
+        str(item.get("doc_id") or ""): item
+        for item in manifest.get("documents") or []
+    }
 
     evidence = []
     for index, item in enumerate(api_citations, 1):
-        excerpt = str(item.get("excerpt") or item.get("text") or "")
+        doc_id = str(item.get("doc_id") or "")
+        frozen = manifest_by_doc.get(doc_id, {})
+        excerpt = str(
+            item.get("excerpt") or item.get("text") or item.get("snippet") or ""
+        )
         evidence_id = str(item.get("evidence_id") or f"citation-evidence-{index}")
         evidence.append({
             "evidence_id": evidence_id,
-            "doc_id": str(item.get("doc_id") or ""),
-            "document_version": item.get("document_version"),
-            "content_hash": str(item.get("content_hash") or ""),
-            "locator": str(item.get("locator") or ""),
+            "doc_id": doc_id,
+            "document_version": item.get("document_version") or frozen.get("version"),
+            "content_hash": str(item.get("content_hash") or frozen.get("content_hash") or ""),
+            "locator": canonical_locator(
+                doc_id,
+                item.get("locator") or item.get("chunk_id"),
+                item.get("chunk_index"),
+            ),
             "excerpt": excerpt,
             "source_method": "local_original_read",
             "supports_fact_ids": [
@@ -102,15 +133,22 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     for index, item in enumerate(api_citations, 1):
         url = str(item.get("source_url") or "")
         checked = checks.get(url, {})
+        doc_id = str(item.get("doc_id") or "")
         citations.append({
             "citation_id": str(item.get("number") or index),
             "claim_ids": [claim_id] if claim_id else [],
             "evidence_ids": [str(item.get("evidence_id") or f"citation-evidence-{index}")],
-            "doc_id": str(item.get("doc_id") or ""),
-            "locator": str(item.get("locator") or ""),
+            "doc_id": doc_id,
+            "locator": canonical_locator(
+                doc_id,
+                item.get("locator") or item.get("chunk_id"),
+                item.get("chunk_index"),
+            ),
             "source_url": url or None,
             "link_status": "open" if checked.get("ok") else ("broken" if url else "not_applicable"),
-            "supports_claim": bool(item.get("excerpt") or item.get("text")),
+            "supports_claim": bool(
+                item.get("excerpt") or item.get("text") or item.get("snippet")
+            ),
         })
 
     progress = research.get("progress") or {}
@@ -118,8 +156,10 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     traced_evidence = []
     for item in trace.get("verified_evidence") or []:
         excerpt = str(item.get("excerpt") or "")
+        doc_id = str(item.get("doc_id") or "")
         traced_evidence.append({
             **item,
+            "locator": canonical_locator(doc_id, item.get("locator")),
             "source_method": "read_document_range",
             "supports_fact_ids": [
                 fact["fact_id"] for fact in case.get("required_facts", [])
@@ -170,7 +210,11 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             {
                 "rank": index,
                 "doc_id": str(item.get("doc_id") or ""),
-                "chunk_id": item.get("chunk_id") or item.get("locator_hint"),
+                "chunk_id": canonical_locator(
+                    str(item.get("doc_id") or ""),
+                    item.get("chunk_id") or item.get("locator_hint"),
+                    item.get("chunk_index"),
+                ),
                 "score": item.get("score"),
                 "search_path": item.get("tool_name") or "search",
             }
