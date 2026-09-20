@@ -253,6 +253,54 @@ def test_repeated_identical_tool_call_is_stopped_before_second_execution() -> No
     assert result.tool_calls[-1].error_code == "repeated_tool_call"
 
 
+def test_same_turn_duplicate_search_calls_are_deduplicated() -> None:
+    search = RecordingSearchTool()
+    llm = ScriptedLLM(
+        [
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    tool_call(
+                        "search_documents",
+                        {"query": "模型生成的查询 A"},
+                        "call-search-a",
+                    ),
+                    tool_call(
+                        "search_documents",
+                        {"query": "模型生成的查询 B"},
+                        "call-search-b",
+                    ),
+                ],
+            },
+            {"role": "assistant", "content": "基于检索证据的回答 [1]"},
+        ]
+    )
+    runner = make_runner(llm, [search], max_repeated_tool_calls=2)
+
+    result = runner.run(make_plan(), trace_id="trace-parallel-duplicate")
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert search.calls == [
+        {
+            "query": "CP2 分工文档内容",
+            "top_k": 5,
+            "mode": "hybrid",
+            "filters": {"space_key": "RAG"},
+            "min_score": 0.0,
+            "trace_id": "trace-parallel-duplicate",
+        }
+    ]
+    replay = llm.calls[1]["messages"]
+    assistant = next(message for message in replay if message.get("tool_calls"))
+    assert [call["id"] for call in assistant["tool_calls"]] == ["call-search-a"]
+    assert [
+        message["tool_call_id"]
+        for message in replay
+        if message.get("role") == "tool"
+    ] == ["call-search-a"]
+
+
 def test_max_iterations_stops_changing_tool_calls() -> None:
     tool = RecordingTool()
     llm = ScriptedLLM(

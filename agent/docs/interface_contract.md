@@ -82,7 +82,9 @@ separate Web contract revision approves an optional `run` field.
 - `title`: document title.
 - `source_url`: optional source link.
 - `doc_id`: document identifier.
-- `chunk_id`: chunk identifier.
+- `chunk_id`: stable chunk identifier in
+  `{doc_id}_chunk_{zero_based_index}` form. Agent normalizes the legacy
+  `{doc_id}::chunk_{index}` Tool Layer form before returning it to Web.
 - `score`: retrieval score.
 - `snippet`: document excerpt, defaulting to the first 120 characters of
   `chunk_text`.
@@ -132,6 +134,10 @@ separate Web contract revision approves an optional `run` field.
   `answer`.
 - Include `trace_id` in logs and issue reports.
 - Match citation markers such as `[1]` and `[2]` by `citation_id`.
+
+Models may emit duplicate parallel calls in one response. Agent deduplicates
+semantically identical calls within that response; the repeated-call limit is
+reserved for an identical call repeated across model turns.
 
 ## CP2 Conversation Rules
 

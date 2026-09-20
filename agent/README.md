@@ -10,6 +10,7 @@
 - 基于 `session_id` 的上下文读取、写回、隔离、截断和清理。
 - `QueryIntent` / `QueryPlan` 严格 Pydantic 契约。
 - Agent Runner 动态读取工具 schema，支持连续多轮工具调用。
+- 同一模型轮次的等价并行工具调用只执行一次，跨轮重复调用仍由安全阈值熔断。
 - 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
 - 检索统一使用 `standalone_query`，保留 `original_query` 用于对话、记忆和审计。
 - `trace_id` 贯穿 Chat、Runner 与检索工具。
@@ -21,6 +22,8 @@
   由低频 Durable Dispatcher 调度和恢复。
 - 单 Worker 顺序完成 Search → Observation → Original Read → Evidence →
   Finding → Coverage → Claim Verification → Markdown Report。
+- Chat 与 Local Deep Research 统一输出 `{doc_id}_chunk_{index}` 稳定定位符；
+  结构化文档按命中 chunk 精确读取原文，无 chunks 时才回退到行号定位。
 - 支持资料充分的 `complete` 与资料不足或冲突的 `degraded` 结果。
 
 共享契约：

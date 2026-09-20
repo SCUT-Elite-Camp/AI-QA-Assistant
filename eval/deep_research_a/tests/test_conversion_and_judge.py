@@ -8,7 +8,7 @@ SUITE_ROOT = Path(__file__).resolve().parents[1]
 if str(SUITE_ROOT) not in sys.path:
     sys.path.insert(0, str(SUITE_ROOT))
 
-from convert_benchmark_runs import GROUPS
+from convert_benchmark_runs import GROUPS, convert
 from judge_records import parse_json
 
 
@@ -18,6 +18,81 @@ def test_all_benchmark_groups_have_six_layer_names() -> None:
         "deep_research_current": "G2",
         "deep_research_page_index": "G3",
     }
+
+
+def test_fast_chat_conversion_restores_stable_evidence_identity() -> None:
+    envelope = {
+        "group": "fast_chat",
+        "run_id": "run-1",
+        "case_id": "DR-A-001",
+        "repetition": 1,
+        "elapsed_ms": 123,
+        "result": {
+            "response": {"answer": "利润保持稳定。[1]", "status": "success"},
+            "citations": [
+                {
+                    "number": 1,
+                    "doc_id": "doc-a",
+                    "chunk_id": "doc-a::chunk_1",
+                    "chunk_index": 1,
+                    "snippet": "利润保持稳定。",
+                    "source_url": "https://example.test/doc-a",
+                    "score": 0.9,
+                }
+            ],
+            "source_checks": [
+                {"url": "https://example.test/doc-a", "ok": True}
+            ],
+        },
+    }
+    case = {
+        "question": "利润如何？",
+        "allowed_document_ids": ["doc-a"],
+        "forbidden_document_ids": [],
+        "required_facts": [
+            {"fact_id": "fact-1", "match_any": ["利润保持稳定"]}
+        ],
+    }
+    manifest = {
+        "manifest_hash": "manifest-hash",
+        "documents": [
+            {
+                "doc_id": "doc-a",
+                "version": "v1",
+                "content_hash": "content-hash",
+            }
+        ],
+    }
+    baseline = {
+        "generation": {
+            "provider": "deepseek",
+            "model": "DeepSeek-V4.1-Flash",
+            "model_revision": "frozen",
+        },
+        "repository": {"head_commit": "abc123"},
+        "generation_config_sha256": "generation-hash",
+        "prompts": {},
+        "retrieval": {"embedding_revision": "embedding-v1"},
+    }
+
+    record = convert(envelope, case, manifest, baseline)
+
+    assert record["verified_evidence"] == [
+        {
+            "evidence_id": "citation-evidence-1",
+            "doc_id": "doc-a",
+            "document_version": "v1",
+            "content_hash": "content-hash",
+            "locator": "doc-a_chunk_1",
+            "excerpt": "利润保持稳定。",
+            "source_method": "local_original_read",
+            "supports_fact_ids": ["fact-1"],
+            "conflict_status": "none",
+        }
+    ]
+    assert record["retrieval_hits"][0]["chunk_id"] == "doc-a_chunk_1"
+    assert record["citations"][0]["locator"] == "doc-a_chunk_1"
+    assert record["citations"][0]["supports_claim"] is True
 
 
 def test_parse_judge_json_accepts_fenced_json() -> None:

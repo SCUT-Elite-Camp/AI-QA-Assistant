@@ -51,7 +51,7 @@
       "path": "agent/agent/prompt/templates.py",
       "sha256": "e66ae8f3400c82e11949d34d43d88fce8fe2bb24fed3799fcd5643ba081cacce",
       "assembly_path": "agent/agent/runtime/runner.py",
-      "assembly_sha256": "f6ea239b71631e18dce6046f9b8edc06f877abdb83d9e01971c651876073f516"
+      "assembly_sha256": "1d729d05612d582365c87d8fcda41c64f99618346ee78bd6fcc4afc3f38c81ba"
     },
     "planner": {
       "path": "agent/deep_research/planner.py",

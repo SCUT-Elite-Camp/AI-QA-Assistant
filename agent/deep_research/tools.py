@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from typing import Any, Protocol
 
+from agent.evidence.locator import canonical_chunk_id
 from agent.schemas.research import SourceManifest
 from .manifest import LocalDocumentResolver
 
@@ -46,23 +47,23 @@ class LocalJsonSearchBackend:
             doc_id = str(payload.get("doc_id") or path.stem)
             if allowed_ids and doc_id not in allowed_ids:
                 continue
-            lines = self._lines(payload)
-            if not lines:
+            candidates = self._candidates(payload, doc_id)
+            if not candidates:
                 continue
-            best_index, best_line, overlap = max(
+            best_index, best_locator, best_text, overlap = max(
                 (
-                    (index, line, len(query_tokens & self._tokens(line)))
-                    for index, line in enumerate(lines)
+                    (index, locator, text, len(query_tokens & self._tokens(text)))
+                    for index, locator, text in candidates
                 ),
-                key=lambda item: (item[2], -item[0]),
+                key=lambda item: (item[3], -item[0]),
             )
             score = overlap / max(1, len(query_tokens))
             rows.append(
                 {
                     "doc_id": doc_id,
-                    "chunk_id": f"line:{best_index + 1}-{best_index + 1}",
+                    "chunk_id": best_locator,
                     "chunk_index": best_index,
-                    "chunk_text": best_line,
+                    "chunk_text": best_text,
                     "score": score,
                 }
             )
@@ -73,6 +74,33 @@ class LocalJsonSearchBackend:
     def _lines(payload: dict[str, Any]) -> list[str]:
         content = LocalDocumentResolver._searchable_text(payload)
         return [line.strip() for line in content.splitlines() if line.strip()]
+
+    @classmethod
+    def _candidates(
+        cls,
+        payload: dict[str, Any],
+        doc_id: str,
+    ) -> list[tuple[int, str, str]]:
+        chunks = payload.get("chunks") or []
+        candidates: list[tuple[int, str, str]] = []
+        for position, chunk in enumerate(chunks):
+            if not isinstance(chunk, dict):
+                continue
+            text = str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+            if not text:
+                continue
+            try:
+                index = int(chunk.get("index", position))
+            except (TypeError, ValueError):
+                index = position
+            locator = canonical_chunk_id(doc_id, chunk.get("chunk_id"), index)
+            candidates.append((index, locator, text))
+        if candidates:
+            return candidates
+        return [
+            (index, f"line:{index + 1}-{index + 1}", line)
+            for index, line in enumerate(cls._lines(payload))
+        ]
 
     @staticmethod
     def _tokens(text: str) -> set[str]:
@@ -186,16 +214,28 @@ class LocalResearchToolAdapter:
             snippet = str(row.get("chunk_text") or row.get("text") or "").strip()
             if not snippet:
                 continue
-            hits.append(SearchHit(
-                doc_id=doc_id,
-                locator_hint=str(row.get("chunk_id") or f"{doc_id}::chunk_{index}"),
-                snippet=snippet,
-                score=float(row.get("score", 0.0)),
-            ))
+            hits.append(
+                SearchHit(
+                    doc_id=doc_id,
+                    locator_hint=canonical_chunk_id(
+                        doc_id,
+                        row.get("chunk_id"),
+                        index,
+                    ),
+                    snippet=snippet,
+                    score=float(row.get("score", 0.0)),
+                )
+            )
         return hits
 
     def read_document_range(
-        self, doc_id: str, context: ToolCallContext, *, start_line: int = 1, end_line: int | None = None,
+        self,
+        doc_id: str,
+        context: ToolCallContext,
+        *,
+        start_line: int = 1,
+        end_line: int | None = None,
+        locator: str | None = None,
     ) -> OriginalRead:
         manifest_item = self._allowed(context).get(doc_id)
         if manifest_item is None:
@@ -218,6 +258,38 @@ class LocalResearchToolAdapter:
         content_hash = str(payload.get("content_hash") or hashlib.sha256(content.encode("utf-8")).hexdigest())
         if content_hash != manifest_item.content_hash:
             raise ManifestAccessError(f"document_version_changed:{doc_id}")
+        version = payload.get("version") or payload.get("last_updated")
+        if locator:
+            requested_locator = canonical_chunk_id(doc_id, locator)
+            for position, chunk in enumerate(payload.get("chunks") or []):
+                if not isinstance(chunk, dict):
+                    continue
+                try:
+                    index = int(chunk.get("index", position))
+                except (TypeError, ValueError):
+                    index = position
+                chunk_locator = canonical_chunk_id(
+                    doc_id,
+                    chunk.get("chunk_id"),
+                    index,
+                )
+                if chunk_locator != requested_locator:
+                    continue
+                excerpt = str(
+                    chunk.get("text") or chunk.get("chunk_text") or ""
+                ).strip()
+                if not excerpt:
+                    raise LocalToolError("empty_document_excerpt")
+                return OriginalRead(
+                    doc_id=doc_id,
+                    document_version=(
+                        str(version) if version is not None else None
+                    ),
+                    locator=chunk_locator,
+                    excerpt=excerpt,
+                    content_hash=content_hash,
+                )
+            raise LocalToolError(f"document_chunk_not_found:{requested_locator}")
         lines = content.splitlines() or [content]
         if start_line > len(lines):
             raise LocalToolError("document_range_out_of_bounds")
@@ -225,7 +297,6 @@ class LocalResearchToolAdapter:
         excerpt = "\n".join(lines[start_line - 1:effective_end]).strip()
         if not excerpt:
             raise LocalToolError("empty_document_excerpt")
-        version = payload.get("version") or payload.get("last_updated")
         return OriginalRead(
             doc_id=doc_id,
             document_version=str(version) if version is not None else None,
