@@ -131,3 +131,22 @@ def test_evaluate_paths_reports_expectation_failures(tmp_path):
         "passed": False,
         "failures": ["required_text missing: missing"],
     }
+
+
+def test_evaluate_paths_matches_expectations_by_relative_path(tmp_path):
+    first = tmp_path / "first" / "report.pdf"
+    second = tmp_path / "second" / "report.pdf"
+    first.parent.mkdir()
+    second.parent.mkdir()
+    first.write_bytes(b"pdf")
+    second.write_bytes(b"pdf")
+
+    report = evaluate_paths(
+        [str(tmp_path)],
+        expectations={"second/report.pdf": {"required_text": ["missing"]}},
+        parser=parsed_document,
+    )
+
+    first_result, second_result = report["files"]
+    assert first_result["expectations"] is None
+    assert second_result["expectations"]["passed"] is False

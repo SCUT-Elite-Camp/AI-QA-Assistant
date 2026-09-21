@@ -54,6 +54,11 @@ def test_safe_reindex_defaults_to_dry_run_without_touching_milvus(tmp_path):
     assert report["status"] == "dry-run"
     assert report["raw_files"] == 1
     assert report["collections"] == list(TARGETS)
+    assert report["local_backups"] == {
+        "documents": True,
+        "bm25_index.pkl": True,
+        "card_links.db": True,
+    }
     assert utility.events == []
 
 
@@ -97,6 +102,12 @@ def test_safe_reindex_backs_up_and_keeps_old_collections_on_success(tmp_path):
     assert (backup / "bm25_index.pkl").read_bytes() == b"old bm25"
     assert (backup / "card_links.db").read_bytes() == b"old cards"
     assert all(f"{name}__backup_20260921T120000Z" in utility.collections for name in TARGETS)
+    assert report["cleanup_after_verification"] == {
+        "drop_backup_collections": [
+            f"{name}__backup_20260921T120000Z" for name in TARGETS
+        ],
+        "remove_backup_directory": str(backup),
+    }
     assert calls[0][0][-1].endswith("scripts\\reindex.py") or calls[0][0][-1].endswith("scripts/reindex.py")
 
 
@@ -128,3 +139,28 @@ def test_safe_reindex_rolls_back_collections_and_local_files_on_failure(tmp_path
     assert (data / "documents" / "doc.json").read_text(encoding="utf-8") == "old document"
     assert (data / "bm25_index.pkl").read_bytes() == b"old bm25"
     assert (data / "card_links.db").read_bytes() == b"old cards"
+
+
+def test_safe_reindex_rolls_back_when_rename_applies_then_raises(tmp_path):
+    project = make_project(tmp_path)
+
+    class AmbiguousRenameUtility(FakeUtility):
+        def rename_collection(self, old_name, new_name):
+            super().rename_collection(old_name, new_name)
+            if old_name == "knowledge_cards":
+                raise RuntimeError("connection lost after rename")
+
+    utility = AmbiguousRenameUtility(TARGETS)
+
+    report = safe_reindex(
+        project_root=project,
+        execute=True,
+        confirmation="REBUILD",
+        utility_api=utility,
+        subprocess_runner=lambda command, cwd: SimpleNamespace(returncode=0),
+        timestamp="20260921T120000Z",
+    )
+
+    assert report["status"] == "error"
+    assert report["rolled_back"] is True
+    assert utility.collections == set(TARGETS)

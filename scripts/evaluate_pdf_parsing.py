@@ -62,6 +62,23 @@ def _expectation_result(document: Document, expected: dict | None) -> dict | Non
     return {"passed": not failures, "failures": failures}
 
 
+def _expectation_for_path(
+    path: Path,
+    *,
+    expectations: dict[str, dict],
+    input_roots: list[Path],
+) -> dict | None:
+    candidates: list[str] = []
+    for root in input_roots:
+        base = root if root.is_dir() else root.parent
+        try:
+            candidates.append(path.relative_to(base).as_posix())
+        except ValueError:
+            continue
+    candidates.extend((path.as_posix(), path.name))
+    return next((expectations[key] for key in candidates if key in expectations), None)
+
+
 def _evaluate_one(
     path: Path,
     *,
@@ -122,10 +139,15 @@ def evaluate_paths(
     if max_files is not None:
         paths = paths[:max(0, max_files)]
     expectations = expectations or {}
+    input_roots = [Path(raw_path).expanduser().resolve() for raw_path in inputs]
     files = [
         _evaluate_one(
             path,
-            expected=expectations.get(path.name) or expectations.get(path.as_posix()),
+            expected=_expectation_for_path(
+                path,
+                expectations=expectations,
+                input_roots=input_roots,
+            ),
             parser=parser,
         )
         for path in paths

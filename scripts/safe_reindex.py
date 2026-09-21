@@ -107,11 +107,15 @@ def safe_reindex(
     """Plan or execute a reindex with local backups and collection rollback."""
     root = Path(project_root).resolve()
     sources = _source_files(root)
+    local_backups = {
+        name: path.exists() for name, path in _local_targets(root).items()
+    }
     command = [sys.executable, str(root / "scripts" / "reindex.py")]
     preflight = {
         "status": "dry-run",
         "raw_files": len(sources),
         "collections": list(TARGET_COLLECTIONS),
+        "local_backups": local_backups,
         "command": command,
     }
     if not execute:
@@ -163,8 +167,8 @@ def safe_reindex(
     try:
         manifest = _backup_local_files(root, backup_directory)
         for original, backup in backup_names.items():
-            utility_api.rename_collection(original, backup)
             renamed.append((original, backup))
+            utility_api.rename_collection(original, backup)
 
         runner = subprocess_runner or subprocess.run
         result = runner(command, cwd=str(root))
@@ -198,6 +202,10 @@ def safe_reindex(
         "status": "ok",
         "backup_directory": str(backup_directory),
         "backup_collections": backup_names,
+        "cleanup_after_verification": {
+            "drop_backup_collections": list(backup_names.values()),
+            "remove_backup_directory": str(backup_directory),
+        },
     }
 
 
