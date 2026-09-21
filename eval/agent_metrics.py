@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 import math
-import re
-import unicodedata
+import sys
+from pathlib import Path
 from statistics import mean
 from typing import Iterable
 
+_AGENT_ROOT = Path(__file__).resolve().parents[1] / "agent"
+if str(_AGENT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_AGENT_ROOT))
 
-def safe_ratio(numerator: int | float, denominator: int | float) -> float:
-    return float(numerator / denominator) if denominator else 0.0
+from agent.answer.fact_coverage import (  # noqa: E402
+    required_fact_coverage,
+    required_fact_match_details,
+    safe_ratio,
+)
+import re
+import unicodedata
 
 
 def binary_scores(expected: Iterable[bool], predicted: Iterable[bool]) -> dict[str, float | int]:
@@ -54,55 +62,6 @@ def latency_summary(values: Iterable[float]) -> dict[str, float | int]:
         "p95_ms": round(percentile(samples, 95), 2),
         "max_ms": round(max(samples), 2) if samples else 0.0,
     }
-
-
-def _normalized_fact_text(text: str) -> str:
-    value = unicodedata.normalize("NFKC", text).casefold()
-    return re.sub(r"[^\w\u3400-\u9fff]+", "", value, flags=re.UNICODE)
-
-
-def _identifier_tokens(text: str) -> set[str]:
-    expanded = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", text)
-    expanded = unicodedata.normalize("NFKC", expanded).casefold().replace("_", " ")
-    return {
-        token
-        for token in re.findall(r"[a-z0-9]+", expanded)
-        if len(token) >= 2
-    }
-
-
-def required_fact_match_details(
-    answer: str,
-    fact_groups: list[list[str]],
-) -> list[dict[str, str | bool | None]]:
-    """Return deterministic and explainable alias/identifier matches."""
-
-    normalized_answer = _normalized_fact_text(answer)
-    answer_tokens = _identifier_tokens(answer)
-    details: list[dict[str, str | bool | None]] = []
-    for group in fact_groups:
-        detail: dict[str, str | bool | None] = {
-            "hit": False,
-            "matched_term": None,
-            "match_type": None,
-        }
-        for term in group:
-            normalized_term = _normalized_fact_text(term)
-            if normalized_term and normalized_term in normalized_answer:
-                detail.update(hit=True, matched_term=term, match_type="normalized_alias")
-                break
-            term_tokens = _identifier_tokens(term)
-            if len(term_tokens) >= 2 and term_tokens.issubset(answer_tokens):
-                detail.update(hit=True, matched_term=term, match_type="identifier_tokens")
-                break
-        details.append(detail)
-    return details
-
-
-def required_fact_coverage(answer: str, fact_groups: list[list[str]]) -> tuple[float, list[bool]]:
-    details = required_fact_match_details(answer, fact_groups)
-    hits = [bool(detail["hit"]) for detail in details]
-    return safe_ratio(sum(hits), len(hits)), hits
 
 
 def required_term_recall(text: str, terms: list[str]) -> float:

@@ -4,6 +4,7 @@ import pytest
 
 from agent.answer import AnswerCompletenessChecker
 from agent.answer.schemas import AnswerCompletenessResult
+from agent.answer.target_extractor import TargetExtractor
 from agent.runtime.runner import AgentRunner
 from agent.runtime.state import AgentState
 from agent.schemas.intent_policy import IntentPolicy
@@ -24,8 +25,8 @@ class ScriptedLLM:
     def generate(self, prompt: str) -> str:
         return prompt
 
-    def chat(self, messages: list[dict], tools=None) -> dict:
-        self.calls.append({"messages": messages, "tools": tools})
+    def chat(self, messages: list[dict], tools=None, **kwargs) -> dict:
+        self.calls.append({"messages": messages, "tools": tools, "kwargs": kwargs})
         return self.responses.pop(0)
 
 
@@ -70,36 +71,24 @@ def test_multi_aspect_flow_requires_semantic_check_without_sub_queries() -> None
     assert AnswerCompletenessChecker.requires_llm_check(plan) is True
 
 
-def test_complete_answer_does_not_require_repair() -> None:
-    llm = ScriptedLLM(
-        [{"content": json.dumps({
-            "complete": True,
-            "missing_aspects": [],
-            "missing_critical_facts": [],
-            "reason": "All requested facts are covered.",
-            "check_performed": True,
-        })}]
-    )
+def test_complete_answer_does_not_call_an_llm_judge() -> None:
+    llm = ScriptedLLM([])
     checker = AnswerCompletenessChecker(llm)
+    answer = (
+        "Boeing sold to commercial airline customers; the U.S. government share "
+        "of revenue in 2022 was 40% [1]."
+    )
 
-    result = checker.check(_plan(), "Airlines were customers; the share was 40% [1].", _evidence())
+    result = checker.check(_plan(), answer, _evidence())
 
     assert result.complete is True
-    assert len(llm.calls) == 1
+    assert result.reason == "deterministic_coverage_check_passed"
+    assert llm.calls == []
 
 
-def test_missing_numeric_fact_is_passed_to_single_repair_call() -> None:
+def test_missing_numeric_fact_is_found_without_llm_and_passed_to_one_repair() -> None:
     llm = ScriptedLLM(
-        [
-            {"content": "```json\n" + json.dumps({
-                "complete": False,
-                "missing_aspects": ["US government revenue share"],
-                "missing_critical_facts": ["The U.S. government accounted for 40% of revenue."],
-                "reason": "The answer omits a material percentage.",
-                "check_performed": True,
-            }) + "\n```"},
-            {"content": "Airlines were customers, and the U.S. government represented 40% of revenue [1]."},
-        ]
+        [{"content": "Airlines were customers, and the U.S. government represented 40% of revenue [1]."}]
     )
     checker = AnswerCompletenessChecker(llm)
 
@@ -109,12 +98,12 @@ def test_missing_numeric_fact_is_passed_to_single_repair_call() -> None:
     )
 
     assert result.complete is False
-    assert "40%" in result.missing_critical_facts[0]
+    assert any("40%" in item for item in [*result.missing_aspects, *result.missing_critical_facts])
     assert "40%" in repaired
-    assert len(llm.calls) == 2
-    repair_prompt = llm.calls[1]["messages"][0]["content"]
-    assert "using only the supplied evidence" in repair_prompt
-    assert "exactly once" in repair_prompt
+    assert len(llm.calls) == 1
+    repair_prompt = llm.calls[0]["messages"][0]["content"]
+    assert "Preserve every correct" in repair_prompt
+    assert "Do not rewrite from scratch" in repair_prompt
 
 
 def test_empty_evidence_skips_llm_check() -> None:
@@ -123,6 +112,7 @@ def test_empty_evidence_skips_llm_check() -> None:
 
     assert result.complete is True
     assert result.check_performed is False
+    assert result.skip_reason == "no_evidence"
     assert llm.calls == []
 
 
@@ -136,7 +126,10 @@ def test_single_target_answer_uses_deterministic_check() -> None:
     )
 
     assert result.complete is True
-    assert result.reason == "deterministic_single_target_check_passed"
+    assert result.reason in {
+        "deterministic_single_target_check_passed",
+        "deterministic_coverage_check_passed",
+    }
     assert result.check_performed is True
     assert llm.calls == []
 
@@ -151,9 +144,48 @@ def test_single_target_answer_without_valid_citation_requests_repair() -> None:
     )
 
     assert result.complete is False
-    assert result.missing_aspects == ["citation_to_accepted_evidence"]
+    assert "citation_to_accepted_evidence" in result.missing_aspects
     assert result.reason == "deterministic_check_missing_valid_citation"
     assert llm.calls == []
+
+
+def test_llm_extract_replaces_the_judge_on_complex_queries(monkeypatch) -> None:
+    monkeypatch.setattr("agent.answer.completeness.settings.ANSWER_TARGET_EXTRACT_LLM", True)
+    llm = ScriptedLLM(
+        [{"content": json.dumps({"required_facts": ["QueryUnderstanding", "ToolExecutor"]})}]
+    )
+    checker = AnswerCompletenessChecker(llm)
+    plan = QueryPlan(
+        original_query="请求从进入系统到返回答案会经过哪些核心步骤？",
+        standalone_query="请求从进入系统到返回答案会经过哪些核心步骤？",
+    )
+    evidence = [
+        Evidence(
+            doc_id="cp2",
+            chunk_id="c1",
+            title="CP2 flow",
+            content="QueryUnderstanding classifies intent. ToolExecutor runs tools.",
+            score=0.9,
+            retrieval_query="core stages",
+            retrieval_mode="hybrid",
+        )
+    ]
+
+    result = checker.check(plan, "QueryUnderstanding classifies intent [1].", evidence)
+
+    assert result.used_llm_extract is True
+    assert result.complete is False
+    assert "ToolExecutor" in result.missing_aspects
+    assert len(llm.calls) == 1
+    assert "required_facts" in llm.calls[0]["messages"][0]["content"]
+
+
+def test_lexical_extractor_keeps_query_grounded_percentages() -> None:
+    extractor = TargetExtractor(llm=None)
+    targets = extractor.lexical_targets(_plan(), _evidence())
+
+    assert "40%" in targets
+    assert "2022" in targets
 
 
 class RecordingChecker:
@@ -171,6 +203,7 @@ class RecordingChecker:
             missing_aspects=["US government revenue share"],
             missing_critical_facts=["40% of revenue"],
             reason="missing percentage",
+            required_targets=["40%"],
         )
 
     def repair(self, query_plan, answer, evidence, result):
@@ -178,11 +211,11 @@ class RecordingChecker:
         return "Commercial airlines were customers; the government share was 40% [1]."
 
 
-def _state() -> AgentState:
+def _state(*, evidence: list[dict] | None = None) -> AgentState:
     return AgentState(
         trace_id="trace-completeness",
         query_plan=_plan(),
-        evidence=[item.model_dump() for item in _evidence()],
+        evidence=evidence if evidence is not None else [item.model_dump() for item in _evidence()],
     )
 
 
@@ -206,6 +239,7 @@ def test_runner_performs_at_most_one_repair_using_existing_evidence() -> None:
     assert checker.check_calls == 1
     assert checker.repair_calls == 1
     assert state.answer_repair_attempted is True
+    assert state.answer_repair_rolled_back is False
     assert state.retrieval_attempts == 0
     assert state.tool_calls == []
 
@@ -230,3 +264,25 @@ def test_checker_failure_preserves_original_answer() -> None:
     assert checker.check_calls == 1
     assert checker.repair_calls == 0
     assert state.answer_repair_attempted is False
+
+
+def test_runner_skips_completeness_when_no_accepted_evidence() -> None:
+    checker = RecordingChecker()
+    runner = AgentRunner(
+        llm=ScriptedLLM([]),
+        registry=ToolRegistry(tools=[]),
+        audit_service=AuditService(),
+        answer_completeness_checker=checker,
+    )
+    state = _state(evidence=[])
+
+    answer = runner._check_and_repair_answer(
+        state=state,
+        policy=IntentPolicy(requires_citations=True),
+        answer="No evidence answer",
+    )
+
+    assert answer == "No evidence answer"
+    assert checker.check_calls == 0
+    assert checker.repair_calls == 0
+    assert state.answer_completeness_checked is False

@@ -52,6 +52,8 @@ class AgentState(BaseModel):
     missing_answer_aspects: list[str] = Field(default_factory=list)
     missing_critical_facts: list[str] = Field(default_factory=list)
     answer_repair_attempted: bool = False
+    answer_repair_rolled_back: bool = False
+    answer_repair_guard_reason: str = ""
     llm_metrics: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -77,4 +79,6 @@ class AgentRunResult(BaseModel):
     missing_answer_aspects: list[str] = Field(default_factory=list)
     missing_critical_facts: list[str] = Field(default_factory=list)
     answer_repair_attempted: bool = False
+    answer_repair_rolled_back: bool = False
+    answer_repair_guard_reason: str = ""
     llm_metrics: dict[str, Any] = Field(default_factory=dict)
