@@ -144,7 +144,8 @@ class MilvusStore:
             raise ValueError(
                 f"{collection_name} schema is missing PDF provenance fields or has "
                 f"incompatible definitions: {', '.join(issues)}. "
-                "Run scripts/reindex.py to rebuild the collection."
+                "Run scripts/safe_reindex.py for a dry run, then execute it with "
+                "--execute --confirm REBUILD. Legacy destructive entry: scripts/reindex.py."
             )
 
     @staticmethod
