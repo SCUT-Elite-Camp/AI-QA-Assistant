@@ -88,6 +88,26 @@ def test_cross_page_chunk_clears_scalar_geometry_but_keeps_all_source_pages():
     assert chunk.bbox is None
 
 
+def test_multiple_same_page_regions_clear_scalar_geometry():
+    regions = [
+        PageRegion(page_number=2, bbox=BoundingBox(x0=1, y0=2, x1=10, y1=20)),
+        PageRegion(page_number=2, bbox=BoundingBox(x0=20, y0=30, x1=40, y1=50)),
+    ]
+
+    chunk = Chunk(
+        index=0,
+        text="two disjoint areas",
+        chunk_id="c1",
+        page_number=2,
+        bbox=regions[0].bbox,
+        page_regions=regions,
+    )
+
+    assert chunk.source_pages == [2]
+    assert chunk.page_number is None
+    assert chunk.bbox is None
+
+
 def make_table(*, acceptance: str) -> TableArtifact:
     return TableArtifact(
         table_id="page-2-table-1",

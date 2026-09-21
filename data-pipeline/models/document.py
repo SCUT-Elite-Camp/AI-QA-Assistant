@@ -302,7 +302,7 @@ class Chunk(BaseModel):
             if len(self.source_pages) == 1 and len(self.page_regions) == 1:
                 self.page_number = self.source_pages[0]
                 self.bbox = self.page_regions[0].bbox
-            elif len(self.source_pages) > 1:
+            elif len(self.page_regions) > 1 or len(self.source_pages) > 1:
                 self.page_number = None
                 self.bbox = None
         return self
