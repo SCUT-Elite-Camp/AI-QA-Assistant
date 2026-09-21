@@ -13,9 +13,59 @@ from models.document import (  # noqa: E402
     ContentBlock,
     Document,
     PageRegion,
+    ParseDiagnostics,
     TableArtifact,
     TableCell,
 )
+
+
+def test_parse_diagnostics_normalizes_and_round_trips():
+    diagnostics = ParseDiagnostics(
+        parser_name="pdf",
+        page_count=3,
+        ocr_attempted_pages=[3, 1, 3],
+        ocr_failed_pages=[2, 2],
+        ocr_messages=["page 2: failed", "", "page 2: failed"],
+        table_messages_by_page={
+            3: ["backend_error:gmft", "backend_error:gmft"],
+            1: ["", "backend_unavailable:camelot"],
+        },
+        accepted_tables=2,
+        review_tables=1,
+    )
+
+    restored = ParseDiagnostics.model_validate_json(diagnostics.model_dump_json())
+
+    assert diagnostics.ocr_attempted_pages == [1, 3]
+    assert diagnostics.ocr_failed_pages == [2]
+    assert diagnostics.ocr_messages == ["page 2: failed"]
+    assert list(diagnostics.table_messages_by_page) == [1, 3]
+    assert diagnostics.table_messages_by_page[3] == ["backend_error:gmft"]
+    assert restored == diagnostics
+
+
+def test_document_diagnostics_are_optional_and_from_file_path_can_attach_them(tmp_path):
+    legacy = Document(
+        doc_id="doc",
+        title="title",
+        content="text",
+        space="space",
+        address="address",
+        last_updated="2026-01-01T00:00:00+00:00",
+    )
+    assert legacy.parse_diagnostics is None
+
+    source = tmp_path / "report.pdf"
+    source.write_bytes(b"pdf")
+    diagnostics = ParseDiagnostics(parser_name="pdf", page_count=1)
+
+    document = Document.from_file_path(
+        str(source),
+        "text",
+        parse_diagnostics=diagnostics,
+    )
+
+    assert document.parse_diagnostics == diagnostics
 
 
 def test_page_region_normalizes_ids_sources_and_round_trips():

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PositiveInt, model_validator
 
 
 class BlockType(StrEnum):
@@ -50,6 +50,47 @@ class PageRegion(BaseModel):
         self.block_ids = _ordered_unique_strings(self.block_ids)
         self.table_ids = _ordered_unique_strings(self.table_ids)
         self.sources = _ordered_unique_strings(self.sources)
+        return self
+
+
+class ParseDiagnostics(BaseModel):
+    """Persistent, deterministic snapshot of document parsing decisions."""
+
+    parser_name: str = ""
+    page_count: int = Field(default=0, ge=0)
+    removed_headers: int = Field(default=0, ge=0)
+    removed_footers: int = Field(default=0, ge=0)
+    partial_table_overlaps: int = Field(default=0, ge=0)
+    ocr_attempted_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_applied_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_unavailable_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_failed_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_empty_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_not_improved_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_messages: list[str] = Field(default_factory=list)
+    table_messages_by_page: dict[PositiveInt, list[str]] = Field(default_factory=dict)
+    accepted_tables: int = Field(default=0, ge=0)
+    review_tables: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def normalize_diagnostics(self) -> "ParseDiagnostics":
+        page_fields = (
+            "ocr_attempted_pages",
+            "ocr_applied_pages",
+            "ocr_unavailable_pages",
+            "ocr_failed_pages",
+            "ocr_empty_pages",
+            "ocr_not_improved_pages",
+        )
+        for field_name in page_fields:
+            setattr(self, field_name, sorted(set(getattr(self, field_name))))
+        self.ocr_messages = _ordered_unique_strings(self.ocr_messages)
+        self.table_messages_by_page = {
+            page_number: messages
+            for page_number, raw_messages in sorted(self.table_messages_by_page.items())
+            for messages in [_ordered_unique_strings(raw_messages)]
+            if messages
+        }
         return self
 
 
@@ -354,6 +395,7 @@ class Document(BaseModel):
     version_id: str = ""
     active_version: bool = True
     sections: list[DocumentSection] = Field(default_factory=list)
+    parse_diagnostics: ParseDiagnostics | None = None
 
     def render_index_content(self) -> str:
         """Render the compatibility/index view from indexable content blocks.
@@ -396,6 +438,7 @@ class Document(BaseModel):
         file_path: str,
         content: str,
         content_blocks: list[ContentBlock] | None = None,
+        parse_diagnostics: ParseDiagnostics | None = None,
     ) -> "Document":
         """从文件路径、已提取文本、可选结构化块构建 Document
 
@@ -437,6 +480,7 @@ class Document(BaseModel):
             metadata=metadata,
             doc_type=doc_type,
             version_id=cls.generate_version_id(abs_path),
+            parse_diagnostics=parse_diagnostics,
         )
 
     @staticmethod

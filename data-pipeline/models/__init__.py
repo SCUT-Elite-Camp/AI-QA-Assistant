@@ -6,6 +6,7 @@ from models.document import (
     Document,
     DocumentSection,
     PageRegion,
+    ParseDiagnostics,
     TableArtifact,
     TableCell,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "Document",
     "DocumentSection",
     "PageRegion",
+    "ParseDiagnostics",
     "TableArtifact",
     "TableCell",
 ]
