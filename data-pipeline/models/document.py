@@ -31,6 +31,28 @@ class BoundingBox(BaseModel):
         return self
 
 
+def _ordered_unique_strings(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(value for value in values if value))
+
+
+class PageRegion(BaseModel):
+    """One physical provenance region in a single page coordinate system."""
+
+    page_number: int = Field(ge=1)
+    bbox: BoundingBox
+    block_ids: list[str] = Field(default_factory=list)
+    table_ids: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def normalize_provenance(self) -> "PageRegion":
+        self.block_ids = _ordered_unique_strings(self.block_ids)
+        self.table_ids = _ordered_unique_strings(self.table_ids)
+        self.sources = _ordered_unique_strings(self.sources)
+        return self
+
+
 class TableCell(BaseModel):
     row_index: int = Field(ge=0)
     column_index: int = Field(ge=0)
@@ -54,6 +76,7 @@ class TableArtifact(BaseModel):
     source_pages: list[int] = Field(default_factory=list)
     source_table_ids: list[str] = Field(default_factory=list)
     bbox: BoundingBox | None = None
+    page_regions: list[PageRegion] = Field(default_factory=list)
     parser_name: str
     confidence: float = Field(ge=0.0, le=1.0)
     backend_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -77,6 +100,19 @@ class TableArtifact(BaseModel):
             self.source_pages = [self.page_number]
         if not self.source_table_ids:
             self.source_table_ids = [self.table_id]
+        if not self.page_regions and self.page_number is not None and self.bbox is not None:
+            self.page_regions = [PageRegion(
+                page_number=self.page_number,
+                bbox=self.bbox,
+                table_ids=list(self.source_table_ids),
+                sources=["table"],
+                confidence=self.confidence,
+            )]
+        if self.page_regions:
+            self.page_regions = sorted(self.page_regions, key=lambda region: region.page_number)
+            self.source_pages = sorted(set(
+                [*self.source_pages, *(region.page_number for region in self.page_regions)]
+            ))
         return self
 
     def to_matrix(self) -> list[list[str]]:
@@ -227,7 +263,49 @@ class Chunk(BaseModel):
     bbox: BoundingBox | None = None
     source: Literal["native", "ocr", "table"] = "native"
     source_pages: list[int] = Field(default_factory=list)
+    page_regions: list[PageRegion] = Field(default_factory=list)
     metadata: dict[str, object] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def normalize_page_regions(self) -> "Chunk":
+        if not self.page_regions and self.page_number is not None and self.bbox is not None:
+            raw_sources = self.metadata.get("sources", [])
+            if isinstance(raw_sources, str):
+                raw_sources = [raw_sources]
+            if not isinstance(raw_sources, list):
+                raw_sources = []
+            raw_block_ids = self.metadata.get("block_ids", [])
+            if isinstance(raw_block_ids, str):
+                raw_block_ids = [raw_block_ids]
+            if not isinstance(raw_block_ids, list):
+                raw_block_ids = []
+            raw_confidence = self.metadata.get("confidence", 1.0)
+            try:
+                confidence = float(raw_confidence)
+            except (TypeError, ValueError):
+                confidence = 1.0
+            if not 0.0 <= confidence <= 1.0:
+                confidence = 1.0
+            self.page_regions = [PageRegion(
+                page_number=self.page_number,
+                bbox=self.bbox,
+                block_ids=[self.block_id, *raw_block_ids],
+                table_ids=[self.table_id],
+                sources=[self.source, *raw_sources],
+                confidence=confidence,
+            )]
+        if self.page_regions:
+            self.page_regions = sorted(self.page_regions, key=lambda region: region.page_number)
+            self.source_pages = sorted(set(
+                [*self.source_pages, *(region.page_number for region in self.page_regions)]
+            ))
+            if len(self.source_pages) == 1 and len(self.page_regions) == 1:
+                self.page_number = self.source_pages[0]
+                self.bbox = self.page_regions[0].bbox
+            elif len(self.source_pages) > 1:
+                self.page_number = None
+                self.bbox = None
+        return self
 
 
 class DocumentSection(BaseModel):
