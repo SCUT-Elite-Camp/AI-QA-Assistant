@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 import pymupdf as fitz
+import pytest
 
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
@@ -179,6 +180,35 @@ class FakeRect:
     height = 600
 
 
+class RecordingOCRPage:
+    rect = FakeRect()
+
+    def __init__(self):
+        self.calls = []
+
+    def get_textpage_ocr(self, **kwargs):
+        self.calls.append(("ocr", kwargs))
+        return "textpage"
+
+    def get_text(self, kind, **kwargs):
+        self.calls.append(("text", kind, kwargs))
+        return {
+            "blocks": [{
+                "type": 0,
+                "bbox": (40, 100, 300, 130),
+                "lines": [{
+                    "dir": (1, 0),
+                    "spans": [{
+                        "text": "OCR result",
+                        "size": 11,
+                        "font": "OCRFont",
+                        "flags": 0,
+                    }],
+                }],
+            }],
+        }
+
+
 class QualityPage:
     rect = FakeRect()
 
@@ -220,38 +250,12 @@ def test_page_quality_detects_sparse_invalid_and_image_dominated_pages():
 
 
 def test_pymupdf_backend_converts_ocr_dict_to_provenance_blocks(monkeypatch):
-    calls = []
-
-    class OCRPage:
-        rect = FakeRect()
-
-        def get_textpage_ocr(self, **kwargs):
-            calls.append(("ocr", kwargs))
-            return "textpage"
-
-        def get_text(self, kind, **kwargs):
-            calls.append(("text", kind, kwargs))
-            return {
-                "blocks": [{
-                    "type": 0,
-                    "bbox": (40, 100, 300, 130),
-                    "lines": [{
-                        "dir": (1, 0),
-                        "spans": [{
-                            "text": "OCR result",
-                            "size": 11,
-                            "font": "OCRFont",
-                            "flags": 0,
-                        }],
-                    }],
-                }],
-            }
-
     monkeypatch.setenv("PDF_OCR_LANGUAGES", "eng")
-    blocks = PyMuPDFOCRBackend().extract(OCRPage(), page_number=3)
+    page = RecordingOCRPage()
+    blocks = PyMuPDFOCRBackend().extract(page, page_number=3)
 
-    assert calls[0] == ("ocr", {"flags": 0, "language": "eng", "dpi": 300, "full": True})
-    assert calls[1] == ("text", "dict", {"textpage": "textpage", "sort": False})
+    assert page.calls[0] == ("ocr", {"flags": 0, "language": "eng", "dpi": 300, "full": True})
+    assert page.calls[1] == ("text", "dict", {"textpage": "textpage", "sort": False})
     assert len(blocks) == 1
     assert blocks[0].block_id == "page-3-block-0"
     assert blocks[0].page_number == 3
@@ -259,3 +263,38 @@ def test_pymupdf_backend_converts_ocr_dict_to_provenance_blocks(monkeypatch):
     assert blocks[0].source == "ocr"
     assert blocks[0].extraction_method == "ocr"
     assert blocks[0].confidence < 1.0
+
+
+def test_pymupdf_backend_falls_back_to_installed_english_and_uses_configured_dpi(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "eng.traineddata").write_bytes(b"language")
+    monkeypatch.setattr(fitz, "get_tessdata", lambda: str(tmp_path))
+    monkeypatch.delenv("PDF_OCR_LANGUAGES", raising=False)
+    monkeypatch.setenv("PDF_OCR_DPI", "220")
+    page = RecordingOCRPage()
+    backend = PyMuPDFOCRBackend()
+
+    assert backend.available() is True
+    backend.extract(page, page_number=1)
+
+    assert page.calls[0][1]["language"] == "eng"
+    assert page.calls[0][1]["dpi"] == 220
+
+
+def test_pymupdf_backend_is_unavailable_when_tessdata_has_no_languages(tmp_path, monkeypatch):
+    monkeypatch.setattr(fitz, "get_tessdata", lambda: str(tmp_path))
+
+    assert PyMuPDFOCRBackend().available() is False
+
+
+@pytest.mark.parametrize("configured", ["not-a-number", "71", "601"])
+def test_pymupdf_backend_rejects_invalid_dpi(configured, monkeypatch):
+    monkeypatch.setenv("PDF_OCR_LANGUAGES", "eng")
+    monkeypatch.setenv("PDF_OCR_DPI", configured)
+    page = RecordingOCRPage()
+
+    PyMuPDFOCRBackend().extract(page, page_number=1)
+
+    assert page.calls[0][1]["dpi"] == 300

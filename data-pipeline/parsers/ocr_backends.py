@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import unicodedata
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 import pymupdf as fitz
@@ -19,6 +20,10 @@ MAX_CONTROL_CHARACTER_RATIO = 0.05
 DOMINANT_IMAGE_COVERAGE = 0.60
 IMAGE_PAGE_SPARSE_CHARACTER_COUNT = 40
 DEFAULT_OCR_CONFIDENCE = 0.75
+DEFAULT_OCR_DPI = 300
+MIN_OCR_DPI = 72
+MAX_OCR_DPI = 600
+DEFAULT_OCR_LANGUAGES = "chi_sim+eng"
 
 
 class PageOCRBackend(Protocol):
@@ -91,17 +96,49 @@ def evaluate_page_text_quality(page, native_blocks) -> PageTextQuality:
 class PyMuPDFOCRBackend:
     name = "pymupdf-ocr"
 
+    def __init__(self) -> None:
+        self._installed_languages_cache: tuple[str, ...] | None = None
+
     def available(self) -> bool:
+        return bool(self._installed_languages())
+
+    def _installed_languages(self) -> tuple[str, ...]:
+        if self._installed_languages_cache is not None:
+            return self._installed_languages_cache
         try:
-            return bool(fitz.get_tessdata())
+            tessdata = Path(fitz.get_tessdata())
         except Exception:
-            return False
+            languages: tuple[str, ...] = ()
+        else:
+            languages = tuple(sorted(
+                path.stem
+                for path in tessdata.glob("*.traineddata")
+                if path.is_file()
+            ))
+        self._installed_languages_cache = languages
+        return languages
+
+    def _languages(self) -> str:
+        requested = [
+            language.strip()
+            for language in os.getenv("PDF_OCR_LANGUAGES", DEFAULT_OCR_LANGUAGES).split("+")
+            if language.strip()
+        ]
+        installed = self._installed_languages()
+        if not installed:
+            return "+".join(requested) or DEFAULT_OCR_LANGUAGES
+        selected = [language for language in requested if language in installed]
+        if selected:
+            return "+".join(selected)
+        if "eng" in installed:
+            return "eng"
+        return installed[0]
 
     def extract(self, page, page_number: int) -> list[ContentBlock]:
         textpage = page.get_textpage_ocr(
             flags=0,
-            language=os.getenv("PDF_OCR_LANGUAGES", "chi_sim+eng"),
-            dpi=300,
+            language=self._languages(),
+            dpi=_configured_ocr_dpi(),
             full=True,
         )
         ocr_dict = page.get_text("dict", textpage=textpage, sort=False)
@@ -115,6 +152,16 @@ class PyMuPDFOCRBackend:
             extraction_method="ocr",
         )
         return [block.to_content_block() for block in layout_blocks]
+
+
+def _configured_ocr_dpi() -> int:
+    try:
+        dpi = int(os.getenv("PDF_OCR_DPI", str(DEFAULT_OCR_DPI)))
+    except (TypeError, ValueError):
+        return DEFAULT_OCR_DPI
+    if not MIN_OCR_DPI <= dpi <= MAX_OCR_DPI:
+        return DEFAULT_OCR_DPI
+    return dpi
 
 
 def _page_image_coverage(page, page_area: float) -> float:
