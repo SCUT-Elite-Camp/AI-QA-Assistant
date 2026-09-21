@@ -271,6 +271,9 @@ def test_pdf_parser_uses_column_order_and_dynamic_edge_filtering(tmp_path):
     assert "Annual results" in parsed.content
     assert parsed.content.index("L2 page 1") < parsed.content.index("R1 page 1")
     assert parser.last_layout_diagnostics.removed_headers == 3
+    assert parsed.parse_diagnostics is not None
+    assert parsed.parse_diagnostics.page_count == 3
+    assert parsed.parse_diagnostics.removed_headers == 3
 
 
 class StaticRouter:

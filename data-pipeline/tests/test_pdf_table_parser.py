@@ -21,12 +21,15 @@ from parsers.table_backends import (  # noqa: E402
 
 
 class StaticRouter:
-    def __init__(self, artifacts):
+    def __init__(self, artifacts, diagnostics=None):
         self.artifacts = artifacts
+        self.diagnostics = diagnostics or []
+        self.last_diagnostics = []
         self.calls = []
 
     def route_page(self, page, *, page_number, text_coverage, file_path=None):
         self.calls.append((page_number, text_coverage, file_path))
+        self.last_diagnostics = list(self.diagnostics)
         return self.artifacts
 
 
@@ -112,6 +115,9 @@ def test_accepted_table_excludes_only_overlapping_text_and_keeps_provenance(tmp_
     assert table_block.confidence == 0.9
     assert table_block.source == "table"
     assert table_block.extraction_method == "test"
+    assert document.parse_diagnostics is not None
+    assert document.parse_diagnostics.accepted_tables == 1
+    assert document.parse_diagnostics.review_tables == 0
     assert router.calls[0][0] == 1
     assert router.calls[0][2] == str(source)
 
@@ -153,6 +159,27 @@ def test_review_table_keeps_overlapping_source_text(tmp_path):
     assert table.acceptance == "review"
     assert "needs_review" in table.warnings
     assert "Alice" not in document.content
+    assert document.parse_diagnostics is not None
+    assert document.parse_diagnostics.accepted_tables == 0
+    assert document.parse_diagnostics.review_tables == 1
+
+
+def test_table_backend_diagnostics_persist_when_no_table_is_returned(tmp_path):
+    source = tmp_path / "table-diagnostics.pdf"
+    make_pdf(source)
+    router = StaticRouter([], diagnostics=[
+        "backend_unavailable:camelot",
+        "backend_error:gmft",
+    ])
+
+    document = PDFParser(router=router).parse(str(source))
+
+    assert document.parse_diagnostics is not None
+    assert document.parse_diagnostics.table_messages_by_page == {
+        1: ["backend_unavailable:camelot", "backend_error:gmft"],
+    }
+    assert document.parse_diagnostics.accepted_tables == 0
+    assert document.parse_diagnostics.review_tables == 0
 
 
 def test_stitched_review_table_keeps_source_text_from_previously_accepted_part(tmp_path):

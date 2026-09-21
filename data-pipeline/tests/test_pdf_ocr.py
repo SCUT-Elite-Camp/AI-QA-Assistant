@@ -141,6 +141,9 @@ def test_ocr_exception_preserves_native_text_and_records_diagnostic(tmp_path):
     assert backend.calls == [1]
     assert parser.last_layout_diagnostics.ocr_failed_pages == [1]
     assert "language data missing" in parser.last_layout_diagnostics.ocr_messages[0]
+    assert document.parse_diagnostics is not None
+    assert document.parse_diagnostics.ocr_failed_pages == [1]
+    assert "language data missing" in document.parse_diagnostics.ocr_messages[0]
 
 
 def test_ocr_blocks_use_shared_header_filter_and_reading_order(tmp_path):
@@ -166,6 +169,9 @@ def test_ocr_blocks_use_shared_header_filter_and_reading_order(tmp_path):
     assert "Repeated report" not in document.content
     assert document.content.index("left 2") < document.content.index("right 1")
     assert parser.last_layout_diagnostics.removed_headers == 2
+    assert document.parse_diagnostics is not None
+    assert document.parse_diagnostics.removed_headers == 2
+    assert document.parse_diagnostics.ocr_applied_pages == [1, 2]
 
 
 class FakeRect:

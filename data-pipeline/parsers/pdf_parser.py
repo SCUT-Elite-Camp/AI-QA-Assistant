@@ -11,7 +11,14 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 import re
 
 import pymupdf as fitz
-from models.document import Document, ContentBlock, BlockType, PageRegion, TableArtifact
+from models.document import (
+    BlockType,
+    ContentBlock,
+    Document,
+    PageRegion,
+    ParseDiagnostics,
+    TableArtifact,
+)
 from parsers.base import BaseParser
 from parsers.ocr_backends import (
     PageOCRBackend,
@@ -64,6 +71,8 @@ class PDFParser(BaseParser):
         body_font_sizes: list[float] = []
         page_heights: dict[int, float] = {}
         source_tables: dict[str, TableArtifact] = {}
+        page_count = len(pdf_doc)
+        table_messages_by_page: dict[int, list[str]] = {}
         try:
             # Pass one gathers native text without deleting edge content so
             # repetition can be evaluated across the complete document.
@@ -107,6 +116,17 @@ class PDFParser(BaseParser):
                     text_coverage=self._text_coverage(page),
                     file_path=file_path,
                 )
+                raw_table_messages = getattr(self.table_router, "last_diagnostics", [])
+                if isinstance(raw_table_messages, str):
+                    raw_table_messages = [raw_table_messages]
+                if isinstance(raw_table_messages, (list, tuple)):
+                    messages = list(dict.fromkeys(
+                        str(message)
+                        for message in raw_table_messages
+                        if message not in (None, "")
+                    ))
+                    if messages:
+                        table_messages_by_page[page_index] = messages
                 source_tables.update({artifact.table_id: artifact for artifact in artifacts})
                 ordered_inputs = list(layout_pages[page_index - 1])
                 table_by_layout_id: dict[int, TableArtifact] = {}
@@ -182,7 +202,34 @@ class PDFParser(BaseParser):
         )
         content = self._clean_text(content)
 
-        return Document.from_file_path(file_path, content, content_blocks=all_blocks)
+        final_tables = [
+            block.table
+            for block in all_blocks
+            if block.block_type == BlockType.TABLE and block.table is not None
+        ]
+        parse_diagnostics = ParseDiagnostics(
+            parser_name="pdf",
+            page_count=page_count,
+            removed_headers=diagnostics.removed_headers,
+            removed_footers=diagnostics.removed_footers,
+            partial_table_overlaps=diagnostics.partial_table_overlaps,
+            ocr_attempted_pages=diagnostics.ocr_attempted_pages,
+            ocr_applied_pages=diagnostics.ocr_applied_pages,
+            ocr_unavailable_pages=diagnostics.ocr_unavailable_pages,
+            ocr_failed_pages=diagnostics.ocr_failed_pages,
+            ocr_empty_pages=diagnostics.ocr_empty_pages,
+            ocr_not_improved_pages=diagnostics.ocr_not_improved_pages,
+            ocr_messages=diagnostics.ocr_messages,
+            table_messages_by_page=table_messages_by_page,
+            accepted_tables=sum(table.acceptance == "accepted" for table in final_tables),
+            review_tables=sum(table.acceptance == "review" for table in final_tables),
+        )
+        return Document.from_file_path(
+            file_path,
+            content,
+            content_blocks=all_blocks,
+            parse_diagnostics=parse_diagnostics,
+        )
 
     # ── 区域与重叠判断 ──
 
