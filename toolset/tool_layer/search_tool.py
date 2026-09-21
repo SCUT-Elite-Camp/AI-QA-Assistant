@@ -13,6 +13,10 @@ from tool_layer.evidence_metadata import chunk_metadata, source_metadata
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 _PUBLIC_FILTER_KEYS = frozenset({"doc_id", "doc_ids", "space", "doc_type"})
+_PROVENANCE_RESULT_FIELDS = (
+    "chunk_type", "block_id", "table_id", "page_number", "bbox_json", "metadata_json",
+    "page_regions",
+)
 
 
 class RetrievalError(Exception):
@@ -52,6 +56,77 @@ def _safe_float(value) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _bbox_list(value) -> list[float] | None:
+    if not isinstance(value, list) or len(value) != 4:
+        return None
+    try:
+        result = [float(item) for item in value]
+    except (TypeError, ValueError):
+        return None
+    return result if result[2] >= result[0] and result[3] >= result[1] else None
+
+
+def _string_list(value) -> list[str]:
+    if isinstance(value, str):
+        return [value] if value else []
+    if not isinstance(value, list):
+        return []
+    return list(dict.fromkeys(str(item) for item in value if item not in (None, "")))
+
+
+def _page_regions_from_provenance(page_number, bbox_json, metadata_json) -> list[dict]:
+    """Normalize structured regions, falling back to legacy scalar provenance."""
+    metadata: dict = {}
+    if isinstance(metadata_json, str) and metadata_json:
+        try:
+            parsed = json.loads(metadata_json)
+            metadata = parsed if isinstance(parsed, dict) else {}
+        except (json.JSONDecodeError, TypeError):
+            metadata = {}
+
+    normalized: list[dict] = []
+    raw_regions = metadata.get("page_regions", [])
+    if isinstance(raw_regions, list):
+        for item in raw_regions:
+            if not isinstance(item, dict):
+                continue
+            bbox = _bbox_list(item.get("bbox"))
+            try:
+                region_page = int(item.get("page_number", 0))
+                confidence = float(item.get("confidence", 1.0))
+            except (TypeError, ValueError):
+                continue
+            if region_page < 1 or bbox is None:
+                continue
+            normalized.append({
+                "page_number": region_page,
+                "bbox": bbox,
+                "block_ids": _string_list(item.get("block_ids", [])),
+                "table_ids": _string_list(item.get("table_ids", [])),
+                "sources": _string_list(item.get("sources", [])),
+                "confidence": confidence,
+            })
+    if normalized:
+        return sorted(normalized, key=lambda item: item["page_number"])
+
+    try:
+        scalar_page = int(page_number or 0)
+        scalar_bbox = _bbox_list(json.loads(bbox_json)) if bbox_json else None
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return []
+    if scalar_page < 1 or scalar_bbox is None:
+        return []
+    source = metadata.get("source")
+    return [{
+        "page_number": scalar_page,
+        "bbox": scalar_bbox,
+        "block_ids": [],
+        "table_ids": [],
+        "sources": [source] if isinstance(source, str) and source else [],
+        "confidence": 1.0,
+    }]
 
 
 def _chunk_key(row: Dict) -> tuple:
@@ -601,7 +676,13 @@ class SearchTool(BaseTool):
                 "space": entity.get("space") or "",
                 "doc_type": entity.get("doc_type") or "",
                 "source_url": entity.get("source_url") or "",
+                **{field: entity.get(field) for field in _PROVENANCE_RESULT_FIELDS},
             }
+            row["page_regions"] = _page_regions_from_provenance(
+                row.get("page_number"),
+                row.get("bbox_json"),
+                row.get("metadata_json"),
+            )
             if not _matches_filters(row, filters):
                 continue
             rows.append(row)
