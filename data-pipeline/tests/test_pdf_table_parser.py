@@ -9,7 +9,7 @@ PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
-from models.document import BlockType, BoundingBox, TableArtifact, TableCell  # noqa: E402
+from models.document import BlockType, BoundingBox, PageRegion, TableArtifact, TableCell  # noqa: E402
 from parsers.pdf_parser import PDFParser, _overlap_ratio, _stitch_cross_page_tables  # noqa: E402
 from parsers.table_backends import (  # noqa: E402
     CamelotTableBackend,
@@ -119,8 +119,16 @@ def test_accepted_table_excludes_only_overlapping_text_and_keeps_provenance(tmp_
 def test_accepted_table_keeps_text_when_overlap_is_less_than_half(tmp_path):
     source = tmp_path / "partial-overlap.pdf"
     make_pdf(source)
+    partial_bbox = BoundingBox(x0=40, y0=170, x1=75, y1=230)
     artifact = accepted_artifact().model_copy(update={
-        "bbox": BoundingBox(x0=40, y0=170, x1=75, y1=230),
+        "bbox": partial_bbox,
+        "page_regions": [PageRegion(
+            page_number=1,
+            bbox=partial_bbox,
+            table_ids=["page-1-table-1"],
+            sources=["table"],
+            confidence=0.9,
+        )],
     })
 
     document = PDFParser(router=StaticRouter([artifact])).parse(str(source))
@@ -164,6 +172,15 @@ def test_stitched_review_table_keeps_source_text_from_previously_accepted_part(t
             TableCell(row_index=1, column_index=0, text="Alice"),
         ],
     })
+    first = first.model_copy(update={
+        "page_regions": [PageRegion(
+            page_number=1,
+            bbox=first.bbox,
+            table_ids=[first.table_id],
+            sources=["table"],
+            confidence=first.confidence,
+        )],
+    })
     second = first.model_copy(update={
         "table_id": "page-2-table-1",
         "page_number": 2,
@@ -176,6 +193,15 @@ def test_stitched_review_table_keeps_source_text_from_previously_accepted_part(t
             TableCell(row_index=1, column_index=0, text="Bob"),
         ],
     })
+    second = second.model_copy(update={
+        "page_regions": [PageRegion(
+            page_number=2,
+            bbox=second.bbox,
+            table_ids=[second.table_id],
+            sources=["table"],
+            confidence=second.confidence,
+        )],
+    })
 
     document = PDFParser(router=PerPageRouter({1: [first], 2: [second]})).parse(str(source))
 
@@ -184,6 +210,9 @@ def test_stitched_review_table_keeps_source_text_from_previously_accepted_part(t
     tables = [block.table for block in document.content_blocks if block.table is not None]
     assert len(tables) == 1
     assert tables[0].acceptance == "review"
+    assert [region.page_number for region in tables[0].page_regions] == [1, 2]
+    assert tables[0].page_regions[0].bbox == first.bbox
+    assert tables[0].page_regions[1].bbox == second.bbox
     assert "Alice" not in document.content and "Bob" not in document.content
 
 
@@ -419,6 +448,15 @@ def test_cross_page_tables_stitch_only_with_matching_headers_and_edge_positions(
             TableCell(row_index=1, column_index=1, text="18"),
         ],
     })
+    second = second.model_copy(update={
+        "page_regions": [PageRegion(
+            page_number=2,
+            bbox=second.bbox,
+            table_ids=[second.table_id],
+            sources=["table"],
+            confidence=second.confidence,
+        )],
+    })
 
     result = _stitch_cross_page_tables([first, second], {1: 800, 2: 800})
 
@@ -426,4 +464,9 @@ def test_cross_page_tables_stitch_only_with_matching_headers_and_edge_positions(
     assert result[0].body_rows() == [["Alice", "10"], ["Bob", "18"]]
     assert result[0].source_pages == [1, 2]
     assert result[0].source_table_ids == ["page-1-table", "page-2-table"]
+    assert [region.page_number for region in result[0].page_regions] == [1, 2]
+    assert result[0].page_regions[0].bbox == first.bbox
+    assert result[0].page_regions[1].bbox == second.bbox
+    assert result[0].page_regions[0].table_ids == ["page-1-table"]
+    assert result[0].page_regions[1].table_ids == ["page-2-table"]
     assert "cross_page_stitched" in result[0].warnings

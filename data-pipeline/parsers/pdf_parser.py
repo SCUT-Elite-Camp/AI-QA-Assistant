@@ -11,7 +11,7 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 import re
 
 import pymupdf as fitz
-from models.document import Document, ContentBlock, BlockType, TableArtifact
+from models.document import Document, ContentBlock, BlockType, PageRegion, TableArtifact
 from parsers.base import BaseParser
 from parsers.ocr_backends import (
     PageOCRBackend,
@@ -381,15 +381,26 @@ class PDFParser(BaseParser):
             table = block.table
             if table is None or table.acceptance != "accepted":
                 continue
-            for table_id in table.source_table_ids:
-                source = source_tables.get(table_id)
-                if source is None or source.page_number is None or source.bbox is None:
-                    continue
-                regions_by_page.setdefault(source.page_number, []).append((
-                    source.bbox.x0,
-                    source.bbox.y0,
-                    source.bbox.x1,
-                    source.bbox.y1,
+            regions = list(table.page_regions)
+            if not regions:
+                regions = [
+                    PageRegion(
+                        page_number=source.page_number,
+                        bbox=source.bbox,
+                        table_ids=[source.table_id],
+                        sources=["table"],
+                        confidence=source.confidence,
+                    )
+                    for table_id in table.source_table_ids
+                    for source in [source_tables.get(table_id)]
+                    if source is not None and source.page_number is not None and source.bbox is not None
+                ]
+            for region in regions:
+                regions_by_page.setdefault(region.page_number, []).append((
+                    region.bbox.x0,
+                    region.bbox.y0,
+                    region.bbox.x1,
+                    region.bbox.y1,
                 ))
 
         retained: list[ContentBlock] = []
@@ -583,6 +594,7 @@ def _merge_continuation(first: TableArtifact, second: TableArtifact) -> TableArt
         ),
         "source_pages": list(dict.fromkeys(first.source_pages + second.source_pages)),
         "source_table_ids": first.source_table_ids + second.source_table_ids,
+        "page_regions": [*first.page_regions, *second.page_regions],
         "warnings": list(dict.fromkeys(first.warnings + second.warnings + ["cross_page_stitched"])),
     })
 

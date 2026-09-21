@@ -69,9 +69,31 @@ def test_text_chunks_aggregate_same_page_boxes_and_cross_page_sources():
     assert same.page_number == 1 and same.source_pages == [1]
     assert same.bbox == BoundingBox(x0=1, y0=2, x1=11, y1=40)
     assert same.metadata["block_ids"] == ["b1", "b2"]
+    assert same.page_regions[0].page_number == 1
+    assert same.page_regions[0].bbox == BoundingBox(x0=1, y0=2, x1=11, y1=40)
+    assert same.page_regions[0].block_ids == ["b1", "b2"]
     cross = chunk_from_blocks([first, second.model_copy(update={"page_number": 2})], "doc", overlap=0)[0]
     assert cross.page_number is None and cross.bbox is None
     assert cross.source_pages == [1, 2]
+    assert [region.page_number for region in cross.page_regions] == [1, 2]
+    assert cross.page_regions[1].block_ids == ["b2"]
+
+
+def test_regionless_block_keeps_page_and_block_provenance_without_fake_geometry():
+    chunk = chunk_from_blocks([
+        ContentBlock(
+            block_type="paragraph",
+            text="Located",
+            block_id="b1",
+            page_number=1,
+            bbox=BoundingBox(x0=1, y0=2, x1=10, y1=20),
+        ),
+        ContentBlock(block_type="paragraph", text="No box", block_id="b2", page_number=2),
+    ], "doc", overlap=0)[0]
+
+    assert chunk.source_pages == [1, 2]
+    assert [region.page_number for region in chunk.page_regions] == [1]
+    assert chunk.metadata["block_ids"] == ["b1", "b2"]
 
 
 def test_overlap_tracks_sources_and_zero_overlap_repeats_no_text():
@@ -88,9 +110,18 @@ def test_overlap_tracks_sources_and_zero_overlap_repeats_no_text():
 
 def test_overlap_provenance_includes_only_blocks_contributing_to_retained_tail():
     blocks = [
-        ContentBlock(block_type="paragraph", text="page1-aaaa", block_id="b1", page_number=1),
-        ContentBlock(block_type="paragraph", text="page2-bbbb", block_id="b2", page_number=2),
-        ContentBlock(block_type="paragraph", text="page3-cccc", block_id="b3", page_number=3),
+        ContentBlock(
+            block_type="paragraph", text="page1-aaaa", block_id="b1", page_number=1,
+            bbox=BoundingBox(x0=1, y0=1, x1=10, y1=10),
+        ),
+        ContentBlock(
+            block_type="paragraph", text="page2-bbbb", block_id="b2", page_number=2,
+            bbox=BoundingBox(x0=2, y0=2, x1=11, y1=11),
+        ),
+        ContentBlock(
+            block_type="paragraph", text="page3-cccc", block_id="b3", page_number=3,
+            bbox=BoundingBox(x0=3, y0=3, x1=12, y1=12),
+        ),
     ]
 
     chunks = chunk_from_blocks(blocks, "doc", chunk_size=10, overlap=4)
@@ -98,6 +129,8 @@ def test_overlap_provenance_includes_only_blocks_contributing_to_retained_tail()
     assert chunks[2].text == "bbbb\n\npage3-cccc"
     assert chunks[2].source_pages == [2, 3]
     assert chunks[2].metadata["block_ids"] == ["b2", "b3"]
+    assert [region.page_number for region in chunks[2].page_regions] == [2, 3]
+    assert [region.block_ids for region in chunks[2].page_regions] == [["b2"], ["b3"]]
 
 
 def test_mixed_extraction_sources_are_preserved_in_text_chunk_metadata():
