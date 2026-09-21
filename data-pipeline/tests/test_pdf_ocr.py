@@ -63,6 +63,17 @@ def make_pdf(path, page_texts):
     document.close()
 
 
+def make_mixed_pdf(path):
+    document = fitz.open()
+    page = document.new_page(width=500, height=600)
+    image = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 10, 10), False)
+    image.clear_with(240)
+    page.insert_image(page.rect, pixmap=image)
+    page.insert_text((60, 40), "Native caption", fontsize=12)
+    document.save(path)
+    document.close()
+
+
 def test_low_text_page_uses_injected_ocr_backend(tmp_path):
     source = tmp_path / "scan.pdf"
     make_pdf(source, [""])
@@ -103,6 +114,30 @@ def test_ocr_runs_only_for_low_quality_pages_and_replaces_native_text(tmp_path):
     assert "A complete native paragraph" in document.content
     assert "Recovered second page" in document.content
     assert "\n\nx\n\n" not in f"\n\n{document.content}\n\n"
+
+
+def test_mixed_page_keeps_reliable_native_text_and_adds_non_overlapping_ocr(tmp_path):
+    source = tmp_path / "mixed-image.pdf"
+    make_mixed_pdf(source)
+    backend = FakeOCRBackend({1: [
+        ocr_block("Native caption", bbox=(58, 25, 140, 46)),
+        ocr_block("Scanned body recovered", bbox=(40, 100, 460, 130)),
+    ]})
+
+    document = PDFParser(router=StaticRouter(), ocr_backend=backend).parse(str(source))
+
+    assert document.content.count("Native caption") == 1
+    assert "Scanned body recovered" in document.content
+    caption = next(block for block in document.content_blocks if block.text == "Native caption")
+    scanned = next(block for block in document.content_blocks if block.text == "Scanned body recovered")
+    assert caption.source == "native"
+    assert scanned.source == "ocr"
+    assert [block.block_id for block in document.content_blocks] == [
+        "page-1-block-0",
+        "page-1-block-1",
+    ]
+    assert document.parse_diagnostics is not None
+    assert document.parse_diagnostics.ocr_applied_pages == [1]
 
 
 def test_ocr_does_not_replace_native_text_when_it_is_not_better(tmp_path):

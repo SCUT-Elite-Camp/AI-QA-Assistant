@@ -9,6 +9,8 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 """
 
 import re
+import unicodedata
+from dataclasses import replace
 
 import pymupdf as fitz
 from models.document import (
@@ -47,6 +49,8 @@ HEADING_FONT_RATIO = 1.15        # 字号超过正文中位数此倍数视为候
 HEADING_LARGE_FONT_RATIO = 1.25  # 非粗体大字号也可作为标题候选
 HEADING_MIN_LEVEL_1_RATIO = 1.5  # 一级标题的最低字号比例
 HEADING_MIN_LEVEL_2_RATIO = 1.3  # 二级标题的最低字号比例
+MIN_RELIABLE_NATIVE_CHARACTERS = 4
+OCR_DUPLICATE_REGION_OVERLAP = 0.50
 
 class PDFParser(BaseParser):
     """使用 PyMuPDF 解析 PDF 文件，提取表格、结构信息并去除页眉页脚"""
@@ -271,6 +275,11 @@ class PDFParser(BaseParser):
             diagnostics.ocr_empty_pages.append(page_number)
             diagnostics.ocr_messages.append(f"page {page_number}: OCR returned no usable text")
             return native_blocks
+        selected = _fuse_native_and_ocr_blocks(
+            native_blocks,
+            selected,
+            float(page.rect.width),
+        )
         ocr_quality = evaluate_page_text_quality(page, selected)
         if _page_text_rank(ocr_quality) <= _page_text_rank(native_quality):
             diagnostics.ocr_not_improved_pages.append(page_number)
@@ -513,6 +522,57 @@ def _ocr_content_to_layout_blocks(
             source="ocr",
         ))
     return result
+
+
+def _fuse_native_and_ocr_blocks(
+    native_blocks: list[LayoutBlock],
+    ocr_blocks: list[LayoutBlock],
+    page_width: float,
+) -> list[LayoutBlock]:
+    """Keep reliable native text and supplement only non-overlapping OCR."""
+    reliable_native = [block for block in native_blocks if _reliable_native_text(block.text)]
+    if reliable_native:
+        ocr_blocks = [
+            ocr_block
+            for ocr_block in ocr_blocks
+            if not any(
+                _layout_overlap_ratio(ocr_block.bbox, native_block.bbox)
+                >= OCR_DUPLICATE_REGION_OVERLAP
+                for native_block in reliable_native
+            )
+        ]
+        selected = [*reliable_native, *ocr_blocks]
+    else:
+        selected = list(ocr_blocks)
+    ordered = order_layout_blocks(selected, page_width)
+    return [replace(block, ordinal=index) for index, block in enumerate(ordered)]
+
+
+def _reliable_native_text(text: str) -> bool:
+    characters = [character for character in text if not character.isspace()]
+    if len(characters) < MIN_RELIABLE_NATIVE_CHARACTERS:
+        return False
+    invalid = sum(
+        character == "\ufffd" or unicodedata.category(character).startswith("C")
+        for character in characters
+    )
+    return invalid / len(characters) < 0.10
+
+
+def _layout_overlap_ratio(
+    first: tuple[float, float, float, float],
+    second: tuple[float, float, float, float],
+) -> float:
+    first_x0, first_y0, first_x1, first_y1 = first
+    second_x0, second_y0, second_x1, second_y1 = second
+    intersection = (
+        max(0.0, min(first_x1, second_x1) - max(first_x0, second_x0))
+        * max(0.0, min(first_y1, second_y1) - max(first_y0, second_y0))
+    )
+    first_area = max(0.0, first_x1 - first_x0) * max(0.0, first_y1 - first_y0)
+    second_area = max(0.0, second_x1 - second_x0) * max(0.0, second_y1 - second_y0)
+    smaller_area = min(first_area, second_area)
+    return intersection / smaller_area if smaller_area > 0 else 0.0
 
 
 def _page_text_rank(quality: PageTextQuality) -> tuple[bool, int, float]:
