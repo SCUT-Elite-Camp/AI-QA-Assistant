@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from agent.config.settings import settings
 from typing import Protocol
 from urllib.request import Request, urlopen
 
@@ -221,6 +222,9 @@ class ModelResearchPlanner:
             "\"acceptance_target\":string}]}. Create 2 to 5 non-overlapping tasks in execution order. "
             "Tasks must name the concrete facts, comparisons, dates, versions, or uncertainties to verify; "
             "do not use generic phrases such as locate core facts or organize conclusions. "
+            "Keep technical identifiers and source-language keywords in task questions "
+            "so local lexical search can find the relevant sections. Separate questions "
+            "about summary counts, commit details, and changed files when all are requested. "
             f"Write task text in {language}. Do not browse or add sources.\n\n"
             f"Question: {request.query}\n"
             f"Documents: {json.dumps(documents, ensure_ascii=False)}"
@@ -232,6 +236,8 @@ class ModelResearchPlanner:
             "max_tokens": 1200,
             "response_format": {"type": "json_object"},
         }
+        if settings.LLM_THINKING_MODE in {"enabled", "disabled"}:
+            payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
         raw = self._chat(payload)["choices"][0]["message"]["content"]
         parsed = json.loads(str(raw).strip().removeprefix("```json").removesuffix("```").strip())
         specs = parsed.get("tasks")

@@ -222,6 +222,10 @@ CP2 意图分类组件、失败回退和 QueryPlan 映射约定见
 
 ## Week 3 质量控制
 
+真实 Confluence 的 Agent 独立产品验收集、复现命令与范围说明见
+[产品验收集 v1](docs/cp2/product_acceptance.md)。它区分运行成功、答案质量与人工验收，
+不替代 dev 的全项目集成验收。
+
 - 空输入直接返回 `invalid_query`。
 - 检索为空或低于 `MIN_RETRIEVAL_SCORE` 时返回 `no_relevant_context`，不调用 LLM。
 - 检索异常返回 `retrieval_error`。

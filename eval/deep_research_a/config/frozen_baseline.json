@@ -51,6 +51,9 @@
       "path": "agent/agent/prompt/templates.py",
       "sha256": "e66ae8f3400c82e11949d34d43d88fce8fe2bb24fed3799fcd5643ba081cacce",
       "assembly_path": "agent/agent/runtime/runner.py",
+      "assembly_git_ref": "2662b31bca1a93961051088e56fc1a0434b990f5",
+      "assembly_git_sha256": "173a7e9dd4e60d65db0ec1e93a9aebd55a5a32b008f851c43724be38edb1b0d4",
+      "assembly_note": "Pin the merged P0 source for historical validation; retain the original Windows worktree hash below. Current product acceptance records its own commit and diff instead of rewriting this baseline.",
       "assembly_sha256": "1d729d05612d582365c87d8fcda41c64f99618346ee78bd6fcc4afc3f38c81ba"
     },
     "planner": {

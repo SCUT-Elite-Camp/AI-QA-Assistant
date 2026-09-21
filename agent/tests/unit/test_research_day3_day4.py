@@ -112,8 +112,9 @@ def test_local_json_search_preserves_canonical_chunk_locator(tmp_path) -> None:
     )
     try:
         hits = adapter.search("利润", tool_context)
-        assert len(hits) == 1
+        assert len(hits) == 2
         assert hits[0].locator_hint == "doc-a_chunk_1"
+        assert {hit.locator_hint for hit in hits} == {"doc-a_chunk_0", "doc-a_chunk_1"}
 
         read = adapter.read_document_range(
             "doc-a",

@@ -85,7 +85,7 @@ class ManifestScopedWorkerTools:
         hits = self.adapter.search(
             query,
             context,
-            top_k=max(1, len(source_ids) * 2),
+            top_k=min(12, max(3, len(source_ids) * 3)),
             source_ids=source_ids,
         )
         return [

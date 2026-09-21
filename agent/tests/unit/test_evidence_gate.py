@@ -66,6 +66,21 @@ def test_knowledge_qa_accepts_one_valid_evidence() -> None:
     assert result.should_retry is False
 
 
+def test_comparison_preserves_query_provenance_across_chunk_deduplication():
+    result = _evaluate(QueryIntent.COMPARISON,
+        [_evidence(retrieval_query="period A"), _evidence(retrieval_query="period B")],
+        sub_queries=["period A", "period B"], attempt=2)
+    assert result.accepted
+    assert len(result.evidence) == 1
+
+
+def test_comparison_does_not_count_low_score_query_provenance():
+    result = _evaluate(QueryIntent.COMPARISON,
+        [_evidence(retrieval_query="period A"), _evidence(retrieval_query="period B", score=0.1)],
+        sub_queries=["period A", "period B"], attempt=2)
+    assert not result.accepted
+
+
 def test_low_score_evidence_is_rejected() -> None:
     result = _evaluate(
         QueryIntent.KNOWLEDGE_QA,
