@@ -74,3 +74,5 @@ eval/wiki/runs/
 ~$*.xlsx
 .local-backups/
 .pnpm-store/
+
+.reindex-backups/

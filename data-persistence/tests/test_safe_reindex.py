@@ -31,6 +31,12 @@ class FakeUtility:
         self.collections.remove(name)
 
 
+def test_reindex_backups_are_gitignored():
+    ignore_rules = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+    assert ".reindex-backups/" in ignore_rules
+
+
 def make_project(tmp_path):
     raw = tmp_path / "data-persistence" / "data" / "raws"
     documents = tmp_path / "data-persistence" / "data" / "documents"
