@@ -140,7 +140,9 @@ def test_search_loop_uses_standalone_query_filters_and_trace_id() -> None:
             "trace_id": "trace-cp2",
         }
     ]
-    assert llm.calls[1]["messages"][-1]["role"] == "tool"
+    assert llm.calls[1]["tools"] is None
+    assert any(m["role"] == "tool" for m in llm.calls[1]["messages"])
+    assert "检索已完成" in llm.calls[1]["messages"][-1]["content"]
 
 
 def test_memory_history_precedes_current_query_and_preserves_distinct_standalone_query() -> None:

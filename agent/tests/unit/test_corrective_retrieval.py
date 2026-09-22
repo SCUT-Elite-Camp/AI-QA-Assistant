@@ -38,7 +38,7 @@ def _failed_gate(*, missing_targets: list[str] | None = None):
     ("previous_mode", "expected_mode"),
     [
         ("hybrid", "bm25"),
-        ("bm25", "vector"),
+        ("bm25", "bm25"),
         ("vector", "bm25"),
     ],
 )

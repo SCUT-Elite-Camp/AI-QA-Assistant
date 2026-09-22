@@ -231,7 +231,8 @@ def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None
     assert agent.last_orchestration is not None
     assert agent.last_orchestration.run_result.retrieval_attempts == 2
     assert [call["query"] for call in search.calls] == ["A 和 B", "A", "B"]
-    runner_replay = [call for call in llm.calls if call["tools"]][-1]["messages"]
+    runner_replay = llm.calls[-1]["messages"]
+    assert llm.calls[-1]["tools"] is None
     assistant_tool_ids = {
         tool_call["id"]
         for message in runner_replay

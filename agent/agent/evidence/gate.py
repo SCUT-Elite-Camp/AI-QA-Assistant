@@ -66,7 +66,11 @@ class EvidenceGate:
             missing = [
                 target
                 for target in targets
-                if not self._has_retrieval_for(target, eligible)
+                # A section may be retrieved for both comparison targets.
+                # Deduplicating first loses its second query provenance.
+                if not self._has_retrieval_for(
+                    target, [item for item in evidence if item.score >= self.min_score]
+                )
             ]
             accepted = bool(targets) and not missing
             reason = (

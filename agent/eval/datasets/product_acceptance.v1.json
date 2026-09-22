@@ -1,0 +1,51 @@
+{
+  "schema_version": "product-acceptance.v1",
+  "source_dataset": "eval/deep_research_a/datasets/cases.v1.json",
+  "source_manifests": "eval/deep_research_a/manifests/source_manifests.v1.json",
+  "review_status": "source-checked; human acceptance review pending",
+  "cases": [
+    {
+      "case_id": "PA-001",
+      "source_case_id": "DR-A-010",
+      "scenario": "single_document_fact",
+      "question": "W30 Agent 周报中，总提交、新功能、Bug 修复、其他改进各是多少？",
+      "checks": ["总提交准确为 9", "新功能准确为 5", "Bug 修复准确为 1", "其他改进准确为 3"]
+    },
+    {
+      "case_id": "PA-002",
+      "source_case_id": "DR-A-001",
+      "scenario": "cross_document_comparison",
+      "checks": ["W30 四项数字全部正确：9、5、1、3", "W34 四项数字全部正确：8、3、5、0", "四项变化全部正确：-1、-2、+4、-3，并说明比较方向"]
+    },
+    {
+      "case_id": "PA-003",
+      "source_case_id": "DR-A-003",
+      "scenario": "cross_section_traceability",
+      "checks": ["query rewriter 对应 32559e07a", "clarification decision 对应 e93c32fbf", "intent classifier 对应 3d3f27dda", "完整列出 clarifier.py、intent_classifier.py、rewriter.py 三个新增文件"]
+    },
+    {
+      "case_id": "PA-004",
+      "source_case_id": "DR-A-010",
+      "scenario": "numeric_condition",
+      "checks": ["原始输入为新功能 5、Bug 修复 1", "明确计算 5+1=6 且满足不少于 6", "明确检查 Bug 修复 1 不超过 1，并得出通过"]
+    },
+    {
+      "case_id": "PA-005",
+      "source_case_id": "DR-A-012",
+      "scenario": "table_and_unknown_status",
+      "checks": ["AG-M6、AG-M7、Research Graph 对应的 AG-M8、AG-M9 全部为 Finished", "AG-M10 为 Not started", "AG-M11 为未记录，不把空白解释为完成或未开始"]
+    },
+    {
+      "case_id": "PA-006",
+      "source_case_id": "DR-A-014",
+      "scenario": "distractor_resistance",
+      "checks": ["query rewriter 作者为 fionaxi", "提交日期为 2026-07-25", "W30 Agent 总提交准确为 9，未混入其他周次或模块"]
+    },
+    {
+      "case_id": "PA-007",
+      "source_case_id": "DR-A-016",
+      "scenario": "insufficient_authorized_evidence",
+      "checks": ["明确说明授权资料无法确认 W34 Web 的精确数字", "不提供 W34 Web 的提交、feat、fix 数字，不用知识猜测"]
+    }
+  ]
+}

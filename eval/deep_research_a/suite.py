@@ -262,6 +262,10 @@ def validate_assets(verbose: bool = True) -> list[str]:
         errors.append("frozen generation config hash mismatch")
     g1_prompt = baseline.get("prompts", {}).get("g1_answer", {})
     for path_key, hash_key in (("path", "sha256"), ("assembly_path", "assembly_sha256")):
+        if path_key == "assembly_path" and g1_prompt.get("assembly_git_ref"):
+            if git_blob_sha256(g1_prompt["assembly_git_ref"], g1_prompt[path_key]) != g1_prompt.get("assembly_git_sha256"):
+                errors.append("frozen G1 assembly source hash mismatch")
+            continue
         prompt_path = PROJECT_ROOT / str(g1_prompt.get(path_key, ""))
         if not prompt_path.is_file():
             errors.append(f"G1 prompt source missing: {g1_prompt.get(path_key)}")

@@ -378,7 +378,7 @@ class MarkdownReportRenderer:
                             if metadata and metadata.title
                             else item.doc_id
                         ),
-                        value_summary=cls._clean_display_text(item.excerpt),
+                        value_summary=cls._bounded_summary(item.excerpt),
                         document_version=item.document_version,
                         effective_at=(metadata.effective_at if metadata else None),
                         updated_at=(metadata.updated_at if metadata else None),
@@ -440,6 +440,12 @@ class MarkdownReportRenderer:
                 )
             )
         return output
+
+    @classmethod
+    def _bounded_summary(cls, excerpt: str) -> str:
+        """Bound display text without changing the stored evidence excerpt."""
+        text = cls._clean_display_text(excerpt)
+        return text if len(text) <= 2000 else text[:1999] + "…"
 
     @staticmethod
     def _citation(
