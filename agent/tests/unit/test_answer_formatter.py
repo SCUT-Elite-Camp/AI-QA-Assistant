@@ -51,3 +51,30 @@ def test_answer_formatter_removes_invalid_reference() -> None:
     response = AnswerFormatter().format_success("trace-test", "答案内容 [9]", [result])
 
     assert response.answer == "答案内容 [1]"
+
+
+def test_answer_formatter_preserves_attachment_citation_identity() -> None:
+    result = RetrievalResult(
+        doc_id="att_allowed",
+        chunk_id="aev_1",
+        chunk_text="attachment evidence",
+        title="report.pdf",
+        source_url="/api/attachments/att_allowed/content",
+        score=0.9,
+        attachment_id="att_allowed",
+        evidence_id="aev_1",
+        locator={"page": 2},
+        version=3,
+    )
+
+    citation = AnswerFormatter().format_success(
+        "trace-test",
+        "answer [1]",
+        [result],
+    ).citations[0]
+
+    assert citation.source_type == "attachment"
+    assert citation.attachment_id == "att_allowed"
+    assert citation.evidence_id == "aev_1"
+    assert citation.locator == {"page": 2}
+    assert citation.version == 3

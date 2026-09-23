@@ -627,6 +627,15 @@ class Agent:
                     title=str(item.get("title", "")),
                     source_url=item.get("source_url") or "",
                     score=float(item["score"]),
+                    source_type=str(item.get("source_type") or "knowledge"),
+                    attachment_id=item.get("attachment_id"),
+                    evidence_id=item.get("evidence_id"),
+                    locator=item.get("locator"),
+                    version=item.get("version"),
+                    source_scope=item.get("source_scope"),
+                    knowledge_base_id=item.get("knowledge_base_id"),
+                    document_id=item.get("document_id"),
+                    version_id=item.get("version_id"),
                 )
             except (KeyError, TypeError, ValueError):
                 logger.warning("[EVIDENCE_DROPPED] malformed evidence: %r", item)

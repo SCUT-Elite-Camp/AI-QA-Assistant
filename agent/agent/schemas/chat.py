@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     topic_titles: Optional[list[str]] = None
     consecutive_no_new_docs_count: int = 0
     is_first_message: Optional[bool] = None
+    knowledge_base_retrieval_enabled: bool = True
 
     @model_validator(mode="before")
     @classmethod
@@ -45,6 +46,15 @@ class Citation(BaseModel):
     chunk_id: str
     score: Optional[float] = None
     snippet: Optional[str] = None
+    source_type: Literal["knowledge", "attachment", "personal"] = "knowledge"
+    attachment_id: Optional[str] = None
+    evidence_id: Optional[str] = None
+    locator: Optional[dict[str, Any]] = None
+    version: Optional[int] = None
+    source_scope: Optional[str] = None
+    knowledge_base_id: Optional[str] = None
+    document_id: Optional[str] = None
+    version_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):

@@ -4,7 +4,7 @@ import hmac
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from agent.agent import Agent
 from agent.api.chat_routes import get_agent
@@ -14,9 +14,11 @@ from agent.schemas.chat import (
     CompactionPlanRequest,
     InternalChatRequest,
     InternalChatResponse,
+    ChatResponse,
     ResetShortWindowRequest,
 )
 from agent.memory.compaction_planner import CompactionPlanner
+from agent.streaming.sse import build_sse_event
 
 router = APIRouter()
 
@@ -46,6 +48,45 @@ def internal_chat(
     # Context resolution and Fact proposal generation begin in Units 05/06/09.
     # This endpoint only transports already trusted data and preserves ChatResponse.
     return InternalChatResponse(response=agent.chat(request))
+
+
+@router.post("/chat/retrieval/stream")
+def internal_retrieval_stream(
+    request: InternalChatRequest,
+    _: Annotated[None, Depends(require_agent_internal_token)],
+    agent: Agent = Depends(get_agent),
+) -> StreamingResponse:
+    """Token-protected streaming adapter for server-authorized private sources."""
+
+    def event_stream():
+        response: ChatResponse = agent.chat(request)
+        yield build_sse_event(
+            "citations",
+            [citation.model_dump() for citation in response.citations],
+        )
+        if response.answer:
+            for offset in range(0, len(response.answer), 32):
+                yield build_sse_event(
+                    "token",
+                    {"content": response.answer[offset:offset + 32]},
+                )
+        if response.status == "success":
+            yield build_sse_event(
+                "done",
+                {
+                    "trace_id": response.trace_id,
+                    "status": response.status,
+                    "citations_count": len(response.citations),
+                    "chat_title": response.chat_title,
+                },
+            )
+        else:
+            yield build_sse_event(
+                "error",
+                {"message": response.message or "Agent retrieval failed"},
+            )
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.post(

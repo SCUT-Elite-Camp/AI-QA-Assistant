@@ -238,6 +238,24 @@ class AgentOrchestrator:
         source_intent: SourceIntent,
     ) -> IntentPolicy:
         sources = set(source_intent.sources)
+        if not request.knowledge_base_retrieval_enabled:
+            sources.difference_update({
+                SourceKind.ENTERPRISE_KB,
+                SourceKind.PERSONAL_LIBRARY,
+            })
+            knowledge_tools = {
+                "search_documents",
+                "find_documents",
+                "get_document",
+                "search_library",
+            }
+            policy = policy.model_copy(update={
+                "candidate_tools": tuple(
+                    tool
+                    for tool in policy.candidate_tools
+                    if tool not in knowledge_tools
+                ),
+            })
         if not sources:
             return policy
 
