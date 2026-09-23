@@ -674,10 +674,38 @@ onBeforeUnmount(() => {
                   />
                 </UDropdownMenu>
 
-                <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
+                <span
+                  v-if="useKnowledgeBase"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+                >
+                  <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
+                  <span>企业知识库检索</span>
+                  <button
+                    type="button"
+                    class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
+                    title="关闭企业知识库检索"
+                    @click.stop="useKnowledgeBase = false"
+                  >
+                    <UIcon name="i-lucide-x" class="w-3 h-3" />
+                  </button>
+                </span>
 
                 <!-- Deep Research Indicator Badge -->
-                <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+                <span
+                  v-if="deepResearchMode"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+                >
+                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
+                  <span>Deep Research</span>
+                  <button
+                    type="button"
+                    class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
+                    title="关闭 Deep Research"
+                    @click.stop="deepResearchMode = false"
+                  >
+                    <UIcon name="i-lucide-x" class="w-3 h-3" />
+                  </button>
+                </span>
 
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
@@ -831,10 +859,38 @@ onBeforeUnmount(() => {
                   />
                 </UDropdownMenu>
 
-                <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
+                <span
+                  v-if="useKnowledgeBase"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+                >
+                  <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
+                  <span>企业知识库检索</span>
+                  <button
+                    type="button"
+                    class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
+                    title="关闭企业知识库检索"
+                    @click.stop="useKnowledgeBase = false"
+                  >
+                    <UIcon name="i-lucide-x" class="w-3 h-3" />
+                  </button>
+                </span>
 
                 <!-- Deep Research Indicator Badge -->
-                <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+                <span
+                  v-if="deepResearchMode"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+                >
+                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
+                  <span>Deep Research</span>
+                  <button
+                    type="button"
+                    class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
+                    title="关闭 Deep Research"
+                    @click.stop="deepResearchMode = false"
+                  >
+                    <UIcon name="i-lucide-x" class="w-3 h-3" />
+                  </button>
+                </span>
 
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
