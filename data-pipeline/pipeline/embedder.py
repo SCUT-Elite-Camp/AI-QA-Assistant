@@ -67,24 +67,24 @@ def _is_model_dir_valid(path_str: str) -> bool:
 
 
 def _download_via_modelscope(target_dir: str | None = None) -> str:
-    """通过 ModelScope 下载模型并返回本地路径"""
+    """Download model via ModelScope and return local path."""
     from modelscope import snapshot_download
 
-    print(f"正在通过 ModelScope 下载模型 {_MODELSCOPE_MODEL_ID}...")
+    print(f"[ModelLoader] Downloading model {_MODELSCOPE_MODEL_ID} via ModelScope...")
     kwargs = {"model_id": _MODELSCOPE_MODEL_ID}
     if target_dir:
         os.makedirs(target_dir, exist_ok=True)
         kwargs["local_dir"] = target_dir
     model_dir = snapshot_download(**kwargs)
-    print(f"模型已下载到: {model_dir}")
+    print(f"[ModelLoader] Model downloaded to: {model_dir}")
     return model_dir
 
 
 @lru_cache(maxsize=1)
 def _get_local_model():
     """
-    加载本地已保存的 BGE 模型（位于 data-persistence/models/bge-small-en-v1.5）。
-    如果本地路径不存在或缺少权重文件，则自动通过 ModelScope 下载到本地目录。
+    Load local BGE model from LOCAL_EMBEDDING_MODEL_PATH.
+    If missing or incomplete, automatically downloads weights.
     """
     from sentence_transformers import SentenceTransformer
 
@@ -99,11 +99,11 @@ def _get_local_model():
     model_kwargs = {"device": configured_device} if configured_device else {}
 
     if not _is_model_dir_valid(local_model_path):
-        print(f"检测到本地模型目录缺少权重: {local_model_path}，正在自动下载模型...")
+        print(f"[ModelLoader] Local model weights missing at: {local_model_path}. Starting automatic download...")
         try:
             _download_via_modelscope(target_dir=local_model_path)
         except Exception as dl_err:
-            print(f"ModelScope 自动下载失败 ({dl_err})，尝试通过 HuggingFace Hub 下载...")
+            print(f"[ModelLoader] ModelScope download failed ({dl_err}), trying HuggingFace Hub mirror...")
             try:
                 if "HF_ENDPOINT" not in os.environ:
                     os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
@@ -116,13 +116,13 @@ def _get_local_model():
                 )
             except Exception as hf_err:
                 raise RuntimeError(
-                    f"无法自动下载嵌入模型: {dl_err} / {hf_err}。请手动将模型权重置于 {local_model_path}"
+                    f"Failed to auto-download embedding model: {dl_err} / {hf_err}. Please place model weights in {local_model_path}"
                 )
 
     model = SentenceTransformer(local_model_path, local_files_only=True, **model_kwargs)
     dim = getattr(model, "get_sentence_embedding_dimension", getattr(model, "get_embedding_dimension", lambda: 384))()
     _validate_local_dimension(dim)
-    print(f"本地模型已加载: {local_model_path}（{dim} 维）")
+    print(f"[ModelLoader] Local model loaded: {local_model_path} ({dim} dims)")
     return model
 
 # ─── 公共接口 ────────────────────────────────────────────
