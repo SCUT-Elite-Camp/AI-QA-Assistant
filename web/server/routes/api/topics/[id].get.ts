@@ -25,13 +25,15 @@ export default defineHandler(async (event) => {
 
   // Read latest soul.md and topic_info from data-persistence layer folder on disk
   const diskData = loadTopicFromDisk(id)
-  const diskDocs = getTopicDocumentsFromDisk(id)
+
+  // Return Knowledge documents (user-uploaded reference files ONLY) for topic settings
+  const userUploadedDocs = (topic.documents || []).filter((d: any) => d.isUserUploaded && !d.isRemoved)
 
   return {
     ...topic,
     soulContent: diskData?.soulContent || topic.soulContent,
     weightMode: diskData?.topicInfo?.weightMode || topic.weightMode,
     tags: diskData?.topicInfo?.tags || topic.tags || [],
-    documents: diskDocs.length ? diskDocs : topic.documents
+    documents: userUploadedDocs
   }
 })

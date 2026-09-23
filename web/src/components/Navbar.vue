@@ -12,6 +12,8 @@
 
       <UColorModeButton />
 
+      <slot name="right-end" />
+
       <UButton
         color="neutral"
         variant="ghost"

@@ -43,3 +43,16 @@ export async function requestTopicSummarizerFromPersistence(
   }
   return null
 }
+
+export async function generateTopicTitle(context: string): Promise<string> {
+  const clean = (context || '').trim().replace(/^[\s\n\r]+/, '')
+  return clean.length > 20 ? clean.slice(0, 20) : (clean || '话题项目')
+}
+
+export async function generateInitialSoul(title: string, context: string, docs: any[] = []): Promise<string> {
+  return `# 话题认知: ${title}\n\n## 核心背景\n${context}\n`
+}
+
+export async function updateTopicSoul(currentSoul: string, feedbacks: any[]): Promise<string> {
+  return currentSoul
+}

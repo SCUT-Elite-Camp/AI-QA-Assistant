@@ -44,7 +44,7 @@ export const topics = sqliteTable('topics', {
   mainChatId: text('main_chat_id').notNull(),
   soulContent: text('soul_content').notNull().default(''),
   description: text('description'),
-  weightMode: text('weight_mode', { enum: ['deeper', 'auto', 'wider'] }).notNull().default('auto'),
+  weightMode: text('weight_mode', { enum: ['thinking', 'auto', 'fast', 'deeper', 'wider'] }).notNull().default('thinking'),
   tags: text('tags', { mode: 'json' }),
   status: text('status', { enum: ['generating', 'ready'] }).notNull().default('ready'),
   consecutiveNoNewDocsCount: integer('consecutive_no_new_docs_count').notNull().default(0),
@@ -77,7 +77,6 @@ export const chatsRelations = relations(chats, ({ one, many }) => ({
     fields: [chats.userId],
     references: [users.id]
   }),
-  messages: many(messages)
   topic: one(topics, {
     fields: [chats.topicId],
     references: [topics.id]
@@ -85,6 +84,31 @@ export const chatsRelations = relations(chats, ({ one, many }) => ({
   messages: many(messages),
   memoryFacts: many(memoryFacts),
   memorySnapshots: many(memorySnapshots)
+}))
+
+export const topicDocuments = sqliteTable('topic_documents', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  topicId: text('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+  docId: text('doc_id').notNull(),
+  title: text('title').notNull(),
+  sourceUrl: text('source_url'),
+  snippet: text('snippet'),
+  recallCount: integer('recall_count').notNull().default(1),
+  lastRecalledAt: integer('last_recalled_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  score: integer('score'),
+  isRemoved: integer('is_removed', { mode: 'boolean' }).notNull().default(false),
+  isUserUploaded: integer('is_user_uploaded', { mode: 'boolean' }).notNull().default(false),
+  ...timestamps
+}, table => [
+  index('topic_docs_topic_id_idx').on(table.topicId),
+  uniqueIndex('topic_doc_idx').on(table.topicId, table.docId)
+])
+
+export const topicDocumentsRelations = relations(topicDocuments, ({ one }) => ({
+  topic: one(topics, {
+    fields: [topicDocuments.topicId],
+    references: [topics.id]
+  })
 }))
 
 export const messages = sqliteTable('messages', {

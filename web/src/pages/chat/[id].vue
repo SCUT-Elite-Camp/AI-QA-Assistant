@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, provide } from 'vue'
 import { $fetch } from 'ofetch'
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
@@ -27,13 +27,36 @@ import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
 import FactProposalCard from '../../components/chat/memory/FactProposalCard.vue'
 import SessionFactPanel from '../../components/chat/memory/SessionFactPanel.vue'
+import QuickNavDial from '../../components/chat/QuickNavDial.vue'
+import HitRateDrawer from '../../components/chat/HitRateDrawer.vue'
+import ProgressIndicator from '../../components/chat/ProgressIndicator.vue'
+import ReasoningFloatingWindow from '../../components/chat/ReasoningFloatingWindow.vue'
 import type { Vote } from '../../../server/utils/drizzle'
 import type { FactCategory } from '../../types/memory'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
 const toast = useToast()
-const currentWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
+const showHitRateDrawer = ref(false)
+
+function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = localStorage.getItem('preferred_weight_mode')
+    if (saved === 'fast' || saved === 'auto' || saved === 'thinking') return saved
+  }
+  return 'thinking'
+}
+
+const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>(
+  (route.query.mode as any) || getStoredWeightMode()
+)
+
+watch(currentWeightMode, (newMode) => {
+  if (typeof window !== 'undefined' && window.localStorage && newMode) {
+    localStorage.setItem('preferred_weight_mode', newMode)
+  }
+})
+
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
@@ -119,8 +142,11 @@ async function revokeFact(factId: string) {
 // Topic Space State
 const topic = ref<any>(null)
 if (data?.topicId) {
-  $fetch(`/api/topics/${data.topicId}`).then((t) => {
+  $fetch(`/api/topics/${data.topicId}`).then((t: any) => {
     topic.value = t
+    if (t?.weightMode && !route.query.mode) {
+      currentWeightMode.value = t.weightMode
+    }
   }).catch(() => {})
 }
 
@@ -189,7 +215,10 @@ const chat = new Chat({
   transport: new DefaultChatTransport({
     api: `/api/chats/${data?.id}`,
     headers: { [headerName]: csrf() },
-    body: { model: model.value },
+    body: {
+      get model() { return model.value },
+      get weightMode() { return currentWeightMode.value }
+    },
   }),
   onData: (dataPart) => {
     if (dataPart.type === 'data-chat-title') {
@@ -229,6 +258,13 @@ const chat = new Chat({
       duration: 0,
     })
   },
+})
+
+provide('is-chat-streaming', computed(() => chat.status === 'streaming'))
+
+const activeReasoningMessage = computed(() => {
+  const assistantMessages = chat.messages.filter(m => m.role === 'assistant')
+  return assistantMessages.length > 0 ? assistantMessages[assistantMessages.length - 1] : null
 })
 
 function handleSubmit(e: Event) {
@@ -414,7 +450,11 @@ function openSelectionDrawer() {
 
 
 
-async function handleUpdateWeightMode(mode: 'deeper' | 'auto' | 'wider') {
+async function handleUpdateWeightMode(mode: 'thinking' | 'auto' | 'fast') {
+  currentWeightMode.value = mode
+  if (topic.value) {
+    topic.value.weightMode = mode
+  }
   if (!topic.value?.id) return
   try {
     const updated: any = await $fetch(`/api/topics/${topic.value.id}`, {
@@ -423,13 +463,8 @@ async function handleUpdateWeightMode(mode: 'deeper' | 'auto' | 'wider') {
       body: { weightMode: mode }
     })
     topic.value = updated
-    toast.add({
-      title: '检索加权模式已切换',
-      description: `当前模式: ${mode.toUpperCase()}`,
-      color: 'success'
-    })
   } catch (err: any) {
-    toast.add({ description: err.message, color: 'error' })
+    console.warn('Failed to patch topic weight mode:', err)
   }
 }
 
@@ -536,6 +571,22 @@ onBeforeUnmount(() => {
             :visibility="visibility"
             @update:visibility="visibility = $event"
           />
+
+          <template #right-end>
+            <!-- Hit Rate Monitor Button at the absolute far right top navbar (Solid White Icon) -->
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-bar-chart-3"
+              size="sm"
+              title="检索命中率监控 (Hit Rate)"
+              :class="[
+                'cursor-pointer transition-colors text-zinc-100 dark:text-white',
+                showHitRateDrawer ? 'bg-zinc-800 text-emerald-400 font-bold' : 'hover:text-white hover:bg-zinc-800/80'
+              ]"
+              @click="showHitRateDrawer = !showHitRateDrawer"
+            />
+          </template>
         </Navbar>
       </div>
     </template>
@@ -544,6 +595,12 @@ onBeforeUnmount(() => {
       <div class="flex-1 flex flex-row min-h-0 relative overflow-hidden w-full h-full">
         <!-- Main Chat Area (Left Panel) -->
         <div class="flex-1 flex flex-col min-w-0 h-full overflow-y-auto relative">
+          <!-- Top-Right Floating Reasoning Window -->
+          <ReasoningFloatingWindow
+            :message="activeReasoningMessage"
+            :status="chat.status"
+          />
+
           <!-- Empty Chat / Branch New Chat Landing View -->
           <UContainer v-if="!visibleMessages.length" class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8 min-h-[75vh]">
             <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
@@ -579,7 +636,7 @@ onBeforeUnmount(() => {
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
                   <WeightModeSelect
-                    :model-value="topic?.weightMode || currentWeightMode"
+                    v-model="currentWeightMode"
                     @change="handleUpdateWeightMode"
                   />
                   <UChatPromptSubmit
@@ -606,29 +663,29 @@ onBeforeUnmount(() => {
               :messages="chat.messages"
               :status="chat.status"
               :spacing-offset="isOwner ? 160 : 0"
-              class="pt-(--ui-header-height) pb-4 sm:pb-6"
+              :ui="{ actions: 'w-full flex items-center' }"
+              class="pt-(--ui-header-height) pb-4 sm:pb-6 w-full"
             >
               <template #indicator>
-                <div class="flex items-center gap-1.5">
-                  <ChatIndicator />
-                  <UChatShimmer text="Thinking..." class="text-sm" />
-                </div>
+                <ProgressIndicator :status="chat.status" :messages="chat.messages" />
               </template>
 
               <template #content="{ message }">
-                <ChatMessageContent
-                  :message="message"
-                  :editing="isOwner && editingMessageId === message.id"
-                  @save="saveEdit"
-                  @cancel-edit="cancelEdit"
-                />
-                <p
-                  v-if="message.role === 'assistant' && isMemoryRecallMessage(message.id)"
-                  class="mt-2 text-xs text-muted"
-                  aria-label="来自已确认会话记忆"
-                >
-                  来自已确认会话记忆
-                </p>
+                <div :id="`msg-${message.id}`" :data-message-id="message.id" class="w-full">
+                  <ChatMessageContent
+                    :message="message"
+                    :editing="isOwner && editingMessageId === message.id"
+                    @save="saveEdit"
+                    @cancel-edit="cancelEdit"
+                  />
+                  <p
+                    v-if="message.role === 'assistant' && isMemoryRecallMessage(message.id)"
+                    class="mt-2 text-xs text-muted"
+                    aria-label="来自已确认会话记忆"
+                  >
+                    来自已确认会话记忆
+                  </p>
+                </div>
               </template>
 
               <template
@@ -727,7 +784,7 @@ onBeforeUnmount(() => {
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
                   <WeightModeSelect
-                    :model-value="topic?.weightMode || currentWeightMode"
+                    v-model="currentWeightMode"
                     @change="handleUpdateWeightMode"
                   />
                   <UChatPromptSubmit
@@ -745,6 +802,14 @@ onBeforeUnmount(() => {
           </UContainer>
         </div>
 
+        <!-- In-Flow Right Side Panel Window for Hit Rate Monitoring (Same plane layout, non-overlay) -->
+        <HitRateDrawer
+          v-if="showHitRateDrawer"
+          :open="showHitRateDrawer"
+          :messages="chat.messages"
+          @update:open="showHitRateDrawer = $event"
+        />
+
         <!-- In-Flow Right Side Panel for Selection Q&A (Same plane layout, non-overlay) -->
         <SelectionDrawer
           v-if="showSelectionDrawer"
@@ -755,6 +820,9 @@ onBeforeUnmount(() => {
           :topic-id="topic?.id"
           @update:open="showSelectionDrawer = $event"
         />
+
+        <!-- Right Semi-Circular Quick Navigation Dial Widget (Attached to Dark Gray Chat Panel Edge, hidden when HitRate side drawer is open) -->
+        <QuickNavDial v-if="!showHitRateDrawer" :messages="chat.messages" />
       </div>
     </template>
   </UDashboardPanel>
@@ -802,3 +870,21 @@ onBeforeUnmount(() => {
   />
 
 </template>
+
+<style scoped>
+:deep([data-slot="container"]) {
+  width: 100% !important;
+}
+
+:deep([data-slot="body"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+:deep([data-slot="actions"]) {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+</style>
