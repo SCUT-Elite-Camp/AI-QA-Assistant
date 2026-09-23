@@ -155,9 +155,11 @@ class MilvusStore:
         if normalized_filters.get("doc_ids") == []:
             return []
         available_fields = self._field_names(collection)
-        required_fields = set(normalized_filters) - {"doc_ids"}
+        required_fields = set(normalized_filters) - {"doc_ids", "chunk_ids"}
         if "doc_ids" in normalized_filters:
             required_fields.add("doc_id")
+        if normalized_filters.get("chunk_ids"):
+            required_fields.add("chunk_id")
         missing_fields = required_fields - available_fields
         if missing_fields:
             raise ValueError(

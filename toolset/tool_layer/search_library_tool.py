@@ -37,11 +37,6 @@ class SearchLibraryTool(BaseTool):
                 "top_k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
                 "doc_ids": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
                 "mode": {"type": "string", "enum": ["hybrid", "vector", "bm25"], "default": "hybrid"},
-                "navigation_mode": {
-                    "type": "string",
-                    "enum": ["direct", "hierarchical", "hybrid"],
-                    "default": "direct",
-                },
             },
             "required": ["query"],
             "additionalProperties": False,
@@ -67,12 +62,7 @@ class SearchLibraryTool(BaseTool):
         owner_id, knowledge_base_id = context
         query = str(kwargs.get("query") or "").strip()
         mode = str(kwargs.get("mode") or "hybrid")
-        navigation_mode = str(kwargs.get("navigation_mode") or "direct")
-        if (
-            not query
-            or mode not in {"hybrid", "vector", "bm25"}
-            or navigation_mode not in {"direct", "hierarchical", "hybrid"}
-        ):
+        if not query or mode not in {"hybrid", "vector", "bm25"}:
             return {"error": "invalid_library_query", "items": []}
         try:
             top_k = min(20, max(1, int(kwargs.get("top_k", 5))))
@@ -84,12 +74,7 @@ class SearchLibraryTool(BaseTool):
             "query": query,
             "top_k": top_k,
             "mode": mode,
-            "navigation_mode": (
-                navigation_mode
-                if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower()
-                in {"1", "true", "yes"}
-                else "direct"
-            ),
+            "navigation_mode": "direct",
         }
         doc_ids = kwargs.get("doc_ids")
         if doc_ids is not None:
@@ -109,6 +94,57 @@ class SearchLibraryTool(BaseTool):
                 if mode == "vector":
                     return {"error": "library_vector_unavailable", "items": []}
         return self._post("/v1/library/search", payload)
+
+    def browse_outline(self, **kwargs: Any) -> dict[str, Any]:
+        payload = self._navigation_payload(kwargs, include_sections=False)
+        if "error" in payload:
+            return payload
+        return self._post("/v1/library/outline", payload)
+
+    def search_evidence_in_scope(self, **kwargs: Any) -> dict[str, Any]:
+        payload = self._navigation_payload(kwargs, include_sections=True)
+        if "error" in payload:
+            return payload
+        mode = str(kwargs.get("mode") or "hybrid")
+        if mode not in {"hybrid", "vector", "bm25"}:
+            return {"error": "invalid_library_query", "items": []}
+        payload["mode"] = mode
+        return self._post("/v1/library/search-scoped", payload)
+
+    def _navigation_payload(
+        self,
+        kwargs: dict[str, Any],
+        *,
+        include_sections: bool,
+    ) -> dict[str, Any]:
+        context = self._request_context.get()
+        if not os.getenv("ATTACHMENT_INTERNAL_SECRET", "") or context is None:
+            return {"error": "library_context_unavailable", "items": [], "sections": []}
+        owner_id, knowledge_base_id = context
+        query = str(kwargs.get("query") or "").strip()
+        if not query:
+            return {"error": "invalid_library_query", "items": [], "sections": []}
+        try:
+            top_k = min(20 if include_sections else 12, max(1, int(kwargs.get("top_k", 8))))
+        except (TypeError, ValueError):
+            return {"error": "invalid_library_query", "items": [], "sections": []}
+        payload: dict[str, Any] = {
+            "owner_id": owner_id,
+            "knowledge_base_id": knowledge_base_id,
+            "query": query,
+            "top_k": top_k,
+        }
+        doc_ids = kwargs.get("doc_ids")
+        if doc_ids is not None:
+            if not isinstance(doc_ids, list) or len(doc_ids) > 100:
+                return {"error": "invalid_library_query", "items": [], "sections": []}
+            payload["doc_ids"] = [str(value) for value in doc_ids]
+        if include_sections:
+            section_ids = kwargs.get("section_ids") or []
+            if not isinstance(section_ids, list) or not 1 <= len(section_ids) <= 20:
+                return {"error": "invalid_library_query", "items": []}
+            payload["section_ids"] = [str(value) for value in section_ids]
+        return payload
 
     @staticmethod
     def _post(path: str, payload: dict[str, Any]) -> dict[str, Any]:

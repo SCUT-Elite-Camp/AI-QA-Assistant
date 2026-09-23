@@ -203,7 +203,6 @@ class ToolExecutor:
         mode = arguments.get("mode", "hybrid")
         top_k = arguments.get("top_k", 5)
         filters = arguments.get("filters")
-        navigation_mode = arguments.get("navigation_mode", "direct")
         min_score = float(getattr(tool, "min_score", 0.0))
 
         search_arguments = dict(
@@ -214,8 +213,6 @@ class ToolExecutor:
             min_score=min_score,
             trace_id=trace_id,
         )
-        if navigation_mode != "direct":
-            search_arguments["navigation_mode"] = navigation_mode
         rows = tool.search(**search_arguments)
         evidence = [
             Evidence(

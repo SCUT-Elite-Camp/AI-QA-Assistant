@@ -23,9 +23,10 @@ from .config import AttachmentSettings
 from .chunking import chunk_attachment_evidence
 from .library_service import (
     fuse_library_candidates,
-    fuse_navigation_candidates,
+    fuse_section_candidates,
     rank_section_evidence,
     rebuild_library_projection,
+    resolve_section_search_context,
     validate_library_configuration,
 )
 from .crypto import decrypt_file, encrypt_file
@@ -36,7 +37,7 @@ from .store import AttachmentStore
 from .structure import build_document_sections
 from .validation import AttachmentValidationError, safe_filename, validate_file
 from .vision import LocalVisionBackend
-from .vector_index import AttachmentVectorIndex
+from .vector_index import AttachmentSectionVectorIndex, AttachmentVectorIndex
 from .previews import build_encrypted_previews
 
 LOGGER = logging.getLogger("attachment-service")
@@ -45,6 +46,7 @@ SETTINGS.data_dir.mkdir(parents=True, exist_ok=True)
 STORE = AttachmentStore(SETTINGS.data_dir / "attachments.sqlite3")
 VISION = LocalVisionBackend(SETTINGS)
 VECTOR_INDEX = AttachmentVectorIndex()
+SECTION_VECTOR_INDEX = AttachmentSectionVectorIndex()
 STOP = threading.Event()
 VECTOR_PENDING: set[str] = set()
 VECTOR_PENDING_LOCK = threading.Lock()
@@ -126,6 +128,26 @@ class LibrarySearchRequest(BaseModel):
     doc_ids: list[str] | None = Field(default=None, max_length=100)
     mode: str = Field(default="hybrid", pattern="^(hybrid|vector|bm25)$")
     navigation_mode: str = Field(default="direct", pattern="^(direct|hierarchical|hybrid)$")
+    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+
+
+class LibraryOutlineRequest(BaseModel):
+    owner_id: str = Field(min_length=1, max_length=128)
+    knowledge_base_id: str = Field(min_length=1, max_length=128)
+    query: str = Field(min_length=1, max_length=4000)
+    top_k: int = Field(default=8, ge=1, le=12)
+    doc_ids: list[str] | None = Field(default=None, max_length=100)
+    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+
+
+class LibraryScopedSearchRequest(BaseModel):
+    owner_id: str = Field(min_length=1, max_length=128)
+    knowledge_base_id: str = Field(min_length=1, max_length=128)
+    query: str = Field(min_length=1, max_length=4000)
+    section_ids: list[str] = Field(min_length=1, max_length=20)
+    top_k: int = Field(default=10, ge=1, le=20)
+    doc_ids: list[str] | None = Field(default=None, max_length=100)
+    mode: str = Field(default="hybrid", pattern="^(hybrid|vector|bm25)$")
     query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
 
 
@@ -296,6 +318,8 @@ def _worker() -> None:
             try:
                 if VECTOR_INDEX.enabled:
                     VECTOR_INDEX.delete(str(attachment.get("vector_ref") or attachment["id"]))
+                if SECTION_VECTOR_INDEX.enabled:
+                    SECTION_VECTOR_INDEX.delete(str(attachment.get("vector_ref") or attachment["id"]))
                 derivative_paths = [item["blob_path"] for item in STORE.list_derivatives(attachment["id"])]
                 blob = STORE.get_blob(attachment["dedupe_domain"], attachment["sha256"])
                 if blob and int(blob["ref_count"]) <= 1:
@@ -319,6 +343,8 @@ def _worker() -> None:
             try:
                 if VECTOR_INDEX.enabled:
                     VECTOR_INDEX.delete(str(job["payload"].get("vector_ref") or attachment["id"]))
+                if SECTION_VECTOR_INDEX.enabled:
+                    SECTION_VECTOR_INDEX.delete(str(job["payload"].get("vector_ref") or attachment["id"]))
                 STORE.complete_job(job["id"])
                 LOGGER.info("LIBRARY_CLEANUP_COMPLETE version_id=%s", attachment["id"])
             except Exception as exc:
@@ -383,6 +409,7 @@ def _worker() -> None:
                 # vector/evidence projection remains searchable on failure.
                 previous_vector_ref, new_vector_ref = rebuild_library_projection(
                     STORE, VECTOR_INDEX, attachment, evidence, job["id"], sections,
+                    SECTION_VECTOR_INDEX,
                 )
                 if not preserve_active:
                     STORE.transition_attachment(attachment["id"], "indexing")
@@ -793,13 +820,131 @@ def search(body: SearchRequest) -> dict[str, Any]:
     return {"items": items}
 
 
+@app.post("/v1/library/outline", dependencies=[Depends(_authorize)])
+def browse_library_outline(body: LibraryOutlineRequest) -> dict[str, Any]:
+    """Search navigation metadata inside the caller's active personal versions."""
+    versions = STORE.list_library_versions(
+        body.owner_id,
+        body.knowledge_base_id,
+        document_ids=body.doc_ids,
+        active_only=True,
+    )
+    attachment_ids, query = resolve_section_search_context(body.query, versions)
+    sparse = STORE.search_sections(attachment_ids, query, top_k=max(body.top_k, 4))
+    vector: list[dict[str, Any]] = []
+    degraded: list[str] = []
+    if SECTION_VECTOR_INDEX.enabled and body.query_vector is not None:
+        try:
+            refs = [
+                str(item.get("vector_ref") or item["id"])
+                for item in versions if str(item["id"]) in attachment_ids
+            ]
+            vector = SECTION_VECTOR_INDEX.search_by_vector(refs, body.query_vector, body.top_k * 2)
+        except Exception as exc:
+            degraded.append("section_vector")
+            LOGGER.warning(
+                "LIBRARY_OUTLINE vector degraded knowledge_base_id=%s error=%s",
+                body.knowledge_base_id, exc.__class__.__name__,
+            )
+    section_rows = STORE.list_sections(attachment_ids)
+    sections = {str(item["id"]): item for item in section_rows}
+    matched = (
+        fuse_section_candidates(
+            sections, sparse, vector, top_k=max(1, body.top_k // 2),
+        )
+        if vector else sparse[:max(1, body.top_k // 2)]
+    )
+    from shared_runtime.document_sections import select_outline_candidates
+
+    hits = select_outline_candidates(section_rows, matched, limit=body.top_k)
+    return {
+        "sections": hits,
+        "citation_authority": False,
+        "degraded": degraded,
+    }
+
+
+@app.post("/v1/library/search-scoped", dependencies=[Depends(_authorize)])
+def search_library_scoped(body: LibraryScopedSearchRequest) -> dict[str, Any]:
+    """Retrieve Evidence only from explicit, preauthorized personal Sections."""
+    versions = STORE.list_library_versions(
+        body.owner_id,
+        body.knowledge_base_id,
+        document_ids=body.doc_ids,
+        active_only=True,
+    )
+    attachment_ids = [str(item["id"]) for item in versions]
+    sections = {str(item["id"]): item for item in STORE.list_sections(attachment_ids)}
+    selected = [sections[value] for value in dict.fromkeys(body.section_ids) if value in sections]
+    evidence_ids = list(dict.fromkeys(
+        str(evidence_id)
+        for section in selected
+        if section.get("quality") != "low" and int(section.get("level") or 0) > 0
+        for evidence_id in section.get("evidence_ids") or []
+    ))
+    if not evidence_ids:
+        return {"items": [], "citation_authority": True}
+    candidate_k = max(body.top_k * 3, 20)
+    evidence = {item["evidence_id"]: item for item in STORE.list_evidence(attachment_ids)}
+    lexical = (
+        STORE.search_evidence(
+            attachment_ids, body.query, candidate_k, evidence_ids=evidence_ids,
+        )
+        if body.mode in {"bm25", "hybrid"} else []
+    )
+    vector: list[dict[str, Any]] = []
+    degraded: list[str] = []
+    if body.mode in {"vector", "hybrid"} and body.query_vector is not None:
+        try:
+            refs = [str(item.get("vector_ref") or item["id"]) for item in versions]
+            ref_to_id = {
+                str(item.get("vector_ref") or item["id"]): str(item["id"])
+                for item in versions
+            }
+            vector = VECTOR_INDEX.search_by_vector(
+                refs, body.query_vector, candidate_k, evidence_ids=evidence_ids,
+            )
+            for row in vector:
+                row["attachment_id"] = ref_to_id.get(
+                    str(row.get("attachment_id")), str(row.get("attachment_id"))
+                )
+        except Exception as exc:
+            degraded.append("vector")
+            LOGGER.warning(
+                "LIBRARY_SCOPED_SEARCH vector degraded knowledge_base_id=%s error=%s",
+                body.knowledge_base_id, exc.__class__.__name__,
+            )
+    items = rank_section_evidence(
+        evidence, evidence_ids, lexical, vector, mode=body.mode, top_k=body.top_k,
+    )
+    section_ids_by_evidence: dict[str, list[str]] = {}
+    for section in selected:
+        for evidence_id in section.get("evidence_ids") or []:
+            section_ids_by_evidence.setdefault(str(evidence_id), []).append(str(section["id"]))
+    metadata = {str(item["id"]): item for item in versions}
+    for item in items:
+        version = metadata.get(str(item.get("attachment_id")), {})
+        item.update({
+            "matched_section_ids": list(dict.fromkeys(
+                section_ids_by_evidence.get(str(item.get("evidence_id")), [])
+            )),
+            "knowledge_base_id": version.get("knowledge_base_id"),
+            "document_id": version.get("document_id"),
+            "version_id": version.get("version_id"),
+            "source_scope": "personal",
+            "filename": version.get("filename", item.get("filename")),
+        })
+    return {
+        "items": items,
+        "citation_authority": True,
+        "degraded": degraded,
+    }
+
+
 @app.post("/v1/library/search", dependencies=[Depends(_authorize)])
 def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
     # owner/source/library/active are resolved before either FTS5 or Milvus
     # search. Unauthorized rows never enter a retrieval candidate set.
-    navigation_mode = (
-        body.navigation_mode if SETTINGS.hierarchical_navigation_enabled else "direct"
-    )
     versions = STORE.list_library_versions(
         body.owner_id,
         body.knowledge_base_id,
@@ -834,47 +979,18 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
     direct = fuse_library_candidates(
         evidence, direct_lexical, direct_vector, mode=body.mode, top_k=candidate_k,
     )
-    section_hits = (
-        STORE.search_sections(attachment_ids, body.query, top_k=8)
-        if navigation_mode in {"hierarchical", "hybrid"} else []
-    )
-    scoped_ids = list(dict.fromkeys(
-        str(evidence_id)
-        for section in section_hits
-        if section.get("quality") != "low" and int(section.get("level") or 0) > 0
-        for evidence_id in section.get("evidence_ids") or []
-    ))
-    scoped_lexical = (
-        STORE.search_evidence(
-            attachment_ids, body.query, candidate_k, evidence_ids=scoped_ids,
-        )
-        if scoped_ids and body.mode in {"bm25", "hybrid"} else []
-    )
-    scoped = rank_section_evidence(
-        evidence, scoped_ids, scoped_lexical, direct_vector,
-        mode=body.mode, top_k=candidate_k,
-    ) if scoped_ids else []
-    if navigation_mode == "direct" or not scoped:
-        items = direct[:body.top_k]
-        fallback_reason = "no_reliable_sections" if navigation_mode != "direct" and not scoped else "none"
-    elif navigation_mode == "hierarchical":
-        # Keep direct candidates as a lower-weight reserve so a bad navigation
-        # decision cannot erase authoritative Evidence recall.
-        items = fuse_navigation_candidates(
-            direct, scoped, top_k=body.top_k, direct_weight=0.35, scoped_weight=1.0,
-        )
-        fallback_reason = "none"
-    else:
-        items = fuse_navigation_candidates(direct, scoped, top_k=body.top_k)
-        fallback_reason = "none"
     result = {
-        "items": items,
+        "items": direct[:body.top_k],
         "navigation": {
-            "mode": navigation_mode,
+            "mode": "direct",
             "requested_mode": body.navigation_mode,
-            "section_hits": len(section_hits),
-            "scoped_candidates": len(scoped),
-            "fallback_reason": fallback_reason,
+            "section_hits": 0,
+            "section_sparse_hits": 0,
+            "section_vector_hits": 0,
+            "scoped_candidates": 0,
+            "fallback_reason": (
+                "explicit_exploration_only" if body.navigation_mode != "direct" else "none"
+            ),
         },
     }
     if vector_degraded:

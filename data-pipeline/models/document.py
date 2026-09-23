@@ -79,6 +79,9 @@ class Chunk(BaseModel):
     index: int
     text: str
     chunk_id: str  # 全局唯一分块 ID，格式: "{doc_id}_chunk_{index}"
+    section_path: list[str] = Field(default_factory=list)
+    block_start: int | None = None
+    block_end: int | None = None
 
 
 class DocumentSection(BaseModel):
@@ -93,9 +96,22 @@ class DocumentSection(BaseModel):
     page_start: int | None = None
     page_end: int | None = None
     summary: str = ""
+    extractive_summary: str = ""
+    llm_summary: str = ""
+    summary_type: str = ""
+    summary_model: str = ""
+    summary_prompt_version: str = ""
+    summary_input_hash: str = ""
+    summary_status: str = "not_requested"
     evidence_ids: list[str] = Field(default_factory=list)
+    own_block_ids: list[str] = Field(default_factory=list)
+    subtree_block_ids: list[str] = Field(default_factory=list)
+    line_start: int | None = None
+    line_end: int | None = None
     quality: str = "low"
+    provenance: str = "native"
     ordinal: int = 0
+    navigation_text: str = ""
 
 
 class Document(BaseModel):

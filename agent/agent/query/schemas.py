@@ -2,7 +2,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from agent.schemas.query_plan import QueryIntent, QueryPlan
+from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent
 
 
 class IntentResult(BaseModel):
@@ -46,6 +46,7 @@ class QueryEnrichment(BaseModel):
 
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
+    source_intent: SourceIntent = Field(default_factory=SourceIntent)
     navigation_mode: Literal["direct", "hierarchical", "hybrid"] = "direct"
     scope: Literal["single_doc", "multi_doc", "kb"] = "kb"
     needs_structure: bool = False

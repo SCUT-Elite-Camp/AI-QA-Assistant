@@ -188,12 +188,6 @@ class SearchTool(BaseTool):
                     },
                     "additionalProperties": False,
                 },
-                "navigation_mode": {
-                    "type": "string",
-                    "description": "Evidence path: direct, hierarchical, or hybrid.",
-                    "enum": ["direct", "hierarchical", "hybrid"],
-                    "default": "direct",
-                },
             },
             "required": ["query"],
             "additionalProperties": False,
@@ -256,18 +250,6 @@ class SearchTool(BaseTool):
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
             results = self._normalize_results(raw_results, filters, float(min_score))
-            if navigation_mode in {"hierarchical", "hybrid"}:
-                section_hits = self._search_sections(query.strip(), filters, top_k=8)
-                scoped = self._load_section_evidence(
-                    section_hits, filters, float(min_score), max(top_k * 3, 20)
-                )
-                if scoped:
-                    results = self._fuse_navigation(
-                        results,
-                        scoped,
-                        direct_weight=0.35 if navigation_mode == "hierarchical" else 1.0,
-                        scoped_weight=1.0 if navigation_mode == "hierarchical" else 1.2,
-                    )
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
             self._log(trace, mode, top_k, 0, latency_ms, [])
@@ -320,6 +302,90 @@ class SearchTool(BaseTool):
                     hits.append(item)
         hits.sort(key=lambda item: (-float(item["score"]), str(item.get("id") or "")))
         return hits[:top_k]
+
+    def _authorized_sections(self, filters: Dict) -> Dict[str, Dict]:
+        sections: Dict[str, Dict] = {}
+        if not self.documents_dir.exists():
+            return sections
+        for path in self.documents_dir.glob("*.json"):
+            document = self._load_document_meta(path.stem)
+            if not document or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            doc_id = str(document.get("doc_id") or path.stem)
+            for section in document.get("sections") or []:
+                if not isinstance(section, dict) or not section.get("id"):
+                    continue
+                row = dict(section)
+                row["doc_id"] = doc_id
+                sections[str(row["id"])] = row
+        return sections
+
+    def browse_document_outline(
+        self,
+        query: str,
+        *,
+        doc_ids: Optional[List[str]] = None,
+        top_k: int = 8,
+    ) -> List[Dict]:
+        """Return Section navigation metadata, never citation Evidence."""
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            return []
+        self._validate_params(query, top_k, "bm25", None, 0.0)
+        filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
+        matched = self._search_sections(query.strip(), filters, top_k=max(1, top_k // 2))
+        from shared_runtime.document_sections import select_outline_candidates
+
+        return select_outline_candidates(
+            self._authorized_sections(filters).values(), matched, limit=top_k
+        )
+
+    def search_evidence_in_scope(
+        self,
+        query: str,
+        *,
+        section_ids: List[str],
+        top_k: int = 10,
+        mode: str = "hybrid",
+        doc_ids: Optional[List[str]] = None,
+    ) -> List[Dict]:
+        """Retrieve authoritative chunks constrained by selected Section IDs."""
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            return []
+        self._validate_params(query, top_k, mode, None, 0.0)
+        requested = list(dict.fromkeys(str(value) for value in section_ids if str(value)))[:20]
+        if not requested:
+            raise RetrievalParameterError("section_ids must contain at least one Section ID")
+        filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
+        sections = self._authorized_sections(filters)
+        selected = [sections[value] for value in requested if value in sections]
+        chunk_ids = sorted({
+            str(chunk_id)
+            for section in selected
+            for chunk_id in section.get("evidence_ids") or []
+            if str(chunk_id)
+        })
+        if not chunk_ids:
+            return []
+        matched_by_chunk: Dict[str, List[str]] = {}
+        for section in selected:
+            section_id = str(section["id"])
+            for chunk_id in section.get("evidence_ids") or []:
+                matched_by_chunk.setdefault(str(chunk_id), []).append(section_id)
+        scoped_filters = dict(filters)
+        scoped_filters["chunk_ids"] = chunk_ids
+        raw = self._search_internal(query.strip(), max(top_k * 3, 20), mode, scoped_filters)
+        rows = self._normalize_results(raw, scoped_filters, 0.0)[:top_k]
+        for row in rows:
+            row["matched_section_ids"] = matched_by_chunk.get(
+                str(row.get("chunk_id") or ""), []
+            )
+        return rows
 
     def _load_section_evidence(
         self,
