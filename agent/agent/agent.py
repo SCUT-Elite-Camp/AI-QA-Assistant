@@ -1,11 +1,7 @@
 import logging
-<<<<<<< HEAD
+import os
 import re
 from typing import Any, Dict, List, Optional
-=======
-import os
-from typing import Any, Optional
->>>>>>> origin/toolset
 
 from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
@@ -789,6 +785,15 @@ class Agent:
                         source_url=r.get("source_url", None),
                         score=float(r.get("score", 0.0)) if r.get("score") is not None else None,
                         snippet=str(r.get("chunk_text", r.get("snippet", r.get("content", ""))) or ""),
+                        source_type=str(r.get("source_type") or "knowledge"),
+                        attachment_id=r.get("attachment_id"),
+                        evidence_id=r.get("evidence_id"),
+                        locator=r.get("locator"),
+                        version=r.get("version"),
+                        source_scope=r.get("source_scope"),
+                        knowledge_base_id=r.get("knowledge_base_id"),
+                        document_id=r.get("document_id"),
+                        version_id=r.get("version_id"),
                     )
                     for idx, r in enumerate(results, start=1)
                 ]
@@ -942,10 +947,19 @@ class Agent:
                     citation_id=idx,
                     doc_id=str(_get_ev(ev, "doc_id", "") or ""),
                     chunk_id=str(_get_ev(ev, "chunk_id", "") or ""),
-                    title=_get_ev(ev, "title", f"Document {idx}") or f"Document {idx}",
+                    title=str(_get_ev(ev, "title", f"Document {idx}") or f"Document {idx}"),
                     source_url=_get_ev(ev, "source_url", None),
                     score=float(_get_ev(ev, "score", 0.0)) if _get_ev(ev, "score") is not None else None,
                     snippet=str(_get_ev(ev, "chunk_text", _get_ev(ev, "snippet", _get_ev(ev, "content", ""))) or ""),
+                    source_type=str(_get_ev(ev, "source_type", "knowledge") or "knowledge"),
+                    attachment_id=_get_ev(ev, "attachment_id", None),
+                    evidence_id=_get_ev(ev, "evidence_id", None),
+                    locator=_get_ev(ev, "locator", None),
+                    version=_get_ev(ev, "version", None),
+                    source_scope=_get_ev(ev, "source_scope", None),
+                    knowledge_base_id=_get_ev(ev, "knowledge_base_id", None),
+                    document_id=_get_ev(ev, "document_id", None),
+                    version_id=_get_ev(ev, "version_id", None),
                 )
                 for idx, ev in enumerate(state.evidence, start=1)
             ]

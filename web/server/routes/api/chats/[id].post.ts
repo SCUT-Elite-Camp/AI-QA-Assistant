@@ -4,22 +4,18 @@ import { createHmac } from 'node:crypto'
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
-import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq, and, inArray } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { MODELS } from '../../../../shared/utils/models'
 import { logger, logMemoryEvent } from '../../../utils/logger'
 import { agentFetch } from '../../../utils/agent-client'
 import {
   recordAiCall,
   recordMemoryCompaction,
   recordMemoryDuration,
-  recordMemoryFact,
-  recordMemoryFallback,
-  recordMemoryResolve
+  recordMemoryFact
 } from '../../../utils/metrics'
-import { ensureTopicDir, loadTopicFromDisk, syncAllTopicDocuments, syncTopicToDisk } from '../../../utils/topicStorage'
+import { ensureTopicDir, loadTopicFromDisk, syncAllTopicDocuments } from '../../../utils/topicStorage'
 import { requireOwnedChat } from '../../../utils/chatAccess'
 import { compactAfterSuccessfulAssistantPersistence } from '../../../utils/postTurnCompaction'
 import {
@@ -41,7 +37,6 @@ import { requireAttachmentAccess } from '../../../utils/attachmentAccess'
 import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
 import { extractAttachmentSelection, mergeSafeAttachmentParts } from '../../../../shared/utils/attachmentParts'
 import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
-import { createAgentStreamError, getAgentFailureMessage } from '../../../utils/agentResponse'
 import { getOrCreateDefaultLibrary } from '../../../utils/library'
 import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
 import { chatExplorationMode } from '../../../../shared/utils/chatExploration'

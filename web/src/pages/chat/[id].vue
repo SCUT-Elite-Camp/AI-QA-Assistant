@@ -16,7 +16,6 @@ import ChatMessageContent from '../../components/chat/message/MessageContent.vue
 import ChatMessageActions from '../../components/chat/message/MessageActions.vue'
 import ChatVisibility from '../../components/chat/ChatVisibility.vue'
 import ChatTitle from '../../components/chat/ChatTitle.vue'
-import ChatIndicator from '../../components/chat/Indicator.vue'
 import Navbar from '../../components/Navbar.vue'
 import SelectionDrawer from '../../components/chat/SelectionDrawer.vue'
 import DialogueTreeModal from '../../components/chat/DialogueTreeModal.vue'

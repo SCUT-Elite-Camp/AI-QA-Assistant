@@ -1,9 +1,6 @@
 from typing import Any, Literal, Optional
 
-<<<<<<< HEAD
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-=======
-from pydantic import BaseModel, Field, model_validator
 
 
 class AttachmentContext(BaseModel):
@@ -25,7 +22,6 @@ class PersonalLibraryContext(BaseModel):
     owner_user_id: str = Field(min_length=1, max_length=128)
     knowledge_base_id: str = Field(min_length=1, max_length=128)
     access_token: str = Field(min_length=64, max_length=64)
->>>>>>> origin/toolset
 
 
 class ChatRequest(BaseModel):
