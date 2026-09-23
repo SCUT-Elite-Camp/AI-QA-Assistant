@@ -684,10 +684,12 @@ class AgentRunner:
             constrained["top_k"] = top_k
             constrained["mode"] = mode
             constrained["filters"] = dict(query_plan.filters)
+            constrained["navigation_mode"] = query_plan.navigation_mode
         elif tool_name == "search_library":
             constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
             constrained["mode"] = mode
+            constrained["navigation_mode"] = query_plan.navigation_mode
             doc_ids = query_plan.filters.get("doc_ids")
             if doc_ids is None and query_plan.filters.get("doc_id") is not None:
                 doc_ids = [query_plan.filters["doc_id"]]
@@ -782,6 +784,7 @@ class AgentRunner:
                     filters=query_plan.filters or None,
                     min_score=settings.MIN_RETRIEVAL_SCORE,
                     trace_id=trace_id,
+                    navigation_mode=query_plan.navigation_mode,
                 )
                 results = self._filter_search_results(results)
                 return self._format_search_observation(results), list(results), True

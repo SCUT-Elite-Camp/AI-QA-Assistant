@@ -1,4 +1,4 @@
-from attachment_service.library_service import fuse_library_candidates
+from attachment_service.library_service import fuse_library_candidates, rank_section_evidence
 
 
 def _item(identifier: str):
@@ -27,3 +27,12 @@ def test_bm25_and_vector_modes_do_not_mix_unrequested_backend():
     vector = [_item("vector")]
     assert [item["evidence_id"] for item in fuse_library_candidates(evidence, lexical, vector, mode="bm25", top_k=5)] == ["lexical"]
     assert [item["evidence_id"] for item in fuse_library_candidates(evidence, lexical, vector, mode="vector", top_k=5)] == ["vector"]
+
+
+def test_section_path_can_recall_authoritative_evidence_missing_from_direct_candidates():
+    evidence = {"direct": _item("direct"), "section": _item("section")}
+    items = rank_section_evidence(
+        evidence, ["section"], lexical=[], vector=[_item("direct")],
+        mode="vector", top_k=5,
+    )
+    assert [item["evidence_id"] for item in items] == ["section"]

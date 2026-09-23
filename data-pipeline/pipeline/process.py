@@ -16,6 +16,7 @@ from models.document import Document
 from parsers.registry import parse_file, supported_extensions
 from pipeline.chunker import chunk_text, chunk_from_blocks
 from pipeline.embedder import embed_texts
+from pipeline.structure import build_document_sections
 from retrieval.bm25_index import BM25Index
 from storage.document_store import save_document
 from storage.milvus_store import MilvusStore
@@ -82,6 +83,7 @@ def process_folder(
                 else:
                     chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
                 doc.chunks = chunks
+                doc.sections = build_document_sections(doc)
                 print(f"    [{doc.doc_id[:8]}] 切片完成，共 {len(chunks)} 个分块")
 
                 if not chunks:

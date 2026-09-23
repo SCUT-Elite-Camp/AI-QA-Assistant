@@ -14,6 +14,7 @@ from models.document import Document
 from parsers.registry import parse_file, supported_extensions
 from pipeline.chunker import chunk_text, chunk_from_blocks
 from pipeline.embedder import embed_texts
+from pipeline.structure import build_document_sections
 from retrieval.bm25_index import BM25Index
 from storage.document_store import save_document
 from storage.milvus_store import MilvusStore
@@ -120,13 +121,14 @@ def auto_process_raws(
             else:
                 chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
             doc.chunks = chunks
+            doc.sections = build_document_sections(doc)
             print(f"  → 分块完成，共 {len(chunks)} 个分块")
             
             if not chunks:
                 print(f"  [Warning] 分块内容为空，跳过该文件")
                 continue
                 
-            # 3. 文本向量化
+            # 3. 文本向量化（Section 是可重建的导航派生物）
             chunk_texts = [ch.text for ch in chunks]
             print(f"  → 正在对 {len(chunk_texts)} 个分块生成语义向量...")
             embeddings = embed_texts(chunk_texts)

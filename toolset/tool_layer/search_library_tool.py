@@ -37,6 +37,11 @@ class SearchLibraryTool(BaseTool):
                 "top_k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
                 "doc_ids": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
                 "mode": {"type": "string", "enum": ["hybrid", "vector", "bm25"], "default": "hybrid"},
+                "navigation_mode": {
+                    "type": "string",
+                    "enum": ["direct", "hierarchical", "hybrid"],
+                    "default": "direct",
+                },
             },
             "required": ["query"],
             "additionalProperties": False,
@@ -62,7 +67,12 @@ class SearchLibraryTool(BaseTool):
         owner_id, knowledge_base_id = context
         query = str(kwargs.get("query") or "").strip()
         mode = str(kwargs.get("mode") or "hybrid")
-        if not query or mode not in {"hybrid", "vector", "bm25"}:
+        navigation_mode = str(kwargs.get("navigation_mode") or "direct")
+        if (
+            not query
+            or mode not in {"hybrid", "vector", "bm25"}
+            or navigation_mode not in {"direct", "hierarchical", "hybrid"}
+        ):
             return {"error": "invalid_library_query", "items": []}
         try:
             top_k = min(20, max(1, int(kwargs.get("top_k", 5))))
@@ -74,6 +84,12 @@ class SearchLibraryTool(BaseTool):
             "query": query,
             "top_k": top_k,
             "mode": mode,
+            "navigation_mode": (
+                navigation_mode
+                if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower()
+                in {"1", "true", "yes"}
+                else "direct"
+            ),
         }
         doc_ids = kwargs.get("doc_ids")
         if doc_ids is not None:

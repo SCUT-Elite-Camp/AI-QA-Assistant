@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -186,7 +187,13 @@ class SearchTool(BaseTool):
                         "doc_type": {"type": "string"},
                     },
                     "additionalProperties": False,
-                }
+                },
+                "navigation_mode": {
+                    "type": "string",
+                    "description": "Evidence path: direct, hierarchical, or hybrid.",
+                    "enum": ["direct", "hierarchical", "hybrid"],
+                    "default": "direct",
+                },
             },
             "required": ["query"],
             "additionalProperties": False,
@@ -197,8 +204,16 @@ class SearchTool(BaseTool):
         top_k = kwargs.get("top_k", 5)
         mode = kwargs.get("mode", "hybrid")
         filters = kwargs.get("filters")
+        navigation_mode = kwargs.get("navigation_mode", "direct")
 
-        results = self.search(query=query, top_k=top_k, mode=mode, filters=filters, min_score=self.min_score)
+        results = self.search(
+            query=query,
+            top_k=top_k,
+            mode=mode,
+            filters=filters,
+            min_score=self.min_score,
+            navigation_mode=navigation_mode,
+        )
         self.latest_results = results
 
         if not results:
@@ -223,8 +238,17 @@ class SearchTool(BaseTool):
         filters: Optional[Dict] = None,
         min_score: float = 0.0,
         trace_id: Optional[str] = None,
+        navigation_mode: str = "direct",
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
+        if navigation_mode not in {"direct", "hierarchical", "hybrid"}:
+            raise RetrievalParameterError(
+                "invalid_navigation_mode: expected direct, hierarchical, or hybrid"
+            )
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            navigation_mode = "direct"
         started = time.perf_counter()
         trace = trace_id or "-"
         filters = _normalize_public_filters(filters)
@@ -232,6 +256,18 @@ class SearchTool(BaseTool):
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
             results = self._normalize_results(raw_results, filters, float(min_score))
+            if navigation_mode in {"hierarchical", "hybrid"}:
+                section_hits = self._search_sections(query.strip(), filters, top_k=8)
+                scoped = self._load_section_evidence(
+                    section_hits, filters, float(min_score), max(top_k * 3, 20)
+                )
+                if scoped:
+                    results = self._fuse_navigation(
+                        results,
+                        scoped,
+                        direct_weight=0.35 if navigation_mode == "hierarchical" else 1.0,
+                        scoped_weight=1.0 if navigation_mode == "hierarchical" else 1.2,
+                    )
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
             self._log(trace, mode, top_k, 0, latency_ms, [])
@@ -250,6 +286,111 @@ class SearchTool(BaseTool):
         top_scores = [row["score"] for row in results[:5]]
         self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
         return results
+
+    def _search_sections(self, query: str, filters: Dict, *, top_k: int) -> List[Dict]:
+        """Rank version-local Section metadata after document authorization."""
+        tokens = [token.casefold() for token in query.split() if token][:20]
+        hits: List[Dict] = []
+        if not self.documents_dir.exists():
+            return hits
+        for path in self.documents_dir.glob("*.json"):
+            try:
+                with path.open("r", encoding="utf-8") as source:
+                    document = json.load(source)
+            except (OSError, ValueError, TypeError):
+                continue
+            if not isinstance(document, dict) or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            document_id = str(document.get("doc_id") or path.stem)
+            for section in document.get("sections") or []:
+                if not isinstance(section, dict):
+                    continue
+                text = " ".join([
+                    str(section.get("title") or ""),
+                    " / ".join(str(value) for value in section.get("section_path") or []),
+                    str(section.get("extractive_summary") or section.get("summary") or ""),
+                ]).casefold()
+                score = sum(text.count(token) for token in tokens)
+                if score:
+                    item = dict(section)
+                    item["doc_id"] = document_id
+                    item["score"] = float(score)
+                    hits.append(item)
+        hits.sort(key=lambda item: (-float(item["score"]), str(item.get("id") or "")))
+        return hits[:top_k]
+
+    def _load_section_evidence(
+        self,
+        section_hits: List[Dict],
+        filters: Dict,
+        min_score: float,
+        limit: int,
+    ) -> List[Dict]:
+        selected: Dict[str, set[str]] = {}
+        for section in section_hits:
+            if section.get("quality") == "low" or int(section.get("level") or 0) <= 0:
+                continue
+            doc_id = str(section.get("doc_id") or "")
+            if doc_id:
+                selected.setdefault(doc_id, set()).update(
+                    str(value) for value in section.get("evidence_ids") or []
+                )
+        raw: List[Dict] = []
+        for doc_id, chunk_ids in selected.items():
+            document = self._load_document_meta(doc_id)
+            if not document or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            for chunk in document.get("chunks") or []:
+                if not isinstance(chunk, dict):
+                    continue
+                chunk_id = str(chunk.get("chunk_id") or "")
+                if chunk_id not in chunk_ids:
+                    continue
+                raw.append({
+                    "doc_id": doc_id,
+                    "chunk_id": chunk_id,
+                    "chunk_index": chunk.get("index", 0),
+                    "text": chunk.get("text", ""),
+                    "score": 1.0,
+                    "title": document.get("title", ""),
+                    "source_url": document.get("source_url", ""),
+                })
+                if len(raw) >= limit:
+                    break
+            if len(raw) >= limit:
+                break
+        return self._normalize_results(raw, filters, min_score)
+
+    @staticmethod
+    def _fuse_navigation(
+        direct: List[Dict],
+        scoped: List[Dict],
+        *,
+        direct_weight: float,
+        scoped_weight: float,
+        rrf_k: int = 60,
+    ) -> List[Dict]:
+        by_id: Dict[str, Dict] = {}
+        scores: Dict[str, float] = {}
+        for weight, rows in ((direct_weight, direct), (scoped_weight, scoped)):
+            for rank, item in enumerate(rows, 1):
+                key = str(item.get("chunk_id") or "")
+                if not key:
+                    continue
+                by_id.setdefault(key, dict(item))
+                scores[key] = scores.get(key, 0.0) + weight / (rrf_k + rank)
+        maximum = max(scores.values(), default=1.0)
+        ordered = sorted(scores, key=lambda key: (-scores[key], key))
+        output: List[Dict] = []
+        for key in ordered:
+            item = dict(by_id[key])
+            item["score"] = min(1.0, scores[key] / maximum) if maximum else 0.0
+            output.append(item)
+        return output
 
     def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         # 空白名单短路：doc_ids 显式为空列表表示用户无可访问文件，直接返回空结果。
