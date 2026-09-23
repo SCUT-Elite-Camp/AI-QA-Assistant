@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 from .base_tool import BaseTool
+from .document_tools import FindDocumentsTool, GetDocumentTool
 from .search_tool import SearchTool
 
 
@@ -22,6 +23,15 @@ def _build_default_search_tool() -> SearchTool:
     return SearchTool()
 
 
+def _build_default_tools() -> List[BaseTool]:
+    search_tool = _build_default_search_tool()
+    return [
+        search_tool,
+        FindDocumentsTool(search_tool),
+        GetDocumentTool(search_tool.documents_dir),
+    ]
+
+
 class ToolRegistry:
     """Registry class responsible for maintaining and exposing all tools in the toolset layer.
 
@@ -33,7 +43,7 @@ class ToolRegistry:
         self._tools: Dict[str, BaseTool] = {}
         if tools is None:
             # Register default tools in the toolset layer
-            default_tools = [_build_default_search_tool()]
+            default_tools = _build_default_tools()
         else:
             default_tools = tools
 
