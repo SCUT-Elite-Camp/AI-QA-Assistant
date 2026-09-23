@@ -28,8 +28,8 @@ from agent.query import (
     UnifiedQueryAnalyzer,
 )
 from agent.retrieval import CorrectiveRetrievalPlanner
-from agent.runtime import AgentRunResult, AgentRunner, StopReason
-from agent.schemas.chat import ChatRequest, ChatResponse, InternalChatRequest
+from agent.runtime import AgentRunResult, AgentRunner, StopReason, AgentState
+from agent.schemas.chat import ChatRequest, ChatResponse, Citation, InternalChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
@@ -691,4 +691,246 @@ class Agent:
     def get_history(self, limit: int = 50) -> list[dict]:
         """Return persisted audit records (not ConversationMemory messages)."""
         return self.audit_service.store.get_records(limit)
+
+    def stream_chat(self, request: ChatRequest):
+        """Execute streaming chat turn yielding (event_name, event_payload) tuples."""
+        trace_id = self.trace_service.start_trace()
+        start_time = self.audit_service.start_timer()
+        try:
+            # =========================================================================
+            # FAST MODE: Independent direct RAG pipeline without agent multi-turn loops
+            # =========================================================================
+            if request.weight_mode == "fast":
+                search_tool = self.registry.get_tool("search_documents")
+                results = []
+                if isinstance(search_tool, SearchTool):
+                    results = search_tool.search(
+                        query=request.query,
+                        top_k=request.top_k or 5,
+                        mode=request.retrieval_mode or "hybrid",
+                        topic_doc_ids=request.topic_doc_ids,
+                        topic_titles=request.topic_titles,
+                        weight_mode="fast",
+                        consecutive_no_new_docs_count=request.consecutive_no_new_docs_count or 0,
+                    )
+
+                citations = [
+                    Citation(
+                        citation_id=idx,
+                        doc_id=str(r.get("doc_id", "") or ""),
+                        chunk_id=str(r.get("chunk_id", "") or ""),
+                        title=str(r.get("title", f"Document {idx}") or f"Document {idx}"),
+                        source_url=r.get("source_url", None),
+                        score=float(r.get("score", 0.0)) if r.get("score") is not None else None,
+                        snippet=str(r.get("chunk_text", r.get("snippet", r.get("content", ""))) or ""),
+                    )
+                    for idx, r in enumerate(results, start=1)
+                ]
+                yield "citations", [c.model_dump() for c in citations]
+
+                context_blocks = []
+                for idx, c in enumerate(citations, start=1):
+                    context_blocks.append(f"[{idx}] 标题: {c.title}\n内容: {c.snippet}")
+                context_text = "\n\n".join(context_blocks) if context_blocks else "无相关参考文档"
+
+                history = self.orchestrator._read_history(request.session_id)
+                is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
+                title_directive = (
+                    "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
+                    if is_first
+                    else ""
+                )
+
+                system_prompt = (
+                    "你是一个高效、精准的智能知识库问答助手。请根据提供的【参考上下文】详细回答用户的问题。\n"
+                    "回答要求：\n"
+                    "1. 事实严格基于参考上下文，条理清晰、层次分明；\n"
+                    "2. 如果参考上下文未包含答案，请如实说明，并结合已知通用常识给出清晰提示；\n"
+                    "3. 在引用上下文事实的地方，可适当标注引用编号（如 [1]、[2]）；\n"
+                    "4. 直接输出最终回答，不要输出任何工具调用代码或标签。"
+                    f"{title_directive}"
+                )
+
+                fast_messages = [{"role": "system", "content": system_prompt}]
+                for msg in (history or []):
+                    if msg.get("role") in ("user", "assistant") and msg.get("content"):
+                        fast_messages.append({"role": msg["role"], "content": msg["content"]})
+
+                fast_messages.append({
+                    "role": "user",
+                    "content": f"【参考上下文】:\n{context_text}\n\n【用户问题】:\n{request.query}"
+                })
+
+                accumulated_answer = ""
+                for delta in self.llm.stream_chat(fast_messages):
+                    reasoning = delta.get("reasoning_content")
+                    content = delta.get("content")
+                    if reasoning:
+                        yield "reasoning", {"content": reasoning}
+                    if content:
+                        clean_content = re.sub(r"<longcat_.*?/?>|</longcat_.*?>", "", content)
+                        if clean_content:
+                            accumulated_answer += clean_content
+                            yield "token", {"content": clean_content}
+
+                extracted_title, clean_answer = self._separate_title_and_answer(accumulated_answer)
+                chat_title = extracted_title
+                if not chat_title and is_first:
+                    chat_title = self._generate_fallback_title(request.query)
+
+                self.orchestrator.memory.add_message(request.session_id, "user", request.query)
+                self.orchestrator.memory.add_message(request.session_id, "assistant", clean_answer)
+
+                yield "done", {
+                    "trace_id": trace_id,
+                    "status": "success",
+                    "citations_count": len(citations),
+                    "chat_title": chat_title,
+                }
+                return
+
+            # =========================================================================
+            # THINKING / AUTO MODE: Full Agent Planning & Reasoning Pipeline
+            # =========================================================================
+            search_tool = self.registry.get_tool("search_documents")
+            if isinstance(search_tool, SearchTool):
+                search_tool.topic_doc_ids = request.topic_doc_ids
+                search_tool.topic_titles = request.topic_titles
+                search_tool.weight_mode = request.weight_mode or "auto"
+                search_tool.consecutive_no_new_docs_count = request.consecutive_no_new_docs_count or 0
+
+            history = self.orchestrator._read_history(request.session_id)
+            plan = self.orchestrator._resolve_query_plan(request, None, history)
+            policy = self.orchestrator.policy_router.route(plan)
+            retrieval_mode, top_k = self.orchestrator._effective_retrieval_options(request, policy)
+            is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
+
+            state = AgentState(
+                trace_id=trace_id,
+                query_plan=plan,
+                messages=self.orchestrator.runner._build_messages(
+                    plan,
+                    history or [],
+                    is_first_message=is_first,
+                    soul_content=request.soul_content,
+                ),
+            )
+
+            for iteration in range(1, 3):
+                schemas = self.orchestrator.runner._tool_schemas(policy)
+                initial_res = self.llm.chat(state.messages, tools=schemas)
+                tool_calls = initial_res.get("tool_calls") or []
+
+                content_str = initial_res.get("content") or ""
+                if not tool_calls and "<longcat_tool_call>" in content_str:
+                    match = re.search(r"<longcat_tool_call>(\w+)(.*?)</longcat_tool_call>", content_str, re.DOTALL)
+                    if match:
+                        t_name = match.group(1).strip()
+                        args_raw = match.group(2)
+                        arg_matches = re.findall(r"<longcat_arg_key>(\w+)</longcat_arg_key>\s*<longcat_arg_value>(.*?)</longcat_arg_value>", args_raw, re.DOTALL)
+                        t_args = {k: v.strip() for k, v in arg_matches}
+                        import json as pyjson
+                        tool_calls = [{"id": f"call_longcat_{iteration}", "type": "function", "function": {"name": t_name, "arguments": pyjson.dumps(t_args)}}]
+
+                if not tool_calls:
+                    break
+
+                state.messages.append(self.orchestrator.runner._assistant_tool_call_message(initial_res, tool_calls))
+                for raw_call in tool_calls:
+                    call_id, tool_name, arguments = self.orchestrator.runner._parse_tool_call(raw_call)
+                    arguments = self.orchestrator.runner._apply_execution_constraints(
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        query_plan=plan,
+                        mode=retrieval_mode,
+                        top_k=top_k,
+                    )
+                    tool = self.orchestrator.runner._get_tool(tool_name, policy)
+                    if tool:
+                        observation, evidence, is_retrieval = self.orchestrator.runner._execute_tool(
+                            tool=tool,
+                            tool_name=tool_name,
+                            arguments=arguments,
+                            query_plan=plan,
+                            trace_id=trace_id,
+                            tool_call_id=call_id,
+                            tool_executor=self.orchestrator.tool_executor,
+                            retrieval_attempt=iteration,
+                        )
+                        if evidence:
+                            state.evidence.extend(evidence)
+                        state.messages.append({
+                            "role": "tool",
+                            "tool_call_id": call_id,
+                            "name": tool_name,
+                            "content": observation,
+                        })
+
+            def _get_ev(item, key, default=None):
+                if isinstance(item, dict):
+                    return item.get(key, default)
+                return getattr(item, key, default)
+
+            citations = [
+                Citation(
+                    citation_id=idx,
+                    doc_id=str(_get_ev(ev, "doc_id", "") or ""),
+                    chunk_id=str(_get_ev(ev, "chunk_id", "") or ""),
+                    title=_get_ev(ev, "title", f"Document {idx}") or f"Document {idx}",
+                    source_url=_get_ev(ev, "source_url", None),
+                    score=float(_get_ev(ev, "score", 0.0)) if _get_ev(ev, "score") is not None else None,
+                    snippet=str(_get_ev(ev, "chunk_text", _get_ev(ev, "snippet", _get_ev(ev, "content", ""))) or ""),
+                )
+                for idx, ev in enumerate(state.evidence, start=1)
+            ]
+            yield "citations", [c.model_dump() for c in citations]
+
+            state.messages.append({
+                "role": "system",
+                "content": "请基于已检索到的知识库事实与文档，直接给出完整、条理清晰的最终解答。不要输出任何工具调用标签。"
+            })
+
+            accumulated_answer = ""
+            for delta in self.llm.stream_chat(state.messages):
+                reasoning = delta.get("reasoning_content")
+                content = delta.get("content")
+                if reasoning:
+                    yield "reasoning", {"content": reasoning}
+                if content:
+                    clean_content = re.sub(r"<longcat_.*?/?>|</longcat_.*?>", "", content)
+                    if clean_content:
+                        accumulated_answer += clean_content
+                        yield "token", {"content": clean_content}
+
+            extracted_title, clean_answer = self._separate_title_and_answer(accumulated_answer)
+            chat_title = extracted_title
+            if not chat_title and is_first:
+                chat_title = self._generate_fallback_title(request.query)
+
+            yield "done", {
+                "trace_id": trace_id,
+                "status": "success",
+                "citations_count": len(citations),
+                "chat_title": chat_title,
+            }
+
+            resp_obj = ChatResponse(
+                trace_id=trace_id,
+                query=request.query,
+                status=StatusCode.SUCCESS,
+                answer=clean_answer or accumulated_answer,
+                message="",
+                citations=citations,
+                chat_title=chat_title,
+            )
+            self._save_conversation_turn(
+                session_id=request.session_id,
+                query=plan.original_query,
+                response=resp_obj,
+            )
+
+        except Exception as exc:
+            yield "error", {"message": str(exc)}
+        finally:
+            self.trace_service.clear_trace()
 

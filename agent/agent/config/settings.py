@@ -30,6 +30,14 @@ def _env_float(name: str, default: float) -> float:
     return float(value)
 
 
+def _find_project_root() -> Path:
+    cur = Path(__file__).resolve()
+    for parent in [cur] + list(cur.parents):
+        if (parent / "requirements.txt").exists() or (parent / "start_project.py").exists():
+            return parent
+    return cur.parents[3] if len(cur.parents) > 3 else cur.parent
+
+
 class Settings(BaseModel):
     """Global settings for Agent Layer."""
 
@@ -153,7 +161,7 @@ class Settings(BaseModel):
     # 默认定位到 AI-QA-Assistant/web/.data/sqlite.db。
     WEB_SQLITE_PATH: str = os.getenv(
         "WEB_SQLITE_PATH",
-        str(Path(__file__).resolve().parents[3] / "web" / ".data" / "sqlite.db"),
+        str(_find_project_root() / "web" / ".data" / "sqlite.db"),
     )
 
 

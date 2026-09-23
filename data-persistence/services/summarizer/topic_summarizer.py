@@ -23,10 +23,8 @@ LLM_MODEL = os.getenv("LLM_MODEL", "LongCat-2.0")
 
 
 def _get_topics_base_dir() -> Path:
-    cwd = Path.cwd()
-    if cwd.name in ["web", "agent", "toolset", "data-pipeline"]:
-        cwd = cwd.parent
-    topics_dir = cwd / "data-persistence" / "data" / "topics"
+    persistence_root = Path(__file__).resolve().parent.parent.parent
+    topics_dir = persistence_root / "data" / "topics"
     topics_dir.mkdir(parents=True, exist_ok=True)
     return topics_dir
 

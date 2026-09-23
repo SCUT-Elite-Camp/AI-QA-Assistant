@@ -167,6 +167,7 @@ max_tokens = get_env("LLM_MAX_TOKENS", "2000")
 timeout = get_env("LLM_TIMEOUT", "60")
 retrieval_mode = get_env("DEFAULT_RETRIEVAL_MODE", "hybrid")
 retrieval_backend = get_env("RETRIEVAL_BACKEND", "milvus")
+agent_api_key = get_env("AGENT_API_KEY", "qa_assistant_agent_secret_token_2026")
 
 if not api_key:
     print("WARNING: LLM_API_KEY is not set! LLM calls will fail.")
@@ -180,6 +181,7 @@ env_content = (
     "TOOL_LAYER_CLASS=SearchTool\n"
     f"RETRIEVAL_BACKEND={retrieval_backend}\n"
     "LOG_LEVEL=INFO\n"
+    f"AGENT_API_KEY={agent_api_key}\n"
     "\n"
     "# LLM API 配置\n"
     f"LLM_API_BASE={api_base}\n"
@@ -261,6 +263,7 @@ print("Starting Web Frontend service...")
 web_dir = project_root / "web"
 web_env = os.environ.copy()
 web_env["SESSION_SECRET"] = "a_very_secret_key_123456_for_qa_assistant"
+web_env["AGENT_API_KEY"] = agent_api_key
 web_proc = subprocess.Popen(
     ["node", str(web_dir / "node_modules" / "vite" / "bin" / "vite.js"), "--host", "0.0.0.0", "--port", "3000"],
     cwd=str(web_dir),
@@ -279,7 +282,14 @@ def preload_in_background():
                 if response.status == 200:
                     chat_url = "http://127.0.0.1:8000/api/chat"
                     data = json.dumps({"query": "预热", "top_k": 1, "retrieval_mode": "hybrid"}).encode("utf-8")
-                    req = urllib.request.Request(chat_url, data=data, headers={"Content-Type": "application/json"})
+                    req = urllib.request.Request(
+                        chat_url,
+                        data=data,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {agent_api_key}",
+                        }
+                    )
                     with urllib.request.urlopen(req, timeout=30) as chat_response:
                         if chat_response.status == 200:
                             print("RAG models preloaded successfully in background.")
