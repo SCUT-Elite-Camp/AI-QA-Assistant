@@ -339,6 +339,8 @@ class AgentRunner:
                     "find_documents",
                     "get_document",
                     "search_library",
+                    "search_attachments",
+                    "inspect_attachment",
                 }
                 if (
                     policy is not None
@@ -591,6 +593,12 @@ class AgentRunner:
                 "\n\n工具选择规则：使用 find_documents 查找或列出文档；"
                 "其结果是文档身份与摘要，不得视为全文。"
             )
+        if "search_attachments" in tools:
+            return (
+                "\n\n工具选择规则：先用 search_attachments 检索当前请求已授权附件；"
+                "仅当文本/OCR 证据不足且需要理解图片或页面区域时，"
+                "才使用 inspect_attachment。不得自行构造 attachment_id。"
+            )
         return ""
 
     def _get_tool(
@@ -687,6 +695,13 @@ class AgentRunner:
                 constrained["doc_ids"] = (
                     [doc_ids] if isinstance(doc_ids, str) else list(doc_ids)
                 )
+        elif tool_name == "search_attachments":
+            constrained["query"] = query_plan.standalone_query
+            constrained["top_k"] = top_k
+        elif tool_name == "inspect_attachment":
+            constrained["question"] = str(
+                constrained.get("question") or query_plan.standalone_query
+            )
         elif tool_name == "find_documents":
             if not constrained.get("query") and not constrained.get("filters"):
                 constrained["query"] = query_plan.standalone_query
@@ -742,10 +757,19 @@ class AgentRunner:
                     result.error_message or "工具执行失败，请稍后重试。",
                 )
             evidence = [item.model_dump() for item in result.evidence]
-            if tool_name in {"search_documents", "search_library"}:
+            if tool_name in {
+                "search_documents",
+                "search_library",
+                "search_attachments",
+                "inspect_attachment",
+            }:
                 return self._format_search_observation(evidence), evidence, True
             is_retrieval = tool_name in {
-                "find_documents", "get_document", "search_library"
+                "find_documents",
+                "get_document",
+                "search_library",
+                "search_attachments",
+                "inspect_attachment",
             }
             return self._stringify_result(result.data or {}), evidence, is_retrieval
 
@@ -767,7 +791,13 @@ class AgentRunner:
         return (
             self._stringify_result(result),
             evidence,
-            tool_name in {"find_documents", "get_document", "search_library"},
+            tool_name in {
+                "find_documents",
+                "get_document",
+                "search_library",
+                "search_attachments",
+                "inspect_attachment",
+            },
         )
 
     def _execute_parallel_comparison_retrieval(

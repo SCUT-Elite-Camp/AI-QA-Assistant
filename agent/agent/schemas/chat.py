@@ -23,7 +23,11 @@ class ChatRequest(BaseModel):
     @classmethod
     def reject_public_memory_context(cls, value: Any) -> Any:
         """Keep browser-supplied persistent Memory out of the public route."""
-        trusted_fields = {"memory_context", "personal_library_context"}
+        trusted_fields = {
+            "memory_context",
+            "personal_library_context",
+            "attachment_context",
+        }
         if (
             cls is ChatRequest
             and isinstance(value, dict)
@@ -140,6 +144,26 @@ class PersonalLibraryContext(BaseModel):
     access_token: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
+class AttachmentContext(BaseModel):
+    """Server-authorized attachment IDs for this request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    allowed_attachment_ids: list[str] = Field(default_factory=list, max_length=100)
+    selected_attachment_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def validate_selection(self) -> "AttachmentContext":
+        allowed = set(self.allowed_attachment_ids)
+        if any(not value.startswith("att_") for value in allowed):
+            raise ValueError("allowed attachment IDs must use the att_ prefix")
+        if any(value not in allowed for value in self.selected_attachment_ids):
+            raise ValueError("selected attachments must be included in the allowlist")
+        self.allowed_attachment_ids = list(dict.fromkeys(self.allowed_attachment_ids))
+        self.selected_attachment_ids = list(dict.fromkeys(self.selected_attachment_ids))
+        return self
+
+
 class InternalChatRequest(ChatRequest):
     """Contract-only request for the future token-protected internal endpoint."""
 
@@ -147,6 +171,7 @@ class InternalChatRequest(ChatRequest):
 
     memory_context: MemoryContextInput
     personal_library_context: PersonalLibraryContext | None = None
+    attachment_context: AttachmentContext | None = None
 
 
 class ContextArtifact(BaseModel):

@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 from .base_tool import BaseTool
+from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
 from .document_tools import FindDocumentsTool, GetDocumentTool
 from .search_library_tool import SearchLibraryTool
 from .search_tool import SearchTool
@@ -41,6 +42,8 @@ def _build_default_tools() -> List[BaseTool]:
     ]
     if _env_bool("PERSONAL_LIBRARY_ENABLED"):
         tools.append(SearchLibraryTool())
+    if _env_bool("ATTACHMENTS_ENABLED"):
+        tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
     return tools
 
 

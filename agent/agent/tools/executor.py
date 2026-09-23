@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from contextvars import copy_context
@@ -81,6 +82,12 @@ class ToolExecutor:
                     parsed_arguments,
                     retrieval_attempt,
                 )
+            elif tool.name in {"search_attachments", "inspect_attachment"}:
+                operation = lambda: self._execute_attachment_tool(
+                    tool,
+                    parsed_arguments,
+                    retrieval_attempt,
+                )
             elif tool.name == "search_library":
                 operation = lambda: self._execute_library_tool(
                     tool,
@@ -90,7 +97,14 @@ class ToolExecutor:
             else:
                 operation = lambda: self._execute_generic(tool, parsed_arguments)
 
-            data, evidence = self._run_with_timeout(operation)
+            timeout_ms = self.timeout_ms
+            if tool_name == "inspect_attachment":
+                timeout_ms = max(
+                    timeout_ms,
+                    int(float(os.getenv("ATTACHMENT_VISION_TIMEOUT_SECONDS", "90")) * 1000)
+                    + 5000,
+                )
+            data, evidence = self._run_with_timeout(operation, timeout_ms=timeout_ms)
         except FutureTimeout:
             return self._failure(
                 tool_call_id,
@@ -120,7 +134,14 @@ class ToolExecutor:
                 tool_name,
                 (
                     "retrieval_error"
-                    if tool_name == "search_documents"
+                    if tool_name in {
+                        "search_documents",
+                        "find_documents",
+                        "get_document",
+                        "search_library",
+                        "search_attachments",
+                        "inspect_attachment",
+                    }
                     else "tool_execution_failed"
                 ),
                 str(exc) or exc.__class__.__name__,
@@ -149,11 +170,13 @@ class ToolExecutor:
     def _run_with_timeout(
         self,
         operation: Callable[[], tuple[dict[str, Any] | None, list[Evidence]]],
+        *,
+        timeout_ms: int | None = None,
     ) -> tuple[dict[str, Any] | None, list[Evidence]]:
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="agent-tool")
         future = pool.submit(copy_context().run, operation)
         try:
-            return future.result(timeout=self.timeout_ms / 1000)
+            return future.result(timeout=(timeout_ms or self.timeout_ms) / 1000)
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
 
@@ -307,6 +330,54 @@ class ToolExecutor:
                 knowledge_base_id=str(item.get("knowledge_base_id") or "") or None,
                 document_id=document_id,
                 version_id=str(item.get("version_id") or "") or None,
+            ))
+        return data, evidence
+
+    @staticmethod
+    def _execute_attachment_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("attachment tools must return a dictionary")
+
+        query = str(
+            arguments.get("query")
+            or arguments.get("question")
+            or "attachment inspection"
+        )
+        evidence: list[Evidence] = []
+        for item in data.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            attachment_id = str(
+                item.get("attachment_id") or arguments.get("attachment_id") or ""
+            )
+            evidence_id = str(item.get("evidence_id") or "")
+            content = str(item.get("content") or "").strip()
+            if not attachment_id or not evidence_id or not content:
+                continue
+            raw_score = item.get("score", item.get("confidence", 0.8))
+            score = 0.8 if raw_score is None else min(1.0, max(0.0, float(raw_score)))
+            evidence.append(Evidence(
+                doc_id=attachment_id,
+                chunk_id=evidence_id,
+                chunk_index=0,
+                title=str(item.get("filename") or f"附件 {attachment_id}"),
+                content=content,
+                source_url=f"/api/attachments/{attachment_id}/content",
+                score=score,
+                retrieval_query=query,
+                retrieval_mode="attachment",
+                retrieval_attempt=retrieval_attempt,
+                source_type=str(item.get("source_type") or "attachment"),
+                attachment_id=attachment_id,
+                evidence_id=evidence_id,
+                locator=item.get("locator") if isinstance(item.get("locator"), dict) else {},
+                version=max(1, int(item.get("version", 1))),
+                confidence=item.get("confidence"),
             ))
         return data, evidence
 

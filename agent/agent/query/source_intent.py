@@ -30,6 +30,10 @@ def heuristic_source_intent(
 
     sources: list[SourceKind] = []
     explicit = False
+    attachment_markers = (
+        "刚上传", "刚刚上传", "这个附件", "这份附件", "当前附件",
+        "uploaded pdf", "this attachment", "attached file",
+    )
     personal_markers = (
         "我的资料库", "个人资料库", "我的文件", "个人文件", "我保存的",
         "my library", "my files", "personal library",
@@ -38,6 +42,9 @@ def heuristic_source_intent(
         "公司", "企业知识库", "公司制度", "公司政策", "corporate policy",
         "company policy", "enterprise knowledge",
     )
+    if any(marker in normalized for marker in attachment_markers):
+        sources.append(SourceKind.CONVERSATION_ATTACHMENT)
+        explicit = True
     if any(marker in normalized for marker in personal_markers):
         sources.append(SourceKind.PERSONAL_LIBRARY)
         explicit = True

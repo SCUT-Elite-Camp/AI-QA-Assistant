@@ -15,6 +15,7 @@ from agent.query.subquery_router import SubQueryRouter
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
 from agent.schemas.chat import (
+    AttachmentContext,
     ChatRequest,
     Citation,
     ContextArtifact,
@@ -119,6 +120,18 @@ class AgentOrchestrator:
             if plan.source_intent.sources
             else heuristic_source_intent(plan.original_query)
         )
+        attachment_context = getattr(request, "attachment_context", None)
+        if (
+            isinstance(attachment_context, AttachmentContext)
+            and attachment_context.selected_attachment_ids
+            and SourceKind.CONVERSATION_ATTACHMENT not in source_intent.sources
+        ):
+            source_intent = source_intent.model_copy(update={
+                "sources": [
+                    SourceKind.CONVERSATION_ATTACHMENT,
+                    *source_intent.sources,
+                ]
+            })
         plan = plan.model_copy(update={"source_intent": source_intent})
         policy = self._apply_source_policy(
             request,
@@ -135,7 +148,7 @@ class AgentOrchestrator:
             policy,
         )
         is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
-        library_tool = self._configure_library_context(request)
+        context_tools = self._configure_tool_contexts(request)
         try:
             run_result = self.runner.run(
                 plan,
@@ -151,8 +164,8 @@ class AgentOrchestrator:
                 soul_content=request.soul_content,
             )
         finally:
-            if library_tool is not None:
-                library_tool.clear_request_context()
+            for tool in context_tools:
+                tool.clear_request_context()
         return OrchestrationResult(
             query_plan=plan,
             policy=policy,
@@ -198,6 +211,26 @@ class AgentOrchestrator:
         )
         return tool
 
+    def _configure_tool_contexts(self, request: ChatRequest) -> list[Any]:
+        configured: list[Any] = []
+        library_tool = self._configure_library_context(request)
+        if library_tool is not None:
+            configured.append(library_tool)
+
+        context = getattr(request, "attachment_context", None)
+        if not isinstance(context, AttachmentContext):
+            return configured
+        for name in ("search_attachments", "inspect_attachment"):
+            tool = self.tool_executor.registry.get(name)
+            if tool is None or not hasattr(tool, "set_request_context"):
+                continue
+            tool.set_request_context(
+                context.allowed_attachment_ids,
+                context.selected_attachment_ids,
+            )
+            configured.append(tool)
+        return configured
+
     @staticmethod
     def _apply_source_policy(
         request: ChatRequest,
@@ -219,9 +252,21 @@ class AgentOrchestrator:
             )
         ):
             tools.append("search_library")
+        if (
+            SourceKind.CONVERSATION_ATTACHMENT in sources
+            and isinstance(
+                getattr(request, "attachment_context", None),
+                AttachmentContext,
+            )
+        ):
+            tools.extend(("search_attachments", "inspect_attachment"))
         tools = list(dict.fromkeys(tools))
 
-        if SourceKind.PERSONAL_LIBRARY not in sources:
+        private_sources = {
+            SourceKind.PERSONAL_LIBRARY,
+            SourceKind.CONVERSATION_ATTACHMENT,
+        }
+        if not sources.intersection(private_sources):
             return policy.model_copy(update={"candidate_tools": tuple(tools)})
         return policy.model_copy(update={
             "candidate_tools": tuple(tools),
@@ -234,10 +279,18 @@ class AgentOrchestrator:
             ),
             "top_k": max(5, policy.top_k),
             "max_iterations": max(2, policy.max_iterations),
-            "max_tool_calls": max(1, policy.max_tool_calls),
+            "max_tool_calls": max(
+                2 if SourceKind.CONVERSATION_ATTACHMENT in sources else 1,
+                policy.max_tool_calls,
+            ),
             # CorrectiveRetrievalPlanner only knows the enterprise search tool.
             "max_retrieval_attempts": (
-                2 if SourceKind.ENTERPRISE_KB in sources else 1
+                2
+                if sources.intersection({
+                    SourceKind.ENTERPRISE_KB,
+                    SourceKind.CONVERSATION_ATTACHMENT,
+                })
+                else 1
             ),
             "requires_citations": True,
         })
