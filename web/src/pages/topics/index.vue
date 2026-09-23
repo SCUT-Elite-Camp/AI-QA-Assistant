@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useToast } from '@nuxt/ui/composables'
 import { ref, computed, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'

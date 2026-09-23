@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useToast } from '@nuxt/ui/composables'
 import { ref, computed } from 'vue'
 import { $fetch } from 'ofetch'
 import { useClipboard } from '@vueuse/core'

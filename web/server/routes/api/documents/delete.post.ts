@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import { defineHandler, HTTPError } from 'nitro'
-import { readBody } from 'h3'
+import { readBody } from 'nitro/h3'
 
 export default defineHandler(async (event) => {
   const body = await readBody(event)

@@ -1,4 +1,2 @@
-allowBuilds:
-  esbuild: false
-  maplibre-gl: false
-  vue-demi: false
+packages:
+  - '.'

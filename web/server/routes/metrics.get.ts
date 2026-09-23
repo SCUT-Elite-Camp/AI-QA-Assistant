@@ -1,5 +1,5 @@
 import { defineHandler } from 'nitro'
-import { setHeader } from 'h3'
+import { setHeader } from 'nitro/h3'
 import { getPrometheusMetrics } from '../utils/metrics'
 
 /**

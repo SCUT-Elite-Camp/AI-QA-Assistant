@@ -107,7 +107,7 @@ const uniqueDocuments = computed(() => {
   const seen = new Set<string>()
   const list: ChunkCitation[] = []
   for (const cit of citations.value) {
-    const key = cit.title || cit.doc_id || doc_
+    const key = cit.title || cit.doc_id || `doc_${list.length}`
     if (!seen.has(key)) {
       seen.add(key)
       list.push(cit)
@@ -123,7 +123,7 @@ function formatDocName(title?: string, docId?: string, idx: number = 0): string 
   if (docId && !/^[0-9a-f]{20,}$/i.test(docId)) {
     return docId
   }
-  return Document #
+  return `Document #${idx + 1}`
 }
 
 function getDocIcon(title?: string, docId?: string): string {
@@ -261,13 +261,13 @@ watch(
 // Calculate duration
 const displayDuration = computed(() => {
   if (reasoningDuration.value) {
-    return ${reasoningDuration.value}s
+    return `${reasoningDuration.value}s`
   }
   const rPart = reasoningPart.value
   if (rPart && (rPart as any).text) {
     const textLen = (rPart as any).text.length
     const est = Math.max(1, Math.round(textLen / 25))
-    return ${est}s
+    return `${est}s`
   }
   return '1s'
 })
@@ -546,9 +546,9 @@ defineExpose({
                 >
                   <div
                     v-for="(doc, idx) in visibleDocuments"
-                    :key="doc.doc_id || doc-"
+                    :key="doc.doc_id || doc.name || idx"
                     class="group inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-emerald-500/40 text-[11px] text-neutral-300 hover:text-neutral-100 transition-all cursor-pointer shrink-0 max-w-[180px]"
-                    :title="${doc.title || doc.doc_id} (相关度: %)"
+                    :title="doc.title || doc.doc_id"
                     @click="handlePillClick(doc)"
                   >
                     <UIcon :name="getDocIcon(doc.title, doc.doc_id)" class="w-3 h-3 text-emerald-400 shrink-0" />

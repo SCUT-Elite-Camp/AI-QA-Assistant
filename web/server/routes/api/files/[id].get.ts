@@ -1,12 +1,10 @@
 import { defineHandler, HTTPError } from 'nitro'
-import { getRouterParam } from 'nitro/h3'
-import { setHeader } from 'h3'
+import { getRouterParam, setHeader, getRequestIP, getHeader, getQuery } from 'nitro/h3'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle } from '../../../utils/drizzle'
 import { readFile } from '../../../utils/file-storage'
 import { logAudit } from '../../../utils/audit-logger'
 import { requireFileAccess } from '../../../utils/permission-service'
-import { getRequestIP, getHeader, getQuery } from 'nitro/h3'
 
 /**
  * GET /api/files/:id

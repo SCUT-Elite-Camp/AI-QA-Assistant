@@ -209,7 +209,7 @@ const plusMenuItems = computed(() => [[
     icon: 'i-lucide-telescope',
     onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
-])])
+]])
 
 
 const chat = new Chat({

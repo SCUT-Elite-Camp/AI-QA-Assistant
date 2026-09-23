@@ -3,16 +3,21 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Enable pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm 9 via fast registry
+RUN npm install -g pnpm@9 --registry=https://registry.npmmirror.com
+RUN pnpm config set registry https://registry.npmmirror.com
 
-# Copy dependencies definitions
+# Copy dependency manifests
 COPY web/package.json web/pnpm-lock.yaml ./
 
+# Install dependencies using mirror
 RUN pnpm install --frozen-lockfile || pnpm install
 
 # Copy source files
 COPY web/ ./
+
+# Create data dir for build-time sqlite migrations
+RUN mkdir -p .data
 
 # Build production bundle
 ENV NODE_ENV=production

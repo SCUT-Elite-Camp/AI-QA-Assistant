@@ -205,7 +205,6 @@ export async function reconcileDrizzleSchema() {
   _schemaReady = ensureLocalSchema(_client)
   await _schemaReady
 }
-}
 
 
 export type Chat = typeof schema.chats.$inferSelect
