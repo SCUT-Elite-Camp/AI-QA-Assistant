@@ -18,7 +18,15 @@ interface TrayAttachment {
   cancelled?: boolean
 }
 
-const props = defineProps<{ scope: Scope, chatId?: string | null, topicId?: string | null, disabled?: boolean }>()
+const props = withDefaults(defineProps<{
+  scope: Scope
+  chatId?: string | null
+  topicId?: string | null
+  disabled?: boolean
+  hideTrigger?: boolean
+}>(), {
+  hideTrigger: false
+})
 const emit = defineEmits<{ change: [ids: string[], acceptedNeedsReviewIds: string[]] }>()
 const { csrf, headerName } = useCsrf()
 const inputRef = ref<HTMLInputElement | null>(null)
@@ -204,25 +212,43 @@ defineExpose({
 </script>
 
 <template>
-  <div class="w-full" @dragover.prevent @drop.prevent="addFiles($event.dataTransfer?.files || [])">
-    <UButton icon="i-lucide-paperclip" color="neutral" variant="ghost" size="sm" :disabled="disabled || !serviceEnabled" :title="serviceEnabled ? '上传图片或文件' : '附件服务不可用'" aria-label="上传图片或文件" @click="inputRef?.click()" />
-    <input ref="inputRef" class="hidden" type="file" multiple
+  <div :class="[items.length ? 'w-full' : (hideTrigger ? 'hidden' : 'w-auto')]" @dragover.prevent @drop.prevent="addFiles($event.dataTransfer?.files || [])">
+    <UButton
+      v-if="!hideTrigger"
+      icon="i-lucide-paperclip"
+      color="neutral"
+      variant="ghost"
+      size="sm"
+      :disabled="disabled || !serviceEnabled"
+      :title="serviceEnabled ? '上传图片或文件' : '附件服务不可用'"
+      aria-label="上传图片或文件"
+      @click="inputRef?.click()"
+    />
+    <input
+      ref="inputRef"
+      class="hidden"
+      type="file"
+      multiple
       accept=".png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.pdf,.doc,.docx,.ppt,.pptx,.html,.htm,.xls,.xlsx,.csv,.txt,.md,.json"
-      @change="addFiles(($event.target as HTMLInputElement).files || [])">
-    <div v-if="items.length" class="mt-2 flex flex-wrap gap-2">
-      <div v-for="item in items" :key="item.id || item.filename" class="max-w-64 rounded-lg border border-default px-2 py-1 text-xs">
-        <div class="flex items-center gap-1">
-          <UIcon :name="item.mimeType.startsWith('image/') ? 'i-lucide-image' : 'i-lucide-file'" class="size-3.5 shrink-0" aria-hidden="true" />
-          <span class="truncate">{{ item.filename }}</span>
-          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :aria-label="`移除 ${item.filename}`" @click="remove(item)" />
+      @change="addFiles(($event.target as HTMLInputElement).files || [])"
+    >
+    <div v-if="items.length" class="flex flex-wrap gap-2 pb-2">
+      <div v-for="item in items" :key="item.id || item.filename" class="max-w-64 rounded-xl border border-default bg-elevated/40 backdrop-blur-xs px-2.5 py-1.5 text-xs shadow-xs">
+        <div class="flex items-center gap-1.5">
+          <UIcon :name="item.mimeType.startsWith('image/') ? 'i-lucide-image' : 'i-lucide-file'" class="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+          <span class="truncate font-medium">{{ item.filename }}</span>
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" class="ml-auto rounded-full p-0.5 hover:bg-neutral/20" :aria-label="`移除 ${item.filename}`" @click="remove(item)" />
         </div>
-        <div class="text-muted" role="status" aria-live="polite">{{ statusText(item) }} · {{ Math.ceil(item.sizeBytes / 1024) }} KB<span v-if="item.status === 'uploading'"> · {{ item.progress }}%</span></div>
-        <div v-if="item.expiresAt" class="text-muted">到期：{{ new Date(item.expiresAt * 1000).toLocaleString() }}</div>
-        <div v-if="item.errorCode" class="text-error">{{ item.errorCode }}</div>
-        <div v-if="item.status === 'needs_review'" class="mt-1 flex items-center gap-1">
+        <div class="text-muted text-[11px] mt-0.5" role="status" aria-live="polite">
+          {{ statusText(item) }} · {{ Math.ceil(item.sizeBytes / 1024) }} KB
+          <span v-if="item.status === 'uploading'"> · {{ item.progress }}%</span>
+        </div>
+        <div v-if="item.expiresAt" class="text-muted text-[10px]">到期：{{ new Date(item.expiresAt * 1000).toLocaleString() }}</div>
+        <div v-if="item.errorCode" class="text-error text-[11px]">{{ item.errorCode }}</div>
+        <div v-if="item.status === 'needs_review'" class="mt-1 flex items-center gap-1 text-[11px]">
           <input v-model="item.acceptedReview" type="checkbox" @change="notify"><span>确认使用低置信度结果</span>
         </div>
-        <UButton v-if="item.status === 'failed' && item.id" label="重试" size="xs" variant="soft" @click="retry(item)" />
+        <UButton v-if="item.status === 'failed' && item.id" label="重试" size="xs" variant="soft" color="error" class="mt-1" @click="retry(item)" />
       </div>
     </div>
   </div>

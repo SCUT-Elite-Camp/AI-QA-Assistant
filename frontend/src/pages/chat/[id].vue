@@ -195,17 +195,17 @@ const deepResearchMode = ref(chatExplorationMode(
 
 const plusMenuItems = computed(() => [[
   {
-    label: '上传图片或文件',
+    label: '上传附件 / 图片',
     icon: 'i-lucide-paperclip',
     onSelect: () => attachmentTray.value?.open()
   },
   {
-    label: '企业知识库检索',
+    label: useKnowledgeBase.value ? '企业知识库检索 (已开启)' : '企业知识库检索 (已关闭)',
     icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
     onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
   {
-    label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
+    label: deepResearchMode.value ? 'Deep Research (已开启)' : 'Deep Research (已关闭)',
     icon: 'i-lucide-telescope',
     onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
@@ -653,15 +653,19 @@ onBeforeUnmount(() => {
               :ui="{ base: 'px-1.5' }"
               @submit="handleSubmit"
             >
-              <template #footer>
+              <template #header>
                 <AttachmentTray
                   ref="attachmentTray"
                   scope="chat"
                   :chat-id="data?.id"
                   :topic-id="topic?.id"
+                  hide-trigger
                   :disabled="chat.status === 'streaming'"
                   @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
                 />
+              </template>
+
+              <template #footer>
                 <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
                 <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
                   <UButton
@@ -669,7 +673,8 @@ onBeforeUnmount(() => {
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-plus"
-                    aria-label="打开更多功能"
+                    aria-label="添加附件与更多功能"
+                    title="添加附件与更多功能"
                     :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
                   />
                 </UDropdownMenu>
@@ -838,15 +843,19 @@ onBeforeUnmount(() => {
               :ui="{ base: 'px-1.5' }"
               @submit="handleSubmit"
             >
-              <template #footer>
+              <template #header>
                 <AttachmentTray
                   ref="attachmentTray"
                   scope="chat"
                   :chat-id="data?.id"
                   :topic-id="topic?.id"
+                  hide-trigger
                   :disabled="chat.status === 'streaming'"
                   @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
                 />
+              </template>
+
+              <template #footer>
                 <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
                 <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
                   <UButton
@@ -854,7 +863,8 @@ onBeforeUnmount(() => {
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-plus"
-                    aria-label="打开更多功能"
+                    aria-label="添加附件与更多功能"
+                    title="添加附件与更多功能"
                     :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
                   />
                 </UDropdownMenu>
