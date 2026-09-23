@@ -127,6 +127,8 @@ class Settings(BaseModel):
         "ANSWER_COMPLETENESS_MODEL_THINKING",
         False,
     )
+    ANSWER_TARGET_EXTRACT_LLM: bool = _env_bool("ANSWER_TARGET_EXTRACT_LLM", False)
+    ANSWER_REPAIR_APPEND_ONLY: bool = _env_bool("ANSWER_REPAIR_APPEND_ONLY", True)
     ANSWER_FAST_MODEL: str = os.getenv("ANSWER_FAST_MODEL", "").strip()
     ANSWER_FAST_MODEL_THINKING: bool = _env_bool(
         "ANSWER_FAST_MODEL_THINKING",

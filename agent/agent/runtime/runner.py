@@ -4,7 +4,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from agent.answer import AnswerCompletenessChecker
+from agent.answer import AnswerCompletenessChecker, should_accept_repair
 from agent.answer.complexity import answer_complexity_reasons
 from agent.config.settings import settings
 from agent.evidence.gate import EvidenceGate
@@ -1165,6 +1165,8 @@ class AgentRunner:
             missing_answer_aspects=state.missing_answer_aspects,
             missing_critical_facts=state.missing_critical_facts,
             answer_repair_attempted=state.answer_repair_attempted,
+            answer_repair_rolled_back=state.answer_repair_rolled_back,
+            answer_repair_guard_reason=state.answer_repair_guard_reason,
         )
 
     def _check_and_repair_answer(
@@ -1175,7 +1177,14 @@ class AgentRunner:
         answer: str,
     ) -> str:
         checker = self.answer_completeness_checker
-        if checker is None or policy is None or not policy.requires_citations or not state.evidence:
+        if checker is None or policy is None or not policy.requires_citations:
+            return answer
+        if not state.evidence:
+            logger.info(
+                "[ANSWER_COMPLETENESS] trace_id=%s skipped=no_accepted_evidence",
+                state.trace_id,
+            )
+            state.answer_completeness_checked = False
             return answer
 
         try:
@@ -1187,18 +1196,34 @@ class AgentRunner:
             state.missing_critical_facts = result.missing_critical_facts
             logger.info(
                 "[ANSWER_COMPLETENESS] trace_id=%s complete=%s missing_aspects=%s "
-                "missing_critical_facts=%s",
+                "missing_critical_facts=%s coverage=%s",
                 state.trace_id,
                 result.complete,
                 result.missing_aspects,
                 result.missing_critical_facts,
+                result.coverage,
             )
             if result.complete:
                 return answer
 
             state.answer_repair_attempted = True
             repaired = checker.repair(state.query_plan, answer, typed_evidence, result)
-            return repaired or answer
+            targets = result.required_targets or [
+                *result.missing_aspects,
+                *result.missing_critical_facts,
+            ]
+            accepted, reason = should_accept_repair(answer, repaired, targets)
+            state.answer_repair_guard_reason = reason
+            if not accepted:
+                state.answer_repair_rolled_back = True
+                logger.info(
+                    "[ANSWER_COMPLETENESS] trace_id=%s repair_rolled_back=%s",
+                    state.trace_id,
+                    reason,
+                )
+                return answer
+            state.answer_complete = True
+            return repaired
         except Exception as exc:
             logger.warning(
                 "[ANSWER_COMPLETENESS] trace_id=%s check_failed=%s; preserving original answer",

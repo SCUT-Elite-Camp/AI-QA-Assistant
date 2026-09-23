@@ -55,24 +55,30 @@ accepted / corrective retrieval / no_relevant_context
 ## Answer Completeness Boundary
 
 Accepted evidence does not guarantee that the generated answer uses every
-material fact. After answer generation, `AnswerCompletenessChecker` compares the
-answer with the `QueryPlan` aspects and accepted Evidence. It pays particular
-attention to percentages, monetary amounts, dates, named entities, and both
-sides of comparisons.
+material fact. After answer generation, `AnswerCompletenessChecker` derives a
+short atomic target list and scores the answer with deterministic coverage.
+LLM calls are reserved for target extraction (optional) and a single append-only
+repair. The completeness *judge* path is no longer used.
 
-If the answer is incomplete, the Agent performs at most one repair call using
-the existing Evidence. This step does not run retrieval or call a tool. A checker
-failure preserves the original answer so that the quality guard cannot break the
-main response path. Citation Check remains the final validation step after the
+If coverage finds a gap, the Agent performs at most one repair using the
+existing Evidence. A coverage guard then compares the answer before and after
+repair and rolls back if the rewrite is worse. Checker failures preserve the
+original answer. Citation Check remains the final validation step after the
 repaired answer has been formatted.
 
 To control latency, completeness checking is tiered:
 
-- Single-target ordinary answers use a deterministic local gate that validates
-  whether the answer cites an accepted evidence item. This path makes no LLM call.
-- Comparison, summarization, and plans with at least two sub-queries retain the
-  semantic completeness review.
-- The semantic review can use a stage-specific model through
-  `ANSWER_COMPLETENESS_MODEL`; an empty value preserves the main-model fallback.
-- A failed local or semantic check can trigger at most one repair using the
-  already accepted evidence. It never starts another retrieval loop.
+- Zero accepted evidence skips completeness entirely. That path is a retrieval
+  problem, not an answer-repair problem.
+- After an answer is generated, a deterministic coverage check compares the
+  answer with atomic targets derived from the QueryPlan and accepted evidence
+  (identifiers, numbers, dates). This path makes no LLM *judgment* call.
+- Optional LLM target extraction (`ANSWER_TARGET_EXTRACT_LLM`) may run for
+  complex queries to turn evidence into a short required-fact list. Extraction
+  is an LLM strength; completeness judging is not.
+- Gaps trigger at most one append-only repair that receives the missing list
+  and only the evidence snippets that contain those facts.
+- A coverage guard compares the answer before and after repair. Coverage drops
+  or lost numeric atoms roll the answer back. Empty repairs are also rejected.
+- `ANSWER_COMPLETENESS_MODEL` still selects a stage-specific model for
+  extraction/repair; an empty value preserves the main-model fallback.

@@ -11,3 +11,7 @@ class AnswerCompletenessResult(BaseModel):
     missing_critical_facts: list[str] = Field(default_factory=list)
     reason: str = ""
     check_performed: bool = True
+    required_targets: list[str] = Field(default_factory=list)
+    coverage: float = 1.0
+    skip_reason: str = ""
+    used_llm_extract: bool = False
