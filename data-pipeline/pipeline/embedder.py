@@ -54,20 +54,37 @@ def _use_api() -> bool:
         raise RuntimeError("EMBEDDING_PROVIDER must be 'local' or 'api'")
     return provider == "api"
 
-def _download_via_modelscope() -> str:
+def _is_model_dir_valid(path_str: str) -> bool:
+    if not path_str or not os.path.isdir(path_str):
+        return False
+    has_config = os.path.exists(os.path.join(path_str, "config.json"))
+    has_weights = (
+        os.path.exists(os.path.join(path_str, "model.safetensors"))
+        or os.path.exists(os.path.join(path_str, "pytorch_model.bin"))
+        or os.path.exists(os.path.join(path_str, "modules.json"))
+    )
+    return has_config and has_weights
+
+
+def _download_via_modelscope(target_dir: str | None = None) -> str:
     """通过 ModelScope 下载模型并返回本地路径"""
     from modelscope import snapshot_download
 
-    print(f"正在通过 ModelScope 下载模型 {_MODELSCOPE_MODEL_ID}（首次约 95MB）...")
-    model_dir = snapshot_download(_MODELSCOPE_MODEL_ID)
+    print(f"正在通过 ModelScope 下载模型 {_MODELSCOPE_MODEL_ID}...")
+    kwargs = {"model_id": _MODELSCOPE_MODEL_ID}
+    if target_dir:
+        os.makedirs(target_dir, exist_ok=True)
+        kwargs["local_dir"] = target_dir
+    model_dir = snapshot_download(**kwargs)
     print(f"模型已下载到: {model_dir}")
     return model_dir
+
 
 @lru_cache(maxsize=1)
 def _get_local_model():
     """
     加载本地已保存的 BGE 模型（位于 data-persistence/models/bge-small-en-v1.5）。
-    强制离线模式 (local_files_only=True)，绝不连接 Hugging Face，无需更新或下载。
+    如果本地路径不存在或缺少权重文件，则自动通过 ModelScope 下载到本地目录。
     """
     from sentence_transformers import SentenceTransformer
 
@@ -76,38 +93,36 @@ def _get_local_model():
         workspace_model_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "data-persistence", "models", "bge-small-en-v1.5")
         )
-        if os.path.exists(workspace_model_dir):
-            local_model_path = workspace_model_dir
+        local_model_path = workspace_model_dir
 
     configured_device = os.environ.get("LOCAL_EMBEDDING_DEVICE", "").strip()
     model_kwargs = {"device": configured_device} if configured_device else {}
-    offline = _is_offline_mode()
 
-    if local_model_path:
-        if not os.path.exists(local_model_path):
-            raise RuntimeError(f"LOCAL_EMBEDDING_MODEL_PATH 不存在: {local_model_path}")
-        model = SentenceTransformer(local_model_path, local_files_only=True, **model_kwargs)
-        dim = getattr(model, "get_sentence_embedding_dimension", getattr(model, "get_embedding_dimension", lambda: 384))()
-        _validate_local_dimension(dim)
-        print(f"本地模型已加载: {local_model_path}（{dim} 维）")
-        return model
+    if not _is_model_dir_valid(local_model_path):
+        print(f"检测到本地模型目录缺少权重: {local_model_path}，正在自动下载模型...")
+        try:
+            _download_via_modelscope(target_dir=local_model_path)
+        except Exception as dl_err:
+            print(f"ModelScope 自动下载失败 ({dl_err})，尝试通过 HuggingFace Hub 下载...")
+            try:
+                if "HF_ENDPOINT" not in os.environ:
+                    os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+                from huggingface_hub import snapshot_download as hf_download
+                hf_download(
+                    repo_id=_LOCAL_MODEL_NAME,
+                    local_dir=local_model_path,
+                    local_dir_use_symlinks=False,
+                    resume_download=True,
+                )
+            except Exception as hf_err:
+                raise RuntimeError(
+                    f"无法自动下载嵌入模型: {dl_err} / {hf_err}。请手动将模型权重置于 {local_model_path}"
+                )
 
-    # 先尝试直接加载（走 HF / HF_ENDPOINT 镜像）
-    try:
-        model = SentenceTransformer(_LOCAL_MODEL_NAME, local_files_only=offline, **model_kwargs)
-    except Exception as e:
-        if offline:
-            raise RuntimeError(
-                f"离线模式下未能从本地缓存加载模型 {_LOCAL_MODEL_NAME}，"
-                "请设置 LOCAL_EMBEDDING_MODEL_PATH 到本地模型目录"
-            ) from e
-        print(f"HuggingFace 加载失败 ({e})，切换到 ModelScope 下载...")
-        local_path = _download_via_modelscope()
-        model = SentenceTransformer(local_path, **model_kwargs)
-
+    model = SentenceTransformer(local_model_path, local_files_only=True, **model_kwargs)
     dim = getattr(model, "get_sentence_embedding_dimension", getattr(model, "get_embedding_dimension", lambda: 384))()
     _validate_local_dimension(dim)
-    print(f"本地模型已加载: {_LOCAL_MODEL_NAME}（{dim} 维）")
+    print(f"本地模型已加载: {local_model_path}（{dim} 维）")
     return model
 
 # ─── 公共接口 ────────────────────────────────────────────

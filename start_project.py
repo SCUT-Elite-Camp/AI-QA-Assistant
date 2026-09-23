@@ -84,6 +84,16 @@ try:
 except Exception as e:
     print(f"Warning: Failed to verify dependencies: {e}")
 
+# 1b. Check and ensure Embedding Model weights exist
+try:
+    print("\n=== [1b/5] Checking Local Embedding Model Weights ===")
+    from scripts.ensure_models import ensure_embedding_model
+    model_path = ensure_embedding_model(project_root / "data-persistence" / "models" / "bge-small-en-v1.5")
+    os.environ["LOCAL_EMBEDDING_MODEL_PATH"] = str(model_path)
+    print(f"Embedding model is ready at: {model_path}")
+except Exception as e:
+    print(f"Warning: Error checking embedding model: {e}")
+
 # 2. Start Milvus Container
 print("\n=== [2/5] Checking Milvus Container ===")
 try:
