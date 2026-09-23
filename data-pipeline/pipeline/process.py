@@ -104,6 +104,9 @@ def process_folder(
                 doc_ids = [doc.doc_id] * len(chunks)
                 chunk_indices = [ch.index for ch in chunks]
                 source_urls = [doc.source_url] * len(chunks)
+                titles = [doc.title] * len(chunks)
+                spaces = [doc.space] * len(chunks)
+                doc_types = [doc.doc_type] * len(chunks)
                 milvus.insert_chunks(
                     embeddings=embeddings,
                     chunk_ids=chunk_ids,
@@ -111,6 +114,9 @@ def process_folder(
                     doc_ids=doc_ids,
                     chunk_indices=chunk_indices,
                     source_urls=source_urls,
+                    titles=titles,
+                    spaces=spaces,
+                    doc_types=doc_types,
                 )
                 print(f"    → 向量已写入 Milvus")
 

@@ -285,19 +285,11 @@ class SearchTool(BaseTool):
 
         query_vector = embed_texts([query])[0]
 
-        doc_ids_filter = None
-        doc_ids = filters.get("doc_ids")
-        if doc_ids:
-            if isinstance(doc_ids, str):
-                doc_ids_filter = [doc_ids]
-            else:
-                doc_ids_filter = list(doc_ids)
-
         try:
             hits = self.milvus_store.search_similar(
                 query_vector=query_vector,
                 top_k=top_k,
-                doc_ids_filter=doc_ids_filter,
+                filters=filters,
             )
         except Exception as e:
             raise RetrievalError(f"milvus_search_failed: {e}") from e
@@ -312,6 +304,10 @@ class SearchTool(BaseTool):
                 "score": hit.distance,
                 "vector_score": hit.distance,
                 "bm25_score": 0.0,
+                "title": entity.get("title") or "",
+                "space": entity.get("space") or "",
+                "doc_type": entity.get("doc_type") or "",
+                "source_url": entity.get("source_url") or "",
             }
             if not _matches_filters(row, filters):
                 continue

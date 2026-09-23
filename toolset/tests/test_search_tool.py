@@ -110,6 +110,26 @@ class SearchToolTest(unittest.TestCase):
         self.assertEqual(tool.search("query", filters={"doc_ids": []}), [])
         self.assertEqual(backend.calls, [])
 
+    def test_vector_search_passes_all_filters_to_milvus(self):
+        class FakeMilvus:
+            def __init__(self):
+                self.filters = None
+
+            def search_similar(self, query_vector, top_k, filters):
+                self.filters = filters
+                return []
+
+        tool = SearchTool()
+        milvus = FakeMilvus()
+        tool._milvus_store = milvus
+
+        from unittest.mock import patch
+
+        with patch("pipeline.embedder.embed_texts", return_value=[[0.1, 0.2]]):
+            tool.search("query", mode="vector", filters={"space": "HR"})
+
+        self.assertEqual(milvus.filters, {"space": "HR"})
+
     def test_wraps_backend_failures(self):
         class BrokenBackend:
             def search(self, *args, **kwargs):

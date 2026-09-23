@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import json
 from typing import Any
 
 
@@ -70,6 +71,31 @@ def matches_filters(item: dict[str, Any], filters: dict[str, Any] | None) -> boo
         if actual != normalized["doc_type"]:
             return False
     return True
+
+
+def build_milvus_filter_expression(filters: dict[str, Any] | None) -> str | None:
+    """Serialize validated filters without accepting raw Milvus expressions."""
+    normalized = normalize_filters(filters)
+    clauses: list[str] = []
+    if "doc_ids" in normalized:
+        values = ", ".join(
+            json.dumps(value, ensure_ascii=False)
+            for value in normalized["doc_ids"]
+        )
+        clauses.append(f"doc_id in [{values}]")
+    for key in ("space", "doc_type"):
+        if key in normalized:
+            value = json.dumps(normalized[key], ensure_ascii=False)
+            clauses.append(f"{key} == {value}")
+    return " and ".join(clauses) or None
+
+
+def validate_embedding_dimension(actual: int, expected: int) -> None:
+    """Reject an existing collection built for another embedding dimension."""
+    if int(actual) != int(expected):
+        raise ValueError(
+            f"Milvus embedding dimension mismatch: expected {expected}, got {actual}"
+        )
 
 
 def _normalize_doc_ids(value: Any, key: str) -> list[str]:
