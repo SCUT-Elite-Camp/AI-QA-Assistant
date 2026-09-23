@@ -86,6 +86,29 @@ class SearchToolTest(unittest.TestCase):
             tool.search("query", top_k=0)
         with self.assertRaises(RetrievalParameterError):
             tool.search("query", mode="dense")
+        with self.assertRaises(RetrievalParameterError):
+            tool.search("query", filters={"unsupported": "value"})
+
+    def test_normalizes_filters_before_backend_call(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        tool.search(
+            "query",
+            filters={"doc_id": " doc_001 ", "doc_type": "application/PDF"},
+        )
+
+        self.assertEqual(
+            backend.calls[0]["filters"],
+            {"doc_ids": ["doc_001"], "doc_type": "pdf"},
+        )
+
+    def test_empty_doc_allowlist_does_not_call_backend(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        self.assertEqual(tool.search("query", filters={"doc_ids": []}), [])
+        self.assertEqual(backend.calls, [])
 
     def test_wraps_backend_failures(self):
         class BrokenBackend:

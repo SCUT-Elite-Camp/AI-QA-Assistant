@@ -3,6 +3,7 @@ import logging
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+from storage.filtering import matches_filters, normalize_filters
 from tool_layer.base_tool import BaseTool
 
 
@@ -53,34 +54,18 @@ def _chunk_key(row: Dict) -> tuple:
 
 
 def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None) -> bool:
-    if not filters:
-        return True
+    combined = dict(doc_meta or {})
+    combined.update(
+        {key: value for key, value in item.items() if value not in (None, "")}
+    )
+    return matches_filters(combined, filters)
 
-    doc_id = str(item.get("doc_id", ""))
-    # 用键存在性而非真值判断，避免把空列表（空白名单）误判为「不过滤」。
-    if "doc_id" in filters:
-        doc_ids = filters["doc_id"]
-    elif "doc_ids" in filters:
-        doc_ids = filters["doc_ids"]
-    else:
-        doc_ids = None
-    if doc_ids is not None:
-        if isinstance(doc_ids, str):
-            doc_ids = {doc_ids}
-        else:
-            doc_ids = set(doc_ids)
-        if doc_id not in doc_ids:
-            return False
 
-    for key in ("space", "doc_type"):
-        expected = filters.get(key)
-        if expected is None:
-            continue
-        actual = item.get(key) or (doc_meta.get(key) if doc_meta else None)
-        if actual != expected:
-            return False
-
-    return True
+def _normalize_public_filters(filters: Optional[Dict]) -> Dict:
+    try:
+        return normalize_filters(filters)
+    except ValueError as exc:
+        raise RetrievalParameterError(f"invalid_filters: {exc}") from exc
 
 
 def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, rrf_k: int = 60) -> list[dict]:
@@ -191,9 +176,20 @@ class SearchTool(BaseTool):
                     "type": "string",
                     "description": "Retrieval mode: 'vector', 'bm25', or 'hybrid'.",
                     "default": "hybrid"
+                },
+                "filters": {
+                    "type": "object",
+                    "properties": {
+                        "doc_id": {"type": "string"},
+                        "doc_ids": {"type": "array", "items": {"type": "string"}},
+                        "space": {"type": "string"},
+                        "doc_type": {"type": "string"},
+                    },
+                    "additionalProperties": False,
                 }
             },
-            "required": ["query"]
+            "required": ["query"],
+            "additionalProperties": False,
         }
 
     def execute(self, **kwargs: Any) -> Any:
@@ -231,7 +227,7 @@ class SearchTool(BaseTool):
         self._validate_params(query, top_k, mode, filters, min_score)
         started = time.perf_counter()
         trace = trace_id or "-"
-        filters = filters or {}
+        filters = _normalize_public_filters(filters)
 
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
@@ -290,7 +286,7 @@ class SearchTool(BaseTool):
         query_vector = embed_texts([query])[0]
 
         doc_ids_filter = None
-        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
+        doc_ids = filters.get("doc_ids")
         if doc_ids:
             if isinstance(doc_ids, str):
                 doc_ids_filter = [doc_ids]
@@ -330,7 +326,7 @@ class SearchTool(BaseTool):
 
     def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
         try:
-            hits = self.bm25_index.search(query, top_k=top_k)
+            hits = self.bm25_index.search(query, top_k=top_k, filters=filters)
         except Exception as e:
             raise RetrievalError(f"bm25_search_failed: {e}") from e
 
@@ -377,8 +373,7 @@ class SearchTool(BaseTool):
             allowed = ", ".join(sorted(self.VALID_MODES))
             raise RetrievalParameterError(f"invalid_mode: mode must be one of {allowed}")
 
-        if filters is not None and not isinstance(filters, dict):
-            raise RetrievalParameterError("invalid_filters: filters must be a dict or None")
+        _normalize_public_filters(filters)
 
         try:
             float(min_score)
