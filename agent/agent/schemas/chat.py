@@ -23,8 +23,13 @@ class ChatRequest(BaseModel):
     @classmethod
     def reject_public_memory_context(cls, value: Any) -> Any:
         """Keep browser-supplied persistent Memory out of the public route."""
-        if cls is ChatRequest and isinstance(value, dict) and "memory_context" in value:
-            raise ValueError("memory_context is only accepted by the internal endpoint")
+        trusted_fields = {"memory_context", "personal_library_context"}
+        if (
+            cls is ChatRequest
+            and isinstance(value, dict)
+            and trusted_fields.intersection(value)
+        ):
+            raise ValueError("trusted context is only accepted by the internal endpoint")
         return value
 
 
@@ -125,12 +130,23 @@ class MemoryContextInput(BaseModel):
         return self
 
 
+class PersonalLibraryContext(BaseModel):
+    """Server-authenticated library scope; never accepted by the public route."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    owner_user_id: str = Field(min_length=1, max_length=200)
+    knowledge_base_id: str = Field(min_length=1, max_length=200)
+    access_token: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class InternalChatRequest(ChatRequest):
     """Contract-only request for the future token-protected internal endpoint."""
 
     model_config = ConfigDict(extra="forbid")
 
     memory_context: MemoryContextInput
+    personal_library_context: PersonalLibraryContext | None = None
 
 
 class ContextArtifact(BaseModel):

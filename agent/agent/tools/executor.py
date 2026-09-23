@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from contextvars import copy_context
 from typing import Any, Callable
 
 from pydantic import ValidationError
@@ -80,6 +81,12 @@ class ToolExecutor:
                     parsed_arguments,
                     retrieval_attempt,
                 )
+            elif tool.name == "search_library":
+                operation = lambda: self._execute_library_tool(
+                    tool,
+                    parsed_arguments,
+                    retrieval_attempt,
+                )
             else:
                 operation = lambda: self._execute_generic(tool, parsed_arguments)
 
@@ -144,7 +151,7 @@ class ToolExecutor:
         operation: Callable[[], tuple[dict[str, Any] | None, list[Evidence]]],
     ) -> tuple[dict[str, Any] | None, list[Evidence]]:
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="agent-tool")
-        future = pool.submit(operation)
+        future = pool.submit(copy_context().run, operation)
         try:
             return future.result(timeout=self.timeout_ms / 1000)
         finally:
@@ -259,6 +266,48 @@ class ToolExecutor:
                     retrieval_mode="document",
                     retrieval_attempt=retrieval_attempt,
                 ))
+        return data, evidence
+
+    @staticmethod
+    def _execute_library_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("search_library must return a dictionary")
+
+        query = str(arguments.get("query") or "personal library search")
+        mode = str(arguments.get("mode") or "hybrid")
+        evidence: list[Evidence] = []
+        for item in data.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            document_id = str(item.get("document_id") or "")
+            evidence_id = str(item.get("evidence_id") or "")
+            content = str(item.get("content") or "").strip()
+            if not document_id or not evidence_id or not content:
+                continue
+            evidence.append(Evidence(
+                doc_id=document_id,
+                chunk_id=evidence_id,
+                chunk_index=max(0, int(item.get("chunk_index", 0))),
+                title=str(item.get("filename") or document_id),
+                content=content,
+                source_url=str(item.get("source_url") or ""),
+                score=min(1.0, max(0.0, float(item.get("score", 0.0)))),
+                retrieval_query=query,
+                retrieval_mode=mode,
+                retrieval_attempt=retrieval_attempt,
+                source_type="personal",
+                evidence_id=evidence_id,
+                locator=(item.get("locator") if isinstance(item.get("locator"), dict) else None),
+                source_scope=str(item.get("source_scope") or "personal"),
+                knowledge_base_id=str(item.get("knowledge_base_id") or "") or None,
+                document_id=document_id,
+                version_id=str(item.get("version_id") or "") or None,
+            ))
         return data, evidence
 
     @staticmethod

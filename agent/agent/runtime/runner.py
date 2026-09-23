@@ -338,6 +338,7 @@ class AgentRunner:
                     "search_documents",
                     "find_documents",
                     "get_document",
+                    "search_library",
                 }
                 if (
                     policy is not None
@@ -675,6 +676,17 @@ class AgentRunner:
             constrained["top_k"] = top_k
             constrained["mode"] = mode
             constrained["filters"] = dict(query_plan.filters)
+        elif tool_name == "search_library":
+            constrained["query"] = query_plan.standalone_query
+            constrained["top_k"] = top_k
+            constrained["mode"] = mode
+            doc_ids = query_plan.filters.get("doc_ids")
+            if doc_ids is None and query_plan.filters.get("doc_id") is not None:
+                doc_ids = [query_plan.filters["doc_id"]]
+            if doc_ids is not None:
+                constrained["doc_ids"] = (
+                    [doc_ids] if isinstance(doc_ids, str) else list(doc_ids)
+                )
         elif tool_name == "find_documents":
             if not constrained.get("query") and not constrained.get("filters"):
                 constrained["query"] = query_plan.standalone_query
@@ -730,9 +742,11 @@ class AgentRunner:
                     result.error_message or "工具执行失败，请稍后重试。",
                 )
             evidence = [item.model_dump() for item in result.evidence]
-            if tool_name == "search_documents":
+            if tool_name in {"search_documents", "search_library"}:
                 return self._format_search_observation(evidence), evidence, True
-            is_retrieval = tool_name in {"find_documents", "get_document"}
+            is_retrieval = tool_name in {
+                "find_documents", "get_document", "search_library"
+            }
             return self._stringify_result(result.data or {}), evidence, is_retrieval
 
         if isinstance(tool, SearchTool) or tool_name == "search_documents":
@@ -753,7 +767,7 @@ class AgentRunner:
         return (
             self._stringify_result(result),
             evidence,
-            tool_name in {"find_documents", "get_document"},
+            tool_name in {"find_documents", "get_document", "search_library"},
         )
 
     def _execute_parallel_comparison_retrieval(

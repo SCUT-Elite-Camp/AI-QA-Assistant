@@ -254,6 +254,13 @@ request-level `doc_ids` permission allowlist before `get_document`, converts
 document results into request-local Evidence, and keeps citation validation in
 the existing Evidence Gate path.
 
+`search_library` is opt-in (`PERSONAL_LIBRARY_ENABLED=true`). Source selection
+comes from the query, while owner ID, knowledge-base ID, and the signed scope
+token are accepted only by the token-protected internal Chat contract. Public
+Chat requests reject those trusted fields. Library results become request-local
+Evidence with document/version/scope/locator metadata; missing or invalid
+trusted context fails closed.
+
 Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
 The retrieval call always receives `standalone_query`, `top_k`,

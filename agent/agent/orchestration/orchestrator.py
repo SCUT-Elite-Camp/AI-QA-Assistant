@@ -10,7 +10,7 @@ from agent.memory.context_resolver import ContextResolver
 from agent.memory.memory_response_policy import MemoryResponsePolicy
 from agent.memory.persistent_models import PersistentMemoryContext
 from agent.policy import IntentPolicyRouter
-from agent.query import QueryUnderstanding
+from agent.query import QueryUnderstanding, heuristic_source_intent
 from agent.query.subquery_router import SubQueryRouter
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
@@ -20,9 +20,10 @@ from agent.schemas.chat import (
     ContextArtifact,
     MemoryContextInput,
     MemoryRecall,
+    PersonalLibraryContext,
 )
 from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryPlan, SourceIntent, SourceKind
 from agent.schemas.subquery_routing import SubQueryRoutingResult
 from agent.schemas.tool_execution import Evidence
 from agent.tools import ToolExecutor
@@ -113,7 +114,17 @@ class AgentOrchestrator:
             )
 
         plan = self._resolve_query_plan(request, query_plan, history)
-        policy = self.policy_router.route(plan)
+        source_intent = (
+            plan.source_intent
+            if plan.source_intent.sources
+            else heuristic_source_intent(plan.original_query)
+        )
+        plan = plan.model_copy(update={"source_intent": source_intent})
+        policy = self._apply_source_policy(
+            request,
+            self.policy_router.route(plan),
+            source_intent,
+        )
         subquery_routing = (
             self.subquery_router.route(plan)
             if self.subquery_router is not None
@@ -124,19 +135,24 @@ class AgentOrchestrator:
             policy,
         )
         is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
-        run_result = self.runner.run(
-            plan,
-            policy=policy,
-            tool_executor=self.tool_executor,
-            evidence_gate=self.evidence_gate,
-            corrective_retrieval=self.corrective_retrieval,
-            history=history,
-            trace_id=trace_id,
-            mode=retrieval_mode,
-            top_k=top_k,
-            is_first_message=is_first,
-            soul_content=request.soul_content,
-        )
+        library_tool = self._configure_library_context(request)
+        try:
+            run_result = self.runner.run(
+                plan,
+                policy=policy,
+                tool_executor=self.tool_executor,
+                evidence_gate=self.evidence_gate,
+                corrective_retrieval=self.corrective_retrieval,
+                history=history,
+                trace_id=trace_id,
+                mode=retrieval_mode,
+                top_k=top_k,
+                is_first_message=is_first,
+                soul_content=request.soul_content,
+            )
+        finally:
+            if library_tool is not None:
+                library_tool.clear_request_context()
         return OrchestrationResult(
             query_plan=plan,
             policy=policy,
@@ -165,6 +181,66 @@ class AgentOrchestrator:
                 # The normal orchestrated path always returns typed Evidence.
                 continue
         return self.citation_checker.validate(answer, citations, typed_evidence)
+
+    def _configure_library_context(self, request: ChatRequest) -> Any | None:
+        tool = self.tool_executor.registry.get("search_library")
+        context = getattr(request, "personal_library_context", None)
+        if (
+            tool is None
+            or not hasattr(tool, "set_request_context")
+            or not isinstance(context, PersonalLibraryContext)
+        ):
+            return None
+        tool.set_request_context(
+            context.owner_user_id,
+            context.knowledge_base_id,
+            context.access_token,
+        )
+        return tool
+
+    @staticmethod
+    def _apply_source_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+        source_intent: SourceIntent,
+    ) -> IntentPolicy:
+        sources = set(source_intent.sources)
+        if not sources:
+            return policy
+
+        tools: list[str] = []
+        if SourceKind.ENTERPRISE_KB in sources:
+            tools.extend(policy.candidate_tools)
+        if (
+            SourceKind.PERSONAL_LIBRARY in sources
+            and isinstance(
+                getattr(request, "personal_library_context", None),
+                PersonalLibraryContext,
+            )
+        ):
+            tools.append("search_library")
+        tools = list(dict.fromkeys(tools))
+
+        if SourceKind.PERSONAL_LIBRARY not in sources:
+            return policy.model_copy(update={"candidate_tools": tuple(tools)})
+        return policy.model_copy(update={
+            "candidate_tools": tuple(tools),
+            "retrieval_strategy": "hybrid",
+            "evidence_policy": (
+                "single_fact" if policy.evidence_policy == "none" else policy.evidence_policy
+            ),
+            "assembly_strategy": (
+                "score_order" if policy.assembly_strategy == "none" else policy.assembly_strategy
+            ),
+            "top_k": max(5, policy.top_k),
+            "max_iterations": max(2, policy.max_iterations),
+            "max_tool_calls": max(1, policy.max_tool_calls),
+            # CorrectiveRetrievalPlanner only knows the enterprise search tool.
+            "max_retrieval_attempts": (
+                2 if SourceKind.ENTERPRISE_KB in sources else 1
+            ),
+            "requires_citations": True,
+        })
 
     def _read_history(self, session_id: str | None) -> list[dict[str, Any]]:
         if not settings.MEMORY_ENABLED or not session_id:

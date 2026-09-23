@@ -17,6 +17,27 @@ class QueryIntent(StrEnum):
     UNSUPPORTED = "unsupported"
 
 
+class SourceKind(StrEnum):
+    ENTERPRISE_KB = "enterprise_kb"
+    PERSONAL_LIBRARY = "personal_library"
+    CONVERSATION_ATTACHMENT = "conversation_attachment"
+
+
+class SourceIntentMode(StrEnum):
+    EXPLICIT = "explicit"
+    INFERRED = "inferred"
+
+
+class SourceIntent(BaseModel):
+    """Retrieval-source choice only; authorization remains server supplied."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    sources: list[SourceKind] = Field(default_factory=list)
+    mode: SourceIntentMode = SourceIntentMode.INFERRED
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
 class QueryPlan(BaseModel):
     """Frozen output contract produced by Query Understanding."""
 
@@ -37,6 +58,7 @@ class QueryPlan(BaseModel):
 
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
+    source_intent: SourceIntent = Field(default_factory=SourceIntent)
     _subquery_intent_hints: dict[str, QueryIntent] = PrivateAttr(default_factory=dict)
 
     @field_validator("original_query")
