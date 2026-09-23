@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scut-elite-camp.local/schemas/deep-research-judge-output.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["judge_version", "correctness", "completeness", "faithfulness", "answer_relevance", "limitation_disclosure", "conflict_handling", "required_fact_ids_supported", "unsupported_claim_ids", "rationale"],
+  "properties": {
+    "judge_version": {"const": "judge.v1"},
+    "correctness": {"type": "integer", "minimum": 1, "maximum": 5},
+    "completeness": {"type": "integer", "minimum": 1, "maximum": 5},
+    "faithfulness": {"type": "integer", "minimum": 1, "maximum": 5},
+    "answer_relevance": {"type": "integer", "minimum": 1, "maximum": 5},
+    "limitation_disclosure": {"type": "integer", "minimum": 1, "maximum": 5},
+    "conflict_handling": {"type": "integer", "minimum": 1, "maximum": 5},
+    "required_fact_ids_supported": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "unsupported_claim_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "rationale": {"type": "string", "maxLength": 1200}
+  }
+}

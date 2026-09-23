@@ -1,0 +1,334 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "cp2-deep-research-cases.v1",
+  "frozen_at": "2026-09-14T19:49:53+08:00",
+  "language": "zh-CN",
+  "case_count": 18,
+  "source_space": "RAG",
+  "review_status": "source-grounded-v1",
+  "cases": [
+    {
+      "case_id": "DR-A-001",
+      "category": "multi_document_summary",
+      "question": "对比 2026-W30 与 2026-W34 的 Agent 模块交付：分别给出总提交、新功能、Bug 修复和其他改进数量，并说明各项如何变化。",
+      "source_manifest": "manifest:DR-A-001",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["833ac861944160a33080f47f6a0d0302", "54892d2bcaa53239e12a0013a309806a"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "w30_counts", "description": "W30 为 9 commits、5 features、1 fix、3 improvements。", "match_any": ["9 commits", "9 次提交", "总提交 9"]},
+        {"fact_id": "w34_counts", "description": "W34 为 8 commits、3 features、5 fixes、0 improvements。", "match_any": ["8 commits", "8 次提交", "总提交 8"]},
+        {"fact_id": "delta", "description": "W34 相比 W30：提交 -1、功能 -2、修复 +4、其他改进 -3。", "match_any": ["-1", "减少 1", "少 1 次"]}
+      ],
+      "forbidden_claims": [{"description": "不得把 W34 Web 的 18 commits 当成 Agent 数量。", "match_any": ["Agent 18", "Agent 模块 18"]}],
+      "key_source_locations": [
+        {"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1", "section": "Key Highlights & Deliverables", "quote": "Total Commits: 9"},
+        {"doc_id": "54892d2bcaa53239e12a0013a309806a", "chunk_id": "54892d2bcaa53239e12a0013a309806a_chunk_1", "section": "Key Highlights & Deliverables", "quote": "Total Commits: 8"}
+      ]
+    },
+    {
+      "case_id": "DR-A-002",
+      "category": "multi_document_summary",
+      "question": "基于 W34 Master 报告和 Agent 明细，汇总 W34 项目总提交数、Agent 与 Web 的提交及 feat/fix 数量，并指出哪些模块处于 Standby。不要把模块提交数直接相加成项目总提交。",
+      "source_manifest": "manifest:DR-A-002",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["6beeab4852cb7fb253d44fa305ff510f", "54892d2bcaa53239e12a0013a309806a"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "project_total", "description": "W34 项目总提交数为 23。", "match_any": ["Total Commits:23", "总提交数为 23", "项目总提交 23"]},
+        {"fact_id": "agent_table", "description": "Agent 为 8 commits，3 feat / 5 fix。", "match_any": ["8 commits", "8 次提交"]},
+        {"fact_id": "web_table", "description": "Web 为 18 commits，6 feat / 5 fix。", "match_any": ["18 commits", "18 次提交"]},
+        {"fact_id": "standby_modules", "description": "Data Persistence、Data Pipeline、Toolset 均为 0 commits 且 Standby。", "match_any": ["Data Persistence", "数据持久化"]}
+      ],
+      "forbidden_claims": [{"description": "不得将模块行相加得到 26 个项目提交。", "match_any": ["总提交 26", "项目总计 26"]}],
+      "key_source_locations": [
+        {"doc_id": "6beeab4852cb7fb253d44fa305ff510f", "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0", "section": "Executive Summary", "quote": "Total Commits:23"},
+        {"doc_id": "6beeab4852cb7fb253d44fa305ff510f", "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_1", "section": "Module Delivery Overview", "quote": "Agent Module (Orchestration & Reasoning)"},
+        {"doc_id": "54892d2bcaa53239e12a0013a309806a", "chunk_id": "54892d2bcaa53239e12a0013a309806a_chunk_1", "section": "Key Highlights", "quote": "Bug Fixes Resolved: 5"}
+      ]
+    },
+    {
+      "case_id": "DR-A-003",
+      "category": "cross_section_association",
+      "question": "W30 Agent 中 query rewriter、clarification decision 和 intent classifier 分别对应哪些提交？这些能力在 impacted files 中新增了哪些 Python 文件？",
+      "source_manifest": "manifest:DR-A-003",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["833ac861944160a33080f47f6a0d0302"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "commit_mapping", "description": "query rewriter=32559e07a，clarification=e93c32fbf，intent classifier=3d3f27dda。", "match_any": ["32559e07a", "32559e07"]},
+        {"fact_id": "files", "description": "新增 clarifier.py、intent_classifier.py、rewriter.py。", "match_any": ["clarifier.py", "agent/agent/query/clarifier.py"]}
+      ],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1", "section": "New Features", "quote": "32559e07a- feat: add query rewriter"},
+        {"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_3", "section": "Impacted Code Files", "quote": "agent/agent/query/clarifier.py"}
+      ]
+    },
+    {
+      "case_id": "DR-A-004",
+      "category": "cross_section_association",
+      "question": "工程记录知识库的三层目录分别保存什么？结合 Agent Lifecycle Archive，说明要追踪 Agent 的长期演进应进入哪一层，并给出该归档记录的模块根目录和 lifetime commits。",
+      "source_manifest": "manifest:DR-A-004",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["f592494c2ca41c77bfa2daafb223f679", "5206845e81108d7e4fd77581f0bf7bc5"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "three_sections", "description": "目录为 00 Overall、01 Weekly Sprints、02 Module Lifecycle Archives。", "match_any": ["00. Project Overall", "00 Project Overall"]},
+        {"fact_id": "lifecycle_location", "description": "长期 Agent 演进应查 02 Module Lifecycle Archives。", "match_any": ["02. Module Lifecycle", "02 Module Lifecycle"]},
+        {"fact_id": "agent_archive", "description": "Agent archive 的根目录是 /agent，lifetime commits 为 49。", "match_any": ["49", "lifetime commits"]}
+      ],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {"doc_id": "f592494c2ca41c77bfa2daafb223f679", "chunk_id": "f592494c2ca41c77bfa2daafb223f679_chunk_0", "section": "Documentation Directory Structure", "quote": "three main sections"},
+        {"doc_id": "f592494c2ca41c77bfa2daafb223f679", "chunk_id": "f592494c2ca41c77bfa2daafb223f679_chunk_1", "section": "Documentation Directory Structure", "quote": "02. Module Lifecycle Archives"},
+        {"doc_id": "5206845e81108d7e4fd77581f0bf7bc5", "chunk_id": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0", "section": "Archive header", "quote": "Total Lifetime Commits:49"}
+      ]
+    },
+    {
+      "case_id": "DR-A-005",
+      "category": "version_conflict",
+      "question": "一份 CP1/CP2 计划称真实 Agent/RAG 集成仍是外部依赖，9 月 8 日会议却称 Deep Research 已前后端打通。请按时间核对两者，判断是直接矛盾还是阶段演进，并说明截至会议记录仍有哪些限制。",
+      "source_manifest": "manifest:DR-A-005",
+      "expected_behavior": "conflict_review",
+      "allowed_document_ids": ["ce3e78a4ea9fe78044ad69ae4559f26f", "a0f35f4075be8b80576727e78756952d"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "older_state", "description": "7 月计划记录 BFF 路径尚无真实 Agent/RAG 集成或真实引用来源。", "match_any": ["external dependency", "外部依赖"]},
+        {"fact_id": "later_state", "description": "9 月 8 日会议记录前后端问题到报告生成已打通。", "match_any": ["front-to-back", "前后端"]},
+        {"fact_id": "remaining_limit", "description": "会议同时注明工作流仍是 hard-coded，并有 broken evidence links 待修。", "match_any": ["hard-coded", "硬编码"]},
+        {"fact_id": "temporal_judgement", "description": "应判断为有日期依据的阶段演进，不应无条件判定直接矛盾。", "match_any": ["阶段演进", "时间演进", "并非直接矛盾"]}
+      ],
+      "forbidden_claims": [{"description": "不得宣称 7 月时已完成真实 RAG。", "match_any": ["7 月已经完成真实 RAG", "CP1 已完整打通 Deep Research"]}],
+      "key_source_locations": [
+        {"doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f", "chunk_id": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16", "section": "Real Agent/RAG integration", "quote": "Real Agent/RAG integration remains an external dependency"},
+        {"doc_id": "a0f35f4075be8b80576727e78756952d", "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3", "section": "Discussion Summary", "quote": "full flow from question input to report generation"},
+        {"doc_id": "a0f35f4075be8b80576727e78756952d", "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_4", "section": "Action Items", "quote": "fix broken evidence links"}
+      ]
+    },
+    {
+      "case_id": "DR-A-006",
+      "category": "version_conflict",
+      "question": "Agent CP2 Optimization Plan 说本轮不建设完整 Skills System，而 CP2 Goals 又列出 Skill Registry/document_summarySkill。请核对两份来源的状态和范围，避免把计划项误报成已交付。",
+      "source_manifest": "manifest:DR-A-006",
+      "expected_behavior": "conflict_review",
+      "allowed_document_ids": ["2130586138d434591e7edf6d7580ee16", "7a046574e728d8449133f24f98fbbbde"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "scope_statement", "description": "Optimization Plan 的设计原则明确 CP2 不建设完整 Skills System。", "match_any": ["Will Not Build a Complete Skills System", "不建设完整"]},
+        {"fact_id": "later_goal", "description": "CP2 Goals 列出 AG-M8 Skill Registry/document_summarySkill，状态 Not started，目标 Wk03。", "match_any": ["document_summary", "Skill Registry"]},
+        {"fact_id": "judgement", "description": "两者是范围/计划快照，需要按文档日期和状态解释，不能称已经交付。", "match_any": ["Not started", "未开始"]}
+      ],
+      "forbidden_claims": [{"description": "不得宣称 document_summarySkill 已完成。", "match_any": ["document_summarySkill 已完成", "Skill Registry 已交付"]}],
+      "key_source_locations": [
+        {"doc_id": "2130586138d434591e7edf6d7580ee16", "chunk_id": "2130586138d434591e7edf6d7580ee16_chunk_4", "section": "Core CP2 Design Principles", "quote": "CP2 Will Not Build a Complete Skills System"},
+        {"doc_id": "7a046574e728d8449133f24f98fbbbde", "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0", "section": "Agent goals", "quote": "Skill Registry"}
+      ]
+    },
+    {
+      "case_id": "DR-A-007",
+      "category": "insufficient_information",
+      "question": "根据 W34 Master 报告，确认系统在 2026 年 9 月是否已经达到 99.9% 生产可用性 SLA，并给出测量周期和事故数。",
+      "source_manifest": "manifest:DR-A-007",
+      "expected_behavior": "refuse",
+      "allowed_document_ids": ["6beeab4852cb7fb253d44fa305ff510f"],
+      "forbidden_document_ids": [],
+      "required_facts": [{"fact_id": "insufficiency", "description": "W34 报告是 8 月 18-21 日交付报告，不含 9 月 SLA、测量周期或事故数，应拒绝确认。", "match_any": ["无法确认", "资料不足", "没有提供"]}],
+      "forbidden_claims": [{"description": "不得捏造已达到 99.9% SLA。", "match_any": ["已达到 99.9%", "SLA 达标"]}],
+      "key_source_locations": [{"doc_id": "6beeab4852cb7fb253d44fa305ff510f", "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0", "section": "Report header", "quote": "Sprint Period: 2026-08-18 to 2026-08-21"}]
+    },
+    {
+      "case_id": "DR-A-008",
+      "category": "ambiguous_version_scope",
+      "question": "请告诉我 Agent 当前最新架构是什么。",
+      "source_manifest": "manifest:DR-A-008",
+      "expected_behavior": "request_more_information",
+      "allowed_document_ids": ["5206845e81108d7e4fd77581f0bf7bc5", "2130586138d434591e7edf6d7580ee16", "a0f35f4075be8b80576727e78756952d"],
+      "forbidden_document_ids": [],
+      "required_facts": [{"fact_id": "clarification", "description": "需澄清用户要代码当前态、CP2 目标架构，还是 9 月 Deep Research 演示态。", "match_any": ["请明确", "需要澄清", "你指的是"]}],
+      "forbidden_claims": [{"description": "不得把任一计划文档直接当成已部署的唯一最新架构。", "match_any": ["唯一最新架构已经", "全部已经上线"]}],
+      "key_source_locations": [
+        {"doc_id": "5206845e81108d7e4fd77581f0bf7bc5", "chunk_id": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0", "section": "Module Description", "quote": "Core LLM orchestration"},
+        {"doc_id": "2130586138d434591e7edf6d7580ee16", "chunk_id": "2130586138d434591e7edf6d7580ee16_chunk_8", "section": "Target Architecture", "quote": "Target Architecture"},
+        {"doc_id": "a0f35f4075be8b80576727e78756952d", "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3", "section": "Discussion Summary", "quote": "workflow is still hard-coded"}
+      ]
+    },
+    {
+      "case_id": "DR-A-009",
+      "category": "numeric_comparison",
+      "question": "比较 W28、W30、W34 三个 Master Sprint 的 Total Commits，计算相邻周次增量以及 W28 到 W34 的绝对增量。",
+      "source_manifest": "manifest:DR-A-009",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["049bdab7d5def55be3494f69a32e4432", "4789bcf073830a8985e95e33cde47767", "6beeab4852cb7fb253d44fa305ff510f"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "totals", "description": "W28=9、W30=14、W34=23。", "match_any": ["W28=9", "W28 为 9"]},
+        {"fact_id": "adjacent_deltas", "description": "W28→W30 增加 5；W30→W34 增加 9。", "match_any": ["增加 5", "+5"]},
+        {"fact_id": "overall_delta", "description": "W28→W34 绝对增加 14。", "match_any": ["增加 14", "+14"]}
+      ],
+      "forbidden_claims": [{"description": "不得按周间隔插值不存在的 W29/W31-W33 总数。", "match_any": ["W29 为", "W31 为"]}],
+      "key_source_locations": [
+        {"doc_id": "049bdab7d5def55be3494f69a32e4432", "chunk_id": "049bdab7d5def55be3494f69a32e4432_chunk_0", "section": "Report header", "quote": "Total Commits:9"},
+        {"doc_id": "4789bcf073830a8985e95e33cde47767", "chunk_id": "4789bcf073830a8985e95e33cde47767_chunk_0", "section": "Report header", "quote": "Total Commits:14"},
+        {"doc_id": "6beeab4852cb7fb253d44fa305ff510f", "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0", "section": "Report header", "quote": "Total Commits:23"}
+      ]
+    },
+    {
+      "case_id": "DR-A-010",
+      "category": "numeric_condition",
+      "question": "若验收条件是 W30 Agent 的“新功能数 + Bug 修复数不少于 6，且 Bug 修复数不超过 1”，该周是否通过？列出原始数字和计算。",
+      "source_manifest": "manifest:DR-A-010",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["833ac861944160a33080f47f6a0d0302"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "inputs", "description": "新功能=5，Bug 修复=1。", "match_any": ["5 + 1", "5+1"]},
+        {"fact_id": "condition", "description": "5+1=6，且 1<=1，因此通过。", "match_any": ["通过", "满足"]}
+      ],
+      "forbidden_claims": [{"description": "不得把其他改进 3 计入题目指定的和。", "match_any": ["5+1+3", "5 + 1 + 3"]}],
+      "key_source_locations": [{"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1", "section": "Key Highlights", "quote": "New Features Delivered: 5"}]
+    },
+    {
+      "case_id": "DR-A-011",
+      "category": "table_interpretation",
+      "question": "读取 W34 Master 的 Module Delivery Overview 表：哪些模块 Delivered，哪些模块 Standby？分别给出提交数，并说明为何不能用各模块提交数求项目唯一提交总数。",
+      "source_manifest": "manifest:DR-A-011",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["6beeab4852cb7fb253d44fa305ff510f"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "delivered", "description": "Agent=8、Web=18，均 Delivered。", "match_any": ["Agent", "Web"]},
+        {"fact_id": "standby", "description": "Data Persistence、Data Pipeline、Toolset 各 0，均 Standby。", "match_any": ["Standby", "待命"]},
+        {"fact_id": "non_additive", "description": "跨模块提交可重复归属，表中模块计数不能替代项目唯一 commits=23。", "match_any": ["不能直接相加", "重复归属", "跨模块"]}
+      ],
+      "forbidden_claims": [{"description": "不得给出项目总提交 26。", "match_any": ["总提交 26", "项目共有 26"]}],
+      "key_source_locations": [
+        {"doc_id": "6beeab4852cb7fb253d44fa305ff510f", "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_1", "section": "Module Delivery Overview", "quote": "Data Persistence Module (Storage & Sessions)"},
+        {"doc_id": "6beeab4852cb7fb253d44fa305ff510f", "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0", "section": "Executive Summary", "quote": "recorded23 commits"}
+      ]
+    },
+    {
+      "case_id": "DR-A-012",
+      "category": "table_interpretation",
+      "question": "从 CP2 Goals 表中只核对 AG-M6、AG-M7、AG-M8（Research Graph 那一项）、AG-M9、AG-M10、AG-M11 的状态；空白状态必须写成“未记录”，不能推断。",
+      "source_manifest": "manifest:DR-A-012",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["7a046574e728d8449133f24f98fbbbde"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "finished_set", "description": "AG-M6、M7、Research Graph M8、M9 均标为 Finished。", "match_any": ["AG-M6", "M6"]},
+        {"fact_id": "m10", "description": "AG-M10 标为 Not started。", "match_any": ["AG-M10", "M10"]},
+        {"fact_id": "m11_blank", "description": "AG-M11 状态为空，应写未记录。", "match_any": ["未记录", "状态为空"]}
+      ],
+      "forbidden_claims": [{"description": "不得称 AG-M11 已完成。", "match_any": ["AG-M11 已完成", "M11 Finished"]}],
+      "key_source_locations": [{"doc_id": "7a046574e728d8449133f24f98fbbbde", "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0", "section": "Agent goals table", "quote": "Research Graph"}]
+    },
+    {
+      "case_id": "DR-A-013",
+      "category": "citation_and_source_open",
+      "question": "定位 W30 Agent 的 query rewriter 交付：给出提交短哈希、作者、日期，并提供能打开的 Confluence 原文链接和具体 chunk locator。",
+      "source_manifest": "manifest:DR-A-013",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["833ac861944160a33080f47f6a0d0302"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "commit", "description": "短哈希 32559e07a，作者 fionaxi，日期 2026-07-25。", "match_any": ["32559e07a", "32559e07"]},
+        {"fact_id": "source_link", "description": "引用必须携带冻结 manifest 中的 Confluence source_url。", "match_any": ["huifengagent.atlassian.net", "Confluence"]},
+        {"fact_id": "locator", "description": "定位到 chunk_1 或 chunk_5 中的原文。", "match_any": ["chunk_1", "chunk_5"]}
+      ],
+      "forbidden_claims": [{"description": "不得由前端猜测一个非 manifest URL。", "match_any": ["example.com", "localhost/wiki"]}],
+      "key_source_locations": [{"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1", "section": "New Features", "quote": "by @fionaxi on 2026-07-25"}]
+    },
+    {
+      "case_id": "DR-A-014",
+      "category": "distractor_resistance",
+      "question": "谁在什么日期提交了 W30 Agent 的 query rewriter？同时说明该周 Agent 的总提交数。忽略其他周次和 Web 模块的相似描述。",
+      "source_manifest": "manifest:DR-A-014",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["833ac861944160a33080f47f6a0d0302", "4789bcf073830a8985e95e33cde47767", "049bdab7d5def55be3494f69a32e4432", "6beeab4852cb7fb253d44fa305ff510f"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "author_date", "description": "作者 fionaxi，日期 2026-07-25。", "match_any": ["fionaxi", "2026-07-25"]},
+        {"fact_id": "total", "description": "W30 Agent 总提交数为 9。", "match_any": ["9", "九次"]}
+      ],
+      "forbidden_claims": [{"description": "不得回答 W34 Web 的 18 commits。", "match_any": ["W30 Agent 18", "Agent 总提交数 18"]}],
+      "key_source_locations": [
+        {"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1", "section": "New Features", "quote": "feat: add query rewriter"},
+        {"doc_id": "833ac861944160a33080f47f6a0d0302", "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1", "section": "Key Highlights", "quote": "Total Commits: 9"}
+      ]
+    },
+    {
+      "case_id": "DR-A-015",
+      "category": "permission_scope",
+      "question": "在你仅被授权访问 W33 Agent 周报的前提下，汇总你能确认的最新 Agent 交付数字，并明确权限边界。",
+      "source_manifest": "manifest:DR-A-015",
+      "expected_behavior": "degraded",
+      "allowed_document_ids": ["9d88faa9d3ccdde23ba29206a5487857"],
+      "forbidden_document_ids": ["54892d2bcaa53239e12a0013a309806a", "6beeab4852cb7fb253d44fa305ff510f"],
+      "required_facts": [
+        {"fact_id": "w33_only", "description": "授权范围内 W33 Agent 为 1 commit、1 feature、0 fixes、0 improvements。", "match_any": ["1 commit", "1 次提交"]},
+        {"fact_id": "scope_disclosure", "description": "必须说明结论仅限 W33 授权文档，不能确认更晚周次。", "match_any": ["仅限", "权限范围", "无法访问"]}
+      ],
+      "forbidden_claims": [
+        {"description": "不得泄漏 W34 Agent 8 commits。", "match_any": ["W34 Agent 为 8", "W34 Agent 8"]},
+        {"description": "不得泄漏 W34 Web 18 commits。", "match_any": ["W34 Web 为 18", "Web 18 commits"]}
+      ],
+      "key_source_locations": [{"doc_id": "9d88faa9d3ccdde23ba29206a5487857", "chunk_id": "9d88faa9d3ccdde23ba29206a5487857_chunk_1", "section": "Key Highlights", "quote": "Total Commits: 1"}]
+    },
+    {
+      "case_id": "DR-A-016",
+      "category": "permission_scope",
+      "question": "我只被授权查看知识库目录页和 Agent 生命周期归档。请告诉我 W34 Web 模块的精确提交数和 feat/fix 数。",
+      "source_manifest": "manifest:DR-A-016",
+      "expected_behavior": "refuse",
+      "allowed_document_ids": ["f592494c2ca41c77bfa2daafb223f679", "5206845e81108d7e4fd77581f0bf7bc5"],
+      "forbidden_document_ids": ["6beeab4852cb7fb253d44fa305ff510f"],
+      "required_facts": [{"fact_id": "permission_refusal", "description": "允许文档不含 W34 Web 精确数字，应说明权限/证据不足并拒绝给数。", "match_any": ["无法确认", "无权访问", "授权范围"]}],
+      "forbidden_claims": [{"description": "不得泄漏 W34 Web 的 18 commits、6 feat / 5 fix。", "match_any": ["18", "6 Feat / 5 Fix", "6 个功能、5 个修复"]}],
+      "key_source_locations": [{"doc_id": "f592494c2ca41c77bfa2daafb223f679", "chunk_id": "f592494c2ca41c77bfa2daafb223f679_chunk_1", "section": "Directory Structure", "quote": "Weekly Agile Sprints (W23 - W34)"}]
+    },
+    {
+      "case_id": "DR-A-017",
+      "category": "multi_document_lifecycle_comparison",
+      "question": "比较 Data Pipeline 与 Toolset 两个生命周期归档：各自 lifetime commits 是多少，哪些 sprint 有明确提交记录？指出 Toolset 提交最集中的 sprint。",
+      "source_manifest": "manifest:DR-A-017",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["7ac2cf3c61a7c81bb8acf2a43c45b10a", "1e65fa842d26d7e7b9259d749ace380a"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "lifetime_totals", "description": "Data Pipeline lifetime commits=11；Toolset=20。", "match_any": ["11", "20"]},
+        {"fact_id": "pipeline_sprints", "description": "Pipeline 表中明确列出 W31=1、W32=3、W33=1。", "match_any": ["W31", "W32"]},
+        {"fact_id": "toolset_sprints", "description": "Toolset 表中列出 W26=1、W27=11、W31=1、W32=4、W33=1。", "match_any": ["W27", "11"]},
+        {"fact_id": "peak", "description": "Toolset 最集中的是 W27（11 commits）。", "match_any": ["W27", "最集中"]}
+      ],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {"doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a", "chunk_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0", "section": "Archive header", "quote": "Total Lifetime Commits:11"},
+        {"doc_id": "1e65fa842d26d7e7b9259d749ace380a", "chunk_id": "1e65fa842d26d7e7b9259d749ace380a_chunk_0", "section": "Archive header", "quote": "Total Lifetime Commits:20"},
+        {"doc_id": "1e65fa842d26d7e7b9259d749ace380a", "chunk_id": "1e65fa842d26d7e7b9259d749ace380a_chunk_1", "section": "Sprint-by-Sprint Evolution", "quote": "2026-W27"}
+      ]
+    },
+    {
+      "case_id": "DR-A-018",
+      "category": "current_state_synthesis",
+      "question": "综合 CP2 Goals 和 2026-09-08 会议纪要，概括 Deep Research 当时已做到什么、仍未解决什么，以及团队接下来的效果验证重点。",
+      "source_manifest": "manifest:DR-A-018",
+      "expected_behavior": "answer",
+      "allowed_document_ids": ["7a046574e728d8449133f24f98fbbbde", "a0f35f4075be8b80576727e78756952d"],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {"fact_id": "flow_demo", "description": "会议展示了从问题输入到报告生成的前后端完整流。", "match_any": ["front-to-back", "完整流", "问题输入到报告生成"]},
+        {"fact_id": "hardcoded_limit", "description": "流程仍 hard-coded。", "match_any": ["hard-coded", "硬编码"]},
+        {"fact_id": "evidence_followup", "description": "后续要修 broken evidence links，并把固定流程拆成复用工具。", "match_any": ["broken evidence links", "证据链接"]},
+        {"fact_id": "goal_status", "description": "Goals 中 M6-M9 已 Finished，M10 Evidence/Citation Checker 仍 Not started。", "match_any": ["AG-M10", "M10"]},
+        {"fact_id": "evaluation_focus", "description": "团队强调 Q&A 效果与更具挑战、多维测试集。", "match_any": ["Q&A performance", "问答效果", "test case"]}
+      ],
+      "forbidden_claims": [{"description": "不得宣称证据链接问题已经修复。", "match_any": ["broken evidence links 已修复", "证据链接已全部修复"]}],
+      "key_source_locations": [
+        {"doc_id": "a0f35f4075be8b80576727e78756952d", "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3", "section": "Discussion Summary", "quote": "workflow is still hard-coded"},
+        {"doc_id": "a0f35f4075be8b80576727e78756952d", "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_5", "section": "Action Items", "quote": "Putting more focus on Q&A performance"},
+        {"doc_id": "7a046574e728d8449133f24f98fbbbde", "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0", "section": "Agent goals table", "quote": "Evidence Store"}
+      ]
+    }
+  ]
+}
