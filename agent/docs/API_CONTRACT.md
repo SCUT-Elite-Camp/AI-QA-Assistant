@@ -243,6 +243,17 @@ The Agent trust boundary converts Tool Layer `dict` results into
 - `source_url`
 - `score`
 
+For document-level intents, Toolset also exposes:
+
+- `find_documents`: returns document identity and bounded match summaries;
+- `get_document`: returns ordered, paginated chunks for one known `doc_id`.
+
+`DOCUMENT_SEARCH` may call only `find_documents`. `SUMMARIZATION` may use
+`find_documents`, `get_document`, and `search_documents`. Agent re-applies the
+request-level `doc_ids` permission allowlist before `get_document`, converts
+document results into request-local Evidence, and keeps citation validation in
+the existing Evidence Gate path.
+
 Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
 The retrieval call always receives `standalone_query`, `top_k`,

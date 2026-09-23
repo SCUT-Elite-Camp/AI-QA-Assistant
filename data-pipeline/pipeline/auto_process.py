@@ -154,6 +154,9 @@ def auto_process_raws(
                 doc_ids = [doc.doc_id] * len(chunks)
                 chunk_indices = [ch.index for ch in chunks]
                 source_urls = [doc.source_url] * len(chunks)
+                titles = [doc.title] * len(chunks)
+                spaces = [doc.space] * len(chunks)
+                doc_types = [doc.doc_type] * len(chunks)
                 
                 milvus.insert_chunks(
                     embeddings=embeddings,
@@ -161,7 +164,10 @@ def auto_process_raws(
                     chunk_texts=chunk_texts,
                     doc_ids=doc_ids,
                     chunk_indices=chunk_indices,
-                    source_urls=source_urls
+                    source_urls=source_urls,
+                    titles=titles,
+                    spaces=spaces,
+                    doc_types=doc_types,
                 )
                 print(f"  → 向量数据已成功写入 Milvus 向量库")
             processed_count += 1

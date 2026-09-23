@@ -7,6 +7,7 @@ import pickle
 from rank_bm25 import BM25Okapi
 from retrieval.english_analyzer import EnglishAnalyzer
 from storage.document_store import DOCS_DIR
+from storage.filtering import matches_filters, normalize_filters
 
 
 class BM25Index:
@@ -56,6 +57,11 @@ class BM25Index:
                     "doc_id": doc_id,
                     "chunk_index": ch.get("index", 0),
                     "text": ch.get("text", ""),
+                    "title": data.get("title", ""),
+                    "space": data.get("space", ""),
+                    "doc_type": _document_type(data),
+                    "last_updated": data.get("last_updated", ""),
+                    "source_url": data.get("source_url", ""),
                 })
                 corpus_texts.append(ch.get("text", ""))
 
@@ -70,7 +76,12 @@ class BM25Index:
         self._bm25 = BM25Okapi(self._tokenized_corpus)
         print(f"BM25 index built with {len(corpus_texts)} chunks")
 
-    def search(self, query: str, top_k: int = 5) -> list[dict]:
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        filters: dict | None = None,
+    ) -> list[dict]:
         """Return the highest-scoring chunks for an English query."""
         if self._bm25 is None:
             raise RuntimeError(
@@ -82,7 +93,13 @@ class BM25Index:
             return []
         scores = self._bm25.get_scores(tokens)
 
-        indexed_scores = list(enumerate(scores))
+        normalized_filters = normalize_filters(filters)
+        self._require_filter_metadata(normalized_filters)
+        indexed_scores = [
+            (index, score)
+            for index, score in enumerate(scores)
+            if matches_filters(self._chunk_meta[index], normalized_filters)
+        ]
         indexed_scores.sort(key=lambda x: x[1], reverse=True)
         top_indices = [idx for idx, _score in indexed_scores[:top_k]]
 
@@ -92,6 +109,18 @@ class BM25Index:
             meta["score"] = float(scores[idx])
             results.append(meta)
         return results
+
+    def _require_filter_metadata(self, filters: dict) -> None:
+        metadata_keys = set(filters).intersection({"space", "doc_type"})
+        if not metadata_keys:
+            return
+        if any(
+            any(key not in row for key in metadata_keys)
+            for row in self._chunk_meta
+        ):
+            raise RuntimeError(
+                "BM25 index is missing filter metadata; rebuild the BM25 index"
+            )
 
     @staticmethod
     def default_index_path() -> str:
@@ -150,3 +179,17 @@ class BM25Index:
     @property
     def is_empty(self) -> bool:
         return self._bm25 is None
+
+
+def _document_type(document: dict) -> str:
+    value = document.get("doc_type")
+    if not value and isinstance(document.get("metadata"), dict):
+        metadata = document["metadata"]
+        value = metadata.get("doc_type") or metadata.get("content_type")
+    fallback = os.path.splitext(str(document.get("address", "")))[1]
+    candidate = str(value or "").strip().lower()
+    if "/" in candidate:
+        candidate = candidate.rsplit("/", 1)[-1]
+    if not candidate or candidate in {"attachment", "page"}:
+        candidate = fallback
+    return candidate.removeprefix(".")

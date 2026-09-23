@@ -92,6 +92,7 @@ class Document(BaseModel):
     source_url: str = ""
     content_blocks: list[ContentBlock] = Field(default_factory=list)  # 结构化内容块
     metadata: dict = Field(default_factory=dict)                      # 侧车溯源元数据（如 Confluence）
+    doc_type: str = ""
 
     @staticmethod
     def generate_doc_id(file_path: str) -> str:
@@ -124,6 +125,7 @@ class Document(BaseModel):
         last_updated = cls.generate_last_updated(abs_path)
         source_url = ""
         metadata: dict = {}
+        doc_type = cls.infer_doc_type(abs_path, metadata)
 
         meta_path = abs_path + ".meta.json"
         if os.path.exists(meta_path):
@@ -134,6 +136,7 @@ class Document(BaseModel):
                 title = _meta.get("title", title) or title
                 last_updated = _meta.get("last_updated", last_updated) or last_updated
                 metadata = _meta
+                doc_type = cls.infer_doc_type(abs_path, metadata)
             except Exception as _e:  # noqa: BLE001
                 print(f"  ⚠ 读取侧车元数据失败: {meta_path}，错误: {_e}")
 
@@ -147,4 +150,19 @@ class Document(BaseModel):
             source_url=source_url,
             content_blocks=content_blocks or [],
             metadata=metadata,
+            doc_type=doc_type,
         )
+
+    @staticmethod
+    def infer_doc_type(address: str, metadata: dict | None = None) -> str:
+        metadata = metadata or {}
+        value = metadata.get("doc_type") or metadata.get("content_type")
+        candidate = str(value or "").strip().lower()
+        if "/" in candidate:
+            candidate = candidate.rsplit("/", 1)[-1]
+        if candidate in {"attachment", "page", "hybrid"}:
+            candidate = ""
+        if not candidate:
+            filename = str(metadata.get("filename") or address)
+            candidate = os.path.splitext(filename)[1]
+        return candidate.removeprefix(".").lower()[:64]

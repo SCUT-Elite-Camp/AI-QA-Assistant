@@ -74,6 +74,12 @@ class ToolExecutor:
                     trace_id,
                     retrieval_attempt,
                 )
+            elif tool.name in {"find_documents", "get_document"}:
+                operation = lambda: self._execute_document_tool(
+                    tool,
+                    parsed_arguments,
+                    retrieval_attempt,
+                )
             else:
                 operation = lambda: self._execute_generic(tool, parsed_arguments)
 
@@ -193,6 +199,67 @@ class ToolExecutor:
             for row in rows
         ]
         return {"result_count": len(evidence)}, evidence
+
+    @staticmethod
+    def _execute_document_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("document tools must return a dictionary")
+
+        evidence: list[Evidence] = []
+        if tool.name == "find_documents":
+            query = str(arguments.get("query") or "document search")
+            for document in data.get("documents", []):
+                if not isinstance(document, dict):
+                    continue
+                doc_id = str(document.get("doc_id") or "")
+                summary = str(
+                    document.get("match_summary") or document.get("title") or ""
+                ).strip()
+                if not doc_id or not summary:
+                    continue
+                evidence.append(Evidence(
+                    doc_id=doc_id,
+                    chunk_id=f"{doc_id}::document",
+                    chunk_index=0,
+                    title=str(document.get("title") or doc_id),
+                    content=summary,
+                    source_url=str(document.get("source_url") or ""),
+                    score=min(1.0, max(0.0, float(document.get("score", 0.0)))),
+                    retrieval_query=query,
+                    retrieval_mode="document",
+                    retrieval_attempt=retrieval_attempt,
+                ))
+        elif "error" not in data:
+            document = data.get("document") or {}
+            if not isinstance(document, dict):
+                raise ValueError("get_document must return document metadata")
+            doc_id = str(document.get("doc_id") or arguments.get("doc_id") or "")
+            title = str(document.get("title") or doc_id)
+            for chunk in data.get("chunks", []):
+                if not isinstance(chunk, dict):
+                    continue
+                index = int(chunk.get("index", 0))
+                content = str(chunk.get("text") or "").strip()
+                if not doc_id or not content:
+                    continue
+                evidence.append(Evidence(
+                    doc_id=doc_id,
+                    chunk_id=str(chunk.get("chunk_id") or f"{doc_id}::chunk_{index}"),
+                    chunk_index=index,
+                    title=title,
+                    content=content,
+                    source_url=str(document.get("source_url") or ""),
+                    score=1.0,
+                    retrieval_query=doc_id,
+                    retrieval_mode="document",
+                    retrieval_attempt=retrieval_attempt,
+                ))
+        return data, evidence
 
     @staticmethod
     def _parse_arguments(arguments: dict[str, Any] | str) -> dict[str, Any]:
