@@ -200,19 +200,39 @@ class IntentClassifier:
 
     @staticmethod
     def _extract_json_object(content: str) -> dict[str, Any]:
-        if content.startswith("```") and content.endswith("```"):
-            lines = content.splitlines()
-            if len(lines) >= 3:
-                content = "\n".join(lines[1:-1]).strip()
-
+        import re
+        raw = content.strip()
+        # Try direct parse first
         try:
-            payload = json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise ValueError("LLM intent response is not valid JSON") from exc
+            payload = json.loads(raw)
+            if isinstance(payload, dict):
+                return payload
+        except json.JSONDecodeError:
+            pass
 
-        if not isinstance(payload, dict):
-            raise ValueError("LLM intent response must be a JSON object")
-        return payload
+        # Try stripping markdown blocks
+        if "```" in raw:
+            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
+            if match:
+                try:
+                    payload = json.loads(match.group(1))
+                    if isinstance(payload, dict):
+                        return payload
+                except json.JSONDecodeError:
+                    pass
+
+        # Try finding outermost { ... }
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                payload = json.loads(raw[start : end + 1])
+                if isinstance(payload, dict):
+                    return payload
+            except json.JSONDecodeError:
+                pass
+
+        raise ValueError(f"LLM intent response is not valid JSON: {raw[:100]}")
 
     @staticmethod
     def _fallback(reason: str) -> IntentResult:
