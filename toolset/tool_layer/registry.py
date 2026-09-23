@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -5,11 +6,19 @@ from dotenv import load_dotenv
 
 from .base_tool import BaseTool
 from .document_tools import FindDocumentsTool, GetDocumentTool
+from .search_library_tool import SearchLibraryTool
 from .search_tool import SearchTool
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env", override=False)
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _build_default_search_tool() -> SearchTool:
@@ -25,11 +34,14 @@ def _build_default_search_tool() -> SearchTool:
 
 def _build_default_tools() -> List[BaseTool]:
     search_tool = _build_default_search_tool()
-    return [
+    tools: List[BaseTool] = [
         search_tool,
         FindDocumentsTool(search_tool),
         GetDocumentTool(search_tool.documents_dir),
     ]
+    if _env_bool("PERSONAL_LIBRARY_ENABLED"):
+        tools.append(SearchLibraryTool())
+    return tools
 
 
 class ToolRegistry:

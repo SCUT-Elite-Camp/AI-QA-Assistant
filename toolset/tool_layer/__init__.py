@@ -1,5 +1,6 @@
 from .search_tool import RetrievalError, RetrievalParameterError, SearchTool
 from .document_tools import DocumentRepository, FindDocumentsTool, GetDocumentTool
+from .search_library_tool import SearchLibraryTool
 from .base_tool import BaseTool
 from .registry import ToolRegistry, get_tools
 
@@ -11,6 +12,7 @@ __all__ = [
     "DocumentRepository",
     "FindDocumentsTool",
     "GetDocumentTool",
+    "SearchLibraryTool",
     "BaseTool",
     "ToolRegistry",
     "get_tools",
