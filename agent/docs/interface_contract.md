@@ -24,6 +24,10 @@ Fields:
 - `stream`: whether streaming output is requested.
 - `retrieval_mode`: `vector`, `bm25`, or `hybrid`; defaults to `hybrid`.
 
+The public ChatRequest does not expose structural routing. `retrieval_mode`
+selects the traditional Evidence retriever only. When enabled, Wiki navigation
+is an Agent-owned explicit tool flow and does not change this request contract.
+
 ## ChatResponse
 
 ```json

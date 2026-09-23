@@ -29,7 +29,7 @@ class PDFParser(BaseParser):
         body_font_sizes: list[float] = []
 
         # ── 第一轮：逐页提取内容块和正文字号 ──
-        for page in pdf_doc:
+        for page_number, page in enumerate(pdf_doc, 1):
             page_height = page.rect.height
             header_y = page_height * HEADER_FOOTER_RATIO
             footer_y = page_height * (1 - HEADER_FOOTER_RATIO)
@@ -61,6 +61,7 @@ class PDFParser(BaseParser):
 
                 cb = self._block_to_content_block(block)
                 if cb:
+                    cb.locator = {"page": page_number, "bbox": list(bbox)}
                     positioned.append((y_mid, cb))
                     # 收集字号用于后续标题判定
                     for line in block.get("lines", []):
@@ -73,6 +74,7 @@ class PDFParser(BaseParser):
             for table in tables:
                 cb = self._table_to_content_block(table)
                 if cb:
+                    cb.locator = {"page": page_number, "bbox": list(table.bbox)}
                     try:
                         table_y = table.bbox[1]  # 表格顶部 y 坐标
                     except Exception:

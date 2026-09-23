@@ -3,6 +3,7 @@ import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle } from '../../../utils/drizzle'
 import { z } from 'zod'
 import { getOptionalChatActor, isChatOwnedByActor } from '../../../utils/chatAccess'
+import { requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
@@ -24,12 +25,14 @@ export default defineHandler(async (event) => {
 
   const actor = await getOptionalChatActor(event)
   const isOwner = actor ? isChatOwnedByActor(chat.userId, actor) : false
-
-  if (chat.visibility === 'private' && !isOwner) {
+  let topicRole: 'owner' | 'editor' | 'viewer' | null = null
+  if (chat.topicId) {
+    topicRole = (await requireTopicRole(event, chat.topicId, 'viewer')).role
+  } else if (chat.visibility === 'private' && !isOwner) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { userId: _, ...rest } = chat
-  return { ...rest, isOwner }
+  return { ...rest, isOwner, topicRole }
 })

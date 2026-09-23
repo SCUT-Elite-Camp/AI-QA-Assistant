@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tool_layer import RetrievalError, RetrievalParameterError, SearchTool

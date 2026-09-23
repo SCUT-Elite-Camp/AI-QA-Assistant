@@ -1,5 +1,7 @@
 """Cross-component Agent orchestration for the CP2 request lifecycle."""
 
+import hashlib
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,6 +13,7 @@ from agent.memory.memory_response_policy import MemoryResponsePolicy
 from agent.memory.persistent_models import PersistentMemoryContext
 from agent.policy import IntentPolicyRouter
 from agent.query import QueryUnderstanding
+from agent.query.source_intent import heuristic_source_intent
 from agent.query.subquery_router import SubQueryRouter
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner
@@ -22,10 +25,22 @@ from agent.schemas.chat import (
     MemoryRecall,
 )
 from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent, SourceKind
 from agent.schemas.subquery_routing import SubQueryRoutingResult
 from agent.schemas.tool_execution import Evidence
 from agent.tools import ToolExecutor
+
+
+logger = logging.getLogger("agent-layer.source-intent")
+
+
+def policy_requires_retrieval(plan: QueryPlan) -> bool:
+    return plan.intent in {
+        QueryIntent.KNOWLEDGE_QA,
+        QueryIntent.DOCUMENT_SEARCH,
+        QueryIntent.SUMMARIZATION,
+        QueryIntent.COMPARISON,
+    }
 
 
 @dataclass(frozen=True)
@@ -119,6 +134,23 @@ class AgentOrchestrator:
             if self.subquery_router is not None
             else SubQueryRoutingResult(is_complex=len(plan.sub_queries) >= 2)
         )
+        heuristic_intent, effective_intent, routing_mode = self._resolve_source_intent(
+            request,
+            plan,
+            trace_id,
+        )
+        policy = self._apply_source_policy(request, policy, effective_intent)
+        policy = self._apply_knowledge_base_policy(request, policy)
+        navigation_scopes = self._navigation_scopes(
+            request,
+            effective_intent,
+        )
+        policy = self._apply_exploration_policy(
+            request,
+            plan,
+            policy,
+            navigation_scopes=navigation_scopes,
+        )
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
@@ -129,13 +161,29 @@ class AgentOrchestrator:
             policy=policy,
             tool_executor=self.tool_executor,
             evidence_gate=self.evidence_gate,
-            corrective_retrieval=self.corrective_retrieval,
+            corrective_retrieval=(
+                self.corrective_retrieval
+                if request.knowledge_base_retrieval_enabled
+                else None
+            ),
             history=history,
             trace_id=trace_id,
             mode=retrieval_mode,
             top_k=top_k,
             is_first_message=is_first,
             soul_content=request.soul_content,
+            exploration_mode=request.exploration_mode,
+            navigation_scopes=navigation_scopes,
+        )
+        self._log_source_routing(
+            request=request,
+            trace_id=trace_id,
+            routing_mode=routing_mode,
+            heuristic_intent=heuristic_intent,
+            structured_intent=plan.source_intent,
+            effective_intent=effective_intent,
+            policy=policy,
+            evidence=run_result.evidence,
         )
         return OrchestrationResult(
             query_plan=plan,
@@ -165,6 +213,60 @@ class AgentOrchestrator:
                 # The normal orchestrated path always returns typed Evidence.
                 continue
         return self.citation_checker.validate(answer, citations, typed_evidence)
+
+    @staticmethod
+    def _apply_exploration_policy(
+        request: ChatRequest,
+        plan: QueryPlan,
+        policy: IntentPolicy,
+        *,
+        navigation_scopes: tuple[str, ...] = (),
+    ) -> IntentPolicy:
+        if (
+            not settings.AGENTIC_EXPLORATION_ENABLED
+            or request.exploration_mode == "off"
+            or not policy_requires_retrieval(plan)
+            or not navigation_scopes
+        ):
+            return policy
+        candidates = list(policy.candidate_tools)
+        if settings.KNOWLEDGE_NAVIGATION_ENABLED:
+            candidates.extend((
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ))
+        return policy.model_copy(update={
+            "candidate_tools": tuple(dict.fromkeys(candidates)),
+            "max_iterations": max(policy.max_iterations, settings.EXPLORATION_MAX_ROUNDS + 2),
+            "max_tool_calls": max(policy.max_tool_calls, settings.EXPLORATION_MAX_TOOL_CALLS),
+            # Mandatory Direct retrieval is outside the exploration-round
+            # budget; leave room for enterprise/personal Direct plus 3 steps.
+            "max_retrieval_attempts": max(
+                policy.max_retrieval_attempts,
+                min(5, settings.EXPLORATION_MAX_ROUNDS + 2),
+            ),
+        })
+
+    @staticmethod
+    def _navigation_scopes(
+        request: ChatRequest,
+        source_intent: SourceIntent,
+    ) -> tuple[str, ...]:
+        """Resolve server-authorized exploration scopes for this request."""
+        selected = set(source_intent.sources)
+        scopes: list[str] = []
+        if (
+            request.knowledge_base_retrieval_enabled
+            and SourceKind.ENTERPRISE_KB in selected
+        ):
+            scopes.append("enterprise")
+        if (
+            request.knowledge_base_retrieval_enabled
+            and request.personal_library_context is not None
+            and SourceKind.PERSONAL_LIBRARY in selected
+        ):
+            scopes.append("personal")
+        return tuple(scopes)
 
     def _read_history(self, session_id: str | None) -> list[dict[str, Any]]:
         if not settings.MEMORY_ENABLED or not session_id:
@@ -247,10 +349,251 @@ class AgentOrchestrator:
 
         merged_filters = dict(query_plan.filters)
         for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
+            # Request filters are explicit caller constraints and therefore
+            # take precedence over filters inferred by QueryPlanner.
             merged_filters[key] = value
         return query_plan.model_copy(update={"filters": merged_filters})
+
+    @staticmethod
+    def _resolve_source_intent(
+        request: ChatRequest,
+        plan: QueryPlan,
+        trace_id: str,
+    ) -> tuple[SourceIntent, SourceIntent, str]:
+        heuristic = heuristic_source_intent(
+            request.query,
+            enterprise_default=policy_requires_retrieval(plan),
+        )
+        structured = plan.source_intent
+        if (
+            request.attachment_context
+            and request.attachment_context.selected_attachment_ids
+        ):
+            if SourceKind.CONVERSATION_ATTACHMENT not in heuristic.sources:
+                heuristic = heuristic.model_copy(
+                    update={
+                        "sources": [
+                            *heuristic.sources,
+                            SourceKind.CONVERSATION_ATTACHMENT,
+                        ]
+                    }
+                )
+            if SourceKind.CONVERSATION_ATTACHMENT not in structured.sources:
+                structured = structured.model_copy(
+                    update={
+                        "sources": [
+                            *structured.sources,
+                            SourceKind.CONVERSATION_ATTACHMENT,
+                        ]
+                    }
+                )
+        mode = settings.SOURCE_INTENT_ROUTING_MODE
+        if mode in {"heuristic", "shadow"} or not structured.sources:
+            return heuristic, heuristic, mode
+        if mode == "canary":
+            identity = request.session_id or trace_id or request.query
+            bucket = int(hashlib.sha256(identity.encode("utf-8")).hexdigest()[:8], 16) % 100
+            if bucket >= settings.SOURCE_INTENT_CANARY_PERCENT:
+                return heuristic, heuristic, mode
+        return heuristic, structured, mode
+
+    @staticmethod
+    def _apply_source_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+        source_intent: SourceIntent,
+    ) -> IntentPolicy:
+        selected = set(source_intent.sources)
+        source_tools = {
+            "search_documents",
+            "find_documents",
+            "get_document",
+            "search_library",
+            "search_attachments",
+            "inspect_attachment",
+        }
+        candidates = [tool for tool in policy.candidate_tools if tool not in source_tools]
+        if SourceKind.ENTERPRISE_KB in selected:
+            enterprise = [tool for tool in policy.candidate_tools if tool in {
+                "search_documents", "find_documents", "get_document",
+            }]
+            candidates.extend(enterprise or ["search_documents"])
+        if SourceKind.PERSONAL_LIBRARY in selected and request.personal_library_context:
+            candidates.append("search_library")
+        attachment_context = request.attachment_context
+        if (
+            SourceKind.CONVERSATION_ATTACHMENT in selected
+            and attachment_context
+            and attachment_context.allowed_attachment_ids
+        ):
+            candidates.extend(("search_attachments", "inspect_attachment"))
+        candidates_tuple = tuple(dict.fromkeys(candidates))
+        updates: dict[str, Any] = {
+            "candidate_tools": candidates_tuple,
+        }
+        added_source_count = len([tool for tool in candidates_tuple if tool in source_tools])
+        if added_source_count:
+            updates.update(
+                max_tool_calls=min(10, max(2, policy.max_tool_calls + added_source_count)),
+                max_iterations=min(10, max(2, policy.max_iterations + added_source_count)),
+                max_retrieval_attempts=min(5, max(2, policy.max_retrieval_attempts + 1)),
+            )
+        if added_source_count and policy.retrieval_strategy == "none":
+            updates.update(
+                retrieval_strategy="hybrid",
+                evidence_policy="single_fact",
+                assembly_strategy="score_order",
+                answer_style="concise_qa",
+                top_k=5,
+                max_retrieval_attempts=2,
+                requires_citations=True,
+            )
+        if (
+            SourceKind.CONVERSATION_ATTACHMENT in selected
+            and attachment_context
+            and attachment_context.selected_attachment_ids
+        ):
+            updates.update(
+                max_tool_calls=max(5, int(updates.get("max_tool_calls", policy.max_tool_calls))),
+                max_iterations=max(5, int(updates.get("max_iterations", policy.max_iterations))),
+                max_retrieval_attempts=max(
+                    5,
+                    int(updates.get("max_retrieval_attempts", policy.max_retrieval_attempts)),
+                ),
+            )
+        return policy.model_copy(update=updates)
+
+    @staticmethod
+    def _apply_library_policy(request: ChatRequest, policy: IntentPolicy) -> IntentPolicy:
+        """One-release compatibility wrapper for callers of the old heuristic."""
+        intent = heuristic_source_intent(
+            request.query,
+            enterprise_default=policy.retrieval_strategy != "none",
+        )
+        return AgentOrchestrator._apply_source_policy(request, policy, intent)
+
+    @staticmethod
+    def _apply_knowledge_base_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+    ) -> IntentPolicy:
+        """Honor the caller's per-turn enterprise/library retrieval choice."""
+        if request.knowledge_base_retrieval_enabled:
+            return policy
+
+        knowledge_tools = {
+            "search_documents",
+            "find_documents",
+            "get_document",
+            "search_library",
+        }
+        candidates = tuple(
+            tool for tool in policy.candidate_tools if tool not in knowledge_tools
+        )
+        if any(
+            tool in {"search_attachments", "inspect_attachment"}
+            for tool in candidates
+        ):
+            return policy.model_copy(update={"candidate_tools": candidates})
+
+        return policy.model_copy(
+            update={
+                "candidate_tools": candidates,
+                "retrieval_strategy": "none",
+                "evidence_policy": "none",
+                "assembly_strategy": "none",
+                "answer_style": "direct_chat",
+                "top_k": 0,
+                "max_iterations": 1,
+                "max_tool_calls": 0,
+                "max_retrieval_attempts": 0,
+                "requires_citations": False,
+            }
+        )
+
+    @staticmethod
+    def _log_source_routing(
+        *,
+        request: ChatRequest,
+        trace_id: str,
+        routing_mode: str,
+        heuristic_intent: SourceIntent,
+        structured_intent: SourceIntent,
+        effective_intent: SourceIntent,
+        policy: IntentPolicy,
+        evidence: list[dict[str, Any]],
+    ) -> None:
+        citation_sources = sorted({
+            str(item.get("source_scope") or item.get("source_type") or "unknown")
+            for item in evidence
+        })
+        logger.info(
+            "[SOURCE_INTENT] trace_id=%s query_hash=%s mode=%s heuristic=%s "
+            "structured=%s effective=%s tools=%s evidence_sources=%s",
+            trace_id,
+            hashlib.sha256(request.query.encode("utf-8")).hexdigest()[:16],
+            routing_mode,
+            [source.value for source in heuristic_intent.sources],
+            [source.value for source in structured_intent.sources],
+            [source.value for source in effective_intent.sources],
+            list(policy.candidate_tools),
+            citation_sources,
+        )
+
+    @staticmethod
+    def _apply_attachment_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+    ) -> IntentPolicy:
+        context = request.attachment_context
+        if not context or not context.allowed_attachment_ids:
+            return policy
+
+        explicitly_selected = bool(context.selected_attachment_ids)
+        retrieval_enabled = policy.retrieval_strategy != "none"
+        if not explicitly_selected and not retrieval_enabled:
+            # Merely having access to Topic attachments must not turn casual
+            # chat or system-help requests into retrieval requests.
+            return policy
+
+        candidates = tuple(
+            dict.fromkeys(
+                (*policy.candidate_tools, "search_attachments", "inspect_attachment")
+            )
+        )
+        updates: dict[str, Any] = {
+            "candidate_tools": candidates,
+            "max_tool_calls": min(10, max(2, policy.max_tool_calls + 2)),
+            "max_iterations": min(10, max(2, policy.max_iterations + 2)),
+            "max_retrieval_attempts": min(
+                5,
+                max(2, policy.max_retrieval_attempts + 2),
+            ),
+        }
+        if explicitly_selected and not retrieval_enabled:
+            # An explicitly selected attachment is request-local evidence.
+            # It must override a mistaken zero-tool intent classification,
+            # while the request allowlist still constrains every tool call.
+            updates.update(
+                retrieval_strategy="hybrid",
+                evidence_policy="single_fact",
+                assembly_strategy="score_order",
+                answer_style="concise_qa",
+                top_k=max(5, policy.top_k),
+                requires_citations=True,
+            )
+        if explicitly_selected:
+            # A selected multimodal attachment may require lexical/OCR search
+            # followed by one deep-vision inspection and a final synthesis.
+            updates.update(
+                max_tool_calls=max(5, updates["max_tool_calls"]),
+                max_iterations=max(5, updates["max_iterations"]),
+                max_retrieval_attempts=max(
+                    5,
+                    updates["max_retrieval_attempts"],
+                ),
+            )
+        return policy.model_copy(update=updates)
 
     @staticmethod
     def _effective_retrieval_options(

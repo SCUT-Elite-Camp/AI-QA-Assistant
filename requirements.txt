@@ -25,6 +25,7 @@ pywin32
 olefile
 python-pptx
 beautifulsoup4
+markdown-it-py>=3,<5
 openpyxl
 sentence-transformers
 modelscope

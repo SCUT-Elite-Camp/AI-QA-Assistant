@@ -40,7 +40,12 @@ class QueryPlan(BaseModel):
     ambiguity_reason: str = ""
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
+    source_intent: SourceIntent = Field(default_factory=SourceIntent)
 ```
+
+`SourceIntent.sources` is a multi-value list containing any of
+`personal_library`, `enterprise_kb`, `conversation_attachment`, and `web`.
+It also carries `mode=explicit|inferred` and an optional `0..1` confidence.
 
 ## Semantic Rules
 
@@ -58,6 +63,14 @@ class QueryPlan(BaseModel):
 - When `needs_clarification=false`, `clarification_question` is normalized to
   an empty string.
 - Undeclared fields are rejected to prevent silent contract drift.
+- `source_intent` selects candidate retrieval sources only. It never carries
+  `owner_user_id`, `knowledge_base_id`, access tokens, or authorization data.
+  Personal Library authorization remains request-local trusted context injected
+  by Web and enforced again by `search_library`.
+- The existing QueryPlanner LLM call produces `source_intent`; there is no
+  separate intent-classifier round trip. `SOURCE_INTENT_ROUTING_MODE` supports
+  `heuristic`, `shadow`, `canary`, and `default`; the deterministic heuristic is
+  retained as a one-release fallback.
 
 ## Runner Calls
 

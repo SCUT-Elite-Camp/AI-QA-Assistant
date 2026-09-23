@@ -1,12 +1,18 @@
+import hashlib
 import json
 import logging
+import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+
+from retrieval.orchestrator import default_observation
 from tool_layer.base_tool import BaseTool
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+_DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 class RetrievalError(Exception):
@@ -57,19 +63,18 @@ def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None)
         return True
 
     doc_id = str(item.get("doc_id", ""))
-    # 用键存在性而非真值判断，避免把空列表（空白名单）误判为「不过滤」。
-    if "doc_id" in filters:
-        doc_ids = filters["doc_id"]
-    elif "doc_ids" in filters:
-        doc_ids = filters["doc_ids"]
-    else:
-        doc_ids = None
+    doc_ids = filters.get("doc_id") or filters.get("doc_ids")
     if doc_ids is not None:
         if isinstance(doc_ids, str):
             doc_ids = {doc_ids}
         else:
             doc_ids = set(doc_ids)
         if doc_id not in doc_ids:
+            return False
+    chunk_ids = filters.get("chunk_ids")
+    if chunk_ids is not None:
+        allowed_chunks = {chunk_ids} if isinstance(chunk_ids, str) else set(chunk_ids)
+        if str(item.get("chunk_id") or "") not in allowed_chunks:
             return False
 
     for key in ("space", "doc_type"):
@@ -83,7 +88,75 @@ def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None)
     return True
 
 
-def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, rrf_k: int = 60) -> list[dict]:
+SUPPORTED_DOC_TYPES = frozenset(
+    {
+        "csv", "doc", "docx", "epub", "htm", "html", "json", "md",
+        "markdown", "odp", "ods", "odt", "pdf", "ppt", "pptx", "rst",
+        "rtf", "txt", "xls", "xlsx", "xml",
+    }
+)
+
+
+def _normalize_public_filters(filters: Optional[Dict]) -> Dict:
+    """Validate the Agent-facing filter contract before backend dispatch."""
+    if filters is None:
+        return {}
+    if not isinstance(filters, dict):
+        raise RetrievalParameterError("invalid_filters: filters must be a dict or None")
+    unknown = set(filters) - {"doc_id", "doc_ids", "space", "doc_type"}
+    if unknown:
+        raise RetrievalParameterError(
+            "invalid_filters: unsupported keys " + ", ".join(sorted(unknown))
+        )
+    normalized: Dict = {}
+    raw_ids = filters.get("doc_ids")
+    if raw_ids is None and filters.get("doc_id") is not None:
+        raw_ids = [filters["doc_id"]]
+    if raw_ids is not None:
+        if isinstance(raw_ids, str):
+            raw_ids = [raw_ids]
+        if not isinstance(raw_ids, (list, tuple, set)):
+            raise RetrievalParameterError(
+                "invalid_filters: doc_ids must be a string or list of strings"
+            )
+        values = []
+        for value in raw_ids:
+            if not isinstance(value, str) or not value.strip() or len(value.strip()) > 128:
+                raise RetrievalParameterError(
+                    "invalid_filters: every doc_id must be a non-empty string up to 128 characters"
+                )
+            if value.strip() not in values:
+                values.append(value.strip())
+        if values:
+            normalized["doc_ids"] = values
+    for key, maximum in (("space", 256), ("doc_type", 64)):
+        value = filters.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > maximum:
+            raise RetrievalParameterError(
+                f"invalid_filters: {key} must be a non-empty string up to {maximum} characters"
+            )
+        candidate = value.strip()
+        normalized_value = (
+            candidate.lower().rsplit("/", 1)[-1].removeprefix(".")
+            if key == "doc_type"
+            else candidate
+        )
+        if key == "doc_type" and normalized_value not in SUPPORTED_DOC_TYPES:
+            raise RetrievalParameterError(
+                "invalid_filters: doc_type must be a supported file extension"
+            )
+        normalized[key] = normalized_value
+    return normalized
+
+
+def _hybrid_search(
+    vector_rows: list[dict],
+    bm25_rows: list[dict],
+    top_k: int,
+    rrf_k: int = 60,
+) -> list[dict]:
     vector_rank = {_chunk_key(row): rank for rank, row in enumerate(vector_rows, start=1)}
     bm25_rank = {_chunk_key(row): rank for rank, row in enumerate(bm25_rows, start=1)}
     vector_scores = {_chunk_key(row): row["vector_score"] for row in vector_rows}
@@ -102,6 +175,7 @@ def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, r
             rrf_score += 1.0 / (rrf_k + bm25_rank[key])
 
         merged[key]["score"] = rrf_score
+        merged[key]["vector_score"] = vector_scores.get(key, 0.0)
         merged[key]["bm25_score"] = bm25_scores.get(key, 0.0)
 
     rows = list(merged.values())
@@ -119,7 +193,6 @@ class SearchTool(BaseTool):
     """Agent-facing retrieval tool."""
 
     VALID_MODES = {"vector", "bm25", "hybrid"}
-
     def __init__(
         self,
         backend=None,
@@ -127,23 +200,45 @@ class SearchTool(BaseTool):
         logger: Optional[logging.Logger] = None,
         min_score: float = 0.0,
         rrf_k: int = 60,
+        reranker=None,
+        rerank_top_n: int = 20,
+        rerank_modes: Optional[Iterable[str]] = None,
+        rerank_fail_open: bool = True,
+        retrieval_orchestrator=None,
+        backend_timeout_seconds: float = 2.0,
+        neighbor_expansion_enabled: bool = False,
     ):
         self.project_root = Path(__file__).resolve().parent.parent.parent
         self.documents_dir = (
             Path(documents_dir) if documents_dir else
             self.project_root / "data-persistence" / "data" / "documents"
         )
-        self.bm25_path = self.project_root / "data-persistence" / "data" / "bm25_index.pkl"
+        configured_bm25_path = Path(
+            os.getenv(
+                "BM25_INDEX_PATH",
+                str(self.project_root / "data-persistence" / "data" / "bm25_index.pkl"),
+            )
+        )
+        self.bm25_path = (
+            configured_bm25_path
+            if configured_bm25_path.is_absolute()
+            else self.project_root / configured_bm25_path
+        )
 
         self.backend = backend
         self.logger = logger or logging.getLogger(__name__)
         self.latest_results = []
         self.min_score = min_score
         self.rrf_k = rrf_k
-        self.topic_doc_ids: Optional[List[str]] = None
-        self.topic_titles: Optional[List[str]] = None
-        self.weight_mode: str = "auto"
-        self.consecutive_no_new_docs_count: int = 0
+        self.reranker = reranker
+        self.rerank_top_n = rerank_top_n
+        if isinstance(rerank_modes, str):
+            rerank_modes = {rerank_modes}
+        self.rerank_modes = frozenset(rerank_modes or {"hybrid"})
+        self.rerank_fail_open = rerank_fail_open
+        self.retrieval_orchestrator = retrieval_orchestrator
+        self.backend_timeout_seconds = float(backend_timeout_seconds)
+        self.neighbor_expansion_enabled = bool(neighbor_expansion_enabled)
 
         self._milvus_store = None
         self._bm25_index = None
@@ -195,9 +290,29 @@ class SearchTool(BaseTool):
                     "type": "string",
                     "description": "Retrieval mode: 'vector', 'bm25', or 'hybrid'.",
                     "default": "hybrid"
-                }
+                },
+                "filters": {
+                    "type": "object",
+                    "properties": {
+                        "doc_id": {"type": "string"},
+                        "doc_ids": {"type": "array", "items": {"type": "string"}},
+                        "space": {"type": "string"},
+                        "doc_type": {
+                            "type": "string",
+                            "enum": sorted(SUPPORTED_DOC_TYPES),
+                            "description": "File extension only; not a content category.",
+                        },
+                    },
+                    "additionalProperties": False,
+                },
+                "include_neighbors": {
+                    "type": "boolean",
+                    "description": "Add the previous and next chunk as context after ranking.",
+                    "default": False,
+                },
             },
-            "required": ["query"]
+            "required": ["query"],
+            "additionalProperties": False,
         }
 
     def execute(self, **kwargs: Any) -> Any:
@@ -205,8 +320,18 @@ class SearchTool(BaseTool):
         top_k = kwargs.get("top_k", 5)
         mode = kwargs.get("mode", "hybrid")
         filters = kwargs.get("filters")
-
-        results = self.search(query=query, top_k=top_k, mode=mode, filters=filters, min_score=self.min_score)
+        include_neighbors = kwargs.get("include_neighbors", False)
+        results = self.search(
+            query=query,
+            top_k=top_k,
+            mode=mode,
+            filters=filters,
+            include_neighbors=include_neighbors,
+            min_score=self.min_score,
+            topic_doc_ids=getattr(self, "topic_doc_ids", None),
+            weight_mode=getattr(self, "weight_mode", "auto"),
+            consecutive_no_new_docs_count=getattr(self, "consecutive_no_new_docs_count", 0),
+        )
         self.latest_results = results
 
         if not results:
@@ -219,9 +344,12 @@ class SearchTool(BaseTool):
                 f"doc_id: {item.get('doc_id')}\n"
                 f"chunk_id: {item.get('chunk_id')}\n"
                 f"content: {item.get('chunk_text')}\n"
+                f"context_before: {item.get('context_before', [])}\n"
+                f"context_after: {item.get('context_after', [])}\n"
                 f"score: {item.get('score'):.4f}"
             )
         return "\n\n".join(blocks)
+
 
     def search(
         self,
@@ -233,30 +361,70 @@ class SearchTool(BaseTool):
         trace_id: Optional[str] = None,
         topic_doc_ids: Optional[List[str]] = None,
         topic_titles: Optional[List[str]] = None,
-        weight_mode: Optional[str] = None,
-        consecutive_no_new_docs_count: Optional[int] = None,
-        **kwargs: Any,
+        weight_mode: str = "auto",
+        consecutive_no_new_docs_count: int = 0,
+        include_neighbors: bool = False,
     ) -> List[Dict]:
-        if topic_doc_ids is not None:
-            self.topic_doc_ids = topic_doc_ids
-        if topic_titles is not None:
-            self.topic_titles = topic_titles
-        if weight_mode is not None:
-            self.weight_mode = weight_mode
-        if consecutive_no_new_docs_count is not None:
-            self.consecutive_no_new_docs_count = consecutive_no_new_docs_count
-
         self._validate_params(query, top_k, mode, filters, min_score)
         started = time.perf_counter()
         trace = trace_id or "-"
-        filters = filters or {}
+        filters = _normalize_public_filters(filters)
+        if not isinstance(include_neighbors, bool):
+            raise RetrievalParameterError(
+                "invalid_include_neighbors: include_neighbors must be boolean"
+            )
 
         try:
-            raw_results = self._search_internal(query.strip(), top_k, mode, filters)
-            results = self._normalize_results(raw_results, filters, float(min_score))
+            normalized_query = query.strip()
+            use_reranker = self.reranker is not None and mode in self.rerank_modes
+            candidate_limit = (
+                self.retrieval_orchestrator.config.fusion_candidate_limit
+                if self.retrieval_orchestrator is not None
+                else 100
+            )
+            candidate_k = min(
+                candidate_limit,
+                max(top_k * 3, self.rerank_top_n) if use_reranker else top_k * 3,
+            )
+            observation = default_observation(mode)
+            if self.retrieval_orchestrator is None:
+                raw_results = self._search_internal(
+                    normalized_query, candidate_k, mode, filters
+                )
+            else:
+                raw_results, observation = self.retrieval_orchestrator.search(
+                    query=normalized_query,
+                    candidate_k=candidate_k,
+                    requested_top_k=top_k,
+                    mode=mode,
+                    filters=filters,
+                    started=started,
+                    trace_id=trace,
+                    channel_search=self._search_channel,
+                )
+            results = self._normalize_results(
+                raw_results, filters, float(min_score)
+            )
+            if use_reranker and results:
+                rerank_query = observation.get("preferred_rerank_query") or normalized_query
+                results = self._rerank(rerank_query, results, trace)
+
+            if results and (topic_doc_ids or topic_titles):
+                results = self._apply_topic_weighting(
+                    results=results,
+                    top_k=top_k,
+                    topic_doc_ids=topic_doc_ids,
+                    topic_titles=topic_titles,
+                    weight_mode=weight_mode,
+                    consecutive_no_new_docs_count=consecutive_no_new_docs_count,
+                )
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
-            self._log(trace, mode, top_k, 0, latency_ms, [])
+            self._log(
+                trace, mode, top_k, 0, latency_ms, [],
+                locals().get("observation", default_observation(mode)),
+                normalized_query if "normalized_query" in locals() else str(query),
+            )
             self.logger.error(
                 "[RETRIEVAL_ERROR] trace_id=%s mode=%s error=%s",
                 trace,
@@ -269,15 +437,175 @@ class SearchTool(BaseTool):
 
         latency_ms = int((time.perf_counter() - started) * 1000)
         results = results[:top_k]
+        if include_neighbors and self.neighbor_expansion_enabled:
+            results = self._expand_neighbors(results)
         top_scores = [row["score"] for row in results[:5]]
-        self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
+        observation["rerank_used"] = bool(use_reranker and results)
+        self._log(
+            trace, mode, top_k, len(results), latency_ms, top_scores,
+            observation, normalized_query,
+        )
         return results
 
-    def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
-        # 空白名单短路：doc_ids 显式为空列表表示用户无可访问文件，直接返回空结果。
-        if self._has_empty_doc_id_allowlist(filters):
-            return []
+    def _expand_neighbors(self, results: List[Dict]) -> List[Dict]:
+        """Attach adjacent context without changing core ranking or scores."""
+        expanded = []
+        document_cache: Dict[str, Dict] = {}
+        for result in results:
+            row = dict(result)
+            doc_id = row["doc_id"]
+            if doc_id not in document_cache:
+                document_cache[doc_id] = self._load_document_meta(doc_id)
+            document = document_cache[doc_id]
+            chunks_by_index = {}
+            for chunk in document.get("chunks", []):
+                if not isinstance(chunk, dict):
+                    continue
+                try:
+                    chunks_by_index[int(chunk.get("index", 0))] = chunk
+                except (TypeError, ValueError):
+                    continue
+            current_index = int(row["chunk_index"])
+            row["context_before"] = self._context_chunk(
+                chunks_by_index.get(current_index - 1),
+                doc_id,
+            )
+            row["context_after"] = self._context_chunk(
+                chunks_by_index.get(current_index + 1),
+                doc_id,
+            )
+            expanded.append(row)
+        return expanded
 
+    @staticmethod
+    def _context_chunk(chunk: Optional[Dict], doc_id: str) -> List[Dict]:
+        if not chunk:
+            return []
+        index = int(chunk.get("index", 0))
+        return [{
+            "role": "context",
+            "doc_id": doc_id,
+            "chunk_id": chunk.get("chunk_id") or f"{doc_id}::chunk_{index}",
+            "chunk_index": index,
+            "chunk_text": str(chunk.get("text", "")),
+        }]
+
+    def _apply_topic_weighting(
+        self,
+        results: List[Dict],
+        top_k: int,
+        topic_doc_ids: Optional[List[str]] = None,
+        topic_titles: Optional[List[str]] = None,
+        weight_mode: str = "auto",
+        consecutive_no_new_docs_count: int = 0,
+    ) -> List[Dict]:
+        import math
+        if not results or (not topic_doc_ids and not topic_titles):
+            return results[:top_k]
+
+        # Rule 3: consecutive >= 3 no new docs -> fallback boost factor to 1.0
+        if consecutive_no_new_docs_count >= 3:
+            boost_multiplier = 1.0
+        elif weight_mode == "deeper":
+            boost_multiplier = 1.5
+        elif weight_mode == "wider":
+            boost_multiplier = 1.0
+        else: # "auto"
+            boost_multiplier = 1.2
+
+        # Build normalized lookup sets for SAME DOCUMENT matching
+        topic_doc_set = {str(x).strip().lower() for x in (topic_doc_ids or []) if str(x).strip()}
+        topic_titles_set = {str(x).strip().lower() for x in (topic_titles or []) if str(x).strip()}
+
+        def is_same_document(item: dict) -> bool:
+            item_doc_id = str(item.get("doc_id", "")).strip().lower()
+            item_title = str(item.get("title", "")).strip().lower()
+            item_source = str(item.get("source_url", "")).strip().lower()
+
+            if item_doc_id in topic_doc_set or item_doc_id in topic_titles_set:
+                return True
+            if item_title in topic_titles_set or item_title in topic_doc_set:
+                return True
+            if item_source in topic_doc_set or item_source in topic_titles_set:
+                return True
+
+            # Matching by clean filename / title substring for the SAME DOCUMENT
+            all_known = topic_doc_set.union(topic_titles_set)
+            for target in all_known:
+                if target and len(target) >= 3:
+                    if target in item_title or item_title in target or target in item_doc_id:
+                        return True
+            return False
+
+        scored_results = []
+        for item in results:
+            base_score = float(item.get("score", 0.0))
+            is_in_pool = is_same_document(item)
+            weighted_score = base_score * boost_multiplier if is_in_pool else base_score
+            scored_results.append({
+                **item,
+                "_weighted_score": weighted_score,
+                "_is_in_pool": is_in_pool
+            })
+
+        scored_results.sort(key=lambda x: x["_weighted_score"], reverse=True)
+
+        # Rule 2: Force at least 30% of top_k results to be non-pool documents (if available)
+        non_pool_quota = max(1, math.ceil(top_k * 0.30)) if len(scored_results) >= top_k else 0
+        non_pool_items = [r for r in scored_results if not r["_is_in_pool"]]
+        
+        selected_non_pool = non_pool_items[:non_pool_quota]
+        selected_non_pool_ids = {r.get("chunk_id") for r in selected_non_pool}
+
+        remaining_candidates = [r for r in scored_results if r.get("chunk_id") not in selected_non_pool_ids]
+        needed_remaining = top_k - len(selected_non_pool)
+        final_selected = selected_non_pool + remaining_candidates[:needed_remaining]
+
+        final_selected.sort(key=lambda x: x["_weighted_score"], reverse=True)
+        
+        clean_results = []
+        for item in final_selected:
+            res = dict(item)
+            res["score"] = res.pop("_weighted_score", res.get("score"))
+            res.pop("_is_in_pool", None)
+            clean_results.append(res)
+
+        return clean_results[:top_k]
+
+
+    def _search_channel(
+        self,
+        query: str,
+        top_k: int,
+        retriever: str,
+        filters: Dict,
+    ) -> List[Dict]:
+        if self.backend is not None:
+            return self.backend.search(
+                query, top_k=top_k, mode=retriever, filters=filters
+            )
+        candidate_limit = max(top_k * 5, 20)
+        if retriever == "vector":
+            return self._vector_search(query, candidate_limit, filters)[:top_k]
+        if retriever == "bm25":
+            return self._bm25_search(query, candidate_limit, filters)[:top_k]
+        raise RetrievalParameterError(f"invalid_retriever: {retriever}")
+
+    def _rerank(self, query: str, results: List[Dict], trace_id: str) -> List[Dict]:
+        try:
+            return self.reranker.rerank(query, results, self.rerank_top_n)
+        except Exception as exc:
+            if not self.rerank_fail_open:
+                raise
+            self.logger.warning(
+                "[RERANK_FALLBACK] trace_id=%s model=%s error=%s",
+                trace_id,
+                getattr(self.reranker, "model_id", type(self.reranker).__name__),
+                exc,
+            )
+            return results
+
+    def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         if self.backend is not None:
             return self.backend.search(query, top_k=top_k, mode=mode, filters=filters)
 
@@ -291,49 +619,37 @@ class SearchTool(BaseTool):
         bm25_rows = self._bm25_search(query, candidate_limit, filters)
         return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
 
-    @staticmethod
-    def _has_empty_doc_id_allowlist(filters: Dict) -> bool:
-        """判断 filters 是否携带显式空白名单（doc_ids 为空列表）。"""
-        if not filters:
-            return False
-        for key in ("doc_ids", "doc_id"):
-            if key in filters:
-                value = filters[key]
-                return isinstance(value, (list, tuple, set)) and len(value) == 0
-        return False
-
     def _vector_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
         from pipeline.embedder import embed_texts
 
         query_vector = embed_texts([query])[0]
 
-        doc_ids_filter = None
-        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
-        if doc_ids:
-            if isinstance(doc_ids, str):
-                doc_ids_filter = [doc_ids]
-            else:
-                doc_ids_filter = list(doc_ids)
-
         try:
             hits = self.milvus_store.search_similar(
                 query_vector=query_vector,
                 top_k=top_k,
-                doc_ids_filter=doc_ids_filter,
+                filters=filters,
+                timeout_seconds=self.backend_timeout_seconds,
             )
         except Exception as e:
-            raise RetrievalError(f"milvus_search_failed: {e}") from e
+            self.logger.warning("[VECTOR_SEARCH_FALLBACK] Milvus search failed, falling back to BM25: %s", e)
+            return []
 
         rows = []
         for hit in hits:
             entity = hit.entity
             row = {
                 "doc_id": entity.get("doc_id"),
+                "chunk_id": entity.get("chunk_id"),
                 "chunk_index": entity.get("chunk_index"),
                 "chunk_text": entity.get("chunk_text") or entity.get("text") or "",
                 "score": hit.distance,
                 "vector_score": hit.distance,
                 "bm25_score": 0.0,
+                "title": entity.get("title") or "",
+                "space": entity.get("space") or "",
+                "doc_type": entity.get("doc_type") or "",
+                "source_url": entity.get("source_url") or "",
             }
             if not _matches_filters(row, filters):
                 continue
@@ -348,7 +664,7 @@ class SearchTool(BaseTool):
 
     def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
         try:
-            hits = self.bm25_index.search(query, top_k=top_k)
+            hits = self.bm25_index.search(query, top_k=top_k, filters=filters)
         except Exception as e:
             raise RetrievalError(f"bm25_search_failed: {e}") from e
 
@@ -358,11 +674,16 @@ class SearchTool(BaseTool):
             chunk_index = hit.get("chunk_index")
             row = {
                 "doc_id": doc_id,
+                "chunk_id": hit.get("chunk_id"),
                 "chunk_index": chunk_index,
                 "chunk_text": hit.get("chunk_text", hit.get("text")),
                 "score": hit.get("score", 0.0),
                 "vector_score": 0.0,
                 "bm25_score": hit.get("score", 0.0),
+                "title": hit.get("title", ""),
+                "space": hit.get("space", ""),
+                "doc_type": hit.get("doc_type", ""),
+                "source_url": hit.get("source_url", ""),
             }
 
             doc_meta = self._load_document_meta(str(doc_id))
@@ -395,15 +716,36 @@ class SearchTool(BaseTool):
             allowed = ", ".join(sorted(self.VALID_MODES))
             raise RetrievalParameterError(f"invalid_mode: mode must be one of {allowed}")
 
-        if filters is not None and not isinstance(filters, dict):
-            raise RetrievalParameterError("invalid_filters: filters must be a dict or None")
+        if not isinstance(self.rerank_top_n, int) or not 1 <= self.rerank_top_n <= 100:
+            raise RetrievalParameterError(
+                "invalid_rerank_top_n: rerank_top_n must be an integer from 1 to 100"
+            )
+
+        invalid_rerank_modes = self.rerank_modes - self.VALID_MODES
+        if invalid_rerank_modes:
+            allowed = ", ".join(sorted(self.VALID_MODES))
+            raise RetrievalParameterError(
+                f"invalid_rerank_modes: rerank modes must be selected from {allowed}"
+            )
+
+        if self.backend_timeout_seconds <= 0:
+            raise RetrievalParameterError(
+                "invalid_backend_timeout: backend timeout must be positive"
+            )
+
+        _normalize_public_filters(filters)
 
         try:
             float(min_score)
         except (TypeError, ValueError) as exc:
             raise RetrievalParameterError("invalid_min_score: min_score must be numeric") from exc
 
-    def _normalize_results(self, raw_results: List[Dict], filters: Dict, min_score: float) -> List[Dict]:
+    def _normalize_results(
+        self,
+        raw_results: List[Dict],
+        filters: Dict,
+        min_score: float,
+    ) -> List[Dict]:
         if not raw_results:
             return []
 
@@ -422,6 +764,8 @@ class SearchTool(BaseTool):
             chunk_index = int(chunk_index)
 
             doc_meta = self._load_document_meta(doc_id)
+            if doc_meta and doc_meta.get("active_version", True) is not True:
+                continue
             if not _matches_filters(item, filters, doc_meta):
                 continue
 
@@ -442,6 +786,22 @@ class SearchTool(BaseTool):
                     "vector_score": _safe_float(item.get("vector_score")),
                     "bm25_score": _safe_float(item.get("bm25_score")),
                     "source_url": str(source_url),
+                    "space": str(item.get("space") or doc_meta.get("space") or ""),
+                    "doc_type": str(
+                        item.get("doc_type")
+                        or doc_meta.get("doc_type")
+                        or ""
+                    ),
+                    "document_id": str(item.get("document_id") or doc_id),
+                    "version_id": str(
+                        item.get("version_id") or doc_meta.get("version_id") or ""
+                    ),
+                    "knowledge_base_id": str(
+                        item.get("knowledge_base_id")
+                        or doc_meta.get("knowledge_base_id")
+                        or doc_meta.get("space")
+                        or ""
+                    ),
                 }
             )
 
@@ -468,14 +828,35 @@ class SearchTool(BaseTool):
         results: int,
         latency_ms: int,
         top_scores: List[float],
+        observation: Optional[Dict] = None,
+        query: str = "",
     ) -> None:
+        observation = observation or default_observation(mode)
         score_text = ",".join(f"{score:.4f}" for score in top_scores)
         self.logger.info(
-            "[RETRIEVAL] trace_id=%s mode=%s top_k=%s results=%s latency=%sms top_scores=%s",
+            "[RETRIEVAL] trace_id=%s mode=%s top_k=%s results=%s latency=%sms "
+            "top_scores=%s query_hash=%s rewrite_status=%s rewrite_latency_ms=%s "
+            "query_count=%s selected_route=%s retriever_paths=%s "
+            "candidate_count_by_path=%s unique_candidate_count=%s "
+            "fallback_reason=%s rerank_used=%s protected_original_count=%s "
+            "protected_variant_unique_count=%s total_latency_ms=%s",
             trace_id,
             mode,
             top_k,
             results,
             latency_ms,
             score_text,
+            hashlib.sha256(query.encode("utf-8")).hexdigest()[:12] if query else "-",
+            observation["rewrite_status"],
+            observation["rewrite_latency_ms"],
+            observation["query_count"],
+            observation["selected_route"],
+            observation["retriever_paths"],
+            observation["candidate_count_by_path"],
+            observation["unique_candidate_count"],
+            observation["fallback_reason"],
+            observation["rerank_used"],
+            observation["protected_original_count"],
+            observation["protected_variant_unique_count"],
+            latency_ms,
         )

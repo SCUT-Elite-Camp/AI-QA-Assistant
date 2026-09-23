@@ -16,6 +16,13 @@ def _env_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_bool_with_legacy(name: str, legacy_name: str, default: bool) -> bool:
+    """Read a new boolean setting while honoring the legacy name for one release."""
+    if os.getenv(name) is not None:
+        return _env_bool(name, default)
+    return _env_bool(legacy_name, default)
+
+
 def _env_int(name: str, default: int) -> int:
     value = os.getenv(name)
     if value is None:
@@ -83,11 +90,41 @@ class Settings(BaseModel):
         ge=0.0,
         le=2.0,
     )
-    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
+    CONVERSATION_REWRITE_ENABLED: bool = _env_bool_with_legacy(
+        "CONVERSATION_REWRITE_ENABLED",
+        "QUERY_REWRITE_ENABLED",
+        True,
+    )
+    # Backward-compatible attribute for callers that have not migrated yet.
+    QUERY_REWRITE_ENABLED: bool = CONVERSATION_REWRITE_ENABLED
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
+    SOURCE_INTENT_ROUTING_MODE: str = Field(
+        default_factory=lambda: os.getenv("SOURCE_INTENT_ROUTING_MODE", "shadow").strip().lower(),
+        pattern="^(heuristic|shadow|canary|default)$",
+    )
+    SOURCE_INTENT_CANARY_PERCENT: int = Field(
+        default_factory=lambda: _env_int("SOURCE_INTENT_CANARY_PERCENT", 10),
+        ge=0,
+        le=100,
+    )
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
+    )
+    AGENTIC_EXPLORATION_ENABLED: bool = _env_bool(
+        "AGENTIC_EXPLORATION_ENABLED", False,
+    )
+    KNOWLEDGE_NAVIGATION_ENABLED: bool = _env_bool(
+        "KNOWLEDGE_NAVIGATION_ENABLED", False,
+    )
+    EXPLORATION_MAX_ROUNDS: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_ROUNDS", 4), ge=1, le=5,
+    )
+    EXPLORATION_MAX_TOOL_CALLS: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_TOOL_CALLS", 8), ge=1, le=10,
+    )
+    EXPLORATION_MAX_EVIDENCE: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_EVIDENCE", 20), ge=5, le=50,
     )
 
 

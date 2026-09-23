@@ -27,6 +27,11 @@ data-persistence/data-persistence/
 *.sqlite
 data-persistence/models/
 eval/logs/
+.pytest-*/
+.pytest_tmp/
+.pytest_tmp_*/
+.bt/
+eval/wiki/runs/
 tmp_test_chat.py
 docs/memory-context-implementation-plan.local.md
 

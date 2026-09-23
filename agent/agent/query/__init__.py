@@ -17,6 +17,8 @@ from agent.query.schemas import (
     RewriteResult,
     UnifiedQueryResult,
 )
+from agent.query.source_intent import heuristic_source_intent
+from agent.schemas.query_plan import SourceIntent, SourceIntentMode, SourceKind
 
 __all__ = [
     "ClarificationDecision",
@@ -37,4 +39,8 @@ __all__ = [
     "UnifiedQueryAnalyzer",
     "UnifiedQueryResult",
     "SentenceTransformerIntentEncoder",
+    "SourceIntent",
+    "SourceIntentMode",
+    "SourceKind",
+    "heuristic_source_intent",
 ]

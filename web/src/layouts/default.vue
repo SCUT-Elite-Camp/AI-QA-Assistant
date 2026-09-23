@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { defineShortcuts, useToast } from '@nuxt/ui/composables'
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { $fetch } from 'ofetch'
@@ -122,8 +123,7 @@ function handleDragOver(topicId: string, event: DragEvent) {
   dragOverTopicId.value = topicId
 }
 
-function handleDragLeave(topicId: string, event: DragEvent) {
-  void event
+function handleDragLeave(topicId: string) {
   if (dragOverTopicId.value === topicId) {
     dragOverTopicId.value = null
   }
@@ -150,8 +150,7 @@ function handleDragOverStandalone(event: DragEvent) {
   dragOverStandalone.value = true
 }
 
-function handleDragLeaveStandalone(event: DragEvent) {
-  void event
+function handleDragLeaveStandalone() {
   dragOverStandalone.value = false
 }
 
@@ -314,7 +313,7 @@ defineShortcuts({
                 :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10': dragOverTopicId === topic.id }"
                 @click="toggleTopic(topic.id)"
                 @dragover.prevent="handleDragOver(topic.id, $event)"
-                @dragleave="handleDragLeave(topic.id, $event)"
+                @dragleave="handleDragLeave(topic.id)"
                 @drop.prevent="handleDropOnTopic(topic.id, $event)"
               >
                 <!-- Expand/collapse chevron -->
@@ -382,7 +381,7 @@ defineShortcuts({
               class="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 pt-3 pb-1 rounded-lg transition-all"
               :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10 text-emerald-400': dragOverStandalone }"
               @dragover.prevent="handleDragOverStandalone($event)"
-              @dragleave="handleDragLeaveStandalone($event)"
+              @dragleave="handleDragLeaveStandalone()"
               @drop.prevent="handleDropOnStandalone($event)"
             >
               Chats

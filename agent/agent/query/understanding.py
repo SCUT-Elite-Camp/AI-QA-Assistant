@@ -12,6 +12,7 @@ from agent.query.preparation import QueryPreparationAnalyzer
 from agent.query.preparation_gate import QueryPreparationGate
 from agent.query.rewriter import QueryRewriter
 from agent.query.schemas import IntentResult
+from agent.query.source_intent import heuristic_source_intent
 from agent.query.unified import UnifiedQueryAnalyzer
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 
@@ -117,6 +118,10 @@ class QueryUnderstanding:
         if clarification.needs_clarification:
             standalone_query = query.strip()
             sub_queries: list[str] = []
+            source_intent = heuristic_source_intent(
+                standalone_query,
+                enterprise_default=False,
+            )
         else:
             rewrite = self.query_rewriter.rewrite(query, readonly_history)
             standalone_query = rewrite.rewritten_query
@@ -125,6 +130,7 @@ class QueryUnderstanding:
                 intent.intent,
             )
             sub_queries = enrichment.sub_queries
+            source_intent = enrichment.source_intent
             semantic_filters = enrichment.filters
             semantic_filters.update(plan_filters)
             plan_filters = semantic_filters
@@ -141,6 +147,7 @@ class QueryUnderstanding:
             ambiguity_reason=clarification.reason,
             sub_queries=sub_queries,
             filters=plan_filters,
+            source_intent=source_intent,
         )
 
     def _analyze_cascaded(

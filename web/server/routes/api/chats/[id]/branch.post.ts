@@ -1,13 +1,16 @@
 import { z } from 'zod'
-import { defineHandler } from 'nitro'
+import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
+import { useDrizzle, tables, eq, and } from '../../../../utils/drizzle'
 import { requireOwnedChat } from '../../../../utils/chatAccess'
 import { appendMessage } from '../../../../utils/messageLifecycle'
 import { requestTopicSummarizerFromPersistence } from '../../../../utils/soul'
 import { copyChatCitationsToTopic } from '../../../../utils/topicStorage'
+import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
+  requireCsrf(event)
+  const userId = await requirePrincipal(event)
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
@@ -20,6 +23,7 @@ export default defineHandler(async (event) => {
     selectedText: z.string().optional(),
     contextText: z.string().optional(),
     messages: z.array(z.object({
+      id: z.string().optional(),
       role: z.string(),
       text: z.string().optional(),
       parts: z.array(z.any()).optional()
@@ -27,6 +31,11 @@ export default defineHandler(async (event) => {
   }).parse)
 
   const db = useDrizzle()
+
+  if (parentChat.topicId) await requireTopicRole(event, parentChat.topicId, 'viewer')
+  else if (parentChat.userId !== userId && parentChat.userId !== actor.userId) {
+    throw new HTTPError({ statusCode: 403, statusMessage: 'chat_forbidden' })
+  }
 
   const selPrefix = (selectedText || '').trim()
   const qPart = (initialQuery || '').trim()
@@ -45,17 +54,20 @@ export default defineHandler(async (event) => {
     }).returning()
 
     topicId = newTopic.id
+    await db.insert(tables.topicMembers).values({ topicId, userId, role: 'owner' }).onConflictDoNothing()
     await db.update(tables.chats).set({ topicId }).where(eq(tables.chats.id, parentChat.id))
 
     void (async () => {
       try {
-        const summary = await requestTopicSummarizerFromPersistence(topicId!, parentChat.title || rawTitle)
+        const summary = await requestTopicSummarizerFromPersistence(
+          topicId!, parentChat.title || rawTitle, parentChat.title || undefined,
+        )
         if (summary) {
           await db.update(tables.topics).set({
             title: summary.title,
             soulContent: summary.soulContent,
             description: summary.description,
-            tags: summary.tags
+            tags: summary.tags,
           }).where(eq(tables.topics.id, topicId!))
         }
       } catch (err) {
@@ -83,14 +95,30 @@ export default defineHandler(async (event) => {
   if (messages && messages.length > 0) {
     for (const msg of messages) {
       const msgParts = msg.parts && msg.parts.length > 0
-        ? msg.parts
+        ? msg.parts.filter(part => part?.type !== 'data-attachment')
         : [{ type: 'text', text: msg.text || '' }]
 
-      await appendMessage(db, {
+      const original = msg.id
+        ? (await db.query.messages.findFirst({ where: eq(tables.messages.id, msg.id) }))
+        : undefined
+
+      const newMessage = await appendMessage(db, {
         chatId: branchChat.id,
         role: msg.role === 'user' ? 'user' : 'assistant',
-        parts: msgParts
+        parts: original?.parts || msgParts
       })
+      if (original) {
+          const links = await db.query.messageAttachments.findMany({
+            where: and(eq(tables.messageAttachments.messageId, original.id))
+          })
+          if (links.length) {
+            await db.insert(tables.messageAttachments).values(links.map(link => ({
+              messageId: newMessage.id,
+              attachmentId: link.attachmentId,
+              evidenceVersion: link.evidenceVersion,
+            }))).onConflictDoNothing()
+          }
+      }
     }
   } else if (initialQuery) {
     await appendMessage(db, {

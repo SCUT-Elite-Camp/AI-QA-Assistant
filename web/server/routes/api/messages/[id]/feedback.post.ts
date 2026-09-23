@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
-import { updateTopicSoul } from '../../../../utils/soul'
+import { requestTopicSummarizerFromPersistence } from '../../../../utils/soul'
 import { saveFavoriteToDisk, removeFavoriteFromDisk } from '../../../../utils/favoriteStorage'
 
 export default defineHandler(async (event) => {
@@ -71,14 +71,20 @@ export default defineHandler(async (event) => {
       const qText = message.role === 'assistant' ? '解答反馈' : '提问反馈'
       const aText = (message.parts as any)?.[0]?.text || ''
       
-      updateTopicSoul(topic.soulContent, [{
-        query: qText,
-        answer: aText,
-        isFavorite: isFavorite ?? false,
-        suggestion: suggestionText
-      }]).then(async (newSoul) => {
-        if (newSoul && newSoul !== topic.soulContent) {
-          await db.update(tables.topics).set({ soulContent: newSoul }).where(eq(tables.topics.id, topic.id))
+      const discussion = [qText, aText, suggestionText || ''].filter(Boolean).join('\n')
+      requestTopicSummarizerFromPersistence(topic.id, discussion, topic.title, {
+        title: topic.title,
+        description: topic.description,
+        soulContent: topic.soulContent,
+        tags: topic.tags,
+      }).then(async (summary) => {
+        if (summary) {
+          await db.update(tables.topics).set({
+            title: summary.title,
+            description: summary.description,
+            soulContent: summary.soulContent,
+            tags: summary.tags,
+          }).where(eq(tables.topics.id, topic.id))
         }
       }).catch(err => console.warn('[SoulUpdateError]', err))
     }

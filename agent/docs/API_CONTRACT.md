@@ -30,6 +30,10 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 -> memory write-back -> JSON response
 ```
 
+Query planning also emits a structured multi-source `SourceIntent` in the same
+planner call. This routing hint cannot provide owner IDs, knowledge-base IDs, or
+tokens; Personal Library access remains bound to Web-signed trusted context.
+
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
 
 ## Frozen internal persistent-Memory contract (Unit 04)
@@ -231,6 +235,10 @@ SearchTool().search(
     trace_id=trace_id,
 )
 ```
+
+`search_documents` is the single traditional Evidence retrieval contract.
+Optional Wiki exploration uses separate tools and returns to original Evidence
+through `wiki_search_evidence`; Wiki pages themselves are not citation sources.
 
 The Agent trust boundary converts Tool Layer `dict` results into
 `RetrievalResult` with:

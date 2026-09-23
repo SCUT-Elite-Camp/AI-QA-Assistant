@@ -27,7 +27,7 @@ class QueryRewriter:
     ) -> None:
         self.llm = llm or LLMClient()
         self.enabled = (
-            settings.QUERY_REWRITE_ENABLED if enabled is None else enabled
+            settings.CONVERSATION_REWRITE_ENABLED if enabled is None else enabled
         )
         self.logger = logger or logging.getLogger("agent-layer.query")
 

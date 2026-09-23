@@ -10,6 +10,7 @@ from retrieval.fusion import (
     chunk_key,
     weighted_rrf_with_reserves,
 )
+from retrieval.query_rewriter import contains_cjk
 from retrieval.query_router import QueryRouter
 
 
@@ -51,6 +52,8 @@ class RetrievalOrchestratorConfig:
     fusion_candidate_limit: int = 20
     original_candidate_reserve: int = 5
     variant_unique_reserve: int = 2
+    cross_language_enabled: bool = False
+    retrieval_expansion_enabled: bool = True
 
     def __post_init__(self) -> None:
         if self.rewrite_timeout_ms <= 0 or self.total_budget_ms <= 0:
@@ -80,6 +83,7 @@ class RetrievalObservation:
     rerank_used: bool = False
     protected_original_count: int = 0
     protected_variant_unique_count: int = 0
+    preferred_rerank_query: str = ""
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -117,20 +121,32 @@ class RetrievalOrchestrator:
         channel_search: ChannelSearch,
     ) -> tuple[List[Dict], Dict]:
         decision = self.query_router.route(query, mode)
+        cross_language = (
+            self.config.cross_language_enabled
+            and mode in {"hybrid", "bm25"}
+            and contains_cjk(query)
+        )
+        retrievers = decision.retrievers
+        if cross_language and mode == "hybrid":
+            retrievers = ("vector",)
         exact_profile = decision.exact if mode == "hybrid" else None
         observation = RetrievalObservation(selected_route=decision.selected_route)
         pending: List[Future] = []
         paths: List[RetrievalPath] = []
         errors = []
 
-        rewrite_future = self._submit_optional(
-            pending,
-            self._rewrite_with_status,
-            query,
-            trace_id=trace_id,
-        )
+        should_rewrite = self.config.retrieval_expansion_enabled or cross_language
+        rewrite_future = None
+        if should_rewrite:
+            rewrite_future = self._submit_optional(
+                pending,
+                self._rewrite_with_status,
+                query,
+                cross_language,
+                trace_id=trace_id,
+            )
         auxiliary = {}
-        for retriever in decision.retrievers[1:]:
+        for retriever in retrievers[1:]:
             future = self._submit_optional(
                 pending,
                 channel_search,
@@ -143,7 +159,7 @@ class RetrievalOrchestrator:
             if future is not None:
                 auxiliary[future] = ("q0", retriever, 1.0)
 
-        primary_retriever = decision.retrievers[0]
+        primary_retriever = retrievers[0]
         try:
             original_rows = channel_search(
                 query, candidate_k, primary_retriever, filters
@@ -156,18 +172,23 @@ class RetrievalOrchestrator:
         except Exception as exc:
             errors.append((f"q0:{primary_retriever}", exc))
 
-        variants = self._collect_rewrite(
-            rewrite_future, observation, started
+        variants = (
+            self._collect_rewrite(rewrite_future, observation, started)
+            if should_rewrite
+            else []
         )
         queries = [("q0", query, 1.0)] + [
             (f"q{index}", variant, 0.8)
             for index, variant in enumerate(variants, start=1)
         ]
         observation.query_count = len(queries)
+        if cross_language and variants:
+            observation.preferred_rerank_query = variants[0]
 
         extension_futures = dict(auxiliary)
         for query_id, variant, query_weight in queries[1:]:
-            for retriever in decision.retrievers:
+            variant_retrievers = ("bm25",) if cross_language else retrievers
+            for retriever in variant_retrievers:
                 if self._remaining_seconds(started) <= 0:
                     break
                 future = self._submit_optional(
@@ -193,7 +214,7 @@ class RetrievalOrchestrator:
             self._remaining_seconds(started),
         )
 
-        if mode == "hybrid" and not decision.exact:
+        if mode == "hybrid" and not decision.exact and not cross_language:
             fallback_reason = self._fallback_reason(
                 paths, errors, requested_top_k, bool(variants)
             )
@@ -316,10 +337,20 @@ class RetrievalOrchestrator:
         observation.rewrite_status = status
         return variants
 
-    def _rewrite_with_status(self, query: str) -> tuple[List[str], str, int]:
+    def _rewrite_with_status(
+        self,
+        query: str,
+        cross_language: bool,
+    ) -> tuple[List[str], str, int]:
         started = time.perf_counter()
         try:
-            if hasattr(self.query_rewriter, "rewrite_with_status"):
+            if hasattr(self.query_rewriter, "rewrite_with_context"):
+                variants, status = self.query_rewriter.rewrite_with_context(
+                    query,
+                    self.config.rewrite_max_variants,
+                    cross_language,
+                )
+            elif hasattr(self.query_rewriter, "rewrite_with_status"):
                 variants, status = self.query_rewriter.rewrite_with_status(
                     query, self.config.rewrite_max_variants
                 )

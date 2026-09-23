@@ -30,9 +30,7 @@ export default defineConfig({
       serverDir: './server',
       rollupConfig: {
         output: {
-          chunkFileNames: 'chunks/[name]-[hash].mjs',
-          entryFileNames: '[name].mjs',
-          sanitizeFileName: (name: string) => name.replace(/[\[\]]/g, '_')
+          chunkFileNames: chunk => `_chunks/${chunk.name.replace(/[\[\]]/g, '_')}-[hash].mjs`
         }
       }
     })

@@ -25,7 +25,13 @@ try:
     import pymilvus  # noqa: F401
 except ModuleNotFoundError:
     pymilvus_stub = ModuleType("pymilvus")
-    pymilvus_stub.connections = SimpleNamespace()
+    def unavailable_milvus(*args, **kwargs):
+        raise RuntimeError("pymilvus is unavailable in this test environment")
+
+    pymilvus_stub.connections = SimpleNamespace(
+        connect=unavailable_milvus,
+        disconnect=unavailable_milvus,
+    )
     pymilvus_stub.utility = SimpleNamespace()
     pymilvus_stub.Collection = object
     pymilvus_stub.CollectionSchema = object

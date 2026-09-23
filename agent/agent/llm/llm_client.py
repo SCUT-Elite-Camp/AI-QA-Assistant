@@ -26,7 +26,15 @@ class LLMClient(BaseLLM):
         msg = self.chat(messages)
         return (msg.get("content") or "").strip()
 
-    def chat(self, messages: list[dict], tools: list[dict] = None, temperature: float = None, max_tokens: int = None, **kwargs) -> dict:
+    def chat(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **kwargs,
+    ) -> dict:
         """Calls the OpenAI-compatible chat/completions endpoint with messages and tools, with retry on 503/429."""
         endpoint = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
         payload = {

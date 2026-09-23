@@ -1,6 +1,11 @@
 import logging
+<<<<<<< HEAD
 import re
 from typing import Any, Dict, List, Optional
+=======
+import os
+from typing import Any, Optional
+>>>>>>> origin/toolset
 
 from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
@@ -194,6 +199,34 @@ class Agent:
         persistent_memory_request = self._is_persistent_memory_request(request)
 
         try:
+            context = request.attachment_context
+            for tool_name in ("search_attachments", "inspect_attachment"):
+                tool = self.registry.get_tool(tool_name)
+                if tool is not None and hasattr(tool, "set_request_context"):
+                    tool.set_request_context(
+                        context.allowed_attachment_ids if context else [],
+                        context.selected_attachment_ids if context else [],
+                    )
+            library_context = request.personal_library_context
+            library_tool = self.registry.get_tool("search_library")
+            if library_tool is not None and hasattr(library_tool, "set_request_context"):
+                library_tool.set_request_context(
+                    library_context.owner_user_id if library_context else "",
+                    library_context.knowledge_base_id if library_context else "",
+                    library_context.access_token if library_context else "",
+                )
+            for tool_name in (
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ):
+                wiki_tool = self.registry.get_tool(tool_name)
+                if wiki_tool is not None and hasattr(wiki_tool, "set_personal_context"):
+                    wiki_tool.set_personal_context(
+                        library_context.owner_user_id if library_context else "",
+                        library_context.knowledge_base_id if library_context else "",
+                        library_context.access_token if library_context else "",
+                        secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
+                    )
             response = self._chat_internal(request, trace_id, query_plan=query_plan)
             latency_ms = self.audit_service.stop_timer(start_time)
             if not persistent_memory_request:
@@ -220,6 +253,14 @@ class Agent:
             raise exc
         finally:
             clear_llm_metrics(metrics_token)
+            for tool_name in (
+                "search_attachments", "inspect_attachment", "search_library",
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ):
+                tool = self.registry.get_tool(tool_name)
+                if tool is not None and hasattr(tool, "clear_request_context"):
+                    tool.clear_request_context()
             self.trace_service.clear_trace()
 
     def _resolve_filters(self, request: ChatRequest) -> Optional[dict[str, Any]]:
@@ -315,6 +356,22 @@ class Agent:
             retrieval_mode=orchestration.retrieval_mode,
             top_k=orchestration.top_k,
         )
+        if run_result.coverage_assessments or run_result.exploration_rounds:
+            response.diagnostics = {
+                "actual_path": [
+                    record.tool_name for record in run_result.tool_calls
+                    if record.tool_name in {
+                        "search_documents", "search_library", "wiki_search",
+                        "wiki_read_page", "wiki_read_sources", "wiki_search_evidence",
+                    }
+                ],
+                "exploration_rounds": run_result.exploration_rounds,
+                "evidence_count": len(run_result.evidence),
+                "coverage": (
+                    run_result.coverage_assessments[-1]
+                    if run_result.coverage_assessments else None
+                ),
+            }
 
         is_first = request.is_first_message
         if is_first is None:
@@ -444,8 +501,8 @@ class Agent:
             return query_plan
         merged_filters = dict(query_plan.filters or {})
         for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
+            # Request filters are explicit caller constraints and therefore
+            # take precedence over filters inferred by QueryPlanner.
             merged_filters[key] = value
         return query_plan.model_copy(update={"filters": merged_filters})
 
@@ -627,6 +684,15 @@ class Agent:
                     title=str(item.get("title", "")),
                     source_url=item.get("source_url") or "",
                     score=float(item["score"]),
+                    source_type=str(item.get("source_type") or "knowledge"),
+                    attachment_id=item.get("attachment_id"),
+                    evidence_id=item.get("evidence_id"),
+                    locator=item.get("locator"),
+                    version=item.get("version"),
+                    source_scope=item.get("source_scope"),
+                    knowledge_base_id=item.get("knowledge_base_id"),
+                    document_id=item.get("document_id"),
+                    version_id=item.get("version_id"),
                 )
             except (KeyError, TypeError, ValueError):
                 logger.warning("[EVIDENCE_DROPPED] malformed evidence: %r", item)

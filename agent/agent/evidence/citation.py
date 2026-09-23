@@ -62,6 +62,11 @@ class CitationChecker:
                 errors.append(
                     f"citation_not_backed_by_evidence:{citation.citation_id}"
                 )
+            if citation.source_type == "attachment":
+                if not citation.attachment_id or not citation.evidence_id:
+                    errors.append(f"attachment_citation_missing_identity:{citation.citation_id}")
+                elif (citation.attachment_id, citation.evidence_id) != (citation.doc_id, citation.chunk_id):
+                    errors.append(f"attachment_citation_identity_mismatch:{citation.citation_id}")
 
         return CitationCheckResult(
             valid=not errors,

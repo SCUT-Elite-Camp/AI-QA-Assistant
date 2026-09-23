@@ -3,10 +3,13 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
+import { requireCsrf, requireTopicRole } from '../../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse)
+  requireCsrf(event)
+  await requireTopicRole(event, id, 'viewer')
   const db = useDrizzle()
 
   const topic = await db.query.topics.findFirst({

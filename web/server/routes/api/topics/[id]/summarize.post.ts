@@ -4,11 +4,14 @@ import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { requestTopicSummarizerFromPersistence } from '../../../../utils/soul'
 import { syncTopicToDisk, loadTopicFromDisk } from '../../../../utils/topicStorage'
+import { requireCsrf, requireTopicRole } from '../../../../utils/attachmentAuth'
 
 export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
+  requireCsrf(event)
+  await requireTopicRole(event, id, 'editor')
 
   const db = useDrizzle()
 
