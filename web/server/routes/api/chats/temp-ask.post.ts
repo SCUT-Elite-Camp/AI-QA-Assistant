@@ -7,6 +7,7 @@ import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { agentFetch } from '../../../utils/agent-client'
 import { logger } from '../../../utils/logger'
+import { recordAiCall } from '../../../utils/metrics'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
@@ -94,7 +95,7 @@ export default defineHandler(async (event) => {
       return err.message || '服务异常，请稍后重试。'
     },
     execute: async ({ writer }) => {
-      // 1. Send query directly to Python Agent layer (identical to standard chat)
+      const aiCallStart = Date.now()
       let agentRes: Response
       try {
         agentRes = await agentFetch("/api/chat", {
@@ -124,7 +125,11 @@ export default defineHandler(async (event) => {
       }
 
       const agentData = await agentRes.json()
+      const aiDuration = Date.now() - aiCallStart
       const rawAnswer = agentData.answer || agentData.message || agentData.response || ""
+      const tokensCount = Math.max(20, Math.round((rawAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
+      const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
+      recordAiCall(aiDuration, ttftMs, tokensCount)
       const citationsList: any[] = agentData.citations || []
 
       // 2. Write rag_search tool result if citations returned from Agent

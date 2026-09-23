@@ -25,11 +25,6 @@ export function getSessionSecret (environment: Record<string, string | undefined
 }
 
 export function useUserSession (event: HTTPEvent) {
-  if (!process.env.SESSION_SECRET) {
-    throw new Error('SESSION_SECRET environment variable is not set')
-  }
-  return useSession<UserSession>(event, {
-    password: process.env.SESSION_SECRET
   return useSession<UserSession>(event, {
     name: 'qa_session',
     password: getSessionSecret(),

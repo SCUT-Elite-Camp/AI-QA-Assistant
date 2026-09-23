@@ -6,11 +6,13 @@ import vueLayouts from 'vite-plugin-vue-layouts'
 import vueDevtools from 'vite-plugin-vue-devtools'
 import ui from '@nuxt/ui/vite'
 
+import { fileURLToPath } from 'node:url'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vueRouter({
-      dts: 'src/route-map.d.ts'
+      dts: fileURLToPath(new URL('./src/route-map.d.ts', import.meta.url))
     }),
     vueLayouts(),
     vue(),
@@ -25,7 +27,14 @@ export default defineConfig({
       }
     }),
     nitro({
-      serverDir: './server'
+      serverDir: './server',
+      rollupConfig: {
+        output: {
+          chunkFileNames: 'chunks/[name]-[hash].mjs',
+          entryFileNames: '[name].mjs',
+          sanitizeFileName: (name: string) => name.replace(/[\[\]]/g, '_')
+        }
+      }
     })
   ],
   server: {

@@ -12,6 +12,13 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent
 os.chdir(str(project_root))
 
+# Permanently enforce offline mode for HuggingFace & Transformers (Zero network connections/downloads)
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+os.environ["DISABLE_SYMLINKS_WARNING"] = "1"
+os.environ["LOCAL_EMBEDDING_MODEL_PATH"] = str(project_root / "data-persistence" / "models" / "bge-small-en-v1.5")
+
 # Standard paths for PYTHONPATH
 python_paths = [
     str(project_root),
@@ -153,6 +160,15 @@ def get_env(key: str, default: str = "") -> str:
     return os.getenv(key) or existing_agent_env.get(key) or root_env_vars.get(key) or default
 
 api_key = get_env("LLM_API_KEY", "")
+api_base = get_env("LLM_API_BASE", "https://api.longcat.chat/openai/v1")
+model = get_env("LLM_MODEL", "LongCat-2.0")
+temperature = get_env("LLM_TEMPERATURE", "0.1")
+max_tokens = get_env("LLM_MAX_TOKENS", "2000")
+timeout = get_env("LLM_TIMEOUT", "60")
+retrieval_mode = get_env("DEFAULT_RETRIEVAL_MODE", "hybrid")
+retrieval_backend = get_env("RETRIEVAL_BACKEND", "milvus")
+agent_api_key = get_env("AGENT_API_KEY", "qa_assistant_agent_secret_token_2026")
+
 if not api_key:
     print("WARNING: LLM_API_KEY is not set! LLM calls will fail.")
     print("  Set it in .env file or export LLM_API_KEY in your shell.")
@@ -160,23 +176,24 @@ if not api_key:
 env_content = (
     "DEFAULT_TOP_K=5\n"
     "MIN_RETRIEVAL_SCORE=0.0\n"
-    "DEFAULT_RETRIEVAL_MODE=hybrid\n"
+    f"DEFAULT_RETRIEVAL_MODE={retrieval_mode}\n"
     "TOOL_LAYER_IMPORT=toolset.tool_layer\n"
     "TOOL_LAYER_CLASS=SearchTool\n"
-    "RETRIEVAL_BACKEND=milvus\n"
+    f"RETRIEVAL_BACKEND={retrieval_backend}\n"
     "LOG_LEVEL=INFO\n"
+    f"AGENT_API_KEY={agent_api_key}\n"
     "\n"
-    "# LongCat API 配置\n"
-    "LLM_API_BASE=https://api.longcat.chat/openai/v1\n"
-    "LLM_MODEL=LongCat-2.0\n"
+    "# LLM API 配置\n"
+    f"LLM_API_BASE={api_base}\n"
+    f"LLM_MODEL={model}\n"
     f"LLM_API_KEY={api_key}\n"
-    "LLM_TEMPERATURE=0.1\n"
-    "LLM_MAX_TOKENS=2000\n"
-    "LLM_TIMEOUT=60\n"
+    f"LLM_TEMPERATURE={temperature}\n"
+    f"LLM_MAX_TOKENS={max_tokens}\n"
+    f"LLM_TIMEOUT={timeout}\n"
 )
 with open(agent_env_path, "w", encoding="utf-8") as f:
     f.write(env_content)
-print(f"Configured agent/.env: LLM=LongCat-2.0 via LongCat API (key={'set' if api_key else 'EMPTY!'}).")
+print(f"Configured agent/.env: LLM={model} via {api_base} (key={'set' if api_key else 'EMPTY!'}).")
 
 
 # 5. Start Servers (Agent Backend & Web Frontend)
@@ -193,6 +210,11 @@ cleanup_port(8000)
 print("Starting Agent Backend service on port 8000...")
 agent_env = os.environ.copy()
 agent_env["PYTHONPATH"] = env_pythonpath
+agent_env["HF_HUB_OFFLINE"] = "1"
+agent_env["TRANSFORMERS_OFFLINE"] = "1"
+agent_env["HF_DATASETS_OFFLINE"] = "1"
+agent_env["DISABLE_SYMLINKS_WARNING"] = "1"
+agent_env["LOCAL_EMBEDDING_MODEL_PATH"] = str(project_root / "data-persistence" / "models" / "bge-small-en-v1.5")
 agent_log = open(project_root / "agent" / "agent_stdout.log", "w", encoding="utf-8")
 agent_err = open(project_root / "agent" / "agent_stderr.log", "w", encoding="utf-8")
 
@@ -241,6 +263,7 @@ print("Starting Web Frontend service...")
 web_dir = project_root / "web"
 web_env = os.environ.copy()
 web_env["SESSION_SECRET"] = "a_very_secret_key_123456_for_qa_assistant"
+web_env["AGENT_API_KEY"] = agent_api_key
 web_proc = subprocess.Popen(
     ["node", str(web_dir / "node_modules" / "vite" / "bin" / "vite.js"), "--host", "0.0.0.0", "--port", "3000"],
     cwd=str(web_dir),
@@ -259,7 +282,14 @@ def preload_in_background():
                 if response.status == 200:
                     chat_url = "http://127.0.0.1:8000/api/chat"
                     data = json.dumps({"query": "预热", "top_k": 1, "retrieval_mode": "hybrid"}).encode("utf-8")
-                    req = urllib.request.Request(chat_url, data=data, headers={"Content-Type": "application/json"})
+                    req = urllib.request.Request(
+                        chat_url,
+                        data=data,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {agent_api_key}",
+                        }
+                    )
                     with urllib.request.urlopen(req, timeout=30) as chat_response:
                         if chat_response.status == 200:
                             print("RAG models preloaded successfully in background.")

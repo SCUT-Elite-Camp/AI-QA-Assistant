@@ -15,6 +15,10 @@ const props = defineProps<{
   citations: ChunkCitation[]
 }>()
 
+const emit = defineEmits<{
+  'select-doc': [citation: ChunkCitation]
+}>()
+
 /**
  * Deduplicate by doc_id: keep the first citation per document,
  * collect chunk indices for that document.
@@ -40,7 +44,8 @@ const dedupedDocs = computed(() => {
     <div
       v-for="{ citation, indices } in dedupedDocs"
       :key="citation.doc_id"
-      class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-elevated/50 transition-colors min-w-0"
+      class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-elevated/50 transition-colors min-w-0 cursor-pointer group"
+      @click="emit('select-doc', citation)"
     >
       <!-- Document icon -->
       <span class="shrink-0 size-4 flex items-center justify-center opacity-60">

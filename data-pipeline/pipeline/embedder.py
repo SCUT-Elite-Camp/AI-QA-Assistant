@@ -59,41 +59,30 @@ def _download_via_modelscope() -> str:
 @lru_cache(maxsize=1)
 def _get_local_model():
     """
-    懒加载本地 BGE 模型（只加载一次，后续调用命中缓存）。
-
-    下载策略：先尝试 HuggingFace（或 hf-mirror 镜像），
-    若不可达则走 ModelScope，模型文件缓存后下次秒加载。
-
-    返回 sentence-transformers 模型实例。
+    加载本地已保存的 BGE 模型（位于 data-persistence/models/bge-small-en-v1.5）。
+    强制离线模式 (local_files_only=True)，绝不连接 Hugging Face，无需更新或下载。
     """
     from sentence_transformers import SentenceTransformer
 
-    local_model_path = os.environ.get("LOCAL_EMBEDDING_MODEL_PATH", "").strip()
-    offline = _is_offline_mode()
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    os.environ["HF_DATASETS_OFFLINE"] = "1"
 
-    if local_model_path:
-        if not os.path.exists(local_model_path):
-            raise RuntimeError(f"LOCAL_EMBEDDING_MODEL_PATH 不存在: {local_model_path}")
+    workspace_model_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "data-persistence", "models", "bge-small-en-v1.5")
+    )
+    local_model_path = os.environ.get("LOCAL_EMBEDDING_MODEL_PATH", "").strip() or workspace_model_dir
+
+    if os.path.exists(local_model_path):
         model = SentenceTransformer(local_model_path, local_files_only=True)
-        dim = model.get_sentence_embedding_dimension()
-        print(f"本地模型已加载: {local_model_path}（{dim} 维）")
+        dim = getattr(model, "get_embedding_dimension", getattr(model, "get_sentence_embedding_dimension", lambda: 384))()
+        print(f"本地 BGE 模型加载成功: {local_model_path}（{dim} 维）")
         return model
 
-    # 先尝试直接加载（走 HF / HF_ENDPOINT 镜像）
-    try:
-        model = SentenceTransformer(_LOCAL_MODEL_NAME, local_files_only=offline)
-    except Exception as e:
-        if offline:
-            raise RuntimeError(
-                f"离线模式下未能从本地缓存加载模型 {_LOCAL_MODEL_NAME}，"
-                "请设置 LOCAL_EMBEDDING_MODEL_PATH 到本地模型目录"
-            ) from e
-        print(f"HuggingFace 加载失败 ({e})，切换到 ModelScope 下载...")
-        local_path = _download_via_modelscope()
-        model = SentenceTransformer(local_path)
-
-    dim = model.get_sentence_embedding_dimension()
-    print(f"本地模型已加载: {_LOCAL_MODEL_NAME}（{dim} 维）")
+    # Fallback to model name with local_files_only=True
+    model = SentenceTransformer(_LOCAL_MODEL_NAME, local_files_only=True)
+    dim = getattr(model, "get_embedding_dimension", getattr(model, "get_sentence_embedding_dimension", lambda: 384))()
+    print(f"本地 BGE 缓存加载成功: {_LOCAL_MODEL_NAME}（{dim} 维）")
     return model
 
 # ─── 公共接口 ────────────────────────────────────────────

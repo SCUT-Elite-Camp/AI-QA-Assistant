@@ -114,13 +114,6 @@ watch(() => props.open, (val) => {
           </div>
 
           <div v-else class="space-y-4 text-sm text-zinc-200 leading-relaxed select-text">
-            <div class="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/30 text-xs text-emerald-400 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-heroicons-information-circle" class="w-4 h-4" />
-                <span>Tip: Select text in the document to ask questions</span>
-              </div>
-            </div>
-
             <div class="whitespace-pre-wrap font-mono text-xs leading-6 bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-zinc-300">
               {{ doc.content || doc.snippet }}
             </div>

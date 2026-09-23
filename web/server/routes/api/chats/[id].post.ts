@@ -1,13 +1,13 @@
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
+import path from 'path'
+import fs from 'fs'
 import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { MODELS } from '../../../../shared/utils/models'
-import { logger } from '../../../utils/logger'
+import { logger, logMemoryEvent } from '../../../utils/logger'
 import { agentFetch } from '../../../utils/agent-client'
-import { recordAiCall } from '../../../utils/metrics'
 import {
   recordAiCall,
   recordMemoryCompaction,
@@ -16,18 +16,15 @@ import {
   recordMemoryFallback,
   recordMemoryResolve
 } from '../../../utils/metrics'
-import { syncTopicToDisk, ensureTopicDir } from '../../../utils/topicStorage'
-import { getAgentBaseUrl, requireOwnedChat } from '../../../utils/chatAccess'
-import { callChatWithPersistentFallback, shouldUsePersistentMemory } from '../../../utils/agentInternalClient'
+import { ensureTopicDir, loadTopicFromDisk, syncAllTopicDocuments } from '../../../utils/topicStorage'
+import { requireOwnedChat } from '../../../utils/chatAccess'
 import { compactAfterSuccessfulAssistantPersistence } from '../../../utils/postTurnCompaction'
-import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import {
   createFactProposal,
   readCurrentRevisionFactSource
 } from '../../../utils/memoryRepository'
 import { isSensitiveMemoryValue } from '../../../utils/sensitiveMemoryValue'
 import { isSessionFactEnabled } from '../../../utils/sessionFactGate'
-import { logMemoryEvent } from '../../../utils/logger'
 import type { FactProposal } from '../../../utils/memoryContract'
 import {
   appendMessage,
@@ -54,11 +51,6 @@ const FACT_CATEGORIES = new Set<FactProposal['category']>([
   'PLAN_CONSTRAINT'
 ])
 
-/**
- * This server-only best-effort branch runs only after the assistant row is
- * durable. It intentionally absorbs malformed Agent candidates and storage
- * errors so neither condition can change an already successful chat response.
- */
 export async function persistAgentFactProposalsAfterAssistantPersistence (
   db: Database,
   input: PersistAgentFactProposalsInput
@@ -121,8 +113,6 @@ export async function persistAgentFactProposalsAfterAssistantPersistence (
   }
 
   try {
-    // expires_at from the internal envelope is deliberately ignored. The
-    // Repository is the only component that assigns expiry on confirmation.
     await createFactProposal(db, {
       actorUserId: input.actorUserId,
       category: proposal.category,
@@ -150,53 +140,18 @@ export default defineHandler(async (event) => {
     id: z.string()
   }).parse)
 
-  const { model, messages } = await readValidatedBody(event, z.object({
-    model: z.string().refine(value => MODELS.some(m => m.value === value), {
-      message: 'Invalid model'
-    }),
-    messages: z.array(z.custom<UIMessage>())
-  }).parse)
-
-  // Authorize before reading the request body, writing a user message, or
-  // calling the Agent so a supplied chat ID can never cross ownership bounds.
-  const { actor } = await requireOwnedChat(event, id)
+  const { actor, chat } = await requireOwnedChat(event, id)
 
   const body = await readValidatedBody(event, z.object({
     model: z.string().optional(),
-    messages: z.array(uiMessageSchema).min(1)
+    messages: z.array(uiMessageSchema).min(1),
+    weightMode: z.string().optional()
   }).parse)
 
   const messages = body.messages as UIMessage[]
-
   const db = useDrizzle()
 
-  const chat = await db.query.chats.findFirst({
-    where: (chat, { eq }) => and(eq(chat.id, id as string), eq(chat.userId, session.data.user?.id || session.id!)),
-    with: {
-      messages: {
-        orderBy: (message, { asc }) => asc(message.sequence)
-      }
-    }
-  })
-  if (!chat) {
-    throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
-  }
-
-  // Generate title locally from first message to avoid external API calls
-  if (!chat.title) {
-    const firstMsgText = messages[0]?.content || 'New Chat'
-    const title = firstMsgText.length > 25 ? firstMsgText.slice(0, 25) + '...' : firstMsgText
-    await db.update(tables.chats).set({ title }).where(eq(tables.chats.id, id as string))
-  }
-
   const lastMessage = messages[messages.length - 1]
-  if (lastMessage?.role === 'user' && messages.length > 1) {
-    await db.insert(tables.messages).values({
-      id: lastMessage.id,
-      chatId: id as string,
-      role: 'user',
-      parts: lastMessage.parts
-    }).onConflictDoUpdate({ target: tables.messages.id, set: { parts: lastMessage.parts } })
   if (!lastMessage || lastMessage.role !== 'user') {
     throw new HTTPError({ statusCode: 400, statusMessage: 'The last message must be a user message' })
   }
@@ -207,9 +162,6 @@ export default defineHandler(async (event) => {
   const messageCount = (chat.messages || []).length
   const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
 
-  // Always resolve the Agent handoff from the exact body message. For the
-  // initial hydrated turn this returns the existing row; for a direct or
-  // retried request it persists or reuses that same UI message ID.
   const currentMessage = await persistCurrentUserMessage(db, {
     chatId: id as string,
     id: lastMessage.id,
@@ -220,8 +172,6 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 409, statusMessage: 'Current user message was not persisted' })
   }
 
-  // This trusted handoff stays server-only until Unit 04/04a maps it to the
-  // token-protected memory_context contract. It must not enter public /api/chat.
   const currentAgentInput = createCurrentMessageHandoff(actor.userId, currentMessage)
 
   const abortController = new AbortController()
@@ -229,186 +179,48 @@ export default defineHandler(async (event) => {
   let assistantMessageId: string | undefined
   let agentFactProposals: FactProposal[] = []
   let shouldAttemptCompaction = false
+
+  const timeoutId = setTimeout(() => abortController.abort(), 90000)
   event.runtime?.node?.req?.on('close', () => {
+    clearTimeout(timeoutId)
     assistantState.clientAborted = true
     abortController.abort()
   })
 
   const stream = createUIMessageStream({
-    onError: () => {
+    onError: (err: any) => {
+      clearTimeout(timeoutId)
       assistantState.streamFailed = true
-      console.error('[web-stream] onError occurred')
-      return 'Request failed.'
+      console.error('[web-stream] onError occurred:', err)
+      return err.message || 'An error occurred.'
     },
     execute: async ({ writer }) => {
       try {
-        const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
-        console.log("[DEBUG queryText]", queryText)
-        
-        // Write a transient status so the user knows RAG is searching
-        if (!chat.title) {
-          writer.write({
-            type: 'data-chat-title',
-            data: { message: 'Generating title...' },
-            transient: true
-        // Fetch Topic Space context if chat is linked to a topic
         let topicInfo: any = null
         let topicDocIds: string[] = []
         let topicTitles: string[] = []
+        let soulContent: string | undefined = undefined
+
         if (chat.topicId) {
           topicInfo = await db.query.topics.findFirst({
             where: eq(tables.topics.id, chat.topicId)
           })
-        }
+          const diskData = loadTopicFromDisk(chat.topicId)
+          soulContent = topicInfo?.soulContent || diskData?.soulContent || undefined
 
-        // 1. Call real Python Agent API (port 8000)
-        const aiCallStart = Date.now()
-        const agentRes = await agentFetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            query: queryText,
-            top_k: 5,
-            retrieval_mode: "hybrid",
-            user_id: session.data.user?.id || session.id
-          }),
-          signal: abortController.signal
-        // 1. Call the public Agent API, or the token-protected Memory API only
-        // after an authenticated user's exact current message is persisted.
-        const aiCallStart = Date.now()
-        const publicAgentRequest = {
-          query: queryText,
-          session_id: currentAgentInput.chatId,
-          top_k: 5,
-          stream: false,
-          retrieval_mode: 'hybrid',
-          topic_id: chat.topicId || undefined,
-          weight_mode: topicInfo?.weightMode || 'auto',
-          soul_content: topicInfo?.soulContent || undefined,
-          topic_doc_ids: topicDocIds,
-          topic_titles: topicTitles,
-          consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
-          is_first_message: needsTitle
-        }
-        const callPublicAgent = async () => {
-          const agentRes = await fetch(`${getAgentBaseUrl()}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(publicAgentRequest),
-            signal: abortController.signal
-          })
-          if (!agentRes.ok) {
-            throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+          if (topicInfo || diskData) {
+            const topicDocs = await db.query.topicDocuments.findMany({
+              where: and(
+                eq(tables.topicDocuments.topicId, chat.topicId),
+                eq(tables.topicDocuments.isRemoved, false)
+              )
+            })
+            topicDocIds = topicDocs.map(d => d.docId)
+            topicTitles = topicDocs.map(d => d.title)
           }
-          return agentRes.json()
         }
 
-        let usePersistentMemory = shouldUsePersistentMemory(actor.isAuthenticated)
-        let memoryContext
-        if (usePersistentMemory) {
-          const contextStartedAt = Date.now()
-          try {
-            memoryContext = await buildPersistentMemoryContext(db, currentAgentInput)
-            recordMemoryResolve('trusted_context', 'success')
-            logMemoryEvent({ event: 'memory_resolve', source: 'trusted_context', outcome: 'success' })
-          } catch {
-            usePersistentMemory = false
-            recordMemoryResolve('trusted_context', 'rejected')
-            recordMemoryFallback('context_error')
-            logMemoryEvent({ event: 'memory_resolve', source: 'trusted_context', outcome: 'rejected' })
-            logMemoryEvent({ event: 'memory_fallback', reason: 'context_error' })
-          } finally {
-            recordMemoryDuration('context', Date.now() - contextStartedAt)
-          }
-        } else {
-          recordMemoryResolve(actor.isAuthenticated ? 'legacy' : 'disabled', 'fallback')
-          logMemoryEvent({ event: 'memory_resolve', source: actor.isAuthenticated ? 'legacy' : 'disabled', outcome: 'fallback' })
-        }
-        const { soul_content: _soulContent, ...internalAgentFields } = publicAgentRequest
-        const agentCall = await callChatWithPersistentFallback({
-          usePersistentMemory,
-          internalRequest: {
-            ...internalAgentFields,
-            memory_context: memoryContext!
-          },
-          callPublic: callPublicAgent,
-          onFallback: (reason) => {
-            recordMemoryFallback(reason)
-            logMemoryEvent({ event: 'memory_fallback', reason })
-          },
-          options: { signal: abortController.signal }
-        })
-        recordMemoryDuration('internal_chat', Date.now() - aiCallStart)
-        const agentData = agentCall.value
-        shouldAttemptCompaction = agentCall.source === 'internal'
-          && agentData.response.status === 'success'
-        if (agentCall.source === 'internal' && agentData.response.status === 'success') {
-          agentFactProposals = agentData.memory_decision.fact_proposals
-        }
-        // A recall label is a trusted UI signal, never a model-generated
-        // citation. Only the token-protected internal response may set it.
-        const isTrustedMemoryRecall = agentCall.source === 'internal'
-          && agentData.memory_decision.recall?.handled === true
-        const responseData = agentCall.source === 'internal' ? agentData.response : agentData
-        recordAiCall(Date.now() - aiCallStart)
-
-        if (agentData.status !== "success") {
-          const errMsg = agentData.message || "RAG retrieval error from Agent layer"
-          const responseId = `err-msg-${Date.now()}`
-        if (responseData.chat_title) {
-          await db.update(tables.chats).set({ title: responseData.chat_title }).where(eq(tables.chats.id, id as string))
-          writer.write({
-            type: 'data-chat-title',
-            data: { title: responseData.chat_title }
-          })
-        }
-
-        const isNoRelevantContext = responseData.status === 'no_relevant_context'
-        const isValidResponse = responseData.status === 'success'
-          || responseData.status === 'clarification_required'
-          || isNoRelevantContext
-        if (!isValidResponse) {
-          assistantState.streamFailed = true
-          writer.write({
-            type: 'error',
-            errorText: 'Agent request failed.'
-          })
-          return
-        }
-
-        const rawAnswer = agentData.answer || ""
-        const citationsList: any[] = agentData.citations || []
-        const rawAnswer = responseData.answer || responseData.message
-          || (isNoRelevantContext ? '未找到可用的知识库内容，请补充问题或调整检索范围。' : '')
-        // NO_RELEVANT_CONTEXT is a safe user-visible retrieval outcome, not
-        // evidence. It must not produce RAG, Fact, recall, or compaction side effects.
-        const citationsList: any[] = isNoRelevantContext ? [] : (responseData.citations || [])
-        assistantState.agentSucceeded = true
-        const currentAssistantMessageId = createAssistantMessageId()
-        assistantMessageId = currentAssistantMessageId
-
-        if (isTrustedMemoryRecall && !isNoRelevantContext) {
-          writer.write({
-            type: 'data-memory-recall',
-            data: { messageId: currentAssistantMessageId }
-          })
-        }
-
-        // 2. Replace [N] markers with :cite-mark{index="N"} — only pass index.
-        //    Complex attribute values (chunk text) break MDC {…} parsing when
-        //    they contain }, ", or other special characters. Chunk details are
-        //    delivered via tool-output and picked up by provide/inject instead.
-        let processedAnswer = rawAnswer
-        for (let i = 0; i < citationsList.length; i++) {
-          const idx = i + 1
-          processedAnswer = processedAnswer.split(`[${idx}]`).join(` :cite-mark{index="${idx}"}`)
-        }
-
-
-        // 3. Write RAG search tool invocation — full ChunkCitation array in output.
-        //    Sources.vue deduplicates by doc_id; CiteMark looks up by index.
+        // 1. Emit tool-input-available event immediately so client tracks real retrieval state
         const toolCallId = `call_${Date.now()}`
         writer.write({
           type: 'tool-input-available',
@@ -417,84 +229,268 @@ export default defineHandler(async (event) => {
           input: { query: queryText }
         })
 
-        // 3. Expose a RAG tool invocation only when the Agent supplied
-        //    citations. In particular, a deterministic Fact recall must not
-        //    be presented as a knowledge-base search.
-        if (citationsList.length > 0) {
-          const toolCallId = `call_${Date.now()}`
-          writer.write({
-            type: 'tool-input-available',
-            toolCallId,
-            toolName: 'rag_search',
-            input: { query: queryText }
-          })
+        // 2. Call real Python Agent Streaming API (port 8000)
+        const aiCallStart = Date.now()
+        const agentRes = await agentFetch("/api/chat/stream", {
+          method: "POST",
+          body: JSON.stringify({
+            query: queryText,
+            session_id: currentAgentInput.chatId,
+            user_id: actor.userId,
+            top_k: 5,
+            stream: true,
+            retrieval_mode: "hybrid",
+            topic_id: chat.topicId || undefined,
+            weight_mode: body.weightMode || topicInfo?.weightMode || "thinking",
+            soul_content: soulContent || undefined,
+            topic_doc_ids: topicDocIds,
+            topic_titles: topicTitles,
+            consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
+            is_first_message: needsTitle
+          }),
+          signal: abortController.signal
+        })
+        clearTimeout(timeoutId)
 
+        if (!agentRes.ok || !agentRes.body) {
+          throw new Error(`Failed to contact Agent Layer: ${agentRes.statusText}`)
+        }
+
+        const reader = agentRes.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        const reasoningId = `reasoning-${Date.now()}`
+        const currentAssistantMessageId = createAssistantMessageId()
+        assistantMessageId = currentAssistantMessageId
+        const responseId = currentAssistantMessageId
+
+        let hasReasoningStarted = false
+        let hasReasoningEnded = false
+        let hasTextStarted = false
+        let accumulatedAnswer = ''
+        let citationsList: any[] = []
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          let currentEvent = ''
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed) continue
+
+            if (trimmed.startsWith('event:')) {
+              currentEvent = trimmed.slice(6).trim()
+            } else if (trimmed.startsWith('data:')) {
+              const dataStr = trimmed.slice(5).trim()
+              try {
+                const data = JSON.parse(dataStr)
+
+                if (currentEvent === 'citations' || Array.isArray(data)) {
+                  citationsList = Array.isArray(data) ? data : (data.citations || [])
+                  
+                  // Write citations to client
+                  writer.write({
+                    type: 'tool-output-available',
+                    toolCallId,
+                    output: citationsList.map((cit: any, i: number) => {
+                      let docUpdated = cit.last_updated || null
+                      if (!docUpdated && cit.doc_id) {
+                        try {
+                          const docPath = path.resolve(process.cwd(), `../data-persistence/data/documents/${cit.doc_id}.json`)
+                          if (fs.existsSync(docPath)) {
+                            const dJson = JSON.parse(fs.readFileSync(docPath, 'utf-8'))
+                            docUpdated = dJson.last_updated || null
+                          }
+                        } catch {}
+                      }
+                      return {
+                        index: i + 1,
+                        doc_id: cit.doc_id || `doc_${i}`,
+                        chunk_id: cit.chunk_id || `chunk_${i}`,
+                        title: cit.title || cit.doc_id || `Document ${i + 1}`,
+                        source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
+                        chunk_text: cit.snippet || '',
+                        score: cit.score ?? null,
+                        similarity: cit.vector_score ?? cit.similarity_score ?? null,
+                        vector_score: cit.vector_score ?? null,
+                        last_updated: docUpdated
+                      }
+                    })
+                  })
+
+                  // If chat belongs to a topic, accumulate citations into topic_documents pool & update counter
+                  if (chat.topicId && citationsList.length > 0) {
+                    try {
+                      let hasNewDocs = false
+                      for (const cit of citationsList) {
+                        const docId = cit.doc_id || `doc_${Date.now()}`
+                        const title = cit.title || docId
+                        const snippet = cit.snippet || ''
+
+                        const existingDoc = await db.query.topicDocuments.findFirst({
+                          where: and(
+                            eq(tables.topicDocuments.topicId, chat.topicId),
+                            eq(tables.topicDocuments.docId, docId)
+                          )
+                        })
+
+                        if (existingDoc) {
+                          await db.update(tables.topicDocuments).set({
+                            recallCount: existingDoc.recallCount + 1,
+                            lastRecalledAt: new Date(),
+                            snippet: snippet || existingDoc.snippet
+                          }).where(eq(tables.topicDocuments.id, existingDoc.id))
+                        } else {
+                          hasNewDocs = true
+                          await db.insert(tables.topicDocuments).values({
+                            topicId: chat.topicId,
+                            docId,
+                            title,
+                            sourceUrl: cit.source_url || null,
+                            snippet,
+                            recallCount: 1,
+                            score: cit.score ? Math.round(cit.score * 100) : null
+                          })
+                        }
+
+                        // Physical document file persistence directly to data-persistence/data/topics/<topicId>/documents/
+                        try {
+                          const topicDir = ensureTopicDir(chat.topicId)
+                          const docsFolder = path.join(topicDir, 'documents')
+                          if (!fs.existsSync(docsFolder)) {
+                            fs.mkdirSync(docsFolder, { recursive: true })
+                          }
+                          const safeTitle = title.replace(/[^a-zA-Z0-9_\-\.\u4e00-\u9fa5]/g, '_')
+                          const filePath = path.join(docsFolder, `${docId}_${safeTitle}.txt`)
+                          const fileText = `Title: ${title}\nSource: ${cit.source_url || 'RAG Retrieval'}\nScore: ${cit.score || ''}\n\nContent:\n${snippet}`
+                          fs.writeFileSync(filePath, fileText, 'utf-8')
+                        } catch (fileErr) {
+                          console.error('[TopicDocFileSaveError]', fileErr)
+                        }
+                      }
+
+                      // Update anti-echo-chamber counter & sync to disk folder
+                      if (topicInfo) {
+                        const newCount = hasNewDocs ? 0 : (topicInfo.consecutiveNoNewDocsCount || 0) + 1
+                        await db.update(tables.topics)
+                          .set({ consecutiveNoNewDocsCount: newCount })
+                          .where(eq(tables.topics.id, chat.topicId))
+                      }
+                      await syncAllTopicDocuments(db, chat.topicId)
+                    } catch (docErr) {
+                      console.error('[TopicDocPoolUpdateError]', docErr)
+                    }
+                  }
+                } else if (currentEvent === 'reasoning') {
+                  const reasoningDelta = data.content || ''
+                  if (reasoningDelta) {
+                    if (!hasReasoningStarted) {
+                      hasReasoningStarted = true
+                      writer.write({
+                        type: 'reasoning-start',
+                        id: reasoningId
+                      })
+                    }
+                    writer.write({
+                      type: 'reasoning-delta',
+                      id: reasoningId,
+                      delta: reasoningDelta
+                    })
+                  }
+                } else if (currentEvent === 'token') {
+                  const tokenDelta = data.content || ''
+                  if (tokenDelta) {
+                    if (hasReasoningStarted && !hasReasoningEnded) {
+                      hasReasoningEnded = true
+                      writer.write({
+                        type: 'reasoning-end',
+                        id: reasoningId
+                      })
+                    }
+                    if (!hasTextStarted) {
+                      hasTextStarted = true
+                      writer.write({
+                        type: 'text-start',
+                        id: responseId
+                      })
+                    }
+                    accumulatedAnswer += tokenDelta
+                    assistantState.assistantContent += tokenDelta
+                    writer.write({
+                      type: 'text-delta',
+                      id: responseId,
+                      delta: tokenDelta
+                    })
+                  }
+                } else if (currentEvent === 'done') {
+                  assistantState.agentSucceeded = true
+                  const aiDuration = Date.now() - aiCallStart
+                  const tokensCount = Math.max(20, Math.round((accumulatedAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
+                  const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
+                  recordAiCall(aiDuration, ttftMs, tokensCount)
+
+                  if (data.chat_title) {
+                    await db.update(tables.chats).set({ title: data.chat_title }).where(eq(tables.chats.id, id as string))
+                    writer.write({
+                      type: 'data-chat-title',
+                      data: { title: data.chat_title }
+                    })
+                  }
+                } else if (currentEvent === 'error') {
+                  const errMsg = data.message || 'Stream processing error'
+                  throw new Error(errMsg)
+                }
+              } catch (parseErr: any) {
+                if (currentEvent === 'error' || parseErr?.message?.includes('Stream processing error') || parseErr?.message?.includes('validation error')) {
+                  throw parseErr
+                }
+                console.error('[SSE parse error]', parseErr, line)
+              }
+            }
+          }
+        }
+
+        if (hasReasoningStarted && !hasReasoningEnded) {
           writer.write({
-            type: 'tool-output-available',
-            toolCallId,
-            output: citationsList.map((cit: any, i: number) => ({
-              index: i + 1,
-              doc_id: cit.doc_id || `doc_${i}`,
-              chunk_id: cit.chunk_id || `chunk_${i}`,
-              title: cit.title || cit.doc_id || `Document ${i + 1}`,
-              source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
-              chunk_text: cit.snippet || '',
-              score: cit.score ?? null,
-            }))
+            type: 'reasoning-end',
+            id: reasoningId
           })
         }
 
+        if (hasTextStarted) {
+          writer.write({
+            type: 'text-end',
+            id: responseId
+          })
+          assistantState.streamCompleted = true
+        }
+      } catch (err: any) {
+        assistantState.streamFailed = true
+        console.error('[web-post] error in agent call:', err)
+        const responseId = `err-msg-${Date.now()}`
+        const isTimeout = err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timeout')
+        const msg = isTimeout 
+          ? `目前远端大模型响应超时，但知识库检索引擎仍正常运行。请稍后再试或精简提问。`
+          : `响应生成受阻：${err.message || '网络连接中断'}`
 
-        // 4. Stream answer text chunk-by-chunk to simulate real-time typing
         writer.write({
           type: 'text-start',
-          id: currentAssistantMessageId
+          id: responseId
         })
-
-        const chunkSize = 2
-        for (let i = 0; i < processedAnswer.length; i += chunkSize) {
-          if (abortController.signal.aborted) {
-            assistantState.clientAborted = true
-            return
-          }
-
-          const chunk = processedAnswer.slice(i, i + chunkSize)
-          writer.write({
-            type: 'text-delta',
-            id: currentAssistantMessageId,
-            delta: chunk
-          })
-          assistantState.assistantContent += chunk
-          // Small delay for natural streaming pacing
-          await new Promise((resolve) => setTimeout(resolve, 20))
-        }
-
-        if (abortController.signal.aborted) {
-          assistantState.clientAborted = true
-          return
-        }
+        writer.write({
+          type: 'text-delta',
+          id: responseId,
+          delta: msg
+        })
         writer.write({
           type: 'text-end',
-          id: currentAssistantMessageId
+          id: responseId
         })
-        assistantState.streamCompleted = true
-
-      } catch {
-        assistantState.streamFailed = true
-        console.error('[web-post] error in agent call')
-        if (abortController.signal.aborted) {
-          assistantState.clientAborted = true
-          return
-        }
-
-        try {
-          writer.write({
-            type: 'error',
-            errorText: 'Failed to retrieve an answer from the Agent layer.'
-          })
-        } catch {
-          console.error('[web-post] unable to write stream error')
-        }
       }
     },
     onFinish: async ({ isAborted }) => {
@@ -534,16 +530,15 @@ export default defineHandler(async (event) => {
                   : 'skipped'
             )
           } catch {
-            // Snapshot planning is best-effort and must never affect this answer.
             recordMemoryCompaction('failed')
             logMemoryEvent({ event: 'memory_compaction', outcome: 'failed' })
           } finally {
             recordMemoryDuration('compaction', Date.now() - compactionStartedAt)
           }
         }
-      } catch {
+      } catch (persistErr) {
         assistantState.streamFailed = true
-        console.error('[web-onFinish] assistant message persistence failed')
+        console.error('[web-onFinish] assistant message persistence failed:', persistErr)
       }
     }
   })
@@ -552,3 +547,4 @@ export default defineHandler(async (event) => {
     stream
   })
 })
+

@@ -34,9 +34,9 @@ export default defineHandler(async (event) => {
     docId,
     topicId: id,
     title: title.trim(),
-    content,
-    chunkCount: 1,
-    isRemoved: false
+    snippet: content.slice(0, 300),
+    isRemoved: false,
+    isUserUploaded: true
   }).returning()
 
   // Save physical file into data-persistence/data/topics/<topicId>/documents/

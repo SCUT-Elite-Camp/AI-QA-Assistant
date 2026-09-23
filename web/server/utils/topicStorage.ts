@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { logger } from './logger'
-import { tables, eq, and } from './drizzle'
+import { tables, eq, and, inArray } from './drizzle'
 
 function getTopicsDir(): string {
   let cwd = process.cwd()
@@ -243,5 +243,119 @@ export function deleteTopicFromDisk(topicId: string) {
     }
   } catch (err) {
     logger.error(`[TopicStorage] Failed to delete topic folder ${topicId}:`, err)
+  }
+}
+
+export function extractCitationsFromParts(parts: any): any[] {
+  if (!parts) return []
+  let p = parts
+  if (typeof parts === 'string') {
+    try { p = JSON.parse(parts) } catch { return [] }
+  }
+  if (!Array.isArray(p)) return []
+
+  const citations: any[] = []
+  for (const item of p) {
+    if (!item) continue
+    const output = item.output || item.result || item.data
+    if (output) {
+      const arr = Array.isArray(output) ? output : [output]
+      for (const cit of arr) {
+        if (cit && typeof cit === 'object' && (cit.doc_id || cit.docId || cit.title)) {
+          citations.push({
+            doc_id: cit.doc_id || cit.docId || `doc_${Date.now()}`,
+            title: cit.title || cit.doc_id || cit.docId || 'Retrieved Document',
+            source_url: cit.source_url || cit.sourceUrl || null,
+            snippet: cit.chunk_text || cit.snippet || cit.content || '',
+            score: cit.score ?? null
+          })
+        }
+      }
+    }
+  }
+  return citations
+}
+
+export async function syncAllTopicDocuments(db: any, topicId: string) {
+  if (!topicId) return []
+  try {
+    const topicChats = await db.query.chats.findMany({
+      where: eq(tables.chats.topicId, topicId)
+    })
+    const chatIds = topicChats.map((c: any) => c.id)
+    if (!chatIds.length) return []
+
+    const assistantMessages = await db.query.messages.findMany({
+      where: and(
+        inArray(tables.messages.chatId, chatIds),
+        eq(tables.messages.role, 'assistant')
+      )
+    })
+
+    const foundCitations: any[] = []
+    for (const msg of assistantMessages) {
+      const cits = extractCitationsFromParts(msg.parts)
+      for (const c of cits) {
+        foundCitations.push(c)
+      }
+    }
+
+    const topicDir = ensureTopicDir(topicId)
+    const docsFolder = path.join(topicDir, 'documents')
+    if (!fs.existsSync(docsFolder)) {
+      fs.mkdirSync(docsFolder, { recursive: true })
+    }
+
+    for (const cit of foundCitations) {
+      const docId = cit.doc_id
+      const title = cit.title || docId
+      const snippet = cit.snippet || ''
+
+      const existingDoc = await db.query.topicDocuments.findFirst({
+        where: and(
+          eq(tables.topicDocuments.topicId, topicId),
+          eq(tables.topicDocuments.docId, docId)
+        )
+      })
+
+      if (existingDoc) {
+        if (!existingDoc.isRemoved) {
+          await db.update(tables.topicDocuments).set({
+            recallCount: existingDoc.recallCount + 1,
+            lastRecalledAt: new Date(),
+            snippet: snippet || existingDoc.snippet
+          }).where(eq(tables.topicDocuments.id, existingDoc.id))
+        }
+      } else {
+        await db.insert(tables.topicDocuments).values({
+          topicId,
+          docId,
+          title,
+          sourceUrl: cit.source_url || null,
+          snippet,
+          recallCount: 1,
+          score: cit.score ? Math.round(cit.score * 100) : null,
+          isUserUploaded: false
+        }).onConflictDoNothing()
+      }
+
+      try {
+        const safeTitle = title.replace(/[^a-zA-Z0-9_\-\.\u4e00-\u9fa5]/g, '_')
+        const filePath = path.join(docsFolder, `${docId}_${safeTitle}.txt`)
+        const fileText = `Title: ${title}\nSource: ${cit.source_url || 'RAG Retrieval'}\nScore: ${cit.score || ''}\n\nContent:\n${snippet}`
+        fs.writeFileSync(filePath, fileText, 'utf-8')
+      } catch (fErr) {}
+    }
+
+    const latestTopic = await db.query.topics.findFirst({ where: eq(tables.topics.id, topicId) })
+    const latestDocs = await db.query.topicDocuments.findMany({ where: eq(tables.topicDocuments.topicId, topicId) })
+    if (latestTopic) {
+      syncTopicToDisk(latestTopic.id, latestTopic, latestTopic.soulContent, latestDocs)
+    }
+
+    return latestDocs || []
+  } catch (err) {
+    logger.error(`[TopicStorage] Failed to sync all topic documents for ${topicId}:`, err)
+    return []
   }
 }

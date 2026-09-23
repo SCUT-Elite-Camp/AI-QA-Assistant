@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from agent.schemas.chat import ChatRequest, ChatResponse
+from agent.schemas.chat import ChatRequest, ChatResponse, Citation
 from agent.agent import Agent
 from agent.auth import verify_agent_key
 from agent.config.settings import settings
@@ -11,9 +11,15 @@ from agent.streaming.sse import build_sse_event
 router = APIRouter()
 
 
+_agent_instance: Optional[Agent] = None
+
+
 def get_agent() -> Agent:
-    """Dependency provider for Agent."""
-    return Agent()
+    """Dependency provider for Agent (singleton instance)."""
+    global _agent_instance
+    if _agent_instance is None:
+        _agent_instance = Agent()
+    return _agent_instance
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -34,18 +40,6 @@ def chat_history(
     return agent.get_history(limit)
 
 
-@router.delete("/chat/memory/{session_id}")
-def clear_chat_memory(
-    session_id: str,
-    agent: Agent = Depends(get_agent),
-    _: None = Depends(verify_agent_key),
-) -> dict[str, str]:
-    """Clears conversation memory for the given session_id."""
-    agent.memory.clear(session_id)
-    return {"status": "ok", "session_id": session_id}
-
-
-
 @router.get("/tools")
 def list_available_tools(
     agent: Agent = Depends(get_agent),
@@ -54,49 +48,30 @@ def list_available_tools(
     """Returns public metadata for all tools registered with the Agent."""
     return agent.registry.list_tool_metadata()
 
+
 @router.post("/chat/stream")
 def chat_stream(
     request: ChatRequest,
     agent: Agent = Depends(get_agent),
     _: None = Depends(verify_agent_key),
 ) -> StreamingResponse:
-    response = agent.chat(request)
-
     def event_stream():
-        if response.answer:
-            for token in _chunk_answer(response.answer):
-                yield build_sse_event("token", {"content": token})
-
-        yield build_sse_event(
-            "citations",
-            [citation.model_dump() for citation in response.citations],
-        )
-        yield build_sse_event(
-            "done",
-            {
-                "trace_id": response.trace_id,
-                "status": response.status,
-                "message": response.message,
-                "citations_count": len(response.citations),
-                "chat_title": response.chat_title,
-            },
-        )
+        for event_name, event_data in agent.stream_chat(request):
+            yield build_sse_event(event_name, event_data)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
-def _chunk_answer(answer: str, chunk_size: int = 24) -> list[str]:
-    return [answer[index:index + chunk_size] for index in range(0, len(answer), chunk_size)]
-
-
 from pydantic import BaseModel
 from services.summarizer.topic_summarizer import TopicSummarizer
+
 
 class SummarizeTopicRequest(BaseModel):
     topic_id: str
     discussion_text: str
     custom_title: Optional[str] = None
     existing_info: Optional[dict] = None
+
 
 @router.post("/topics/summarize")
 def summarize_topic(
@@ -112,7 +87,7 @@ def summarize_topic(
         topic_id=req.topic_id,
         discussion_text=req.discussion_text,
         custom_title=req.custom_title,
-        existing_info=req.existing_info
+        existing_info=req.existing_info,
     )
     return result
 

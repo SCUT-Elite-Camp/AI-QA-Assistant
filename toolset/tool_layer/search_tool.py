@@ -102,7 +102,6 @@ def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, r
             rrf_score += 1.0 / (rrf_k + bm25_rank[key])
 
         merged[key]["score"] = rrf_score
-        merged[key]["vector_score"] = vector_scores.get(key, 0.0)
         merged[key]["bm25_score"] = bm25_scores.get(key, 0.0)
 
     rows = list(merged.values())
@@ -141,6 +140,10 @@ class SearchTool(BaseTool):
         self.latest_results = []
         self.min_score = min_score
         self.rrf_k = rrf_k
+        self.topic_doc_ids: Optional[List[str]] = None
+        self.topic_titles: Optional[List[str]] = None
+        self.weight_mode: str = "auto"
+        self.consecutive_no_new_docs_count: int = 0
 
         self._milvus_store = None
         self._bm25_index = None
@@ -228,7 +231,21 @@ class SearchTool(BaseTool):
         filters: Optional[Dict] = None,
         min_score: float = 0.0,
         trace_id: Optional[str] = None,
+        topic_doc_ids: Optional[List[str]] = None,
+        topic_titles: Optional[List[str]] = None,
+        weight_mode: Optional[str] = None,
+        consecutive_no_new_docs_count: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Dict]:
+        if topic_doc_ids is not None:
+            self.topic_doc_ids = topic_doc_ids
+        if topic_titles is not None:
+            self.topic_titles = topic_titles
+        if weight_mode is not None:
+            self.weight_mode = weight_mode
+        if consecutive_no_new_docs_count is not None:
+            self.consecutive_no_new_docs_count = consecutive_no_new_docs_count
+
         self._validate_params(query, top_k, mode, filters, min_score)
         started = time.perf_counter()
         trace = trace_id or "-"
