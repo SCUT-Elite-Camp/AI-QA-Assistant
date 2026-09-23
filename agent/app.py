@@ -4,7 +4,7 @@ from pathlib import Path
 
 agent_dir = Path(__file__).resolve().parent
 project_root = agent_dir.parent
-for folder in [project_root, project_root / "data-pipeline", project_root / "data-persistence", project_root / "toolset"]:
+for folder in [agent_dir, project_root, project_root / "data-pipeline", project_root / "data-persistence", project_root / "toolset", project_root / "shared_runtime"]:
     if str(folder) not in sys.path:
         sys.path.insert(0, str(folder))
 

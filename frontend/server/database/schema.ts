@@ -15,6 +15,8 @@ export type MemoryFactCategory = typeof memoryFactCategories[number]
 export type MemoryFactScope = typeof memoryFactScopes[number]
 export type MemoryFactStatus = typeof memoryFactStatuses[number]
 
+// ==================== Tables ====================
+
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   email: text('email').notNull(),
@@ -31,12 +33,6 @@ export const users = sqliteTable('users', {
   uniqueIndex('users_provider_id_idx').on(table.provider, table.providerId),
   uniqueIndex('users_sso_id_idx').on(table.ssoId)
 ])
-
-export const usersRelations = relations(users, ({ many }) => ({
-  chats: many(chats),
-  memoryFacts: many(memoryFacts),
-  memorySnapshots: many(memorySnapshots)
-}))
 
 export const knowledgeBases = sqliteTable('knowledge_bases', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -92,19 +88,6 @@ export const documentVersions = sqliteTable('document_versions', {
   uniqueIndex('document_versions_identity_idx').on(table.documentId, table.contentHash)
 ])
 
-export const knowledgeBasesRelations = relations(knowledgeBases, ({ many }) => ({
-  documents: many(libraryDocuments)
-}))
-
-export const libraryDocumentsRelations = relations(libraryDocuments, ({ one, many }) => ({
-  knowledgeBase: one(knowledgeBases, { fields: [libraryDocuments.knowledgeBaseId], references: [knowledgeBases.id] }),
-  versions: many(documentVersions)
-}))
-
-export const documentVersionsRelations = relations(documentVersions, ({ one }) => ({
-  document: one(libraryDocuments, { fields: [documentVersions.documentId], references: [libraryDocuments.id] })
-}))
-
 export const libraryCleanupJobs = sqliteTable('library_cleanup_jobs', {
   id: text('id').primaryKey(),
   action: text('action', { enum: ['delete_version'] }).notNull(),
@@ -145,14 +128,6 @@ export const topics = sqliteTable('topics', {
   ...timestamps
 })
 
-export const topicsRelations = relations(topics, ({ many }) => ({
-  chats: many(chats),
-  departments: many(userDepartments),
-  documents: many(topicDocuments),
-  members: many(topicMembers),
-  attachments: many(attachments)
-}))
-
 export const topicMembers = sqliteTable('topic_members', {
   topicId: text('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull(),
@@ -179,20 +154,6 @@ export const chats = sqliteTable('chats', {
   index('chats_user_id_idx').on(table.userId)
 ])
 
-export const chatsRelations = relations(chats, ({ one, many }) => ({
-  user: one(users, {
-    fields: [chats.userId],
-    references: [users.id]
-  }),
-  topic: one(topics, {
-    fields: [chats.topicId],
-    references: [topics.id]
-  }),
-  messages: many(messages),
-  memoryFacts: many(memoryFacts),
-  memorySnapshots: many(memorySnapshots)
-}))
-
 export const topicDocuments = sqliteTable('topic_documents', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   topicId: text('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
@@ -210,13 +171,6 @@ export const topicDocuments = sqliteTable('topic_documents', {
   index('topic_docs_topic_id_idx').on(table.topicId),
   uniqueIndex('topic_doc_idx').on(table.topicId, table.docId)
 ])
-
-export const topicDocumentsRelations = relations(topicDocuments, ({ one }) => ({
-  topic: one(topics, {
-    fields: [topicDocuments.topicId],
-    references: [topics.id]
-  })
-}))
 
 export const messages = sqliteTable('messages', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -237,21 +191,8 @@ export const messages = sqliteTable('messages', {
     .where(sql`${table.requestId} IS NOT NULL`)
 ])
 
-export const messagesRelations = relations(messages, ({ one }) => ({
-  chat: one(chats, {
-    fields: [messages.chatId],
-    references: [chats.id]
-  }),
-  feedbacks: many(messageFeedbacks),
-  memoryFacts: many(memoryFacts),
-  attachments: many(messageAttachments)
-}))
-
 export const memorySnapshots = sqliteTable('memory_snapshots', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  // Chat ownership is authenticated against the external provider ID. Unlike
-  // the optional local users profile table, that provider ID is always present
-  // on chats, so Memory must not require a matching local users row.
   userId: text('user_id').notNull(),
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   historyRevision: integer('history_revision').notNull(),
@@ -275,21 +216,8 @@ export const memorySnapshots = sqliteTable('memory_snapshots', {
     .on(table.chatId, table.historyRevision, table.status, table.coveredToSequence)
 ])
 
-export const memorySnapshotsRelations = relations(memorySnapshots, ({ one }) => ({
-  chat: one(chats, {
-    fields: [memorySnapshots.chatId],
-    references: [chats.id]
-  }),
-  user: one(users, {
-    fields: [memorySnapshots.userId],
-    references: [users.id]
-  })
-}))
-
 export const memoryFacts = sqliteTable('memory_facts', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  // See memorySnapshots.userId: ownership is enforced by the owned chat query,
-  // not by a local users-table foreign key.
   userId: text('user_id').notNull(),
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   historyRevision: integer('history_revision').notNull(),
@@ -312,21 +240,6 @@ export const memoryFacts = sqliteTable('memory_facts', {
   uniqueIndex('memory_facts_chat_revision_proposal_key_idx')
     .on(table.chatId, table.historyRevision, table.proposalKey)
 ])
-
-export const memoryFactsRelations = relations(memoryFacts, ({ one }) => ({
-  chat: one(chats, {
-    fields: [memoryFacts.chatId],
-    references: [chats.id]
-  }),
-  sourceMessage: one(messages, {
-    fields: [memoryFacts.sourceMessageId],
-    references: [messages.id]
-  }),
-  user: one(users, {
-    fields: [memoryFacts.userId],
-    references: [users.id]
-  })
-}))
 
 export const attachmentBatches = sqliteTable('attachment_batches', {
   id: text('id').primaryKey(),
@@ -386,17 +299,6 @@ export const messageFeedbacks = sqliteTable('message_feedbacks', {
   index('msg_feedbacks_msg_id_idx').on(table.messageId)
 ])
 
-export const messageFeedbacksRelations = relations(messageFeedbacks, ({ one }) => ({
-  chat: one(chats, {
-    fields: [messageFeedbacks.chatId],
-    references: [chats.id]
-  }),
-  message: one(messages, {
-    fields: [messageFeedbacks.messageId],
-    references: [messages.id]
-  })
-}))
-
 export const votes = sqliteTable('votes', {
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
@@ -404,17 +306,6 @@ export const votes = sqliteTable('votes', {
 }, table => [
   primaryKey({ columns: [table.chatId, table.messageId] })
 ])
-
-export const votesRelations = relations(votes, ({ one }) => ({
-  chat: one(chats, {
-    fields: [votes.chatId],
-    references: [chats.id]
-  }),
-  message: one(messages, {
-    fields: [votes.messageId],
-    references: [messages.id]
-  })
-}))
 
 // ==================== 用户设置 ====================
 
@@ -505,6 +396,112 @@ export const auditLogs = sqliteTable('audit_logs', {
 ])
 
 // ==================== Relations ====================
+
+export const usersRelations = relations(users, ({ many }) => ({
+  chats: many(chats),
+  memoryFacts: many(memoryFacts),
+  memorySnapshots: many(memorySnapshots)
+}))
+
+export const knowledgeBasesRelations = relations(knowledgeBases, ({ many }) => ({
+  documents: many(libraryDocuments)
+}))
+
+export const libraryDocumentsRelations = relations(libraryDocuments, ({ one, many }) => ({
+  knowledgeBase: one(knowledgeBases, { fields: [libraryDocuments.knowledgeBaseId], references: [knowledgeBases.id] }),
+  versions: many(documentVersions)
+}))
+
+export const documentVersionsRelations = relations(documentVersions, ({ one }) => ({
+  document: one(libraryDocuments, { fields: [documentVersions.documentId], references: [libraryDocuments.id] })
+}))
+
+export const topicsRelations = relations(topics, ({ many }) => ({
+  chats: many(chats),
+  departments: many(userDepartments),
+  documents: many(topicDocuments),
+  members: many(topicMembers),
+  attachments: many(attachments)
+}))
+
+export const chatsRelations = relations(chats, ({ one, many }) => ({
+  user: one(users, {
+    fields: [chats.userId],
+    references: [users.id]
+  }),
+  topic: one(topics, {
+    fields: [chats.topicId],
+    references: [topics.id]
+  }),
+  messages: many(messages),
+  memoryFacts: many(memoryFacts),
+  memorySnapshots: many(memorySnapshots)
+}))
+
+export const topicDocumentsRelations = relations(topicDocuments, ({ one }) => ({
+  topic: one(topics, {
+    fields: [topicDocuments.topicId],
+    references: [topics.id]
+  })
+}))
+
+export const messagesRelations = relations(messages, ({ one, many }) => ({
+  chat: one(chats, {
+    fields: [messages.chatId],
+    references: [chats.id]
+  }),
+  feedbacks: many(messageFeedbacks),
+  memoryFacts: many(memoryFacts),
+  attachments: many(messageAttachments)
+}))
+
+export const memorySnapshotsRelations = relations(memorySnapshots, ({ one }) => ({
+  chat: one(chats, {
+    fields: [memorySnapshots.chatId],
+    references: [chats.id]
+  }),
+  user: one(users, {
+    fields: [memorySnapshots.userId],
+    references: [users.id]
+  })
+}))
+
+export const memoryFactsRelations = relations(memoryFacts, ({ one }) => ({
+  chat: one(chats, {
+    fields: [memoryFacts.chatId],
+    references: [chats.id]
+  }),
+  sourceMessage: one(messages, {
+    fields: [memoryFacts.sourceMessageId],
+    references: [messages.id]
+  }),
+  user: one(users, {
+    fields: [memoryFacts.userId],
+    references: [users.id]
+  })
+}))
+
+export const messageFeedbacksRelations = relations(messageFeedbacks, ({ one }) => ({
+  chat: one(chats, {
+    fields: [messageFeedbacks.chatId],
+    references: [chats.id]
+  }),
+  message: one(messages, {
+    fields: [messageFeedbacks.messageId],
+    references: [messages.id]
+  })
+}))
+
+export const votesRelations = relations(votes, ({ one }) => ({
+  chat: one(chats, {
+    fields: [votes.chatId],
+    references: [chats.id]
+  }),
+  message: one(messages, {
+    fields: [votes.messageId],
+    references: [messages.id]
+  })
+}))
 
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   user: one(users, {

@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent

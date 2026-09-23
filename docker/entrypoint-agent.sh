@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "=== [Agent Container] Starting Initialization ==="
+echo "=== [Agent Container] Starting Development Environment ==="
 
 # 1. Ensure local embedding model weights exist (auto-download if missing)
 echo "[Agent Container] Checking embedding model weights..."
@@ -14,5 +14,5 @@ if [ "$DOCS_COUNT" -eq 0 ] && [ -d "/app/data-persistence/data/raws" ]; then
     python -m pipeline.auto_process || echo "[Agent Container] Pipeline completed or skipped."
 fi
 
-echo "=== [Agent Container] Launching FastAPI Backend (Port 8000) ==="
-exec python -m uvicorn app:app --host 0.0.0.0 --port 8000
+echo "=== [Agent Container] Launching FastAPI Backend with Hot Reload (Port 8000) ==="
+exec python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
