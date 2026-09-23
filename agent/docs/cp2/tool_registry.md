@@ -83,4 +83,11 @@ The adapter intentionally does not expose `register`, `unregister`, or
 
 The `enabled` value is read from the Toolset tool when available and defaults
 to `true`. Whether a tool may actually be called is ultimately controlled by
-Toolset and the future `IntentPolicy`.
+Toolset and `IntentPolicy`.
+
+The default Toolset registry may include `find_documents` and `get_document` in
+addition to `search_documents`. Registry presence does not grant execution
+permission: the Agent filters schemas through the active intent policy, injects
+hard request filters into `find_documents`, checks the `doc_ids` allowlist for
+`get_document`, and converts successful document output into Evidence before
+the answer/citation gates run.

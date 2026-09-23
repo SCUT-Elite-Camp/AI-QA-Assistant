@@ -128,7 +128,13 @@ class AgentRunner:
         state = AgentState(
             trace_id=trace_id,
             query_plan=query_plan,
-            messages=self._build_messages(query_plan, history or [], is_first_message=is_first_message, soul_content=soul_content),
+            messages=self._build_messages(
+                query_plan,
+                history or [],
+                is_first_message=is_first_message,
+                soul_content=soul_content,
+                policy=policy,
+            ),
         )
         schemas = self._tool_schemas(policy)
         last_fingerprint: str | None = None
@@ -328,9 +334,14 @@ class AgentRunner:
                         error_code="tool_not_allowed",
                     )
 
+                is_retrieval_tool = tool_name in {
+                    "search_documents",
+                    "find_documents",
+                    "get_document",
+                }
                 if (
                     policy is not None
-                    and tool_name == "search_documents"
+                    and is_retrieval_tool
                     and state.retrieval_attempts >= policy.max_retrieval_attempts
                 ):
                     return self._result(
@@ -505,6 +516,7 @@ class AgentRunner:
         history: list[dict[str, Any]],
         is_first_message: bool = False,
         soul_content: str | None = None,
+        policy: IntentPolicy | None = None,
     ) -> list[dict[str, Any]]:
         title_directive = (
             "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
@@ -525,6 +537,7 @@ class AgentRunner:
             f"{soul_directive}\n"
             f"检索用独立查询：{query_plan.standalone_query}\n\n"
             f"回答约束：\n{ANSWER_RULES}"
+            f"{AgentRunner._document_tool_guidance(policy)}"
             f"{title_directive}"
         )
         messages: list[dict[str, Any]] = [
@@ -561,6 +574,23 @@ class AgentRunner:
             and isinstance(schema.get("function"), dict)
             and schema["function"].get("name") in allowed
         ]
+
+    @staticmethod
+    def _document_tool_guidance(policy: IntentPolicy | None) -> str:
+        tools = set(policy.candidate_tools) if policy is not None else set()
+        if {"find_documents", "get_document"}.issubset(tools):
+            return (
+                "\n\n工具选择规则：未知 doc_id 时先用 find_documents 定位文档；"
+                "已知 doc_id 且需要通读或摘要时用 get_document。"
+                "get_document 返回 has_more=true 时，按 next_offset 继续分页读取；"
+                "只需查找相关片段时用 search_documents。"
+            )
+        if "find_documents" in tools:
+            return (
+                "\n\n工具选择规则：使用 find_documents 查找或列出文档；"
+                "其结果是文档身份与摘要，不得视为全文。"
+            )
+        return ""
 
     def _get_tool(
         self,
@@ -645,7 +675,34 @@ class AgentRunner:
             constrained["top_k"] = top_k
             constrained["mode"] = mode
             constrained["filters"] = dict(query_plan.filters)
+        elif tool_name == "find_documents":
+            if not constrained.get("query") and not constrained.get("filters"):
+                constrained["query"] = query_plan.standalone_query
+            constrained["top_k"] = top_k
+            constrained["filters"] = dict(query_plan.filters)
+        elif tool_name == "get_document":
+            doc_id = str(constrained.get("doc_id") or "")
+            if doc_id and not AgentRunner._document_is_allowed(
+                doc_id,
+                query_plan.filters,
+            ):
+                raise ValueError("document_not_allowed")
         return constrained
+
+    @staticmethod
+    def _document_is_allowed(doc_id: str, filters: dict[str, Any]) -> bool:
+        constraints: list[set[str]] = []
+        for key in ("doc_id", "doc_ids"):
+            if key not in filters:
+                continue
+            value = filters[key]
+            if isinstance(value, str):
+                constraints.append({value})
+            elif isinstance(value, (list, tuple, set)):
+                constraints.append({str(item) for item in value})
+            else:
+                return False
+        return all(doc_id in allowed for allowed in constraints)
 
     def _execute_tool(
         self,
@@ -675,7 +732,8 @@ class AgentRunner:
             evidence = [item.model_dump() for item in result.evidence]
             if tool_name == "search_documents":
                 return self._format_search_observation(evidence), evidence, True
-            return self._stringify_result(result.data or {}), evidence, False
+            is_retrieval = tool_name in {"find_documents", "get_document"}
+            return self._stringify_result(result.data or {}), evidence, is_retrieval
 
         if isinstance(tool, SearchTool) or tool_name == "search_documents":
             if hasattr(tool, "search"):
@@ -692,7 +750,11 @@ class AgentRunner:
 
         result = tool.execute(**arguments)
         evidence = self._extract_evidence(result)
-        return self._stringify_result(result), evidence, False
+        return (
+            self._stringify_result(result),
+            evidence,
+            tool_name in {"find_documents", "get_document"},
+        )
 
     def _execute_parallel_comparison_retrieval(
         self,
