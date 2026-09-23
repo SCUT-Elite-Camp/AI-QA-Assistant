@@ -126,6 +126,60 @@ class NativeStructureProvider:
         return _build_native_sections(document)
 
 
+@dataclass(frozen=True)
+class SectionHeadingSelection:
+    indices: frozenset[int]
+    recovered_indices: frozenset[int]
+    duplicate_root: int | None
+
+
+def select_section_heading_blocks(
+    blocks: list[ContentBlock], document_title: str,
+) -> SectionHeadingSelection:
+    """Select the same native/recovered headings for chunking and SectionTree."""
+    native_heading_count = sum(
+        1 for index, block in enumerate(blocks)
+        if block.block_type == BlockType.HEADING
+        and block.text.strip()
+        and not _is_non_navigable_heading(index, block)
+        and not (
+            block.level == 1
+            and document_title
+            and _title_key(block.text) == _title_key(document_title)
+        )
+    )
+    # Recover bold-only headings only when the native hierarchy is sparse;
+    # otherwise bold API fields can become false parent sections.
+    recovered = (
+        [index for index, block in enumerate(blocks) if _looks_like_recovered_heading(block)]
+        if native_heading_count < 2 else []
+    )
+    recovered_set = frozenset(recovered if len(recovered) >= 2 else [])
+    heading_indices = {
+        index for index, block in enumerate(blocks)
+        if block.block_type == BlockType.HEADING
+        and block.text.strip()
+        and not _is_non_navigable_heading(index, block)
+    } | set(recovered_set)
+    # A source H1 repeating the document title belongs to the root, not to a
+    # second Section. The chunker still treats it as a text boundary.
+    duplicate_root: int | None = None
+    for index in sorted(heading_indices):
+        block = blocks[index]
+        if block.block_type == BlockType.HEADING:
+            if (block.level == 1 and document_title
+                    and _title_key(block.text) == _title_key(document_title)):
+                duplicate_root = index
+            break
+    if duplicate_root is not None:
+        heading_indices.remove(duplicate_root)
+    return SectionHeadingSelection(
+        indices=frozenset(heading_indices),
+        recovered_indices=recovered_set,
+        duplicate_root=duplicate_root,
+    )
+
+
 def _build_native_sections(document: Document) -> list[DocumentSection]:
     version_id = document.version_id or f"legacy:{document.doc_id}"
     blocks = document.content_blocks
@@ -136,44 +190,10 @@ def _build_native_sections(document: Document) -> list[DocumentSection]:
         level=0, raw_level=0, ordinal=0, parent=None, provenance="document",
     )
 
-    native_heading_count = sum(
-        1 for index, block in enumerate(blocks)
-        if block.block_type == BlockType.HEADING
-        and block.text.strip()
-        and not _is_non_navigable_heading(index, block)
-        and not (
-            block.level == 1
-            and _title_key(block.text) == _title_key(document.title)
-        )
-    )
-    # Bold-only recovery is a fallback for structurally poor documents. Once a
-    # document already has a navigable native hierarchy, promoting arbitrary
-    # bold fields can invert parent/child relationships (for example
-    # "Authentication required" becoming the parent of the next API endpoint).
-    recovered = (
-        [index for index, block in enumerate(blocks) if _looks_like_recovered_heading(block)]
-        if native_heading_count < 2
-        else []
-    )
-    recovered_set = set(recovered if len(recovered) >= 2 else [])
-    heading_indices = {
-        index for index, block in enumerate(blocks)
-        if block.block_type == BlockType.HEADING
-        and block.text.strip()
-        and not _is_non_navigable_heading(index, block)
-    } | recovered_set
-
-    # The exported Markdown reserves its first H1 for the page title. It is the
-    # root itself, not a duplicate child section.
-    duplicate_root: int | None = None
-    for index in sorted(heading_indices):
-        block = blocks[index]
-        if block.block_type == BlockType.HEADING:
-            if block.level == 1 and _title_key(block.text) == _title_key(document.title):
-                duplicate_root = index
-            break
-    if duplicate_root is not None:
-        heading_indices.remove(duplicate_root)
+    selection = select_section_heading_blocks(blocks, document.title)
+    recovered_set = set(selection.recovered_indices)
+    heading_indices = set(selection.indices)
+    duplicate_root = selection.duplicate_root
 
     stack: list[_Node] = []
     nodes: list[_Node] = [root]

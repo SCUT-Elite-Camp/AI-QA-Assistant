@@ -14,6 +14,7 @@
 import os
 from models.document import Document
 from parsers.registry import parse_file, supported_extensions
+from pipeline.confluence_snapshot import deduplicate_confluence_paths
 from pipeline.auto_process import _index_document
 from retrieval.bm25_index import BM25Index
 from retrieval.section_bm25_index import SectionBM25Index
@@ -28,7 +29,7 @@ def _scan_folder(folder_path: str) -> list[str]:
             ext = os.path.splitext(fname)[1].lower()
             if ext in exts:
                 files.append(os.path.join(root, fname))
-    return files
+    return deduplicate_confluence_paths(files)
 
 
 

@@ -82,6 +82,7 @@ class Chunk(BaseModel):
     section_path: list[str] = Field(default_factory=list)
     block_start: int | None = None
     block_end: int | None = None
+    overlap_prefix_length: int = 0  # duplicated retrieval context, not source content
 
 
 class DocumentSection(BaseModel):
@@ -170,7 +171,7 @@ class Document(BaseModel):
         last_updated = cls.generate_last_updated(abs_path)
         source_url = ""
         metadata: dict = {}
-        doc_type = cls.infer_doc_type(abs_path, metadata)
+        doc_type = os.path.splitext(abs_path)[1].removeprefix(".").lower()
 
         meta_path = abs_path + ".meta.json"
         if os.path.exists(meta_path):
@@ -181,7 +182,13 @@ class Document(BaseModel):
                 title = _meta.get("title", title) or title
                 last_updated = _meta.get("last_updated", last_updated) or last_updated
                 metadata = _meta
-                doc_type = cls.infer_doc_type(abs_path, metadata)
+                metadata_type = _meta.get("doc_type") or _meta.get("content_type")
+                if isinstance(metadata_type, str) and metadata_type.strip():
+                    candidate = metadata_type.strip().lower()
+                    if "/" in candidate:
+                        candidate = candidate.rsplit("/", 1)[-1]
+                    if candidate not in {"attachment", "page"}:
+                        doc_type = candidate.removeprefix(".")
             except Exception as _e:  # noqa: BLE001
                 print(f"  ⚠ 读取侧车元数据失败: {meta_path}，错误: {_e}")
 
@@ -198,17 +205,3 @@ class Document(BaseModel):
             doc_type=doc_type,
             version_id=cls.generate_version_id(abs_path),
         )
-
-    @staticmethod
-    def infer_doc_type(address: str, metadata: dict | None = None) -> str:
-        metadata = metadata or {}
-        value = metadata.get("doc_type") or metadata.get("content_type")
-        candidate = str(value or "").strip().lower()
-        if "/" in candidate:
-            candidate = candidate.rsplit("/", 1)[-1]
-        if candidate in {"attachment", "page", "hybrid"}:
-            candidate = ""
-        if not candidate:
-            filename = str(metadata.get("filename") or address)
-            candidate = os.path.splitext(filename)[1]
-        return candidate.removeprefix(".").lower()[:64]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import json
@@ -15,10 +17,17 @@ from parsers.registry import parse_file, supported_extensions
 from pipeline.chunker import chunk_text, chunk_from_blocks
 from pipeline.embedder import embed_texts
 from pipeline.structure import build_document_sections
+from pipeline.confluence_snapshot import deduplicate_confluence_paths
+from pipeline.rag_lifecycle import (
+    finish_retraction,
+    mark_retraction_pending,
+    pending_confluence_retractions,
+    withdrawn_confluence_documents,
+)
 from retrieval.bm25_index import BM25Index
 from retrieval.section_bm25_index import SectionBM25Index
 from storage.document_store import save_document
-from storage.milvus_store import MilvusStore
+from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 # 配置默认目录
 RAWS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "raws"
@@ -33,7 +42,7 @@ def _scan_folder(folder_path: str) -> list[str]:
             ext = os.path.splitext(fname)[1].lower()
             if ext in exts:
                 files.append(os.path.abspath(os.path.join(root, fname)))
-    return files
+    return deduplicate_confluence_paths(files)
 
 def get_new_or_modified_files(raw_files: list[str]) -> list[str]:
     """根据已经保存的文档 JSON 和文件修改时间，筛选出新增或修改的文件"""
@@ -56,7 +65,7 @@ def get_new_or_modified_files(raw_files: list[str]) -> list[str]:
             current_last_updated = Document.generate_last_updated(abs_path)
             
             # 如果修改时间不一致，说明文件被更新了
-            if stored_last_updated != current_last_updated:
+            if doc_data.get("active_version", True) is not True or stored_last_updated != current_last_updated:
                 to_process.append(file_path)
         except Exception:
             # 如果读取 JSON 失败，当作新文件重新处理以保证数据完整性
@@ -71,12 +80,13 @@ def _index_document(
     chunk_size: int,
     overlap: int,
     evidence_milvus: MilvusStore,
-    section_milvus: MilvusStore | None,
     has_milvus: bool,
+    section_milvus: MilvusStore | None = None,
 ) -> bool:
     if doc.content_blocks:
         chunks = chunk_from_blocks(
             doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap,
+            document_title=doc.title,
         )
     else:
         chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
@@ -130,6 +140,28 @@ def _index_document(
     # The active JSON projection is switched only after all enabled indexes succeed.
     save_document(doc.doc_id, doc.model_dump(mode="json"))
     print(f"  → JSON 元数据已保存至: data-persistence/data/documents/{doc.doc_id}.json")
+    if os.getenv("WIKI_INGEST_ENABLED", "false").strip().casefold() in {
+        "1", "true", "yes",
+    }:
+        space_id = str(doc.metadata.get("space_id") or "").strip()
+        if space_id:
+            from pipeline.wiki.domain import WikiScope
+            from pipeline.wiki.queue import WikiLifecycleCoordinator
+            from pipeline.wiki.source import document_to_wiki_source
+            from storage.wiki_store import WikiStore
+
+            source = document_to_wiki_source(
+                doc,
+                WikiScope(
+                    source_scope="enterprise",
+                    knowledge_base_id=os.getenv(
+                        "ENTERPRISE_KNOWLEDGE_BASE_ID", "default"
+                    ),
+                ),
+            )
+            WikiLifecycleCoordinator(
+                WikiStore(resolve_wiki_db_path(PROJECT_ROOT))
+            ).document_ingested(source)
     return True
 
 def auto_process_raws(
@@ -149,7 +181,17 @@ def auto_process_raws(
     print(f"==================================================")
     
     raw_files = _scan_folder(str(RAWS_DIR))
-    if not raw_files:
+    retractions = pending_confluence_retractions(DOCS_DIR, RAWS_DIR / "confluence")
+    withdrawn_ids = {
+        item.document_id
+        for item in withdrawn_confluence_documents(DOCS_DIR, RAWS_DIR / "confluence")
+    }
+    raw_files = [
+        path
+        for path in raw_files
+        if Document.generate_doc_id(os.path.abspath(path)) not in withdrawn_ids
+    ]
+    if not raw_files and not retractions:
         print(f" [Info] 未在 {RAWS_DIR} 下找到任何支持的原始文件（支持格式: {supported_extensions()}）。")
         print(f" [Tip] 请将需要解析的文件放入该目录中。")
         return
@@ -157,7 +199,7 @@ def auto_process_raws(
     print(f" [Scan] 共扫描到 {len(raw_files)} 个支持的文件")
     files_to_process = get_new_or_modified_files(raw_files)
     
-    if not files_to_process:
+    if not files_to_process and not retractions:
         print(" [Finish] 所有文件均已是最新状态，无需处理！")
         return
         
@@ -166,6 +208,8 @@ def auto_process_raws(
         print(f"  - {f}")
         
     # 初始化 Milvus 连接并测试是否能够连接
+    from storage.milvus_store import MilvusStore
+
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
     has_milvus = False
     section_milvus: MilvusStore | None = None
@@ -184,6 +228,23 @@ def auto_process_raws(
         print(f" [Warning] 无法连接到 Milvus 服务（{e}）。将跳过向量库写入，仅生成 JSON 元数据和 BM25 索引。")
         
     processed_count = 0
+    for retraction in retractions:
+        mark_retraction_pending(retraction)
+    retracted = []
+    for retraction in retractions:
+        if not has_milvus:
+            print(
+                f" [Warning] Milvus 不可用，文档 {retraction.document_id} "
+                "已隐藏并等待向量清理。"
+            )
+            continue
+        try:
+            milvus.delete_document_chunks(retraction.document_id)
+            if section_milvus is not None:
+                section_milvus.delete_document_chunks(retraction.document_id)
+            retracted.append(retraction)
+        except Exception as exc:
+            print(f" [Error] 文档 {retraction.document_id} 的 Milvus 清理失败: {exc}")
     
     for i, file_path in enumerate(files_to_process, 1):
         print(f"\n [Ingest] [{i}/{len(files_to_process)}] 正在处理: {file_path}")
@@ -202,7 +263,7 @@ def auto_process_raws(
             print(f"  [Error] 处理文件时发生错误: {file_path}，错误详情: {e}")
             
     # 6. 重建全量 BM25 关键词索引
-    if processed_count > 0:
+    if processed_count > 0 or retractions:
         print(f"\n [BM25] 正在重建全量 BM25 倒排索引...")
         bm25 = BM25Index()
         bm25.build_from_documents()
@@ -213,7 +274,13 @@ def auto_process_raws(
         section_bm25.build_from_documents(str(DOCS_DIR))
         section_bm25.save(SectionBM25Index.default_index_path())
         print("  → Section BM25 索引已更新")
-        print(f"\n [Finish] 自动解析入库任务完成！成功入库 {processed_count} 个文档。")
+        if has_milvus:
+            for retraction in retracted:
+                finish_retraction(retraction)
+        print(
+            f"\n [Finish] 自动解析入库任务完成！成功入库 {processed_count} 个文档，"
+            f"完成 {len(retracted)} 个文档撤销。"
+        )
     else:
         print("\n [Info] 未有任何新文档成功处理入库。")
 
