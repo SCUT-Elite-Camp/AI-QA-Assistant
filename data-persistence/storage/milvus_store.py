@@ -13,12 +13,12 @@ class MilvusStore:
     
     def __init__(
         self,
-        host: str = "localhost",
-        port: str = "19530",
+        host: str | None = None,
+        port: str | None = None,
         collection_name: str | None = None,
     ):
-        self.host = host
-        self.port = port
+        self.host = host or os.getenv("MILVUS_HOST", "localhost")
+        self.port = str(port or os.getenv("MILVUS_PORT", "19530"))
         self.collection_name = collection_name or os.getenv(
             "MILVUS_COLLECTION",
             "doc_chunks",

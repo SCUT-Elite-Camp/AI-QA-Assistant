@@ -1,0 +1,142 @@
+services:
+  # =========================================================================
+  # 1. Milvus Vector DB Stack
+  # =========================================================================
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_RETENTION=1h
+    volumes:
+      - milvus_etcd_data:/etcd
+    command: etcd -advertise-client-urls http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - milvus_minio_data:/data
+    command: minio server /data --console-address ":9001"
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  milvus-standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.3.15
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  # =========================================================================
+  # 2. Agent Backend (Python FastAPI & Planning Core)
+  # =========================================================================
+  agent:
+    container_name: qa-agent
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - MILVUS_HOST=milvus-standalone
+      - MILVUS_PORT=19530
+      - LOCAL_EMBEDDING_MODEL_PATH=/app/data-persistence/models/bge-small-en-v1.5
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      - HF_DATASETS_OFFLINE=1
+      - DISABLE_SYMLINKS_WARNING=1
+      - AGENT_API_KEY=${AGENT_API_KEY:-qa_assistant_agent_secret_token_2026}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_API_BASE=${LLM_API_BASE:-https://api.longcat.chat/openai/v1}
+      - LLM_MODEL=${LLM_MODEL:-LongCat-2.0}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.1}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-2000}
+      - LLM_TIMEOUT=${LLM_TIMEOUT:-60}
+      - DEFAULT_RETRIEVAL_MODE=${DEFAULT_RETRIEVAL_MODE:-hybrid}
+    volumes:
+      - ./data-persistence/data:/app/data-persistence/data
+      - ./data-persistence/models:/app/data-persistence/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      milvus-standalone:
+        condition: service_healthy
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  # =========================================================================
+  # 3. Web Frontend & BFF (Nuxt 3 / Nitro)
+  # =========================================================================
+  web:
+    container_name: qa-web
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - AGENT_BASE_URL=http://agent:8000
+      - AGENT_API_KEY=${AGENT_API_KEY:-qa_assistant_agent_secret_token_2026}
+      - SESSION_SECRET=${SESSION_SECRET:-qa_session_secret_key_long_random_string_2026}
+      - TURSO_DATABASE_URL=file:/app/.data/sqlite.db
+      - NITRO_PORT=3000
+      - NITRO_HOST=0.0.0.0
+    volumes:
+      - ./web/.data:/app/.data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      agent:
+        condition: service_healthy
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+networks:
+  qa-network:
+    driver: bridge
+
+volumes:
+  milvus_etcd_data:
+  milvus_minio_data:
+  milvus_data:

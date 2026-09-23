@@ -1,0 +1,43 @@
+# Stage 1: Build Frontend and Nitro Server
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy dependencies definitions
+COPY web/package.json web/pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile || pnpm install
+
+# Copy source files
+COPY web/ ./
+
+# Build production bundle
+ENV NODE_ENV=production
+RUN pnpm run build
+
+# Stage 2: Minimal Production Runtime
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV AGENT_BASE_URL="http://agent:8000"
+ENV TURSO_DATABASE_URL="file:/app/.data/sqlite.db"
+
+# Copy build artifacts
+COPY --from=builder /app/.output ./
+
+# Create data directory for local SQLite persistence
+RUN mkdir -p /app/.data
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
+
+CMD ["node", "server/index.mjs"]

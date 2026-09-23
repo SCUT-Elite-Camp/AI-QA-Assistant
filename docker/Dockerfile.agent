@@ -1,0 +1,41 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ || \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy codebase
+COPY agent/ ./agent/
+COPY toolset/ ./toolset/
+COPY data-pipeline/ ./data-pipeline/
+COPY data-persistence/ ./data-persistence/
+COPY shared_runtime/ ./shared_runtime/
+
+# Configure paths and offline HuggingFace environment
+ENV PYTHONPATH="/app:/app/agent:/app/data-pipeline:/app/data-persistence:/app/toolset"
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
+ENV HF_DATASETS_OFFLINE=1
+ENV DISABLE_SYMLINKS_WARNING=1
+ENV LOCAL_EMBEDDING_MODEL_PATH="/app/data-persistence/models/bge-small-en-v1.5"
+ENV MILVUS_HOST="milvus-standalone"
+ENV MILVUS_PORT="19530"
+
+WORKDIR /app/agent
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -f http://127.0.0.1:8000/health || exit 1
+
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
