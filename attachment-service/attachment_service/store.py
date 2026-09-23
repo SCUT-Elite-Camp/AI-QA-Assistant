@@ -90,25 +90,6 @@ class AttachmentStore:
           evidence_id UNINDEXED, attachment_id UNINDEXED, content,
           tokenize='unicode61'
         );
-        CREATE TABLE IF NOT EXISTS document_sections (
-          id TEXT PRIMARY KEY, attachment_id TEXT NOT NULL, version_id TEXT NOT NULL,
-          parent_id TEXT, level INTEGER NOT NULL, title TEXT NOT NULL,
-          section_path TEXT NOT NULL, page_start INTEGER, page_end INTEGER,
-          line_start INTEGER, line_end INTEGER,
-          summary TEXT NOT NULL, extractive_summary TEXT NOT NULL DEFAULT '',
-          llm_summary TEXT NOT NULL DEFAULT '', summary_type TEXT NOT NULL DEFAULT '',
-          summary_model TEXT NOT NULL DEFAULT '', summary_prompt_version TEXT NOT NULL DEFAULT '',
-          summary_input_hash TEXT NOT NULL DEFAULT '', summary_status TEXT NOT NULL DEFAULT 'not_requested',
-          evidence_ids TEXT NOT NULL, own_block_ids TEXT NOT NULL DEFAULT '[]',
-          subtree_block_ids TEXT NOT NULL DEFAULT '[]', navigation_text TEXT NOT NULL DEFAULT '',
-          quality TEXT NOT NULL, provenance TEXT NOT NULL DEFAULT 'native', ordinal INTEGER NOT NULL,
-          created_at INTEGER NOT NULL,
-          FOREIGN KEY(attachment_id) REFERENCES attachments(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS document_sections_attachment_idx
-          ON document_sections(attachment_id, ordinal);
-        CREATE INDEX IF NOT EXISTS document_sections_version_idx
-          ON document_sections(version_id);
         CREATE TABLE IF NOT EXISTS evidence_revisions (
           id TEXT PRIMARY KEY, evidence_id TEXT NOT NULL, attachment_id TEXT NOT NULL,
           previous_content TEXT NOT NULL, corrected_content TEXT NOT NULL,
@@ -138,26 +119,6 @@ class AttachmentStore:
         ):
             if column not in existing:
                 db.execute(f"ALTER TABLE attachments ADD COLUMN {column} {declaration}")
-        section_columns = {
-            str(row[1]) for row in db.execute("PRAGMA table_info(document_sections)").fetchall()
-        }
-        for column, declaration in (
-            ("line_start", "INTEGER"),
-            ("line_end", "INTEGER"),
-            ("extractive_summary", "TEXT NOT NULL DEFAULT ''"),
-            ("llm_summary", "TEXT NOT NULL DEFAULT ''"),
-            ("summary_type", "TEXT NOT NULL DEFAULT ''"),
-            ("summary_model", "TEXT NOT NULL DEFAULT ''"),
-            ("summary_prompt_version", "TEXT NOT NULL DEFAULT ''"),
-            ("summary_input_hash", "TEXT NOT NULL DEFAULT ''"),
-            ("summary_status", "TEXT NOT NULL DEFAULT 'not_requested'"),
-            ("own_block_ids", "TEXT NOT NULL DEFAULT '[]'"),
-            ("subtree_block_ids", "TEXT NOT NULL DEFAULT '[]'"),
-            ("navigation_text", "TEXT NOT NULL DEFAULT ''"),
-            ("provenance", "TEXT NOT NULL DEFAULT 'native'"),
-        ):
-            if column not in section_columns:
-                db.execute(f"ALTER TABLE document_sections ADD COLUMN {column} {declaration}")
         db.execute(
             "CREATE INDEX IF NOT EXISTS attachments_library_scope_idx "
             "ON attachments(owner_id, knowledge_base_id, source_scope, active, status)"
@@ -397,58 +358,6 @@ class AttachmentStore:
             )
         db.commit()
 
-    def replace_sections(self, attachment_id: str, items: list[dict[str, Any]]) -> None:
-        """Atomically replace version-derived navigation rows."""
-        db = self.connection()
-        now = int(time.time())
-        db.execute("BEGIN IMMEDIATE")
-        db.execute("DELETE FROM document_sections WHERE attachment_id=?", (attachment_id,))
-        for item in items:
-            path = json.dumps(item.get("section_path") or [], ensure_ascii=False)
-            evidence_ids = json.dumps(item.get("evidence_ids") or [], ensure_ascii=False)
-            own_block_ids = json.dumps(item.get("own_block_ids") or [], ensure_ascii=False)
-            subtree_block_ids = json.dumps(item.get("subtree_block_ids") or [], ensure_ascii=False)
-            db.execute(
-                "INSERT INTO document_sections(id,attachment_id,version_id,parent_id,level,title,"
-                "section_path,page_start,page_end,line_start,line_end,summary,extractive_summary,"
-                "llm_summary,summary_type,summary_model,summary_prompt_version,summary_input_hash,"
-                "summary_status,evidence_ids,own_block_ids,subtree_block_ids,navigation_text,quality,"
-                "provenance,ordinal,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    item["id"], attachment_id, item["version_id"], item.get("parent_id"),
-                    int(item.get("level", 0)), item["title"], path,
-                    item.get("page_start"), item.get("page_end"), item.get("line_start"),
-                    item.get("line_end"), item.get("summary", ""),
-                    item.get("extractive_summary", item.get("summary", "")),
-                    item.get("llm_summary", ""), item.get("summary_type", ""),
-                    item.get("summary_model", ""), item.get("summary_prompt_version", ""),
-                    item.get("summary_input_hash", ""), item.get("summary_status", "not_requested"),
-                    evidence_ids, own_block_ids, subtree_block_ids,
-                    item.get("navigation_text", ""), item.get("quality", "low"),
-                    item.get("provenance", "native"), int(item.get("ordinal", 0)), now,
-                ),
-            )
-        db.commit()
-
-    def list_sections(self, attachment_ids: list[str]) -> list[dict[str, Any]]:
-        if not attachment_ids:
-            return []
-        marks = ",".join("?" for _ in attachment_ids)
-        rows = self.connection().execute(
-            f"SELECT * FROM document_sections WHERE attachment_id IN ({marks}) "
-            "ORDER BY attachment_id,ordinal,id",
-            tuple(attachment_ids),
-        ).fetchall()
-        result: list[dict[str, Any]] = []
-        for row in rows:
-            item = dict(row)
-            item["section_path"] = json.loads(item["section_path"] or "[]")
-            item["evidence_ids"] = json.loads(item["evidence_ids"] or "[]")
-            item["own_block_ids"] = json.loads(item["own_block_ids"] or "[]")
-            item["subtree_block_ids"] = json.loads(item["subtree_block_ids"] or "[]")
-            result.append(item)
-        return result
-
     def replace_derivatives(self, attachment_id: str, items: list[dict[str, Any]]) -> list[str]:
         db = self.connection()
         now = int(time.time())
@@ -545,35 +454,19 @@ class AttachmentStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def search_evidence(
-        self,
-        attachment_ids: list[str],
-        query: str,
-        top_k: int,
-        *,
-        evidence_ids: list[str] | None = None,
-    ) -> list[dict[str, Any]]:
+    def search_evidence(self, attachment_ids: list[str], query: str, top_k: int) -> list[dict[str, Any]]:
         if not attachment_ids:
-            return []
-        allowed_evidence = set(evidence_ids) if evidence_ids is not None else None
-        if evidence_ids is not None and not allowed_evidence:
             return []
         terms = [term for term in query.replace('"', ' ').split() if term]
         if terms:
             expression = " OR ".join(f'"{term}"' for term in terms[:20])
             try:
                 marks = ",".join("?" for _ in attachment_ids)
-                evidence_clause = ""
-                evidence_args: tuple[Any, ...] = ()
-                if allowed_evidence is not None:
-                    evidence_marks = ",".join("?" for _ in allowed_evidence)
-                    evidence_clause = f" AND evidence_id IN ({evidence_marks})"
-                    evidence_args = tuple(sorted(allowed_evidence))
                 rows = self.connection().execute(
                     "SELECT evidence_id,attachment_id,bm25(evidence_fts) AS rank "
                     f"FROM evidence_fts WHERE evidence_fts MATCH ? "
-                    f"AND attachment_id IN ({marks}){evidence_clause} ORDER BY rank LIMIT ?",
-                    (expression, *attachment_ids, *evidence_args, max(top_k * 10, 50)),
+                    f"AND attachment_id IN ({marks}) ORDER BY rank LIMIT ?",
+                    (expression, *attachment_ids, max(top_k * 10, 50)),
                 ).fetchall()
                 ranked = [
                     (row["evidence_id"], row["attachment_id"], -float(row["rank"]))
@@ -583,10 +476,7 @@ class AttachmentStore:
                 ranked = []
         else:
             ranked = []
-        evidence = {
-            item["evidence_id"]: item for item in self.list_evidence(attachment_ids)
-            if allowed_evidence is None or item["evidence_id"] in allowed_evidence
-        }
+        evidence = {item["evidence_id"]: item for item in self.list_evidence(attachment_ids)}
         marks = ",".join("?" for _ in attachment_ids)
         filenames = {
             row["id"]: row["filename"]
@@ -614,12 +504,10 @@ class AttachmentStore:
                 return sorted(scored, key=lambda value: (-value["score"], value["evidence_id"]))[:top_k]
             return list(evidence.values())[:top_k]
         result = []
-        for evidence_id, _, score in ranked:
+        for evidence_id, _, score in ranked[:top_k]:
             if evidence_id in evidence:
                 evidence[evidence_id]["score"] = min(1.0, max(0.0, score))
                 result.append(evidence[evidence_id])
-                if len(result) >= top_k:
-                    break
         return result
 
     def soft_delete(self, attachment_id: str, status: str = "deleted") -> None:

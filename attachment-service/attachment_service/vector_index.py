@@ -91,16 +91,11 @@ class AttachmentVectorIndex:
 
     def search_by_vector(
         self, attachment_ids: list[str], query_vector: list[float], top_k: int,
-        *, evidence_ids: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         _, store = self._dependencies()
         self._connect(store)
         try:
-            hits = store.search_similar(
-                query_vector, top_k=top_k, doc_ids_filter=attachment_ids,
-                filters={"chunk_ids": evidence_ids} if evidence_ids is not None else None,
-                collection_name=self.collection,
-            )
+            hits = store.search_similar(query_vector, top_k=top_k, doc_ids_filter=attachment_ids, collection_name=self.collection)
         except Exception:
             self._retry_after = time.monotonic() + float(
                 os.getenv("ATTACHMENT_VECTOR_RETRY_SECONDS", "30")

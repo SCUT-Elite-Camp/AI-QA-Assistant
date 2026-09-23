@@ -9,8 +9,7 @@ from .vector_index import AttachmentVectorIndex
 def main() -> int:
     try:
         request = json.load(sys.stdin)
-        index = AttachmentVectorIndex()
-        index._replace_in_process(
+        AttachmentVectorIndex()._replace_in_process(
             str(request["attachment_id"]),
             list(request["items"]),
         )

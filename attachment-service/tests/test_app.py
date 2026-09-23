@@ -38,9 +38,7 @@ def _headers(filename: str = "企业制度.txt") -> dict[str, str]:
 
 
 def _wait_status(client: TestClient, attachment_id: str, expected: set[str]) -> dict:
-    payload = {}
-    deadline = time.monotonic() + 10.0
-    while time.monotonic() < deadline:
+    for _ in range(40):
         response = client.get(f"/v1/attachments/{attachment_id}", headers={"Authorization": "Bearer test-internal-secret"})
         if response.status_code == 404 and "deleted" in expected:
             return {"status": "deleted"}
@@ -48,7 +46,7 @@ def _wait_status(client: TestClient, attachment_id: str, expected: set[str]) -> 
         if payload.get("status") in expected:
             return payload
         time.sleep(0.05)
-    raise AssertionError(f"attachment did not reach {expected}; last status={payload.get('status')}")
+    raise AssertionError(f"attachment did not reach {expected}")
 
 
 def test_upload_parse_download_and_async_physical_delete(service) -> None:

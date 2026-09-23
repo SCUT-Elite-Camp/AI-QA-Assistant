@@ -31,10 +31,8 @@ from .parser_runner import parse_with_timeout
 from .office import remove_office_tree
 from .scanner import MalwareDetected, ScannerUnavailable, scan_file
 from .store import AttachmentStore
-from .structure import build_document_sections
 from .validation import AttachmentValidationError, safe_filename, validate_file
 from .vision import LocalVisionBackend
-from .vision_input import prepare_vision_image
 from .vector_index import AttachmentVectorIndex
 from .previews import build_encrypted_previews
 
@@ -153,6 +151,42 @@ def _authorize(authorization: str = Header(default="")) -> None:
 def _public_record(record: dict[str, Any]) -> dict[str, Any]:
     excluded = {"blob_path", "key_id", "dedupe_domain", "deleted_at"}
     return {key: value for key, value in record.items() if key not in excluded}
+
+
+def _prepare_vision_image(source: Path, extension: str, page: int | None, bbox: list[float] | None, output: Path) -> dict[str, Any]:
+    locator: dict[str, Any] = {"page": page, "bbox": bbox}
+    if bbox is not None:
+        if len(bbox) != 4 or any(value < 0 or value > 1 for value in bbox) or bbox[0] >= bbox[2] or bbox[1] >= bbox[3]:
+            raise ValueError("invalid_bbox")
+    if extension == ".pdf":
+        import fitz
+        document = fitz.open(source)
+        try:
+            page_number = page or 1
+            if page_number > len(document):
+                raise ValueError("page_out_of_range")
+            pixmap = document[page_number - 1].get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            pixmap.save(output)
+            locator["page"] = page_number
+        finally:
+            document.close()
+    else:
+        if page not in {None, 1}:
+            raise ValueError("page_out_of_range")
+        from PIL import Image
+        with Image.open(source) as image:
+            image.convert("RGB").save(output, format="PNG")
+        locator["page"] = None
+    if bbox is not None:
+        from PIL import Image
+        with Image.open(output) as image:
+            width, height = image.size
+            crop = (
+                round(bbox[0] * width), round(bbox[1] * height),
+                round(bbox[2] * width), round(bbox[3] * height),
+            )
+            image.crop(crop).save(output, format="PNG")
+    return locator
 
 
 def _persist_uploaded_file(
@@ -330,9 +364,6 @@ def _worker() -> None:
                 )
                 if not evidence:
                     raise RuntimeError("empty_parse_result")
-                sections = build_document_sections(temporary, attachment, evidence)
-                if not sections:
-                    raise RuntimeError("empty_structure_result")
                 LOGGER.info(
                     "LIBRARY_CHUNK_COMPLETE document_id=%s version_id=%s chunks=%s",
                     attachment.get("document_id"), attachment.get("version_id"), len(evidence),
@@ -344,7 +375,7 @@ def _worker() -> None:
                 # Build under a generation-specific ref. The previous active
                 # vector/evidence projection remains searchable on failure.
                 previous_vector_ref, new_vector_ref = rebuild_library_projection(
-                    STORE, VECTOR_INDEX, attachment, evidence, job["id"], sections,
+                    STORE, VECTOR_INDEX, attachment, evidence, job["id"],
                 )
                 if not preserve_active:
                     STORE.transition_attachment(attachment["id"], "indexing")
@@ -382,7 +413,6 @@ def _worker() -> None:
             code = str(exc) if str(exc) in {
                 "ocr_backend_unavailable", "parse_timeout", "empty_parse_result",
                 "library_vector_index_disabled", "attachment_vector_index_unavailable",
-                "empty_structure_result",
             } else "parse_failed"
             LOGGER.warning("parse failed attachment_id=%s hash=%s error=%s", attachment["id"], attachment["sha256"][:12], code)
             current = STORE.get_attachment(attachment["id"], include_deleted=True)
@@ -772,16 +802,16 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
         for item in versions
     }
     candidate_k = max(body.top_k * 4, 20)
-    direct_lexical = (
+    lexical_rows = (
         STORE.search_evidence(attachment_ids, body.query, candidate_k)
         if body.mode in {"bm25", "hybrid"} else []
     )
-    direct_vector: list[dict[str, Any]] = []
+    vector_rows: list[dict[str, Any]] = []
     vector_degraded = False
     if body.mode in {"vector", "hybrid"} and body.query_vector is not None:
         try:
-            direct_vector = VECTOR_INDEX.search_by_vector(vector_refs, body.query_vector, candidate_k)
-            for row in direct_vector:
+            vector_rows = VECTOR_INDEX.search_by_vector(vector_refs, body.query_vector, candidate_k)
+            for row in vector_rows:
                 row["attachment_id"] = vector_to_attachment.get(str(row.get("attachment_id")), str(row.get("attachment_id")))
         except Exception as exc:
             vector_degraded = True
@@ -790,10 +820,9 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
                 body.knowledge_base_id, exc.__class__.__name__,
             )
     evidence = {item["evidence_id"]: item for item in STORE.list_evidence(attachment_ids)}
-    direct = fuse_library_candidates(
-        evidence, direct_lexical, direct_vector, mode=body.mode, top_k=candidate_k,
-    )
-    result = {"items": direct[:body.top_k]}
+    result = {"items": fuse_library_candidates(
+        evidence, lexical_rows, vector_rows, mode=body.mode, top_k=body.top_k,
+    )}
     if vector_degraded:
         result["degraded"] = ["vector"]
         if body.mode == "vector":
@@ -813,7 +842,7 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
         hashlib.sha256(body.owner_id.encode()).hexdigest()[:12],
         body.knowledge_base_id,
         body.mode,
-        len(set(item.get("evidence_id") for item in (*direct_lexical, *direct_vector))),
+        len(set(item.get("evidence_id") for item in (*lexical_rows, *vector_rows))),
         len(result["items"]),
     )
     return result
@@ -836,7 +865,7 @@ async def inspect(attachment_id: str, body: InspectRequest) -> dict[str, Any]:
         decrypt_file(Path(record["blob_path"]), temporary, SETTINGS.encryption_key, _blob_aad(record))
         try:
             locator = await asyncio.to_thread(
-                prepare_vision_image, temporary, record["extension"], body.page, body.bbox, vision_image,
+                _prepare_vision_image, temporary, record["extension"], body.page, body.bbox, vision_image,
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc

@@ -19,14 +19,12 @@ def rebuild_library_projection(
     attachment: dict[str, Any],
     evidence: list[dict[str, Any]],
     generation_id: str,
-    sections: list[dict[str, Any]] | None = None,
 ) -> tuple[str, str]:
     """Build a new vector generation before switching lexical/vector state."""
     new_vector_ref = f"{attachment['id']}__{generation_id}"
     vector_index.replace(new_vector_ref, evidence)
     previous_vector_ref = str(attachment.get("vector_ref") or "")
     store.replace_evidence(attachment["id"], evidence)
-    store.replace_sections(attachment["id"], sections or [])
     store.update_attachment(attachment["id"], vector_ref=new_vector_ref)
     return previous_vector_ref, new_vector_ref
 
