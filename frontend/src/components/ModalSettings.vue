@@ -61,17 +61,17 @@ const presets = [
     proxy: 'http://127.0.0.1:7897',
   },
   {
+    name: 'Claude',
+    icon: 'i-lucide-brain',
+    base: 'https://api.anthropic.com/v1',
+    model: 'claude-3-5-sonnet-20241022',
+    proxy: 'http://127.0.0.1:7897',
+  },
+  {
     name: 'DeepSeek',
     icon: 'i-lucide-cpu',
     base: 'https://api.deepseek.com/v1',
     model: 'deepseek-chat',
-    proxy: '',
-  },
-  {
-    name: 'Ollama',
-    icon: 'i-lucide-terminal',
-    base: 'http://localhost:11434/v1',
-    model: 'qwen2.5:7b',
     proxy: '',
   },
 ]
@@ -104,7 +104,7 @@ async function loadLLMConfig() {
 
 async function testLLMConnection() {
   if (!llmConfig.value.llm_api_base) {
-    toast.add({ title: '请填写 API 地址', color: 'error' })
+    toast.add({ title: 'Please enter an API Base URL', color: 'error' })
     return
   }
   testingLLM.value = true
@@ -131,26 +131,26 @@ async function testLLMConnection() {
 
     if (res.success) {
       toast.add({
-        title: '连通性测试通过',
-        description: `响应正常 (延迟 ${res.latency_ms}ms)`,
+        title: 'Connection Test Successful',
+        description: `Model response verified (${res.latency_ms}ms)`,
         color: 'success',
       })
     } else {
       toast.add({
-        title: '连通性测试未通过',
-        description: res.error || '无法连接模型接口',
+        title: 'Connection Test Failed',
+        description: res.error || 'Unable to connect to model endpoint',
         color: 'error',
       })
     }
   } catch (err: any) {
-    const msg = err?.data?.statusMessage || err?.message || '请求失败'
+    const msg = err?.data?.statusMessage || err?.message || 'Request failed'
     testResult.value = {
       tested: true,
       success: false,
       latency_ms: 0,
       error: msg,
     }
-    toast.add({ title: '连通性测试失败', description: msg, color: 'error' })
+    toast.add({ title: 'Connection Test Failed', description: msg, color: 'error' })
   } finally {
     testingLLM.value = false
   }
@@ -232,15 +232,15 @@ async function saveSettings() {
     }
 
     toast.add({
-      title: '设置已保存',
-      description: '偏好与 API 配置已成功保存并即时生效。',
+      title: 'Settings Saved',
+      description: 'System preferences and API configuration saved successfully.',
       color: 'success',
     })
     emit('update:open', false)
   } catch (err: any) {
     toast.add({
-      title: '保存失败',
-      description: err?.data?.statusMessage || err?.message || '保存设置时出现错误',
+      title: 'Save Failed',
+      description: err?.data?.statusMessage || err?.message || 'An error occurred while saving settings.',
       color: 'error',
     })
   } finally {
@@ -383,7 +383,7 @@ const tabs = [
             <div v-else-if="activeTab === 'model'" class="space-y-4 animate-in fade-in duration-200">
               <!-- Quick Presets -->
               <div class="flex items-center justify-between p-3 px-4 bg-zinc-900/60 rounded-2xl border border-zinc-800/80">
-                <div class="text-xs text-zinc-400 font-medium">快捷预设模板</div>
+                <div class="text-xs text-zinc-400 font-medium">Quick Presets</div>
                 <div class="flex flex-wrap gap-1.5">
                   <button
                     v-for="p in presets"
@@ -400,7 +400,7 @@ const tabs = [
 
               <!-- Base URL -->
               <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-zinc-300">API 接口地址 (Base URL)</label>
+                <label class="text-xs font-semibold text-zinc-300">API Base URL</label>
                 <input
                   v-model="llmConfig.llm_api_base"
                   type="text"
@@ -412,9 +412,9 @@ const tabs = [
               <!-- API Key with inline Test Button -->
               <div class="space-y-1.5">
                 <div class="flex items-center justify-between">
-                  <label class="text-xs font-semibold text-zinc-300">API 密钥 (API Key)</label>
+                  <label class="text-xs font-semibold text-zinc-300">API Key</label>
                   <span v-if="llmConfig.has_api_key" class="text-[11px] text-emerald-400 font-mono font-medium">
-                    已配置: {{ llmConfig.llm_api_key_masked }}
+                    Configured: {{ llmConfig.llm_api_key_masked }}
                   </span>
                 </div>
                 <div class="flex gap-2">
@@ -422,7 +422,7 @@ const tabs = [
                     <input
                       v-model="llmConfig.llm_api_key"
                       :type="showApiKey ? 'text' : 'password'"
-                      :placeholder="llmConfig.has_api_key ? '留空保持现有密钥不变' : '请输入 API 密钥...'"
+                      :placeholder="llmConfig.has_api_key ? 'Leave empty to keep existing key' : 'Enter API Key...'"
                       class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-9"
                     />
                     <button
@@ -440,14 +440,14 @@ const tabs = [
                     @click="testLLMConnection"
                   >
                     <UIcon :name="testingLLM ? 'i-lucide-loader-2' : 'i-lucide-zap'" class="w-3.5 h-3.5 text-emerald-400" :class="{ 'animate-spin': testingLLM }" />
-                    {{ testingLLM ? '测试中...' : '测试连通性' }}
+                    {{ testingLLM ? 'Testing...' : 'Test Connection' }}
                   </button>
                 </div>
               </div>
 
               <!-- Model Name -->
               <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-zinc-300">模型名称 (Model)</label>
+                <label class="text-xs font-semibold text-zinc-300">Model Name</label>
                 <input
                   v-model="llmConfig.llm_model"
                   type="text"
@@ -458,7 +458,7 @@ const tabs = [
 
               <!-- Proxy -->
               <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-zinc-300">HTTP 代理 (Proxy，选填)</label>
+                <label class="text-xs font-semibold text-zinc-300">HTTP Proxy (Optional)</label>
                 <input
                   v-model="llmConfig.llm_http_proxy"
                   type="text"
@@ -475,15 +475,9 @@ const tabs = [
               >
                 <div class="flex items-center gap-2">
                   <UIcon :name="testResult.success ? 'i-lucide-check-circle' : 'i-lucide-x-circle'" class="w-4 h-4 shrink-0" />
-                  <span v-if="testResult.success">连通成功！模型响应正常 (耗时 {{ testResult.latency_ms }}ms)</span>
+                  <span v-if="testResult.success">Connection successful! (Latency: {{ testResult.latency_ms }}ms)</span>
                   <span v-else class="truncate max-w-md">{{ testResult.error }}</span>
                 </div>
-              </div>
-
-              <!-- Gitignore Note -->
-              <div class="text-[11px] text-zinc-500 flex items-center gap-1.5 pt-1">
-                <UIcon name="i-lucide-shield-check" class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>配置将一键写入本地 <code class="text-zinc-400">.env</code>，受 <code class="text-zinc-400">.gitignore</code> 保护防误提交 GitHub。</span>
               </div>
             </div>
 
