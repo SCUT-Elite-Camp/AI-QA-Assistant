@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.api.chat_routes import router as chat_router
+from agent.api.config_routes import router as config_router
 from agent.api.internal_memory_routes import router as internal_memory_router
 from agent.config.settings import settings
 from agent.logger.logger import get_logger, setup_logger
@@ -121,6 +122,7 @@ def readiness() -> dict[str, str | bool]:
 
 
 app.include_router(chat_router, prefix="/api")
+app.include_router(config_router)
 app.include_router(internal_memory_router, prefix="/api/internal")
 
 
