@@ -171,7 +171,7 @@ class Document(BaseModel):
         last_updated = cls.generate_last_updated(abs_path)
         source_url = ""
         metadata: dict = {}
-        doc_type = os.path.splitext(abs_path)[1].removeprefix(".").lower()
+        doc_type = cls.infer_doc_type(abs_path, metadata)
 
         meta_path = abs_path + ".meta.json"
         if os.path.exists(meta_path):
@@ -182,13 +182,7 @@ class Document(BaseModel):
                 title = _meta.get("title", title) or title
                 last_updated = _meta.get("last_updated", last_updated) or last_updated
                 metadata = _meta
-                metadata_type = _meta.get("doc_type") or _meta.get("content_type")
-                if isinstance(metadata_type, str) and metadata_type.strip():
-                    candidate = metadata_type.strip().lower()
-                    if "/" in candidate:
-                        candidate = candidate.rsplit("/", 1)[-1]
-                    if candidate not in {"attachment", "page"}:
-                        doc_type = candidate.removeprefix(".")
+                doc_type = cls.infer_doc_type(abs_path, metadata)
             except Exception as _e:  # noqa: BLE001
                 print(f"  ⚠ 读取侧车元数据失败: {meta_path}，错误: {_e}")
 
@@ -205,3 +199,18 @@ class Document(BaseModel):
             doc_type=doc_type,
             version_id=cls.generate_version_id(abs_path),
         )
+
+    @staticmethod
+    def infer_doc_type(address: str, metadata: dict | None = None) -> str:
+        """Resolve a stable document type from metadata or the source filename."""
+        metadata = metadata or {}
+        value = metadata.get("doc_type") or metadata.get("content_type")
+        candidate = str(value or "").strip().lower()
+        if "/" in candidate:
+            candidate = candidate.rsplit("/", 1)[-1]
+        if candidate in {"attachment", "page", "hybrid"}:
+            candidate = ""
+        if not candidate:
+            filename = str(metadata.get("filename") or address)
+            candidate = os.path.splitext(filename)[1]
+        return candidate.removeprefix(".").lower()[:64]

@@ -3,9 +3,12 @@ from typing import Any
 
 import pytest
 
+from agent.config.settings import settings
 from agent.runtime import AgentRunner, StopReason
+from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 from agent.service.audit_service import AuditService
+from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool, ToolRegistry
 
 
@@ -69,6 +72,42 @@ class RecordingSearchTool(RecordingTool):
         ]
 
 
+class WikiEvidenceTool(RecordingTool):
+    def __init__(self) -> None:
+        super().__init__(name="wiki_search_evidence")
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "source_scope": {"type": "string"},
+                "page_id": {"type": "string"},
+                "top_k": {"type": "integer"},
+                "mode": {"type": "string"},
+            },
+            "required": ["query", "page_id"],
+            "additionalProperties": False,
+        }
+
+    def execute(self, **kwargs: Any) -> Any:
+        self.calls.append(kwargs)
+        return {
+            "citation_authority": True,
+            "items": [{
+                "doc_id": "doc-2",
+                "document_id": "doc-2",
+                "version_id": "ver-2",
+                "chunk_id": "doc-2::chunk_0",
+                "chunk_index": 0,
+                "chunk_text": "Wiki-scoped original evidence",
+                "title": "Source document",
+                "score": 0.9,
+            }],
+        }
+
+
 def tool_call(
     name: str,
     arguments: dict[str, Any] | str,
@@ -101,6 +140,78 @@ def make_plan(**updates: Any) -> QueryPlan:
     }
     values.update(updates)
     return QueryPlan(**values)
+
+
+def test_wiki_navigation_returns_to_authoritative_evidence(monkeypatch) -> None:
+    class WikiStep(RecordingTool):
+        def __init__(self, name: str, payload: dict[str, Any]) -> None:
+            super().__init__(name)
+            self.payload = payload
+
+        @property
+        def parameters(self) -> dict[str, Any]:
+            return {"type": "object", "additionalProperties": True}
+
+        def execute(self, **kwargs: Any) -> Any:
+            self.calls.append(kwargs)
+            return self.payload
+
+    search = RecordingSearchTool()
+    wiki_search = WikiStep("wiki_search", {
+        "pages": [{"page_id": "page-1", "title": "Related"}],
+        "citation_authority": False,
+    })
+    wiki_page = WikiStep("wiki_read_page", {
+        "page": {"id": "page-1", "title": "Related"},
+        "citation_authority": False,
+    })
+    wiki_sources = WikiStep("wiki_read_sources", {
+        "sources": [{"document_id": "doc-2", "document_version_id": "ver-2"}],
+        "citation_authority": False,
+    })
+    wiki_evidence = WikiEvidenceTool()
+    tools = [search, wiki_search, wiki_page, wiki_sources, wiki_evidence]
+    registry = ToolRegistry(tools=tools)
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call("wiki_search", {"query": "ignored"}, "wiki-1")]},
+        {"tool_calls": [tool_call("wiki_read_page", {"page_ref": "page-1"}, "wiki-2")]},
+        {"tool_calls": [tool_call("wiki_read_sources", {"page_id": "page-1"}, "wiki-3")]},
+        {"tool_calls": [tool_call("wiki_search_evidence", {
+            "query": "ignored", "page_id": "page-1",
+        }, "wiki-4")]},
+        {"role": "assistant", "content": "基于两份原始证据回答 [1][2]"},
+    ])
+    runner = AgentRunner(llm=llm, registry=registry, audit_service=AuditService())
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(
+            original_query="跨文档比较两个主题",
+            standalone_query="跨文档比较两个主题",
+            intent=QueryIntent.COMPARISON,
+        ),
+        policy=IntentPolicy(
+            candidate_tools=tuple(tool.name for tool in tools),
+            max_iterations=6,
+            max_tool_calls=8,
+            max_retrieval_attempts=5,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        trace_id="trace-wiki-chain",
+        exploration_mode="auto",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert [call.tool_name for call in result.tool_calls] == [
+        "search_documents", "wiki_search", "wiki_read_page",
+        "wiki_read_sources", "wiki_search_evidence",
+    ]
+    assert result.exploration_rounds == 4
+    assert {
+        item.get("document_id") or item["doc_id"] for item in result.evidence
+    } == {"doc-1", "doc-2"}
+    assert all(not item.get("citation_authority") is False for item in result.evidence)
 
 
 def test_search_loop_uses_standalone_query_filters_and_trace_id() -> None:

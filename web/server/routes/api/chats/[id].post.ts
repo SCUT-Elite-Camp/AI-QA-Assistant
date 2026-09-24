@@ -33,6 +33,7 @@ import {
 } from '../../../../shared/utils/attachmentParts'
 import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
 import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
+import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
 import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import {
   appendMessage,
@@ -170,6 +171,10 @@ export default defineHandler(async (event) => {
     messageMetadata,
     lastMessage.parts,
   )
+  const explorationMode = chatExplorationMode(
+    messageMetadata,
+    lastMessage.parts,
+  )
   const attachmentSelection = extractAttachmentSelection(
     lastMessage.parts,
     messageMetadata,
@@ -219,7 +224,10 @@ export default defineHandler(async (event) => {
     ...lastMessage.parts.filter(part => part.type !== 'data-chat-preferences'),
     {
       type: 'data-chat-preferences',
-      data: { knowledge_base_retrieval_enabled: useKnowledgeBase },
+      data: {
+        knowledge_base_retrieval_enabled: useKnowledgeBase,
+        exploration_mode: explorationMode,
+      },
     },
   ]
   const safeParts = mergeSafeAttachmentParts(
@@ -340,6 +348,7 @@ export default defineHandler(async (event) => {
             top_k: 5,
             stream: true,
             retrieval_mode: "hybrid",
+            exploration_mode: explorationMode,
             topic_id: chat.topicId || undefined,
             weight_mode: body.weightMode || topicInfo?.weightMode || "thinking",
             soul_content: soulContent || undefined,
