@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { $fetch } from 'ofetch'
 import { useColorMode } from '@vueuse/core'
 import { useUserSession } from '../composables/useUserSession'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
 }>()
 
@@ -11,14 +12,149 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const activeTab = ref<'general' | 'personalization' | 'documents' | 'account'>('general')
+const activeTab = ref<'general' | 'model' | 'personalization' | 'documents' | 'account'>('general')
 
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
 const { user, clearSession, loggedIn } = useUserSession()
+const toast = useToast()
 
-const colors = ['emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'orange', 'amber', 'yellow', 'lime', 'green']
-const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
+// LLM API Config State
+const testingLLM = ref(false)
+const savingLLM = ref(false)
+const showApiKey = ref(false)
+
+const testResult = ref<{
+  tested: boolean
+  success: boolean
+  latency_ms: number
+  reply?: string
+  error?: string
+}>({
+  tested: false,
+  success: false,
+  latency_ms: 0,
+})
+
+const llmConfig = ref({
+  llm_api_base: '',
+  llm_model: 'gemini-3.5-flash',
+  llm_api_key: '',
+  llm_api_key_masked: '',
+  has_api_key: false,
+  llm_http_proxy: '',
+})
+
+const presets = [
+  {
+    name: 'Gemini',
+    icon: 'i-lucide-sparkles',
+    base: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+    model: 'gemini-3.5-flash',
+    proxy: 'http://127.0.0.1:7897',
+  },
+  {
+    name: 'OpenAI',
+    icon: 'i-lucide-bot',
+    base: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+    proxy: 'http://127.0.0.1:7897',
+  },
+  {
+    name: 'DeepSeek',
+    icon: 'i-lucide-cpu',
+    base: 'https://api.deepseek.com/v1',
+    model: 'deepseek-chat',
+    proxy: '',
+  },
+  {
+    name: 'Ollama',
+    icon: 'i-lucide-terminal',
+    base: 'http://localhost:11434/v1',
+    model: 'qwen2.5:7b',
+    proxy: '',
+  },
+]
+
+function applyPreset(p: typeof presets[0]) {
+  llmConfig.value.llm_api_base = p.base
+  llmConfig.value.llm_model = p.model
+  if (p.proxy) {
+    llmConfig.value.llm_http_proxy = p.proxy
+  }
+}
+
+async function loadLLMConfig() {
+  try {
+    const data = await $fetch<any>('/api/settings/llm')
+    if (data && !('error' in data && data.error && !data.llm_api_base)) {
+      llmConfig.value = {
+        llm_api_base: data.llm_api_base || '',
+        llm_model: data.llm_model || 'gemini-3.5-flash',
+        llm_api_key: '',
+        llm_api_key_masked: data.llm_api_key_masked || '',
+        has_api_key: !!data.has_api_key,
+        llm_http_proxy: data.llm_http_proxy || '',
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function testLLMConnection() {
+  if (!llmConfig.value.llm_api_base) {
+    toast.add({ title: '请填写 API 地址', color: 'error' })
+    return
+  }
+  testingLLM.value = true
+  testResult.value = { tested: false, success: false, latency_ms: 0 }
+
+  try {
+    const res: any = await $fetch('/api/settings/llm/test', {
+      method: 'POST',
+      body: {
+        llm_api_base: llmConfig.value.llm_api_base,
+        llm_api_key: llmConfig.value.llm_api_key || undefined,
+        llm_model: llmConfig.value.llm_model,
+        llm_http_proxy: llmConfig.value.llm_http_proxy || undefined,
+      },
+    })
+
+    testResult.value = {
+      tested: true,
+      success: res.success,
+      latency_ms: res.latency_ms || 0,
+      reply: res.reply,
+      error: res.error,
+    }
+
+    if (res.success) {
+      toast.add({
+        title: '连通性测试通过',
+        description: `响应正常 (延迟 ${res.latency_ms}ms)`,
+        color: 'success',
+      })
+    } else {
+      toast.add({
+        title: '连通性测试未通过',
+        description: res.error || '无法连接模型接口',
+        color: 'error',
+      })
+    }
+  } catch (err: any) {
+    const msg = err?.data?.statusMessage || err?.message || '请求失败'
+    testResult.value = {
+      tested: true,
+      success: false,
+      latency_ms: 0,
+      error: msg,
+    }
+    toast.add({ title: '连通性测试失败', description: msg, color: 'error' })
+  } finally {
+    testingLLM.value = false
+  }
+}
 
 // Personalization settings stored in localStorage
 const styleTone = ref<string>(localStorage.getItem('sys_style_tone') || 'Default')
@@ -36,15 +172,15 @@ const styleToneOptions = [
   { label: 'Friendly', value: 'Friendly', icon: 'i-lucide-smile' },
   { label: 'Academic', value: 'Academic', icon: 'i-lucide-graduation-cap' },
   { label: 'Humorous', value: 'Humorous', icon: 'i-lucide-laugh' },
-  { label: 'Direct', value: 'Direct', icon: 'i-lucide-target' }
+  { label: 'Direct', value: 'Direct', icon: 'i-lucide-target' },
 ]
 
 const styleToneMenuItems = computed(() => [
   styleToneOptions.map(opt => ({
     label: opt.label,
     icon: opt.icon,
-    onSelect: () => { styleTone.value = opt.value }
-  }))
+    onSelect: () => { styleTone.value = opt.value },
+  })),
 ])
 
 const appearanceLabel = computed(() => {
@@ -57,35 +193,59 @@ const appearanceItems = computed(() => [
     {
       label: 'System',
       icon: 'i-lucide-monitor',
-      onSelect: () => { colorMode.preference = 'system' }
+      onSelect: () => { colorMode.preference = 'system' },
     },
     {
       label: 'Dark',
       icon: 'i-lucide-moon',
-      onSelect: () => { colorMode.preference = 'dark'; colorMode.value = 'dark' }
+      onSelect: () => { colorMode.preference = 'dark'; colorMode.value = 'dark' },
     },
     {
       label: 'Light',
       icon: 'i-lucide-sun',
-      onSelect: () => { colorMode.preference = 'light'; colorMode.value = 'light' }
-    }
-  ]
+      onSelect: () => { colorMode.preference = 'light'; colorMode.value = 'light' },
+    },
+  ],
 ])
 
-function saveSettings() {
-  localStorage.setItem('sys_style_tone', styleTone.value)
-  localStorage.setItem('sys_custom_instructions', customInstructions.value)
-  localStorage.setItem('sys_user_nickname', userNickname.value)
-  localStorage.setItem('sys_user_occupation', userOccupation.value)
-  localStorage.setItem('sys_user_details', userDetails.value)
+async function saveSettings() {
+  savingLLM.value = true
+  try {
+    // 1. Save Personalization in localStorage
+    localStorage.setItem('sys_style_tone', styleTone.value)
+    localStorage.setItem('sys_custom_instructions', customInstructions.value)
+    localStorage.setItem('sys_user_nickname', userNickname.value)
+    localStorage.setItem('sys_user_occupation', userOccupation.value)
+    localStorage.setItem('sys_user_details', userDetails.value)
 
-  const toast = useToast()
-  toast.add({
-    title: 'Settings Saved',
-    description: 'System preferences have been updated successfully.',
-    color: 'success'
-  })
-  emit('update:open', false)
+    // 2. Save API Config to backend .env if base URL is provided
+    if (llmConfig.value.llm_api_base) {
+      await $fetch('/api/settings/llm/save', {
+        method: 'POST',
+        body: {
+          llm_api_base: llmConfig.value.llm_api_base,
+          llm_api_key: llmConfig.value.llm_api_key || undefined,
+          llm_model: llmConfig.value.llm_model,
+          llm_http_proxy: llmConfig.value.llm_http_proxy,
+        },
+      })
+    }
+
+    toast.add({
+      title: '设置已保存',
+      description: '偏好与 API 配置已成功保存并即时生效。',
+      color: 'success',
+    })
+    emit('update:open', false)
+  } catch (err: any) {
+    toast.add({
+      title: '保存失败',
+      description: err?.data?.statusMessage || err?.message || '保存设置时出现错误',
+      color: 'error',
+    })
+  } finally {
+    savingLLM.value = false
+  }
 }
 
 function resetDefaults() {
@@ -101,11 +261,22 @@ function resetDefaults() {
   saveSettings()
 }
 
+watch(() => props.open, (isOpen) => {
+  if (isOpen) {
+    loadLLMConfig()
+  }
+})
+
+onMounted(() => {
+  loadLLMConfig()
+})
+
 const tabs = [
   { id: 'general', label: 'General', icon: 'i-lucide-sliders-horizontal' },
+  { id: 'model', label: 'Model & API', icon: 'i-lucide-cpu' },
   { id: 'personalization', label: 'Personalization', icon: 'i-lucide-palette' },
   { id: 'documents', label: 'Documents', icon: 'i-lucide-file-text' },
-  { id: 'account', label: 'Account', icon: 'i-lucide-user' }
+  { id: 'account', label: 'Account', icon: 'i-lucide-user' },
 ]
 </script>
 
@@ -189,7 +360,7 @@ const tabs = [
           <!-- Scrollable Tab Content Area -->
           <div class="flex-1 p-6 overflow-y-auto space-y-6">
             
-            <!-- Tab 1: General (Minimalist Appearance Dropdown Row) -->
+            <!-- Tab 1: General (Appearance) -->
             <div v-if="activeTab === 'general'" class="space-y-4 animate-in fade-in duration-200">
               <div class="flex items-center justify-between py-3.5 px-4 bg-zinc-900/60 rounded-2xl border border-zinc-800/80">
                 <span class="text-sm font-medium text-zinc-200">Appearance</span>
@@ -208,10 +379,118 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Tab 2: Personalization -->
+            <!-- Tab 2: Model & API (Concise & Clean) -->
+            <div v-else-if="activeTab === 'model'" class="space-y-4 animate-in fade-in duration-200">
+              <!-- Quick Presets -->
+              <div class="flex items-center justify-between p-3 px-4 bg-zinc-900/60 rounded-2xl border border-zinc-800/80">
+                <div class="text-xs text-zinc-400 font-medium">快捷预设模板</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    v-for="p in presets"
+                    :key="p.name"
+                    type="button"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-300 hover:text-white border border-zinc-700/40 transition-colors cursor-pointer flex items-center gap-1"
+                    @click="applyPreset(p)"
+                  >
+                    <UIcon :name="p.icon" class="w-3.5 h-3.5 text-emerald-400" />
+                    {{ p.name }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Base URL -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-zinc-300">API 接口地址 (Base URL)</label>
+                <input
+                  v-model="llmConfig.llm_api_base"
+                  type="text"
+                  placeholder="https://generativelanguage.googleapis.com/v1beta/openai/"
+                  class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <!-- API Key with inline Test Button -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-semibold text-zinc-300">API 密钥 (API Key)</label>
+                  <span v-if="llmConfig.has_api_key" class="text-[11px] text-emerald-400 font-mono font-medium">
+                    已配置: {{ llmConfig.llm_api_key_masked }}
+                  </span>
+                </div>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <input
+                      v-model="llmConfig.llm_api_key"
+                      :type="showApiKey ? 'text' : 'password'"
+                      :placeholder="llmConfig.has_api_key ? '留空保持现有密钥不变' : '请输入 API 密钥...'"
+                      class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-9"
+                    />
+                    <button
+                      type="button"
+                      class="absolute inset-y-0 right-0 px-2.5 flex items-center text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                      @click="showApiKey = !showApiKey"
+                    >
+                      <UIcon :name="showApiKey ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    :disabled="testingLLM"
+                    class="px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700/60 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                    @click="testLLMConnection"
+                  >
+                    <UIcon :name="testingLLM ? 'i-lucide-loader-2' : 'i-lucide-zap'" class="w-3.5 h-3.5 text-emerald-400" :class="{ 'animate-spin': testingLLM }" />
+                    {{ testingLLM ? '测试中...' : '测试连通性' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Model Name -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-zinc-300">模型名称 (Model)</label>
+                <input
+                  v-model="llmConfig.llm_model"
+                  type="text"
+                  placeholder="gemini-3.5-flash"
+                  class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <!-- Proxy -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-zinc-300">HTTP 代理 (Proxy，选填)</label>
+                <input
+                  v-model="llmConfig.llm_http_proxy"
+                  type="text"
+                  placeholder="http://127.0.0.1:7897"
+                  class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <!-- Test Result Box -->
+              <div
+                v-if="testResult.tested"
+                class="p-3 rounded-xl border text-xs transition-all flex items-center justify-between"
+                :class="testResult.success ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300' : 'bg-rose-950/30 border-rose-800/60 text-rose-300'"
+              >
+                <div class="flex items-center gap-2">
+                  <UIcon :name="testResult.success ? 'i-lucide-check-circle' : 'i-lucide-x-circle'" class="w-4 h-4 shrink-0" />
+                  <span v-if="testResult.success">连通成功！模型响应正常 (耗时 {{ testResult.latency_ms }}ms)</span>
+                  <span v-else class="truncate max-w-md">{{ testResult.error }}</span>
+                </div>
+              </div>
+
+              <!-- Gitignore Note -->
+              <div class="text-[11px] text-zinc-500 flex items-center gap-1.5 pt-1">
+                <UIcon name="i-lucide-shield-check" class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>配置将一键写入本地 <code class="text-zinc-400">.env</code>，受 <code class="text-zinc-400">.gitignore</code> 保护防误提交 GitHub。</span>
+              </div>
+            </div>
+
+            <!-- Tab 3: Personalization -->
             <div v-else-if="activeTab === 'personalization'" class="space-y-6 animate-in fade-in duration-200">
               
-              <!-- 1. Base Style & Tone (Minimalist Dropdown Row - 8 Options) -->
+              <!-- 1. Base Style & Tone -->
               <div class="space-y-3">
                 <div class="flex items-center justify-between p-4 bg-zinc-900/60 rounded-2xl border border-zinc-800/80">
                   <div>
@@ -258,7 +537,6 @@ const tabs = [
                   </div>
                 </div>
 
-                <!-- Nickname -->
                 <div class="space-y-1.5">
                   <label class="text-xs font-medium text-zinc-300">Nickname</label>
                   <input
@@ -269,7 +547,6 @@ const tabs = [
                   />
                 </div>
 
-                <!-- Occupation -->
                 <div class="space-y-1.5">
                   <label class="text-xs font-medium text-zinc-300">Occupation</label>
                   <input
@@ -280,7 +557,6 @@ const tabs = [
                   />
                 </div>
 
-                <!-- Details / Preferences -->
                 <div class="space-y-1.5">
                   <label class="text-xs font-medium text-zinc-300">Your Details</label>
                   <textarea
@@ -294,7 +570,7 @@ const tabs = [
 
             </div>
 
-            <!-- Tab 3: Documents -->
+            <!-- Tab 4: Documents -->
             <div v-else-if="activeTab === 'documents'" class="space-y-6 animate-in fade-in duration-200">
               
               <div class="space-y-4">
@@ -303,7 +579,6 @@ const tabs = [
                   Document & Vector Store Overview
                 </h4>
 
-                <!-- Minimalist Grid: Total Docs, Total Chunks, Embedding Model -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div class="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800/80 space-y-1">
                     <div class="text-xs text-zinc-400">Total Documents</div>
@@ -328,7 +603,6 @@ const tabs = [
                 </div>
               </div>
 
-              <!-- Manage Documents Action Box & Button -->
               <div class="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between">
                 <div>
                   <div class="text-sm font-semibold text-zinc-200">Manage Ingested Documents</div>
@@ -348,10 +622,9 @@ const tabs = [
 
             </div>
 
-            <!-- Tab 4: Account -->
+            <!-- Tab 5: Account -->
             <div v-else-if="activeTab === 'account'" class="space-y-6 animate-in fade-in duration-200">
               
-              <!-- User Profile Information -->
               <div class="space-y-3">
                 <h4 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                   <UIcon name="i-lucide-user-check" class="w-4 h-4 text-emerald-400" />
@@ -371,7 +644,7 @@ const tabs = [
                     </div>
                     <div>
                       <div class="text-sm font-bold text-zinc-100">{{ user.name || user.username }}</div>
-                      <div class="text-xs text-zinc-400">{{ user.email || 'GitHub Authenticated User' }}</div>
+                      <div class="text-xs text-zinc-400">{{ user.email || 'Authenticated User' }}</div>
                     </div>
                   </div>
                   <span class="px-2.5 py-1 text-[11px] font-semibold text-emerald-400 bg-emerald-400/10 rounded-full border border-emerald-400/20">
@@ -380,7 +653,7 @@ const tabs = [
                 </div>
 
                 <div v-else class="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800/80 text-xs text-zinc-400">
-                  Currently running in Local Guest Mode.
+                  Currently running in Local Mode.
                 </div>
               </div>
 
@@ -388,26 +661,21 @@ const tabs = [
               <div class="space-y-3">
                 <h4 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                   <UIcon name="i-lucide-cpu" class="w-4 h-4 text-sky-400" />
-                  AI Backend Configuration
+                  Active LLM Status
                 </h4>
 
                 <div class="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800/80 space-y-2.5 text-xs text-zinc-300">
                   <div class="flex items-center justify-between">
-                    <span class="text-zinc-400">LLM Provider</span>
-                    <span class="font-mono font-bold text-zinc-200">LongCat API (OpenAI Compatible)</span>
-                  </div>
-                  <div class="flex items-center justify-between pt-2 border-t border-zinc-800/60">
                     <span class="text-zinc-400">Base URL</span>
-                    <span class="font-mono text-emerald-400">https://api.longcat.chat/openai/v1</span>
+                    <span class="font-mono text-emerald-400 truncate max-w-xs">{{ llmConfig.llm_api_base || 'Not configured' }}</span>
                   </div>
                   <div class="flex items-center justify-between pt-2 border-t border-zinc-800/60">
                     <span class="text-zinc-400">Active Model</span>
-                    <span class="font-mono font-bold text-sky-400">LongCat-2.0</span>
+                    <span class="font-mono font-bold text-sky-400">{{ llmConfig.llm_model }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Logout Button -->
               <div v-if="loggedIn" class="pt-2">
                 <UButton
                   color="error"
@@ -446,6 +714,7 @@ const tabs = [
                 color="primary"
                 label="Save Settings"
                 icon="i-lucide-check"
+                :loading="savingLLM"
                 class="rounded-xl font-medium cursor-pointer"
                 @click="saveSettings"
               />
