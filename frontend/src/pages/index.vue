@@ -113,12 +113,12 @@ const plusMenuItems = computed(() => [[
     onSelect: () => attachmentTray.value?.open()
   },
   {
-    label: useKnowledgeBase.value ? '企业知识库检索 (已开启)' : '企业知识库检索 (已关闭)',
+    label: '企业知识库检索',
     icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
     onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
   {
-    label: deepResearchMode.value ? 'Deep Research (已开启)' : 'Deep Research (已关闭)',
+    label: 'Deep Research',
     icon: 'i-lucide-telescope',
     onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
