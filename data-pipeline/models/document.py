@@ -82,6 +82,7 @@ class Chunk(BaseModel):
     section_path: list[str] = Field(default_factory=list)
     block_start: int | None = None
     block_end: int | None = None
+    overlap_prefix_length: int = 0  # duplicated retrieval context, not source content
 
 
 class DocumentSection(BaseModel):
@@ -201,6 +202,7 @@ class Document(BaseModel):
 
     @staticmethod
     def infer_doc_type(address: str, metadata: dict | None = None) -> str:
+        """Resolve a stable document type from metadata or the source filename."""
         metadata = metadata or {}
         value = metadata.get("doc_type") or metadata.get("content_type")
         candidate = str(value or "").strip().lower()

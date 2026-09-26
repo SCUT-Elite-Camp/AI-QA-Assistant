@@ -3,11 +3,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 from .base_tool import BaseTool
 from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
 from .document_tools import FindDocumentsTool, GetDocumentTool
 from .navigation_tools import BrowseDocumentOutlineTool, SearchEvidenceInScopeTool
+from .wiki_tool import (
+    WikiReadPageTool,
+    WikiReadSourcesTool,
+    WikiSearchEvidenceTool,
+    WikiSearchTool,
+)
 from .search_library_tool import SearchLibraryTool
 from .search_tool import SearchTool
 
@@ -52,6 +59,34 @@ def _build_default_tools() -> List[BaseTool]:
         tools.extend([
             BrowseDocumentOutlineTool(search_tool, library_tool),
             SearchEvidenceInScopeTool(search_tool, library_tool),
+        ])
+    if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool(
+        "KNOWLEDGE_NAVIGATION_ENABLED"
+    ):
+        from pipeline.wiki.search import (
+            BgeM3WikiVectorSearch,
+            SQLiteFTSWikiSearch,
+            WikiSearchBackend,
+        )
+        from storage.wiki_store import WikiStore
+
+        store = WikiStore(resolve_wiki_db_path(PROJECT_ROOT))
+        vector = (
+            BgeM3WikiVectorSearch(store)
+            if _env_bool("WIKI_VECTOR_SEARCH_ENABLED")
+            else None
+        )
+        backend = WikiSearchBackend(SQLiteFTSWikiSearch(store), vector)
+        kwargs = {
+            "enterprise_knowledge_base_id": os.getenv(
+                "ENTERPRISE_KNOWLEDGE_BASE_ID", "default"
+            )
+        }
+        tools.extend([
+            WikiSearchTool(store, search_backend=backend, **kwargs),
+            WikiReadPageTool(store, **kwargs),
+            WikiReadSourcesTool(store, **kwargs),
+            WikiSearchEvidenceTool(store, search_tool, library_tool, **kwargs),
         ])
     return tools
 

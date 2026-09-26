@@ -35,6 +35,7 @@ import type { Vote } from '../../../server/utils/drizzle'
 import type { FactCategory } from '../../types/memory'
 import { extractAttachmentSelection } from '../../../shared/utils/attachmentParts'
 import { knowledgeBaseRetrievalEnabled } from '../../../shared/utils/chatRetrieval'
+import { chatExplorationMode } from '../../../shared/utils/chatExploration'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
@@ -189,7 +190,10 @@ const visibleMessages = computed(() => {
   return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant') || []
 })
 
-const deepResearchMode = ref(false)
+const deepResearchMode = ref(chatExplorationMode(
+  (latestUserMessage as any)?.metadata,
+  (latestUserMessage as any)?.parts,
+) === 'force')
 
 const plusMenuItems = computed(() => [[
   {
@@ -286,6 +290,7 @@ function handleSubmit(e: Event) {
         attachmentIds: attachmentIds.value,
         acceptedNeedsReviewIds: acceptedNeedsReviewIds.value,
         knowledgeBaseRetrievalEnabled: useKnowledgeBase.value,
+        explorationMode: deepResearchMode.value ? 'force' : 'auto',
       },
     } as any)
     input.value = ''
