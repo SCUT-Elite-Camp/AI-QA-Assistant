@@ -1,8 +1,10 @@
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+from storage.filtering import matches_filters, normalize_filters
 from tool_layer.base_tool import BaseTool
 
 
@@ -53,34 +55,18 @@ def _chunk_key(row: Dict) -> tuple:
 
 
 def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None) -> bool:
-    if not filters:
-        return True
+    combined = dict(doc_meta or {})
+    combined.update(
+        {key: value for key, value in item.items() if value not in (None, "")}
+    )
+    return matches_filters(combined, filters)
 
-    doc_id = str(item.get("doc_id", ""))
-    # 用键存在性而非真值判断，避免把空列表（空白名单）误判为「不过滤」。
-    if "doc_id" in filters:
-        doc_ids = filters["doc_id"]
-    elif "doc_ids" in filters:
-        doc_ids = filters["doc_ids"]
-    else:
-        doc_ids = None
-    if doc_ids is not None:
-        if isinstance(doc_ids, str):
-            doc_ids = {doc_ids}
-        else:
-            doc_ids = set(doc_ids)
-        if doc_id not in doc_ids:
-            return False
 
-    for key in ("space", "doc_type"):
-        expected = filters.get(key)
-        if expected is None:
-            continue
-        actual = item.get(key) or (doc_meta.get(key) if doc_meta else None)
-        if actual != expected:
-            return False
-
-    return True
+def _normalize_public_filters(filters: Optional[Dict]) -> Dict:
+    try:
+        return normalize_filters(filters)
+    except ValueError as exc:
+        raise RetrievalParameterError(f"invalid_filters: {exc}") from exc
 
 
 def _hybrid_search(vector_rows: list[dict], bm25_rows: list[dict], top_k: int, rrf_k: int = 60) -> list[dict]:
@@ -191,9 +177,20 @@ class SearchTool(BaseTool):
                     "type": "string",
                     "description": "Retrieval mode: 'vector', 'bm25', or 'hybrid'.",
                     "default": "hybrid"
-                }
+                },
+                "filters": {
+                    "type": "object",
+                    "properties": {
+                        "doc_id": {"type": "string"},
+                        "doc_ids": {"type": "array", "items": {"type": "string"}},
+                        "space": {"type": "string"},
+                        "doc_type": {"type": "string"},
+                    },
+                    "additionalProperties": False,
+                },
             },
-            "required": ["query"]
+            "required": ["query"],
+            "additionalProperties": False,
         }
 
     def execute(self, **kwargs: Any) -> Any:
@@ -201,8 +198,16 @@ class SearchTool(BaseTool):
         top_k = kwargs.get("top_k", 5)
         mode = kwargs.get("mode", "hybrid")
         filters = kwargs.get("filters")
+        navigation_mode = kwargs.get("navigation_mode", "direct")
 
-        results = self.search(query=query, top_k=top_k, mode=mode, filters=filters, min_score=self.min_score)
+        results = self.search(
+            query=query,
+            top_k=top_k,
+            mode=mode,
+            filters=filters,
+            min_score=self.min_score,
+            navigation_mode=navigation_mode,
+        )
         self.latest_results = results
 
         if not results:
@@ -227,11 +232,20 @@ class SearchTool(BaseTool):
         filters: Optional[Dict] = None,
         min_score: float = 0.0,
         trace_id: Optional[str] = None,
+        navigation_mode: str = "direct",
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
+        if navigation_mode not in {"direct", "hierarchical", "hybrid"}:
+            raise RetrievalParameterError(
+                "invalid_navigation_mode: expected direct, hierarchical, or hybrid"
+            )
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            navigation_mode = "direct"
         started = time.perf_counter()
         trace = trace_id or "-"
-        filters = filters or {}
+        filters = _normalize_public_filters(filters)
 
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
@@ -254,6 +268,195 @@ class SearchTool(BaseTool):
         top_scores = [row["score"] for row in results[:5]]
         self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
         return results
+
+    def _search_sections(self, query: str, filters: Dict, *, top_k: int) -> List[Dict]:
+        """Rank version-local Section metadata after document authorization."""
+        tokens = [token.casefold() for token in query.split() if token][:20]
+        hits: List[Dict] = []
+        if not self.documents_dir.exists():
+            return hits
+        for path in self.documents_dir.glob("*.json"):
+            try:
+                with path.open("r", encoding="utf-8") as source:
+                    document = json.load(source)
+            except (OSError, ValueError, TypeError):
+                continue
+            if not isinstance(document, dict) or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            document_id = str(document.get("doc_id") or path.stem)
+            for section in document.get("sections") or []:
+                if not isinstance(section, dict):
+                    continue
+                text = " ".join([
+                    str(section.get("title") or ""),
+                    " / ".join(str(value) for value in section.get("section_path") or []),
+                    str(section.get("extractive_summary") or section.get("summary") or ""),
+                ]).casefold()
+                score = sum(text.count(token) for token in tokens)
+                if score:
+                    item = dict(section)
+                    item["doc_id"] = document_id
+                    item["score"] = float(score)
+                    hits.append(item)
+        hits.sort(key=lambda item: (-float(item["score"]), str(item.get("id") or "")))
+        return hits[:top_k]
+
+    def _authorized_sections(self, filters: Dict) -> Dict[str, Dict]:
+        sections: Dict[str, Dict] = {}
+        if not self.documents_dir.exists():
+            return sections
+        for path in self.documents_dir.glob("*.json"):
+            document = self._load_document_meta(path.stem)
+            if not document or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            doc_id = str(document.get("doc_id") or path.stem)
+            for section in document.get("sections") or []:
+                if not isinstance(section, dict) or not section.get("id"):
+                    continue
+                row = dict(section)
+                row["doc_id"] = doc_id
+                sections[str(row["id"])] = row
+        return sections
+
+    def browse_document_outline(
+        self,
+        query: str,
+        *,
+        doc_ids: Optional[List[str]] = None,
+        top_k: int = 8,
+    ) -> List[Dict]:
+        """Return Section navigation metadata, never citation Evidence."""
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            return []
+        self._validate_params(query, top_k, "bm25", None, 0.0)
+        filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
+        matched = self._search_sections(query.strip(), filters, top_k=max(1, top_k // 2))
+        from shared_runtime.document_sections import select_outline_candidates
+
+        return select_outline_candidates(
+            self._authorized_sections(filters).values(), matched, limit=top_k
+        )
+
+    def search_evidence_in_scope(
+        self,
+        query: str,
+        *,
+        section_ids: List[str],
+        top_k: int = 10,
+        mode: str = "hybrid",
+        doc_ids: Optional[List[str]] = None,
+    ) -> List[Dict]:
+        """Retrieve authoritative chunks constrained by selected Section IDs."""
+        if os.getenv("HIERARCHICAL_NAVIGATION_ENABLED", "false").lower() not in {
+            "1", "true", "yes",
+        }:
+            return []
+        self._validate_params(query, top_k, mode, None, 0.0)
+        requested = list(dict.fromkeys(str(value) for value in section_ids if str(value)))[:20]
+        if not requested:
+            raise RetrievalParameterError("section_ids must contain at least one Section ID")
+        filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
+        sections = self._authorized_sections(filters)
+        selected = [sections[value] for value in requested if value in sections]
+        chunk_ids = sorted({
+            str(chunk_id)
+            for section in selected
+            for chunk_id in section.get("evidence_ids") or []
+            if str(chunk_id)
+        })
+        if not chunk_ids:
+            return []
+        matched_by_chunk: Dict[str, List[str]] = {}
+        for section in selected:
+            section_id = str(section["id"])
+            for chunk_id in section.get("evidence_ids") or []:
+                matched_by_chunk.setdefault(str(chunk_id), []).append(section_id)
+        scoped_filters = dict(filters)
+        scoped_filters["chunk_ids"] = chunk_ids
+        raw = self._search_internal(query.strip(), max(top_k * 3, 20), mode, scoped_filters)
+        rows = self._normalize_results(raw, scoped_filters, 0.0)[:top_k]
+        for row in rows:
+            row["matched_section_ids"] = matched_by_chunk.get(
+                str(row.get("chunk_id") or ""), []
+            )
+        return rows
+
+    def _load_section_evidence(
+        self,
+        section_hits: List[Dict],
+        filters: Dict,
+        min_score: float,
+        limit: int,
+    ) -> List[Dict]:
+        selected: Dict[str, set[str]] = {}
+        for section in section_hits:
+            if section.get("quality") == "low" or int(section.get("level") or 0) <= 0:
+                continue
+            doc_id = str(section.get("doc_id") or "")
+            if doc_id:
+                selected.setdefault(doc_id, set()).update(
+                    str(value) for value in section.get("evidence_ids") or []
+                )
+        raw: List[Dict] = []
+        for doc_id, chunk_ids in selected.items():
+            document = self._load_document_meta(doc_id)
+            if not document or document.get("active_version", True) is not True:
+                continue
+            if not _matches_filters(document, filters, document):
+                continue
+            for chunk in document.get("chunks") or []:
+                if not isinstance(chunk, dict):
+                    continue
+                chunk_id = str(chunk.get("chunk_id") or "")
+                if chunk_id not in chunk_ids:
+                    continue
+                raw.append({
+                    "doc_id": doc_id,
+                    "chunk_id": chunk_id,
+                    "chunk_index": chunk.get("index", 0),
+                    "text": chunk.get("text", ""),
+                    "score": 1.0,
+                    "title": document.get("title", ""),
+                    "source_url": document.get("source_url", ""),
+                })
+                if len(raw) >= limit:
+                    break
+            if len(raw) >= limit:
+                break
+        return self._normalize_results(raw, filters, min_score)
+
+    @staticmethod
+    def _fuse_navigation(
+        direct: List[Dict],
+        scoped: List[Dict],
+        *,
+        direct_weight: float,
+        scoped_weight: float,
+        rrf_k: int = 60,
+    ) -> List[Dict]:
+        by_id: Dict[str, Dict] = {}
+        scores: Dict[str, float] = {}
+        for weight, rows in ((direct_weight, direct), (scoped_weight, scoped)):
+            for rank, item in enumerate(rows, 1):
+                key = str(item.get("chunk_id") or "")
+                if not key:
+                    continue
+                by_id.setdefault(key, dict(item))
+                scores[key] = scores.get(key, 0.0) + weight / (rrf_k + rank)
+        maximum = max(scores.values(), default=1.0)
+        ordered = sorted(scores, key=lambda key: (-scores[key], key))
+        output: List[Dict] = []
+        for key in ordered:
+            item = dict(by_id[key])
+            item["score"] = min(1.0, scores[key] / maximum) if maximum else 0.0
+            output.append(item)
+        return output
 
     def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         # 空白名单短路：doc_ids 显式为空列表表示用户无可访问文件，直接返回空结果。
@@ -289,19 +492,11 @@ class SearchTool(BaseTool):
 
         query_vector = embed_texts([query])[0]
 
-        doc_ids_filter = None
-        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
-        if doc_ids:
-            if isinstance(doc_ids, str):
-                doc_ids_filter = [doc_ids]
-            else:
-                doc_ids_filter = list(doc_ids)
-
         try:
             hits = self.milvus_store.search_similar(
                 query_vector=query_vector,
                 top_k=top_k,
-                doc_ids_filter=doc_ids_filter,
+                filters=filters,
             )
         except Exception as e:
             raise RetrievalError(f"milvus_search_failed: {e}") from e
@@ -316,6 +511,10 @@ class SearchTool(BaseTool):
                 "score": hit.distance,
                 "vector_score": hit.distance,
                 "bm25_score": 0.0,
+                "title": entity.get("title") or "",
+                "space": entity.get("space") or "",
+                "doc_type": entity.get("doc_type") or "",
+                "source_url": entity.get("source_url") or "",
             }
             if not _matches_filters(row, filters):
                 continue
@@ -330,7 +529,7 @@ class SearchTool(BaseTool):
 
     def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
         try:
-            hits = self.bm25_index.search(query, top_k=top_k)
+            hits = self.bm25_index.search(query, top_k=top_k, filters=filters)
         except Exception as e:
             raise RetrievalError(f"bm25_search_failed: {e}") from e
 
@@ -377,8 +576,7 @@ class SearchTool(BaseTool):
             allowed = ", ".join(sorted(self.VALID_MODES))
             raise RetrievalParameterError(f"invalid_mode: mode must be one of {allowed}")
 
-        if filters is not None and not isinstance(filters, dict):
-            raise RetrievalParameterError("invalid_filters: filters must be a dict or None")
+        _normalize_public_filters(filters)
 
         try:
             float(min_score)

@@ -231,6 +231,7 @@ class HtmlParser(BaseParser):
             source_url=source_url,
             content_blocks=blocks,
             metadata=metadata,
+            doc_type=Document.infer_doc_type(source, metadata),
         )
 
     # ════════════════════ 第一步：页面类型判断 ════════════════════

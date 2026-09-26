@@ -70,6 +70,41 @@
       "when": 1787550396923,
       "tag": "0008_lazy_madame_web",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787550396924,
+      "tag": "0009_cp2_multimodal_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787550396925,
+      "tag": "0010_personal_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1787550396926,
+      "tag": "0011_library_version_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787550396927,
+      "tag": "0012_library_orphan_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1787550396928,
+      "tag": "0013_library_cleanup_outbox",
+      "breakpoints": true
     }
   ]
 }
