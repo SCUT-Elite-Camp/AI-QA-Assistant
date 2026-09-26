@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "status": "NOT_RUN",
+  "frozen": false,
+  "dataset_id": "",
+  "frozen_at": null,
+  "annotator_ids": [],
+  "cohort_sha256": "56f42871495b12b9c45248e572a1e1777c8508106c6531e5b154d0c43a9659fe",
+  "corpus_snapshot_sha256": null,
+  "active_version_snapshot_sha256": null,
+  "wiki_revision": null,
+  "arm_config_sha256": {"P0_DIRECT_EVIDENCE": null, "P1_DIRECT_THEN_AGENT_WIKI": null},
+  "protocol": {
+    "arms": ["P0_DIRECT_EVIDENCE", "P1_DIRECT_THEN_AGENT_WIKI"],
+    "query_types": ["cross_page", "concept", "entity", "simple_direct"],
+    "retrieval_cutoff": 20,
+    "latency": {
+      "warmup_repetitions": null,
+      "measured_repetitions": null,
+      "retry_policy": null,
+      "timeout_seconds": null,
+      "concurrency": null
+    },
+    "citation_and_faithfulness_rubric": null,
+    "freeze_before_running": [
+      "queries_and_query_type",
+      "relevant_document_version_and_evidence_ids",
+      "authorized_scope_and_active_version",
+      "citation_and_faithfulness_review_rubric",
+      "latency_measurement_protocol"
+    ]
+  },
+  "queries": []
+}

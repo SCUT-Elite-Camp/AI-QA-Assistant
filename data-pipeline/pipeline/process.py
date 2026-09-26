@@ -14,10 +14,10 @@
 import os
 from models.document import Document
 from parsers.registry import parse_file, supported_extensions
-from pipeline.chunker import chunk_text, chunk_from_blocks
-from pipeline.embedder import embed_texts
+from pipeline.confluence_snapshot import deduplicate_confluence_paths
+from pipeline.auto_process import _index_document
 from retrieval.bm25_index import BM25Index
-from storage.document_store import save_document
+from retrieval.section_bm25_index import SectionBM25Index
 from storage.milvus_store import MilvusStore
 
 def _scan_folder(folder_path: str) -> list[str]:
@@ -29,7 +29,7 @@ def _scan_folder(folder_path: str) -> list[str]:
             ext = os.path.splitext(fname)[1].lower()
             if ext in exts:
                 files.append(os.path.join(root, fname))
-    return files
+    return deduplicate_confluence_paths(files)
 
 
 
@@ -65,6 +65,14 @@ def process_folder(
     print(f"找到 {len(files)} 个文件待处理")
 
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
+    section_collection = os.getenv("SECTION_MILVUS_COLLECTION", "document_sections_bgem3")
+    if section_collection.casefold() == milvus.collection_name.casefold():
+        raise RuntimeError("SECTION_MILVUS_COLLECTION must differ from Evidence collection")
+    section_milvus = MilvusStore(
+        host=milvus_host, port=milvus_port, collection_name=section_collection,
+    )
+    milvus.connect()
+    section_milvus.connect()
     documents: list[Document] = []
 
     for i, file_path in enumerate(files, 1):
@@ -76,51 +84,12 @@ def process_folder(
             print(f"  → 解析完成，全文 {total_chars} 字符，{len(docs)} 个文档")
 
             for doc in docs:
-                # 2. 文本切片（优先使用块感知切片）
-                if doc.content_blocks:
-                    chunks = chunk_from_blocks(doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-                else:
-                    chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-                doc.chunks = chunks
-                print(f"    [{doc.doc_id[:8]}] 切片完成，共 {len(chunks)} 个分块")
-
-                if not chunks:
-                    print(f"    [SKIP] 跳过（无内容）")
-                    continue
-
-                # 3. 向量化
-                chunk_texts = [ch.text for ch in chunks]
-                print(f"    → 正在向量化 {len(chunk_texts)} 个分块...")
-                embeddings = embed_texts(chunk_texts)
-                print(f"    → 向量化完成")
-
-                # 4. 保存 JSON 到 data/documents/
-                json_data = doc.model_dump(mode="json")
-                save_document(doc.doc_id, json_data)
-                print(f"    → JSON 已保存: data/documents/{doc.doc_id}.json")
-
-                # 5. 插入向量到 Milvus
-                chunk_ids = [ch.chunk_id for ch in chunks]
-                doc_ids = [doc.doc_id] * len(chunks)
-                chunk_indices = [ch.index for ch in chunks]
-                source_urls = [doc.source_url] * len(chunks)
-                titles = [doc.title] * len(chunks)
-                spaces = [doc.space] * len(chunks)
-                doc_types = [doc.doc_type] * len(chunks)
-                milvus.insert_chunks(
-                    embeddings=embeddings,
-                    chunk_ids=chunk_ids,
-                    chunk_texts=chunk_texts,
-                    doc_ids=doc_ids,
-                    chunk_indices=chunk_indices,
-                    source_urls=source_urls,
-                    titles=titles,
-                    spaces=spaces,
-                    doc_types=doc_types,
-                )
-                print(f"    → 向量已写入 Milvus")
-
-                documents.append(doc)
+                if _index_document(
+                    doc, chunk_size=chunk_size, overlap=overlap,
+                    evidence_milvus=milvus, section_milvus=section_milvus,
+                    has_milvus=True,
+                ):
+                    documents.append(doc)
         except Exception as e:
             print(f"  [FAIL] 处理文件时出错: {file_path}，错误: {e}")
 
@@ -131,6 +100,10 @@ def process_folder(
     bm25_index_path = BM25Index.default_index_path()
     bm25.save(bm25_index_path)
     print(f"  → BM25 索引已保存: {bm25_index_path}")
+    section_bm25 = SectionBM25Index()
+    section_bm25.build_from_documents()
+    section_bm25.save(SectionBM25Index.default_index_path())
+    print(f"  → Section BM25 索引已保存: {SectionBM25Index.default_index_path()}")
 
     print(f"\n处理完成！共 {len(documents)} 个文档")
     return documents

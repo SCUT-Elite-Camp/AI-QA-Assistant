@@ -23,6 +23,7 @@ class ContentBlock(BaseModel):
     headers: list[str] = Field(default_factory=list)        # 表格列头
     bold: bool = False
     italic: bool = False
+    locator: dict = Field(default_factory=dict)
 
     @property
     def is_empty(self) -> bool:
@@ -78,6 +79,40 @@ class Chunk(BaseModel):
     index: int
     text: str
     chunk_id: str  # 全局唯一分块 ID，格式: "{doc_id}_chunk_{index}"
+    section_path: list[str] = Field(default_factory=list)
+    block_start: int | None = None
+    block_end: int | None = None
+    overlap_prefix_length: int = 0  # duplicated retrieval context, not source content
+
+
+class DocumentSection(BaseModel):
+    """Version-derived navigation node; Evidence chunks remain authoritative."""
+
+    id: str
+    version_id: str
+    parent_id: str | None = None
+    level: int = 0
+    title: str
+    section_path: list[str] = Field(default_factory=list)
+    page_start: int | None = None
+    page_end: int | None = None
+    summary: str = ""
+    extractive_summary: str = ""
+    llm_summary: str = ""
+    summary_type: str = ""
+    summary_model: str = ""
+    summary_prompt_version: str = ""
+    summary_input_hash: str = ""
+    summary_status: str = "not_requested"
+    evidence_ids: list[str] = Field(default_factory=list)
+    own_block_ids: list[str] = Field(default_factory=list)
+    subtree_block_ids: list[str] = Field(default_factory=list)
+    line_start: int | None = None
+    line_end: int | None = None
+    quality: str = "low"
+    provenance: str = "native"
+    ordinal: int = 0
+    navigation_text: str = ""
 
 
 class Document(BaseModel):
@@ -93,6 +128,9 @@ class Document(BaseModel):
     content_blocks: list[ContentBlock] = Field(default_factory=list)  # 结构化内容块
     metadata: dict = Field(default_factory=dict)                      # 侧车溯源元数据（如 Confluence）
     doc_type: str = ""
+    version_id: str = ""
+    active_version: bool = True
+    sections: list[DocumentSection] = Field(default_factory=list)
 
     @staticmethod
     def generate_doc_id(file_path: str) -> str:
@@ -104,6 +142,14 @@ class Document(BaseModel):
         """读取文件修改时间，返回 ISO 格式字符串"""
         ts = os.path.getmtime(file_path)
         return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+
+    @staticmethod
+    def generate_version_id(file_path: str) -> str:
+        digest = hashlib.sha256()
+        with open(file_path, "rb") as source:
+            for block in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(block)
+        return f"ver_{digest.hexdigest()}"
 
     @classmethod
     def from_file_path(
@@ -151,10 +197,12 @@ class Document(BaseModel):
             content_blocks=content_blocks or [],
             metadata=metadata,
             doc_type=doc_type,
+            version_id=cls.generate_version_id(abs_path),
         )
 
     @staticmethod
     def infer_doc_type(address: str, metadata: dict | None = None) -> str:
+        """Resolve a stable document type from metadata or the source filename."""
         metadata = metadata or {}
         value = metadata.get("doc_type") or metadata.get("content_type")
         candidate = str(value or "").strip().lower()

@@ -229,8 +229,15 @@ SearchTool().search(
     filters=filters,
     min_score=min_score,
     trace_id=trace_id,
+    navigation_mode=navigation_mode,
 )
 ```
+
+`navigation_mode` is independent from `retrieval_mode` and accepts `direct`,
+`hierarchical`, or `hybrid`. The Agent planner may select it internally. The
+runtime keeps the legacy call shape when the value is `direct`, and the feature
+gate `HIERARCHICAL_NAVIGATION_ENABLED` defaults to disabled. Section metadata
+only guides retrieval; returned chunk Evidence remains the citation authority.
 
 The Agent trust boundary converts Tool Layer `dict` results into
 `RetrievalResult` with:
@@ -254,11 +261,18 @@ request-level `doc_ids` permission allowlist before `get_document`, converts
 document results into request-local Evidence, and keeps citation validation in
 the existing Evidence Gate path.
 
+`search_library` is opt-in (`PERSONAL_LIBRARY_ENABLED=true`). Source selection
+comes from the query, while owner ID, knowledge-base ID, and the signed scope
+token are accepted only by the token-protected internal Chat contract. Public
+Chat requests reject those trusted fields. Library results become request-local
+Evidence with document/version/scope/locator metadata; missing or invalid
+trusted context fails closed.
+
 Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
 The retrieval call always receives `standalone_query`, `top_k`,
 `retrieval_mode`, hard `filters`, `MIN_RETRIEVAL_SCORE`, and the request
-`trace_id`. Tests replace the LLM and search method with deterministic fakes;
+`trace_id`. Non-direct calls additionally receive `navigation_mode`. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
 ## Permission Filtering
