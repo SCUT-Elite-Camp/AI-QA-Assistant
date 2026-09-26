@@ -11,6 +11,7 @@ class ChatRequest(BaseModel):
     filters: Optional[dict[str, Any]] = None
     stream: bool = False
     retrieval_mode: Literal["vector", "bm25", "hybrid"] = "hybrid"
+    exploration_mode: Literal["auto", "off", "force"] = "auto"
     topic_id: Optional[str] = None
     weight_mode: Optional[Literal["thinking", "auto", "fast", "deeper", "wider"]] = "thinking"
     soul_content: Optional[str] = None

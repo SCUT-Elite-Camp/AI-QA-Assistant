@@ -64,6 +64,7 @@ async function createChat(prompt: string) {
         attachment_ids: attachmentIds.value,
         accepted_needs_review_ids: acceptedNeedsReviewIds.value,
         knowledge_base_retrieval_enabled: useKnowledgeBase.value,
+        exploration_mode: deepResearchMode.value ? 'force' : 'auto',
       }
     })
     await fetchChats()

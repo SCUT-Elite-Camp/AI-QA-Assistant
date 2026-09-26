@@ -94,6 +94,10 @@ class ToolExecutor:
                     parsed_arguments,
                     retrieval_attempt,
                 )
+            elif tool.name == "wiki_search_evidence":
+                operation = lambda: self._execute_wiki_evidence_tool(
+                    tool, parsed_arguments, retrieval_attempt
+                )
             else:
                 operation = lambda: self._execute_generic(tool, parsed_arguments)
 
@@ -205,7 +209,7 @@ class ToolExecutor:
         filters = arguments.get("filters")
         min_score = float(getattr(tool, "min_score", 0.0))
 
-        rows = tool.search(
+        search_arguments = dict(
             query=query,
             top_k=top_k,
             mode=mode,
@@ -213,6 +217,7 @@ class ToolExecutor:
             min_score=min_score,
             trace_id=trace_id,
         )
+        rows = tool.search(**search_arguments)
         evidence = [
             Evidence(
                 doc_id=row["doc_id"],
@@ -380,6 +385,64 @@ class ToolExecutor:
                 confidence=item.get("confidence"),
             ))
         return data, evidence
+
+    @staticmethod
+    def _execute_wiki_evidence_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("Wiki Evidence tool must return a dictionary")
+        query = str(arguments.get("query") or "Wiki Evidence search")
+        mode = str(arguments.get("mode") or "hybrid")
+        evidence: list[Evidence] = []
+        for row in data.get("items", []):
+            if not isinstance(row, dict):
+                continue
+            source_scope = str(
+                row.get("source_scope") or arguments.get("source_scope") or ""
+            )
+            document_id = str(row.get("document_id") or row.get("doc_id") or "")
+            attachment_id = str(row.get("attachment_id") or "")
+            doc_id = str(row.get("doc_id") or document_id or attachment_id)
+            chunk_id = str(row.get("chunk_id") or row.get("evidence_id") or "")
+            content = str(
+                row.get("chunk_text") or row.get("content") or ""
+            ).strip()
+            if not doc_id or not chunk_id or not content:
+                continue
+            evidence.append(Evidence(
+                doc_id=doc_id,
+                chunk_id=chunk_id,
+                chunk_index=max(0, int(row.get("chunk_index") or 0)),
+                title=str(row.get("title") or row.get("filename") or doc_id),
+                content=content,
+                source_url=str(row.get("source_url") or ""),
+                score=min(1.0, max(0.0, float(row.get("score") or 0.0))),
+                retrieval_query=query,
+                retrieval_mode=f"wiki_{mode}",
+                retrieval_attempt=retrieval_attempt,
+                source_type=(
+                    "personal" if source_scope == "personal" else "knowledge"
+                ),
+                attachment_id=attachment_id or None,
+                evidence_id=str(row.get("evidence_id") or chunk_id),
+                source_scope=source_scope or None,
+                knowledge_base_id=row.get("knowledge_base_id") or None,
+                document_id=document_id or doc_id,
+                version_id=row.get("version_id") or None,
+                locator=(
+                    row.get("locator")
+                    if isinstance(row.get("locator"), dict)
+                    else {}
+                ),
+            ))
+        return {
+            "result_count": len(evidence),
+            "citation_authority": True,
+        }, evidence
 
     @staticmethod
     def _parse_arguments(arguments: dict[str, Any] | str) -> dict[str, Any]:

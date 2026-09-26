@@ -1,6 +1,7 @@
 """Cross-component Agent orchestration for the CP2 request lifecycle."""
 
 from dataclasses import dataclass
+import os
 from typing import Any
 
 from agent.config.settings import settings
@@ -24,10 +25,19 @@ from agent.schemas.chat import (
     PersonalLibraryContext,
 )
 from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan, SourceIntent, SourceKind
+from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent, SourceKind
 from agent.schemas.subquery_routing import SubQueryRoutingResult
 from agent.schemas.tool_execution import Evidence
 from agent.tools import ToolExecutor
+
+
+def policy_requires_retrieval(plan: QueryPlan) -> bool:
+    return plan.intent in {
+        QueryIntent.KNOWLEDGE_QA,
+        QueryIntent.DOCUMENT_SEARCH,
+        QueryIntent.SUMMARIZATION,
+        QueryIntent.COMPARISON,
+    }
 
 
 @dataclass(frozen=True)
@@ -138,6 +148,13 @@ class AgentOrchestrator:
             self.policy_router.route(plan),
             source_intent,
         )
+        navigation_scopes = self._navigation_scopes(request, source_intent)
+        policy = self._apply_exploration_policy(
+            request,
+            plan,
+            policy,
+            navigation_scopes=navigation_scopes,
+        )
         subquery_routing = (
             self.subquery_router.route(plan)
             if self.subquery_router is not None
@@ -162,6 +179,8 @@ class AgentOrchestrator:
                 top_k=top_k,
                 is_first_message=is_first,
                 soul_content=request.soul_content,
+                exploration_mode=request.exploration_mode,
+                navigation_scopes=navigation_scopes,
             )
         finally:
             for tool in context_tools:
@@ -217,6 +236,22 @@ class AgentOrchestrator:
         if library_tool is not None:
             configured.append(library_tool)
 
+        personal = getattr(request, "personal_library_context", None)
+        for name in (
+            "wiki_search", "wiki_read_page", "wiki_read_sources",
+            "wiki_search_evidence",
+        ):
+            tool = self.tool_executor.registry.get(name)
+            if tool is None or not hasattr(tool, "set_personal_context"):
+                continue
+            tool.set_personal_context(
+                personal.owner_user_id if isinstance(personal, PersonalLibraryContext) else "",
+                personal.knowledge_base_id if isinstance(personal, PersonalLibraryContext) else "",
+                personal.access_token if isinstance(personal, PersonalLibraryContext) else "",
+                secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
+            )
+            configured.append(tool)
+
         context = getattr(request, "attachment_context", None)
         if not isinstance(context, AttachmentContext):
             return configured
@@ -248,6 +283,10 @@ class AgentOrchestrator:
                 "find_documents",
                 "get_document",
                 "search_library",
+                "wiki_search",
+                "wiki_read_page",
+                "wiki_read_sources",
+                "wiki_search_evidence",
             }
             policy = policy.model_copy(update={
                 "candidate_tools": tuple(
@@ -301,7 +340,6 @@ class AgentOrchestrator:
                 2 if SourceKind.CONVERSATION_ATTACHMENT in sources else 1,
                 policy.max_tool_calls,
             ),
-            # CorrectiveRetrievalPlanner only knows the enterprise search tool.
             "max_retrieval_attempts": (
                 2
                 if sources.intersection({
@@ -312,6 +350,61 @@ class AgentOrchestrator:
             ),
             "requires_citations": True,
         })
+
+    @staticmethod
+    def _apply_exploration_policy(
+        request: ChatRequest,
+        plan: QueryPlan,
+        policy: IntentPolicy,
+        *,
+        navigation_scopes: tuple[str, ...] = (),
+    ) -> IntentPolicy:
+        if (
+            not settings.AGENTIC_EXPLORATION_ENABLED
+            or request.exploration_mode == "off"
+            or not policy_requires_retrieval(plan)
+            or not navigation_scopes
+        ):
+            return policy
+        candidates = list(policy.candidate_tools)
+        if settings.KNOWLEDGE_NAVIGATION_ENABLED:
+            candidates.extend((
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ))
+        return policy.model_copy(update={
+            "candidate_tools": tuple(dict.fromkeys(candidates)),
+            "max_iterations": max(
+                policy.max_iterations, settings.EXPLORATION_MAX_ROUNDS + 2
+            ),
+            "max_tool_calls": max(
+                policy.max_tool_calls, settings.EXPLORATION_MAX_TOOL_CALLS
+            ),
+            "max_retrieval_attempts": max(
+                policy.max_retrieval_attempts,
+                min(5, settings.EXPLORATION_MAX_ROUNDS + 2),
+            ),
+        })
+
+    @staticmethod
+    def _navigation_scopes(
+        request: ChatRequest,
+        source_intent: SourceIntent,
+    ) -> tuple[str, ...]:
+        selected = set(source_intent.sources)
+        scopes: list[str] = []
+        if (
+            request.knowledge_base_retrieval_enabled
+            and SourceKind.ENTERPRISE_KB in selected
+        ):
+            scopes.append("enterprise")
+        if (
+            request.knowledge_base_retrieval_enabled
+            and getattr(request, "personal_library_context", None) is not None
+            and SourceKind.PERSONAL_LIBRARY in selected
+        ):
+            scopes.append("personal")
+        return tuple(scopes)
 
     def _read_history(self, session_id: str | None) -> list[dict[str, Any]]:
         if not settings.MEMORY_ENABLED or not session_id:

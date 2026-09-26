@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 
-FILTER_KEYS = frozenset({"doc_id", "doc_ids", "space", "doc_type"})
+FILTER_KEYS = frozenset({"doc_id", "doc_ids", "chunk_ids", "space", "doc_type"})
 
 
 def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
@@ -39,6 +39,24 @@ def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
             selected = [value for value in selected if value in allowed]
         normalized["doc_ids"] = selected
 
+    raw_chunk_ids = filters.get("chunk_ids")
+    if raw_chunk_ids is not None:
+        if isinstance(raw_chunk_ids, str):
+            raw_chunk_ids = [raw_chunk_ids]
+        if not isinstance(raw_chunk_ids, (list, tuple, set)):
+            raise ValueError("chunk_ids must be a string or a list of strings")
+        chunk_ids: list[str] = []
+        for value in raw_chunk_ids:
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError("every chunk_id must be a non-empty string")
+            candidate = value.strip()
+            if len(candidate) > 256:
+                raise ValueError("chunk_id must not exceed 256 characters")
+            if candidate not in chunk_ids:
+                chunk_ids.append(candidate)
+        if chunk_ids:
+            normalized["chunk_ids"] = chunk_ids
+
     for key, max_length in (("space", 256), ("doc_type", 64)):
         if key not in filters:
             continue
@@ -60,10 +78,12 @@ def matches_filters(item: dict[str, Any], filters: dict[str, Any] | None) -> boo
     normalized = normalize_filters(filters)
     if not normalized:
         return True
-
-    if "doc_ids" in normalized:
-        if str(item.get("doc_id", "")) not in normalized["doc_ids"]:
-            return False
+    doc_ids = normalized.get("doc_ids")
+    if doc_ids is not None and str(item.get("doc_id", "")) not in doc_ids:
+        return False
+    chunk_ids = normalized.get("chunk_ids")
+    if chunk_ids is not None and str(item.get("chunk_id", "")) not in chunk_ids:
+        return False
     if "space" in normalized and item.get("space") != normalized["space"]:
         return False
     if "doc_type" in normalized:
@@ -83,6 +103,12 @@ def build_milvus_filter_expression(filters: dict[str, Any] | None) -> str | None
             for value in normalized["doc_ids"]
         )
         clauses.append(f"doc_id in [{values}]")
+    if normalized.get("chunk_ids"):
+        values = ", ".join(
+            json.dumps(value, ensure_ascii=False)
+            for value in normalized["chunk_ids"]
+        )
+        clauses.append(f"chunk_id in [{values}]")
     for key in ("space", "doc_type"):
         if key in normalized:
             value = json.dumps(normalized[key], ensure_ascii=False)
