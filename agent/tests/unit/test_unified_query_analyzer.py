@@ -2,24 +2,8 @@ import json
 
 import pytest
 
-from agent.llm.base import BaseLLM
 from agent.query import QueryIntent, UnifiedQueryAnalyzer
-
-
-pytestmark = pytest.mark.no_storage
-
-
-class FakeLLM(BaseLLM):
-    def __init__(self, payload: dict) -> None:
-        self.payload = payload
-        self.calls = 0
-
-    def generate(self, prompt: str) -> str:
-        raise NotImplementedError
-
-    def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
-        self.calls += 1
-        return {"content": json.dumps(self.payload)}
+from tests.helpers import FakeLLM
 
 
 def _payload(**updates: object) -> dict:
