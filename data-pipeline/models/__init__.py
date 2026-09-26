@@ -1,1 +1,1 @@
-from models.document import Chunk, Document, ContentBlock, BlockType
+from models.document import Chunk, Document, DocumentSection, ContentBlock, BlockType

@@ -1,7 +1,9 @@
 import json
 import logging
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from contextvars import copy_context
 from typing import Any, Callable
 
 from pydantic import ValidationError
@@ -74,10 +76,39 @@ class ToolExecutor:
                     trace_id,
                     retrieval_attempt,
                 )
+            elif tool.name in {"find_documents", "get_document"}:
+                operation = lambda: self._execute_document_tool(
+                    tool,
+                    parsed_arguments,
+                    retrieval_attempt,
+                )
+            elif tool.name in {"search_attachments", "inspect_attachment"}:
+                operation = lambda: self._execute_attachment_tool(
+                    tool,
+                    parsed_arguments,
+                    retrieval_attempt,
+                )
+            elif tool.name == "search_library":
+                operation = lambda: self._execute_library_tool(
+                    tool,
+                    parsed_arguments,
+                    retrieval_attempt,
+                )
+            elif tool.name == "wiki_search_evidence":
+                operation = lambda: self._execute_wiki_evidence_tool(
+                    tool, parsed_arguments, retrieval_attempt
+                )
             else:
                 operation = lambda: self._execute_generic(tool, parsed_arguments)
 
-            data, evidence = self._run_with_timeout(operation)
+            timeout_ms = self.timeout_ms
+            if tool_name == "inspect_attachment":
+                timeout_ms = max(
+                    timeout_ms,
+                    int(float(os.getenv("ATTACHMENT_VISION_TIMEOUT_SECONDS", "90")) * 1000)
+                    + 5000,
+                )
+            data, evidence = self._run_with_timeout(operation, timeout_ms=timeout_ms)
         except FutureTimeout:
             return self._failure(
                 tool_call_id,
@@ -107,7 +138,14 @@ class ToolExecutor:
                 tool_name,
                 (
                     "retrieval_error"
-                    if tool_name == "search_documents"
+                    if tool_name in {
+                        "search_documents",
+                        "find_documents",
+                        "get_document",
+                        "search_library",
+                        "search_attachments",
+                        "inspect_attachment",
+                    }
                     else "tool_execution_failed"
                 ),
                 str(exc) or exc.__class__.__name__,
@@ -136,11 +174,13 @@ class ToolExecutor:
     def _run_with_timeout(
         self,
         operation: Callable[[], tuple[dict[str, Any] | None, list[Evidence]]],
+        *,
+        timeout_ms: int | None = None,
     ) -> tuple[dict[str, Any] | None, list[Evidence]]:
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="agent-tool")
-        future = pool.submit(operation)
+        future = pool.submit(copy_context().run, operation)
         try:
-            return future.result(timeout=self.timeout_ms / 1000)
+            return future.result(timeout=(timeout_ms or self.timeout_ms) / 1000)
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
 
@@ -169,7 +209,7 @@ class ToolExecutor:
         filters = arguments.get("filters")
         min_score = float(getattr(tool, "min_score", 0.0))
 
-        rows = tool.search(
+        search_arguments = dict(
             query=query,
             top_k=top_k,
             mode=mode,
@@ -177,6 +217,7 @@ class ToolExecutor:
             min_score=min_score,
             trace_id=trace_id,
         )
+        rows = tool.search(**search_arguments)
         evidence = [
             Evidence(
                 doc_id=row["doc_id"],
@@ -193,6 +234,215 @@ class ToolExecutor:
             for row in rows
         ]
         return {"result_count": len(evidence)}, evidence
+
+    @staticmethod
+    def _execute_document_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("document tools must return a dictionary")
+
+        evidence: list[Evidence] = []
+        if tool.name == "find_documents":
+            query = str(arguments.get("query") or "document search")
+            for document in data.get("documents", []):
+                if not isinstance(document, dict):
+                    continue
+                doc_id = str(document.get("doc_id") or "")
+                summary = str(
+                    document.get("match_summary") or document.get("title") or ""
+                ).strip()
+                if not doc_id or not summary:
+                    continue
+                evidence.append(Evidence(
+                    doc_id=doc_id,
+                    chunk_id=f"{doc_id}::document",
+                    chunk_index=0,
+                    title=str(document.get("title") or doc_id),
+                    content=summary,
+                    source_url=str(document.get("source_url") or ""),
+                    score=min(1.0, max(0.0, float(document.get("score", 0.0)))),
+                    retrieval_query=query,
+                    retrieval_mode="document",
+                    retrieval_attempt=retrieval_attempt,
+                ))
+        elif "error" not in data:
+            document = data.get("document") or {}
+            if not isinstance(document, dict):
+                raise ValueError("get_document must return document metadata")
+            doc_id = str(document.get("doc_id") or arguments.get("doc_id") or "")
+            title = str(document.get("title") or doc_id)
+            for chunk in data.get("chunks", []):
+                if not isinstance(chunk, dict):
+                    continue
+                index = int(chunk.get("index", 0))
+                content = str(chunk.get("text") or "").strip()
+                if not doc_id or not content:
+                    continue
+                evidence.append(Evidence(
+                    doc_id=doc_id,
+                    chunk_id=str(chunk.get("chunk_id") or f"{doc_id}::chunk_{index}"),
+                    chunk_index=index,
+                    title=title,
+                    content=content,
+                    source_url=str(document.get("source_url") or ""),
+                    score=1.0,
+                    retrieval_query=doc_id,
+                    retrieval_mode="document",
+                    retrieval_attempt=retrieval_attempt,
+                ))
+        return data, evidence
+
+    @staticmethod
+    def _execute_library_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("search_library must return a dictionary")
+
+        query = str(arguments.get("query") or "personal library search")
+        mode = str(arguments.get("mode") or "hybrid")
+        evidence: list[Evidence] = []
+        for item in data.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            document_id = str(item.get("document_id") or "")
+            evidence_id = str(item.get("evidence_id") or "")
+            content = str(item.get("content") or "").strip()
+            if not document_id or not evidence_id or not content:
+                continue
+            evidence.append(Evidence(
+                doc_id=document_id,
+                chunk_id=evidence_id,
+                chunk_index=max(0, int(item.get("chunk_index", 0))),
+                title=str(item.get("filename") or document_id),
+                content=content,
+                source_url=str(item.get("source_url") or ""),
+                score=min(1.0, max(0.0, float(item.get("score", 0.0)))),
+                retrieval_query=query,
+                retrieval_mode=mode,
+                retrieval_attempt=retrieval_attempt,
+                source_type="personal",
+                evidence_id=evidence_id,
+                locator=(item.get("locator") if isinstance(item.get("locator"), dict) else None),
+                source_scope=str(item.get("source_scope") or "personal"),
+                knowledge_base_id=str(item.get("knowledge_base_id") or "") or None,
+                document_id=document_id,
+                version_id=str(item.get("version_id") or "") or None,
+            ))
+        return data, evidence
+
+    @staticmethod
+    def _execute_attachment_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("attachment tools must return a dictionary")
+
+        query = str(
+            arguments.get("query")
+            or arguments.get("question")
+            or "attachment inspection"
+        )
+        evidence: list[Evidence] = []
+        for item in data.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            attachment_id = str(
+                item.get("attachment_id") or arguments.get("attachment_id") or ""
+            )
+            evidence_id = str(item.get("evidence_id") or "")
+            content = str(item.get("content") or "").strip()
+            if not attachment_id or not evidence_id or not content:
+                continue
+            raw_score = item.get("score", item.get("confidence", 0.8))
+            score = 0.8 if raw_score is None else min(1.0, max(0.0, float(raw_score)))
+            evidence.append(Evidence(
+                doc_id=attachment_id,
+                chunk_id=evidence_id,
+                chunk_index=0,
+                title=str(item.get("filename") or f"附件 {attachment_id}"),
+                content=content,
+                source_url=f"/api/attachments/{attachment_id}/content",
+                score=score,
+                retrieval_query=query,
+                retrieval_mode="attachment",
+                retrieval_attempt=retrieval_attempt,
+                source_type=str(item.get("source_type") or "attachment"),
+                attachment_id=attachment_id,
+                evidence_id=evidence_id,
+                locator=item.get("locator") if isinstance(item.get("locator"), dict) else {},
+                version=max(1, int(item.get("version", 1))),
+                confidence=item.get("confidence"),
+            ))
+        return data, evidence
+
+    @staticmethod
+    def _execute_wiki_evidence_tool(
+        tool: BaseTool,
+        arguments: dict[str, Any],
+        retrieval_attempt: int,
+    ) -> tuple[dict[str, Any], list[Evidence]]:
+        data = tool.execute(**arguments)
+        if not isinstance(data, dict):
+            raise ValueError("Wiki Evidence tool must return a dictionary")
+        query = str(arguments.get("query") or "Wiki Evidence search")
+        mode = str(arguments.get("mode") or "hybrid")
+        evidence: list[Evidence] = []
+        for row in data.get("items", []):
+            if not isinstance(row, dict):
+                continue
+            source_scope = str(
+                row.get("source_scope") or arguments.get("source_scope") or ""
+            )
+            document_id = str(row.get("document_id") or row.get("doc_id") or "")
+            attachment_id = str(row.get("attachment_id") or "")
+            doc_id = str(row.get("doc_id") or document_id or attachment_id)
+            chunk_id = str(row.get("chunk_id") or row.get("evidence_id") or "")
+            content = str(
+                row.get("chunk_text") or row.get("content") or ""
+            ).strip()
+            if not doc_id or not chunk_id or not content:
+                continue
+            evidence.append(Evidence(
+                doc_id=doc_id,
+                chunk_id=chunk_id,
+                chunk_index=max(0, int(row.get("chunk_index") or 0)),
+                title=str(row.get("title") or row.get("filename") or doc_id),
+                content=content,
+                source_url=str(row.get("source_url") or ""),
+                score=min(1.0, max(0.0, float(row.get("score") or 0.0))),
+                retrieval_query=query,
+                retrieval_mode=f"wiki_{mode}",
+                retrieval_attempt=retrieval_attempt,
+                source_type=(
+                    "personal" if source_scope == "personal" else "knowledge"
+                ),
+                attachment_id=attachment_id or None,
+                evidence_id=str(row.get("evidence_id") or chunk_id),
+                source_scope=source_scope or None,
+                knowledge_base_id=row.get("knowledge_base_id") or None,
+                document_id=document_id or doc_id,
+                version_id=row.get("version_id") or None,
+                locator=(
+                    row.get("locator")
+                    if isinstance(row.get("locator"), dict)
+                    else {}
+                ),
+            ))
+        return {
+            "result_count": len(evidence),
+            "citation_authority": True,
+        }, evidence
 
     @staticmethod
     def _parse_arguments(arguments: dict[str, Any] | str) -> dict[str, Any]:

@@ -117,6 +117,12 @@ export default defineHandler(async (event) => {
     consecutiveNoNewDocsCount: 0
   }).returning()
 
+  await db.insert(tables.topicMembers).values({
+    topicId: topic.id,
+    userId,
+    role: 'owner'
+  }).onConflictDoNothing()
+
   // Attach chat to topic
   await db.update(tables.chats).set({ topicId: topic.id }).where(eq(tables.chats.id, chat.id))
 

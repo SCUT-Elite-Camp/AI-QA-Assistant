@@ -50,7 +50,7 @@ def test_each_complex_subquery_gets_its_own_intent_and_policy() -> None:
     ]
     assert result.routes[0].policy.answer_style == "structured_summary"
     assert result.routes[1].policy.retrieval_strategy == "bm25"
-    assert result.routes[1].policy.candidate_tools == ("search_documents",)
+    assert result.routes[1].policy.candidate_tools == ("find_documents",)
     assert classifier.classify.call_count == 2
 
 

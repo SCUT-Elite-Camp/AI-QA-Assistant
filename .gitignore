@@ -40,7 +40,9 @@ models/
 # Local IDE, Codex artifact, preview, and generated evaluation outputs.
 .idea/
 .tmp/
+.pytest-tmp*/
 .codex_spreadsheet/
 outputs/
 eval/reports/
+eval/wiki/runs/
 ~$*.xlsx

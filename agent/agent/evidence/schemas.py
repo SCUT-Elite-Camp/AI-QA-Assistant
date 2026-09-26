@@ -17,4 +17,4 @@ class EvidenceGateResult(BaseModel):
     eligible_evidence_count: int = Field(default=0, ge=0)
     rejected_evidence_count: int = Field(default=0, ge=0)
     should_retry: bool = False
-    retrieval_attempt: int = Field(ge=1, le=2)
+    retrieval_attempt: int = Field(ge=1, le=5)
