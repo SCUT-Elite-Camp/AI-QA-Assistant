@@ -11,6 +11,7 @@ class ChatRequest(BaseModel):
     filters: Optional[dict[str, Any]] = None
     stream: bool = False
     retrieval_mode: Literal["vector", "bm25", "hybrid"] = "hybrid"
+    exploration_mode: Literal["auto", "off", "force"] = "auto"
     topic_id: Optional[str] = None
     weight_mode: Optional[Literal["thinking", "auto", "fast", "deeper", "wider"]] = "thinking"
     soul_content: Optional[str] = None
@@ -18,13 +19,23 @@ class ChatRequest(BaseModel):
     topic_titles: Optional[list[str]] = None
     consecutive_no_new_docs_count: int = 0
     is_first_message: Optional[bool] = None
+    knowledge_base_retrieval_enabled: bool = True
 
     @model_validator(mode="before")
     @classmethod
     def reject_public_memory_context(cls, value: Any) -> Any:
         """Keep browser-supplied persistent Memory out of the public route."""
-        if cls is ChatRequest and isinstance(value, dict) and "memory_context" in value:
-            raise ValueError("memory_context is only accepted by the internal endpoint")
+        trusted_fields = {
+            "memory_context",
+            "personal_library_context",
+            "attachment_context",
+        }
+        if (
+            cls is ChatRequest
+            and isinstance(value, dict)
+            and trusted_fields.intersection(value)
+        ):
+            raise ValueError("trusted context is only accepted by the internal endpoint")
         return value
 
 
@@ -36,6 +47,15 @@ class Citation(BaseModel):
     chunk_id: str
     score: Optional[float] = None
     snippet: Optional[str] = None
+    source_type: Literal["knowledge", "attachment", "personal"] = "knowledge"
+    attachment_id: Optional[str] = None
+    evidence_id: Optional[str] = None
+    locator: Optional[dict[str, Any]] = None
+    version: Optional[int] = None
+    source_scope: Optional[str] = None
+    knowledge_base_id: Optional[str] = None
+    document_id: Optional[str] = None
+    version_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -125,12 +145,44 @@ class MemoryContextInput(BaseModel):
         return self
 
 
+class PersonalLibraryContext(BaseModel):
+    """Server-authenticated library scope; never accepted by the public route."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    owner_user_id: str = Field(min_length=1, max_length=200)
+    knowledge_base_id: str = Field(min_length=1, max_length=200)
+    access_token: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class AttachmentContext(BaseModel):
+    """Server-authorized attachment IDs for this request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    allowed_attachment_ids: list[str] = Field(default_factory=list, max_length=100)
+    selected_attachment_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def validate_selection(self) -> "AttachmentContext":
+        allowed = set(self.allowed_attachment_ids)
+        if any(not value.startswith("att_") for value in allowed):
+            raise ValueError("allowed attachment IDs must use the att_ prefix")
+        if any(value not in allowed for value in self.selected_attachment_ids):
+            raise ValueError("selected attachments must be included in the allowlist")
+        self.allowed_attachment_ids = list(dict.fromkeys(self.allowed_attachment_ids))
+        self.selected_attachment_ids = list(dict.fromkeys(self.selected_attachment_ids))
+        return self
+
+
 class InternalChatRequest(ChatRequest):
     """Contract-only request for the future token-protected internal endpoint."""
 
     model_config = ConfigDict(extra="forbid")
 
     memory_context: MemoryContextInput
+    personal_library_context: PersonalLibraryContext | None = None
+    attachment_context: AttachmentContext | None = None
 
 
 class ContextArtifact(BaseModel):

@@ -12,6 +12,14 @@
 
       <UColorModeButton />
 
+      <UButton
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-library"
+        to="/library"
+        aria-label="My Library"
+      />
+
       <slot name="right-end" />
 
       <UButton

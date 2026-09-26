@@ -30,6 +30,7 @@ class AttachmentSettings:
     allow_fake_scanner: bool = False
     vision_enabled: bool = False
     vision_model_path: str = ""
+    hierarchical_navigation_enabled: bool = False
 
     @classmethod
     def from_env(cls) -> "AttachmentSettings":
@@ -68,4 +69,7 @@ class AttachmentSettings:
             allow_fake_scanner=fake_scanner_requested,
             vision_enabled=os.getenv("LOCAL_VISION_ENABLED", "false").lower() in {"1", "true", "yes"},
             vision_model_path=os.getenv("LOCAL_VISION_MODEL_PATH", "").strip(),
+            hierarchical_navigation_enabled=os.getenv(
+                "HIERARCHICAL_NAVIGATION_ENABLED", "false"
+            ).lower() in {"1", "true", "yes"},
         )

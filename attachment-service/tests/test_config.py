@@ -30,3 +30,11 @@ def test_fake_scanner_remains_available_for_explicit_development_testing(
     monkeypatch.setenv("NODE_ENV", "development")
     monkeypatch.setenv("ALLOW_FAKE_ATTACHMENT_SCANNER", "true")
     assert AttachmentSettings.from_env().allow_fake_scanner is True
+
+
+def test_hierarchical_navigation_is_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    _required_environment(monkeypatch)
+    monkeypatch.delenv("HIERARCHICAL_NAVIGATION_ENABLED", raising=False)
+    assert AttachmentSettings.from_env().hierarchical_navigation_enabled is False
+    monkeypatch.setenv("HIERARCHICAL_NAVIGATION_ENABLED", "true")
+    assert AttachmentSettings.from_env().hierarchical_navigation_enabled is True

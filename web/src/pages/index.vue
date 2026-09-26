@@ -2,16 +2,23 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
+import { useToast } from '@nuxt/ui/composables'
 import { useChats } from '../composables/useChats'
 import { useCsrf } from '../composables/useCsrf'
 import { useUserSession } from '../composables/useUserSession'
 import Navbar from '../components/Navbar.vue'
 import WeightModeSelect from '../components/chat/WeightModeSelect.vue'
+import AttachmentTray from '../components/chat/AttachmentTray.vue'
 
 const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { user } = useUserSession()
 const input = ref('')
+const toast = useToast()
+const attachmentIds = ref<string[]>([])
+const acceptedNeedsReviewIds = ref<string[]>([])
+const attachmentTray = ref<InstanceType<typeof AttachmentTray> | null>(null)
+const useKnowledgeBase = ref(true)
 
 function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -45,18 +52,25 @@ const greeting = computed(() => {
 })
 
 async function createChat(prompt: string) {
-  if (loading.value || !prompt.trim()) return
+  if (loading.value || (!prompt.trim() && !attachmentIds.value.length)) return
   const chosenMode = currentWeightMode.value
-  input.value = ''
   loading.value = true
   try {
     const chat = await $fetch('/api/chats', {
       method: 'POST',
       headers: { [headerName]: csrf() },
-      body: { input: prompt }
+      body: {
+        input: prompt,
+        attachment_ids: attachmentIds.value,
+        accepted_needs_review_ids: acceptedNeedsReviewIds.value,
+        knowledge_base_retrieval_enabled: useKnowledgeBase.value,
+        exploration_mode: deepResearchMode.value ? 'force' : 'auto',
+      }
     })
     await fetchChats()
     if (chat?.id) {
+      input.value = ''
+      attachmentTray.value?.resetAfterSend()
       router.push(`/chat/${chat.id}?mode=${chosenMode}`)
     }
   } catch (e: unknown) {
@@ -68,8 +82,15 @@ async function createChat(prompt: string) {
 }
 
 function onSubmit() {
+  if (attachmentTray.value?.hasBlockingAttachments()) {
+    toast.add({
+      description: '请等待附件解析完成；低置信度附件需要确认后才能发送。',
+      icon: 'i-lucide-alert-circle',
+      color: 'warning',
+    })
+    return
+  }
   const text = input.value
-  input.value = ''
   createChat(text)
 }
 
@@ -83,29 +104,18 @@ const quickChats = [
   { label: 'Explain the Transformer architecture', icon: 'i-lucide-brain' },
 ]
 
-const fileInputRef = ref<HTMLInputElement | null>(null)
 const deepResearchMode = ref(false)
-
-function triggerFileUpload() {
-  fileInputRef.value?.click()
-}
-
-function handleFileUpload(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const content = e.target?.result as string
-    input.value = (input.value ? input.value + '\n\n' : '') + `[Attached: ${file.name}]\n${content.slice(0, 500)}`
-  }
-  reader.readAsText(file)
-}
 
 const plusMenuItems = computed(() => [[
   {
-    label: 'Upload File',
+    label: '上传图片或文件',
     icon: 'i-lucide-paperclip',
-    onSelect: () => triggerFileUpload()
+    onSelect: () => attachmentTray.value?.open()
+  },
+  {
+    label: '企业知识库检索',
+    icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
+    onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
   {
     label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
@@ -141,7 +151,13 @@ const plusMenuItems = computed(() => [[
           @submit="onSubmit"
         >
           <template #footer>
-            <!-- + Menu: Upload File / Deep Research -->
+            <AttachmentTray
+              ref="attachmentTray"
+              scope="draft"
+              :disabled="loading"
+              @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
+            />
+            <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
             <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
               <UButton
                 color="neutral"
@@ -152,6 +168,7 @@ const plusMenuItems = computed(() => [[
               />
             </UDropdownMenu>
 
+            <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
             <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
 
             <!-- Right: WeightMode + Submit -->
@@ -161,10 +178,6 @@ const plusMenuItems = computed(() => [[
             </div>
           </template>
         </UChatPrompt>
-
-        <!-- Hidden file input -->
-        <input ref="fileInputRef" type="file" accept=".txt,.md,.pdf,.docx,.json" class="hidden" @change="handleFileUpload" />
-
 
         <div class="flex flex-wrap gap-2">
           <UButton

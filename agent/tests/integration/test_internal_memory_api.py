@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app import app
 from agent.api.chat_routes import get_agent
 from agent.config.settings import settings
-from agent.schemas.chat import ChatResponse
+from agent.schemas.chat import ChatResponse, Citation
 
 
 class StubAgent:
@@ -16,7 +16,19 @@ class StubAgent:
             status="success",
             answer="Answer.",
             message="",
-            citations=[],
+            citations=[Citation(
+                citation_id=1,
+                title="report.pdf",
+                doc_id="att_allowed",
+                chunk_id="aev_1",
+                score=0.9,
+                snippet="attachment evidence",
+                source_type="attachment",
+                attachment_id="att_allowed",
+                evidence_id="aev_1",
+                locator={"page": 2},
+                version=3,
+            )],
         )
 
 
@@ -146,3 +158,35 @@ def test_internal_chat_returns_fixed_409_when_persistent_memory_is_disabled(monk
     )
     assert compaction.status_code == 409
     assert compaction.json() == {"code": "persistent_memory_disabled"}
+
+
+def test_internal_retrieval_stream_is_token_protected_and_memory_flag_independent(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "AGENT_INTERNAL_TOKEN", "test-internal-token")
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", False)
+    app.dependency_overrides[get_agent] = StubAgent
+    client = TestClient(app)
+    request = {
+        "query": "summarize attachment",
+        "memory_context": memory_context(),
+        "attachment_context": {
+            "allowed_attachment_ids": ["att_allowed"],
+            "selected_attachment_ids": ["att_allowed"],
+        },
+    }
+    try:
+        assert client.post(
+            "/api/internal/chat/retrieval/stream",
+            json=request,
+        ).status_code == 403
+        response = client.post(
+            "/api/internal/chat/retrieval/stream",
+            headers={"X-Agent-Internal-Token": "test-internal-token"},
+            json=request,
+        )
+        assert response.status_code == 200
+        assert "event: citations" in response.text
+        assert '"attachment_id": "att_allowed"' in response.text
+        assert "event: token" in response.text
+        assert "event: done" in response.text
+    finally:
+        app.dependency_overrides.clear()

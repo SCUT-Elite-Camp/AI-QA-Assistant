@@ -44,4 +44,5 @@ models/
 .codex_spreadsheet/
 outputs/
 eval/reports/
+eval/wiki/runs/
 ~$*.xlsx

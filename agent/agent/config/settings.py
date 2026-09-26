@@ -81,6 +81,21 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
     )
+    AGENTIC_EXPLORATION_ENABLED: bool = _env_bool(
+        "AGENTIC_EXPLORATION_ENABLED", False,
+    )
+    KNOWLEDGE_NAVIGATION_ENABLED: bool = _env_bool(
+        "KNOWLEDGE_NAVIGATION_ENABLED", False,
+    )
+    EXPLORATION_MAX_ROUNDS: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_ROUNDS", 4), ge=1, le=5,
+    )
+    EXPLORATION_MAX_TOOL_CALLS: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_TOOL_CALLS", 8), ge=1, le=10,
+    )
+    EXPLORATION_MAX_EVIDENCE: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_EVIDENCE", 20), ge=5, le=50,
+    )
 
 
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
