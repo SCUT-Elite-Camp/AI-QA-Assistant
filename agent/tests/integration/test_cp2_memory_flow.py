@@ -279,7 +279,7 @@ def test_query_plan_filters_merge_without_losing_hard_constraints() -> None:
     }
 
 
-def test_explicit_request_filter_overrides_inferred_plan_filter() -> None:
+def test_conflicting_hard_filters_are_rejected() -> None:
     query = "总结文档"
     plan = QueryPlan(
         original_query=query,
@@ -287,9 +287,10 @@ def test_explicit_request_filter_overrides_inferred_plan_filter() -> None:
         filters={"space_key": "RAG"},
     )
 
-    resolved = Agent._resolve_query_plan(
+    response = Agent(llm=InspectingLLM([]), tools=[]).chat(
         ChatRequest(query=query, filters={"space_key": "PRIVATE"}),
-        plan,
+        query_plan=plan,
     )
 
-    assert resolved.filters == {"space_key": "PRIVATE"}
+    assert response.status == StatusCode.INVALID_QUERY
+    assert response.message == "查询计划与当前请求不一致。"

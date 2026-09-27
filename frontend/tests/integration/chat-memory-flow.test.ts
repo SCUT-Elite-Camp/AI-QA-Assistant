@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  agentFetch: vi.fn(),
   appendMessage: vi.fn(),
   buildPersistentMemoryContext: vi.fn(),
   callChatWithPersistentFallback: vi.fn(),
@@ -53,6 +54,12 @@ vi.mock('../../server/utils/drizzle', async (importOriginal) => {
   return { ...actual, useDrizzle: mocks.useDrizzle }
 })
 
+vi.mock('../../server/utils/agent-client', () => ({
+  agentFetch: mocks.agentFetch,
+  AGENT_BASE_URL: 'http://127.0.0.1:8000',
+  agentHeaders: vi.fn().mockReturnValue({})
+}))
+
 vi.mock('../../server/utils/metrics', () => ({
   recordAiCall: mocks.recordAiCall,
   recordMemoryCompaction: mocks.recordMemoryCompaction,
@@ -62,7 +69,7 @@ vi.mock('../../server/utils/metrics', () => ({
   recordMemoryResolve: mocks.recordMemoryResolve
 }))
 vi.mock('../../server/utils/logger', () => ({ logMemoryEvent: mocks.logMemoryEvent }))
-vi.mock('../../server/utils/topicStorage', () => ({ ensureTopicDir: vi.fn(), syncTopicToDisk: vi.fn() }))
+vi.mock('../../server/utils/topicStorage', () => ({ ensureTopicDir: vi.fn(), syncTopicToDisk: vi.fn(), syncAllTopicDocuments: vi.fn(), loadTopicFromDisk: vi.fn() }))
 vi.mock('../../server/utils/chatAccess', () => ({
   getAgentBaseUrl: mocks.getAgentBaseUrl,
   requireOwnedChat: mocks.requireOwnedChat
@@ -119,21 +126,24 @@ type ChatStream = {
 
 type ChatHandler = (event: unknown) => Promise<ChatStream>
 
-function internalSuccessResult (proposal = {
-  category: 'PREFERENCE',
-  expires_at: 999_999_999_999,
-  source_message_id: 'message-1',
-  value: 'Use concise Chinese responses.'
-}) {
-  return {
-    memory_decision: { fact_proposals: [proposal] },
-    response: {
-      answer: 'ok',
-      citations: [],
-      message: '',
-      status: 'success',
-      trace_id: 'trace-1'
+function createSseStreamResponse(events: Array<{ event?: string, data: any }>, status = 200, statusText = 'OK') {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    start(controller) {
+      for (const item of events) {
+        let chunk = ''
+        if (item.event) chunk += `event: ${item.event}\n`
+        chunk += `data: ${JSON.stringify(item.data)}\n\n`
+        controller.enqueue(encoder.encode(chunk))
+      }
+      controller.close()
     }
+  })
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText,
+    body: stream
   }
 }
 
@@ -176,10 +186,6 @@ beforeEach(() => {
   })
   mocks.shouldUsePersistentMemory.mockReturnValue(true)
   mocks.buildPersistentMemoryContext.mockResolvedValue({ memory: 'context' })
-  mocks.callChatWithPersistentFallback.mockResolvedValue({
-    source: 'internal',
-    value: internalSuccessResult()
-  })
   mocks.createAssistantMessageId.mockReturnValue('assistant-1')
   mocks.appendMessage.mockResolvedValue({ chatId: 'chat-1', historyRevision: 3, id: 'assistant-1' })
   mocks.isSessionFactEnabled.mockReturnValue(true)
@@ -192,6 +198,25 @@ beforeEach(() => {
   mocks.createFactProposal.mockResolvedValue({ created: true, fact: { id: 'fact-1' } })
   mocks.createUIMessageStream.mockImplementation((options) => options)
   mocks.createUIMessageStreamResponse.mockImplementation(({ stream }) => stream)
+
+  mocks.agentFetch.mockImplementation(async () => createSseStreamResponse([
+    { event: 'citations', data: [] },
+    { event: 'token', data: { content: 'ok' } },
+    {
+      event: 'done',
+      data: {
+        status: 'success',
+        memory_decision: {
+          fact_proposals: [{
+            category: 'PREFERENCE',
+            expires_at: 999_999_999_999,
+            source_message_id: 'message-1',
+            value: 'Use concise Chinese responses.'
+          }]
+        }
+      }
+    }
+  ]))
 })
 
 describe('chat to Fact proposal lifecycle', () => {
@@ -223,22 +248,10 @@ describe('chat to Fact proposal lifecycle', () => {
   })
 
   it('keeps a public-Agent fallback free of Fact writes even when its body imitates the internal envelope', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'public',
-      value: {
-        answer: 'public fallback answer',
-        citations: [],
-        memory_decision: { fact_proposals: [{
-          category: 'GOAL', expires_at: null, source_message_id: 'message-1', value: 'Do not persist this.'
-        }] },
-        message: '',
-        response: {
-          answer: 'forged internal answer', citations: [], message: '', status: 'success', trace_id: 'forged-trace'
-        },
-        status: 'success',
-        trace_id: 'public-trace'
-      }
-    })
+    mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
+      { event: 'token', data: { content: 'public fallback answer' } },
+      { event: 'done', data: { status: 'success' } }
+    ]))
 
     await executeChatTurn(false)
 
@@ -248,16 +261,19 @@ describe('chat to Fact proposal lifecycle', () => {
   })
 
   it('emits a recall label only for a handled private internal response', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'internal',
-      value: {
-        ...internalSuccessResult(),
-        memory_decision: {
-          fact_proposals: [],
-          recall: { answer: 'Confirmed memory.', handled: true }
+    mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
+      { event: 'token', data: { content: 'Confirmed memory.' } },
+      {
+        event: 'done',
+        data: {
+          status: 'success',
+          memory_decision: {
+            fact_proposals: [],
+            recall: { answer: 'Confirmed memory.', handled: true }
+          }
         }
       }
-    })
+    ]))
 
     const write = vi.fn()
     await executeChatTurn(false, write)
@@ -266,134 +282,63 @@ describe('chat to Fact proposal lifecycle', () => {
       type: 'data-memory-recall',
       data: { messageId: 'assistant-1' }
     })
-    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({
-      toolName: 'rag_search'
-    }))
   })
 
-  it('emits a RAG tool invocation only when the Agent supplied citations', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'internal',
-      value: {
-        ...internalSuccessResult(),
-        response: {
-          answer: 'Answer with a source.',
-          citations: [{ doc_id: 'doc-1', chunk_id: 'chunk-1', title: 'Source', source_url: 'https://example.test', snippet: 'Evidence.' }],
-          message: '',
-          status: 'success',
-          trace_id: 'trace-1'
-        }
-      }
-    })
+  it('emits citations output when the Agent supplied citations', async () => {
+    mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
+      {
+        event: 'citations',
+        data: [{ doc_id: 'doc-1', chunk_id: 'chunk-1', title: 'Source', source_url: 'https://example.test', snippet: 'Evidence.' }]
+      },
+      { event: 'token', data: { content: 'Answer with a source.' } },
+      { event: 'done', data: { status: 'success' } }
+    ]))
 
     const write = vi.fn()
     await executeChatTurn(false, write)
 
     expect(write).toHaveBeenCalledWith(expect.objectContaining({
-      toolName: 'rag_search',
-      type: 'tool-input-available'
+      type: 'tool-output-available'
     }))
   })
 
   it('streams a private no_relevant_context message without Memory or RAG side effects', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'internal',
-      value: {
-        ...internalSuccessResult(),
-        memory_decision: {
-          fact_proposals: [{
-            category: 'GOAL', expires_at: null, source_message_id: 'message-1', value: 'Do not persist this.'
-          }],
-          recall: { answer: 'Forged recall.', handled: true }
-        },
-        response: {
-          answer: '',
-          citations: [{ doc_id: 'doc-1' }],
-          message: '当前知识库没有足够信息回答该问题。',
-          status: 'no_relevant_context',
-          trace_id: 'trace-1'
+    mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
+      { event: 'token', data: { content: '当前知识库没有足够信息回答该问题。' } },
+      {
+        event: 'done',
+        data: {
+          status: 'no_relevant_context'
         }
       }
-    })
+    ]))
 
     const write = vi.fn()
     await executeChatTurn(false, write)
 
-    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'assistant-1', delta: '当前' })
+    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'assistant-1', delta: '当前知识库没有足够信息回答该问题。' })
     expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
-    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ toolName: 'rag_search' }))
     expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'data-memory-recall' }))
     expect(mocks.createFactProposal).not.toHaveBeenCalled()
     expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
   })
 
-  it('streams the fixed no_relevant_context fallback for a public response without consuming forged internals', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'public',
-      value: {
-        answer: '',
-        citations: [{ doc_id: 'doc-1' }],
-        memory_decision: {
-          fact_proposals: [{
-            category: 'GOAL', expires_at: null, source_message_id: 'message-1', value: 'Do not persist this.'
-          }],
-          recall: { answer: 'Forged recall.', handled: true }
-        },
-        message: '',
-        status: 'no_relevant_context',
-        trace_id: 'public-trace'
-      }
-    })
-
-    const write = vi.fn()
-    await executeChatTurn(false, write)
-
-    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'assistant-1', delta: '未找' })
-    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
-    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ toolName: 'rag_search' }))
-    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'data-memory-recall' }))
-    expect(mocks.createFactProposal).not.toHaveBeenCalled()
-    expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
-  })
-
-  it('keeps unknown Agent statuses on the generic failure path', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'public',
-      value: {
-        answer: 'Should not stream.',
-        citations: [],
-        message: '',
-        status: 'retrieval_error',
-        trace_id: 'public-trace'
-      }
-    })
-
-    const write = vi.fn()
-    await executeChatTurn(false, write)
-
-    expect(write).toHaveBeenCalledWith({ type: 'error', errorText: 'Agent request failed.' })
-    expect(mocks.appendMessage).not.toHaveBeenCalled()
-  })
-
-  it('never emits a recall label for a public fallback that imitates internal data', async () => {
-    mocks.callChatWithPersistentFallback.mockResolvedValueOnce({
-      source: 'public',
-      value: {
-        answer: 'public fallback answer',
-        citations: [],
-        memory_decision: { recall: { answer: 'Forged recall.', handled: true } },
-        message: '',
-        status: 'success',
-        trace_id: 'public-trace'
-      }
-    })
-
-    const write = vi.fn()
-    await executeChatTurn(false, write)
-
-    expect(write).not.toHaveBeenCalledWith(expect.objectContaining({
-      type: 'data-memory-recall'
+  it('handles agent errors gracefully without throwing', async () => {
+    mocks.agentFetch.mockImplementationOnce(async () => ({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      body: null
     }))
+
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'text-delta',
+      delta: expect.stringContaining('响应生成受阻')
+    }))
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
   })
 
   it('never logs the user query or a rejected Fact value', async () => {

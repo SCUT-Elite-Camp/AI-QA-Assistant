@@ -36,14 +36,39 @@ def test_signed_context_is_injected_and_doc_ids_remain_scoped(monkeypatch):
     token = hmac.new(secret.encode(), b"user-a:kb-a", hashlib.sha256).hexdigest()
     tool = SearchLibraryTool()
     tool.set_request_context("user-a", "kb-a", token)
-    tool.execute(query="risk", mode="bm25", doc_ids=["doc-from-model"])
+    tool.execute(
+        query="risk", mode="bm25", doc_ids=["doc-from-model"],
+        navigation_mode="hierarchical",
+    )
 
     assert captured["owner_id"] == "user-a"
     assert captured["knowledge_base_id"] == "kb-a"
     assert captured["doc_ids"] == ["doc-from-model"]
     assert set(captured) == {
         "owner_id", "knowledge_base_id", "query", "top_k", "mode", "doc_ids",
+        "navigation_mode",
     }
+    assert captured["navigation_mode"] == "direct"
+
+
+def test_legacy_navigation_mode_is_never_forwarded_as_automatic_navigation(monkeypatch):
+    secret = "test-secret"
+    monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", secret)
+    monkeypatch.setenv("HIERARCHICAL_NAVIGATION_ENABLED", "true")
+    captured = {}
+
+    def fake_open(request, timeout):
+        captured.update(json.loads(request.data.decode("utf-8")))
+        return _Response()
+
+    monkeypatch.setattr("tool_layer.search_library_tool.urlopen", fake_open)
+    token = hmac.new(secret.encode(), b"user-a:kb-a", hashlib.sha256).hexdigest()
+    tool = SearchLibraryTool()
+    tool.set_request_context("user-a", "kb-a", token)
+    tool.execute(query="risk", mode="bm25", navigation_mode="hierarchical")
+
+    assert captured["navigation_mode"] == "direct"
+    assert "navigation_mode" not in tool.parameters["properties"]
 
 
 def test_invalid_context_fails_closed(monkeypatch):
@@ -51,3 +76,19 @@ def test_invalid_context_fails_closed(monkeypatch):
     tool = SearchLibraryTool()
     tool.set_request_context("user-a", "kb-a", "0" * 64)
     assert tool.execute(query="secret") == {"error": "library_context_unavailable", "items": []}
+
+
+def test_invalid_model_arguments_fail_before_network(monkeypatch):
+    secret = "test-secret"
+    monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", secret)
+    monkeypatch.setattr(
+        "tool_layer.search_library_tool.urlopen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("network called")),
+    )
+    token = hmac.new(secret.encode(), b"user-a:kb-a", hashlib.sha256).hexdigest()
+    tool = SearchLibraryTool()
+    tool.set_request_context("user-a", "kb-a", token)
+
+    assert tool.execute(query="", mode="hybrid")["error"] == "invalid_library_query"
+    assert tool.execute(query="risk", mode="invalid")["error"] == "invalid_library_query"
+    assert tool.execute(query="risk", doc_ids=["x"] * 101)["error"] == "invalid_library_query"

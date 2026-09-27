@@ -195,7 +195,7 @@ class Agent:
         persistent_memory_request = self._is_persistent_memory_request(request)
 
         try:
-            context = request.attachment_context
+            context = getattr(request, "attachment_context", None)
             for tool_name in ("search_attachments", "inspect_attachment"):
                 tool = self.registry.get_tool(tool_name)
                 if tool is not None and hasattr(tool, "set_request_context"):
@@ -203,7 +203,7 @@ class Agent:
                         context.allowed_attachment_ids if context else [],
                         context.selected_attachment_ids if context else [],
                     )
-            library_context = request.personal_library_context
+            library_context = getattr(request, "personal_library_context", None)
             library_tool = self.registry.get_tool("search_library")
             if library_tool is not None and hasattr(library_tool, "set_request_context"):
                 library_tool.set_request_context(

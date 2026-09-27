@@ -38,6 +38,7 @@ class ToolRegistryTest(unittest.TestCase):
     def test_default_registry_initialization(self) -> None:
         registry = ToolRegistry()
         tools = registry.get_all_tools()
+        # By default, should have SearchTool registered
         self.assertEqual(
             {tool.name for tool in tools},
             {"search_documents", "find_documents", "get_document"},

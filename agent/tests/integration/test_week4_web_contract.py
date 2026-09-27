@@ -41,7 +41,12 @@ def test_chat_response_has_web_required_fields() -> None:
     assert response.status_code == 200
     body = response.json()
     assert set(body.keys()) == {
-        "trace_id", "status", "answer", "message", "citations", "chat_title", "diagnostics",
+        "trace_id",
+        "status",
+        "answer",
+        "message",
+        "citations",
+        "chat_title",
     }
     assert body["status"] == "success"
     assert body["trace_id"].startswith("trace-")
@@ -65,7 +70,6 @@ def test_chat_error_response_keeps_web_contract() -> None:
         "message": "请输入有效问题。",
         "citations": [],
         "chat_title": None,
-        "diagnostics": None,
     }
 
 

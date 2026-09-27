@@ -23,7 +23,10 @@ from .config import AttachmentSettings
 from .chunking import chunk_attachment_evidence
 from .library_service import (
     fuse_library_candidates,
+    fuse_section_candidates,
+    rank_section_evidence,
     rebuild_library_projection,
+    resolve_section_search_context,
     validate_library_configuration,
 )
 from .crypto import decrypt_file, encrypt_file
@@ -34,8 +37,7 @@ from .store import AttachmentStore
 from .structure import build_document_sections
 from .validation import AttachmentValidationError, safe_filename, validate_file
 from .vision import LocalVisionBackend
-from .vision_input import prepare_vision_image
-from .vector_index import AttachmentVectorIndex
+from .vector_index import AttachmentSectionVectorIndex, AttachmentVectorIndex
 from .previews import build_encrypted_previews
 
 LOGGER = logging.getLogger("attachment-service")
@@ -44,6 +46,7 @@ SETTINGS.data_dir.mkdir(parents=True, exist_ok=True)
 STORE = AttachmentStore(SETTINGS.data_dir / "attachments.sqlite3")
 VISION = LocalVisionBackend(SETTINGS)
 VECTOR_INDEX = AttachmentVectorIndex()
+SECTION_VECTOR_INDEX = AttachmentSectionVectorIndex()
 STOP = threading.Event()
 VECTOR_PENDING: set[str] = set()
 VECTOR_PENDING_LOCK = threading.Lock()
@@ -124,6 +127,27 @@ class LibrarySearchRequest(BaseModel):
     top_k: int = Field(default=5, ge=1, le=20)
     doc_ids: list[str] | None = Field(default=None, max_length=100)
     mode: str = Field(default="hybrid", pattern="^(hybrid|vector|bm25)$")
+    navigation_mode: str = Field(default="direct", pattern="^(direct|hierarchical|hybrid)$")
+    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+
+
+class LibraryOutlineRequest(BaseModel):
+    owner_id: str = Field(min_length=1, max_length=128)
+    knowledge_base_id: str = Field(min_length=1, max_length=128)
+    query: str = Field(min_length=1, max_length=4000)
+    top_k: int = Field(default=8, ge=1, le=12)
+    doc_ids: list[str] | None = Field(default=None, max_length=100)
+    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+
+
+class LibraryScopedSearchRequest(BaseModel):
+    owner_id: str = Field(min_length=1, max_length=128)
+    knowledge_base_id: str = Field(min_length=1, max_length=128)
+    query: str = Field(min_length=1, max_length=4000)
+    section_ids: list[str] = Field(min_length=1, max_length=20)
+    top_k: int = Field(default=10, ge=1, le=20)
+    doc_ids: list[str] | None = Field(default=None, max_length=100)
+    mode: str = Field(default="hybrid", pattern="^(hybrid|vector|bm25)$")
     query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
 
 
@@ -153,6 +177,42 @@ def _authorize(authorization: str = Header(default="")) -> None:
 def _public_record(record: dict[str, Any]) -> dict[str, Any]:
     excluded = {"blob_path", "key_id", "dedupe_domain", "deleted_at"}
     return {key: value for key, value in record.items() if key not in excluded}
+
+
+def _prepare_vision_image(source: Path, extension: str, page: int | None, bbox: list[float] | None, output: Path) -> dict[str, Any]:
+    locator: dict[str, Any] = {"page": page, "bbox": bbox}
+    if bbox is not None:
+        if len(bbox) != 4 or any(value < 0 or value > 1 for value in bbox) or bbox[0] >= bbox[2] or bbox[1] >= bbox[3]:
+            raise ValueError("invalid_bbox")
+    if extension == ".pdf":
+        import fitz
+        document = fitz.open(source)
+        try:
+            page_number = page or 1
+            if page_number > len(document):
+                raise ValueError("page_out_of_range")
+            pixmap = document[page_number - 1].get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            pixmap.save(output)
+            locator["page"] = page_number
+        finally:
+            document.close()
+    else:
+        if page not in {None, 1}:
+            raise ValueError("page_out_of_range")
+        from PIL import Image
+        with Image.open(source) as image:
+            image.convert("RGB").save(output, format="PNG")
+        locator["page"] = None
+    if bbox is not None:
+        from PIL import Image
+        with Image.open(output) as image:
+            width, height = image.size
+            crop = (
+                round(bbox[0] * width), round(bbox[1] * height),
+                round(bbox[2] * width), round(bbox[3] * height),
+            )
+            image.crop(crop).save(output, format="PNG")
+    return locator
 
 
 def _persist_uploaded_file(
@@ -258,6 +318,8 @@ def _worker() -> None:
             try:
                 if VECTOR_INDEX.enabled:
                     VECTOR_INDEX.delete(str(attachment.get("vector_ref") or attachment["id"]))
+                if SECTION_VECTOR_INDEX.enabled:
+                    SECTION_VECTOR_INDEX.delete(str(attachment.get("vector_ref") or attachment["id"]))
                 derivative_paths = [item["blob_path"] for item in STORE.list_derivatives(attachment["id"])]
                 blob = STORE.get_blob(attachment["dedupe_domain"], attachment["sha256"])
                 if blob and int(blob["ref_count"]) <= 1:
@@ -281,6 +343,8 @@ def _worker() -> None:
             try:
                 if VECTOR_INDEX.enabled:
                     VECTOR_INDEX.delete(str(job["payload"].get("vector_ref") or attachment["id"]))
+                if SECTION_VECTOR_INDEX.enabled:
+                    SECTION_VECTOR_INDEX.delete(str(job["payload"].get("vector_ref") or attachment["id"]))
                 STORE.complete_job(job["id"])
                 LOGGER.info("LIBRARY_CLEANUP_COMPLETE version_id=%s", attachment["id"])
             except Exception as exc:
@@ -345,6 +409,7 @@ def _worker() -> None:
                 # vector/evidence projection remains searchable on failure.
                 previous_vector_ref, new_vector_ref = rebuild_library_projection(
                     STORE, VECTOR_INDEX, attachment, evidence, job["id"], sections,
+                    SECTION_VECTOR_INDEX,
                 )
                 if not preserve_active:
                     STORE.transition_attachment(attachment["id"], "indexing")
@@ -755,6 +820,127 @@ def search(body: SearchRequest) -> dict[str, Any]:
     return {"items": items}
 
 
+@app.post("/v1/library/outline", dependencies=[Depends(_authorize)])
+def browse_library_outline(body: LibraryOutlineRequest) -> dict[str, Any]:
+    """Search navigation metadata inside the caller's active personal versions."""
+    versions = STORE.list_library_versions(
+        body.owner_id,
+        body.knowledge_base_id,
+        document_ids=body.doc_ids,
+        active_only=True,
+    )
+    attachment_ids, query = resolve_section_search_context(body.query, versions)
+    sparse = STORE.search_sections(attachment_ids, query, top_k=max(body.top_k, 4))
+    vector: list[dict[str, Any]] = []
+    degraded: list[str] = []
+    if SECTION_VECTOR_INDEX.enabled and body.query_vector is not None:
+        try:
+            refs = [
+                str(item.get("vector_ref") or item["id"])
+                for item in versions if str(item["id"]) in attachment_ids
+            ]
+            vector = SECTION_VECTOR_INDEX.search_by_vector(refs, body.query_vector, body.top_k * 2)
+        except Exception as exc:
+            degraded.append("section_vector")
+            LOGGER.warning(
+                "LIBRARY_OUTLINE vector degraded knowledge_base_id=%s error=%s",
+                body.knowledge_base_id, exc.__class__.__name__,
+            )
+    section_rows = STORE.list_sections(attachment_ids)
+    sections = {str(item["id"]): item for item in section_rows}
+    matched = (
+        fuse_section_candidates(
+            sections, sparse, vector, top_k=max(1, body.top_k // 2),
+        )
+        if vector else sparse[:max(1, body.top_k // 2)]
+    )
+    from shared_runtime.document_sections import select_outline_candidates
+
+    hits = select_outline_candidates(section_rows, matched, limit=body.top_k)
+    return {
+        "sections": hits,
+        "citation_authority": False,
+        "degraded": degraded,
+    }
+
+
+@app.post("/v1/library/search-scoped", dependencies=[Depends(_authorize)])
+def search_library_scoped(body: LibraryScopedSearchRequest) -> dict[str, Any]:
+    """Retrieve Evidence only from explicit, preauthorized personal Sections."""
+    versions = STORE.list_library_versions(
+        body.owner_id,
+        body.knowledge_base_id,
+        document_ids=body.doc_ids,
+        active_only=True,
+    )
+    attachment_ids = [str(item["id"]) for item in versions]
+    sections = {str(item["id"]): item for item in STORE.list_sections(attachment_ids)}
+    selected = [sections[value] for value in dict.fromkeys(body.section_ids) if value in sections]
+    evidence_ids = list(dict.fromkeys(
+        str(evidence_id)
+        for section in selected
+        if section.get("quality") != "low" and int(section.get("level") or 0) > 0
+        for evidence_id in section.get("evidence_ids") or []
+    ))
+    if not evidence_ids:
+        return {"items": [], "citation_authority": True}
+    candidate_k = max(body.top_k * 3, 20)
+    evidence = {item["evidence_id"]: item for item in STORE.list_evidence(attachment_ids)}
+    lexical = (
+        STORE.search_evidence(
+            attachment_ids, body.query, candidate_k, evidence_ids=evidence_ids,
+        )
+        if body.mode in {"bm25", "hybrid"} else []
+    )
+    vector: list[dict[str, Any]] = []
+    degraded: list[str] = []
+    if body.mode in {"vector", "hybrid"} and body.query_vector is not None:
+        try:
+            refs = [str(item.get("vector_ref") or item["id"]) for item in versions]
+            ref_to_id = {
+                str(item.get("vector_ref") or item["id"]): str(item["id"])
+                for item in versions
+            }
+            vector = VECTOR_INDEX.search_by_vector(
+                refs, body.query_vector, candidate_k, evidence_ids=evidence_ids,
+            )
+            for row in vector:
+                row["attachment_id"] = ref_to_id.get(
+                    str(row.get("attachment_id")), str(row.get("attachment_id"))
+                )
+        except Exception as exc:
+            degraded.append("vector")
+            LOGGER.warning(
+                "LIBRARY_SCOPED_SEARCH vector degraded knowledge_base_id=%s error=%s",
+                body.knowledge_base_id, exc.__class__.__name__,
+            )
+    items = rank_section_evidence(
+        evidence, evidence_ids, lexical, vector, mode=body.mode, top_k=body.top_k,
+    )
+    section_ids_by_evidence: dict[str, list[str]] = {}
+    for section in selected:
+        for evidence_id in section.get("evidence_ids") or []:
+            section_ids_by_evidence.setdefault(str(evidence_id), []).append(str(section["id"]))
+    metadata = {str(item["id"]): item for item in versions}
+    for item in items:
+        version = metadata.get(str(item.get("attachment_id")), {})
+        item.update({
+            "matched_section_ids": list(dict.fromkeys(
+                section_ids_by_evidence.get(str(item.get("evidence_id")), [])
+            )),
+            "knowledge_base_id": version.get("knowledge_base_id"),
+            "document_id": version.get("document_id"),
+            "version_id": version.get("version_id"),
+            "source_scope": "personal",
+            "filename": version.get("filename", item.get("filename")),
+        })
+    return {
+        "items": items,
+        "citation_authority": True,
+        "degraded": degraded,
+    }
+
+
 @app.post("/v1/library/search", dependencies=[Depends(_authorize)])
 def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
     # owner/source/library/active are resolved before either FTS5 or Milvus
@@ -793,7 +979,20 @@ def search_library(body: LibrarySearchRequest) -> dict[str, Any]:
     direct = fuse_library_candidates(
         evidence, direct_lexical, direct_vector, mode=body.mode, top_k=candidate_k,
     )
-    result = {"items": direct[:body.top_k]}
+    result = {
+        "items": direct[:body.top_k],
+        "navigation": {
+            "mode": "direct",
+            "requested_mode": body.navigation_mode,
+            "section_hits": 0,
+            "section_sparse_hits": 0,
+            "section_vector_hits": 0,
+            "scoped_candidates": 0,
+            "fallback_reason": (
+                "explicit_exploration_only" if body.navigation_mode != "direct" else "none"
+            ),
+        },
+    }
     if vector_degraded:
         result["degraded"] = ["vector"]
         if body.mode == "vector":
@@ -836,7 +1035,7 @@ async def inspect(attachment_id: str, body: InspectRequest) -> dict[str, Any]:
         decrypt_file(Path(record["blob_path"]), temporary, SETTINGS.encryption_key, _blob_aad(record))
         try:
             locator = await asyncio.to_thread(
-                prepare_vision_image, temporary, record["extension"], body.page, body.bbox, vision_image,
+                _prepare_vision_image, temporary, record["extension"], body.page, body.bbox, vision_image,
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc

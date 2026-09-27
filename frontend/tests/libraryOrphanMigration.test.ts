@@ -27,7 +27,7 @@ describe('personal library orphan repair migration', () => {
       await client.execute("INSERT INTO document_versions VALUES('ver-valid','personal-valid')")
 
       const migrationPath = fileURLToPath(new URL(
-        '../server/database/migrations/0006_library_orphan_repair.sql',
+        '../server/database/migrations/0012_library_orphan_repair.sql',
         import.meta.url,
       ))
       await client.execute(readFileSync(migrationPath, 'utf8'))

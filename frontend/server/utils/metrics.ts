@@ -1,14 +1,12 @@
-/**
- * 轻量级内存 Metrics 采集器。
- * 无外部依赖，纯内存计数器 + 延迟直方图。
- */
+﻿/**
+ * 杞婚噺绾у唴瀛?Metrics 閲囬泦鍣ㄣ€? * 鏃犲閮ㄤ緷璧栵紝绾唴瀛樿鏁板櫒 + 寤惰繜鐩存柟鍥俱€? */
 
 interface LatencyBucket {
   count: number
   totalMs: number
   min: number
   max: number
-  // 用于近似 P50/P95/P99
+  // 鐢ㄤ簬杩戜技 P50/P95/P99
   samples: number[]
 }
 
@@ -67,7 +65,7 @@ function recordLatency(bucket: LatencyBucket, ms: number) {
   bucket.totalMs += ms
   bucket.min = Math.min(bucket.min, ms)
   bucket.max = Math.max(bucket.max, ms)
-  // 保留最近 1000 个样本用于分位数计算
+  // 淇濈暀鏈€杩?1000 涓牱鏈敤浜庡垎浣嶆暟璁＄畻
   bucket.samples.push(ms)
   if (bucket.samples.length > 1000) {
     bucket.samples.shift()
@@ -110,8 +108,8 @@ const store: MetricsStore = {
     dead: 0,
     oldestPendingAgeSeconds: 0,
     attemptTotal: 0,
-    successTotal: 0,
-  },
+    successTotal: 0
+  }
 }
 
 const MEMORY_RESOLVE_SOURCES = new Set(['disabled', 'trusted_context', 'legacy'])
@@ -156,6 +154,18 @@ export function recordMemoryDuration (operation: string, durationMs: number) {
   recordMemoryDurationBucket(operation, durationMs)
 }
 
+export function recordLibraryCleanupAttempt(succeeded: boolean) {
+  store.libraryCleanup.attemptTotal++
+  if (succeeded) store.libraryCleanup.successTotal++
+}
+
+export function setLibraryCleanupGauges(gauges: Pick<
+  MetricsStore['libraryCleanup'],
+  'pending' | 'retry' | 'dead' | 'oldestPendingAgeSeconds'
+>) {
+  Object.assign(store.libraryCleanup, gauges)
+}
+
 function getOrCreateEndpoint(method: string, path: string): EndpointMetrics {
   const key = `${method} ${path}`
   if (!store.requests.byEndpoint[key]) {
@@ -168,9 +178,9 @@ function getOrCreateEndpoint(method: string, path: string): EndpointMetrics {
   return store.requests.byEndpoint[key]!
 }
 
-// ==================== 公开 API ====================
+// ==================== 鍏紑 API ====================
 
-/** 记录一次 HTTP 请求 */
+/** 璁板綍涓€娆?HTTP 璇锋眰 */
 export function recordRequest(method: string, path: string, statusCode: number, durationMs: number) {
   store.requests.total++
   const ep = getOrCreateEndpoint(method, path)
@@ -179,7 +189,7 @@ export function recordRequest(method: string, path: string, statusCode: number, 
   recordLatency(ep.latency, durationMs)
 }
 
-/** 记录一次数据库查询 */
+/** 璁板綍涓€娆℃暟鎹簱鏌ヨ */
 export function recordDbQuery(durationMs: number) {
   store.db.totalQueries++
   store.db.totalDurationMs += durationMs
@@ -188,7 +198,7 @@ export function recordDbQuery(durationMs: number) {
   }
 }
 
-/** 记录一次 AI 模型调用 */
+/** 璁板綍涓€娆?AI 妯″瀷璋冪敤 */
 export function recordAiCall(durationMs: number, ttftMs?: number, tokens?: number) {
   store.ai.totalCalls++
   store.ai.totalDurationMs += durationMs || 0
@@ -205,23 +215,11 @@ export function recordAiCall(durationMs: number, ttftMs?: number, tokens?: numbe
   recordLatency(store.ai.ttftBuckets, safeTtft)
 }
 
-export function recordLibraryCleanupAttempt(succeeded: boolean) {
-  store.libraryCleanup.attemptTotal++
-  if (succeeded) store.libraryCleanup.successTotal++
-}
-
-export function setLibraryCleanupGauges(gauges: Pick<
-  MetricsStore['libraryCleanup'],
-  'pending' | 'retry' | 'dead' | 'oldestPendingAgeSeconds'
->) {
-  Object.assign(store.libraryCleanup, gauges)
-}
-
-/** 获取当前 Metrics 快照 */
+/** 鑾峰彇褰撳墠 Metrics 蹇収 */
 export function getMetrics() {
   const uptime = Date.now() - store.startTime
 
-  // 计算全局延迟分布
+  // 璁＄畻鍏ㄥ眬寤惰繜鍒嗗竷
   const allLatencies: number[] = []
   for (const ep of Object.values(store.requests.byEndpoint)) {
     allLatencies.push(...ep.latency.samples)
@@ -281,20 +279,20 @@ export function getMetrics() {
   }
 }
 
-// ==================== Prometheus 格式导出 ====================
+// ==================== Prometheus 鏍煎紡瀵煎嚭 ====================
 
-/** 辅助：转义 Prometheus label 值中的特殊字符 */
+/** 杈呭姪锛氳浆涔?Prometheus label 鍊间腑鐨勭壒娈婂瓧绗?*/
 function escapeLabelValue(v: string): string {
   return v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')
 }
 
-/** 将内部 Metrics 转换为 Prometheus 文本格式 */
+/** 灏嗗唴閮?Metrics 杞崲涓?Prometheus 鏂囨湰鏍煎紡 */
 export function getPrometheusMetrics(): string {
   const now = Date.now()
   const uptime = (now - store.startTime) / 1000
   const lines: string[] = []
 
-  // --- 帮助信息 ---
+  // --- 甯姪淇℃伅 ---
   lines.push('# HELP http_requests_total Total number of HTTP requests.')
   lines.push('# TYPE http_requests_total counter')
   lines.push(`http_requests_total ${store.requests.total}`)
@@ -302,7 +300,7 @@ export function getPrometheusMetrics(): string {
   lines.push('# HELP http_request_duration_ms HTTP request latency in milliseconds.')
   lines.push('# TYPE http_request_duration_ms histogram')
 
-  // 按端点 + 状态码输出指标
+  // 鎸夌鐐?+ 鐘舵€佺爜杈撳嚭鎸囨爣
   for (const [key, ep] of Object.entries(store.requests.byEndpoint)) {
     const [method, path] = key.split(' ')
     const labels = `method="${escapeLabelValue(method)}",path="${escapeLabelValue(path)}"`
@@ -319,13 +317,13 @@ export function getPrometheusMetrics(): string {
       lines.push(`http_request_duration_ms_p99{${labels}} ${calcPercentile(sorted, 99)}`)
     }
 
-    // 按状态码
+    // 鎸夌姸鎬佺爜
     for (const [code, count] of Object.entries(ep.statusCodes)) {
       lines.push(`http_requests_total{${labels},status_code="${code}"} ${count}`)
     }
   }
 
-  // --- 全局延迟 ---
+  // --- 鍏ㄥ眬寤惰繜 ---
   const allLatencies: number[] = []
   for (const ep of Object.values(store.requests.byEndpoint)) {
     allLatencies.push(...ep.latency.samples)
@@ -338,7 +336,7 @@ export function getPrometheusMetrics(): string {
   lines.push(`http_request_duration_overall_ms{quantile="0.95"} ${calcPercentile(allLatencies, 95)}`)
   lines.push(`http_request_duration_overall_ms{quantile="0.99"} ${calcPercentile(allLatencies, 99)}`)
 
-  // --- 错误率 ---
+  // --- 閿欒鐜?---
   let totalErrors = 0
   for (const ep of Object.values(store.requests.byEndpoint)) {
     for (const [code, count] of Object.entries(ep.statusCodes)) {
@@ -349,7 +347,7 @@ export function getPrometheusMetrics(): string {
   lines.push('# TYPE http_errors_total counter')
   lines.push(`http_errors_total ${totalErrors}`)
 
-  // --- 吞吐量 (req/s 近似) ---
+  // --- 鍚炲悙閲?(req/s 杩戜技) ---
   if (uptime > 0) {
     const throughput = store.requests.total / uptime
     lines.push('# HELP http_throughput_requests_per_second Approximate requests per second.')
@@ -357,7 +355,7 @@ export function getPrometheusMetrics(): string {
     lines.push(`http_throughput_requests_per_second ${throughput.toFixed(4)}`)
   }
 
-  // --- DB 指标 ---
+  // --- DB 鎸囨爣 ---
   lines.push('# HELP db_queries_total Total database queries.')
   lines.push('# TYPE db_queries_total counter')
   lines.push(`db_queries_total ${store.db.totalQueries}`)
@@ -377,7 +375,7 @@ export function getPrometheusMetrics(): string {
   lines.push('# TYPE db_slow_queries_total counter')
   lines.push(`db_slow_queries_total ${store.db.slowQueries}`)
 
-  // --- AI 指标 ---
+  // --- AI 鎸囨爣 ---
   lines.push('# HELP ai_calls_total Total AI model calls.')
   lines.push('# TYPE ai_calls_total counter')
   lines.push(`ai_calls_total ${store.ai.totalCalls}`)
@@ -400,7 +398,7 @@ export function getPrometheusMetrics(): string {
   lines.push(`ai_ttft_ms{quantile="0.95"} ${calcPercentile(aiSorted, 95)}`)
   lines.push(`ai_ttft_ms{quantile="0.99"} ${calcPercentile(aiSorted, 99)}`)
 
-  // --- 运行时 ---
+  // --- 杩愯鏃?---
   lines.push('# HELP process_uptime_seconds Application uptime in seconds.')
   lines.push('# TYPE process_uptime_seconds gauge')
   lines.push(`process_uptime_seconds ${uptime}`)
@@ -408,7 +406,7 @@ export function getPrometheusMetrics(): string {
   return lines.join('\n') + '\n'
 }
 
-/** 重置 Metrics（用于测试） */
+/** 閲嶇疆 Metrics锛堢敤浜庢祴璇曪級 */
 export function resetMetrics() {
   store.startTime = Date.now()
   store.requests = { total: 0, byEndpoint: {} }
@@ -421,6 +419,6 @@ export function resetMetrics() {
     dead: 0,
     oldestPendingAgeSeconds: 0,
     attemptTotal: 0,
-    successTotal: 0,
+    successTotal: 0
   }
 }

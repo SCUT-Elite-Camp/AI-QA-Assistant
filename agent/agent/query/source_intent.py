@@ -22,11 +22,10 @@ def heuristic_source_intent(
     *,
     enterprise_default: bool = True,
 ) -> SourceIntent:
-    """One-release deterministic fallback for structured source planning."""
+    """Select source classes without deriving any authorization identity."""
+
     normalized = query.casefold().strip()
-    if not normalized:
-        return SourceIntent()
-    if _NON_RETRIEVAL_PRODUCT_LANGUAGE.search(normalized):
+    if not normalized or _NON_RETRIEVAL_PRODUCT_LANGUAGE.search(normalized):
         return SourceIntent()
 
     sources: list[SourceKind] = []

@@ -7,12 +7,9 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
+from storage.filtering import matches_filters, normalize_filters
+
 from .base_tool import BaseTool
-from .search_tool import (
-    SUPPORTED_DOC_TYPES,
-    _matches_filters,
-    _normalize_public_filters,
-)
 
 
 _DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -28,7 +25,7 @@ def _document_type(document: dict) -> str:
     candidate = str(value or "").strip().lower()
     if "/" in candidate:
         candidate = candidate.rsplit("/", 1)[-1]
-    if not candidate or candidate in {"attachment", "page"}:
+    if not candidate or candidate in {"attachment", "page", "hybrid"}:
         candidate = fallback
     return candidate.removeprefix(".")
 
@@ -103,7 +100,7 @@ class FindDocumentsTool(BaseTool):
 
     def execute(self, **kwargs: Any) -> Any:
         query = str(kwargs.get("query") or "").strip()
-        filters = _normalize_public_filters(kwargs.get("filters"))
+        filters = normalize_filters(kwargs.get("filters"))
         top_k = kwargs.get("top_k", 5)
         if not query and not filters:
             raise ValueError("query or filters is required")
@@ -144,7 +141,7 @@ class FindDocumentsTool(BaseTool):
                 "last_updated": str(document.get("last_updated", "")),
                 "source_url": str(document.get("source_url", "")),
             }
-            if not _matches_filters(metadata, filters):
+            if not matches_filters(metadata, filters):
                 continue
             content = content_matches.get(metadata["doc_id"], {"score": 0.0, "summary": ""})
             exact_id = bool(query and normalized_query == metadata["doc_id"].casefold())
@@ -165,7 +162,8 @@ class FindDocumentsTool(BaseTool):
             row["title"].casefold(),
             row["doc_id"],
         ))
-        return {"documents": rows[:top_k], "result_count": min(len(rows), top_k)}
+        selected = rows[:top_k]
+        return {"documents": selected, "result_count": len(selected)}
 
 
 class GetDocumentTool(BaseTool):
@@ -263,8 +261,7 @@ def _filter_schema() -> Dict[str, Any]:
             "space": {"type": "string"},
             "doc_type": {
                 "type": "string",
-                "enum": sorted(SUPPORTED_DOC_TYPES),
-                "description": "File extension only; not a content category.",
+                "description": "Normalized document type or file extension.",
             },
         },
         "additionalProperties": False,

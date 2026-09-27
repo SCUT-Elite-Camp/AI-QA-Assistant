@@ -94,45 +94,68 @@ class StructuredSearchTool(BaseTool):
         return self.rows
 
 
-class PersonalWikiEvidenceTool(BaseTool):
+class FindDocumentsToolStub(BaseTool):
     @property
     def name(self) -> str:
-        return "wiki_search_evidence"
+        return "find_documents"
 
     @property
     def description(self) -> str:
-        return "Search Evidence from Wiki source documents."
+        return "Find documents."
 
     @property
     def parameters(self) -> dict[str, Any]:
         return {
             "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "page_id": {"type": "string"},
-                "source_scope": {"type": "string", "enum": ["personal", "enterprise"]},
-                "mode": {"type": "string"},
-            },
-            "required": ["query", "page_id", "source_scope"],
+            "properties": {"query": {"type": "string"}},
             "additionalProperties": False,
         }
 
-    def execute(self, **kwargs: Any) -> dict[str, Any]:
+    def execute(self, **kwargs: Any) -> Any:
         return {
-            "citation_authority": True,
-            "items": [{
-                "attachment_id": "ver-1",
-                "evidence_id": "ev-1",
-                "content": "Agent runtime uses bounded tool execution.",
-                "score": 0.88,
-                "filename": "architecture.md",
-                "locator": {"section_path": ["Architecture", "Runtime"]},
-                "matched_section_ids": ["sec-1"],
-                "knowledge_base_id": "kb-personal",
-                "document_id": "doc-personal",
-                "version_id": "ver-1",
-                "source_scope": "personal",
-            }],
+            "documents": [
+                {
+                    "doc_id": "doc-1",
+                    "title": "Policy",
+                    "source_url": "https://example.test/doc-1",
+                    "match_summary": "Policy document identity.",
+                    "score": 0.75,
+                }
+            ],
+            "result_count": 1,
+        }
+
+
+class GetDocumentToolStub(BaseTool):
+    @property
+    def name(self) -> str:
+        return "get_document"
+
+    @property
+    def description(self) -> str:
+        return "Read one document."
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {"doc_id": {"type": "string"}},
+            "required": ["doc_id"],
+            "additionalProperties": False,
+        }
+
+    def execute(self, **kwargs: Any) -> Any:
+        return {
+            "document": {
+                "doc_id": kwargs["doc_id"],
+                "title": "Policy",
+                "source_url": "https://example.test/doc-1",
+            },
+            "chunks": [
+                {"chunk_id": "chunk-2", "index": 2, "text": "Second page."}
+            ],
+            "has_more": False,
+            "next_offset": None,
         }
 
 
@@ -288,29 +311,36 @@ def test_invalid_search_row_returns_invalid_tool_result() -> None:
     assert result.evidence == []
 
 
-def test_personal_wiki_result_becomes_authoritative_evidence() -> None:
-    result = _executor(PersonalWikiEvidenceTool()).execute(
-        tool_call_id="call-personal-wiki",
-        tool_name="wiki_search_evidence",
-        arguments={
-            "query": "Agent runtime",
-            "page_id": "wiki-page-1",
-            "source_scope": "personal",
-            "mode": "bm25",
-        },
-        trace_id="trace-personal-scoped",
+def test_find_documents_is_converted_to_identity_evidence() -> None:
+    result = _executor(FindDocumentsToolStub()).execute(
+        tool_call_id="call-find",
+        tool_name="find_documents",
+        arguments={"query": "policy"},
+        trace_id="trace-find",
         retrieval_attempt=2,
     )
 
     assert result.success is True
-    assert len(result.evidence) == 1
-    evidence = result.evidence[0]
-    assert evidence.doc_id == "doc-personal"
-    assert evidence.chunk_id == "ev-1"
-    assert evidence.evidence_id == "ev-1"
-    assert evidence.source_scope == "personal"
-    assert evidence.source_type == "personal"
-    assert evidence.locator == {"section_path": ["Architecture", "Runtime"]}
+    assert result.data["result_count"] == 1
+    assert result.evidence[0].doc_id == "doc-1"
+    assert result.evidence[0].chunk_id == "doc-1::document"
+    assert result.evidence[0].retrieval_mode == "document"
+    assert result.evidence[0].retrieval_attempt == 2
+
+
+def test_get_document_chunks_are_converted_to_evidence() -> None:
+    result = _executor(GetDocumentToolStub()).execute(
+        tool_call_id="call-get",
+        tool_name="get_document",
+        arguments={"doc_id": "doc-1"},
+        trace_id="trace-get",
+    )
+
+    assert result.success is True
+    assert result.evidence[0].doc_id == "doc-1"
+    assert result.evidence[0].chunk_id == "chunk-2"
+    assert result.evidence[0].chunk_index == 2
+    assert result.evidence[0].content == "Second page."
 
 
 def test_execution_models_reject_shared_or_invalid_state() -> None:

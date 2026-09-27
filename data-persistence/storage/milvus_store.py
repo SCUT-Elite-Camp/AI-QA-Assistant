@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 from pymilvus import Collection, CollectionSchema, DataType, FieldSchema, connections, utility
 
@@ -50,7 +50,7 @@ class MilvusStore:
     def init_collection(
         self,
         collection_name: str | None = None,
-        dim: int = 1024,
+        dim: int = 384,
     ) -> Collection:
         self.connect()
         collection_name = collection_name or self.collection_name
@@ -106,7 +106,7 @@ class MilvusStore:
 
         # 动态检测向量维度
         dim = len(embeddings[0])
-        self.init_collection(collection_name, dim=dim)
+        collection = self.init_collection(collection_name, dim=dim)
             
         if source_urls is None:
             source_urls = [""] * len(embeddings)
@@ -117,34 +117,35 @@ class MilvusStore:
         if doc_types is None:
             doc_types = [""] * len(embeddings)
 
+        columns = {
+            "embedding": embeddings,
+            "chunk_id": chunk_ids,
+            "chunk_text": chunk_texts,
+            "doc_id": doc_ids,
+            "chunk_index": chunk_indices,
+            "source_url": [str(value or "")[:512] for value in source_urls],
+            "title": [str(value or "")[:512] for value in titles],
+            "space": [str(value or "")[:256] for value in spaces],
+            "doc_type": [
+                self._normalize_doc_type(value)[:64] for value in doc_types
+            ],
+        }
         expected = len(embeddings)
-        columns = (
-            chunk_ids,
-            chunk_texts,
-            doc_ids,
-            chunk_indices,
-            source_urls,
-            titles,
-            spaces,
-            doc_types,
-        )
-        if any(len(column) != expected for column in columns):
+        if any(len(column) != expected for column in columns.values()):
             raise ValueError("all Milvus insert columns must have equal lengths")
 
-        data = [
-            embeddings,      # float 向量列表
-            chunk_ids,       # 全局分块ID 列表
-            chunk_texts,     # 文本列表
-            doc_ids,         # 文档 ID 列表
-            chunk_indices,   # 分块序号列表
-            [str(value or "")[:512] for value in source_urls],
-            [str(value or "")[:512] for value in titles],
-            [str(value or "")[:256] for value in spaces],
-            [
-                str(value or "").removeprefix(".").lower()[:64]
-                for value in doc_types
-            ],
+        writable_fields = [
+            field.name
+            for field in collection.schema.fields
+            if not (getattr(field, "is_primary", False) and getattr(field, "auto_id", False))
         ]
+        unsupported = set(writable_fields) - set(columns)
+        if unsupported:
+            raise ValueError(
+                "Milvus collection has unsupported required fields: "
+                + ", ".join(sorted(unsupported))
+            )
+        data = [columns[name] for name in writable_fields]
         
         insert_result = self.collection.insert(data)
         self.collection.flush()
@@ -162,30 +163,28 @@ class MilvusStore:
         self.connect()
   
         dim = len(query_vector)
-        self.init_collection(collection_name, dim=dim)
-            
+        collection = self.init_collection(collection_name, dim=dim)
+
         combined_filters = dict(filters or {})
-        if (
-            doc_ids_filter
-            and "doc_id" not in combined_filters
-            and "doc_ids" not in combined_filters
-        ):
-            combined_filters["doc_ids"] = doc_ids_filter
+        if doc_ids_filter is not None:
+            alias = "doc_id" if "doc_ids" in combined_filters else "doc_ids"
+            combined_filters[alias] = doc_ids_filter
         normalized_filters = normalize_filters(combined_filters)
-        available_fields = self._field_names(self.collection)
+        if normalized_filters.get("doc_ids") == []:
+            return []
+        available_fields = self._field_names(collection)
         required_fields = set(normalized_filters) - {"doc_ids", "chunk_ids"}
-        if normalized_filters.get("doc_ids"):
+        if "doc_ids" in normalized_filters:
             required_fields.add("doc_id")
         if normalized_filters.get("chunk_ids"):
             required_fields.add("chunk_id")
         missing_fields = required_fields - available_fields
         if missing_fields:
             raise ValueError(
-                "Milvus collection does not support filters: "
+                "Milvus collection does not support filters; rebuild it with fields: "
                 + ", ".join(sorted(missing_fields))
             )
         expr = build_milvus_filter_expression(normalized_filters)
-
         output_fields = [
             field
             for field in (
@@ -236,3 +235,10 @@ class MilvusStore:
         actual = int(embedding_field.params.get("dim", 0))
         if actual:
             validate_embedding_dimension(actual, expected)
+
+    @staticmethod
+    def _normalize_doc_type(value) -> str:
+        candidate = str(value or "").strip().lower()
+        if "/" in candidate:
+            candidate = candidate.rsplit("/", 1)[-1]
+        return candidate.removeprefix(".")

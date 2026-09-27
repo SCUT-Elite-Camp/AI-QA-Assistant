@@ -24,6 +24,7 @@ import DocumentModal from '../../components/chat/DocumentModal.vue'
 import SoulModal from '../../components/chat/SoulModal.vue'
 import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
+import AttachmentTray from '../../components/chat/AttachmentTray.vue'
 import FactProposalCard from '../../components/chat/memory/FactProposalCard.vue'
 import SessionFactPanel from '../../components/chat/memory/SessionFactPanel.vue'
 import QuickNavDial from '../../components/chat/QuickNavDial.vue'
@@ -192,7 +193,6 @@ const deepResearchMode = ref(chatExplorationMode(
   (latestUserMessage as any)?.metadata,
   (latestUserMessage as any)?.parts,
 ) === 'force')
-
 const plusMenuItems = computed(() => [[
   {
     label: '上传附件 / 图片',
@@ -694,7 +694,6 @@ onBeforeUnmount(() => {
                     <UIcon name="i-lucide-x" class="w-3 h-3" />
                   </button>
                 </span>
-
                 <!-- Deep Research Indicator Badge -->
                 <span
                   v-if="deepResearchMode"
@@ -884,7 +883,6 @@ onBeforeUnmount(() => {
                     <UIcon name="i-lucide-x" class="w-3 h-3" />
                   </button>
                 </span>
-
                 <!-- Deep Research Indicator Badge -->
                 <span
                   v-if="deepResearchMode"

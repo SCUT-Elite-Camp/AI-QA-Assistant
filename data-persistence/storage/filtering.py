@@ -1,7 +1,8 @@
-"""Validation and backend serialization for supported retrieval filters."""
+"""Validation and matching for the public retrieval-filter contract."""
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 import json
 from typing import Any
 
@@ -10,7 +11,12 @@ FILTER_KEYS = frozenset({"doc_id", "doc_ids", "chunk_ids", "space", "doc_type"})
 
 
 def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
-    """Validate and canonicalize the public retrieval filter contract."""
+    """Validate filters and return one canonical, fail-closed representation.
+
+    ``doc_id`` and ``doc_ids`` are aliases. When both are supplied, their
+    intersection is used so a narrower caller constraint cannot widen an
+    authorization allowlist. An explicitly empty allowlist remains empty.
+    """
     if filters is None:
         return {}
     if not isinstance(filters, dict):
@@ -21,27 +27,17 @@ def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
         raise ValueError(f"unsupported filter keys: {', '.join(sorted(unknown))}")
 
     normalized: dict[str, Any] = {}
-    raw_ids = filters.get("doc_ids")
-    if raw_ids is None and filters.get("doc_id") is not None:
-        raw_ids = [filters["doc_id"]]
-    if raw_ids is not None:
-        if isinstance(raw_ids, str):
-            raw_ids = [raw_ids]
-        if not isinstance(raw_ids, (list, tuple, set)):
-            raise ValueError("doc_ids must be a string or a list of strings")
-        doc_ids: list[str] = []
-        seen: set[str] = set()
-        for value in raw_ids:
-            if not isinstance(value, str) or not value.strip():
-                raise ValueError("every doc_id must be a non-empty string")
-            candidate = value.strip()
-            if len(candidate) > 128:
-                raise ValueError("doc_id must not exceed 128 characters")
-            if candidate not in seen:
-                seen.add(candidate)
-                doc_ids.append(candidate)
-        if doc_ids:
-            normalized["doc_ids"] = doc_ids
+    doc_id_sets: list[list[str]] = []
+    for key in ("doc_id", "doc_ids"):
+        if key in filters:
+            doc_id_sets.append(_normalize_doc_ids(filters[key], key))
+
+    if doc_id_sets:
+        selected = doc_id_sets[0]
+        for candidates in doc_id_sets[1:]:
+            allowed = set(candidates)
+            selected = [value for value in selected if value in allowed]
+        normalized["doc_ids"] = selected
 
     raw_chunk_ids = filters.get("chunk_ids")
     if raw_chunk_ids is not None:
@@ -62,22 +58,23 @@ def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
             normalized["chunk_ids"] = chunk_ids
 
     for key, max_length in (("space", 256), ("doc_type", 64)):
-        value = filters.get(key)
-        if value is None:
+        if key not in filters:
             continue
+        value = filters[key]
         if not isinstance(value, str) or not value.strip():
             raise ValueError(f"{key} must be a non-empty string")
         candidate = value.strip()
         if key == "doc_type":
-            candidate = candidate.lower().rsplit("/", 1)[-1].removeprefix(".")
+            candidate = _normalize_doc_type(candidate)
         if len(candidate) > max_length:
             raise ValueError(f"{key} must not exceed {max_length} characters")
         normalized[key] = candidate
+
     return normalized
 
 
 def matches_filters(item: dict[str, Any], filters: dict[str, Any] | None) -> bool:
-    """Match normalized filters against a chunk or document metadata row."""
+    """Return whether a metadata row satisfies normalized retrieval filters."""
     normalized = normalize_filters(filters)
     if not normalized:
         return True
@@ -90,17 +87,17 @@ def matches_filters(item: dict[str, Any], filters: dict[str, Any] | None) -> boo
     if "space" in normalized and item.get("space") != normalized["space"]:
         return False
     if "doc_type" in normalized:
-        actual = str(item.get("doc_type", "")).removeprefix(".").lower()
+        actual = _normalize_doc_type(str(item.get("doc_type", "")))
         if actual != normalized["doc_type"]:
             return False
     return True
 
 
 def build_milvus_filter_expression(filters: dict[str, Any] | None) -> str | None:
-    """Serialize normalized filters without interpolating raw expression fragments."""
+    """Serialize validated filters without accepting raw Milvus expressions."""
     normalized = normalize_filters(filters)
     clauses: list[str] = []
-    if normalized.get("doc_ids"):
+    if "doc_ids" in normalized:
         values = ", ".join(
             json.dumps(value, ensure_ascii=False)
             for value in normalized["doc_ids"]
@@ -120,8 +117,37 @@ def build_milvus_filter_expression(filters: dict[str, Any] | None) -> str | None
 
 
 def validate_embedding_dimension(actual: int, expected: int) -> None:
-    """Fail before search when an index was built with a different model dimension."""
+    """Reject an existing collection built for another embedding dimension."""
     if int(actual) != int(expected):
         raise ValueError(
             f"Milvus embedding dimension mismatch: expected {expected}, got {actual}"
         )
+
+
+def _normalize_doc_ids(value: Any, key: str) -> list[str]:
+    if isinstance(value, str):
+        values: Iterable[Any] = [value]
+    elif isinstance(value, (list, tuple, set)):
+        values = value
+    else:
+        raise ValueError(f"{key} must be a string or a list of strings")
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw_value in values:
+        if not isinstance(raw_value, str) or not raw_value.strip():
+            raise ValueError("every doc_id must be a non-empty string")
+        candidate = raw_value.strip()
+        if len(candidate) > 128:
+            raise ValueError("doc_id must not exceed 128 characters")
+        if candidate not in seen:
+            seen.add(candidate)
+            normalized.append(candidate)
+    return normalized
+
+
+def _normalize_doc_type(value: str) -> str:
+    candidate = value.strip().lower()
+    if "/" in candidate:
+        candidate = candidate.rsplit("/", 1)[-1]
+    return candidate.removeprefix(".")

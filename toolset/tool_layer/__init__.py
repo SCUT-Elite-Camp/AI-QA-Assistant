@@ -1,8 +1,9 @@
 from .search_tool import RetrievalError, RetrievalParameterError, SearchTool
-from .document_tools import FindDocumentsTool, GetDocumentTool
-from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
+from .document_tools import DocumentRepository, FindDocumentsTool, GetDocumentTool
 from .search_library_tool import SearchLibraryTool
+from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
 from .base_tool import BaseTool
+from .navigation_tools import BrowseDocumentOutlineTool, SearchEvidenceInScopeTool
 from .wiki_tool import (
     WikiReadPageTool,
     WikiReadSourcesTool,
@@ -16,12 +17,15 @@ __all__ = [
     "RetrievalError",
     "RetrievalParameterError",
     "SearchTool",
+    "DocumentRepository",
     "FindDocumentsTool",
     "GetDocumentTool",
-    "SearchAttachmentsTool",
     "SearchLibraryTool",
+    "SearchAttachmentsTool",
     "InspectAttachmentTool",
     "BaseTool",
+    "BrowseDocumentOutlineTool",
+    "SearchEvidenceInScopeTool",
     "WikiSearchTool",
     "WikiReadPageTool",
     "WikiReadSourcesTool",

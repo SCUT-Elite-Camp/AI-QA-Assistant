@@ -1,6 +1,6 @@
 from agent.config.settings import settings
 from agent.orchestration.orchestrator import AgentOrchestrator
-from agent.schemas.chat import ChatRequest, PersonalLibraryContext
+from agent.schemas.chat import ChatRequest, InternalChatRequest, PersonalLibraryContext
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan, SourceIntent, SourceKind
 
@@ -26,7 +26,10 @@ def test_wiki_tools_require_an_authorized_source_scope(monkeypatch) -> None:
 
 
 def test_navigation_scopes_follow_effective_source_and_request_context() -> None:
-    request = ChatRequest(
+    # The personal-library scope is populated only by the trusted internal
+    # endpoint.  Construct that already-validated state directly so this unit
+    # test remains focused on scope derivation rather than endpoint validation.
+    request = InternalChatRequest.model_construct(
         query=_plan().original_query,
         personal_library_context=PersonalLibraryContext(
             owner_user_id="user-1",

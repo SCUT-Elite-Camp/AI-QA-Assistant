@@ -47,4 +47,8 @@ ALTER TABLE `chats` ADD `parent_chat_id` text;--> statement-breakpoint
 ALTER TABLE `chats` ADD `parent_message_id` text;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `chats_topic_id_idx` ON `chats` (`topic_id`);--> statement-breakpoint
 ALTER TABLE `messages` ADD `is_favorite` integer DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE `messages` ADD `suggestion_text` text;
+ALTER TABLE `messages` ADD `suggestion_text` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `role` text DEFAULT 'user' NOT NULL;--> statement-breakpoint
+ALTER TABLE `users` ADD `sso_id` text;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `users_sso_id_idx` ON `users` (`sso_id`);--> statement-breakpoint
+ALTER TABLE `users` ADD `disabled` integer DEFAULT false NOT NULL;

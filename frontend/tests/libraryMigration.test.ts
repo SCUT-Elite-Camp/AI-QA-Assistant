@@ -11,7 +11,7 @@ describe('library version order migration', () => {
     await client.execute('CREATE TABLE document_versions (id TEXT PRIMARY KEY, document_id TEXT NOT NULL, created_at INTEGER NOT NULL)')
     await client.execute("INSERT INTO library_documents(id,active_version_id) VALUES('doc-a','ver-2')")
     await client.execute("INSERT INTO document_versions VALUES('ver-2','doc-a',20),('ver-1','doc-a',10)")
-    const migrationPath = fileURLToPath(new URL('../server/database/migrations/0005_library_version_order.sql', import.meta.url))
+    const migrationPath = fileURLToPath(new URL('../server/database/migrations/0011_library_version_order.sql', import.meta.url))
     const statements = readFileSync(migrationPath, 'utf8').split('--> statement-breakpoint').map(item => item.trim()).filter(Boolean)
     for (const statement of statements) await client.execute(statement)
 
@@ -30,7 +30,7 @@ describe('library version order migration', () => {
     await client.execute('CREATE TABLE library_documents (id TEXT PRIMARY KEY, active_version_id TEXT)')
     await client.execute('CREATE TABLE document_versions (id TEXT PRIMARY KEY, document_id TEXT NOT NULL, created_at INTEGER NOT NULL)')
     await client.execute("INSERT INTO library_documents(id,active_version_id) VALUES('doc-a',NULL)")
-    const migrationPath = fileURLToPath(new URL('../server/database/migrations/0005_library_version_order.sql', import.meta.url))
+    const migrationPath = fileURLToPath(new URL('../server/database/migrations/0011_library_version_order.sql', import.meta.url))
     const statements = readFileSync(migrationPath, 'utf8').split('--> statement-breakpoint').map(item => item.trim()).filter(Boolean)
     for (const statement of statements) await client.execute(statement)
     await client.execute("INSERT INTO document_versions(id,document_id,created_at,version_number) VALUES('ver-1','doc-a',1,1)")

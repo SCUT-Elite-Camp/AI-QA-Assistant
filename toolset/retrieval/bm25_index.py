@@ -11,10 +11,6 @@ from storage.document_store import DOCS_DIR
 from storage.filtering import matches_filters, normalize_filters
 
 
-INDEX_FORMAT_VERSION = 2
-DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
-
-
 class BM25Index:
     """Build, query, and persist the lexical chunk index.
 
@@ -31,10 +27,6 @@ class BM25Index:
         self._bm25: BM25Okapi | None = None
         self._chunk_meta: list[dict] = []
         self._tokenized_corpus: list[list[str]] = []
-        self._embedding_model_id = os.getenv(
-            "LOCAL_EMBEDDING_MODEL_NAME",
-            DEFAULT_EMBEDDING_MODEL,
-        )
 
     def build_from_documents(self, docs_dir: str | None = None):
         """Build BM25 from all processed document chunks."""
@@ -105,6 +97,7 @@ class BM25Index:
         scores = self._bm25.get_scores(tokens)
 
         normalized_filters = normalize_filters(filters)
+        self._require_filter_metadata(normalized_filters)
         indexed_scores = [
             (index, score)
             for index, score in enumerate(scores)
@@ -120,13 +113,22 @@ class BM25Index:
             results.append(meta)
         return results
 
+    def _require_filter_metadata(self, filters: dict) -> None:
+        metadata_keys = set(filters).intersection({"space", "doc_type"})
+        if not metadata_keys:
+            return
+        if any(
+            any(key not in row for key in metadata_keys)
+            for row in self._chunk_meta
+        ):
+            raise RuntimeError(
+                "BM25 index is missing filter metadata; rebuild the BM25 index"
+            )
+
     @staticmethod
     def default_index_path() -> str:
         """Return the default persisted-index path."""
-        return os.getenv(
-            "BM25_INDEX_PATH",
-            os.path.join(os.path.dirname(DOCS_DIR), "bm25_index.pkl"),
-        )
+        return os.path.join(os.path.dirname(DOCS_DIR), "bm25_index.pkl")
 
     def save(self, path: str):
         """Persist the tokenized index with its analyzer identity."""
@@ -134,17 +136,17 @@ class BM25Index:
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
         data = {
-            "format_version": INDEX_FORMAT_VERSION,
             "analyzer_id": self._analyzer.analyzer_id,
-            "embedding_model_id": self._embedding_model_id,
             "tokenized_corpus": self._tokenized_corpus,
             "chunk_meta": self._chunk_meta,
         }
         temporary = None
         try:
-            with tempfile.NamedTemporaryFile(mode="wb", dir=parent_dir or ".", delete=False) as f:
-                temporary = f.name
-                pickle.dump(data, f)
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=parent_dir or ".", delete=False
+            ) as handle:
+                temporary = handle.name
+                pickle.dump(data, handle)
             os.replace(temporary, path)
         finally:
             if temporary and os.path.exists(temporary):
@@ -162,16 +164,8 @@ class BM25Index:
                 f"got {stored_analyzer_id or 'legacy_jieba_or_unknown'}; "
                 "rebuild the BM25 index"
             )
-        stored_format = int(data.get("format_version", 1))
-        if stored_format not in {1, INDEX_FORMAT_VERSION}:
-            raise ValueError(
-                f"unsupported BM25 index format {stored_format}; rebuild the BM25 index"
-            )
         self._tokenized_corpus = data["tokenized_corpus"]
         self._chunk_meta = data["chunk_meta"]
-        self._embedding_model_id = str(
-            data.get("embedding_model_id") or "legacy_or_unknown"
-        )
         if self._tokenized_corpus:
             self._bm25 = BM25Okapi(self._tokenized_corpus)
         else:
@@ -192,10 +186,6 @@ class BM25Index:
     @property
     def document_count(self) -> int:
         return len({str(row.get("doc_id", "")) for row in self._chunk_meta})
-
-    @property
-    def embedding_model_id(self) -> str:
-        return self._embedding_model_id
 
     @property
     def analyzer_id(self) -> str:

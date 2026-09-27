@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -8,12 +7,20 @@ import fitz
 import pytest
 from PIL import Image
 
+import base64
 from attachment_service.config import AttachmentSettings
 from attachment_service.vision import LocalVisionBackend
-from attachment_service.vision_input import prepare_vision_image
+
+
+@pytest.fixture(autouse=True)
+def _set_test_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", "test-secret")
+    monkeypatch.setenv("ATTACHMENT_ENCRYPTION_KEY", base64.urlsafe_b64encode(b"k" * 32).decode())
 
 
 def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path) -> None:
+    from attachment_service.app import _prepare_vision_image
+
     source = tmp_path / "source.pdf"
     document = fitz.open()
     document.new_page(width=120, height=80)
@@ -23,7 +30,7 @@ def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path
     document.close()
 
     output = tmp_path / "page.png"
-    locator = prepare_vision_image(source, ".pdf", 2, [0.0, 0.0, 0.5, 1.0], output)
+    locator = _prepare_vision_image(source, ".pdf", 2, [0.0, 0.0, 0.5, 1.0], output)
     with Image.open(output) as image:
         assert image.width == 200
         assert image.height == 200
@@ -31,12 +38,14 @@ def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path
 
 
 def test_prepare_vision_image_rejects_invalid_locator(tmp_path: Path) -> None:
+    from attachment_service.app import _prepare_vision_image
+
     source = tmp_path / "source.png"
     Image.new("RGB", (20, 20), "white").save(source)
     with pytest.raises(ValueError, match="invalid_bbox"):
-        prepare_vision_image(source, ".png", None, [0.8, 0.1, 0.2, 0.9], tmp_path / "out.png")
+        _prepare_vision_image(source, ".png", None, [0.8, 0.1, 0.2, 0.9], tmp_path / "out.png")
     with pytest.raises(ValueError, match="page_out_of_range"):
-        prepare_vision_image(source, ".png", 2, None, tmp_path / "out.png")
+        _prepare_vision_image(source, ".png", 2, None, tmp_path / "out.png")
 
 
 def test_vision_model_load_is_local_quantized_and_does_not_run_remote_code(
@@ -117,14 +126,15 @@ def test_isolated_vision_worker_failure_keeps_parent_backend_available(
     backend = LocalVisionBackend(settings)
     image = tmp_path / "image.png"
     Image.new("RGB", (20, 20), "white").save(image)
-    original_run = subprocess.run
+
+    real_run = sys.modules["subprocess"].run
 
     def crashed_worker(command, **kwargs):
-        if not isinstance(command, (list, tuple)):
-            return original_run(command, **kwargs)
-        result_path = Path(command[-1])
-        result_path.write_text(json.dumps({"error": "vision_unavailable"}), encoding="utf-8")
-        return SimpleNamespace(returncode=1)
+        if isinstance(command, (list, tuple)) and len(command) > 0 and str(command[-1]).endswith(".json"):
+            result_path = Path(command[-1])
+            result_path.write_text(json.dumps({"error": "vision_unavailable"}), encoding="utf-8")
+            return SimpleNamespace(returncode=1, stdout="", stderr="")
+        return real_run(command, **kwargs)
 
     monkeypatch.setattr("attachment_service.vision.subprocess.run", crashed_worker)
 

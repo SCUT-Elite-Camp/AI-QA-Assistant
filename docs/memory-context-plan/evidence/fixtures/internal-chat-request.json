@@ -1,0 +1,41 @@
+{
+  "query": "What was the agreed presentation style?",
+  "session_id": "chat-fixture-1",
+  "top_k": 5,
+  "stream": false,
+  "retrieval_mode": "hybrid",
+  "memory_context": {
+    "actor": {
+      "user_id": "user-fixture-1",
+      "authenticated": true
+    },
+    "chat_id": "chat-fixture-1",
+    "revision": 1,
+    "current_message_id": "message-fixture-3",
+    "current_sequence": 3,
+    "snapshot": {
+      "id": "snapshot-fixture-1",
+      "version": 1,
+      "revision": 1,
+      "covered_to_sequence": 1,
+      "summary": "The user is preparing a project presentation."
+    },
+    "facts": [
+      {
+        "id": "fact-fixture-1",
+        "category": "PREFERENCE",
+        "value": "Use concise Chinese responses.",
+        "expires_at": null
+      }
+    ],
+    "tail": [
+      {
+        "id": "message-fixture-2",
+        "sequence": 2,
+        "revision": 1,
+        "role": "assistant",
+        "content": "I will prepare a concise outline."
+      }
+    ]
+  }
+}

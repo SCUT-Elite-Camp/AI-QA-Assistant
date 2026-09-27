@@ -50,7 +50,13 @@ class AnswerFormatter:
                 chunk_id=result.chunk_id,
                 score=result.score,
                 snippet=result.chunk_text,
-                source_type=("attachment" if result.attachment_id else ("personal" if result.source_scope == "personal" else "knowledge")),
+                source_type=(
+                    "attachment"
+                    if result.attachment_id
+                    else "personal"
+                    if result.source_scope == "personal"
+                    else "knowledge"
+                ),
                 attachment_id=result.attachment_id,
                 evidence_id=result.evidence_id,
                 locator=result.locator,

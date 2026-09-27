@@ -30,6 +30,8 @@ vi.mock('nitro', () => ({
 }))
 
 vi.mock('nitro/h3', () => ({
+  getCookie: vi.fn(),
+  getHeader: vi.fn(),
   getValidatedRouterParams: mocks.getValidatedRouterParams,
   readValidatedBody: mocks.readValidatedBody
 }))
@@ -56,8 +58,17 @@ vi.mock('../../server/utils/chatAccess', () => ({
   requireOwnedChat: mocks.requireOwnedChat
 }))
 
+vi.mock('../../server/utils/attachmentAuth', () => ({
+  requireCsrf: vi.fn(),
+  requirePrincipal: vi.fn()
+}))
+
 vi.mock('../../server/utils/agentInternalClient', () => ({
   resetShortWindow: mocks.resetShortWindow
+}))
+
+vi.mock('../../server/utils/session', () => ({
+  useUserSession: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, id: 'session-1' })
 }))
 
 vi.mock('../../server/utils/memoryRepository', () => ({
@@ -89,8 +100,8 @@ async function loadChatDeletionHandler (): Promise<RouteHandler> {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.getValidatedRouterParams.mockResolvedValue({ id: 'chat-1' })
-  mocks.readValidatedBody.mockResolvedValue({ messageId: 'message-1', type: 'edit' })
+  mocks.getValidatedRouterParams.mockResolvedValue({ id: 'message-1' })
+  mocks.readValidatedBody.mockResolvedValue({ chatId: 'chat-1', messageId: 'message-1', type: 'edit' })
   mocks.requireOwnedChat.mockResolvedValue({ actor: { userId: 'user-1' } })
   mocks.resetShortWindow.mockResolvedValue({ cleared: true })
 })
@@ -99,7 +110,12 @@ describe('history mutation short-window reset boundary', () => {
   it('calls the private reset only after an edit transaction commits, and a reset failure leaves the response successful', async () => {
     const commit = deferred<{ historyRevision: number }>()
     mocks.truncateHistoryAndInvalidateMemory.mockReturnValue(commit.promise)
-    mocks.useDrizzle.mockReturnValue({})
+    mocks.useDrizzle.mockReturnValue({
+      query: {
+        messages: { findMany: vi.fn().mockResolvedValue([]) },
+        messageAttachments: { findMany: vi.fn().mockResolvedValue([]) }
+      }
+    })
     mocks.resetShortWindow.mockRejectedValue(new Error('agent temporarily unavailable'))
     const handler = await loadMessageMutationHandler()
 
@@ -109,11 +125,10 @@ describe('history mutation short-window reset boundary', () => {
     commit.resolve({ historyRevision: 2 })
 
     await expect(response).resolves.toEqual({ success: true, historyRevision: 2 })
-    expect(mocks.truncateHistoryAndInvalidateMemory).toHaveBeenCalledWith({}, {
+    expect(mocks.truncateHistoryAndInvalidateMemory).toHaveBeenCalledWith(expect.anything(), {
       actorUserId: 'user-1',
       chatId: 'chat-1',
-      messageId: 'message-1',
-      type: 'edit'
+      firstDeletedMessageId: 'message-1'
     })
     expect(mocks.resetShortWindow).toHaveBeenCalledOnce()
     expect(mocks.resetShortWindow).toHaveBeenCalledWith('chat-1')
@@ -121,7 +136,12 @@ describe('history mutation short-window reset boundary', () => {
 
   it('does not reset the short window when the edit transaction fails', async () => {
     mocks.truncateHistoryAndInvalidateMemory.mockRejectedValue(new Error('transaction rolled back'))
-    mocks.useDrizzle.mockReturnValue({})
+    mocks.useDrizzle.mockReturnValue({
+      query: {
+        messages: { findMany: vi.fn().mockResolvedValue([]) },
+        messageAttachments: { findMany: vi.fn().mockResolvedValue([]) }
+      }
+    })
     const handler = await loadMessageMutationHandler()
 
     await expect(handler({})).rejects.toThrow('transaction rolled back')
@@ -129,10 +149,15 @@ describe('history mutation short-window reset boundary', () => {
   })
 
   it('calls the private reset only after chat deletion commits, and a reset failure leaves the deletion response intact', async () => {
+    mocks.getValidatedRouterParams.mockResolvedValue({ id: 'chat-1' })
     const commit = deferred<Array<{ id: string }>>()
     const returning = vi.fn().mockReturnValue(commit.promise)
     const where = vi.fn().mockReturnValue({ returning })
     mocks.useDrizzle.mockReturnValue({
+      query: {
+        messages: { findMany: vi.fn().mockResolvedValue([]) },
+        messageAttachments: { findMany: vi.fn().mockResolvedValue([]) }
+      },
       delete: mocks.delete.mockReturnValue({ where })
     })
     mocks.resetShortWindow.mockRejectedValue(new Error('agent temporarily unavailable'))
@@ -150,9 +175,14 @@ describe('history mutation short-window reset boundary', () => {
   })
 
   it('does not reset the short window when chat deletion fails', async () => {
+    mocks.getValidatedRouterParams.mockResolvedValue({ id: 'chat-1' })
     const returning = vi.fn().mockRejectedValue(new Error('delete rolled back'))
     const where = vi.fn().mockReturnValue({ returning })
     mocks.useDrizzle.mockReturnValue({
+      query: {
+        messages: { findMany: vi.fn().mockResolvedValue([]) },
+        messageAttachments: { findMany: vi.fn().mockResolvedValue([]) }
+      },
       delete: mocks.delete.mockReturnValue({ where })
     })
     const handler = await loadChatDeletionHandler()

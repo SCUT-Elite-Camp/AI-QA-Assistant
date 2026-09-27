@@ -44,6 +44,8 @@ export default defineHandler(async (event) => {
     throw err
   }
 
+  void resetShortWindow(chatId).catch(() => {})
+
   // Find all message IDs to delete to clean up attachments
   const allMessages = await db.query.messages.findMany({
     where: eq(tables.messages.chatId, chatId),
@@ -64,7 +66,6 @@ export default defineHandler(async (event) => {
     if (attachmentLinks.length) await cleanupOrphanedAttachments(attachmentLinks.map(link => link.attachmentId))
     agentFetch(`/api/chat/memory/${id}`, { method: 'DELETE' }).catch(() => {})
   }
-  void resetShortWindow(id).catch(() => {})
 
   return { success: true, historyRevision: result.historyRevision }
 })

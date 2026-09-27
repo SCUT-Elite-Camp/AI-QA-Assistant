@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import json
@@ -17,12 +19,14 @@ from pipeline.embedder import embed_texts
 from pipeline.structure import build_document_sections
 from pipeline.confluence_snapshot import deduplicate_confluence_paths
 from pipeline.rag_lifecycle import (
-    finish_retraction, mark_retraction_pending, pending_confluence_retractions,
+    finish_retraction,
+    mark_retraction_pending,
+    pending_confluence_retractions,
     withdrawn_confluence_documents,
 )
 from retrieval.bm25_index import BM25Index
+from retrieval.section_bm25_index import SectionBM25Index
 from storage.document_store import save_document
-from storage.milvus_store import MilvusStore
 from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 # 配置默认目录
@@ -77,6 +81,7 @@ def _index_document(
     overlap: int,
     evidence_milvus: MilvusStore,
     has_milvus: bool,
+    section_milvus: MilvusStore | None = None,
 ) -> bool:
     if doc.content_blocks:
         chunks = chunk_from_blocks(
@@ -93,10 +98,30 @@ def _index_document(
         return False
 
     chunk_texts = [chunk.text for chunk in chunks]
+    section_texts = [section.navigation_text for section in doc.sections if section.navigation_text]
     print(f"  → 正在生成 {len(chunk_texts)} 个 Evidence 向量")
     embeddings = embed_texts(chunk_texts)
+    section_embeddings = embed_texts(section_texts) if has_milvus and section_texts else []
 
     if has_milvus:
+        # Section and Evidence use different collections and ID namespaces.
+        assert section_milvus is not None
+        section_milvus.init_collection(dim=len(section_embeddings[0]))
+        section_milvus.collection.delete(expr=f'doc_id == "{doc.doc_id}"')
+        section_milvus.collection.flush()
+        section_rows = [section for section in doc.sections if section.navigation_text]
+        section_milvus.insert_chunks(
+            embeddings=section_embeddings,
+            chunk_ids=[section.id for section in section_rows],
+            chunk_texts=[section.navigation_text for section in section_rows],
+            doc_ids=[doc.doc_id] * len(section_rows),
+            chunk_indices=list(range(len(section_rows))),
+            source_urls=[doc.source_url] * len(section_rows),
+            titles=[section.title for section in section_rows],
+            spaces=[doc.space] * len(section_rows),
+            doc_types=["section"] * len(section_rows),
+            collection_name=section_milvus.collection_name,
+        )
         evidence_milvus.init_collection(dim=len(embeddings[0]))
         evidence_milvus.collection.delete(expr=f'doc_id == "{doc.doc_id}"')
         evidence_milvus.collection.flush()
@@ -115,7 +140,9 @@ def _index_document(
     # The active JSON projection is switched only after all enabled indexes succeed.
     save_document(doc.doc_id, doc.model_dump(mode="json"))
     print(f"  → JSON 元数据已保存至: data-persistence/data/documents/{doc.doc_id}.json")
-    if os.getenv("WIKI_INGEST_ENABLED", "false").strip().casefold() in {"1", "true", "yes"}:
+    if os.getenv("WIKI_INGEST_ENABLED", "false").strip().casefold() in {
+        "1", "true", "yes",
+    }:
         space_id = str(doc.metadata.get("space_id") or "").strip()
         if space_id:
             from pipeline.wiki.domain import WikiScope
@@ -124,12 +151,17 @@ def _index_document(
             from storage.wiki_store import WikiStore
 
             source = document_to_wiki_source(
-                doc, WikiScope(
+                doc,
+                WikiScope(
                     source_scope="enterprise",
-                    knowledge_base_id=os.getenv("ENTERPRISE_KNOWLEDGE_BASE_ID", "default"),
+                    knowledge_base_id=os.getenv(
+                        "ENTERPRISE_KNOWLEDGE_BASE_ID", "default"
+                    ),
                 ),
             )
-            WikiLifecycleCoordinator(WikiStore(resolve_wiki_db_path(PROJECT_ROOT))).document_ingested(source)
+            WikiLifecycleCoordinator(
+                WikiStore(resolve_wiki_db_path(PROJECT_ROOT))
+            ).document_ingested(source)
     return True
 
 def auto_process_raws(
@@ -151,11 +183,12 @@ def auto_process_raws(
     raw_files = _scan_folder(str(RAWS_DIR))
     retractions = pending_confluence_retractions(DOCS_DIR, RAWS_DIR / "confluence")
     withdrawn_ids = {
-        item.document_id for item in withdrawn_confluence_documents(DOCS_DIR, RAWS_DIR / "confluence")
+        item.document_id
+        for item in withdrawn_confluence_documents(DOCS_DIR, RAWS_DIR / "confluence")
     }
-    # A stale raw export must never reactivate a page missing from the complete snapshot.
     raw_files = [
-        path for path in raw_files
+        path
+        for path in raw_files
         if Document.generate_doc_id(os.path.abspath(path)) not in withdrawn_ids
     ]
     if not raw_files and not retractions:
@@ -175,10 +208,20 @@ def auto_process_raws(
         print(f"  - {f}")
         
     # 初始化 Milvus 连接并测试是否能够连接
+    from storage.milvus_store import MilvusStore
+
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
     has_milvus = False
+    section_milvus: MilvusStore | None = None
     try:
         milvus.connect()
+        section_collection = os.getenv("SECTION_MILVUS_COLLECTION", "document_sections_bgem3")
+        if section_collection.casefold() == milvus.collection_name.casefold():
+            raise RuntimeError("SECTION_MILVUS_COLLECTION must differ from Evidence collection")
+        section_milvus = MilvusStore(
+            host=milvus_host, port=milvus_port, collection_name=section_collection,
+        )
+        section_milvus.connect()
         has_milvus = True
         print(" [Milvus] 成功连接到 Milvus 向量库")
     except Exception as e:
@@ -190,10 +233,15 @@ def auto_process_raws(
     retracted = []
     for retraction in retractions:
         if not has_milvus:
-            print(f" [Warning] Milvus 不可用，文档 {retraction.document_id} 已隐藏并等待向量清理。")
+            print(
+                f" [Warning] Milvus 不可用，文档 {retraction.document_id} "
+                "已隐藏并等待向量清理。"
+            )
             continue
         try:
             milvus.delete_document_chunks(retraction.document_id)
+            if section_milvus is not None:
+                section_milvus.delete_document_chunks(retraction.document_id)
             retracted.append(retraction)
         except Exception as exc:
             print(f" [Error] 文档 {retraction.document_id} 的 Milvus 清理失败: {exc}")
@@ -206,7 +254,8 @@ def auto_process_raws(
             for doc in docs:
                 if _index_document(
                     doc, chunk_size=chunk_size, overlap=overlap,
-                    evidence_milvus=milvus, has_milvus=has_milvus,
+                    evidence_milvus=milvus, section_milvus=section_milvus,
+                    has_milvus=has_milvus,
                 ):
                     processed_count += 1
             
@@ -220,11 +269,18 @@ def auto_process_raws(
         bm25.build_from_documents()
         bm25_index_path = BM25Index.default_index_path()
         bm25.save(bm25_index_path)
+        print(f"  → BM25 索引已更新并保存至: {bm25_index_path}")
+        section_bm25 = SectionBM25Index()
+        section_bm25.build_from_documents(str(DOCS_DIR))
+        section_bm25.save(SectionBM25Index.default_index_path())
+        print("  → Section BM25 索引已更新")
         if has_milvus:
             for retraction in retracted:
                 finish_retraction(retraction)
-        print(f"  → BM25 索引已更新并保存至: {bm25_index_path}")
-        print(f"\n [Finish] 自动解析入库任务完成！成功入库 {processed_count} 个文档，完成 {len(retracted)} 个文档撤销。")
+        print(
+            f"\n [Finish] 自动解析入库任务完成！成功入库 {processed_count} 个文档，"
+            f"完成 {len(retracted)} 个文档撤销。"
+        )
     else:
         print("\n [Info] 未有任何新文档成功处理入库。")
 

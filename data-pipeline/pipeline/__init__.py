@@ -18,8 +18,3 @@ def embed_texts(*args: Any, **kwargs: Any):
 
 
 # process_folder remains available from pipeline.process.
-
-__all__ = [
-    "chunk_text",
-    "embed_texts",
-]

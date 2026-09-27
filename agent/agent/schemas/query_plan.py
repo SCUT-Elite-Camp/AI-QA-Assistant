@@ -1,6 +1,6 @@
 """Frozen public QueryPlan contract shared by CP2 Agent components."""
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
@@ -18,12 +18,9 @@ class QueryIntent(StrEnum):
 
 
 class SourceKind(StrEnum):
-    """Retrieval sources selected by planning, never authorization identities."""
-
-    PERSONAL_LIBRARY = "personal_library"
     ENTERPRISE_KB = "enterprise_kb"
+    PERSONAL_LIBRARY = "personal_library"
     CONVERSATION_ATTACHMENT = "conversation_attachment"
-    WEB = "web"
 
 
 class SourceIntentMode(StrEnum):
@@ -32,16 +29,13 @@ class SourceIntentMode(StrEnum):
 
 
 class SourceIntent(BaseModel):
+    """Retrieval-source choice only; authorization remains server supplied."""
+
     model_config = ConfigDict(extra="forbid")
 
     sources: list[SourceKind] = Field(default_factory=list)
     mode: SourceIntentMode = SourceIntentMode.INFERRED
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
-
-    @field_validator("sources")
-    @classmethod
-    def unique_sources(cls, values: list[SourceKind]) -> list[SourceKind]:
-        return list(dict.fromkeys(values))
 
 
 class QueryPlan(BaseModel):
@@ -65,6 +59,11 @@ class QueryPlan(BaseModel):
     sub_queries: list[str] = Field(default_factory=list)
     filters: dict[str, Any] = Field(default_factory=dict)
     source_intent: SourceIntent = Field(default_factory=SourceIntent)
+    navigation_mode: Literal["direct", "hierarchical", "hybrid"] = "direct"
+    scope: Literal["single_doc", "multi_doc", "kb"] = "kb"
+    needs_structure: bool = False
+    needs_knowledge: bool = False
+    needs_version_reasoning: bool = False
     _subquery_intent_hints: dict[str, QueryIntent] = PrivateAttr(default_factory=dict)
 
     @field_validator("original_query")

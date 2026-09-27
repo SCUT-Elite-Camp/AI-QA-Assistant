@@ -56,12 +56,11 @@ function controlledMime(file: File): string {
 }
 
 function statusText(item: TrayAttachment): string {
-  const image = item.mimeType.startsWith('image/')
   const labels: Record<string, string> = {
-    uploading: '正在上传',
-    scanning: '安全扫描中',
-    parsing: image ? '正在识别图片内容' : '正在解析内容',
-    ready: image ? '图片内容已识别' : '内容已解析',
+    uploading: '上传中',
+    scanning: '安全扫描',
+    parsing: '解析中',
+    ready: '就绪',
     needs_review: '识别结果需要确认',
     failed: '处理失败',
     quarantined: '文件未通过安全检查',

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useToast } from '@nuxt/ui/composables'
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
+import { useToast } from '@nuxt/ui/composables'
 import { useChats } from '../composables/useChats'
 import { useCsrf } from '../composables/useCsrf'
 import { useUserSession } from '../composables/useUserSession'
@@ -14,6 +14,14 @@ const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { user } = useUserSession()
 const input = ref('')
+const toast = useToast()
+const attachmentIds = ref<string[]>([])
+const acceptedNeedsReviewIds = ref<string[]>([])
+const attachmentTray = ref<InstanceType<typeof AttachmentTray> | null>(null)
+const useKnowledgeBase = ref(true)
+const deepResearchMode = ref(false)
+const loading = ref(false)
+const router = useRouter()
 
 function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -30,15 +38,6 @@ watch(currentWeightMode, (newMode) => {
     localStorage.setItem('preferred_weight_mode', newMode)
   }
 })
-
-const loading = ref(false)
-const router = useRouter()
-const toast = useToast()
-const attachmentIds = ref<string[]>([])
-const acceptedNeedsReviewIds = ref<string[]>([])
-const attachmentTray = ref<InstanceType<typeof AttachmentTray> | null>(null)
-const useKnowledgeBase = ref(true)
-
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -70,6 +69,7 @@ async function createChat(prompt: string) {
     await fetchChats()
     if (chat?.id) {
       input.value = ''
+      attachmentTray.value?.resetAfterSend()
       router.push(`/chat/${chat.id}?mode=${chosenMode}`)
     }
   } catch (e: unknown) {
@@ -103,8 +103,6 @@ const quickChats = [
   { label: 'How to optimize RAG retrieval?', icon: 'i-lucide-search' },
   { label: 'Explain the Transformer architecture', icon: 'i-lucide-brain' },
 ]
-
-const deepResearchMode = ref(false)
 
 const plusMenuItems = computed(() => [[
   {

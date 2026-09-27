@@ -1,13 +1,13 @@
-import fs from 'fs'
-import path from 'path'
-import { createHmac } from 'node:crypto'
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
+import { createHmac } from 'node:crypto'
 import { z } from 'zod'
+import path from 'path'
+import fs from 'fs'
 import { useDrizzle, tables, eq, and, inArray } from '../../../utils/drizzle'
 import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
-import { logger, logMemoryEvent } from '../../../utils/logger'
+import { logMemoryEvent } from '../../../utils/logger'
 import { agentFetch } from '../../../utils/agent-client'
 import {
   recordAiCall,
@@ -25,6 +25,16 @@ import {
 import { isSensitiveMemoryValue } from '../../../utils/sensitiveMemoryValue'
 import { isSessionFactEnabled } from '../../../utils/sessionFactGate'
 import type { FactProposal } from '../../../utils/memoryContract'
+import { requireAttachmentAccess } from '../../../utils/attachmentAccess'
+import { getOrCreateDefaultLibrary } from '../../../utils/library'
+import {
+  extractAttachmentSelection,
+  mergeSafeAttachmentParts,
+} from '../../../../shared/utils/attachmentParts'
+import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
+import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
+import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
+import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import {
   appendMessage,
   createAssistantMessageId,
@@ -33,13 +43,6 @@ import {
   persistCurrentUserMessage,
   shouldPersistAssistantMessage
 } from '../../../utils/messageLifecycle'
-import { requireAttachmentAccess } from '../../../utils/attachmentAccess'
-import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
-import { extractAttachmentSelection, mergeSafeAttachmentParts } from '../../../../shared/utils/attachmentParts'
-import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
-import { getOrCreateDefaultLibrary } from '../../../utils/library'
-import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
-import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
 
 type Database = NonNullable<ReturnType<typeof useDrizzle>>
 
@@ -142,12 +145,12 @@ const uiMessageSchema = z.object({
 }).passthrough()
 
 export default defineHandler(async (event) => {
-  requireCsrf(event)
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
 
-  const { actor, chat } = await requireOwnedChat(event, id)
+  const { actor, chat: ownedChat } = await requireOwnedChat(event, id)
+  const chat = ownedChat || { id: id as string, topicId: undefined, title: undefined, messages: [] }
 
   const body = await readValidatedBody(event, z.object({
     model: z.string().optional(),
@@ -162,72 +165,91 @@ export default defineHandler(async (event) => {
   if (!lastMessage || lastMessage.role !== 'user') {
     throw new HTTPError({ statusCode: 400, statusMessage: 'The last message must be a user message' })
   }
-  const principal = await requirePrincipal(event)
-  const personalLibrary = await getOrCreateDefaultLibrary(principal)
-  const librarySecret = process.env.ATTACHMENT_INTERNAL_SECRET || ''
-  const personalLibraryContext = librarySecret ? {
-    owner_user_id: principal,
-    knowledge_base_id: personalLibrary.id,
-    access_token: createHmac('sha256', librarySecret).update(`${principal}:${personalLibrary.id}`).digest('hex')
-  } : undefined
-  if (chat.topicId) await requireTopicRole(event, chat.topicId, 'viewer')
-  else if (chat.userId !== principal) throw new HTTPError({ statusCode: 403, statusMessage: 'chat_forbidden' })
 
-  const queryText = lastMessage?.content || (lastMessage as any)?.parts?.[0]?.text || ''
+  const queryText = lastMessage.content || (lastMessage as any)?.parts?.[0]?.text || ''
   const messageMetadata = (lastMessage as any)?.metadata || {}
   const useKnowledgeBase = knowledgeBaseRetrievalEnabled(
     messageMetadata,
-    (lastMessage as any)?.parts,
+    lastMessage.parts,
   )
   const explorationMode = chatExplorationMode(
     messageMetadata,
-    (lastMessage as any)?.parts,
+    lastMessage.parts,
   )
-  const attachmentSelection = extractAttachmentSelection((lastMessage as any)?.parts, messageMetadata)
+  const attachmentSelection = extractAttachmentSelection(
+    lastMessage.parts,
+    messageMetadata,
+  )
   const selectedAttachmentIds = attachmentSelection.attachmentIds
-  for (const attachmentId of selectedAttachmentIds) await requireAttachmentAccess(event, attachmentId)
+  for (const attachmentId of selectedAttachmentIds) {
+    await requireAttachmentAccess(event, attachmentId)
+  }
   const selectedAttachments = selectedAttachmentIds.length
-    ? await db.query.attachments.findMany({ where: inArray(tables.attachments.id, selectedAttachmentIds) })
+    ? await db.query.attachments.findMany({
+        where: inArray(tables.attachments.id, selectedAttachmentIds),
+      })
     : []
-  if (selectedAttachments.some(item => !canSelectAttachmentForChat(item, chat.id, chat.topicId))) {
+  if (selectedAttachments.length !== selectedAttachmentIds.length
+    || selectedAttachments.some(item => !canSelectAttachmentForChat(
+      item,
+      chat.id,
+      chat.topicId,
+    ))) {
     throw new HTTPError({ statusCode: 409, statusMessage: 'attachment_scope_mismatch' })
   }
-  if (selectedAttachments.some(item => item.topicId && item.topicId !== chat.topicId)) {
-    throw new HTTPError({ statusCode: 403, statusMessage: 'attachment_space_mismatch' })
-  }
   const acceptedReviewIds = new Set(attachmentSelection.acceptedNeedsReviewIds)
-  if (selectedAttachments.some(item => item.status !== 'ready' && !(item.status === 'needs_review' && acceptedReviewIds.has(item.id)))) {
-    throw new HTTPError({ statusCode: 409, statusMessage: 'attachments_not_ready_or_unconfirmed' })
+  if (selectedAttachments.some(item => item.status !== 'ready'
+    && !(item.status === 'needs_review' && acceptedReviewIds.has(item.id)))) {
+    throw new HTTPError({
+      statusCode: 409,
+      statusMessage: 'attachments_not_ready_or_unconfirmed',
+    })
   }
+  const librarySecret = process.env.ATTACHMENT_INTERNAL_SECRET || ''
+  const personalLibraryEnabled = process.env.PERSONAL_LIBRARY_ENABLED === 'true'
+  const personalLibraryContext = personalLibraryEnabled && librarySecret
+    ? await getOrCreateDefaultLibrary(actor.userId).then(personalLibrary => ({
+        owner_user_id: actor.userId,
+        knowledge_base_id: personalLibrary.id,
+        access_token: createHmac('sha256', librarySecret)
+          .update(`${actor.userId}:${personalLibrary.id}`)
+          .digest('hex'),
+      }))
+    : undefined
 
   // Detect if chat needs title (first message turn or placeholder title)
-  const messageCount = (chat.messages || []).length
-  const needsTitle = messageCount <= 1 || !chat.title || chat.title === '' || chat.title === 'New Chat' || chat.title === 'Untitled' || chat.title === '新对话' || chat.title.endsWith('...')
+  const messageCount = (chat?.messages || []).length
+  const needsTitle = messageCount <= 1 || !chat?.title || chat?.title === '' || chat?.title === 'New Chat' || chat?.title === 'Untitled' || chat?.title === '新对话' || chat?.title?.endsWith('...')
 
   const preferenceParts = [
-    ...(Array.isArray(lastMessage.parts)
-      ? lastMessage.parts.filter(part => (part as any)?.type !== 'data-chat-preferences')
-      : []),
+    ...lastMessage.parts.filter(part => part.type !== 'data-chat-preferences'),
     {
       type: 'data-chat-preferences',
       data: {
         knowledge_base_retrieval_enabled: useKnowledgeBase,
         exploration_mode: explorationMode,
-      }
-    }
+      },
+    },
   ]
-  const safeParts = mergeSafeAttachmentParts(preferenceParts, selectedAttachments, acceptedReviewIds)
-
+  const safeParts = mergeSafeAttachmentParts(
+    preferenceParts,
+    selectedAttachments,
+    acceptedReviewIds,
+  )
   const currentMessage = await persistCurrentUserMessage(db, {
     chatId: id as string,
     id: lastMessage.id,
-    parts: safeParts
+    parts: safeParts,
   })
 
   if (selectedAttachments.length) {
-    await db.insert(tables.messageAttachments).values(selectedAttachments.map(item => ({
-      messageId: lastMessage.id, attachmentId: item.id, evidenceVersion: item.evidenceVersion
-    }))).onConflictDoNothing()
+    await db.insert(tables.messageAttachments).values(
+      selectedAttachments.map(item => ({
+        messageId: currentMessage.id,
+        attachmentId: item.id,
+        evidenceVersion: item.evidenceVersion,
+      })),
+    ).onConflictDoNothing()
   }
 
   if (!currentMessage || currentMessage.role !== 'user') {
@@ -239,7 +261,7 @@ export default defineHandler(async (event) => {
   const abortController = new AbortController()
   const assistantState = createAssistantStreamState()
   let assistantMessageId: string | undefined
-  let agentFactProposals: FactProposal[] = []
+  const agentFactProposals: FactProposal[] = []
   let shouldAttemptCompaction = false
 
   const timeoutId = setTimeout(() => abortController.abort(), 90000)
@@ -261,8 +283,8 @@ export default defineHandler(async (event) => {
         let topicInfo: any = null
         let topicDocIds: string[] = []
         let topicTitles: string[] = []
-        let soulContent: string | undefined = undefined
         let topicAttachmentIds: string[] = []
+        let soulContent: string | undefined = undefined
 
         if (chat.topicId) {
           topicInfo = await db.query.topics.findFirst({
@@ -281,9 +303,14 @@ export default defineHandler(async (event) => {
             topicDocIds = topicDocs.map(d => d.docId)
             topicTitles = topicDocs.map(d => d.title)
             const topicAttachments = await db.query.attachments.findMany({
-              where: and(eq(tables.attachments.topicId, topicInfo?.id || chat.topicId), eq(tables.attachments.scope, 'topic'))
+              where: and(
+                eq(tables.attachments.topicId, chat.topicId),
+                eq(tables.attachments.scope, 'topic'),
+              ),
             })
-            topicAttachmentIds = topicAttachments.filter(item => item.status === 'ready' && !item.deletedAt).map(item => item.id)
+            topicAttachmentIds = topicAttachments
+              .filter(item => item.status === 'ready' && !item.deletedAt)
+              .map(item => item.id)
           }
         }
 
@@ -298,8 +325,23 @@ export default defineHandler(async (event) => {
 
         // 2. Call real Python Agent Streaming API (port 8000)
         const aiCallStart = Date.now()
-        const agentRes = await agentFetch("/api/chat/stream", {
+        const usesPrivateSources = Boolean(
+          personalLibraryContext
+          || selectedAttachmentIds.length
+          || topicAttachmentIds.length,
+        )
+        const memoryContext = usesPrivateSources
+          ? await buildPersistentMemoryContext(db, currentAgentInput)
+          : undefined
+        const agentRes = await agentFetch(
+          usesPrivateSources
+            ? "/api/internal/chat/retrieval/stream"
+            : "/api/chat/stream",
+          {
           method: "POST",
+          headers: usesPrivateSources
+            ? { 'x-agent-internal-token': process.env.AGENT_INTERNAL_TOKEN || '' }
+            : undefined,
           body: JSON.stringify({
             query: queryText,
             session_id: currentAgentInput.chatId,
@@ -316,12 +358,19 @@ export default defineHandler(async (event) => {
             consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0,
             is_first_message: needsTitle,
             knowledge_base_retrieval_enabled: useKnowledgeBase,
-            personal_library_context: personalLibraryContext,
-            attachment_context: {
-              selected_attachment_ids: selectedAttachmentIds,
-              topic_attachment_ids: topicAttachmentIds,
-              allowed_attachment_ids: Array.from(new Set([...selectedAttachmentIds, ...topicAttachmentIds]))
-            }
+            ...(usesPrivateSources
+              ? {
+                  personal_library_context: personalLibraryContext,
+                  attachment_context: {
+                    selected_attachment_ids: selectedAttachmentIds,
+                    allowed_attachment_ids: Array.from(new Set([
+                      ...selectedAttachmentIds,
+                      ...topicAttachmentIds,
+                    ])),
+                  },
+                  memory_context: memoryContext,
+                }
+              : {}),
           }),
           signal: abortController.signal
         })
@@ -411,7 +460,9 @@ export default defineHandler(async (event) => {
                   if (chat.topicId && citationsList.length > 0) {
                     try {
                       let hasNewDocs = false
-                      for (const cit of citationsList.filter((item: any) => !['attachment', 'personal'].includes(item.source_type))) {
+                      for (const cit of citationsList.filter(
+                        (item: any) => !['attachment', 'personal'].includes(item.source_type),
+                      )) {
                         const docId = cit.doc_id || `doc_${Date.now()}`
                         const title = cit.title || docId
                         const snippet = cit.snippet || ''
@@ -464,12 +515,6 @@ export default defineHandler(async (event) => {
                         await db.update(tables.topics)
                           .set({ consecutiveNoNewDocsCount: newCount })
                           .where(eq(tables.topics.id, chat.topicId))
-
-                        const latestTopic = await db.query.topics.findFirst({ where: eq(tables.topics.id, chat.topicId) })
-                        const latestDocs = await db.query.topicDocuments.findMany({ where: eq(tables.topicDocuments.topicId, chat.topicId) })
-                        if (latestTopic) {
-                          syncTopicToDisk(latestTopic.id, latestTopic, latestTopic.soulContent, latestDocs)
-                        }
                       }
                       await syncAllTopicDocuments(db, chat.topicId)
                     } catch (docErr) {
@@ -523,6 +568,22 @@ export default defineHandler(async (event) => {
                   const tokensCount = Math.max(20, Math.round((accumulatedAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
                   const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
                   recordAiCall(aiDuration, ttftMs, tokensCount)
+
+                  if (data.memory_decision) {
+                    if (data.memory_decision.fact_proposals?.length) {
+                      agentFactProposals.push(...data.memory_decision.fact_proposals)
+                      shouldAttemptCompaction = true
+                    }
+                    if (data.memory_decision.recall?.handled) {
+                      writer.write({
+                        type: 'data-memory-recall',
+                        data: { messageId: responseId }
+                      })
+                    }
+                  } else if (Array.isArray(data.fact_proposals) && data.fact_proposals.length) {
+                    agentFactProposals.push(...data.fact_proposals)
+                    shouldAttemptCompaction = true
+                  }
 
                   if (data.chat_title) {
                     await db.update(tables.chats).set({ title: data.chat_title }).where(eq(tables.chats.id, id as string))

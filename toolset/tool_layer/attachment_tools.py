@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextvars import ContextVar
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -11,17 +12,17 @@ from .base_tool import BaseTool
 
 class _AttachmentTool(BaseTool):
     def __init__(self) -> None:
-        self._allowed_ids: frozenset[str] = frozenset()
-        self._selected_ids: tuple[str, ...] = ()
+        self._context: ContextVar[tuple[frozenset[str], tuple[str, ...]] | None] = (
+            ContextVar(f"attachment_context_{id(self)}", default=None)
+        )
 
     def set_request_context(self, allowed_ids: list[str], selected_ids: list[str]) -> None:
         allowed = frozenset(str(value) for value in allowed_ids if str(value).startswith("att_"))
-        self._allowed_ids = allowed
-        self._selected_ids = tuple(value for value in selected_ids if value in allowed)
+        selected = tuple(str(value) for value in selected_ids if str(value) in allowed)
+        self._context.set((allowed, selected))
 
     def clear_request_context(self) -> None:
-        self._allowed_ids = frozenset()
-        self._selected_ids = ()
+        self._context.set(None)
 
     def _request(
         self,
@@ -31,7 +32,8 @@ class _AttachmentTool(BaseTool):
         timeout_seconds: float | None = None,
     ) -> dict[str, Any]:
         secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "")
-        if not secret or not self._allowed_ids:
+        context = self._context.get()
+        if not secret or context is None or not context[0]:
             return {"error": "attachments_unavailable", "items": []}
         request = Request(
             f"{os.getenv('ATTACHMENT_SERVICE_URL', 'http://127.0.0.1:8200').rstrip('/')}{path}",
@@ -51,6 +53,7 @@ class _AttachmentTool(BaseTool):
             TimeoutError,
             ConnectionError,
             OSError,
+            ValueError,
             json.JSONDecodeError,
         ):
             return {"error": "attachment_tool_unavailable", "items": []}
@@ -73,7 +76,10 @@ class SearchAttachmentsTool(_AttachmentTool):
         }, "required": ["query"], "additionalProperties": False}
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        top_k = min(20, max(1, int(kwargs.get("top_k", 8))))
+        try:
+            top_k = min(20, max(1, int(kwargs.get("top_k", 8))))
+        except (TypeError, ValueError):
+            return {"error": "invalid_attachment_query", "items": []}
         query = str(kwargs.get("query") or "")
         query_vector: list[float] | None = None
         vector_enabled = os.getenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "false").lower() in {
@@ -86,14 +92,18 @@ class SearchAttachmentsTool(_AttachmentTool):
                 query_vector = embed_texts([query])[0]
             except (ImportError, RuntimeError, OSError, ValueError):
                 query_vector = None
-        ordered = list(dict.fromkeys((*self._selected_ids, *sorted(self._allowed_ids))))
+        context = self._context.get()
+        if context is None:
+            return {"error": "attachments_unavailable", "items": []}
+        allowed_ids, selected_ids = context
+        ordered = list(dict.fromkeys((*selected_ids, *sorted(allowed_ids))))
         global_payload: dict[str, Any] = {
             "attachment_ids": ordered, "query": query, "top_k": top_k,
         }
         if query_vector is not None:
             global_payload["query_vector"] = query_vector
         global_result = self._request("/v1/search", global_payload)
-        if not self._selected_ids:
+        if not selected_ids:
             return global_result
 
         # The attachment service intentionally has no concept of UI selection.
@@ -102,7 +112,7 @@ class SearchAttachmentsTool(_AttachmentTool):
         # deterministic preference without excluding useful Topic evidence.
         selected_limit = max(1, (top_k + 1) // 2)
         selected_payload: dict[str, Any] = {
-            "attachment_ids": list(self._selected_ids),
+            "attachment_ids": list(selected_ids),
             "query": query,
             "top_k": selected_limit,
         }
@@ -115,7 +125,7 @@ class SearchAttachmentsTool(_AttachmentTool):
             # browse the explicitly selected file instead of searching other
             # attachments or asking the model to guess its identity.
             selected_result = self._request("/v1/search", {
-                "attachment_ids": list(self._selected_ids),
+                "attachment_ids": list(selected_ids),
                 "query": "",
                 "top_k": selected_limit,
             })
@@ -159,7 +169,9 @@ class InspectAttachmentTool(_AttachmentTool):
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
         attachment_id = str(kwargs.get("attachment_id") or "")
-        if attachment_id not in self._allowed_ids:
+        context = self._context.get()
+        allowed_ids = context[0] if context is not None else frozenset()
+        if attachment_id not in allowed_ids:
             return {"error": "attachment_forbidden", "items": []}
         payload: dict[str, Any] = {"question": str(kwargs.get("question") or "")}
         if kwargs.get("page") is not None:

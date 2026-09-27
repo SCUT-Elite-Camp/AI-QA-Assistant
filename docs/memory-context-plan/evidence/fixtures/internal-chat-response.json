@@ -1,0 +1,19 @@
+{
+  "response": {
+    "trace_id": "trace-fixture-1",
+    "status": "success",
+    "answer": "Answer.",
+    "message": "",
+    "citations": []
+  },
+  "memory_decision": {
+    "fact_proposals": [
+      {
+        "category": "PREFERENCE",
+        "value": "Use concise Chinese responses.",
+        "source_message_id": "message-fixture-3",
+        "expires_at": null
+      }
+    ]
+  }
+}

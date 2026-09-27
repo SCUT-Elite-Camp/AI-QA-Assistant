@@ -18,7 +18,7 @@ def test_doc_parser_fallback_parsing() -> None:
 
     try:
         documents = parse_file(f_path)
-        assert documents is not None and len(documents) > 0
+        assert len(documents) == 1
         doc = documents[0]
         assert doc is not None
         assert doc.doc_id is not None
