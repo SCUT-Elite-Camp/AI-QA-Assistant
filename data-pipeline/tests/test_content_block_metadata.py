@@ -232,6 +232,45 @@ def test_review_table_is_not_indexable():
     assert block.to_index_markdown() == ""
 
 
+def test_content_block_keeps_plain_index_text_separate_from_markdown():
+    heading = ContentBlock(
+        block_type=BlockType.HEADING,
+        level=2,
+        text="经济展望",
+    )
+    table = ContentBlock(
+        block_type=BlockType.TABLE,
+        table=TableArtifact(
+            table_id="sales",
+            caption="销售表",
+            cells=[
+                TableCell(row_index=0, column_index=0, text="地区", is_header=True),
+                TableCell(row_index=0, column_index=1, text="金额", is_header=True),
+                TableCell(row_index=1, column_index=0, text="华南"),
+                TableCell(row_index=1, column_index=1, text="120"),
+            ],
+            row_count=2,
+            column_count=2,
+            header_row_count=1,
+            parser_name="test",
+            confidence=0.9,
+            acceptance="accepted",
+        ),
+    )
+
+    assert heading.to_index_text() == "经济展望"
+    assert heading.to_index_markdown() == "## 经济展望"
+    assert table.to_index_text() == "销售表\n地区: 华南 | 金额: 120"
+    assert table.to_index_markdown().startswith("| 地区 | 金额 |")
+
+
+def test_legacy_chunk_populates_both_text_views():
+    chunk = Chunk(index=0, text="legacy text", chunk_id="legacy")
+
+    assert chunk.index_text == "legacy text"
+    assert chunk.markdown_text == "legacy text"
+
+
 def test_document_render_index_content_excludes_review_tables():
     document = Document(
         doc_id="doc",

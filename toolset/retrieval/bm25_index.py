@@ -57,18 +57,20 @@ class BM25Index:
             if data.get("active_version", True) is not True:
                 continue
             for ch in data.get("chunks", []):
+                text = ch.get("markdown_text") or ch.get("text", "")
+                index_text = ch.get("index_text") or text
                 self._chunk_meta.append({
                     "chunk_id": ch.get("chunk_id", ""),
                     "doc_id": doc_id,
                     "chunk_index": ch.get("index", 0),
-                    "text": ch.get("text", ""),
+                    "text": text,
                     "title": data.get("title", ""),
                     "space": data.get("space", ""),
                     "doc_type": _document_type(data),
                     "last_updated": data.get("last_updated", ""),
                     "source_url": data.get("source_url", ""),
                 })
-                corpus_texts.append(ch.get("text", ""))
+                corpus_texts.append(index_text)
 
         if not corpus_texts:
             print("No document chunks found; BM25 is empty")

@@ -176,6 +176,19 @@ class TableArtifact(BaseModel):
     def to_markdown(self) -> str:
         return _table_to_markdown(self.body_rows(), self.legacy_headers())
 
+    def to_index_text(self) -> str:
+        """Render a compact plain-text representation for retrieval."""
+        rows = self.to_row_chunks()
+        parts = [self.caption.strip()] if self.caption.strip() else []
+        parts.extend(rows)
+        if not rows:
+            header_text = " | ".join(
+                value.strip() for value in self.legacy_headers() if value.strip()
+            )
+            if header_text:
+                parts.append(header_text)
+        return "\n".join(parts)
+
     def to_html(self) -> str:
         lines = [f'<table data-table-id="{html.escape(self.table_id, quote=True)}">']
         if self.caption:
@@ -257,8 +270,18 @@ class ContentBlock(BaseModel):
         return ""
 
     def to_index_markdown(self) -> str:
-        """Render this block for indexing, omitting review-only tables."""
+        """Render the Markdown display view, omitting review-only tables."""
         return self.to_markdown() if self.is_indexable else ""
+
+    def to_index_text(self) -> str:
+        """Render plain semantic text without Markdown presentation syntax."""
+        if not self.is_indexable:
+            return ""
+        if self.block_type == BlockType.TABLE:
+            if self.table is not None:
+                return self.table.to_index_text()
+            return _table_to_index_text(self.rows, self.headers)
+        return self.text
 
 
 def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
@@ -288,10 +311,32 @@ def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _table_to_index_text(rows: list[list[str]], headers: list[str]) -> str:
+    """Render legacy table fields as compact retrieval text."""
+    rendered_rows: list[str] = []
+    for row in rows:
+        parts: list[str] = []
+        for column_index, raw_value in enumerate(row):
+            value = str(raw_value).strip()
+            if not value:
+                continue
+            header = str(headers[column_index]).strip() if column_index < len(headers) else ""
+            parts.append(f"{header}: {value}" if header else value)
+        if parts:
+            rendered_rows.append(" | ".join(parts))
+    if rendered_rows:
+        return "\n".join(rendered_rows)
+    return " | ".join(str(value).strip() for value in headers if str(value).strip())
+
+
+def _escape_markdown_cell(value: object) -> str:
+    return str(value).replace("\\", "\\\\").replace("|", "\\|").replace("\r\n", "<br>").replace("\n", "<br>")
 class Chunk(BaseModel):
     """单个文本分块"""
     index: int
     text: str
+    index_text: str = ""
+    markdown_text: str = ""
     chunk_id: str  # 全局唯一分块 ID，格式: "{doc_id}_chunk_{index}"
     section_path: list[str] = Field(default_factory=list)
     block_start: int | None = None
@@ -309,6 +354,12 @@ class Chunk(BaseModel):
 
     @model_validator(mode="after")
     def normalize_page_regions(self) -> "Chunk":
+        if not self.markdown_text:
+            self.markdown_text = self.text
+        if not self.text:
+            self.text = self.markdown_text
+        if not self.index_text:
+            self.index_text = self.text
         if not self.page_regions and self.page_number is not None and self.bbox is not None:
             raw_sources = self.metadata.get("sources", [])
             if isinstance(raw_sources, str):

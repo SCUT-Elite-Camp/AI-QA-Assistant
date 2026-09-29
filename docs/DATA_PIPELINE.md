@@ -39,6 +39,13 @@ chunk。只有 `chunk_type == "text"` 的块进行语义分割；`table`/`table_
 `metadata_json.page_regions`。没有可靠 bbox 的来源页仍保留在 `source_pages`，但不会伪造
 `page_regions`。
 
+切片同时保存两种文本视图：`Chunk.index_text` 是去除标题井号、粗体符号和 Markdown
+表格语法后的语义文本，用于切片长度计算、语义分段、向量化和 BM25；
+`Chunk.markdown_text` 用于大模型上下文和前端展示。既有 `Chunk.text` 继续等同于
+`markdown_text`，旧 JSON 缺少新字段时会从 `text` 自动补齐，因此不需要迁移存量文档。
+新增字段不改变 Milvus schema；但历史向量和 BM25 仍基于旧文本，若要让存量数据获得
+纯文本索引收益，需要重新解析或执行安全重建。
+
 `doc_chunks` 新建集合必须包含 `chunk_type`、`block_id`、`table_id`、`page_number`、
 `bbox_json`、`metadata_json` 六个来源字段（以及既有字段）。Milvus 不支持在线补齐既有
 集合字段；检测到旧 schema 时管线会明确报错。先运行默认不修改数据的预检，再在维护窗口

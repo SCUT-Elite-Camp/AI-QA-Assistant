@@ -16,6 +16,20 @@ from .structure import select_section_heading_blocks
 _SENTENCE_END = re.compile(r"(?<=[.!?。！？；;])(?=\s|[^\w])|(?<=[。！？；])")
 
 
+def _index_text_from_markdown(value: str) -> str:
+    """Drop presentation-only Markdown syntax from retrieval text."""
+    lines: list[str] = []
+    for line in value.splitlines():
+        stripped = line.strip()
+        if not stripped or re.fullmatch(r"\|?\s*:?-{3,}:?(\s*\|\s*:?-{3,}:?)*\s*\|?", stripped):
+            continue
+        stripped = re.sub(r"^#{1,6}\s+", "", stripped)
+        stripped = re.sub(r"^[-*+]\s+", "", stripped)
+        stripped = stripped.replace("**", "").replace("__", "").replace("`", "")
+        lines.append(stripped.strip("| "))
+    return "\n".join(line for line in lines if line)
+
+
 def split_prose_at_boundaries(text: str, max_chars: int) -> list[str]:
     """Split oversized prose at complete sentences or whitespace, preserving every character.
 
@@ -162,6 +176,8 @@ def chunk_from_blocks(
         chunk = Chunk(
             index=len(chunks),
             text=full_text,
+            index_text=_index_text_from_markdown(full_text),
+            markdown_text=full_text,
             chunk_id=f"{doc_id}_chunk_{len(chunks)}",
             section_path=list(current_section_path),
             block_start=min(buffer_indices) if buffer_indices else None,
@@ -202,6 +218,8 @@ def chunk_from_blocks(
             chunks.append(Chunk(
                 index=len(chunks),
                 text=bt,
+                index_text=content_block.to_index_text(),
+                markdown_text=bt,
                 chunk_id=f"{doc_id}_chunk_{len(chunks)}",
                 section_path=list(current_section_path),
                 block_start=block_index,
@@ -214,6 +232,8 @@ def chunk_from_blocks(
                 chunks.append(Chunk(
                     index=len(chunks),
                     text=prefix + row_text,
+                    index_text=prefix + row_text,
+                    markdown_text=prefix + row_text,
                     chunk_id=f"{doc_id}_chunk_{len(chunks)}",
                     section_path=list(current_section_path),
                     block_start=block_index,
@@ -242,6 +262,8 @@ def chunk_from_blocks(
                 chunks.append(Chunk(
                     index=len(chunks),
                     text=f"{heading_prefix}\n\n{bt}" if heading_prefix else bt,
+                    index_text=_index_text_from_markdown(f"{heading_prefix}\n\n{bt}" if heading_prefix else bt),
+                    markdown_text=f"{heading_prefix}\n\n{bt}" if heading_prefix else bt,
                     chunk_id=f"{doc_id}_chunk_{len(chunks)}",
                     section_path=list(current_section_path),
                     block_start=heading_start,
@@ -256,6 +278,11 @@ def chunk_from_blocks(
                         index=len(chunks),
                         text=(f"{heading_prefix}\n\n{part}"
                               if heading_prefix and part_index == 0 else part),
+                        index_text=_index_text_from_markdown(
+                            f"{heading_prefix}\n\n{part}" if heading_prefix and part_index == 0 else part
+                        ),
+                        markdown_text=(f"{heading_prefix}\n\n{part}"
+                                       if heading_prefix and part_index == 0 else part),
                         chunk_id=f"{doc_id}_chunk_{len(chunks)}",
                         section_path=list(current_section_path),
                         block_start=heading_start if heading_prefix and part_index == 0 else block_index,

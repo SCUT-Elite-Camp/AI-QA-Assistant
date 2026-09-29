@@ -97,10 +97,14 @@ def _index_document(
         print("  [Warning] 分块内容为空，跳过该文档")
         return False
 
-    chunk_texts = [chunk.text for chunk in chunks]
+    # Retrieval vectors are deliberately built from the semantic view; the
+    # stored chunk remains Markdown so citations and model context retain the
+    # original layout.
+    chunk_texts = [chunk.markdown_text or chunk.text for chunk in chunks]
+    index_texts = [chunk.index_text or chunk.text for chunk in chunks]
     section_texts = [section.navigation_text for section in doc.sections if section.navigation_text]
     print(f"  → 正在生成 {len(chunk_texts)} 个 Evidence 向量")
-    embeddings = embed_texts(chunk_texts)
+    embeddings = embed_texts(index_texts)
     section_embeddings = embed_texts(section_texts) if has_milvus and section_texts else []
 
     if has_milvus:

@@ -147,3 +147,43 @@ def test_legacy_table_blocks_remain_first_class_tables():
     chunks = chunk_from_blocks([ContentBlock(block_type="table", headers=["Name"], rows=[["East"]])], "doc")
     assert chunks[0].chunk_type == "table"
     assert "| East |" in chunks[0].text
+
+
+def test_chunk_boundaries_use_plain_text_while_markdown_is_rendered_afterward():
+    chunks = chunk_from_blocks([
+        ContentBlock(block_type="heading", level=1, text="Title"),
+        ContentBlock(block_type="paragraph", text="Body", bold=True),
+    ], "doc", chunk_size=11, overlap=0)
+
+    assert len(chunks) == 1
+    assert chunks[0].index_text == "Title\n\nBody"
+    assert chunks[0].markdown_text == "# Title\n\n**Body**"
+    assert chunks[0].text == chunks[0].markdown_text
+
+
+def test_table_chunk_has_plain_embedding_text_and_markdown_display_text():
+    artifact = TableArtifact(
+        table_id="sales",
+        caption="销售表",
+        cells=[
+            TableCell(row_index=0, column_index=0, text="地区", is_header=True),
+            TableCell(row_index=0, column_index=1, text="金额", is_header=True),
+            TableCell(row_index=1, column_index=0, text="华南"),
+            TableCell(row_index=1, column_index=1, text="120"),
+        ],
+        row_count=2,
+        column_count=2,
+        header_row_count=1,
+        parser_name="test",
+        confidence=0.9,
+        acceptance="accepted",
+    )
+
+    table_chunk = chunk_from_blocks(
+        [ContentBlock(block_type=BlockType.TABLE, table=artifact)],
+        "document",
+    )[0]
+
+    assert table_chunk.index_text == "销售表\n地区: 华南 | 金额: 120"
+    assert table_chunk.markdown_text.startswith("| 地区 | 金额 |")
+    assert table_chunk.text == table_chunk.markdown_text
