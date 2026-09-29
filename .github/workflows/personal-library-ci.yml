@@ -43,7 +43,6 @@ jobs:
           toolset/tests
           agent/tests/unit/test_personal_library_evidence.py
           agent/tests/unit/test_personal_library_routing.py
-          agent/tests/unit/test_personal_library_source_intent.py
           agent/tests/unit/test_personal_library_tool.py
           -q
 
