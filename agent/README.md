@@ -153,6 +153,17 @@ MAX_MEMORY_MESSAGES=10
 MAX_AGENT_ITERATIONS=5
 MAX_REPEATED_TOOL_CALLS=2
 
+# When the Agent selects Wiki, append this many unique original Evidence items
+# after Direct Evidence. 0 restores legacy merge behavior; valid range: 0-10.
+WIKI_CONTEXT_TOP_K=3
+# This limit applies to the Direct branch before Wiki Evidence is appended.
+EXPLORATION_MAX_EVIDENCE=20
+
+# For retrieval-backed requests, exploration_mode=auto asks the Agent to choose
+# a Direct entry tool or wiki_search. force starts Direct+Wiki deterministically;
+# off exposes Direct tools only. When citations are required, the Runner rejects
+# pre-retrieval text answers and out-of-order Wiki subtool calls.
+
 # 接口共享密钥（必配）：Web 可信端调用 /api/* 业务接口时携带
 # `Authorization: Bearer <AGENT_API_KEY>`。未配置时业务接口返回 503，
 # 防止外部直连 agent 端口伪造 user_id 绕过权限隔离。

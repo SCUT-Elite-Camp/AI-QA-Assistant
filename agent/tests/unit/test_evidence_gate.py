@@ -107,6 +107,31 @@ def test_duplicate_chunks_keep_the_highest_score() -> None:
     assert [item.score for item in result.evidence] == [0.9]
 
 
+def test_public_eligibility_filter_uses_composite_identity() -> None:
+    gate = EvidenceGate(min_score=0.5)
+    evidence = [
+        _evidence(score=0.6).model_copy(update={
+            "source_scope": "enterprise",
+            "document_id": "doc-1",
+            "version_id": "v1",
+        }),
+        _evidence(score=0.9).model_copy(update={
+            "source_scope": "enterprise",
+            "document_id": "doc-1",
+            "version_id": "v1",
+        }),
+        _evidence(score=0.8).model_copy(update={
+            "source_scope": "enterprise",
+            "document_id": "doc-1",
+            "version_id": "v2",
+        }),
+    ]
+
+    selected = gate.select_eligible(evidence)
+
+    assert [item.score for item in selected] == [0.9, 0.8]
+
+
 def test_summarization_requires_multiple_valid_chunks() -> None:
     insufficient = _evaluate(
         QueryIntent.SUMMARIZATION,
@@ -196,12 +221,12 @@ def test_second_failed_attempt_does_not_retry_again() -> None:
     assert result.should_retry is False
 
 
-@pytest.mark.parametrize("attempt", [0, 3])
+@pytest.mark.parametrize("attempt", [0, 6])
 def test_invalid_retrieval_attempt_is_rejected(attempt: int) -> None:
     plan = _plan(QueryIntent.KNOWLEDGE_QA)
     policy = IntentPolicyRouter().route(plan)
 
-    with pytest.raises(ValueError, match="one or two"):
+    with pytest.raises(ValueError, match="between one and five"):
         EvidenceGate().evaluate(
             plan,
             policy,

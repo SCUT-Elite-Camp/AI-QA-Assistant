@@ -126,6 +126,9 @@ class Settings(BaseModel):
     EXPLORATION_MAX_EVIDENCE: int = Field(
         default_factory=lambda: _env_int("EXPLORATION_MAX_EVIDENCE", 20), ge=5, le=50,
     )
+    WIKI_CONTEXT_TOP_K: int = Field(
+        default_factory=lambda: _env_int("WIKI_CONTEXT_TOP_K", 3), ge=0, le=10,
+    )
 
 
     MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)

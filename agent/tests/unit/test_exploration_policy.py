@@ -25,6 +25,21 @@ def test_wiki_tools_require_an_authorized_source_scope(monkeypatch) -> None:
     assert result == policy
 
 
+def test_exploration_off_does_not_add_wiki_tools(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+    monkeypatch.setattr(settings, "KNOWLEDGE_NAVIGATION_ENABLED", True)
+    policy = IntentPolicy(candidate_tools=("search_documents",))
+
+    result = AgentOrchestrator._apply_exploration_policy(
+        ChatRequest(query=_plan().original_query, exploration_mode="off"),
+        _plan(),
+        policy,
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result == policy
+
+
 def test_navigation_scopes_follow_effective_source_and_request_context() -> None:
     # The personal-library scope is populated only by the trusted internal
     # endpoint.  Construct that already-validated state directly so this unit

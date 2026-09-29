@@ -39,6 +39,8 @@ class AgentState(BaseModel):
     messages: list[dict[str, Any]] = Field(default_factory=list)
     iteration: int = 0
     retrieval_attempts: int = 0
+    wiki_evidence_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    wiki_evidence_supplements: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
     exploration_rounds: int = 0

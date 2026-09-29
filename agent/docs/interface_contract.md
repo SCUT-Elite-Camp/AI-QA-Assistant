@@ -46,6 +46,11 @@ The public response remains limited to these five fields in CP2. Iteration
 counts and tool traces stay in Agent logs and internal run summaries until a
 separate Web contract revision approves an optional `run` field.
 
+The Agent's Direct-only versus Direct+Wiki route and `WIKI_CONTEXT_TOP_K` are
+internal runtime details. They do not add fields to `ChatRequest`,
+`ChatResponse`, or citations. Wiki navigation metadata cannot populate citation
+fields; only accepted original Evidence can do so.
+
 ## Citation Fields
 
 - `citation_id`: citation number starting from `1`.

@@ -7,8 +7,7 @@ from typing import Any
 from agent.answer import AnswerCompletenessChecker, should_accept_repair
 from agent.answer.complexity import answer_complexity_reasons
 from agent.config.settings import settings
-from agent.evidence.gate import EvidenceGate
-from agent.exploration import CoverageAssessor
+from agent.evidence import EvidenceGate, WikiEvidenceSupplementer
 from agent.llm.base import BaseLLM
 from agent.prompt.templates import ANSWER_RULES, SYSTEM_ROLE
 from agent.retrieval.corrective import CorrectiveRetrievalPlanner
@@ -45,6 +44,20 @@ class AgentRunner:
     """Bounded ReAct-style runner consuming the frozen CP2 QueryPlan contract."""
 
     _MAX_PARALLEL_SUB_QUERIES = 4
+    _WIKI_TOOLS = {
+        "wiki_search",
+        "wiki_read_page",
+        "wiki_read_sources",
+        "wiki_search_evidence",
+    }
+    _DIRECT_ROUTE_TOOLS = {
+        "search_documents",
+        "find_documents",
+        "get_document",
+        "search_library",
+        "search_attachments",
+        "inspect_attachment",
+    }
 
     def __init__(
         self,
@@ -146,27 +159,16 @@ class AgentRunner:
             and policy is not None
             and tool_executor is not None
             and any(
-                str(schema.get("function", {}).get("name", "")).startswith("wiki_")
+                schema.get("function", {}).get("name") == "wiki_search"
                 for schema in schemas
                 if isinstance(schema, dict)
             )
         )
-        if navigation_enabled:
-            self._prefetch_direct(
-                state=state,
-                query_plan=query_plan,
-                policy=policy,
-                tool_executor=tool_executor,
-                schemas=schemas,
-                trace_id=trace_id,
-                mode=mode,
-                top_k=top_k,
-                exploration_mode=exploration_mode,
-                navigation_scopes=navigation_scopes,
-            )
         last_fingerprint: str | None = None
         repeated_count = 0
         next_wiki_tool: str | None = None
+        wiki_route_active = False
+        retrieval_route: str | None = None
 
         for iteration in range(1, limit + 1):
             state.iteration = iteration
@@ -177,18 +179,25 @@ class AgentRunner:
                 # next model turn is answer generation. Hiding tool schemas at
                 # that point prevents providers from requesting the identical
                 # search again instead of consuming the observation.
-                should_explore = (
-                    navigation_enabled
-                    and state.exploration_rounds < settings.EXPLORATION_MAX_ROUNDS
-                    and self._latest_should_explore(state)
-                )
-                available_tools = schemas if not state.evidence or should_explore else None
+                available_tools = schemas if not state.evidence else None
+                if available_tools and retrieval_route is None:
+                    available_tools = self._route_entry_schemas(
+                        available_tools,
+                        navigation_enabled=navigation_enabled,
+                        force_wiki=(exploration_mode == "force"),
+                    )
                 if next_wiki_tool:
                     available_tools = [
                         schema for schema in schemas
                         if schema.get("function", {}).get("name") == next_wiki_tool
                     ]
-                if state.evidence and not should_explore and not next_wiki_tool:
+                if (
+                    navigation_enabled
+                    and exploration_mode == "force"
+                    and retrieval_route is None
+                ):
+                    response = self._forced_wiki_route_response(query_plan)
+                elif state.evidence and not next_wiki_tool:
                     # Start answer generation from a clean evidence-only prompt.
                     # Replaying the prior assistant tool call can make some
                     # providers request the same tool again even when schemas
@@ -230,9 +239,7 @@ class AgentRunner:
                     error_code="invalid_tool_calls",
                 )
 
-            if state.evidence and tool_calls and not (
-                navigation_enabled and self._latest_should_explore(state)
-            ) and not next_wiki_tool:
+            if state.evidence and tool_calls and not next_wiki_tool:
                 logger.warning(
                     "[POST_EVIDENCE_TOOL_CALL_IGNORED] trace_id=%s iteration=%s calls=%s",
                     trace_id,
@@ -279,30 +286,29 @@ class AgentRunner:
                     })
                     continue
                 if (
-                    navigation_enabled
-                    and state.exploration_rounds < settings.EXPLORATION_MAX_ROUNDS
-                    and self._latest_should_explore(state)
-                ):
-                    state.messages.append({
-                        "role": "system",
-                        "content": (
-                            "Coverage is incomplete. Continue with the recommended "
-                            "Wiki navigation tool, then return to original Evidence."
-                        ),
-                    })
-                    continue
-                if (
                     policy is not None
                     and policy.requires_citations
                     and not state.evidence
                     and schemas
-                    and not answer
                 ):
+                    if retrieval_route is None and iteration < limit:
+                        state.messages.append({
+                            "role": "system",
+                            "content": self._route_required_message(
+                                navigation_enabled=navigation_enabled,
+                            ),
+                        })
+                        logger.warning(
+                            "[RETRIEVAL_ROUTE_REQUIRED] trace_id=%s iteration=%s",
+                            trace_id,
+                            iteration,
+                        )
+                        continue
                     return self._result(
                         state,
                         StopReason.NO_RELEVANT_CONTEXT,
-                        message="未检索到具体匹配的文档库片段，请尝试调整搜索关键词。",
-                        error_code="evidence_required",
+                        message="Agent 未完成必需的检索路由选择。",
+                        error_code="retrieval_route_required",
                     )
                 answer = self._check_and_repair_answer(
                     state=state,
@@ -376,10 +382,47 @@ class AgentRunner:
                     })
                     continue
 
-                exploration_tools = {
-                    "wiki_search", "wiki_read_page", "wiki_read_sources",
-                    "wiki_search_evidence",
-                }
+                exploration_tools = self._WIKI_TOOLS
+                if (
+                    navigation_enabled
+                    and not wiki_route_active
+                    and tool_name in exploration_tools
+                    and tool_name != "wiki_search"
+                ):
+                    state.tool_calls.append(ToolCallRecord(
+                        iteration=iteration,
+                        tool_call_id=call_id,
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        success=False,
+                        error_code="wiki_route_must_start_with_search",
+                    ))
+                    state.messages.append({
+                        "role": "tool",
+                        "tool_call_id": call_id,
+                        "name": tool_name,
+                        "content": (
+                            "Wiki retrieval must start with wiki_search. "
+                            "Choose wiki_search or a Direct retrieval tool."
+                        ),
+                    })
+                    continue
+                if retrieval_route == "direct_only" and tool_name in exploration_tools:
+                    state.tool_calls.append(ToolCallRecord(
+                        iteration=iteration,
+                        tool_call_id=call_id,
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        success=False,
+                        error_code="retrieval_route_locked",
+                    ))
+                    state.messages.append({
+                        "role": "tool",
+                        "tool_call_id": call_id,
+                        "name": tool_name,
+                        "content": "The current request is locked to Direct retrieval.",
+                    })
+                    continue
                 if (
                     tool_name in exploration_tools
                     and state.exploration_rounds >= settings.EXPLORATION_MAX_ROUNDS
@@ -435,6 +478,44 @@ class AgentRunner:
                         StopReason.TOOL_ERROR,
                         message=f"当前意图不允许调用工具：{tool_name}",
                         error_code="tool_not_allowed",
+                    )
+
+                if (
+                    navigation_enabled
+                    and tool_name == "wiki_search"
+                    and not wiki_route_active
+                ):
+                    retrieval_route = "direct_plus_wiki"
+                    logger.info(
+                        "[RETRIEVAL_ROUTE] trace_id=%s route=%s selected_tool=%s",
+                        trace_id,
+                        retrieval_route,
+                        tool_name,
+                    )
+                    self._prefetch_direct(
+                        state=state,
+                        query_plan=query_plan,
+                        policy=policy,
+                        tool_executor=tool_executor,
+                        schemas=schemas,
+                        trace_id=trace_id,
+                        mode=mode,
+                        top_k=top_k,
+                        navigation_scopes=navigation_scopes,
+                    )
+                    wiki_route_active = True
+
+                if (
+                    navigation_enabled
+                    and retrieval_route is None
+                    and tool_name in self._DIRECT_ROUTE_TOOLS
+                ):
+                    retrieval_route = "direct_only"
+                    logger.info(
+                        "[RETRIEVAL_ROUTE] trace_id=%s route=%s selected_tool=%s",
+                        trace_id,
+                        retrieval_route,
+                        tool_name,
                     )
 
                 is_retrieval_tool = tool_name in {
@@ -560,10 +641,18 @@ class AgentRunner:
                 if tool_name in exploration_tools:
                     state.exploration_rounds += 1
                     next_wiki_tool = self._next_wiki_tool(tool_name, observation)
+                corrective_observations: list[dict[str, Any]] = []
                 if is_retrieval:
                     state.retrieval_attempts += 1
-                    state.evidence = self._merge_evidence(state.evidence, evidence)
-                    if navigation_enabled:
+                    if tool_name == "wiki_search_evidence":
+                        self._supplement_wiki_evidence(
+                            state,
+                            evidence=evidence,
+                            evidence_gate=evidence_gate,
+                        )
+                    else:
+                        state.evidence = self._merge_evidence(state.evidence, evidence)
+                    if navigation_enabled and tool_name != "wiki_search_evidence":
                         state.evidence = state.evidence[:settings.EXPLORATION_MAX_EVIDENCE]
 
                     try:
@@ -577,6 +666,10 @@ class AgentRunner:
                             state=state,
                             previous_mode=mode,
                             previous_top_k=top_k,
+                            preserve_evidence_order=(
+                                tool_name == "wiki_search_evidence"
+                                and settings.WIKI_CONTEXT_TOP_K > 0
+                            ),
                         )
                     except ToolExecutionFailure as exc:
                         return self._result(
@@ -590,6 +683,7 @@ class AgentRunner:
                             error_code=exc.error_code,
                         )
                     except NoRelevantContext as exc:
+                        state.evidence = []
                         return self._result(
                             state,
                             StopReason.NO_RELEVANT_CONTEXT,
@@ -597,29 +691,42 @@ class AgentRunner:
                             error_code="evidence_insufficient_after_correction",
                         )
 
-                    state.evidence = self._merge_evidence([], evidence)
-                    if navigation_enabled:
-                        assessment = CoverageAssessor().assess(
-                            query_plan,
-                            self._typed_evidence(state.evidence),
-                            exploration_mode=exploration_mode,
-                            available_actions=(
-                                schema.get("function", {}).get("name", "")
-                                for schema in schemas
-                                if isinstance(schema, dict)
-                            ),
-                        )
-                        state.coverage_assessments.append(
-                            assessment.model_dump(mode="json")
-                        )
+                    state.evidence = list(evidence)
+                    if tool_name == "wiki_search_evidence":
                         observation = self._format_search_observation(state.evidence)
-                        if assessment.should_explore:
-                            observation += (
-                                "\n\n[COVERAGE] Direct Evidence is valid but incomplete. "
-                                "Missing: " + ", ".join(assessment.missing_facets)
-                                + ". Continue with: "
-                                + ", ".join(assessment.recommended_actions) + "."
-                            )
+                elif tool_name in exploration_tools and next_wiki_tool is None:
+                    # Wiki navigation can legitimately find no page/source. In
+                    # that case the Direct prefetch remains usable, but it must
+                    # pass the same EvidenceGate before answer generation.
+                    try:
+                        evidence, corrective_observations = self._apply_evidence_policy(
+                            query_plan=query_plan,
+                            policy=policy,
+                            evidence_gate=evidence_gate,
+                            corrective_retrieval=corrective_retrieval,
+                            tool_executor=tool_executor,
+                            trace_id=trace_id,
+                            state=state,
+                            previous_mode=mode,
+                            previous_top_k=top_k,
+                            preserve_evidence_order=False,
+                        )
+                    except ToolExecutionFailure as exc:
+                        return self._result(
+                            state,
+                            StopReason.TOOL_ERROR,
+                            message="检索服务暂时不可用。",
+                            error_code=exc.error_code,
+                        )
+                    except NoRelevantContext as exc:
+                        state.evidence = []
+                        return self._result(
+                            state,
+                            StopReason.NO_RELEVANT_CONTEXT,
+                            message=str(exc),
+                            error_code="evidence_insufficient_after_correction",
+                        )
+                    state.evidence = list(evidence)
 
                 state.messages.append(
                     {
@@ -629,9 +736,7 @@ class AgentRunner:
                         "content": observation,
                     }
                 )
-                if is_retrieval and not (
-                    navigation_enabled and self._latest_should_explore(state)
-                ):
+                if (is_retrieval or tool_name in exploration_tools) and not next_wiki_tool:
                     for correction in corrective_observations:
                         state.messages.append(correction)
                     # One retrieval batch may already cover every planned
@@ -711,15 +816,71 @@ class AgentRunner:
             and schema["function"].get("name") in allowed
         ]
 
+    @classmethod
+    def _route_entry_schemas(
+        cls,
+        schemas: list[dict[str, Any]],
+        *,
+        navigation_enabled: bool,
+        force_wiki: bool,
+    ) -> list[dict[str, Any]]:
+        allowed = (
+            {"wiki_search"}
+            if navigation_enabled and force_wiki
+            else cls._DIRECT_ROUTE_TOOLS | (
+                {"wiki_search"} if navigation_enabled else set()
+            )
+        )
+        return [
+            schema
+            for schema in schemas
+            if schema.get("function", {}).get("name") in allowed
+        ]
+
+    @staticmethod
+    def _forced_wiki_route_response(query_plan: QueryPlan) -> dict[str, Any]:
+        return {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [{
+                "id": "forced-wiki-route",
+                "type": "function",
+                "function": {
+                    "name": "wiki_search",
+                    "arguments": json.dumps(
+                        {"query": query_plan.standalone_query},
+                        ensure_ascii=False,
+                    ),
+                },
+            }],
+        }
+
+    @staticmethod
+    def _route_required_message(*, navigation_enabled: bool) -> str:
+        if navigation_enabled:
+            return (
+                "This request requires cited Evidence. Before answering, choose "
+                "exactly one retrieval route: call a Direct retrieval tool for "
+                "precise facts, or call wiki_search for Direct + Wiki retrieval."
+            )
+        return (
+            "This request requires cited Evidence. Call an available Direct "
+            "retrieval tool before answering."
+        )
+
     @staticmethod
     def _document_tool_guidance(policy: IntentPolicy | None) -> str:
         tools = set(policy.candidate_tools) if policy is not None else set()
         if "wiki_search" in tools:
             return (
-                "\n\n检索流程规则：先使用普通 Direct Evidence。只有覆盖评估显示跨文档"
-                "缺口时，才依次调用 wiki_search、wiki_read_page、wiki_read_sources 和 "
-                "wiki_search_evidence。Wiki 页面仅用于导航；最终结论必须引用最后取得的"
-                "原始 Evidence。"
+                "\n\n检索路由规则：在首次检索前选择一条路由。"
+                "精确事实、数字、代码、指定文档或局部片段查询，选择 Direct "
+                "工具（如 search_documents 或 search_library），不启动 Wiki。"
+                "概念全景、主题关系、跨文档综合或多跳问题，可选择 wiki_search；"
+                "一旦选择 Wiki，服务端会自动同时执行 Direct 分支，不要再手动"
+                "重复调用 Direct。随后按 wiki_search -> wiki_read_page -> "
+                "wiki_read_sources -> wiki_search_evidence 完成导航。Wiki 页面"
+                "和关系元数据仅用于导航；最终结论只能引用原始 Evidence。"
             )
         if {"find_documents", "get_document"}.issubset(tools):
             return (
@@ -1045,10 +1206,11 @@ class AgentRunner:
     ) -> dict[str, Any]:
         """Generate an answer without carrying tool-call history forward."""
 
-        state.evidence = self._prioritize_evidence_for_answer(
-            state.query_plan.standalone_query or state.query_plan.original_query,
-            state.evidence,
-        )
+        if not state.wiki_evidence_supplements:
+            state.evidence = self._prioritize_evidence_for_answer(
+                state.query_plan.standalone_query or state.query_plan.original_query,
+                state.evidence,
+            )
         evidence_context = self._format_search_observation(state.evidence)
         context_history = self._history_before_current_query(state)
         question_context = f"Original question: {state.query_plan.original_query}"
@@ -1071,7 +1233,10 @@ class AgentRunner:
                 "content": (
                     f"{question_context}\n"
                     f"Answer style: {state.query_plan.intent.value}\n\n"
-                    f"Accepted evidence:\n{evidence_context}"
+                    "Accepted evidence:\n"
+                    "[AUTHORITATIVE_EVIDENCE version=1]\n"
+                    f"{evidence_context}\n"
+                    "[/AUTHORITATIVE_EVIDENCE]"
                 ),
             },
         ]
@@ -1186,6 +1351,7 @@ class AgentRunner:
         state: AgentState,
         previous_mode: str,
         previous_top_k: int,
+        preserve_evidence_order: bool,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Gate retrieval evidence and perform at most one corrective pass."""
 
@@ -1203,10 +1369,15 @@ class AgentRunner:
         )
         self._record_gate_diagnostics(state, gate_result)
         if gate_result.accepted:
-            return [item.model_dump() for item in gate_result.evidence], []
+            return self._accepted_evidence(
+                current,
+                gate_result.evidence,
+                preserve_order=preserve_evidence_order,
+            ), []
 
         if (
             not gate_result.should_retry
+            or gate_result.retrieval_attempt != 1
             or corrective_retrieval is None
             or tool_executor is None
         ):
@@ -1224,6 +1395,16 @@ class AgentRunner:
 
         correction_messages: list[dict[str, Any]] = []
         corrected = list(current)
+        direct_corrected: list[Evidence] = []
+        if preserve_evidence_order:
+            supplement_keys = {
+                evidence_gate.evidence_key(item)
+                for item in self._typed_evidence(state.wiki_evidence_supplements)
+            }
+            direct_corrected = [
+                item for item in current
+                if evidence_gate.evidence_key(item) not in supplement_keys
+            ]
         for index, request in enumerate(requests, start=1):
             call_id = f"corrective-{state.tool_calls[-1].tool_call_id}-{index}"
             arguments = {
@@ -1248,7 +1429,25 @@ class AgentRunner:
                 state.retrieval_attempts,
                 request.retrieval_attempt,
             )
-            corrected.extend(result.evidence)
+            if preserve_evidence_order:
+                direct_by_key = {
+                    evidence_gate.evidence_key(item): item
+                    for item in direct_corrected
+                }
+                for item in result.evidence:
+                    direct_by_key[evidence_gate.evidence_key(item)] = item
+                direct_corrected = list(direct_by_key.values())
+                state.evidence = [
+                    item.model_dump() for item in direct_corrected
+                ]
+                self._supplement_wiki_evidence(
+                    state,
+                    evidence=[],
+                    evidence_gate=evidence_gate,
+                )
+                corrected = self._typed_evidence(state.evidence)
+            else:
+                corrected.extend(result.evidence)
             correction_messages.append(
                 {
                     "role": "tool",
@@ -1269,7 +1468,27 @@ class AgentRunner:
         self._record_gate_diagnostics(state, second_gate)
         if not second_gate.accepted:
             raise NoRelevantContext(self._insufficient_evidence_message(second_gate))
-        return [item.model_dump() for item in second_gate.evidence], correction_messages
+        return self._accepted_evidence(
+            corrected,
+            second_gate.evidence,
+            preserve_order=preserve_evidence_order,
+        ), correction_messages
+
+    @staticmethod
+    def _accepted_evidence(
+        original: list[Evidence],
+        accepted: list[Evidence],
+        *,
+        preserve_order: bool,
+    ) -> list[dict[str, Any]]:
+        if not preserve_order:
+            return [item.model_dump() for item in accepted]
+        accepted_keys = {EvidenceGate.evidence_key(item) for item in accepted}
+        return [
+            item.model_dump()
+            for item in original
+            if EvidenceGate.evidence_key(item) in accepted_keys
+        ]
 
     @staticmethod
     def _record_gate_diagnostics(state: AgentState, gate_result) -> None:
@@ -1311,10 +1530,9 @@ class AgentRunner:
         trace_id: str,
         mode: str,
         top_k: int,
-        exploration_mode: str,
         navigation_scopes: tuple[str, ...],
     ) -> None:
-        """Run the mandatory citation-authoritative retrieval before Wiki navigation."""
+        """Run Direct retrieval after the Agent selects the Wiki route."""
         available = {
             schema.get("function", {}).get("name", "")
             for schema in schemas
@@ -1343,49 +1561,62 @@ class AgentRunner:
                 arguments["doc_ids"] = list(query_plan.filters["doc_ids"])
 
             call_id = f"initial-direct-{index}"
-            result = tool_executor.execute(
-                tool_call_id=call_id,
-                tool_name=tool_name,
-                arguments=arguments,
-                trace_id=trace_id,
-                retrieval_attempt=state.retrieval_attempts + 1,
-            )
+            retrieval_attempt = state.retrieval_attempts + 1
+            if (
+                tool_name == "search_documents"
+                and query_plan.intent.value == "comparison"
+                and len(query_plan.sub_queries) >= 2
+            ):
+                try:
+                    _, parallel_evidence, _ = (
+                        self._execute_parallel_comparison_retrieval(
+                            query_plan=query_plan,
+                            arguments=arguments,
+                            trace_id=trace_id,
+                            tool_call_id=call_id,
+                            tool_executor=tool_executor,
+                            retrieval_attempt=retrieval_attempt,
+                        )
+                    )
+                    success = True
+                    error_code = ""
+                    evidence = parallel_evidence
+                except ToolExecutionFailure as exc:
+                    success = False
+                    error_code = exc.error_code
+                    evidence = []
+            else:
+                result = tool_executor.execute(
+                    tool_call_id=call_id,
+                    tool_name=tool_name,
+                    arguments=arguments,
+                    trace_id=trace_id,
+                    retrieval_attempt=retrieval_attempt,
+                )
+                success = result.success
+                error_code = result.error_code
+                evidence = [item.model_dump() for item in result.evidence]
             state.tool_calls.append(ToolCallRecord(
                 iteration=0,
                 tool_call_id=call_id,
                 tool_name=tool_name,
                 arguments=arguments,
-                success=result.success,
-                error_code=result.error_code,
+                success=success,
+                error_code=error_code,
             ))
-            if result.success:
+            if success:
                 state.retrieval_attempts += 1
                 state.evidence = self._merge_evidence(
                     state.evidence,
-                    [item.model_dump() for item in result.evidence],
+                    evidence,
                 )[:settings.EXPLORATION_MAX_EVIDENCE]
 
-        assessment = CoverageAssessor().assess(
-            query_plan,
-            self._typed_evidence(state.evidence),
-            exploration_mode=exploration_mode,
-            available_actions=available,
-        )
-        state.coverage_assessments.append(assessment.model_dump(mode="json"))
         observation = self._format_search_observation(state.evidence)
-        if assessment.should_explore:
-            observation += (
-                "\n\n[COVERAGE] Direct Evidence is incomplete. Missing: "
-                + ", ".join(assessment.missing_facets)
-                + ". Continue with: "
-                + ", ".join(assessment.recommended_actions) + "."
-            )
-        else:
-            observation += "\n\n[COVERAGE] Direct Evidence coverage is sufficient."
         state.messages.append({
             "role": "system",
             "content": (
-                "The server completed the mandatory initial Direct retrieval. "
+                "The Agent selected Direct + Wiki retrieval. The server also "
+                "completed the Direct branch. "
                 "Only original Evidence may support claims and citations; Wiki "
                 "pages are navigation metadata.\n\n" + observation
             ),
@@ -1408,13 +1639,6 @@ class AgentRunner:
         if tool_name == "wiki_read_sources" and payload.get("sources"):
             return "wiki_search_evidence"
         return None
-
-    @staticmethod
-    def _latest_should_explore(state: AgentState) -> bool:
-        return bool(
-            state.coverage_assessments
-            and state.coverage_assessments[-1].get("should_explore")
-        )
 
     @staticmethod
     def _typed_evidence(items: list[dict[str, Any]]) -> list[Evidence]:
@@ -1476,24 +1700,77 @@ class AgentRunner:
         return json.dumps(result, ensure_ascii=False, default=str)
 
     @staticmethod
+    def _supplement_wiki_evidence(
+        state: AgentState,
+        *,
+        evidence: list[dict[str, Any]],
+        evidence_gate: EvidenceGate | None,
+    ) -> None:
+        if settings.WIKI_CONTEXT_TOP_K == 0:
+            state.evidence = AgentRunner._merge_evidence(state.evidence, evidence)
+            return
+
+        gate = evidence_gate or EvidenceGate()
+        state.wiki_evidence_candidates.extend(evidence)
+        previous_supplement_keys = {
+            gate.evidence_key(item)
+            for item in AgentRunner._typed_evidence(
+                state.wiki_evidence_supplements
+            )
+        }
+        direct = [
+            item
+            for item in AgentRunner._typed_evidence(state.evidence)
+            if gate.evidence_key(item) not in previous_supplement_keys
+        ]
+        result = WikiEvidenceSupplementer(
+            evidence_gate=gate,
+            wiki_top_k=settings.WIKI_CONTEXT_TOP_K,
+        ).supplement(
+            direct,
+            AgentRunner._typed_evidence(state.wiki_evidence_candidates),
+        )
+        state.evidence = [item.model_dump() for item in result.evidence]
+        state.wiki_evidence_supplements = [
+            item.model_dump() for item in result.evidence[len(direct):]
+        ]
+        logger.info(
+            "[WIKI_EVIDENCE_SUPPLEMENT] trace_id=%s direct_retained=%s "
+            "wiki_candidates=%s wiki_selected=%s "
+            "wiki_duplicates_skipped=%s total=%s",
+            state.trace_id,
+            len(direct),
+            len(state.wiki_evidence_candidates),
+            result.wiki_selected,
+            result.wiki_duplicates_skipped,
+            len(result.evidence),
+        )
+
+    @staticmethod
     def _merge_evidence(
         current: list[dict[str, Any]],
         new_items: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         merged = list(current)
-        seen = {
-            str(item.get("chunk_id") or f"{item.get('doc_id')}:{item.get('chunk_index')}")
-            for item in current
-        }
+        seen = {AgentRunner._evidence_dict_key(item) for item in current}
         for item in new_items:
-            key = str(
-                item.get("chunk_id")
-                or f"{item.get('doc_id')}:{item.get('chunk_index')}"
-            )
+            key = AgentRunner._evidence_dict_key(item)
             if key not in seen:
                 merged.append(item)
                 seen.add(key)
         return merged
+
+    @staticmethod
+    def _evidence_dict_key(item: dict[str, Any]) -> tuple[str, str, str, str]:
+        return (
+            str(item.get("source_scope") or "").strip(),
+            str(item.get("document_id") or item.get("doc_id") or "").strip(),
+            str(item.get("version_id") or "").strip(),
+            str(
+                item.get("chunk_id")
+                or f"{item.get('doc_id')}:{item.get('chunk_index')}"
+            ).strip(),
+        )
 
     @staticmethod
     def _assistant_tool_call_message(
