@@ -4,7 +4,7 @@ import json
 import sqlite3
 
 from eval.wiki.run_phase8_integration import _retain_reviewed_pages
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 
 
 def test_isolated_reviewed_subset_excludes_failed_pages_and_dead_links(tmp_path):

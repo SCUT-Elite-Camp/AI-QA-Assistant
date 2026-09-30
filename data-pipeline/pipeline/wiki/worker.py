@@ -63,6 +63,7 @@ class WikiStageWorker:
                 try:
                     if not self.repository.renew_wiki_job_lease(
                         job_id, worker_id=self.worker_id, attempt=lease["attempt"],
+                        lease_generation=lease["lease_generation"],
                         lease_seconds=600,
                     ):
                         lease_lost.set()
@@ -72,7 +73,7 @@ class WikiStageWorker:
                     continue
         thread = threading.Thread(target=heartbeat, daemon=True)
         thread.start()
-        guard = (job_id, self.worker_id, lease["attempt"])
+        guard = (job_id, self.worker_id, lease["attempt"], lease["lease_generation"])
         try:
             documents = list(self.load_active_documents(lease))
             if state.get("document_order"):
@@ -106,7 +107,8 @@ class WikiStageWorker:
                 if self.repository.reusable_revision(input_hash=input_hash, **_context(scope)):
                     self.repository.advance_wiki_job(job_id, worker_id=self.worker_id,
                                                      next_stage=None, payload={"reused": True},
-                                                     attempt=lease["attempt"])
+                                                     attempt=lease["attempt"],
+                                                     lease_generation=lease["lease_generation"])
                     return True
                 candidates: list[WikiCandidate] = []
                 issues: list[WikiIssue] = []
@@ -245,16 +247,26 @@ class WikiStageWorker:
                 if state.get("finalize_generation"):
                     self.repository.complete_wiki_finalize(
                         **_context(scope), generation=state["finalize_generation"],
+                        lease_guard=guard,
                     )
             self.repository.advance_wiki_job(job_id, worker_id=self.worker_id,
                                              next_stage=next_wiki_stage(stage), payload=state,
-                                             attempt=lease["attempt"])
+                                             attempt=lease["attempt"],
+                                             lease_generation=lease["lease_generation"])
             return True
         except Exception as exc:
             backoff = min(3600, 2 ** min(lease["attempt"], 10))
-            self.repository.fail_wiki_job(job_id, worker_id=self.worker_id,
-                                          error=f"{type(exc).__name__}: {exc}",
-                                          retry_at=int(time.time()) + backoff)
+            try:
+                self.repository.fail_wiki_job(
+                    job_id, worker_id=self.worker_id, attempt=lease["attempt"],
+                    stage=stage.value,
+                    lease_generation=lease["lease_generation"],
+                    error=f"{type(exc).__name__}: {exc}",
+                    retry_at=int(time.time()) + backoff,
+                )
+            except ValueError:
+                # A lost lease must not replace the stage's original failure.
+                pass
             raise
         finally:
             stop_heartbeat.set()

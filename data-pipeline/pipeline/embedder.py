@@ -10,6 +10,7 @@
 """
 
 import gc
+import math
 import os
 from functools import lru_cache
 
@@ -22,6 +23,14 @@ _MODELSCOPE_MODEL_ID = os.environ.get(
     "MODELSCOPE_EMBEDDING_MODEL_ID",
     _LOCAL_MODEL_NAME,
 )
+_EMBEDDING_API_TIMEOUT_SECONDS = float(
+    os.environ.get("EMBEDDING_API_TIMEOUT_SECONDS", "20")
+)
+if (
+    not math.isfinite(_EMBEDDING_API_TIMEOUT_SECONDS)
+    or _EMBEDDING_API_TIMEOUT_SECONDS <= 0
+):
+    raise ValueError("EMBEDDING_API_TIMEOUT_SECONDS must be a finite positive number")
 
 
 def _is_offline_mode() -> bool:
@@ -45,7 +54,11 @@ def _build_openai_client():
     kwargs = {"api_key": api_key}
     if base_url:
         kwargs["base_url"] = base_url
-    return OpenAI(**kwargs)
+    return OpenAI(
+        **kwargs,
+        timeout=_EMBEDDING_API_TIMEOUT_SECONDS,
+        max_retries=0,
+    )
 
 def _use_api() -> bool:
     """Use an embedding API only when production configuration explicitly selects it."""

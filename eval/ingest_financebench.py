@@ -21,7 +21,7 @@ from parsers.registry import parse_file
 from pipeline.chunker import chunk_from_blocks, chunk_text
 from pipeline.embedder import embed_texts
 from retrieval.bm25_index import BM25Index
-from storage.milvus_store import MilvusStore
+from data_persistence.vector import MilvusStore
 
 DEFAULT_PDFS = ROOT / "eval" / "datasets" / "external" / "financebench_subset" / "pdfs"
 DEFAULT_NAMESPACE = "financebench_eval"

@@ -14,7 +14,7 @@ These items do not block the frozen implementation but should remain visible.
 
 - Reduce the current ESLint baseline of 389 warnings without weakening rules.
 - Update GitHub Actions/runtime dependencies before the Node.js 20 action-runtime warning becomes an enforced failure.
-- Remove the legacy SourceIntent heuristic fallback after one accepted shadow/canary release and benchmark review.
+- Evaluate removing the heuristic SourceIntent fallback only after structured SourceIntent passes benchmark and production validation.
 - Make local Windows Web build dependencies self-contained so validation does not depend on junction behavior.
 
 ## P3 - Product enhancement

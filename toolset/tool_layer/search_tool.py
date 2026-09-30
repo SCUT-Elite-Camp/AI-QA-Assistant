@@ -4,7 +4,7 @@ import os
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
-from storage.filtering import matches_filters, normalize_filters
+from data_persistence.vector import matches_filters, normalize_filters
 from tool_layer.base_tool import BaseTool
 
 
@@ -114,12 +114,14 @@ class SearchTool(BaseTool):
         min_score: float = 0.0,
         rrf_k: int = 60,
     ):
-        self.project_root = Path(__file__).resolve().parent.parent.parent
+        from data_persistence.documents import resolve_documents_dir
+
+        default_documents_dir = resolve_documents_dir()
         self.documents_dir = (
             Path(documents_dir) if documents_dir else
-            self.project_root / "data-persistence" / "data" / "documents"
+            default_documents_dir
         )
-        self.bm25_path = self.project_root / "data-persistence" / "data" / "bm25_index.pkl"
+        self.bm25_path = default_documents_dir.parent / "bm25_index.pkl"
 
         self.backend = backend
         self.logger = logger or logging.getLogger(__name__)
@@ -133,7 +135,7 @@ class SearchTool(BaseTool):
     @property
     def milvus_store(self):
         if self._milvus_store is None:
-            from storage.milvus_store import MilvusStore
+            from data_persistence.vector import MilvusStore
             self._milvus_store = MilvusStore()
         return self._milvus_store
 

@@ -7,8 +7,10 @@ import tempfile
 
 from rank_bm25 import BM25Okapi
 from retrieval.english_analyzer import EnglishAnalyzer
-from storage.document_store import DOCS_DIR
-from storage.filtering import matches_filters, normalize_filters
+from data_persistence.documents import resolve_documents_dir
+from data_persistence.vector import matches_normalized_filters, normalize_filters
+
+DOCS_DIR = str(resolve_documents_dir())
 
 
 class BM25Index:
@@ -101,7 +103,7 @@ class BM25Index:
         indexed_scores = [
             (index, score)
             for index, score in enumerate(scores)
-            if matches_filters(self._chunk_meta[index], normalized_filters)
+            if matches_normalized_filters(self._chunk_meta[index], normalized_filters)
         ]
         indexed_scores.sort(key=lambda x: x[1], reverse=True)
         top_indices = [idx for idx, _score in indexed_scores[:top_k]]

@@ -31,13 +31,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 
 def _build_default_search_tool() -> SearchTool:
-    """构造默认的检索工具。
-
-    注：SearchTool 在权限集成后已简化为内置的 hybrid 检索（bm25 + milvus），
-    不再接收 reranker / retrieval_orchestrator 等参数。此前的 orchestrator /
-    reranker 构造逻辑已随之移除；如需启用 query 改写 / 重排，应在 SearchTool
-    内部或独立的检索编排层实现，而不是在此处注入。
-    """
+    """Build the default Agent-facing search tool."""
     return SearchTool()
 
 
@@ -68,7 +62,7 @@ def _build_default_tools() -> List[BaseTool]:
             SQLiteFTSWikiSearch,
             WikiSearchBackend,
         )
-        from storage.wiki_store import WikiStore
+        from data_persistence.wiki import WikiStore
 
         store = WikiStore(resolve_wiki_db_path(PROJECT_ROOT))
         vector = (

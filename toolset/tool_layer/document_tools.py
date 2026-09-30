@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
-from storage.filtering import matches_filters, normalize_filters
+from data_persistence.vector import matches_filters, normalize_filters
 
 from .base_tool import BaseTool
 

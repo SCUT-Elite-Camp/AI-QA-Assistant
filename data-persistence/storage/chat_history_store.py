@@ -1,11 +1,11 @@
 import sqlite3
 import os
 from datetime import datetime, timezone
-from pathlib import Path
 
-# Resolve path relative to storage directory
-DB_DIR = Path(__file__).resolve().parent.parent / "data"
-DB_PATH = DB_DIR / "chat_history.db"
+from data_persistence._paths import chat_history_db_path
+
+DB_PATH = chat_history_db_path()
+DB_DIR = DB_PATH.parent
 
 
 class ChatHistoryStore:
@@ -79,9 +79,23 @@ class ChatHistoryStore:
             )
             return [dict(row) for row in cursor.fetchall()]
 
+    def _get_recent_session_records(self, session_id: str, limit: int) -> list[dict]:
+        """Retrieve the newest session rows, returned in chronological order."""
+        if not session_id:
+            return []
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT * FROM chat_history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
+                (session_id, limit)
+            )
+            records = [dict(row) for row in cursor.fetchall()]
+        records.reverse()
+        return records
+
     def get_session_messages(self, session_id: str, limit: int = 10) -> list[dict[str, str]]:
         """Extracts alternating user and assistant message dicts for short-term memory recovery."""
-        records = self.get_session_records(session_id, limit=limit)
+        records = self._get_recent_session_records(session_id, limit=limit)
         messages: list[dict[str, str]] = []
         for record in records:
             if record.get("user_query"):

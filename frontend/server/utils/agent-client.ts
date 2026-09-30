@@ -9,7 +9,7 @@
  * 环境变量读取（与 Agent 层配置的值必须一致）。
  */
 
-const AGENT_BASE_URL = process.env.AGENT_BASE_URL || 'http://127.0.0.1:8000'
+import { getAgentBaseUrl } from './agentConfig'
 
 function agentHeaders(extra?: Record<string, string>): Record<string, string> {
   return {
@@ -29,7 +29,7 @@ export function agentFetch(path: string, init?: RequestInit): Promise<Response> 
     const extra = new Headers(init.headers)
     extra.forEach((value, key) => headers.set(key, value))
   }
-  return fetch(`${AGENT_BASE_URL}${path}`, { ...init, headers })
+  return fetch(`${getAgentBaseUrl()}${path}`, { ...init, headers })
 }
 
-export { AGENT_BASE_URL, agentHeaders }
+export { agentHeaders }

@@ -1,124 +1,46 @@
-import os
 import json
-import urllib.request
-import urllib.error
-from pathlib import Path
 from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
-
-# Load env configuration from agent/.env and root .env
-for env_path in [
-    Path(__file__).resolve().parent.parent.parent.parent / "agent" / ".env",
-    Path(__file__).resolve().parent.parent.parent.parent / ".env",
-    Path.cwd() / "agent" / ".env",
-    Path.cwd() / ".env"
-]:
-    if env_path.exists():
-        load_dotenv(env_path)
-load_dotenv()
-
-LLM_API_KEY = os.getenv("LLM_API_KEY", "")
-LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.longcat.chat/openai/v1")
-LLM_MODEL = os.getenv("LLM_MODEL", "LongCat-2.0")
+from agent.llm.base import BaseLLM
+from data_persistence.topics import TopicArtifactRepository
 
 
-def _get_topics_base_dir() -> Path:
-    persistence_root = Path(__file__).resolve().parent.parent.parent
-    topics_dir = persistence_root / "data" / "topics"
-    topics_dir.mkdir(parents=True, exist_ok=True)
-    return topics_dir
-
-
-def _call_llm(messages: List[Dict[str, str]], max_tokens: int = 2500, temperature: float = 0.2) -> str:
-    """Call LLM API for topic summarization and cognition generation."""
-    env_file = Path(__file__).resolve().parent.parent.parent.parent / "agent" / ".env"
-    if env_file.exists():
-        load_dotenv(env_file, override=True)
-    load_dotenv(override=True)
-
-    api_key = os.getenv("LLM_API_KEY", "")
-    api_base = os.getenv("LLM_API_BASE", "https://api.longcat.chat/openai/v1")
-    model = os.getenv("LLM_MODEL", "LongCat-2.0")
-
-    if not api_key:
-        print("[TopicSummarizer] Error: LLM_API_KEY is not set in environment!")
-        return ""
-
-    try:
-        url = f"{api_base.rstrip('/')}/chat/completions"
-        payload = json.dumps({
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature
-        }).encode("utf-8")
-
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-
-        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            if resp.status == 200:
-                data = json.loads(resp.read().decode("utf-8"))
-                msg = data.get("choices", [{}])[0].get("message", {})
-                content = (msg.get("content") or "").strip()
-                if content:
-                    return content
-                
-                # Handle reasoning models where output is in reasoning_content
-                reasoning = (msg.get("reasoning_content") or "").strip()
-                if reasoning:
-                    return reasoning
-    except Exception as err:
-        print(f"[TopicSummarizer] LLM API call error: {err}")
-    return ""
-
-
-class TopicSummarizer:
+class TopicSummarizationService:
     """
-    Data Persistence Layer Infrastructure Service:
+    Agent application service:
     Executes a single structured LLM request to extract discussion content and reference existing topic state,
     generating Title, Description, System Core Cognition (Soul.md), and Content Tags.
-    Directly persists generated artifacts to data-persistence/data/topics/<topic_id>/
+    Delegates topic artifact storage to the persistence repository.
     """
 
-    @classmethod
+    def __init__(self, llm: BaseLLM, repository: TopicArtifactRepository) -> None:
+        self.llm = llm
+        self.repository = repository
+
+    def _call_llm(self, messages: List[Dict[str, str]], max_tokens: int = 2500, temperature: float = 0.2) -> str:
+        """Return model text while keeping transport and configuration in Agent."""
+        try:
+            message = self.llm.chat(messages, max_tokens=max_tokens, temperature=temperature) or {}
+            content = (message.get("content") or "").strip()
+            if content:
+                return content
+            return (message.get("reasoning_content") or "").strip()
+        except Exception:
+            return ""
+
     def summarize_and_persist(
-        cls,
+        self,
         topic_id: str,
         discussion_text: str,
         custom_title: Optional[str] = None,
         existing_info: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        topics_base = _get_topics_base_dir()
-        topic_dir = topics_base / topic_id
-        topic_dir.mkdir(parents=True, exist_ok=True)
-        docs_dir = topic_dir / "documents"
-        docs_dir.mkdir(parents=True, exist_ok=True)
+        repository = self.repository
 
         if custom_title and (custom_title.startswith("我想知道") or custom_title.startswith("请问") or custom_title == "新对话"):
             custom_title = None
 
-        # 1. Read existing topic info if present on disk if not provided
-        if not existing_info:
-            info_file = topic_dir / "topic_info.json"
-            soul_file = topic_dir / "soul.md"
-            if info_file.exists():
-                try:
-                    with open(info_file, "r", encoding="utf-8") as f:
-                        existing_info = json.load(f)
-                except Exception:
-                    pass
-            if not existing_info:
-                existing_info = {}
-            if soul_file.exists() and "soulContent" not in existing_info:
-                try:
-                    with open(soul_file, "r", encoding="utf-8") as f:
-                        existing_info["soulContent"] = f.read()
-                except Exception:
-                    pass
+        # Read existing topic state or preserve the caller-supplied state.
+        existing_info = repository.load_existing(topic_id, existing_info)
 
         # Truncate discussion text to prevent context window overflow (~6000 chars max)
         MAX_DISCUSSION_CHARS = 6000
@@ -177,40 +99,32 @@ class TopicSummarizer:
         # Retry up to 2 times on empty response
         raw_resp = ""
         for attempt in range(2):
-            raw_resp = _call_llm(messages, max_tokens=2500, temperature=0.2)
+            raw_resp = self._call_llm(messages, max_tokens=2500, temperature=0.2)
             if raw_resp and raw_resp.strip():
                 break
-            print(f"[TopicSummarizer] Warning: LLM returned empty response on attempt {attempt + 1}, retrying...")
+            print(f"[TopicSummarizationService] Warning: LLM returned empty response on attempt {attempt + 1}, retrying...")
         
-        parsed = cls._parse_and_verify_json(raw_resp, custom_title, discussion_text, existing_info)
+        parsed = self._parse_and_verify_json(raw_resp, custom_title, discussion_text, existing_info)
 
         title = parsed["title"]
         description = parsed["description"]
         soul_content = parsed["soul_content"]
         tags = parsed["tags"]
 
-        # 3. Write soul.md & topic_info.json directly to disk
-        soul_path = topic_dir / "soul.md"
-        with open(soul_path, "w", encoding="utf-8") as f:
-            f.write(soul_content)
-
-        import datetime
-        now_str = datetime.datetime.now().isoformat()
-        info_data = {
-            "id": topic_id,
-            "title": title,
-            "description": description,
-            "soulContent": soul_content,
-            "tags": tags,
-            "weightMode": existing_info.get("weightMode", "auto"),
-            "consecutiveNoNewDocsCount": existing_info.get("consecutiveNoNewDocsCount", 0),
-            "last_synced_at": now_str
+        persisted = repository.save_summary(
+            topic_id,
+            title=title,
+            description=description,
+            soul_content=soul_content,
+            tags=tags,
+            existing_info=existing_info,
+        )
+        return {
+            "title": persisted["title"],
+            "description": persisted.get("description"),
+            "soul_content": persisted.get("soulContent", ""),
+            "tags": persisted.get("tags") or [],
         }
-        info_path = topic_dir / "topic_info.json"
-        with open(info_path, "w", encoding="utf-8") as f:
-            json.dump(info_data, f, ensure_ascii=False, indent=2)
-
-        return info_data
 
 
     @staticmethod
@@ -232,7 +146,7 @@ class TopicSummarizer:
     ) -> Dict[str, Any]:
         """Strictly extracts, parses, and validates JSON object returned by LLM."""
         if not raw_resp:
-            return TopicSummarizer._fallback(custom_title, discussion_text, existing_info)
+            return TopicSummarizationService._fallback(custom_title, discussion_text, existing_info)
 
         import re
         data = None
@@ -259,20 +173,20 @@ class TopicSummarizer:
                         sanitized = re.sub(r'"([^"\\]|\\.)*"', lambda m: m.group(0).replace('\n', '\\n').replace('\r', '\\r'), candidate, flags=re.DOTALL)
                         data = json.loads(sanitized)
                     except Exception as e:
-                        print(f"[TopicSummarizer] JSON parse verification failed: {e}")
+                        print(f"[TopicSummarizationService] JSON parse verification failed: {e}")
 
         if not data or not isinstance(data, dict):
-            return TopicSummarizer._fallback(custom_title, discussion_text, existing_info)
+            return TopicSummarizationService._fallback(custom_title, discussion_text, existing_info)
 
         raw_title = str(data.get("title", "")).strip()
-        clean_t = TopicSummarizer._clean_title(raw_title)
+        clean_t = TopicSummarizationService._clean_title(raw_title)
         title = clean_t if clean_t and len(clean_t) >= 2 else raw_title
         if custom_title and custom_title.strip():
-            title = TopicSummarizer._clean_title(custom_title.strip()) or custom_title.strip()
+            title = TopicSummarizationService._clean_title(custom_title.strip()) or custom_title.strip()
         if not title or len(title) < 2:
             title = existing_info.get("title") or "话题研读"
 
-        title = TopicSummarizer._clean_title(title) or "话题研读"
+        title = TopicSummarizationService._clean_title(title) or "话题研读"
         # Guard: if title is still a placeholder or too short, extract meaningful phrase from discussion
         if len(title) < 2 or title in ("话题研读", "topic", "data", "test", "Topic Workspace") or title.startswith("我想知道") or title.startswith("请问"):
             import re
@@ -294,8 +208,10 @@ class TopicSummarizer:
 
         tags = data.get("tags", [])
         if isinstance(tags, list):
-            cleaned_tags = [TopicSummarizer._clean_title(str(t)) for t in tags if str(t).strip()]
+            cleaned_tags = [TopicSummarizationService._clean_title(str(t)) for t in tags if str(t).strip()]
             tags = [t for t in cleaned_tags if t and len(t) >= 2][:4]
+        else:
+            tags = []
         if not tags:
             tags = [title[:8]]
 
@@ -328,11 +244,11 @@ class TopicSummarizer:
             if len(existing_t) >= 2 and existing_t not in ("话题研读", "topic", "data"):
                 raw_t = existing_t
             else:
-                raw_t = TopicSummarizer._extract_meaningful_title(discussion_text)
+                raw_t = TopicSummarizationService._extract_meaningful_title(discussion_text)
         else:
-            raw_t = TopicSummarizer._extract_meaningful_title(discussion_text)
+            raw_t = TopicSummarizationService._extract_meaningful_title(discussion_text)
 
-        title = TopicSummarizer._clean_title(raw_t) or "话题研读"
+        title = TopicSummarizationService._clean_title(raw_t) or "话题研读"
         return {
             "title": title,
             "description": f"深入研究与探索「{title}」的核心概念、规范流程与技术细节。",

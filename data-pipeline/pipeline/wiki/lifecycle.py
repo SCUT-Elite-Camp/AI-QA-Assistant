@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from data_persistence.documents import resolve_documents_dir
 from models.document import Document
-from storage.document_store import DOCS_DIR
 from pipeline.confluence_snapshot import complete_confluence_export_pages
 
 from .domain import WikiScope, WikiSourceDocument
@@ -19,7 +19,10 @@ class WikiDocumentProjection:
     """Read only active, versioned Confluence documents from the RAG projection."""
 
     def __init__(
-        self, documents_dir: str | Path = DOCS_DIR, *, knowledge_base_id: str = "default",
+        self,
+        documents_dir: str | Path = resolve_documents_dir(),
+        *,
+        knowledge_base_id: str = "default",
         confluence_export_dir: str | Path | None = None,
     ) -> None:
         if not knowledge_base_id.strip():

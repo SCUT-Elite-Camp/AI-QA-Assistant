@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getAgentInternalToken, resolveAgentBaseUrl } from './chatAccess'
-import { getMemoryFeatureFlags, shouldUsePersistentMemory } from './memoryFeatureFlags'
+import { getAgentInternalToken, resolveAgentBaseUrl } from './agentConfig'
+import { shouldUsePersistentMemory } from './memoryFeatureFlags'
 import {
   compactionPlanRequestSchema,
   compactionPlanResponseSchema,
@@ -45,11 +45,6 @@ export type PersistentChatCallResult<T> =
   | { source: 'public', value: T }
 
 export { shouldUsePersistentMemory }
-
-/** @deprecated Prefer getMemoryFeatureFlags for all three server-side gates. */
-export function isPersistentMemoryEnabled (environment: Record<string, string | undefined> = process.env): boolean {
-  return getMemoryFeatureFlags(environment).persistentMemoryEnabled
-}
 
 async function postInternal<TRequest, TResponse> (
   path: string,

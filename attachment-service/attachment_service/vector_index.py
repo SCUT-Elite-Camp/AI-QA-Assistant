@@ -41,7 +41,7 @@ class AttachmentVectorIndex:
             if str(path) not in sys.path:
                 sys.path.insert(0, str(path))
         from pipeline.embedder import embed_texts
-        from storage.milvus_store import MilvusStore
+        from data_persistence.vector import MilvusStore
         if self._store is None:
             self._store = MilvusStore(collection_name=self.collection)
         return embed_texts, self._store
@@ -186,10 +186,16 @@ class AttachmentSectionVectorIndex(AttachmentVectorIndex):
     ) -> list[dict[str, Any]]:
         _, store = self._dependencies()
         self._connect(store)
-        hits = store.search_similar(
-            query_vector, top_k=top_k, doc_ids_filter=attachment_ids,
-            collection_name=self.collection,
-        )
+        try:
+            hits = store.search_similar(
+                query_vector, top_k=top_k, doc_ids_filter=attachment_ids,
+                collection_name=self.collection,
+            )
+        except Exception:
+            self._retry_after = time.monotonic() + float(
+                os.getenv("ATTACHMENT_VECTOR_RETRY_SECONDS", "30")
+            )
+            raise
         return [{
             "attachment_id": hit.entity.get("doc_id"),
             "section_id": hit.entity.get("chunk_id"),

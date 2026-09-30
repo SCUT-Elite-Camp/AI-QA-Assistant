@@ -50,3 +50,31 @@ def test_chat_history_store_session_records_and_clearing() -> None:
         store.clear_session("session-1")
         assert store.get_session_messages("session-1") == []
         assert len(store.get_session_records("session-2")) == 1
+
+
+def test_session_message_recovery_uses_latest_records_in_chronological_order() -> None:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
+        db_path = os.path.join(tmp_dir, "test_chat.db")
+        store = ChatHistoryStore(db_path=db_path)
+
+        for index in range(1, 4):
+            store.add_record(
+                trace_id=f"trace-{index}",
+                user_query=f"question-{index}",
+                assistant_answer=f"answer-{index}",
+                status="success",
+                latency_ms=1,
+                session_id="session-1",
+            )
+
+        messages = store.get_session_messages("session-1", limit=2)
+        assert messages == [
+            {"role": "user", "content": "question-2"},
+            {"role": "assistant", "content": "answer-2"},
+            {"role": "user", "content": "question-3"},
+            {"role": "assistant", "content": "answer-3"},
+        ]
+        assert [record["user_query"] for record in store.get_session_records("session-1", limit=2)] == [
+            "question-1",
+            "question-2",
+        ]

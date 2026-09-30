@@ -23,7 +23,7 @@ class InMemoryConversationMemory(ConversationMemory):
         with self._lock:
             if key not in self._sessions:
                 try:
-                    from storage.chat_history_store import ChatHistoryStore
+                    from data_persistence.chat import ChatHistoryStore
                     store = ChatHistoryStore()
                     db_messages = store.get_session_messages(key, limit=self.max_messages)
                     if db_messages:
@@ -61,7 +61,7 @@ class InMemoryConversationMemory(ConversationMemory):
         with self._lock:
             self._sessions.pop(key, None)
             try:
-                from storage.chat_history_store import ChatHistoryStore
+                from data_persistence.chat import ChatHistoryStore
                 ChatHistoryStore().clear_session(key)
             except Exception:
                 pass

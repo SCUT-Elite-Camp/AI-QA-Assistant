@@ -16,8 +16,7 @@ from pathlib import Path
 
 from eval.wiki.export_review_bundle import main as export_review_bundle
 from eval.wiki.verify_gate_c_full_submission import TABLES, validate
-from storage.wiki_review_release import create_reviewed_revision
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore, create_reviewed_revision
 
 
 def _read_review(archive: Path) -> dict[str, list[dict[str, str]]]:

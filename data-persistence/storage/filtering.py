@@ -74,8 +74,20 @@ def normalize_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def matches_filters(item: dict[str, Any], filters: dict[str, Any] | None) -> bool:
-    """Return whether a metadata row satisfies normalized retrieval filters."""
+    """Validate retrieval filters and match them against a metadata row."""
     normalized = normalize_filters(filters)
+    return matches_normalized_filters(item, normalized)
+
+
+def matches_normalized_filters(
+    item: dict[str, Any], normalized_filters: dict[str, Any]
+) -> bool:
+    """Match a metadata row against filters already returned by normalize_filters.
+
+    Callers accepting untrusted filters should use ``matches_filters`` so
+    validation and fail-closed normalization are not skipped.
+    """
+    normalized = normalized_filters
     if not normalized:
         return True
     doc_ids = normalized.get("doc_ids")

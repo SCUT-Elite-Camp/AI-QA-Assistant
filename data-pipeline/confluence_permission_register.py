@@ -3,7 +3,7 @@ Confluence 文档权限登记器。
 
 用途：
   在 confluence_pull.py 把某个页面/附件写入 Milvus 之后，将同一文档登记到
-  Web 层 SQLite（web/.data/sqlite.db）的 files / file_permissions 表，从而使
+  Web 层 SQLite（frontend/.data/sqlite.db）的 files / file_permissions 表，从而使
   Agent 层的 doc_id 白名单权限过滤（permission_service.get_accessible_doc_ids）
   对 Confluence 来源文档生效，实现「空间级权限隔离」。
 
@@ -33,7 +33,7 @@ from typing import Any, Optional
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-DEFAULT_DB_PATH = os.path.join(REPO, "web", ".data", "sqlite.db")
+DEFAULT_DB_PATH = os.path.join(REPO, "frontend", ".data", "sqlite.db")
 CONFIG_PATH = os.path.join(HERE, "confluence_space_permissions.json")
 
 logger = logging.getLogger("confluence_permission_register")
@@ -142,7 +142,7 @@ def register_doc_permissions(
       title       文档标题（页面标题）
       source_url  页面完整链接
       space_key   Confluence 空间 Key
-      db_path     Web 层 SQLite 路径，默认 web/.data/sqlite.db
+      db_path     Web 层 SQLite 路径，默认 frontend/.data/sqlite.db
       config      空间权限映射配置（None 则自动加载）
       size        文档字节数（Confluence 无真实字节，可用 0 或字符数）
     """

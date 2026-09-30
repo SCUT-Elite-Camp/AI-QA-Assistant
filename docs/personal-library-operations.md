@@ -139,11 +139,8 @@ a compatible worker is restored.
 | Cleanup job is dead | Permanent 4xx, attempts, remote ID | Correct configuration/data, then reviewed requeue |
 | Personal search returns no result | feature flags, trusted context, active Version, owner/KB scope | Fix configuration or ingestion; never weaken filters |
 
-## SourceIntent rollout
+## Source selection
 
-`SOURCE_INTENT_ROUTING_MODE` accepts `heuristic`, `shadow`, `canary`, or
-`default`. Shadow is the safe initial default and logs only query hashes,
-heuristic/structured/effective source names, selected tools, and evidence source
-types. `SOURCE_INTENT_CANARY_PERCENT` deterministically selects canary traffic.
-The heuristic remains available for one release as fallback and can be removed
-only after benchmark and production shadow comparisons are accepted.
+The Agent uses `plan.source_intent` when the structured query plan provides it.
+Otherwise, `heuristic_source_intent()` deterministically selects the source
+scope. There is no shadow or canary rollout mode in the current runtime.

@@ -24,18 +24,12 @@ class ScopedBackend:
         ][:top_k]
 
 
-class EmptySectionIndex:
-    def search(self, *args, **kwargs):
-        return []
-
-
 def _search_tool(documents_dir: Path) -> SearchTool:
     rows = [
         {"doc_id": "doc_1", "chunk_id": "c1", "chunk_index": 0, "text": "overview", "score": 0.5},
         {"doc_id": "doc_1", "chunk_id": "c2", "chunk_index": 1, "text": "tool routing implementation", "score": 0.9},
     ]
     tool = SearchTool(backend=ScopedBackend(rows), documents_dir=str(documents_dir))
-    tool._section_bm25_index = EmptySectionIndex()
     return tool
 
 

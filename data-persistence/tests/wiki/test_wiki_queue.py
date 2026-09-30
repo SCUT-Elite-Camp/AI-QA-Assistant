@@ -30,7 +30,10 @@ def test_persistent_job_lease_recovers_and_advances(tmp_path) -> None:
 
     recovered = store.lease_wiki_job(worker_id="worker-b", lease_seconds=10, now=now + 11)
     assert recovered and recovered["job_id"] == job_id and recovered["attempt"] == 2
-    store.advance_wiki_job(job_id, worker_id="worker-b", next_stage=WikiJobStage.CITE)
+    store.advance_wiki_job(
+        job_id, worker_id="worker-b", next_stage=WikiJobStage.CITE,
+        attempt=recovered["attempt"], lease_generation=recovered["lease_generation"],
+    )
     next_lease = store.lease_wiki_job(worker_id="worker-c", now=now + 12)
     assert next_lease and next_lease["stage"] == "CITE"
 
@@ -77,7 +80,9 @@ def test_retry_dead_letter_and_coalesced_finalize_requests(tmp_path) -> None:
     job_id = _enqueue(store, max_attempts=1)
     lease = store.lease_wiki_job(worker_id="worker", now=int(time.time()))
     assert lease and lease["job_id"] == job_id
-    store.fail_wiki_job(job_id, worker_id="worker", error="permanent", retry_at=200)
+    store.fail_wiki_job(job_id, worker_id="worker", attempt=lease["attempt"], stage=lease["stage"],
+                        lease_generation=lease["lease_generation"],
+                        error="permanent", retry_at=200)
 
     store.upsert_pending_wiki_op(
         source_scope="enterprise", owner_id="", knowledge_base_id="kb",
@@ -161,16 +166,209 @@ def test_expired_worker_cannot_advance_or_publish_after_takeover(tmp_path) -> No
     job_id = _enqueue(store)
     now = int(time.time())
     old = store.lease_wiki_job(worker_id="old", lease_seconds=10, now=now)
-    assert old and store.renew_wiki_job_lease(job_id, worker_id="old", attempt=1)
+    assert old and store.renew_wiki_job_lease(
+        job_id, worker_id="old", attempt=old["attempt"],
+        lease_generation=old["lease_generation"],
+    )
     with store.connection() as db:
         db.execute("UPDATE wiki_jobs SET lease_expires_at=? WHERE job_id=?", (now - 1, job_id))
     new = store.lease_wiki_job(worker_id="new", lease_seconds=10, now=now)
     assert new and new["attempt"] == 2
-    assert not store.renew_wiki_job_lease(job_id, worker_id="old", attempt=1)
+    assert not store.renew_wiki_job_lease(
+        job_id, worker_id="old", attempt=old["attempt"],
+        lease_generation=old["lease_generation"],
+    )
     with pytest.raises(ValueError, match="not leased"):
         store.advance_wiki_job(job_id, worker_id="old", next_stage=WikiJobStage.CITE,
-                               attempt=1)
+                               attempt=old["attempt"], lease_generation=old["lease_generation"])
     with pytest.raises(ValueError, match="lease was lost"):
         store.publish_revision(source_scope="enterprise", owner_id="",
                                knowledge_base_id="kb", revision="not-yet-built",
-                               lease_guard=(job_id, "old", 1))
+                               lease_guard=(job_id, "old", old["attempt"], old["lease_generation"]))
+
+
+def test_expired_worker_cannot_fail_job_or_create_dead_letter(tmp_path, monkeypatch) -> None:
+    from storage import wiki_store
+
+    now = 1000
+    monkeypatch.setattr(wiki_store.time, "time", lambda: now + 11)
+    store = WikiStore(tmp_path / "wiki.sqlite3")
+    job_id = _enqueue(store, max_attempts=1)
+    lease = store.lease_wiki_job(worker_id="worker", lease_seconds=10, now=now)
+    assert lease and lease["job_id"] == job_id
+
+    with pytest.raises(ValueError, match="not leased"):
+        store.fail_wiki_job(job_id, worker_id="worker", attempt=lease["attempt"], stage=lease["stage"],
+                            lease_generation=lease["lease_generation"],
+                            error="stale failure", retry_at=2000)
+
+    with store.connection() as db:
+        row = db.execute("SELECT status,attempt,lease_owner FROM wiki_jobs WHERE job_id=?",
+                         (job_id,)).fetchone()
+        assert tuple(row) == ("RUNNING", 1, "worker")
+        assert db.execute("SELECT COUNT(*) FROM wiki_dead_letters").fetchone()[0] == 0
+
+
+def test_old_attempt_cannot_fail_same_workers_reclaimed_lease(tmp_path, monkeypatch) -> None:
+    from storage import wiki_store
+
+    now = 2000
+    monkeypatch.setattr(wiki_store.time, "time", lambda: now)
+    store = WikiStore(tmp_path / "wiki.sqlite3")
+    job_id = _enqueue(store)
+    old = store.lease_wiki_job(worker_id="same-worker", lease_seconds=10, now=now)
+    assert old and old["attempt"] == 1
+    with store.connection() as db:
+        db.execute("UPDATE wiki_jobs SET lease_expires_at=? WHERE job_id=?", (now, job_id))
+
+    current = store.lease_wiki_job(worker_id="same-worker", lease_seconds=10, now=now)
+    assert current and current["attempt"] == 2
+    with pytest.raises(ValueError, match="not leased"):
+        store.fail_wiki_job(job_id, worker_id="same-worker", attempt=old["attempt"], stage=old["stage"],
+                            lease_generation=old["lease_generation"],
+                            error="stale attempt", retry_at=3000)
+
+    with store.connection() as db:
+        row = db.execute("SELECT status,attempt,lease_owner FROM wiki_jobs WHERE job_id=?",
+                         (job_id,)).fetchone()
+        assert tuple(row) == ("RUNNING", 2, "same-worker")
+        assert db.execute("SELECT COUNT(*) FROM wiki_dead_letters").fetchone()[0] == 0
+    store.fail_wiki_job(job_id, worker_id="same-worker", attempt=current["attempt"], stage=current["stage"],
+                        lease_generation=current["lease_generation"],
+                        error="current failure", retry_at=3000)
+    with store.connection() as db:
+        assert db.execute("SELECT status FROM wiki_jobs WHERE job_id=?", (job_id,)).fetchone()[0] == "RETRY"
+
+
+def test_old_stage_cannot_fail_same_worker_attempt_after_stage_advance(tmp_path, monkeypatch) -> None:
+    from storage import wiki_store
+
+    now = 3000
+    monkeypatch.setattr(wiki_store.time, "time", lambda: now)
+    store = WikiStore(tmp_path / "wiki.sqlite3")
+    job_id = _enqueue(store)
+    old = store.lease_wiki_job(worker_id="same-worker", lease_seconds=10, now=now)
+    assert old and old["stage"] == "EXTRACT" and old["attempt"] == 1
+    with store.connection() as db:
+        db.execute("UPDATE wiki_jobs SET lease_expires_at=? WHERE job_id=?", (now, job_id))
+
+    reclaimed = store.lease_wiki_job(worker_id="other-worker", lease_seconds=10, now=now)
+    assert reclaimed and reclaimed["attempt"] == 2
+    store.advance_wiki_job(
+        job_id, worker_id="other-worker", next_stage=WikiJobStage.CITE,
+        attempt=reclaimed["attempt"], lease_generation=reclaimed["lease_generation"],
+    )
+    current = store.lease_wiki_job(worker_id="same-worker", lease_seconds=10, now=now)
+    assert current and current["stage"] == "CITE" and current["attempt"] == 1
+
+    assert not store.renew_wiki_job_lease(
+        job_id, worker_id="same-worker", attempt=old["attempt"],
+        lease_generation=old["lease_generation"],
+    )
+    with pytest.raises(ValueError, match="not leased"):
+        store.advance_wiki_job(
+            job_id, worker_id="same-worker", next_stage=WikiJobStage.CITE,
+            attempt=old["attempt"], lease_generation=old["lease_generation"],
+        )
+    with pytest.raises(ValueError, match="lease was lost"):
+        store.publish_revision(
+            source_scope="enterprise", owner_id="", knowledge_base_id="kb",
+            revision="not-yet-built",
+            lease_guard=(job_id, "same-worker", old["attempt"], old["lease_generation"]),
+        )
+    stale_artifact = {
+        "scope": {"source_scope": "enterprise", "owner_id": "", "knowledge_base_id": "kb"},
+        "revision": "stale-revision", "input_hash": "stale-input",
+        "generator_model": "test", "prompt_version": "test",
+    }
+    with pytest.raises(ValueError, match="lease was lost"):
+        store.save_artifact(
+            stale_artifact, {},
+            lease_guard=(job_id, "same-worker", old["attempt"], old["lease_generation"]),
+        )
+    store.request_wiki_finalize(
+        source_scope="enterprise", owner_id="", knowledge_base_id="kb",
+    )
+    with pytest.raises(ValueError, match="lease was lost"):
+        store.complete_wiki_finalize(
+            source_scope="enterprise", owner_id="", knowledge_base_id="kb",
+            generation=1,
+            lease_guard=(job_id, "same-worker", old["attempt"], old["lease_generation"]),
+        )
+    with pytest.raises(ValueError, match="not leased"):
+        store.fail_wiki_job(job_id, worker_id="same-worker", attempt=old["attempt"],
+                            stage=old["stage"], lease_generation=old["lease_generation"],
+                            error="stale EXTRACT failure", retry_at=4000)
+
+    with store.connection() as db:
+        row = db.execute("SELECT status,stage,attempt,lease_owner FROM wiki_jobs WHERE job_id=?",
+                         (job_id,)).fetchone()
+        assert tuple(row) == ("RUNNING", "CITE", 1, "same-worker")
+        assert db.execute("SELECT COUNT(*) FROM wiki_dead_letters").fetchone()[0] == 0
+
+
+def test_old_lease_cannot_fail_revived_dead_job_with_reused_identity(tmp_path, monkeypatch) -> None:
+    from storage import wiki_store
+
+    now = 4000
+    monkeypatch.setattr(wiki_store.time, "time", lambda: now)
+    store = WikiStore(tmp_path / "wiki.sqlite3")
+    scope = {"source_scope": "enterprise", "owner_id": "", "knowledge_base_id": "kb"}
+    operation = {**scope, "document_id": "doc", "document_version_id": "ver-1",
+                 "content_sha256": "a" * 64}
+    store.upsert_pending_wiki_op(**operation)
+    job_id = store.schedule_pending_wiki_jobs(now=now)[0]
+
+    old = None
+    for _ in range(5):
+        lease = store.lease_wiki_job(worker_id="same-worker", now=now)
+        assert lease and lease["job_id"] == job_id
+        old = old or lease
+        store.fail_wiki_job(
+            job_id, worker_id="same-worker", attempt=lease["attempt"], stage=lease["stage"],
+            lease_generation=lease["lease_generation"], error="permanent", retry_at=now,
+        )
+    assert old and old["stage"] == "EXTRACT" and old["attempt"] == 1
+    with store.connection() as db:
+        assert db.execute("SELECT status FROM wiki_jobs WHERE job_id=?", (job_id,)).fetchone()[0] == "DEAD"
+        old_generation = db.execute(
+            "SELECT lease_generation FROM wiki_jobs WHERE job_id=?", (job_id,),
+        ).fetchone()[0]
+
+    store.upsert_pending_wiki_op(**operation)
+    assert store.schedule_pending_wiki_jobs(now=now) == [job_id]
+    revived = store.lease_wiki_job(worker_id="same-worker", now=now)
+    assert revived and revived["job_id"] == job_id
+    assert revived["stage"] == old["stage"] and revived["attempt"] == old["attempt"]
+    assert revived["lease_generation"] > old_generation
+
+    with pytest.raises(ValueError, match="not leased"):
+        store.fail_wiki_job(
+            job_id, worker_id="same-worker", attempt=old["attempt"], stage=old["stage"],
+            lease_generation=old["lease_generation"], error="stale prior lifecycle", retry_at=now,
+        )
+    with store.connection() as db:
+        row = db.execute("SELECT status,lease_generation FROM wiki_jobs WHERE job_id=?",
+                         (job_id,)).fetchone()
+        assert tuple(row) == ("RUNNING", revived["lease_generation"])
+        assert db.execute("SELECT COUNT(*) FROM wiki_dead_letters").fetchone()[0] == 1
+
+    current = revived
+    while True:
+        store.fail_wiki_job(
+            job_id, worker_id="same-worker", attempt=current["attempt"], stage=current["stage"],
+            lease_generation=current["lease_generation"], error="revived lifecycle failure",
+            retry_at=now,
+        )
+        if current["attempt"] == 5:
+            break
+        current = store.lease_wiki_job(worker_id="same-worker", now=now)
+        assert current and current["job_id"] == job_id
+
+    with store.connection() as db:
+        dead_letters = db.execute(
+            "SELECT dead_letter_id FROM wiki_dead_letters WHERE job_id=? ORDER BY created_at,dead_letter_id",
+            (job_id,),
+        ).fetchall()
+        assert len(dead_letters) == 2
+        assert dead_letters[0]["dead_letter_id"] != dead_letters[1]["dead_letter_id"]

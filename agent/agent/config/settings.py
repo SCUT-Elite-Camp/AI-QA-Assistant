@@ -53,13 +53,11 @@ class Settings(BaseModel):
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = _env_int("PORT", 8000)
 
-    DEFAULT_TOP_K: int = Field(default_factory=lambda: _env_int("DEFAULT_TOP_K", 5), ge=1, le=20)
     MIN_RETRIEVAL_SCORE: float = Field(
         default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.0),
         ge=0.0,
         le=1.0,
     )
-    DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
     QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
         "QUERY_UNDERSTANDING_ENABLED",
         True,
@@ -95,21 +93,18 @@ class Settings(BaseModel):
         "QUERY_REWRITE_ENABLED",
         True,
     )
-    # Backward-compatible attribute for callers that have not migrated yet.
-    QUERY_REWRITE_ENABLED: bool = CONVERSATION_REWRITE_ENABLED
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
-    SOURCE_INTENT_ROUTING_MODE: str = Field(
-        default_factory=lambda: os.getenv("SOURCE_INTENT_ROUTING_MODE", "shadow").strip().lower(),
-        pattern="^(heuristic|shadow|canary|default)$",
-    )
-    SOURCE_INTENT_CANARY_PERCENT: int = Field(
-        default_factory=lambda: _env_int("SOURCE_INTENT_CANARY_PERCENT", 10),
-        ge=0,
-        le=100,
-    )
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
+    )
+    TOOL_EXECUTOR_MAX_WORKERS: int = Field(
+        default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_WORKERS", 8),
+        ge=1,
+    )
+    TOOL_EXECUTOR_MAX_PENDING: int = Field(
+        default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_PENDING", 16),
+        ge=0,
     )
     AGENTIC_EXPLORATION_ENABLED: bool = _env_bool(
         "AGENTIC_EXPLORATION_ENABLED", False,
@@ -197,10 +192,10 @@ class Settings(BaseModel):
     PERMISSION_FAIL_OPEN: bool = _env_bool("PERMISSION_FAIL_OPEN", False)
 
     # Web 层 SQLite 数据库路径，Agent 层权限服务据此查询文件权限。
-    # 默认定位到 AI-QA-Assistant/web/.data/sqlite.db。
+    # 默认定位到 AI-QA-Assistant/frontend/.data/sqlite.db。
     WEB_SQLITE_PATH: str = os.getenv(
         "WEB_SQLITE_PATH",
-        str(_find_project_root() / "web" / ".data" / "sqlite.db"),
+        str(_find_project_root() / "frontend" / ".data" / "sqlite.db"),
     )
 
 

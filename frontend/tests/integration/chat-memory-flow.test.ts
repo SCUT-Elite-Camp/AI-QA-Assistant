@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   createFactProposal: vi.fn(),
   createUIMessageStream: vi.fn(),
   createUIMessageStreamResponse: vi.fn(),
-  getAgentBaseUrl: vi.fn(),
   getValidatedRouterParams: vi.fn(),
   isSensitiveMemoryValue: vi.fn(),
   isSessionFactEnabled: vi.fn(),
@@ -56,7 +55,6 @@ vi.mock('../../server/utils/drizzle', async (importOriginal) => {
 
 vi.mock('../../server/utils/agent-client', () => ({
   agentFetch: mocks.agentFetch,
-  AGENT_BASE_URL: 'http://127.0.0.1:8000',
   agentHeaders: vi.fn().mockReturnValue({})
 }))
 
@@ -71,7 +69,6 @@ vi.mock('../../server/utils/metrics', () => ({
 vi.mock('../../server/utils/logger', () => ({ logMemoryEvent: mocks.logMemoryEvent }))
 vi.mock('../../server/utils/topicStorage', () => ({ ensureTopicDir: vi.fn(), syncTopicToDisk: vi.fn(), syncAllTopicDocuments: vi.fn(), loadTopicFromDisk: vi.fn() }))
 vi.mock('../../server/utils/chatAccess', () => ({
-  getAgentBaseUrl: mocks.getAgentBaseUrl,
   requireOwnedChat: mocks.requireOwnedChat
 }))
 vi.mock('../../server/utils/agentInternalClient', () => ({
