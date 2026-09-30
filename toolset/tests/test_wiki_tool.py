@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 from tool_layer.wiki_tool import (
     WikiReadPageTool,
     WikiReadSourcesTool,

@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { getSessionSecret } from '../../server/utils/session'
+import { getAgentInternalToken, resolveAgentBaseUrl } from '../../server/utils/agentConfig'
 import {
-  getAgentInternalToken,
   isChatOwnedByActor,
   requireAuthenticatedActorId,
-  resolveAgentBaseUrl,
   resolveChatActor
 } from '../../server/utils/chatAccess'
 

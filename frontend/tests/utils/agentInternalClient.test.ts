@@ -4,7 +4,6 @@ import {
   AgentInternalClientError,
   callChatWithPersistentFallback,
   callInternalChat,
-  isPersistentMemoryEnabled,
   requestCompactionPlan,
   shouldUsePersistentMemory
 } from '../../server/utils/agentInternalClient'
@@ -107,7 +106,6 @@ describe('Agent internal client', () => {
     })
     expect(callPublic).toHaveBeenCalledTimes(1)
     expect(onFallback).toHaveBeenCalledWith('internal_error')
-    expect(isPersistentMemoryEnabled(environment)).toBe(true)
     expect(shouldUsePersistentMemory(false, environment)).toBe(false)
   })
 

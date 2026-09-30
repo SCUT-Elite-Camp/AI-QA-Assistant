@@ -6,7 +6,7 @@ import hashlib
 import hmac
 from typing import Any
 
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 
 from .base_tool import BaseTool
 from .search_library_tool import SearchLibraryTool

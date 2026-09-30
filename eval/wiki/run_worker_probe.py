@@ -26,7 +26,7 @@ from pipeline.wiki.queue import WikiLifecycleCoordinator  # noqa: E402
 from pipeline.wiki.source import document_to_wiki_source  # noqa: E402
 from pipeline.wiki.taxonomy import TaxonomyPlanner  # noqa: E402
 from pipeline.wiki.worker import WikiStageWorker  # noqa: E402
-from storage.wiki_store import WikiStore  # noqa: E402
+from data_persistence.wiki import WikiStore  # noqa: E402
 
 
 def main() -> None:

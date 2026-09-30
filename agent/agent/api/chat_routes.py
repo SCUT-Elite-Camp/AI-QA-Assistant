@@ -1,11 +1,10 @@
-from typing import Optional
+from typing import Iterator, Optional
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from agent.schemas.chat import ChatRequest, ChatResponse, Citation
 from agent.agent import Agent
 from agent.auth import verify_agent_key
-from agent.config.settings import settings
 from agent.streaming.sse import build_sse_event
 
 router = APIRouter()
@@ -63,7 +62,9 @@ def chat_stream(
 
 
 from pydantic import BaseModel
-from services.summarizer.topic_summarizer import TopicSummarizer
+from agent.llm.llm_client import LLMClient
+from agent.service.topic_summarization_service import TopicSummarizationService
+from data_persistence.topics import TopicArtifactRepository
 
 
 class SummarizeTopicRequest(BaseModel):
@@ -73,21 +74,40 @@ class SummarizeTopicRequest(BaseModel):
     existing_info: Optional[dict] = None
 
 
-@router.post("/topics/summarize")
+class SummarizeTopicResponse(BaseModel):
+    title: str
+    description: Optional[str] = None
+    soul_content: str
+    tags: list[str]
+
+
+def get_topic_summarization_service() -> Iterator[TopicSummarizationService]:
+    """Build a request-scoped topic service using the current Agent settings."""
+    llm = LLMClient(
+        fallback_models=(),
+        attempts_per_model=1,
+        retry_delay_seconds=0,
+    )
+    try:
+        yield TopicSummarizationService(
+            llm=llm,
+            repository=TopicArtifactRepository(),
+        )
+    finally:
+        llm.close()
+
+
+@router.post("/topics/summarize", response_model=SummarizeTopicResponse)
 def summarize_topic(
     req: SummarizeTopicRequest,
     _: None = Depends(verify_agent_key),
-):
-    """
-    Triggers Data Persistence Layer Summarizer Service.
-    Generates Title, Description, Soul Cognition (Soul.md), and Content Tags,
-    and directly writes artifacts into data-persistence/data/topics/<topic_id>/
-    """
-    result = TopicSummarizer.summarize_and_persist(
+    service: TopicSummarizationService = Depends(get_topic_summarization_service),
+) -> SummarizeTopicResponse:
+    """Summarize a topic and persist its artifacts through the persistence API."""
+    return service.summarize_and_persist(
         topic_id=req.topic_id,
         discussion_text=req.discussion_text,
         custom_title=req.custom_title,
         existing_info=req.existing_info,
     )
-    return result
 

@@ -6,8 +6,12 @@ on:
       - "agent/**"
       - "attachment-service/**"
       - "data-pipeline/**"
+      - "data-persistence/**"
+      - "shared_runtime/**"
       - "toolset/**"
-      - "web/**"
+      - "frontend/**"
+      - "app.py"
+      - "requirements.txt"
       - ".github/workflows/personal-library-ci.yml"
   push:
     branches: [toolset]
@@ -55,28 +59,28 @@ jobs:
         with:
           node-version: "22"
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Install Web dependencies
-        working-directory: web
+      - name: Install frontend dependencies
+        working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Run Web integration tests
-        working-directory: web
+      - name: Run frontend integration tests
+        working-directory: frontend
         run: pnpm exec vitest run --config vitest.config.ts
 
-      - name: Lint Personal Library Web paths
-        working-directory: web
+      - name: Lint Personal Library frontend paths
+        working-directory: frontend
         run: |
           pnpm run lint
           pnpm exec eslint server/database/schema.ts server/routes/api/library/files server/utils/drizzle.ts server/utils/library.ts server/utils/libraryVersionService.ts tests vitest.config.ts
 
-      - name: Typecheck Web application
-        working-directory: web
+      - name: Typecheck frontend application
+        working-directory: frontend
         run: pnpm run typecheck
 
-      - name: Build Web application
-        working-directory: web
+      - name: Build frontend application
+        working-directory: frontend
         run: |
           New-Item -ItemType Directory -Force .data | Out-Null
           pnpm run build

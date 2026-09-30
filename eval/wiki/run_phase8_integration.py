@@ -33,8 +33,8 @@ from pipeline.embedder import embed_texts  # noqa: E402
 from pipeline.wiki.confluence_source import load_authoritative_confluence_document  # noqa: E402
 from pipeline.wiki.search import BgeM3WikiVectorSearch, SQLiteFTSWikiSearch, WikiSearchBackend  # noqa: E402
 from retrieval.bm25_index import BM25Index  # noqa: E402
-from storage.wiki_store import WikiStore  # noqa: E402
-from storage.milvus_store import MilvusStore  # noqa: E402
+from data_persistence.wiki import WikiStore  # noqa: E402
+from data_persistence.vector import MilvusStore  # noqa: E402
 from toolset.tool_layer import SearchTool, ToolRegistry  # noqa: E402
 from toolset.tool_layer.wiki_tool import (  # noqa: E402
     WikiReadPageTool, WikiReadSourcesTool, WikiSearchEvidenceTool, WikiSearchTool,

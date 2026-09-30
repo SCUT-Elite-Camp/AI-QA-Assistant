@@ -14,15 +14,30 @@ class LLMClient(BaseLLM):
         *,
         model: str | None = None,
         enable_thinking: bool | None = None,
+        fallback_models: tuple[str, ...] | None = None,
+        attempts_per_model: int = 2,
+        retry_delay_seconds: float = 2.0,
     ) -> None:
+        if attempts_per_model < 1:
+            raise ValueError("attempts_per_model must be at least 1")
+        if retry_delay_seconds < 0:
+            raise ValueError("retry_delay_seconds cannot be negative")
+
         self.model = model.strip() if isinstance(model, str) and model.strip() else settings.LLM_MODEL
         self.enable_thinking = enable_thinking
+        self.fallback_models = fallback_models
+        self.attempts_per_model = attempts_per_model
+        self.retry_delay_seconds = retry_delay_seconds
         self._session = requests.Session()
         proxy = os.getenv("LLM_HTTP_PROXY") or os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY")
         if proxy:
             self._session.proxies.update({"http": proxy, "https": proxy})
         else:
             self._session.trust_env = True
+
+    def close(self) -> None:
+        """Release the underlying HTTP connection pool when the client is request-scoped."""
+        self._session.close()
 
     def generate(self, prompt: str) -> str:
         """Helper to generate a response for a single text prompt."""
@@ -59,14 +74,21 @@ class LLMClient(BaseLLM):
             headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
 
         candidate_models = [self.model]
-        for fallback in ["gemini-3-flash-preview", "gemini-3.5-flash", "gemini-flash-latest"]:
+        fallback_models = self.fallback_models
+        if fallback_models is None:
+            fallback_models = (
+                "gemini-3-flash-preview",
+                "gemini-3.5-flash",
+                "gemini-flash-latest",
+            )
+        for fallback in fallback_models:
             if fallback not in candidate_models:
                 candidate_models.append(fallback)
 
         last_error = None
         for current_model in candidate_models:
             payload["model"] = current_model
-            for attempt in range(2):
+            for attempt in range(self.attempts_per_model):
                 try:
                     resp = self._session.post(
                         endpoint,
@@ -85,13 +107,15 @@ class LLMClient(BaseLLM):
                     # If 429 / 503 / 404, retry or try next model
                     if resp.status_code in (429, 503, 500, 502, 404):
                         last_error = LLMError(f"LLM API returned status {resp.status_code} for {current_model}: {resp.text}")
-                        time.sleep(2)
+                        if self.retry_delay_seconds:
+                            time.sleep(self.retry_delay_seconds)
                         continue
 
                     raise LLMError(f"LLM API returned status {resp.status_code}: {resp.text}")
                 except requests.RequestException as exc:
                     last_error = exc
-                    time.sleep(2)
+                    if self.retry_delay_seconds:
+                        time.sleep(self.retry_delay_seconds)
                     continue
 
         if last_error:

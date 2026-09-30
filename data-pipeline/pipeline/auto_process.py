@@ -25,8 +25,7 @@ from pipeline.rag_lifecycle import (
     withdrawn_confluence_documents,
 )
 from retrieval.bm25_index import BM25Index
-from retrieval.section_bm25_index import SectionBM25Index
-from storage.document_store import save_document
+from data_persistence.documents import save_document
 from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 # 配置默认目录
@@ -148,7 +147,7 @@ def _index_document(
             from pipeline.wiki.domain import WikiScope
             from pipeline.wiki.queue import WikiLifecycleCoordinator
             from pipeline.wiki.source import document_to_wiki_source
-            from storage.wiki_store import WikiStore
+            from data_persistence.wiki import WikiStore
 
             source = document_to_wiki_source(
                 doc,
@@ -208,7 +207,7 @@ def auto_process_raws(
         print(f"  - {f}")
         
     # 初始化 Milvus 连接并测试是否能够连接
-    from storage.milvus_store import MilvusStore
+    from data_persistence.vector import MilvusStore
 
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
     has_milvus = False
@@ -270,10 +269,6 @@ def auto_process_raws(
         bm25_index_path = BM25Index.default_index_path()
         bm25.save(bm25_index_path)
         print(f"  → BM25 索引已更新并保存至: {bm25_index_path}")
-        section_bm25 = SectionBM25Index()
-        section_bm25.build_from_documents(str(DOCS_DIR))
-        section_bm25.save(SectionBM25Index.default_index_path())
-        print("  → Section BM25 索引已更新")
         if has_milvus:
             for retraction in retracted:
                 finish_retraction(retraction)

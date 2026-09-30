@@ -12,7 +12,7 @@ import AttachmentTray from '../components/chat/AttachmentTray.vue'
 
 const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
-const { user } = useUserSession()
+const { user, fetchSession } = useUserSession()
 const input = ref('')
 const toast = useToast()
 const attachmentIds = ref<string[]>([])
@@ -55,6 +55,9 @@ async function createChat(prompt: string) {
   const chosenMode = currentWeightMode.value
   loading.value = true
   try {
+    if (!user.value) {
+      await fetchSession()
+    }
     const chat = await $fetch('/api/chats', {
       method: 'POST',
       headers: { [headerName]: csrf() },

@@ -183,6 +183,7 @@ class WikiStore:
                   knowledge_base_id TEXT NOT NULL, document_id TEXT NOT NULL,
                   document_version_id TEXT NOT NULL, content_sha256 TEXT NOT NULL,
                   stage TEXT NOT NULL, status TEXT NOT NULL, attempt INTEGER NOT NULL,
+                  lease_generation INTEGER NOT NULL DEFAULT 0,
                   max_attempts INTEGER NOT NULL, next_retry_at INTEGER NOT NULL,
                   lease_owner TEXT NOT NULL, lease_expires_at INTEGER NOT NULL,
                   payload TEXT NOT NULL, last_error TEXT NOT NULL,
@@ -234,6 +235,10 @@ class WikiStore:
                     db.execute(f"ALTER TABLE wiki_page_revisions ADD COLUMN {column} {declaration}")
             if "op_type" not in {row["name"] for row in db.execute("PRAGMA table_info(wiki_pending_ops)")}:
                 db.execute("ALTER TABLE wiki_pending_ops ADD COLUMN op_type TEXT NOT NULL DEFAULT 'UPSERT'")
+            if "lease_generation" not in {
+                row["name"] for row in db.execute("PRAGMA table_info(wiki_jobs)")
+            }:
+                db.execute("ALTER TABLE wiki_jobs ADD COLUMN lease_generation INTEGER NOT NULL DEFAULT 0")
 
     def get_completion(self, cache_key: str) -> dict[str, Any] | None:
         if len(cache_key) != 64:
@@ -272,10 +277,13 @@ class WikiStore:
         now = int(time.time())
         with self.connection() as db:
             db.execute(
-                "INSERT INTO wiki_jobs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                "INSERT INTO wiki_jobs(job_id,idempotency_key,source_scope,owner_id,knowledge_base_id,"
+                "document_id,document_version_id,content_sha256,stage,status,attempt,lease_generation,"
+                "max_attempts,next_retry_at,lease_owner,lease_expires_at,payload,last_error,created_at,updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(idempotency_key) DO NOTHING",
                 (job_id, digest, scope, owner, kb, document_id, document_version_id,
-                 content_sha256, "EXTRACT", "PENDING", 0, max_attempts, now, "", 0,
+                 content_sha256, "EXTRACT", "PENDING", 0, 0, max_attempts, now, "", 0,
                  _json(payload or {}), "", now, now),
             )
         return job_id
@@ -306,7 +314,8 @@ class WikiStore:
                     "last_error='lease expired after final attempt',updated_at=? WHERE job_id=?",
                     (timestamp, expired["job_id"]),
                 )
-                dead_id = f"wd_{hashlib.sha256((expired['job_id'] + str(expired['attempt'])).encode()).hexdigest()[:24]}"
+                dead_material = f"{expired['job_id']}:{expired['lease_generation']}:{expired['attempt']}"
+                dead_id = f"wd_{hashlib.sha256(dead_material.encode()).hexdigest()[:24]}"
                 db.execute(
                     "INSERT OR IGNORE INTO wiki_dead_letters VALUES(?,?,?,?,?,?,?)",
                     (dead_id, expired["job_id"], expired["stage"], expired["payload"],
@@ -328,19 +337,22 @@ class WikiStore:
                 return None
             lease_expires = timestamp + lease_seconds
             db.execute(
-                "UPDATE wiki_jobs SET status='RUNNING',attempt=attempt+1,lease_owner=?,"
+                "UPDATE wiki_jobs SET status='RUNNING',attempt=attempt+1,"
+                "lease_generation=lease_generation+1,lease_owner=?,"
                 "lease_expires_at=?,updated_at=? WHERE job_id=?",
                 (worker_id, lease_expires, timestamp, row["job_id"]),
             )
             value = dict(row)
             value.update({"status": "RUNNING", "attempt": row["attempt"] + 1,
+                          "lease_generation": row["lease_generation"] + 1,
                           "lease_owner": worker_id, "lease_expires_at": lease_expires,
                           "payload": json.loads(row["payload"])})
             return value
 
     def advance_wiki_job(
         self, job_id: str, *, worker_id: str, next_stage: Any | None,
-        payload: dict[str, Any] | None = None, attempt: int | None = None,
+        payload: dict[str, Any] | None = None, attempt: int,
+        lease_generation: int,
     ) -> None:
         stage = str(next_stage.value if hasattr(next_stage, "value") else next_stage or "")
         valid = {"EXTRACT", "CITE", "PROMOTE", "RESOLVE", "COMPILE", "VERIFY", "FINALIZE", "PUBLISH"}
@@ -353,23 +365,27 @@ class WikiStore:
                 "lease_owner='',lease_expires_at=0,next_retry_at=?,updated_at=?,"
                 "payload=CASE WHEN ? IS NULL THEN payload ELSE ? END "
                 "WHERE job_id=? AND status='RUNNING' AND lease_owner=? "
-                "AND (? IS NULL OR attempt=?) AND lease_expires_at>?",
+                "AND attempt=? AND lease_generation=? AND lease_expires_at>?",
                 (stage, stage, "PENDING" if stage else "COMPLETE", now, now,
                  None if payload is None else 1, _json(payload) if payload is not None else "",
-                 job_id, worker_id, attempt, attempt, now),
+                 job_id, worker_id, attempt, lease_generation, now),
             )
             if cursor.rowcount != 1:
                 raise ValueError("Wiki job is not leased by this worker")
 
     def fail_wiki_job(
-        self, job_id: str, *, worker_id: str, error: str, retry_at: int,
+        self, job_id: str, *, worker_id: str, attempt: int, stage: str,
+        lease_generation: int,
+        error: str, retry_at: int,
     ) -> None:
         now = int(time.time())
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
-                "SELECT * FROM wiki_jobs WHERE job_id=? AND status='RUNNING' AND lease_owner=?",
-                (job_id, worker_id),
+                "SELECT * FROM wiki_jobs WHERE job_id=? AND status='RUNNING' "
+                "AND lease_owner=? AND attempt=? AND stage=? AND lease_generation=? "
+                "AND lease_expires_at>?",
+                (job_id, worker_id, attempt, stage, lease_generation, now),
             ).fetchone()
             if row is None:
                 raise ValueError("Wiki job is not leased by this worker")
@@ -381,14 +397,15 @@ class WikiStore:
                 (status, int(retry_at), error[:2000], now, job_id),
             )
             if dead:
-                dead_id = f"wd_{hashlib.sha256((job_id + str(row['attempt'])).encode()).hexdigest()[:24]}"
+                dead_material = f"{job_id}:{row['lease_generation']}:{row['attempt']}"
+                dead_id = f"wd_{hashlib.sha256(dead_material.encode()).hexdigest()[:24]}"
                 db.execute(
                     "INSERT OR IGNORE INTO wiki_dead_letters VALUES(?,?,?,?,?,?,?)",
                     (dead_id, job_id, row["stage"], row["payload"], error[:2000], row["attempt"], now),
                 )
 
     def renew_wiki_job_lease(
-        self, job_id: str, *, worker_id: str, attempt: int,
+        self, job_id: str, *, worker_id: str, attempt: int, lease_generation: int,
         lease_seconds: int = 600,
     ) -> bool:
         if lease_seconds < 1:
@@ -397,19 +414,21 @@ class WikiStore:
         with self.connection() as db:
             cursor = db.execute(
                 "UPDATE wiki_jobs SET lease_expires_at=?,updated_at=? WHERE job_id=? "
-                "AND status='RUNNING' AND lease_owner=? AND attempt=? AND lease_expires_at>?",
-                (now + lease_seconds, now, job_id, worker_id, attempt, now),
+                "AND status='RUNNING' AND lease_owner=? AND attempt=? AND lease_generation=? "
+                "AND lease_expires_at>?",
+                (now + lease_seconds, now, job_id, worker_id, attempt, lease_generation, now),
             )
             return cursor.rowcount == 1
 
     @staticmethod
     def _require_job_lease(
-        db: sqlite3.Connection, guard: tuple[str, str, int] | None,
+        db: sqlite3.Connection, guard: tuple[str, str, int, int] | None,
     ) -> None:
         if guard is None:
             return
         row = db.execute(
             "SELECT 1 FROM wiki_jobs WHERE job_id=? AND lease_owner=? AND attempt=? "
+            "AND lease_generation=? "
             "AND status='RUNNING' AND lease_expires_at>?", (*guard, int(time.time())),
         ).fetchone()
         if row is None:
@@ -569,10 +588,13 @@ class WikiStore:
                 ).fetchone()
                 generation = (current["generation"] if current else 0) + 1
                 inserted = db.execute(
-                    "INSERT INTO wiki_jobs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                    "INSERT INTO wiki_jobs(job_id,idempotency_key,source_scope,owner_id,knowledge_base_id,"
+                    "document_id,document_version_id,content_sha256,stage,status,attempt,lease_generation,"
+                    "max_attempts,next_retry_at,lease_owner,lease_expires_at,payload,last_error,created_at,updated_at) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
                     "ON CONFLICT(idempotency_key) DO NOTHING",
                     (job_id, digest, *key, "scope-batch", f"batch-{digest[:24]}", digest,
-                     "EXTRACT", "PENDING", 0, 5, timestamp, "", 0,
+                     "EXTRACT", "PENDING", 0, 0, 5, timestamp, "", 0,
                      _json({"changes": changes, "finalize_generation": generation,
                             "intent": intent}),
                      "", timestamp, timestamp),
@@ -611,10 +633,12 @@ class WikiStore:
 
     def complete_wiki_finalize(
         self, *, source_scope: str, owner_id: str, knowledge_base_id: str,
-        generation: int,
+        generation: int, lease_guard: tuple[str, str, int, int],
     ) -> bool:
         scope, owner, kb = self._context(source_scope, owner_id, knowledge_base_id)
         with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self._require_job_lease(db, lease_guard)
             cursor = db.execute(
                 "UPDATE wiki_finalize_requests SET status='COMPLETE' WHERE source_scope=? "
                 "AND owner_id=? AND knowledge_base_id=? AND generation=? "
@@ -849,7 +873,7 @@ class WikiStore:
 
     def save_artifact(
         self, artifact: Any, source_catalog: dict[str, Any], *,
-        lease_guard: tuple[str, str, int] | None = None,
+        lease_guard: tuple[str, str, int, int] | None = None,
     ) -> None:
         payload = artifact.model_dump(mode="json") if hasattr(artifact, "model_dump") else dict(artifact)
         scope_value = payload["scope"]
@@ -1001,7 +1025,7 @@ class WikiStore:
 
     def publish_revision(
         self, *, source_scope: str, owner_id: str, knowledge_base_id: str, revision: str,
-        lease_guard: tuple[str, str, int] | None = None,
+        lease_guard: tuple[str, str, int, int] | None = None,
     ) -> None:
         scope, owner, kb = self._context(source_scope, owner_id, knowledge_base_id)
         key = (scope, owner, kb, revision)

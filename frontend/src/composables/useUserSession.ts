@@ -18,6 +18,26 @@ export const useUserSession = createSharedComposable(() => {
 
   const fetchSession = async () => {
     session.value = await $fetch<UserSession>('/api/session').catch(() => null)
+    if (!session.value?.user) {
+      try {
+        const res = await $fetch<{ success: boolean; user?: any }>('/api/auth/dev-login', {
+          method: 'POST',
+          headers: { [headerName]: csrf() },
+          body: {
+            userId: 'dev-user',
+            username: 'dev',
+            name: 'Development User',
+            role: 'admin',
+          }
+        })
+        if (res?.user) {
+          session.value = await $fetch<UserSession>('/api/session').catch(() => null)
+        }
+      } catch {
+        // Ignored if dev login is disabled or in production
+      }
+    }
+    return session.value
   }
 
   const popupListener = (e: StorageEvent) => {

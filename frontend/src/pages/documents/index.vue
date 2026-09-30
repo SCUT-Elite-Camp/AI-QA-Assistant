@@ -116,17 +116,30 @@ async function executeDelete() {
   if (!targetDocsToDelete.value.length) return
   isDeleting.value = true
   try {
-    await $fetch('/api/documents/delete', {
+    const result = await $fetch<{
+      success: boolean
+      deletedCount: number
+      failures: string[]
+      warnings: string[]
+    }>('/api/documents/delete', {
       method: 'POST',
       headers: { [headerName]: csrf() },
       body: { docIds: targetDocsToDelete.value }
     })
 
-    toast.add({
-      title: 'Documents Deleted',
-      description: `Successfully deleted ${targetDocsToDelete.value.length} document(s) and cleared vector indices.`,
-      color: 'success'
-    })
+    if (result.success) {
+      toast.add({
+        title: 'Documents Deleted',
+        description: `Successfully deleted ${result.deletedCount} document(s) and cleared vector indices.`,
+        color: 'success'
+      })
+    } else {
+      toast.add({
+        title: 'Deletion Partially Completed',
+        description: `Deleted ${result.deletedCount} document(s), but some files or indexes need attention.`,
+        color: 'warning'
+      })
+    }
 
     selectedDocIds.value.clear()
     showDeleteModal.value = false

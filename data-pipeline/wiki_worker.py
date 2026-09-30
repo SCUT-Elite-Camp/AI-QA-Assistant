@@ -24,8 +24,8 @@ from pipeline.wiki.quality import WikiQualityGate  # noqa: E402
 from pipeline.wiki.search import BgeM3WikiVectorSearch  # noqa: E402
 from pipeline.wiki.taxonomy import TaxonomyPlanner  # noqa: E402
 from pipeline.wiki.worker import WikiStageWorker  # noqa: E402
-from storage.document_store import DOCS_DIR  # noqa: E402
-from storage.wiki_store import WikiStore  # noqa: E402
+from data_persistence.documents import resolve_documents_dir  # noqa: E402
+from data_persistence.wiki import WikiStore  # noqa: E402
 from shared_runtime.wiki_paths import resolve_wiki_db_path  # noqa: E402
 
 
@@ -47,7 +47,8 @@ def main() -> None:
     wiki_path = resolve_wiki_db_path(ROOT)
     store = WikiStore(wiki_path)
     projection = WikiDocumentProjection(
-        DOCS_DIR, knowledge_base_id=os.getenv("ENTERPRISE_KNOWLEDGE_BASE_ID", "default"),
+        resolve_documents_dir(),
+        knowledge_base_id=os.getenv("ENTERPRISE_KNOWLEDGE_BASE_ID", "default"),
     )
     lifecycle = WikiDocumentLifecycle(store, projection)
     api_key = deepseek_api_key_from_environment()

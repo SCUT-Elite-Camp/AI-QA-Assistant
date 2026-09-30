@@ -10,7 +10,7 @@ from pipeline.structure import build_document_sections
 from pipeline.wiki.lifecycle import WikiDocumentLifecycle, WikiDocumentProjection
 from pipeline.wiki.source import document_to_wiki_source
 from pipeline.wiki.domain import WikiScope
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 

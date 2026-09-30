@@ -85,31 +85,3 @@ export async function requireOwnedChat (event: HTTPEvent, chatId: string) {
 
   return { actor, chat }
 }
-
-/**
- * Resolves the server-to-server Agent URL. A local fallback is permitted only
- * during development; deployed environments must configure AGENT_BASE_URL.
- */
-export function getAgentBaseUrl (): string {
-  return resolveAgentBaseUrl(process.env)
-}
-
-export function resolveAgentBaseUrl (environment: Record<string, string | undefined>): string {
-  const configuredUrl = environment.AGENT_BASE_URL?.trim()
-  if (configuredUrl) return configuredUrl.replace(/\/+$/, '')
-
-  if (environment.NODE_ENV === 'development') {
-    return 'http://127.0.0.1:8000'
-  }
-
-  throw new Error('AGENT_BASE_URL must be configured outside development')
-}
-
-/**
- * Token delivery is deliberately deferred until Unit 04a creates token-checked
- * private Agent endpoints. The legacy public chat/reset endpoints must not be
- * treated as a token-protected security boundary.
- */
-export function getAgentInternalToken (environment: Record<string, string | undefined> = process.env): string | undefined {
-  return environment.AGENT_INTERNAL_TOKEN?.trim() || undefined
-}

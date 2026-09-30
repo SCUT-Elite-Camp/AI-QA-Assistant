@@ -132,7 +132,7 @@ def mock_sqlite_db_path(monkeypatch, tmp_path, request):
     if request.node.get_closest_marker("no_storage"):
         return
 
-    from storage.chat_history_store import ChatHistoryStore
+    from data_persistence.chat import ChatHistoryStore
     db_file = tmp_path / "test_chat_history.db"
     
     # Override initializer to use our temporary test database path
