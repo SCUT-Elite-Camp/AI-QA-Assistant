@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from agent.config.settings import settings
+from agent.evidence import EvidenceGate
 from agent.runtime import AgentRunner, StopReason
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryIntent, QueryPlan
@@ -142,7 +143,11 @@ def make_plan(**updates: Any) -> QueryPlan:
     return QueryPlan(**values)
 
 
-def test_wiki_navigation_returns_to_authoritative_evidence(monkeypatch) -> None:
+@pytest.mark.parametrize("wiki_top_k", [3, 0])
+def test_wiki_navigation_returns_to_authoritative_evidence(
+    monkeypatch,
+    wiki_top_k: int,
+) -> None:
     class WikiStep(RecordingTool):
         def __init__(self, name: str, payload: dict[str, Any]) -> None:
             super().__init__(name)
@@ -156,7 +161,21 @@ def test_wiki_navigation_returns_to_authoritative_evidence(monkeypatch) -> None:
             self.calls.append(kwargs)
             return self.payload
 
-    search = RecordingSearchTool()
+    class ComparisonSearchTool(RecordingSearchTool):
+        def search(self, **kwargs: Any) -> list[dict[str, Any]]:
+            self.calls.append(kwargs)
+            suffix = "a" if kwargs["query"] == "主题 A" else "b"
+            return [{
+                "doc_id": f"direct-{suffix}",
+                "chunk_id": f"direct-{suffix}::chunk_0",
+                "chunk_index": 0,
+                "chunk_text": f"Direct evidence for {suffix}",
+                "title": f"Direct {suffix}",
+                "source_url": f"https://example.com/direct-{suffix}",
+                "score": 0.9,
+            }]
+
+    search = ComparisonSearchTool()
     wiki_search = WikiStep("wiki_search", {
         "pages": [{"page_id": "page-1", "title": "Related"}],
         "citation_authority": False,
@@ -183,20 +202,24 @@ def test_wiki_navigation_returns_to_authoritative_evidence(monkeypatch) -> None:
     ])
     runner = AgentRunner(llm=llm, registry=registry, audit_service=AuditService())
     monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+    monkeypatch.setattr(settings, "WIKI_CONTEXT_TOP_K", wiki_top_k)
 
     result = runner.run(
         make_plan(
             original_query="跨文档比较两个主题",
             standalone_query="跨文档比较两个主题",
             intent=QueryIntent.COMPARISON,
+            sub_queries=["主题 A", "主题 B"],
         ),
         policy=IntentPolicy(
             candidate_tools=tuple(tool.name for tool in tools),
+            evidence_policy="bilateral_coverage",
             max_iterations=6,
             max_tool_calls=8,
             max_retrieval_attempts=5,
         ),
         tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.5),
         trace_id="trace-wiki-chain",
         exploration_mode="auto",
         navigation_scopes=("enterprise",),
@@ -207,11 +230,327 @@ def test_wiki_navigation_returns_to_authoritative_evidence(monkeypatch) -> None:
         "search_documents", "wiki_search", "wiki_read_page",
         "wiki_read_sources", "wiki_search_evidence",
     ]
+    assert {call["query"] for call in search.calls} == {"主题 A", "主题 B"}
     assert result.exploration_rounds == 4
-    assert {
+    evidence_ids = [
         item.get("document_id") or item["doc_id"] for item in result.evidence
-    } == {"doc-1", "doc-2"}
+    ]
+    assert set(evidence_ids[:2]) == {"direct-a", "direct-b"}
+    assert evidence_ids[-1] == "doc-2"
     assert all(not item.get("citation_authority") is False for item in result.evidence)
+    answer_context = llm.calls[-1]["messages"][-1]["content"]
+    assert answer_context.count("[AUTHORITATIVE_EVIDENCE version=1]") == 1
+    assert answer_context.count("[/AUTHORITATIVE_EVIDENCE]") == 1
+    assert "direct-a::chunk_0" in answer_context
+    assert "direct-b::chunk_0" in answer_context
+    assert "doc-2::chunk_0" in answer_context
+    initial_tool_names = {
+        schema["function"]["name"] for schema in llm.calls[0]["tools"]
+    }
+    assert initial_tool_names == {"search_documents", "wiki_search"}
+
+
+def test_agent_can_select_direct_only_when_wiki_tools_are_available(
+    monkeypatch,
+) -> None:
+    search = RecordingSearchTool()
+    wiki_search = RecordingTool(name="wiki_search")
+    tools = [search, wiki_search]
+    registry = ToolRegistry(tools=tools)
+    llm = ScriptedLLM([
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [tool_call(
+                "search_documents",
+                {"query": "ignored"},
+                "direct-1",
+            )],
+        },
+        {"role": "assistant", "content": "Direct-only answer [1]"},
+    ])
+    runner = AgentRunner(
+        llm=llm,
+        registry=registry,
+        audit_service=AuditService(),
+    )
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=4,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        trace_id="trace-direct-only-route",
+        exploration_mode="auto",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert [call.tool_name for call in result.tool_calls] == ["search_documents"]
+    assert len(search.calls) == 1
+    assert wiki_search.calls == []
+    assert "检索路由规则" in llm.calls[0]["messages"][0]["content"]
+
+
+def test_evidence_required_answer_without_route_is_reprompted(monkeypatch) -> None:
+    search = RecordingSearchTool()
+    wiki_search = RecordingTool(name="wiki_search")
+    tools = [search, wiki_search]
+    registry = ToolRegistry(tools=tools)
+    llm = ScriptedLLM([
+        {"role": "assistant", "content": "unsupported direct answer"},
+        {"tool_calls": [tool_call(
+            "search_documents",
+            {"query": "ignored"},
+            "direct-after-reprompt",
+        )]},
+        {"role": "assistant", "content": "Grounded answer [1]"},
+    ])
+    runner = AgentRunner(
+        llm=llm,
+        registry=registry,
+        audit_service=AuditService(),
+    )
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=4,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        trace_id="trace-route-reprompt",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "Grounded answer [1]"
+    assert [call.tool_name for call in result.tool_calls] == ["search_documents"]
+    assert any(
+        "requires cited Evidence" in message.get("content", "")
+        for message in llm.calls[1]["messages"]
+    )
+
+
+def test_evidence_required_answer_cannot_bypass_route(monkeypatch) -> None:
+    search = RecordingSearchTool()
+    wiki_search = RecordingTool(name="wiki_search")
+    registry = ToolRegistry(tools=[search, wiki_search])
+    llm = ScriptedLLM([
+        {"role": "assistant", "content": "first unsupported answer"},
+        {"role": "assistant", "content": "second unsupported answer"},
+    ])
+    runner = AgentRunner(
+        llm=llm,
+        registry=registry,
+        audit_service=AuditService(),
+    )
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=2,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        trace_id="trace-route-required",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.NO_RELEVANT_CONTEXT
+    assert result.answer == ""
+    assert result.error_code == "retrieval_route_required"
+    assert result.evidence == []
+    assert result.tool_calls == []
+
+
+def test_wiki_subtool_cannot_start_the_route(monkeypatch) -> None:
+    search = RecordingSearchTool()
+    wiki_search = RecordingTool(name="wiki_search")
+    wiki_evidence = WikiEvidenceTool()
+    tools = [search, wiki_search, wiki_evidence]
+    registry = ToolRegistry(tools=tools)
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call(
+            "wiki_search_evidence",
+            {"query": "ignored", "page_id": "fabricated"},
+            "invalid-wiki-start",
+        )]},
+        {"tool_calls": [tool_call(
+            "search_documents",
+            {"query": "ignored"},
+            "direct-after-invalid-wiki",
+        )]},
+        {"role": "assistant", "content": "Direct answer [1]"},
+    ])
+    runner = AgentRunner(
+        llm=llm,
+        registry=registry,
+        audit_service=AuditService(),
+    )
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=(
+                "search_documents", "wiki_search", "wiki_search_evidence",
+            ),
+            max_iterations=4,
+            max_tool_calls=5,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        trace_id="trace-invalid-wiki-start",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert [call.error_code for call in result.tool_calls] == [
+        "wiki_route_must_start_with_search", "",
+    ]
+    assert len(search.calls) == 1
+    assert wiki_evidence.calls == []
+
+
+def test_force_mode_starts_direct_plus_wiki_without_model_route_choice(
+    monkeypatch,
+) -> None:
+    class WikiStep(RecordingTool):
+        def __init__(self, name: str, payload: dict[str, Any]) -> None:
+            super().__init__(name)
+            self.payload = payload
+
+        @property
+        def parameters(self) -> dict[str, Any]:
+            return {"type": "object", "additionalProperties": True}
+
+        def execute(self, **kwargs: Any) -> Any:
+            self.calls.append(kwargs)
+            return self.payload
+
+    search = RecordingSearchTool()
+    wiki_search = WikiStep("wiki_search", {
+        "pages": [{"page_id": "page-1", "title": "Related"}],
+    })
+    wiki_page = WikiStep("wiki_read_page", {
+        "page": {"id": "page-1", "title": "Related"},
+    })
+    wiki_sources = WikiStep("wiki_read_sources", {
+        "sources": [{"document_id": "doc-2", "document_version_id": "ver-2"}],
+    })
+    wiki_evidence = WikiEvidenceTool()
+    tools = [search, wiki_search, wiki_page, wiki_sources, wiki_evidence]
+    registry = ToolRegistry(tools=tools)
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call(
+            "wiki_read_page", {"page_ref": "page-1"}, "forced-wiki-2",
+        )]},
+        {"tool_calls": [tool_call(
+            "wiki_read_sources", {"page_id": "page-1"}, "forced-wiki-3",
+        )]},
+        {"tool_calls": [tool_call(
+            "wiki_search_evidence",
+            {"query": "ignored", "page_id": "page-1"},
+            "forced-wiki-4",
+        )]},
+        {"role": "assistant", "content": "Forced Wiki answer [1][2]"},
+    ])
+    runner = AgentRunner(
+        llm=llm,
+        registry=registry,
+        audit_service=AuditService(),
+    )
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=tuple(tool.name for tool in tools),
+            max_iterations=6,
+            max_tool_calls=8,
+            max_retrieval_attempts=5,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        trace_id="trace-force-wiki-route",
+        exploration_mode="force",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert [call.tool_name for call in result.tool_calls] == [
+        "search_documents", "wiki_search", "wiki_read_page",
+        "wiki_read_sources", "wiki_search_evidence",
+    ]
+    assert wiki_search.calls[0]["query"] == "CP2 分工文档内容"
+    assert len(search.calls) == 1
+    assert len(llm.calls) == 4
+    assert {
+        schema["function"]["name"] for schema in llm.calls[0]["tools"]
+    } == {"wiki_read_page"}
+
+
+def test_empty_wiki_navigation_still_gates_direct_prefetch(monkeypatch) -> None:
+    class EmptyWikiSearch(RecordingTool):
+        def __init__(self) -> None:
+            super().__init__(name="wiki_search")
+
+        @property
+        def parameters(self) -> dict[str, Any]:
+            return {"type": "object", "additionalProperties": True}
+
+        def execute(self, **kwargs: Any) -> Any:
+            self.calls.append(kwargs)
+            return {"pages": [], "citation_authority": False}
+
+    search = RecordingSearchTool()
+    wiki_search = EmptyWikiSearch()
+    tools = [search, wiki_search]
+    registry = ToolRegistry(tools=tools)
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call(
+            "wiki_search", {"query": "ignored"}, "empty-wiki",
+        )]},
+    ])
+    runner = AgentRunner(
+        llm=llm,
+        registry=registry,
+        audit_service=AuditService(),
+    )
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=3,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.95),
+        trace_id="trace-empty-wiki-gates-direct",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.NO_RELEVANT_CONTEXT
+    assert result.answer == ""
+    assert result.evidence == []
+    assert len(llm.calls) == 1
 
 
 def test_search_loop_uses_standalone_query_filters_and_trace_id() -> None:

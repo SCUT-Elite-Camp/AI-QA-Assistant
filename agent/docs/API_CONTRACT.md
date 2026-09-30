@@ -25,7 +25,7 @@ The endpoint runs the CP2 orchestration flow:
 
 ```text
 request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
--> IntentPolicyRouter -> AgentRunner -> ToolExecutor -> EvidenceGate
+-> IntentPolicyRouter -> AgentRunner route selection -> ToolExecutor -> EvidenceGate
 -> corrective retrieval (at most once) -> AnswerFormatter/CitationChecker
 -> memory write-back -> JSON response
 ```
@@ -196,6 +196,24 @@ question in `message`, matching the existing Web error/status rendering path.
   and retrieval strategy before the Runner executes.
 - Evidence is accepted by `EvidenceGate` before final answer generation; a
   failed first attempt may trigger one bounded corrective retrieval.
+- When Wiki tools are available, the Agent selects the retrieval route before
+  retrieval: a Direct tool runs Direct-only, while `wiki_search` makes the
+  Runner execute Direct and Wiki branches together. This does not depend on a
+  post-retrieval evidence-sufficiency classifier.
+- `exploration_mode=auto` exposes only Direct entry tools and `wiki_search`
+  until the route is selected. A text answer without a route is rejected and
+  reprompted, and Wiki subtools cannot be called before `wiki_search`.
+  `exploration_mode=force` deterministically starts Direct+Wiki without asking
+  the model to choose; `off` exposes Direct tools only.
+- `WIKI_CONTEXT_TOP_K` (default `3`, range `0-10`) appends that many eligible,
+  versioned, unique `wiki_search_evidence` items after Direct Evidence without
+  reranking or displacing it. `EXPLORATION_MAX_EVIDENCE` remains the Direct
+  branch limit, so Direct 20 plus Wiki 3 produces 23 final Evidence items.
+  Setting `WIKI_CONTEXT_TOP_K=0` restores the legacy merge behavior.
+- Wiki pages, summaries, and relationship metadata never enter the Evidence
+  pool. The final prompt contains one versioned `[AUTHORITATIVE_EVIDENCE]`
+  block, and that ordered list is also used by run results, answer formatting,
+  citation output, and citation validation.
 - `CitationChecker` validates that exposed citations are backed by accepted
   request-local Evidence.
 - Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
