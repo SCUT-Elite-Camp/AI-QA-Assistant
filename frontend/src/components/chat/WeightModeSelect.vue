@@ -59,10 +59,10 @@ const menuItems = computed(() => [[
       color="neutral"
       variant="ghost"
       size="sm"
-      class="text-sm font-semibold text-zinc-200 hover:text-white flex items-center gap-1 cursor-pointer px-2"
+      class="text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md"
     >
       <span>{{ displayLabel }}</span>
-      <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-zinc-400 ms-0.5" />
+      <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-zinc-400 ms-0.5" />
     </UButton>
   </UDropdownMenu>
 </template>
