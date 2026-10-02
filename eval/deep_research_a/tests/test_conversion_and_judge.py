@@ -85,7 +85,8 @@ def test_fast_chat_conversion_restores_stable_evidence_identity() -> None:
             "content_hash": "content-hash",
             "locator": "doc-a_chunk_1",
             "excerpt": "利润保持稳定。",
-            "source_method": "local_original_read",
+            "source_method": "citation_excerpt",
+            "metadata_provenance": "public_api_and_frozen_manifest",
             "supports_fact_ids": ["fact-1"],
             "conflict_status": "none",
         }

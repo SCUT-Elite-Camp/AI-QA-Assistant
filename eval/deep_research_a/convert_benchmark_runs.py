@@ -10,15 +10,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
-DATASET = HERE / "datasets" / "cases.v1.json"
-MANIFESTS = HERE / "manifests" / "source_manifests.v1.json"
-BASELINE = HERE / "config" / "frozen_baseline.json"
+DATASET = Path(os.getenv("DR_EVAL_DATASET_PATH", HERE / "datasets" / "cases.v1.json"))
+MANIFESTS = Path(os.getenv("DR_EVAL_MANIFEST_PATH", HERE / "manifests" / "source_manifests.v1.json"))
+BASELINE = Path(os.getenv("DR_EVAL_BASELINE_PATH", HERE / "config" / "frozen_baseline.json"))
 GROUPS = {
     "fast_chat": "G1",
     "deep_research_current": "G2",
@@ -76,7 +77,7 @@ def adjacent_context_locators(doc_id: str, value: Any) -> list[str]:
     ]
 
 
-def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
+def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, Any], baseline: dict[str, Any], *, frozen_environment: dict[str, Any] | None = None) -> dict[str, Any]:
     result = envelope.get("result") or {}
     group = GROUPS[str(envelope["group"])]
     research = result if group != "G1" else {}
@@ -109,7 +110,8 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
                 item.get("chunk_index"),
             ),
             "excerpt": excerpt,
-            "source_method": "local_original_read",
+            "source_method": "citation_excerpt" if group == "G1" else "local_original_read",
+            "metadata_provenance": "public_api_and_frozen_manifest",
             "supports_fact_ids": [
                 fact["fact_id"] for fact in case.get("required_facts", [])
                 if contains_any(excerpt, fact.get("match_any", []))
@@ -176,7 +178,7 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
                 item.get("chunk_index"),
             ),
             "source_url": url or None,
-            "link_status": "open" if checked.get("ok") else ("broken" if url else "not_applicable"),
+            "link_status": "open" if checked.get("ok") else ("pending" if checked.get("error") == "authentication_required" else ("broken" if url else "not_applicable")),
             "supports_claim": bool(
                 item.get("excerpt") or item.get("text") or item.get("snippet")
             ),
@@ -231,7 +233,8 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     metrics = progress.get("metrics") or {}
     job = research.get("job") or {}
     error = envelope.get("error")
-    behavior = str(report_payload.get("result_status") or response.get("result_status") or "degraded")
+    behavior = str(report_payload.get("result_status") or response.get("result_status") or response.get("status") or "degraded")
+    behavior = {"clarification_required": "request_more_information", "no_relevant_context": "refuse"}.get(behavior, behavior)
     behavior = {"completed": "answer", "success": "answer", "failed": "degraded"}.get(behavior, behavior)
     if behavior not in {"answer", "degraded", "refuse", "request_more_information", "conflict_review"}:
         behavior = "answer" if report_text else "degraded"
@@ -271,6 +274,13 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
                 "search_path": "read_context",
             })
 
+    actual_environment = ({
+        "git_commit": frozen_environment["git"]["commit"], "git_dirty": frozen_environment["git"]["dirty"],
+        "python_version": frozen_environment["runtime"]["python"], "model": frozen_environment["model"]["name"],
+        "model_revision": "unreported", "generation_config_hash": frozen_environment["config_hash"],
+        "prompt_hashes": frozen_environment.get("prompt_hashes", {}),
+        "embedding_revision": frozen_environment["retrieval"]["embedding_model"],
+    } if frozen_environment else {})
     return {
         "schema_version": "1.0",
         "run_id": envelope["run_id"], "group": group,
@@ -283,6 +293,7 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             "generation_config_hash": baseline["generation_config_sha256"],
             "prompt_hashes": {name: value.get("sha256") for name, value in baseline["prompts"].items() if isinstance(value, dict)},
             "embedding_revision": baseline["retrieval"]["embedding_revision"],
+            **actual_environment,
         },
         "request": {
             "question": case["question"], "question_sha256": sha256(case["question"]),
@@ -294,8 +305,8 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
         "retrieval_hits": retrieval_hits,
         "observations": list(trace.get("observations") or []),
         "verified_evidence": traced_evidence or evidence,
-        "claims": traced_claims or ([{"claim_id": claim_id, "text": report_text, "factual": True, "evidence_ids": evidence_ids}] if claim_id else []),
-        "report": {"text": report_text, "behavior": behavior, "limitations_disclosed": "局限" in report_text or "无法" in report_text},
+        "claims": traced_claims or ([{"claim_id": claim_id, "text": report_text, "factual": response.get("status") != "clarification_required", "evidence_ids": evidence_ids}] if claim_id else []),
+        "report": {"text": report_text, "behavior": behavior, "limitations_disclosed": bool(re.search(r"limitations?|cannot confirm|insufficient|clarif|authorized scope|局限|无法", report_text, re.I))},
         "citations": citations,
         "events": list((research.get("events") or {}).get("events") or []),
         "runtime_metrics": {
@@ -321,13 +332,15 @@ def main() -> int:
     dataset = {item["case_id"]: item for item in load(DATASET)["cases"]}
     manifests = load(MANIFESTS)["manifests"]
     baseline = load(BASELINE)
+    frozen_path = args.envelopes / "config" / "frozen_environment.json"
+    frozen_environment = load(frozen_path) if frozen_path.is_file() else None
     count = 0
     for path in sorted(args.envelopes.rglob("*.json")):
         envelope = load(path)
         if envelope.get("schema_version") != "deep-research-run.v1":
             continue
         case_id = str(envelope["case_id"])
-        record = convert(envelope, dataset[case_id], manifests[case_id], baseline)
+        record = convert(envelope, dataset[case_id], manifests[case_id], baseline, frozen_environment=frozen_environment)
         dump(args.output_dir / record["group"] / case_id / path.name, record)
         count += 1
     print(f"converted {count} benchmark envelopes")

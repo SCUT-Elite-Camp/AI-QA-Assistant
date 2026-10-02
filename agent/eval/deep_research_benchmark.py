@@ -8,6 +8,7 @@ It never silently substitutes the current lexical fallback for Page Index.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
@@ -126,6 +127,7 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             "branch": _git("branch", "--show-current"),
             "commit": _git("rev-parse", "HEAD"),
             "dirty": bool(_git("status", "--porcelain")),
+            "tracked_dirty": bool(_git("diff", "--name-only", "HEAD")),
         },
         "runtime": {
             "python": sys.version.split()[0],
@@ -148,6 +150,8 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             ),
             "g1_backend": "hybrid_milvus_bm25",
             "g2_backend": "local_json",
+            "bm25_index_sha256": (_sha256_bytes(Path(os.getenv("BM25_INDEX_PATH", str(PROJECT_ROOT / "data-persistence/data/bm25_index.pkl"))).read_bytes())
+                                  if Path(os.getenv("BM25_INDEX_PATH", str(PROJECT_ROOT / "data-persistence/data/bm25_index.pkl"))).is_file() else None),
             "page_index_provider": "unavailable_until_capability_probe_passes",
         },
         "research": {
@@ -161,6 +165,10 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
         },
         "documents_manifest_hash": manifest["manifest_hash"],
         "documents_count": manifest["document_count"],
+        "prompt_hashes": {name: _sha256_bytes((PROJECT_ROOT / path).read_bytes()) for name, path in {
+            "g1_answer": "agent/agent/prompt/templates.py", "g1_assembly": "agent/agent/runtime/runner.py",
+            "planner": "agent/deep_research/planner.py", "report": "agent/deep_research/model_report.py",
+        }.items()},
     }
     config["config_hash"] = _sha256_json(config)
     _json_dump(output_dir / "frozen_environment.json", config)
@@ -248,9 +256,9 @@ def _check_url(url: str, *, timeout_seconds: float = 15.0) -> dict[str, Any]:
         # Authenticated Confluence may return 401/403 to this non-browser probe.
         return {
             "url": url,
-            "ok": False,
+            "ok": None if exc.code in (401, 403) else False,
             "status": exc.code,
-            "error": "http_error",
+            "error": "authentication_required" if exc.code in (401, 403) else "http_error",
             "latency_ms": int((time.perf_counter() - started) * 1000),
         }
     except (URLError, ValueError) as exc:
@@ -315,12 +323,11 @@ def _run_fast_chat(client: ApiClient, case: dict[str, Any], top_k: int) -> dict[
             "filters": {"doc_ids": _case_scope(case)["document_ids"]},
             "retrieval_mode": "hybrid",
             "stream": False,
+            "is_first_message": False,
         },
     )
     citations = response.get("citations", []) if isinstance(response, dict) else []
     status = str(response.get("status") or "") if isinstance(response, dict) else ""
-    if status != "success":
-        raise RuntimeError(f"fast_chat_terminal_status:{status or 'missing'}")
     result = {
         "response": response,
         "citations": citations,
@@ -328,6 +335,8 @@ def _run_fast_chat(client: ApiClient, case: dict[str, Any], top_k: int) -> dict[
             _check_url(str(item.get("source_url") or "")) for item in citations
         ],
     }
+    if status not in {"success", "clarification_required", "no_relevant_context", "unsupported"}:
+        raise BenchmarkRunError(f"fast_chat_terminal_status:{status or 'missing'}", partial_result=result)
     return result
 
 
@@ -492,61 +501,75 @@ def run_benchmark(args: argparse.Namespace) -> int:
     client = ApiClient(args.base_url, timeout_seconds=args.request_timeout)
     failures = 0
 
-    for case in cases:
+    def run_case_group(case, group):
+        failures = 0
         case_id = str(case.get("case_id") or "").strip()
         question = str(case.get("question") or "").strip()
         if not case_id or not question:
             raise ValueError("every case requires case_id and question")
-        for group in args.groups:
-            for repetition in range(1, args.repetitions + 1):
-                run_id = f"{case_id}-{group}-r{repetition}-{uuid4().hex[:8]}"
-                started_at = datetime.now(timezone.utc)
-                started = time.perf_counter()
-                result = None
-                error = None
-                try:
-                    if group == "fast_chat":
-                        result = _run_fast_chat(client, case, args.top_k)
-                    elif group == "deep_research_current":
-                        result = _run_research(
-                            client,
-                            case,
-                            profile="current",
-                            timeout_seconds=args.run_timeout,
-                        )
-                    else:
-                        result = _run_research(
-                            client,
-                            case,
-                            profile="page_index",
-                            timeout_seconds=args.run_timeout,
-                        )
-                except Exception as exc:  # preserve every failed run
-                    failures += 1
-                    result = getattr(exc, "partial_result", result)
-                    error = {
-                        "type": type(exc).__name__,
-                        "message": str(exc),
-                        "http_status": getattr(exc, "status", None),
-                    }
-                completed_at = datetime.now(timezone.utc)
-                envelope = RunEnvelope(
-                    schema_version="deep-research-run.v1",
-                    run_id=run_id,
-                    case_id=case_id,
-                    group=group,
-                    repetition=repetition,
-                    started_at=started_at.isoformat(),
-                    completed_at=completed_at.isoformat(),
-                    elapsed_ms=int((time.perf_counter() - started) * 1000),
-                    config_hash=config["config_hash"],
-                    success=error is None,
-                    result=result,
-                    error=error,
-                )
-                _json_dump(output_root / "runs" / group / case_id / f"{run_id}.json", asdict(envelope))
-                state = "PASS" if envelope.success else "FAIL"
-                print(f"[{state}] {case_id} {group} repetition={repetition} run_id={run_id}")
+        for repetition in range(1, args.repetitions + 1):
+            run_id = f"{case_id}-{group}-r{repetition}-{uuid4().hex[:8]}"
+            started_at = datetime.now(timezone.utc)
+            started = time.perf_counter()
+            result = None
+            error = None
+            try:
+                if group == "fast_chat":
+                    result = _run_fast_chat(client, case, args.top_k)
+                elif group == "deep_research_current":
+                    result = _run_research(
+                        client,
+                        case,
+                        profile="current",
+                        timeout_seconds=args.run_timeout,
+                    )
+                else:
+                    result = _run_research(
+                        client,
+                        case,
+                        profile="page_index",
+                        timeout_seconds=args.run_timeout,
+                    )
+            except Exception as exc:  # preserve every failed run
+                failures += 1
+                result = getattr(exc, "partial_result", result)
+                error = {
+                    "type": type(exc).__name__,
+                    "message": str(exc),
+                    "http_status": getattr(exc, "status", None),
+                }
+            completed_at = datetime.now(timezone.utc)
+            envelope = RunEnvelope(
+                schema_version="deep-research-run.v1",
+                run_id=run_id,
+                case_id=case_id,
+                group=group,
+                repetition=repetition,
+                started_at=started_at.isoformat(),
+                completed_at=completed_at.isoformat(),
+                elapsed_ms=int((time.perf_counter() - started) * 1000),
+                config_hash=config["config_hash"],
+                success=error is None,
+                result=result,
+                error=error,
+            )
+            _json_dump(output_root / "runs" / group / case_id / f"{run_id}.json", asdict(envelope))
+            state = "PASS" if envelope.success else "FAIL"
+            print(f"[{state}] {case_id} {group} repetition={repetition} run_id={run_id}")
+        return failures
+
+    if getattr(args, "parallel_groups", False):
+        # G1 uses the shared Chat Agent; G2 uses its separate Research runtime.
+        # Keep Chat requests sequential, while the two independent groups overlap.
+        def run_group(group):
+            return sum(run_case_group(case, group) for case in cases)
+        with ThreadPoolExecutor(max_workers=len(args.groups)) as pool:
+            failures = sum(pool.map(run_group, args.groups))
+    else:
+        for case in cases:
+            for group in args.groups:
+                failures += run_case_group(case, group)
+
     return 1 if failures else 0
 
 
@@ -573,7 +596,7 @@ def summarize(output_root: Path) -> dict[str, Any]:
             "latency_mean_ms": round(statistics.mean(elapsed), 2) if elapsed else None,
             "latency_p50_ms": round(statistics.median(elapsed), 2) if elapsed else None,
             "source_links": len(source_checks),
-            "broken_source_links": sum(not bool(item.get("ok")) for item in source_checks),
+            "broken_source_links": sum(item.get("ok") is False for item in source_checks),
         }
     _json_dump(output_root / "summary.json", result)
     return result
@@ -592,6 +615,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--base-url", default="http://127.0.0.1:8000")
     run.add_argument("--groups", nargs="+", choices=GROUPS, default=list(GROUPS))
     run.add_argument("--case-ids", nargs="+", help="run only the selected frozen case IDs")
+    run.add_argument("--parallel-groups", action="store_true", help="Overlap independent groups while preserving sequential Chat requests")
     run.add_argument("--repetitions", type=int, default=3)
     run.add_argument("--top-k", type=int, default=5)
     run.add_argument("--request-timeout", type=float, default=120.0)

@@ -1764,7 +1764,7 @@ class AgentRunner:
         return merged
 
     @staticmethod
-    def _evidence_dict_key(item: dict[str, Any]) -> tuple[str, str, str, str]:
+    def _evidence_dict_key(item: dict[str, Any]) -> tuple[str, str, str, str, str]:
         return (
             str(item.get("source_scope") or "").strip(),
             str(item.get("document_id") or item.get("doc_id") or "").strip(),
@@ -1773,6 +1773,8 @@ class AgentRunner:
                 item.get("chunk_id")
                 or f"{item.get('doc_id')}:{item.get('chunk_index')}"
             ).strip(),
+            # Keep each query's provenance until the comparison gate checks coverage.
+            str(item.get("retrieval_query") or "").strip(),
         )
 
     @staticmethod

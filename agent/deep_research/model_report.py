@@ -9,6 +9,7 @@ import time
 from urllib.request import Request, urlopen
 
 from agent.config.settings import settings
+from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
 from .renderer import MarkdownReportRenderer
 
 
@@ -29,6 +30,9 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
     def render(self, **kwargs):
         language = kwargs.get("language") or "en-US"
         base_report = super().render(**kwargs)
+        if needs_architecture_scope(str(kwargs["objective"])):
+            title, separator, body = base_report.markdown.partition("\n")
+            base_report = base_report.model_copy(update={"markdown": title + separator + "\n## Scope clarification\n\n" + ARCHITECTURE_SCOPE_QUESTION + "\nThe following evidence describes candidate snapshots, not a verified latest deployment.\n" + body})
         if not base_report.citations or not self.api_key:
             return base_report
 
@@ -43,6 +47,14 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             else "Write a complete research report with these sections: Executive summary, Key findings, Detailed analysis, Conflicts and resolution, and Limitations. "
             "Use tables when they make comparisons clearer. Explain conditions, dates, versions, and exceptions instead of only giving a direct answer."
         )
+        if needs_architecture_scope(str(kwargs["objective"])):
+            output_instruction += (
+                " This question does not define which architecture snapshot is wanted. "
+                "Your executive summary MUST ask the user to clarify current code implementation, "
+                "planned target architecture (such as CP2), or a dated demonstration. "
+                "Do not declare any plan or demonstration to be the uniquely latest deployed architecture. "
+                "Present retrieved documents only as dated candidate snapshots; the latest implementation remains unconfirmed."
+            )
         prompt = (
             "You are a rigorous research report writer. Use only the frozen, verified local evidence below. "
             "Do not browse, add facts from memory, or invent sources. "
@@ -99,6 +111,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                     "Every non-heading line containing a fact, number, status, date, name, or file path "
                     "must end with one or more valid [n] citations. If a fact cannot be confirmed, say so. "
                     "Do not output a title or source list.\n\n"
+                    f"Language and scope requirements: {output_instruction}\n\n"
                     f"Question: {kwargs['objective']}\n\nEvidence:\n{evidence_text}"
                 )
                 rescue_payload = {
@@ -159,6 +172,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                     "Keep the body under 600 Chinese characters or 350 English words. Answer requested facts directly; "
                     "do not copy source Markdown. Every factual non-heading line must end with valid "
                     "[n] citations. Do not output a title or source list.\n\n"
+                    f"Language and scope requirements: {output_instruction}\n\n"
                     f"Question: {kwargs['objective']}\n\nEvidence:\n{evidence_text}"
                 )
                 rescue_payload = {

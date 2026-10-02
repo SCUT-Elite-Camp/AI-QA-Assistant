@@ -634,6 +634,14 @@ class Agent:
             return response
 
         status, message, stage = self._error_mapping(run_result)
+        if not re.search(r"[\u4e00-\u9fff]", query):
+            message = {
+                StatusCode.NO_RELEVANT_CONTEXT: "I cannot confirm this from the authorized documents. Please provide the missing evidence or clarify the source scope.",
+                StatusCode.LLM_ERROR: "The model service is temporarily unavailable. Please try again.",
+                StatusCode.TOOL_ERROR: "A required tool is temporarily unavailable. Please try again.",
+                StatusCode.RETRIEVAL_ERROR: "The retrieval service is temporarily unavailable. Please try again.",
+                StatusCode.AGENT_LIMIT_REACHED: "The request reached its execution limit. Please narrow the question and try again.",
+            }.get(status, message)
         return self._error_response(
             trace_id=trace_id,
             query=query,

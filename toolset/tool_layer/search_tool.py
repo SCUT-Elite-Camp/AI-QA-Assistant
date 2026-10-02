@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -121,7 +122,7 @@ class SearchTool(BaseTool):
             Path(documents_dir) if documents_dir else
             default_documents_dir
         )
-        self.bm25_path = default_documents_dir.parent / "bm25_index.pkl"
+        self.bm25_path = Path(os.getenv("BM25_INDEX_PATH", str(default_documents_dir.parent / "bm25_index.pkl")))
 
         self.backend = backend
         self.logger = logger or logging.getLogger(__name__)
@@ -248,6 +249,7 @@ class SearchTool(BaseTool):
         started = time.perf_counter()
         trace = trace_id or "-"
         filters = _normalize_public_filters(filters)
+        filters = self._narrow_week_scope(query, filters)
 
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
@@ -459,6 +461,16 @@ class SearchTool(BaseTool):
             item["score"] = min(1.0, scores[key] / maximum) if maximum else 0.0
             output.append(item)
         return output
+
+    def _narrow_week_scope(self, query: str, filters: Dict) -> Dict:
+        """Resolve a single named sprint inside an explicit document allowlist."""
+        weeks = set(re.findall(r"(?<!\w)W\d{2}(?!\w)", query, re.IGNORECASE))
+        allowed = filters.get("doc_ids") or []
+        if len(weeks) != 1 or len(allowed) < 2:
+            return filters
+        week = next(iter(weeks)).casefold()
+        matching = [doc_id for doc_id in allowed if week in str(self._load_document_meta(doc_id).get("title", "")).casefold()]
+        return {**filters, "doc_ids": matching} if matching else filters
 
     def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         # 空白名单短路：doc_ids 显式为空列表表示用户无可访问文件，直接返回空结果。

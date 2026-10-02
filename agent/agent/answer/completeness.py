@@ -17,7 +17,7 @@ class AnswerCompletenessChecker:
     _MAX_EVIDENCE_ITEMS = 10
     _MAX_CONTENT_CHARS = 2400
     _REPAIR_EVIDENCE_ITEMS = 5
-    _REPAIR_CONTENT_CHARS = 1200
+    _REPAIR_CONTENT_CHARS = 12000
 
     def __init__(
         self,
@@ -132,7 +132,7 @@ class AnswerCompletenessChecker:
         response = self.llm.chat(
             [{
                 "role": "system",
-                "content": self._repair_prompt(query_plan, answer, repair_evidence, result),
+                "content": self._repair_prompt(query_plan, answer, repair_evidence, result, evidence),
             }],
             tools=None,
         )
@@ -145,6 +145,7 @@ class AnswerCompletenessChecker:
         answer: str,
         evidence: list[Evidence],
         result: AnswerCompletenessResult,
+        original_evidence: list[Evidence] | None = None,
     ) -> str:
         style = (
             "Add the listed omissions onto the original answer. Preserve every correct "
@@ -161,7 +162,7 @@ class AnswerCompletenessChecker:
             f"Missing aspects: {json.dumps(result.missing_aspects, ensure_ascii=False)}\n"
             "Missing critical facts: "
             f"{json.dumps(result.missing_critical_facts, ensure_ascii=False)}\n\n"
-            f"Evidence:\n{self._format_evidence(evidence)}"
+            f"Evidence:\n{self._format_evidence(evidence, original_evidence)}"
         )
 
     def _evidence_for_repair(
@@ -181,11 +182,12 @@ class AnswerCompletenessChecker:
                 break
         return selected or evidence[: self._REPAIR_EVIDENCE_ITEMS]
 
-    def _format_evidence(self, evidence: list[Evidence]) -> str:
+    def _format_evidence(self, evidence: list[Evidence], original_evidence: list[Evidence] | None = None) -> str:
         rows: list[str] = []
         limit = self._REPAIR_CONTENT_CHARS
         for index, item in enumerate(evidence[: self._MAX_EVIDENCE_ITEMS], start=1):
-            rows.append(f"[{index}] {item.title}: {item.content[:limit]}")
+            citation_index = next((i for i, source in enumerate(original_evidence, start=1) if source is item), index) if original_evidence is not None else index
+            rows.append(f"[{citation_index}] {item.title}: {item.content[:limit]}")
         return "\n".join(rows)
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -165,7 +166,7 @@ def main() -> int:
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=180)
     args = parser.parse_args()
-    dataset = {item["case_id"]: item for item in load(HERE / "datasets" / "cases.v1.json")["cases"]}
+    dataset = {item["case_id"]: item for item in load(Path(os.getenv("DR_EVAL_DATASET_PATH", HERE / "datasets" / "cases.v1.json")))["cases"]}
     prompt = (HERE / "prompts" / "model_judge.v1.md").read_text(encoding="utf-8")
     client = LLMClient()
     settings.LLM_TIMEOUT = args.timeout

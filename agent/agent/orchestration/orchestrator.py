@@ -491,6 +491,13 @@ class AgentOrchestrator:
             )
 
         merged_filters = dict(query_plan.filters)
+        hard_doc_ids = (request.filters or {}).get("doc_ids")
+        if hard_doc_ids is not None:
+            for key in ("doc_id", "document_id"):
+                if key not in (request.filters or {}) and merged_filters.get(key) not in hard_doc_ids:
+                    # A model may mistake a document title for its ID. Explicit
+                    # caller-selected IDs remain the authoritative source scope.
+                    merged_filters.pop(key, None)
         for key, value in (request.filters or {}).items():
             if key in merged_filters and merged_filters[key] != value:
                 raise ValueError(f"conflicting hard filter: {key}")

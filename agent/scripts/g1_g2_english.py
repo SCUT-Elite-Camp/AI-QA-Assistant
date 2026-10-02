@@ -21,6 +21,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("check", "freeze", "serve", "run"))
     parser.add_argument("--port", type=int, default=8010)
+    parser.add_argument("--case-ids", nargs="+", help="Run a selected pilot subset of the English cases")
+    parser.add_argument("--repetitions", type=int, default=3)
+    parser.add_argument("--request-timeout", type=float, default=300)
+    parser.add_argument("--parallel-groups", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "g1_g2_english_20261002")
     args = parser.parse_args()
     load_dotenv(AGENT / ".env", override=True)
@@ -52,11 +56,16 @@ def main() -> int:
         uvicorn.run("app:app", host="127.0.0.1", port=args.port)
         return 0
     if args.mode == "run":
-        benchmark_args = benchmark.build_parser().parse_args([
+        run_options = [
             "run", "--dataset", str(dataset_path), "--output-dir", str(output / "runs"),
             "--base-url", f"http://127.0.0.1:{args.port}", "--groups", "fast_chat", "deep_research_current",
-            "--repetitions", "3", "--request-timeout", "120", "--run-timeout", "600",
-        ])
+            "--repetitions", str(args.repetitions), "--request-timeout", str(args.request_timeout), "--run-timeout", "600",
+        ]
+        if args.case_ids:
+            run_options.extend(["--case-ids", *args.case_ids])
+        if args.parallel_groups:
+            run_options.append("--parallel-groups")
+        benchmark_args = benchmark.build_parser().parse_args(run_options)
         return benchmark.run_benchmark(benchmark_args)
     frozen = benchmark.freeze_environment(output / "config")
     print(json.dumps({"cases": 18, "runs_planned": 108, "language": "en-US",
