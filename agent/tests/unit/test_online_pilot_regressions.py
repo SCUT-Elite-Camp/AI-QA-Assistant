@@ -114,3 +114,16 @@ def test_repair_subset_keeps_original_citation_numbers_and_table_tail():
     formatted = checker._format_evidence([evidence[5]], evidence)
     assert formatted.startswith('[6]')
     assert 'M10 Not started' in formatted
+
+@pytest.mark.parametrize('policy_name', ['single_fact', 'topic_coverage', 'bilateral_coverage'])
+def test_document_discovery_summary_does_not_support_factual_answers(policy_name):
+    from agent.evidence import EvidenceGate
+    from agent.schemas.intent_policy import IntentPolicy
+    from agent.schemas.tool_execution import Evidence
+    summary = Evidence(doc_id='doc', chunk_id='doc::document', title='Deliverables', content='Truncated file table', score=1, retrieval_query='test', retrieval_mode='document')
+    plan = QueryPlan(original_query='test', standalone_query='test', sub_queries=['test', 'test2'])
+    result = EvidenceGate().evaluate(plan, IntentPolicy(evidence_policy=policy_name), [summary], retrieval_attempt=1)
+    assert not result.accepted
+    assert result.eligible_evidence_count == 0
+    identity = EvidenceGate().evaluate(plan, IntentPolicy(evidence_policy='document_identity'), [summary], retrieval_attempt=1)
+    assert identity.accepted

@@ -26,7 +26,12 @@ class EvidenceGate:
         if not 1 <= retrieval_attempt <= 5:
             raise ValueError("retrieval_attempt must be between one and five")
 
-        eligible = self.select_eligible(evidence)
+        # Document discovery summaries establish identity, not factual support.
+        # Require a chunk read/search before answering questions about contents.
+        supporting = evidence if policy.evidence_policy == "document_identity" else [
+            item for item in evidence if item.chunk_id != f"{item.doc_id}::document"
+        ]
+        eligible = self.select_eligible(supporting)
         covered = self._covered_targets(eligible)
         counts = {
             "candidate_evidence_count": len(evidence),
@@ -84,7 +89,7 @@ class EvidenceGate:
                 # A section may be retrieved for both comparison targets.
                 # Deduplicating first loses its second query provenance.
                 if not self._has_retrieval_for(
-                    target, [item for item in evidence if item.score >= self.min_score]
+                    target, [item for item in supporting if item.score >= self.min_score]
                 )
             ]
             accepted = bool(targets) and not missing
