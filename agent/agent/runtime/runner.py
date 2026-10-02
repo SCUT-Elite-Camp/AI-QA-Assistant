@@ -1161,6 +1161,11 @@ class AgentRunner:
         def execute(index: int, query: str):
             child_arguments = dict(arguments)
             child_arguments["query"] = query
+            registry = getattr(tool_executor, "registry", None)
+            search_tool = registry.get("search_documents") if registry is not None else None
+            date_scope = getattr(search_tool, "_narrow_dated_scope", None)
+            if callable(date_scope):
+                child_arguments["filters"] = date_scope(query, dict(child_arguments.get("filters") or {}))
             return query, tool_executor.execute(
                 tool_call_id=f"{tool_call_id}-sub-{index}",
                 tool_name="search_documents",
@@ -1317,6 +1322,17 @@ class AgentRunner:
         messages: list[dict[str, Any]],
     ) -> dict[str, Any]:
         selected = self._select_answer_llm(state)
+        if not re.search(r"[\u4e00-\u9fff]", state.query_plan.original_query):
+            instruction = (
+                "The user's question is in English. Write the entire answer in English. "
+                "Preserve exact technical identifiers and citations. Do not switch to "
+                "another language because evidence or tool metadata use that language."
+            )
+            messages = [dict(message) for message in messages]
+            if messages and messages[0].get("role") == "system":
+                messages[0]["content"] = str(messages[0].get("content", "")) + "\n\n" + instruction
+            else:
+                messages.insert(0, {"role": "system", "content": instruction})
         try:
             return selected.chat(messages, tools=None)
         except Exception as exc:

@@ -154,8 +154,9 @@ class AnswerCompletenessChecker:
             if settings.ANSWER_REPAIR_APPEND_ONLY
             else "Repair the answer exactly once using only the supplied evidence."
         )
+        language = "Write the entire repaired answer in English. " if not re.search(r"[\u4e00-\u9fff]", query_plan.original_query) else ""
         return (
-            f"{style} Do not mention this review and do not invent facts. "
+            f"{language}{style} Do not mention this review and do not invent facts. "
             "Return only the repaired answer.\n\n"
             f"Question: {query_plan.standalone_query}\n"
             f"Original answer: {answer}\n"

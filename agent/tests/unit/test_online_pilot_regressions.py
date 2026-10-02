@@ -159,3 +159,66 @@ def test_selected_documents_do_not_inherit_guessed_metadata_filters():
     request = ChatRequest(query=query, filters={'doc_ids': ['a', 'b'], 'space': 'explicit'})
     plan = plan.model_copy(update={'filters': {'space': 'explicit', 'doc_type': 'sprint'}})
     assert AgentOrchestrator._merge_request_constraints(request, plan).filters == {'doc_ids': ['a', 'b'], 'space': 'explicit'}
+
+
+@pytest.mark.parametrize('query', ['Retrieve details from the September 8 meeting notes', 'Read the meeting on September 8, 2026', 'Read the 2026-09-08 meeting'])
+def test_dated_comparison_target_resolves_only_inside_allowed_documents(tmp_path, query):
+    import json
+    for doc_id, title in [('plan', 'Implementation Plan'), ('meeting', 'Meeting 2026-09-08'), ('forbidden', 'Meeting 2026-09-08')]:
+        (tmp_path / f'{doc_id}.json').write_text(json.dumps({'title': title}), encoding='utf-8')
+    tool = SearchTool(documents_dir=str(tmp_path))
+    scope = {'doc_ids': ['plan', 'meeting']}
+    assert tool._narrow_dated_scope(query, scope) == {'doc_ids': ['meeting']}
+    assert scope == {'doc_ids': ['plan', 'meeting']}
+
+
+def test_missing_or_multiple_dates_do_not_narrow_comparison_scope(tmp_path):
+    import json
+    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting 2026-09-08'}), encoding='utf-8')
+    tool = SearchTool(documents_dir=str(tmp_path))
+    scope = {'doc_ids': ['plan', 'meeting']}
+    for query in ['Compare September 8 and September 9', 'Read the September 9 meeting', 'Read the 2025-09-08 meeting', 'Compare these plans']:
+        assert tool._narrow_dated_scope(query, scope) == scope
+    assert tool._narrow_dated_scope('Read September 8 meeting', {'doc_ids': []}) == {'doc_ids': []}
+
+
+def test_comparison_executor_receives_dated_child_scope(tmp_path):
+    import json
+    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting 2026-09-08'}), encoding='utf-8')
+    tool = SearchTool(documents_dir=str(tmp_path))
+    calls = []
+    class Executor:
+        registry = SimpleNamespace(get=lambda name: tool)
+        def execute(self, **kwargs):
+            calls.append(kwargs['arguments'])
+            return SimpleNamespace(success=True, evidence=[])
+    plan = QueryPlan(original_query='Compare plan and meeting', standalone_query='Compare plan and meeting', sub_queries=['Retrieve plan details', 'Retrieve the September 8 meeting'])
+    runner = AgentRunner.__new__(AgentRunner)
+    runner._execute_parallel_comparison_retrieval(query_plan=plan, arguments={'filters': {'doc_ids': ['plan', 'meeting']}, 'top_k': 5, 'mode': 'bm25'}, trace_id='test', tool_call_id='call', tool_executor=Executor(), retrieval_attempt=1)
+    by_query = {c['query']:c['filters'] for c in calls}
+    assert by_query['Retrieve plan details'] == {'doc_ids': ['plan', 'meeting']}
+    assert by_query['Retrieve the September 8 meeting'] == {'doc_ids': ['meeting']}
+
+
+def test_english_answer_instruction_overrides_mixed_language_metadata_without_mutating_history():
+    captured = []
+    class LLM:
+        def chat(self, messages, **kwargs):
+            captured.extend(messages)
+            return {'content': 'English answer [1].'}
+    runner = AgentRunner.__new__(AgentRunner)
+    runner.answer_llm = LLM()
+    runner.fast_answer_llm = None
+    state = SimpleNamespace(query_plan=QueryPlan(original_query='Compare the dated reports', standalone_query='Compare the dated reports'))
+    messages = [{'role': 'system', 'content': 'Original evidence rules'}, {'role': 'user', 'content': '资料元数据'}]
+    runner._chat_for_answer(state, messages)
+    assert 'Write the entire answer in English' in captured[0]['content']
+    assert messages[0]['content'] == 'Original evidence rules'
+
+
+def test_english_repair_explicitly_retains_answer_language():
+    from agent.answer.completeness import AnswerCompletenessChecker
+    from agent.answer.schemas import AnswerCompletenessResult
+    plan = QueryPlan(original_query='Summarize the goals', standalone_query='Summarize the goals')
+    prompt = AnswerCompletenessChecker(SimpleNamespace())._repair_prompt(plan, 'Existing answer', [], AnswerCompletenessResult(complete=False))
+    assert 'Write the entire repaired answer in English' in prompt

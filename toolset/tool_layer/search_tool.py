@@ -472,6 +472,30 @@ class SearchTool(BaseTool):
         matching = [doc_id for doc_id in allowed if week in str(self._load_document_meta(doc_id).get("title", "")).casefold()]
         return {**filters, "doc_ids": matching} if matching else filters
 
+    def _narrow_dated_scope(self, query: str, filters: Dict) -> Dict:
+        """Resolve a dated comparison target within its authorized documents."""
+        dates = {(int(y), int(m), int(d)) for y, m, d in re.findall(
+            r"(?<!\d)(\d{4})[-_/](\d{1,2})[-_/](\d{1,2})(?!\d)", query
+        )}
+        months = {name: i for i, name in enumerate(
+            ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"), 1
+        )}
+        for name, day, year in re.findall(
+            r"\b(" + "|".join(months) + r")\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b", query, re.IGNORECASE
+        ):
+            dates.add((int(year or 0), months[name.casefold()], int(day)))
+        allowed = filters.get("doc_ids") or []
+        if len(dates) != 1 or len(allowed) < 2:
+            return filters
+        year, month, day = next(iter(dates))
+        matching = []
+        for doc_id in allowed:
+            title = str(self._load_document_meta(doc_id).get("title", ""))
+            title_dates = re.findall(r"(?<!\d)(\d{4})[-_/](\d{1,2})[-_/](\d{1,2})(?!\d)", title)
+            if any(int(m) == month and int(d) == day and (not year or int(y) == year) for y, m, d in title_dates):
+                matching.append(doc_id)
+        return {**filters, "doc_ids": matching} if matching else filters
+
     def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         # 空白名单短路：doc_ids 显式为空列表表示用户无可访问文件，直接返回空结果。
         if self._has_empty_doc_id_allowlist(filters):
