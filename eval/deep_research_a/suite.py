@@ -16,8 +16,8 @@ from typing import Any, Iterable
 
 SUITE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = SUITE_ROOT.parents[1]
-DATASET_PATH = SUITE_ROOT / "datasets" / "cases.v1.json"
-MANIFEST_PATH = SUITE_ROOT / "manifests" / "source_manifests.v1.json"
+DATASET_PATH = Path(os.getenv("DR_EVAL_DATASET_PATH", SUITE_ROOT / "datasets" / "cases.v1.json")).resolve()
+MANIFEST_PATH = Path(os.getenv("DR_EVAL_MANIFEST_PATH", SUITE_ROOT / "manifests" / "source_manifests.v1.json")).resolve()
 BASELINE_PATH = SUITE_ROOT / "config" / "frozen_baseline.json"
 TAXONOMY_PATH = SUITE_ROOT / "failure_taxonomy.json"
 DOCUMENTS_DIR = Path(os.getenv(
@@ -265,6 +265,10 @@ def validate_assets(verbose: bool = True) -> list[str]:
         if path_key == "assembly_path" and g1_prompt.get("assembly_git_ref"):
             if git_blob_sha256(g1_prompt["assembly_git_ref"], g1_prompt[path_key]) != g1_prompt.get("assembly_git_sha256"):
                 errors.append("frozen G1 assembly source hash mismatch")
+            continue
+        if path_key == "path" and g1_prompt.get("git_ref"):
+            if git_blob_sha256(g1_prompt["git_ref"], g1_prompt[path_key]) != g1_prompt.get("git_sha256", g1_prompt.get(hash_key)):
+                errors.append("frozen G1 prompt source hash mismatch")
             continue
         prompt_path = PROJECT_ROOT / str(g1_prompt.get(path_key, ""))
         if not prompt_path.is_file():

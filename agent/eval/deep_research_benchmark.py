@@ -23,9 +23,11 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from uuid import uuid4
+from dotenv import load_dotenv
 
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(AGENT_ROOT / ".env")
 PROJECT_ROOT = AGENT_ROOT.parent
 DOCUMENTS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "documents"
 DEFAULT_OUTPUT_ROOT = AGENT_ROOT / "outputs" / "deep_research_benchmark"
@@ -130,6 +132,8 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             "platform": platform.platform(),
         },
         "model": {
+            "api_base": _safe_setting("LLM_API_BASE", ""),
+            "fallback_policy": "no_implicit_model_fallback",
             "name": _safe_setting("LLM_MODEL", "qwen3.7-flash-2026-07-15"),
             "temperature": float(_safe_setting("LLM_TEMPERATURE", 0.1)),
             "max_tokens": int(_safe_setting("LLM_MAX_TOKENS", 2000)),
@@ -140,8 +144,10 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             "top_k": int(_safe_setting("DEFAULT_TOP_K", 5)),
             "min_score": float(_safe_setting("MIN_RETRIEVAL_SCORE", 0.0)),
             "embedding_model": _safe_setting(
-                "LOCAL_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"
+                "LOCAL_EMBEDDING_MODEL_NAME", "BAAI/bge-small-en-v1.5"
             ),
+            "g1_backend": "hybrid_milvus_bm25",
+            "g2_backend": "local_json",
             "page_index_provider": "unavailable_until_capability_probe_passes",
         },
         "research": {
@@ -177,11 +183,14 @@ class ApiClient:
         self, method: str, path: str, payload: dict[str, Any] | None = None
     ) -> Any:
         body = None if payload is None else json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json", "X-User-ID": "benchmark-user"}
+        if api_key := os.getenv("AGENT_API_KEY", "").strip():
+            headers["Authorization"] = f"Bearer {api_key}"
         request = Request(
             f"{self.base_url}{path}",
             data=body,
             method=method,
-            headers={"Content-Type": "application/json", "X-User-ID": "benchmark-user"},
+            headers=headers,
         )
         try:
             with urlopen(request, timeout=self.timeout_seconds) as response:
@@ -364,7 +373,7 @@ def _run_research(
             "source_scope": _case_scope(case),
             "report_spec": {
                 "format": "markdown",
-                "language": case.get("report_language", "zh-CN"),
+                "language": case.get("report_language", "en-US"),
                 "include_citations": True,
                 "include_limitations": True,
             },

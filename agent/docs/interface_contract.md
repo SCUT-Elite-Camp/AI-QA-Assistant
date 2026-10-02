@@ -73,6 +73,12 @@ Fields:
 - `stream`: whether streaming output is requested.
 - `retrieval_mode`: `vector`, `bm25`, or `hybrid`; defaults to `hybrid`.
 
+The public ChatRequest does not expose structural routing in P0. Query planning
+internally derives `navigation_mode` (`direct`, `hierarchical`, or `hybrid`) and
+passes non-direct values to `search_documents` or `search_library` only when
+`HIERARCHICAL_NAVIGATION_ENABLED=true`. This keeps retrieval backend selection
+and document/section navigation as separate contracts.
+
 ## ChatResponse
 
 ```json
@@ -88,6 +94,11 @@ Fields:
 The public response remains limited to these five fields in CP2. Iteration
 counts and tool traces stay in Agent logs and internal run summaries until a
 separate Web contract revision approves an optional `run` field.
+
+The Agent's Direct-only versus Direct+Wiki route and `WIKI_CONTEXT_TOP_K` are
+internal runtime details. They do not add fields to `ChatRequest`,
+`ChatResponse`, or citations. Wiki navigation metadata cannot populate citation
+fields; only accepted original Evidence can do so.
 
 ## Citation Fields
 

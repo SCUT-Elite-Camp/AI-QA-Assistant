@@ -53,6 +53,14 @@ class DocParser(BaseParser):
     @staticmethod
     def _convert_doc_to_docx_win32(doc_path: str) -> str | None:
         """尝试在 Windows 环境利用 MS Word 将 .doc 转为临时 .docx"""
+        # Do not send plain-text fallback fixtures or mislabeled files to Word
+        # automation. Legacy binary .doc files use the OLE compound-file magic.
+        try:
+            with open(doc_path, "rb") as source:
+                if source.read(8) != b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
+                    return None
+        except OSError:
+            return None
         try:
             import olefile  # type: ignore[import-not-found]
             if not olefile.isOleFile(doc_path):

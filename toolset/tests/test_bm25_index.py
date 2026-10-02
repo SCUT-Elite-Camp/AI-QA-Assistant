@@ -11,6 +11,6 @@ def test_document_scope_is_applied_before_top_k_ranking():
     from rank_bm25 import BM25Okapi
     index._bm25 = BM25Okapi(index._tokenized_corpus)
 
-    rows = index.search("alpha", top_k=5, doc_ids=["target"])
+    rows = index.search("alpha", top_k=5, filters={"doc_ids": ["target"]})
 
     assert [row["doc_id"] for row in rows] == ["target"]

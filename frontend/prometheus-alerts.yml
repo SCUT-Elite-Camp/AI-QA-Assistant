@@ -1,0 +1,113 @@
+# ============================================================
+# Prometheus 告警规则配置
+# 适用于 AI-QA-Assistant Web 服务
+# ============================================================
+#
+# 使用方式：
+#   1. 将此文件置于 Prometheus Server 的 rules 目录中
+#   2. 在 prometheus.yml 中添加 rule_files 配置：
+#      rule_files:
+#        - "prometheus-alerts.yml"
+#   3. 重启 Prometheus Server
+#
+# ============================================================
+
+groups:
+  - name: htc-web-alerts
+    interval: 30s
+    rules:
+      # ----- 核心告警：P95 延迟 > 500ms -----
+      - alert: HighP95Latency
+        expr: http_request_duration_overall_ms{quantile="0.95"} > 500
+        for: 2m
+        labels:
+          severity: warning
+          component: web
+        annotations:
+          summary: "P95 请求延迟超过 500ms"
+          description: "应用 {{ $labels.instance }} 的 P95 延迟为 {{ $value }}ms，超过 500ms 阈值。请检查系统负载和下游服务响应时间。"
+
+      - alert: CriticalP95Latency
+        expr: http_request_duration_overall_ms{quantile="0.95"} > 1000
+        for: 1m
+        labels:
+          severity: critical
+          component: web
+        annotations:
+          summary: "P95 请求延迟严重超标 (>1000ms)"
+          description: "应用 {{ $labels.instance }} 的 P95 延迟为 {{ $value }}ms，超过 1000ms 严重阈值。需立即排查！"
+
+      # ----- 错误率告警 -----
+      - alert: HighErrorRate
+        expr: rate(http_errors_total[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          component: web
+        annotations:
+          summary: "HTTP 错误率超过 5%"
+          description: "应用 {{ $labels.instance }} 过去 5 分钟错误率为 {{ $value | humanizePercentage }}，超过 5% 阈值。"
+
+      - alert: CriticalErrorRate
+        expr: rate(http_errors_total[5m]) / rate(http_requests_total[5m]) > 0.10
+        for: 1m
+        labels:
+          severity: critical
+          component: web
+        annotations:
+          summary: "HTTP 错误率严重超标 (>10%)"
+          description: "应用 {{ $labels.instance }} 过去 5 分钟错误率为 {{ $value | humanizePercentage }}，超过 10% 严重阈值！"
+
+      # ----- 吞吐量异常 -----
+      - alert: LowThroughput
+        expr: http_throughput_requests_per_second < 0.01 and http_requests_total > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: web
+        annotations:
+          summary: "请求吞吐量异常偏低"
+          description: "应用 {{ $labels.instance }} 当前吞吐量仅为 {{ $value }} req/s，可能服务异常。"
+
+      # ----- 慢数据库查询 -----
+      - alert: SlowDatabaseQueries
+        expr: rate(db_slow_queries_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "慢数据库查询频率过高 (>100ms)"
+          description: "应用 {{ $labels.instance }} 过去 5 分钟慢查询速率为 {{ $value }}/s，请检查查询优化和索引。"
+
+      - alert: HighDbLatency
+        expr: db_query_duration_avg_ms > 200
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "数据库平均查询延迟 > 200ms"
+          description: "应用 {{ $labels.instance }} 数据库平均查询延迟为 {{ $value }}ms。"
+
+      # ----- AI 调用异常 -----
+      - alert: HighAITTFT
+        expr: ai_ttft_ms{quantile="0.95"} > 5000
+        for: 5m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI 首 Token 延迟过高 (>5s)"
+          description: "应用 {{ $labels.instance }} 的 AI P95 TTFT 为 {{ $value }}ms，超过 5 秒阈值。"
+
+      # ----- 服务不可用 -----
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: web
+        annotations:
+          summary: "服务不可用"
+          description: "应用 {{ $labels.instance }} 已停止响应 Prometheus 抓取，服务可能已宕机。"

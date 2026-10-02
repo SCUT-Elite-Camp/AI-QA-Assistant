@@ -6,7 +6,7 @@ from agent.agent import Agent
 from agent.memory import InMemoryConversationMemory
 from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
-from storage.chat_history_store import ChatHistoryStore
+from data_persistence.chat import ChatHistoryStore
 
 
 class DummyLLM:

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `memory_snapshots_one_active_per_chat_revision_idx` ON `memory_snapshots` (`chat_id`,`history_revision`) WHERE "memory_snapshots"."status" = 'ACTIVE';

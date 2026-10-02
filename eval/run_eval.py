@@ -4,6 +4,12 @@ import os
 import sys
 from pathlib import Path
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 # Setup paths to resolve imports correctly
 project_root = Path(__file__).resolve().parent.parent
 python_paths = [
@@ -17,102 +23,65 @@ for p in python_paths:
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from eval.ragas_eval import RagasEvaluator
 from eval.evaluator import SystemEvaluator, format_summary_table
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="AI-QA-Assistant Performance Evaluation Suite",
+        description="AI-QA-Assistant Ragas 自动化量化评测套件 (支持 Fast / Thinking 双模式对比)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         "--mode",
-        choices=["all", "retrieval", "generation"],
-        default="all",
-        help="What component of the system to evaluate."
+        choices=["ragas", "retrieval", "all"],
+        default="ragas",
+        help="评测模式：'ragas'（RAG三元组自动化打分）、'retrieval'（仅检索评测）、'all'（全量评测）"
     )
     parser.add_argument(
-        "--retrieval-mode",
-        choices=["vector", "bm25", "hybrid", "all_modes"],
-        default="hybrid",
-        help="Retrieval mode to evaluate (use 'all_modes' to compare all options)."
+        "--weight-mode",
+        choices=["fast", "thinking", "compare"],
+        default="compare",
+        help="系统工作模式：'fast'（极速单轮直接RAG）、'thinking'（深度Agent编排思考模式）、'compare'（双模式横向对比）"
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        help="自定义评测集路径（默认使用 eval/confluence_eval_dataset.json）"
     )
     parser.add_argument(
         "--top-k",
         type=int,
-        default=5,
-        help="Number of documents to retrieve (1-20)."
+        default=4,
+        help="检索召回文档块数 (Top-K)"
     )
     parser.add_argument(
-        "--judge",
-        action="store_true",
-        help="Enable LLM-as-a-judge for faithfulness and relevance scoring (requires running LLM)."
-    )
-    parser.add_argument(
-        "--dataset",
-        choices=["local", "ms_marco"],
-        default="local",
-        help="Evaluation dataset to use ('local' for Chinese docs, 'ms_marco' for English MSMARCO)."
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="eval_results.json",
-        help="Filename/Path to save the detailed evaluation output."
+        "--max-samples",
+        type=int,
+        default=None,
+        help="限制评测样本数量（用于快速抽样测试）"
     )
 
     args = parser.parse_args()
-    
-    # Resolve absolute path for output to keep it clear
-    output_path = Path(args.output)
-    if not output_path.is_absolute():
-        output_path = Path(__file__).parent / output_path
 
-    print("=" * 60)
-    print("      AI-QA-ASSISTANT PERFORMANCE EVALUATION SUITE      ")
-    print("=" * 60)
-    print(f"Working Directory: {Path(__file__).parent}")
-    print(f"Output File:      {output_path}")
-    print("-" * 60)
+    print("=" * 70)
+    print("      AI-QA-ASSISTANT RAGAS AUTOMATION EVALUATION SUITE      ")
+    print("=" * 70)
 
-    # Initialize evaluator
-    filename = "eval_questions_msmarco.json" if args.dataset == "ms_marco" else "eval_questions.json"
-    questions_path = Path(__file__).parent / filename
-    evaluator = SystemEvaluator(questions_path=str(questions_path))
-
-    results = {}
-
-    # 1. Retrieval Evaluation
-    if args.mode in ["all", "retrieval"]:
-        if args.retrieval_mode == "all_modes":
-            retrieval_runs = {}
-            for r_mode in ["vector", "bm25", "hybrid"]:
-                run_res = evaluator.evaluate_retrieval_performance(mode=r_mode, top_k=args.top_k)
-                retrieval_runs[r_mode] = run_res
-                print(format_summary_table("retrieval", run_res))
-            results["retrieval"] = retrieval_runs
+    # 1. 运行 Ragas 评测 (核心)
+    if args.mode in ["ragas", "all"]:
+        ragas_eval = RagasEvaluator(dataset_path=args.dataset)
+        if args.weight_mode == "compare":
+            ragas_eval.evaluate_comparison(top_k=args.top_k, max_samples=args.max_samples)
         else:
-            run_res = evaluator.evaluate_retrieval_performance(mode=args.retrieval_mode, top_k=args.top_k)
-            print(format_summary_table("retrieval", run_res))
-            results["retrieval"] = run_res
+            ragas_eval.evaluate_live(weight_mode=args.weight_mode, top_k=args.top_k, max_samples=args.max_samples)
 
-    # 2. Generation Evaluation
-    if args.mode in ["all", "generation"]:
-        gen_mode = "hybrid" if args.retrieval_mode == "all_modes" else args.retrieval_mode
-        run_res = evaluator.evaluate_generation_performance(mode=gen_mode, top_k=args.top_k, use_judge=args.judge)
-        print(format_summary_table("generation", run_res))
-        results["generation"] = run_res
-
-
-    # Save results to file
-    try:
-        # Create directories if they don't exist
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-        print(f"\n✅ Detailed evaluation logs successfully saved to: {output_path}")
-    except Exception as e:
-        print(f"\n❌ Error writing output file: {e}")
+    # 2. 运行纯检索指标评测 (可选)
+    if args.mode in ["retrieval", "all"]:
+        evaluator = SystemEvaluator()
+        retrieval_res = evaluator.evaluate_retrieval_performance(mode="hybrid", top_k=args.top_k)
+        print(format_summary_table("retrieval", retrieval_res))
 
 
 if __name__ == "__main__":

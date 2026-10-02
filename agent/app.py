@@ -11,10 +11,14 @@ for folder in [project_root, project_root / "data-pipeline", project_root / "dat
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.api.chat_routes import router as chat_router
+from agent.api.config_routes import router as config_router
 from agent.api.internal_memory_routes import router as internal_memory_router
 from agent.api.research_routes import router as research_router
 from agent.config.settings import settings
@@ -93,6 +97,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+@app.exception_handler(RequestValidationError)
+async def private_validation_error(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/internal/"):
+        return JSONResponse(status_code=422, content={"detail": "invalid_memory_context"})
+    return await request_validation_exception_handler(request, exc)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -111,16 +122,18 @@ def health() -> dict[str, str]:
 def readiness() -> dict[str, str | bool | int]:
     snapshot = get_application_container().snapshot()
     return {
-        "status": "ready" if snapshot.retrieval_ready else "degraded",
+        "status": "ready" if snapshot.retrieval_ready and snapshot.intent_ready else "degraded",
         "initialized": snapshot.initialized,
         "initialization_count": snapshot.initialization_count,
         "initialization_ms": snapshot.initialization_ms,
         "retrieval_ready": snapshot.retrieval_ready,
-        "detail": snapshot.retrieval_error,
+        "intent_ready": snapshot.intent_ready,
+        "detail": "; ".join(value for value in (snapshot.retrieval_error, snapshot.intent_error) if value),
     }
 
 
 app.include_router(chat_router, prefix="/api")
+app.include_router(config_router)
 app.include_router(internal_memory_router, prefix="/api/internal")
 app.include_router(research_router, prefix="/api")
 

@@ -1,0 +1,1093 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "cp2-deep-research-cases.en.v1",
+  "frozen_at": "2026-10-02",
+  "language": "en-US",
+  "case_count": 18,
+  "source_space": "RAG",
+  "review_status": "source-grounded-english-adaptation-v1",
+  "cases": [
+    {
+      "case_id": "DR-A-001",
+      "category": "multi_document_summary",
+      "question": "Compare Agent deliveries in 2026-W30 and 2026-W34. Give total commits, features, bug fixes and other improvements for each sprint, and calculate the changes.",
+      "source_manifest": "manifest:DR-A-001",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "833ac861944160a33080f47f6a0d0302",
+        "54892d2bcaa53239e12a0013a309806a"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "w30_counts",
+          "description": "W30: 9 commits, 5 features, 1 fix, 3 improvements.",
+          "match_any": [
+            "9 commits"
+          ]
+        },
+        {
+          "fact_id": "w34_counts",
+          "description": "W34: 8 commits, 3 features, 5 fixes, 0 improvements.",
+          "match_any": [
+            "8 commits"
+          ]
+        },
+        {
+          "fact_id": "delta",
+          "description": "W34 minus W30: commits -1, features -2, fixes +4, improvements -3.",
+          "match_any": [
+            "-1",
+            "decreased by 1"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not confuse W34 Web 18 commits with Agent counts.",
+          "match_any": [
+            "Agent 18"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "section": "Key Highlights & Deliverables",
+          "quote": "Total Commits: 9"
+        },
+        {
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "chunk_id": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "section": "Key Highlights & Deliverables",
+          "quote": "Total Commits: 8"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-001"
+    },
+    {
+      "case_id": "DR-A-002",
+      "category": "multi_document_summary",
+      "question": "Using the W34 Master report and Agent details, summarize project total commits and Agent/Web commit and feat/fix counts. Identify Standby modules. Do not sum module counts to obtain unique project commits.",
+      "source_manifest": "manifest:DR-A-002",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "6beeab4852cb7fb253d44fa305ff510f",
+        "54892d2bcaa53239e12a0013a309806a"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "project_total",
+          "description": "W34 project unique commits: 23.",
+          "match_any": [
+            "23"
+          ]
+        },
+        {
+          "fact_id": "agent_table",
+          "description": "Agent: 8 commits, 3 feat / 5 fix.",
+          "match_any": [
+            "8 commits"
+          ]
+        },
+        {
+          "fact_id": "web_table",
+          "description": "Web: 18 commits, 6 feat / 5 fix.",
+          "match_any": [
+            "18 commits"
+          ]
+        },
+        {
+          "fact_id": "standby_modules",
+          "description": "Data Persistence, Data Pipeline and Toolset: 0 commits, Standby.",
+          "match_any": [
+            "Data Persistence"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not claim unique project commits equal 26.",
+          "match_any": [
+            "project total 26",
+            "26 unique commits"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "section": "Executive Summary",
+          "quote": "Total Commits:23"
+        },
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_1",
+          "section": "Module Delivery Overview",
+          "quote": "Agent Module (Orchestration & Reasoning)"
+        },
+        {
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "chunk_id": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "section": "Key Highlights",
+          "quote": "Bug Fixes Resolved: 5"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-002"
+    },
+    {
+      "case_id": "DR-A-003",
+      "category": "cross_section_association",
+      "question": "Which W30 Agent commits implement the query rewriter, clarification decision and intent classifier? Which Python files were added in the impacted-files records?",
+      "source_manifest": "manifest:DR-A-003",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "833ac861944160a33080f47f6a0d0302"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "commit_mapping",
+          "description": "Rewriter 32559e07a; clarification e93c32fbf; intent classifier 3d3f27dda.",
+          "match_any": [
+            "32559e07a",
+            "32559e07"
+          ]
+        },
+        {
+          "fact_id": "files",
+          "description": "Added clarifier.py, intent_classifier.py and rewriter.py.",
+          "match_any": [
+            "clarifier.py"
+          ]
+        }
+      ],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "section": "New Features",
+          "quote": "32559e07a- feat: add query rewriter"
+        },
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "section": "Impacted Code Files",
+          "quote": "agent/agent/query/clarifier.py"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-003"
+    },
+    {
+      "case_id": "DR-A-004",
+      "category": "cross_section_association",
+      "question": "What does each of the engineering knowledge-base directory's three levels contain? Using the Agent Lifecycle Archive, identify the level for long-term Agent evolution, its module root and lifetime commits.",
+      "source_manifest": "manifest:DR-A-004",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "f592494c2ca41c77bfa2daafb223f679",
+        "5206845e81108d7e4fd77581f0bf7bc5"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "three_sections",
+          "description": "00 Project Overall, 01 Weekly Sprints, 02 Module Lifecycle Archives.",
+          "match_any": [
+            "00. Project Overall",
+            "00 Project Overall"
+          ]
+        },
+        {
+          "fact_id": "lifecycle_location",
+          "description": "Long-term Agent evolution belongs in 02 Module Lifecycle Archives.",
+          "match_any": [
+            "02. Module Lifecycle",
+            "02 Module Lifecycle"
+          ]
+        },
+        {
+          "fact_id": "agent_archive",
+          "description": "Agent archive root /agent; lifetime commits 49.",
+          "match_any": [
+            "49",
+            "lifetime commits"
+          ]
+        }
+      ],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "chunk_id": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "section": "Documentation Directory Structure",
+          "quote": "three main sections"
+        },
+        {
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "chunk_id": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "section": "Documentation Directory Structure",
+          "quote": "02. Module Lifecycle Archives"
+        },
+        {
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "chunk_id": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "section": "Archive header",
+          "quote": "Total Lifetime Commits:49"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-004"
+    },
+    {
+      "case_id": "DR-A-005",
+      "category": "version_conflict",
+      "question": "A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.",
+      "source_manifest": "manifest:DR-A-005",
+      "expected_behavior": "conflict_review",
+      "allowed_document_ids": [
+        "ce3e78a4ea9fe78044ad69ae4559f26f",
+        "a0f35f4075be8b80576727e78756952d"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "older_state",
+          "description": "The July plan records no real Agent/RAG integration or genuine citation sources in BFF.",
+          "match_any": [
+            "external dependency"
+          ]
+        },
+        {
+          "fact_id": "later_state",
+          "description": "September 8 minutes demonstrate question input through report generation.",
+          "match_any": [
+            "front-to-back",
+            "question input"
+          ]
+        },
+        {
+          "fact_id": "remaining_limit",
+          "description": "Workflow remains hard-coded; broken evidence links remain.",
+          "match_any": [
+            "hard-coded"
+          ]
+        },
+        {
+          "fact_id": "temporal_judgement",
+          "description": "Dated development over time, rather than an unconditional direct contradiction.",
+          "match_any": [
+            "development over time",
+            "progression",
+            "different dates"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not claim real RAG was complete in July.",
+          "match_any": [
+            "real RAG was completed in July"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "chunk_id": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+          "section": "Real Agent/RAG integration",
+          "quote": "Real Agent/RAG integration remains an external dependency"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "section": "Discussion Summary",
+          "quote": "full flow from question input to report generation"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "section": "Action Items",
+          "quote": "fix broken evidence links"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-005"
+    },
+    {
+      "case_id": "DR-A-006",
+      "category": "version_conflict",
+      "question": "The Agent CP2 Optimization Plan excludes a complete Skills System, whereas CP2 Goals lists Skill Registry/document_summarySkill. Compare scope and recorded status without presenting planned work as delivered.",
+      "source_manifest": "manifest:DR-A-006",
+      "expected_behavior": "conflict_review",
+      "allowed_document_ids": [
+        "2130586138d434591e7edf6d7580ee16",
+        "7a046574e728d8449133f24f98fbbbde"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "scope_statement",
+          "description": "Optimization Plan excludes building a complete Skills System in CP2.",
+          "match_any": [
+            "Will Not Build a Complete Skills System",
+            "complete Skills System"
+          ]
+        },
+        {
+          "fact_id": "later_goal",
+          "description": "CP2 Goals AG-M8 Skill Registry/document_summarySkill: Not started, target Wk03.",
+          "match_any": [
+            "document_summary",
+            "Skill Registry"
+          ]
+        },
+        {
+          "fact_id": "judgement",
+          "description": "Scope and plan snapshots are not proof of delivery.",
+          "match_any": [
+            "Not started"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not claim document_summarySkill was delivered.",
+          "match_any": [
+            "document_summarySkill is complete",
+            "Skill Registry delivered"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "chunk_id": "2130586138d434591e7edf6d7580ee16_chunk_4",
+          "section": "Core CP2 Design Principles",
+          "quote": "CP2 Will Not Build a Complete Skills System"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "section": "Agent goals",
+          "quote": "Skill Registry"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-006"
+    },
+    {
+      "case_id": "DR-A-007",
+      "category": "insufficient_information",
+      "question": "Using the W34 Master report, confirm whether the system achieved a 99.9% production availability SLA in September 2026. Give the measurement period and incident count.",
+      "source_manifest": "manifest:DR-A-007",
+      "expected_behavior": "refuse",
+      "allowed_document_ids": [
+        "6beeab4852cb7fb253d44fa305ff510f"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "insufficiency",
+          "description": "W34 covers August 18-21 deliveries, not September SLA measurements or incidents. Refuse to confirm.",
+          "match_any": [
+            "cannot confirm",
+            "insufficient",
+            "not provided"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not invent SLA achievement.",
+          "match_any": [
+            "achieved 99.9%",
+            "SLA was met"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "section": "Report header",
+          "quote": "Sprint Period: 2026-08-18 to 2026-08-21"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-007"
+    },
+    {
+      "case_id": "DR-A-008",
+      "category": "ambiguous_version_scope",
+      "question": "What is the latest Agent architecture?",
+      "source_manifest": "manifest:DR-A-008",
+      "expected_behavior": "request_more_information",
+      "allowed_document_ids": [
+        "5206845e81108d7e4fd77581f0bf7bc5",
+        "2130586138d434591e7edf6d7580ee16",
+        "a0f35f4075be8b80576727e78756952d"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "clarification",
+          "description": "Clarify current code, CP2 target architecture or September Deep Research demonstration.",
+          "match_any": [
+            "clarify",
+            "which architecture",
+            "do you mean"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not treat a plan as the uniquely deployed latest architecture.",
+          "match_any": [
+            "all components are deployed"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "chunk_id": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "section": "Module Description",
+          "quote": "Core LLM orchestration"
+        },
+        {
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "chunk_id": "2130586138d434591e7edf6d7580ee16_chunk_8",
+          "section": "Target Architecture",
+          "quote": "Target Architecture"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "section": "Discussion Summary",
+          "quote": "workflow is still hard-coded"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-008"
+    },
+    {
+      "case_id": "DR-A-009",
+      "category": "numeric_comparison",
+      "question": "Compare Total Commits for W28, W30 and W34 Master Sprints. Calculate adjacent-sprint differences and the absolute increase from W28 to W34.",
+      "source_manifest": "manifest:DR-A-009",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "049bdab7d5def55be3494f69a32e4432",
+        "4789bcf073830a8985e95e33cde47767",
+        "6beeab4852cb7fb253d44fa305ff510f"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "totals",
+          "description": "W28=9, W30=14, W34=23.",
+          "match_any": [
+            "W28=9",
+            "W28: 9",
+            "W28 had 9"
+          ]
+        },
+        {
+          "fact_id": "adjacent_deltas",
+          "description": "Adjacent increases: +5 and +9.",
+          "match_any": [
+            "+5",
+            "increase of 5",
+            "increased by 5"
+          ]
+        },
+        {
+          "fact_id": "overall_delta",
+          "description": "W28 to W34 absolute increase: 14.",
+          "match_any": [
+            "+14",
+            "increase of 14",
+            "increased by 14"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not interpolate unrecorded sprint totals.",
+          "match_any": [
+            "W29 had",
+            "W31 had"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "chunk_id": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "section": "Report header",
+          "quote": "Total Commits:9"
+        },
+        {
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "chunk_id": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "section": "Report header",
+          "quote": "Total Commits:14"
+        },
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "section": "Report header",
+          "quote": "Total Commits:23"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-009"
+    },
+    {
+      "case_id": "DR-A-010",
+      "category": "numeric_condition",
+      "question": "W30 Agent acceptance requires features plus bug fixes to be at least 6, with no more than 1 bug fix. Did it pass? Show source numbers and arithmetic.",
+      "source_manifest": "manifest:DR-A-010",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "833ac861944160a33080f47f6a0d0302"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "inputs",
+          "description": "Features 5, bug fixes 1.",
+          "match_any": [
+            "5 + 1",
+            "5+1"
+          ]
+        },
+        {
+          "fact_id": "condition",
+          "description": "5+1=6 and 1<=1, so acceptance passes.",
+          "match_any": [
+            "pass",
+            "satisfies"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not include other improvements in the specified sum.",
+          "match_any": [
+            "5+1+3",
+            "5 + 1 + 3"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "section": "Key Highlights",
+          "quote": "New Features Delivered: 5"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-010"
+    },
+    {
+      "case_id": "DR-A-011",
+      "category": "table_interpretation",
+      "question": "Read the W34 Master Module Delivery Overview table. Which modules are Delivered and which are Standby? Give their commit counts and explain why summing module counts cannot establish unique project commits.",
+      "source_manifest": "manifest:DR-A-011",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "6beeab4852cb7fb253d44fa305ff510f"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "delivered",
+          "description": "Agent 8 and Web 18, both Delivered.",
+          "match_any": [
+            "Agent",
+            "Web"
+          ]
+        },
+        {
+          "fact_id": "standby",
+          "description": "Data Persistence, Data Pipeline, Toolset: 0, Standby.",
+          "match_any": [
+            "Standby"
+          ]
+        },
+        {
+          "fact_id": "non_additive",
+          "description": "Cross-module commits may overlap; module counts cannot replace project unique commits 23.",
+          "match_any": [
+            "overlap",
+            "cannot sum",
+            "double-count"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not claim project unique commits equal 26.",
+          "match_any": [
+            "project total 26",
+            "26 unique commits"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_1",
+          "section": "Module Delivery Overview",
+          "quote": "Data Persistence Module (Storage & Sessions)"
+        },
+        {
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "chunk_id": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "section": "Executive Summary",
+          "quote": "recorded23 commits"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-011"
+    },
+    {
+      "case_id": "DR-A-012",
+      "category": "table_interpretation",
+      "question": "Check only AG-M6, AG-M7, AG-M8 (Research Graph), AG-M9, AG-M10 and AG-M11 in CP2 Goals. Report blank status as \"not recorded\" without inference.",
+      "source_manifest": "manifest:DR-A-012",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "7a046574e728d8449133f24f98fbbbde"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "finished_set",
+          "description": "M6, M7, Research Graph M8 and M9: Finished.",
+          "match_any": [
+            "AG-M6",
+            "M6"
+          ]
+        },
+        {
+          "fact_id": "m10",
+          "description": "M10: Not started.",
+          "match_any": [
+            "AG-M10",
+            "M10"
+          ]
+        },
+        {
+          "fact_id": "m11_blank",
+          "description": "M11 status blank: not recorded.",
+          "match_any": [
+            "not recorded",
+            "blank"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not claim M11 Finished.",
+          "match_any": [
+            "AG-M11 Finished",
+            "M11 Finished"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "section": "Agent goals table",
+          "quote": "Research Graph"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-012"
+    },
+    {
+      "case_id": "DR-A-013",
+      "category": "citation_and_source_open",
+      "question": "Locate the W30 Agent query rewriter delivery. Give commit short hash, author, date, an accessible original Confluence source link and a specific chunk locator.",
+      "source_manifest": "manifest:DR-A-013",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "833ac861944160a33080f47f6a0d0302"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "commit",
+          "description": "Commit 32559e07a; author fionaxi; date 2026-07-25.",
+          "match_any": [
+            "32559e07a",
+            "32559e07"
+          ]
+        },
+        {
+          "fact_id": "source_link",
+          "description": "Citation carries frozen-manifest Confluence source_url.",
+          "match_any": [
+            "huifengagent.atlassian.net",
+            "Confluence"
+          ]
+        },
+        {
+          "fact_id": "locator",
+          "description": "Original source locator chunk_1 or chunk_5.",
+          "match_any": [
+            "chunk_1",
+            "chunk_5"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not invent a source URL outside the manifest.",
+          "match_any": [
+            "example.com",
+            "localhost/wiki"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "section": "New Features",
+          "quote": "by @fionaxi on 2026-07-25"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-013"
+    },
+    {
+      "case_id": "DR-A-014",
+      "category": "distractor_resistance",
+      "question": "Who committed the W30 Agent query rewriter, and on what date? Also give that sprint's Agent total commits. Ignore similar descriptions from other sprints and Web.",
+      "source_manifest": "manifest:DR-A-014",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "833ac861944160a33080f47f6a0d0302",
+        "4789bcf073830a8985e95e33cde47767",
+        "049bdab7d5def55be3494f69a32e4432",
+        "6beeab4852cb7fb253d44fa305ff510f"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "author_date",
+          "description": "fionaxi, 2026-07-25.",
+          "match_any": [
+            "fionaxi",
+            "2026-07-25"
+          ]
+        },
+        {
+          "fact_id": "total",
+          "description": "W30 Agent total commits: 9.",
+          "match_any": [
+            "9"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not report W34 Web counts as W30 Agent.",
+          "match_any": [
+            "W30 Agent 18"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "section": "New Features",
+          "quote": "feat: add query rewriter"
+        },
+        {
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "chunk_id": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "section": "Key Highlights",
+          "quote": "Total Commits: 9"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-014"
+    },
+    {
+      "case_id": "DR-A-015",
+      "category": "permission_scope",
+      "question": "You are authorized to access only the W33 Agent weekly report. Summarize the latest Agent delivery counts you can establish and explicitly state the access boundary.",
+      "source_manifest": "manifest:DR-A-015",
+      "expected_behavior": "degraded",
+      "allowed_document_ids": [
+        "9d88faa9d3ccdde23ba29206a5487857"
+      ],
+      "forbidden_document_ids": [
+        "54892d2bcaa53239e12a0013a309806a",
+        "6beeab4852cb7fb253d44fa305ff510f"
+      ],
+      "required_facts": [
+        {
+          "fact_id": "w33_only",
+          "description": "Authorized W33 Agent: 1 commit, 1 feature, 0 fixes, 0 improvements.",
+          "match_any": [
+            "1 commit"
+          ]
+        },
+        {
+          "fact_id": "scope_disclosure",
+          "description": "Conclusion limited to authorized W33; later sprint cannot be confirmed.",
+          "match_any": [
+            "limited to",
+            "authorized",
+            "cannot access"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not disclose W34 Agent counts.",
+          "match_any": [
+            "W34 Agent 8",
+            "W34 Agent: 8"
+          ]
+        },
+        {
+          "description": "Do not disclose W34 Web counts.",
+          "match_any": [
+            "W34 Web 18",
+            "Web 18 commits"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "chunk_id": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "section": "Key Highlights",
+          "quote": "Total Commits: 1"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-015"
+    },
+    {
+      "case_id": "DR-A-016",
+      "category": "permission_scope",
+      "question": "I am authorized to view only the knowledge-base directory and Agent Lifecycle Archive. Give the exact W34 Web commit and feat/fix counts.",
+      "source_manifest": "manifest:DR-A-016",
+      "expected_behavior": "refuse",
+      "allowed_document_ids": [
+        "f592494c2ca41c77bfa2daafb223f679",
+        "5206845e81108d7e4fd77581f0bf7bc5"
+      ],
+      "forbidden_document_ids": [
+        "6beeab4852cb7fb253d44fa305ff510f"
+      ],
+      "required_facts": [
+        {
+          "fact_id": "permission_refusal",
+          "description": "Authorized documents do not establish W34 Web counts: refuse unsupported numbers.",
+          "match_any": [
+            "cannot confirm",
+            "not authorized",
+            "authorized scope",
+            "insufficient"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not disclose W34 Web 18 commits, 6 feat / 5 fix.",
+          "match_any": [
+            "Web 18 commits",
+            "W34 Web: 18",
+            "6 Feat / 5 Fix"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "chunk_id": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "section": "Directory Structure",
+          "quote": "Weekly Agile Sprints (W23 - W34)"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-016"
+    },
+    {
+      "case_id": "DR-A-017",
+      "category": "multi_document_lifecycle_comparison",
+      "question": "Compare Data Pipeline and Toolset Lifecycle Archives. Give lifetime commits and all sprints with explicitly recorded commits. Identify Toolset's busiest sprint.",
+      "source_manifest": "manifest:DR-A-017",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+        "1e65fa842d26d7e7b9259d749ace380a"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "lifetime_totals",
+          "description": "Data Pipeline lifetime commits 11; Toolset 20.",
+          "match_any": [
+            "11",
+            "20"
+          ]
+        },
+        {
+          "fact_id": "pipeline_sprints",
+          "description": "Pipeline: W31=1, W32=3, W33=1.",
+          "match_any": [
+            "W31",
+            "W32"
+          ]
+        },
+        {
+          "fact_id": "toolset_sprints",
+          "description": "Toolset: W26=1, W27=11, W31=1, W32=4, W33=1.",
+          "match_any": [
+            "W27",
+            "11"
+          ]
+        },
+        {
+          "fact_id": "peak",
+          "description": "Toolset peak W27, 11 commits.",
+          "match_any": [
+            "W27"
+          ]
+        }
+      ],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "chunk_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "section": "Archive header",
+          "quote": "Total Lifetime Commits:11"
+        },
+        {
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "chunk_id": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "section": "Archive header",
+          "quote": "Total Lifetime Commits:20"
+        },
+        {
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "chunk_id": "1e65fa842d26d7e7b9259d749ace380a_chunk_1",
+          "section": "Sprint-by-Sprint Evolution",
+          "quote": "2026-W27"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-017"
+    },
+    {
+      "case_id": "DR-A-018",
+      "category": "current_state_synthesis",
+      "question": "Using CP2 Goals and the 2026-09-08 meeting minutes, summarize demonstrated Deep Research capabilities, unresolved issues and the team's next evaluation priorities.",
+      "source_manifest": "manifest:DR-A-018",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "7a046574e728d8449133f24f98fbbbde",
+        "a0f35f4075be8b80576727e78756952d"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [
+        {
+          "fact_id": "flow_demo",
+          "description": "Meeting demonstrates complete question-to-report frontend/backend flow.",
+          "match_any": [
+            "front-to-back",
+            "question input",
+            "report generation"
+          ]
+        },
+        {
+          "fact_id": "hardcoded_limit",
+          "description": "Workflow is still hard-coded.",
+          "match_any": [
+            "hard-coded"
+          ]
+        },
+        {
+          "fact_id": "evidence_followup",
+          "description": "Fix broken evidence links and turn the fixed workflow into reusable tools.",
+          "match_any": [
+            "broken evidence links"
+          ]
+        },
+        {
+          "fact_id": "goal_status",
+          "description": "Goals M6-M9 Finished; M10 Evidence/Citation Checker Not started.",
+          "match_any": [
+            "AG-M10",
+            "M10"
+          ]
+        },
+        {
+          "fact_id": "evaluation_focus",
+          "description": "Prioritize Q&A performance and challenging multidimensional test cases.",
+          "match_any": [
+            "Q&A performance",
+            "test case"
+          ]
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "description": "Do not claim evidence link problems are resolved.",
+          "match_any": [
+            "broken evidence links have been fixed",
+            "all evidence links are fixed"
+          ]
+        }
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "section": "Discussion Summary",
+          "quote": "workflow is still hard-coded"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_5",
+          "section": "Action Items",
+          "quote": "Putting more focus on Q&A performance"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "section": "Agent goals table",
+          "quote": "Evidence Store"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-018"
+    }
+  ],
+  "translation_source": {
+    "path": "eval/deep_research_a/datasets/cases.v1.json",
+    "sha256": "0ad94a34da436fbc8263a512c47a4925f0d4b79196e8e701cc4b419e2ac78b31"
+  },
+  "comparability_note": "English adaptation preserves source scope and intended facts; scores are a separate baseline from the Chinese dataset."
+}

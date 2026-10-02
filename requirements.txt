@@ -5,30 +5,31 @@ setuptools<70
 marshmallow<4.0.0
 
 # FastAPI / Web Server (Agent Layer)
-fastapi
-uvicorn
-pydantic
-httpx
-openai
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
+pydantic>=2.9,<3
+httpx>=0.27,<1
+openai>=1.50,<4
 
 # Database & Vector DB (Data Persistence Layer)
 pymilvus==2.3.7
 
 # RAG & Document Pipeline (Data Pipeline Layer)
-rank-bm25
-jieba
-nltk
-scikit-learn
-PyMuPDF
-python-docx
-pywin32
-olefile
-python-pptx
-beautifulsoup4
-openpyxl
-sentence-transformers
-modelscope
+rank-bm25>=0.2.2,<1
+jieba>=0.42.1,<1
+nltk>=3.8,<4
+scikit-learn>=1.3,<2
+PyMuPDF>=1.24,<2
+python-docx>=1.1,<2
+pywin32>=306,<400; sys_platform == 'win32'
+olefile>=0.47,<1
+python-pptx>=1,<2
+beautifulsoup4>=4.12,<5
+markdown-it-py>=3,<5
+openpyxl>=3.1,<4
+sentence-transformers>=2.7,<7
+modelscope>=1.20,<2
 python-dotenv>=1.0,<2
 
 # Testing
-pytest
+pytest>=8,<10

@@ -33,7 +33,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             return base_report
 
         evidence_text = "\n\n".join(
-            f"[{item.number}] {item.title}（{item.document_version or '本地快照'}，{item.locator}）\n原文：{item.excerpt}"
+            f"[{item.number}] {item.title} ({item.document_version or 'local snapshot'}, {item.locator})\nSource excerpt: {item.excerpt}"
             for item in base_report.citations
         )
         output_instruction = (
@@ -155,8 +155,8 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             try:
                 compact_prompt = (
                     "Create a compact final answer from the frozen evidence only. Use exactly five "
-                    "level-two headings: 结论摘要、关键发现、逐项分析、冲突与处理、局限与待确认事项. "
-                    "Keep the body under 600 Chinese characters. Answer requested facts directly; "
+                    f"level-two headings: {'结论摘要、关键发现、逐项分析、冲突与处理、局限与待确认事项' if language == 'zh-CN' else 'Executive summary, Key findings, Detailed analysis, Conflicts and resolution, Limitations'}. "
+                    "Keep the body under 600 Chinese characters or 350 English words. Answer requested facts directly; "
                     "do not copy source Markdown. Every factual non-heading line must end with valid "
                     "[n] citations. Do not output a title or source list.\n\n"
                     f"Question: {kwargs['objective']}\n\nEvidence:\n{evidence_text}"
