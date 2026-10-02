@@ -70,8 +70,13 @@ class BM25Index:
         self._bm25 = BM25Okapi(self._tokenized_corpus)
         print(f"BM25 index built with {len(corpus_texts)} chunks")
 
-    def search(self, query: str, top_k: int = 5) -> list[dict]:
-        """Return the highest-scoring chunks for an English query."""
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        doc_ids: list[str] | set[str] | tuple[str, ...] | None = None,
+    ) -> list[dict]:
+        """Return highest-scoring chunks, ranking inside an optional document scope."""
         if self._bm25 is None:
             raise RuntimeError(
                 "BM25 index is unavailable; build or load it before searching"
@@ -82,7 +87,12 @@ class BM25Index:
             return []
         scores = self._bm25.get_scores(tokens)
 
-        indexed_scores = list(enumerate(scores))
+        allowed = {str(doc_id) for doc_id in doc_ids or []}
+        indexed_scores = [
+            (index, score)
+            for index, score in enumerate(scores)
+            if not allowed or str(self._chunk_meta[index].get("doc_id")) in allowed
+        ]
         indexed_scores.sort(key=lambda x: x[1], reverse=True)
         top_indices = [idx for idx, _score in indexed_scores[:top_k]]
 

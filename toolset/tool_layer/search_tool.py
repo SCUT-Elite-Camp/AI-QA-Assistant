@@ -507,8 +507,11 @@ class SearchTool(BaseTool):
         return rows
 
     def _bm25_search(self, query: str, top_k: int, filters: Dict) -> List[Dict]:
+        doc_ids = filters.get("doc_id") or filters.get("doc_ids")
+        if isinstance(doc_ids, str):
+            doc_ids = [doc_ids]
         try:
-            hits = self.bm25_index.search(query, top_k=top_k)
+            hits = self.bm25_index.search(query, top_k=top_k, doc_ids=doc_ids)
         except Exception as e:
             raise RetrievalError(f"bm25_search_failed: {e}") from e
 

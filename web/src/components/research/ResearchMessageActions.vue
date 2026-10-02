@@ -13,6 +13,7 @@ const props = defineProps<{
   text: string
   createdAt?: string
 }>()
+const toast = useToast()
 const emit = defineEmits<{ regenerate: [] }>()
 const { csrf, headerName } = useCsrf()
 const { notifyFavoriteChanged } = useFavorites()
@@ -83,6 +84,6 @@ async function handleVote(_message: UIMessage, next: boolean) {
     :open="suggestionOpen"
     :message-id="messageId"
     @update:open="suggestionOpen = $event"
-    @submit="useToast().add({ title: '感谢反馈', description: '改进建议已保存。', color: 'success' })"
+    @submit="toast.add({ title: '感谢反馈', description: '改进建议已保存。', color: 'success' })"
   />
 </template>

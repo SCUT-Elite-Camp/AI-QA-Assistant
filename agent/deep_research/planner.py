@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import logging
 import time
+from agent.config.settings import settings
+import re
 from typing import Protocol
 from urllib.request import Request, urlopen
 
@@ -177,6 +179,7 @@ class ModelResearchPlanner:
             return self.fallback.create_plan(request, manifest, version=version)
         try:
             tasks = self._generate_tasks(request, manifest)
+            self._validate_task_coverage(request.query, tasks)
             plan = ResearchPlan(
                 schema_version="research.v2",
                 research_id=manifest.research_id,
@@ -221,6 +224,9 @@ class ModelResearchPlanner:
             "\"acceptance_target\":string}]}. Create 2 to 5 non-overlapping tasks in execution order. "
             "Tasks must name the concrete facts, comparisons, dates, versions, or uncertainties to verify; "
             "do not use generic phrases such as locate core facts or organize conclusions. "
+            "Keep technical identifiers and source-language keywords in task questions "
+            "so local lexical search can find the relevant sections. Separate questions "
+            "about summary counts, commit details, and changed files when all are requested. "
             f"Write task text in {language}. Do not browse or add sources.\n\n"
             f"Question: {request.query}\n"
             f"Documents: {json.dumps(documents, ensure_ascii=False)}"
@@ -232,6 +238,8 @@ class ModelResearchPlanner:
             "max_tokens": 1200,
             "response_format": {"type": "json_object"},
         }
+        if settings.LLM_THINKING_MODE in {"enabled", "disabled"}:
+            payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
         raw = self._chat(payload)["choices"][0]["message"]["content"]
         parsed = json.loads(str(raw).strip().removeprefix("```json").removesuffix("```").strip())
         specs = parsed.get("tasks")
@@ -272,6 +280,28 @@ class ModelResearchPlanner:
                 )
             )
         return tasks
+
+    @classmethod
+    def _validate_task_coverage(cls, objective: str, tasks: list[ResearchTask]) -> None:
+        """Reject generic model plans that do not mention the user's subject."""
+
+        combined = " ".join(
+            f"{task.question} {task.purpose} "
+            + " ".join(item.target for item in task.acceptance_criteria)
+            for task in tasks
+        ).casefold()
+        objective_terms = {
+            term.casefold()
+            for term in re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}|[\u4e00-\u9fff]{2,}", objective)
+        }
+        generic = (
+            "locate core facts", "organize conclusions", "定位核心事实",
+            "整理研究结论", "收集相关信息",
+        )
+        if any(marker in combined for marker in generic):
+            raise PlannerError("model returned a generic research plan")
+        if objective_terms and not any(term in combined for term in objective_terms):
+            raise PlannerError("research plan does not cover the objective")
 
     def _chat(self, payload: dict) -> dict:
         last_error: Exception | None = None

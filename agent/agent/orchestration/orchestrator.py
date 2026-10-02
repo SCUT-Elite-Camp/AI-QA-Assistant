@@ -253,6 +253,14 @@ class AgentOrchestrator:
         if top_k < 1:
             top_k = 1
 
+        # An explicit document allowlist is a hard scope, not a reason to
+        # inspect only the first few sections.  Keep the public request value
+        # as the normal default, but reserve a bounded wider window so facts
+        # split across summary, commit, and impacted-file sections remain
+        # available to the evidence gate.  The policy cap still applies.
+        if (request.filters or {}).get("doc_ids") and policy.top_k:
+            top_k = min(policy.top_k, max(top_k, 10))
+
         # Hybrid is the general default; specialized policies (e.g. document
         # search) are allowed to select their own retrieval strategy.
         mode = (

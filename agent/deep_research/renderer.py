@@ -229,7 +229,10 @@ class MarkdownReportRenderer:
             structured_limitations.append(
                 ResearchLimitation(
                     code="source_boundary",
-                    message=f"{prefix}{self._clean_display_text(claim_text)}",
+                    message=self._bounded_text(
+                        f"{prefix}{self._clean_display_text(claim_text)}",
+                        max_length=2_000,
+                    ),
                     evidence_ids=evidence_ids,
                 )
             )
@@ -378,7 +381,7 @@ class MarkdownReportRenderer:
                             if metadata and metadata.title
                             else item.doc_id
                         ),
-                        value_summary=cls._clean_display_text(item.excerpt),
+                        value_summary=cls._bounded_summary(item.excerpt),
                         document_version=item.document_version,
                         effective_at=(metadata.effective_at if metadata else None),
                         updated_at=(metadata.updated_at if metadata else None),
@@ -440,6 +443,12 @@ class MarkdownReportRenderer:
                 )
             )
         return output
+
+    @classmethod
+    def _bounded_summary(cls, excerpt: str) -> str:
+        """Bound display text without changing the stored evidence excerpt."""
+        text = cls._clean_display_text(excerpt)
+        return text if len(text) <= 2000 else text[:1999] + "…"
 
     @staticmethod
     def _citation(
@@ -526,6 +535,14 @@ class MarkdownReportRenderer:
             if 0 <= marker_index < 80:
                 cleaned = cleaned[marker_index + len(marker):].strip()
         return cleaned
+
+    @staticmethod
+    def _bounded_text(text: str, *, max_length: int) -> str:
+        """Keep user-facing derived text inside its persisted schema limit."""
+
+        if len(text) <= max_length:
+            return text
+        return text[: max_length - 1].rstrip() + "…"
 
     @staticmethod
     def _unique_text(values: Iterable[str]) -> list[str]:

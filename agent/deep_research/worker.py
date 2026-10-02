@@ -511,6 +511,7 @@ class LocalResearchWorker:
             statement = f"候选资料的关键数值存在差异：{compared}"
         else:
             statement = substantive[0].excerpt
+        statement = LocalResearchWorker._bounded_finding_statement(statement)
         return Finding(
             finding_id=LocalResearchWorker._stable_id(
                 "finding", context.job.research_id, task.task_id
@@ -521,6 +522,15 @@ class LocalResearchWorker:
             evidence_ids=[item.evidence_id for item in evidence],
             covers=covers,
         )
+
+    @staticmethod
+    def _bounded_finding_statement(statement: str, limit: int = 4000) -> str:
+        """Keep expanded evidence from violating the Finding contract."""
+
+        normalized = statement.strip()
+        if len(normalized) <= limit:
+            return normalized
+        return normalized[: limit - 3].rstrip() + "..."
 
     @staticmethod
     def _is_substantive(text: str) -> bool:

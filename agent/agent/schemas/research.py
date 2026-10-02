@@ -878,7 +878,7 @@ class ResearchPlanValidator:
         for left_index, left in enumerate(normalized_questions):
             for right_index in range(left_index + 1, len(normalized_questions)):
                 right = normalized_questions[right_index]
-                if left == right or SequenceMatcher(None, left, right).ratio() >= 0.95:
+                if cls._questions_duplicate(left, right):
                     issues.append(
                         PlanIssue(
                             "research_plan_duplicate_task_question",
@@ -1034,6 +1034,16 @@ class ResearchPlanValidator:
     @staticmethod
     def _normalize_question(value: str) -> str:
         return re.sub(r"[\s？?!。,.，、:：；;]+", "", value.lower())
+
+    @staticmethod
+    def _questions_duplicate(left: str, right: str) -> bool:
+        if left == right:
+            return True
+        # Near-identical phrasing with distinct dates, versions, or metric IDs
+        # is a legitimate comparison, not a duplicate task.
+        if re.findall(r"\d+(?:\.\d+)*", left) != re.findall(r"\d+(?:\.\d+)*", right):
+            return False
+        return SequenceMatcher(None, left, right).ratio() >= 0.95
 
     @staticmethod
     def _find_dependency_cycle(tasks: list[ResearchTask]) -> list[str]:

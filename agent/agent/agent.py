@@ -31,6 +31,7 @@ from agent.schemas.common import StatusCode
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
 from agent.schemas.retrieval import RetrievalResult
+from agent.evidence.locator import canonical_chunk_id
 from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool, SearchTool
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
@@ -594,7 +595,11 @@ class Agent:
             try:
                 result = RetrievalResult(
                     doc_id=str(item["doc_id"]),
-                    chunk_id=str(item["chunk_id"]),
+                    chunk_id=canonical_chunk_id(
+                        str(item["doc_id"]),
+                        item.get("chunk_id"),
+                        item.get("chunk_index"),
+                    ),
                     chunk_index=int(item.get("chunk_index", 0)),
                     chunk_text=str(item.get("chunk_text", item.get("content", ""))),
                     title=str(item.get("title", "")),

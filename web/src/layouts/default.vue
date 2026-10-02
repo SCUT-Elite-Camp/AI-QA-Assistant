@@ -6,7 +6,6 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { useChats } from '../composables/useChats'
 import { useUserSession } from '../composables/useUserSession'
 import { useChatActions } from '../composables/useChatActions'
-import { useFavorites } from '../composables/useFavorites'
 import { useCsrf } from '../composables/useCsrf'
 import ModalSelectTopic from '../components/ModalSelectTopic.vue'
 
@@ -43,7 +42,6 @@ const dragOverTopicId = ref<string | null>(null)
 const showSelectTopicModal = ref(false)
 const targetChatIdForTopicModal = ref<string | null>(null)
 
-const { favoriteChats, loadFavorites } = useFavorites()
 
 watch(loggedIn, () => {
   fetchChats()
@@ -53,7 +51,7 @@ watch(loggedIn, () => {
 
 // Auto-expand topic if current route chat belongs to that topic
 watch(() => [route.path, chats.value], () => {
-  const currentChatId = route.params.id as string
+  const currentChatId = (route.params as { id?: string }).id
   if (currentChatId && chats.value.length) {
     const chat = chats.value.find(c => c.id === currentChatId)
     if (chat && (chat as any).topicId) {
@@ -115,7 +113,7 @@ function handleDragOver(topicId: string, event: DragEvent) {
   dragOverTopicId.value = topicId
 }
 
-function handleDragLeave(topicId: string, event: DragEvent) {
+function handleDragLeave(topicId: string, _event: DragEvent) {
   if (dragOverTopicId.value === topicId) {
     dragOverTopicId.value = null
   }
@@ -142,7 +140,7 @@ function handleDragOverStandalone(event: DragEvent) {
   dragOverStandalone.value = true
 }
 
-function handleDragLeaveStandalone(event: DragEvent) {
+function handleDragLeaveStandalone(_event: DragEvent) {
   dragOverStandalone.value = false
 }
 

@@ -73,7 +73,7 @@ onMounted(() => {
 <template>
   <UModal
     :open="open"
-    :ui="{ width: 'sm:max-w-3xl' }"
+    :ui="{ content: 'sm:max-w-3xl' }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>

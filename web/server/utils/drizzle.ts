@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/libsql'
+import type { InStatement } from '@libsql/client'
 import { createClient } from '@libsql/client'
 
 import * as schema from '../database/schema'
@@ -34,7 +35,8 @@ export function useDrizzle() {
         const duration = Date.now() - start
         recordDbQuery(duration)
         if (duration > 100) {
-          const sql = typeof args[0] === 'string' ? args[0] : args[0]?.sql || 'unknown'
+          const statement = args[0] as InStatement
+          const sql = typeof statement === 'string' ? statement : statement.sql
           logger.warn({ sql: sql.slice(0, 200), duration }, 'slow db query')
         }
         return result

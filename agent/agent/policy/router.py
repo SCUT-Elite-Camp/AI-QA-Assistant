@@ -8,6 +8,10 @@ class IntentPolicyRouter:
     _POLICIES = {
         QueryIntent.KNOWLEDGE_QA: IntentPolicy(
             candidate_tools=("search_documents",),
+            # A factual answer may span summary, commit, and changed-file
+            # sections. Keep the bounded QA window wide enough to assemble
+            # those sections while the runner/evidence gate remains capped.
+            top_k=10,
         ),
         QueryIntent.DOCUMENT_SEARCH: IntentPolicy(
             candidate_tools=("search_documents",),

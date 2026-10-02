@@ -1,7 +1,6 @@
 import { ref, shallowRef } from 'vue'
 import type { UIMessage } from 'ai'
-import { $fetch } from 'ofetch'
-import { getErrorMessage } from '../mock/errorMap'
+import { getErrorMessage } from '../utils/errorMap'
 
 function getTextFromParts(parts: UIMessage['parts']): string {
   for (const part of parts) {

@@ -75,9 +75,11 @@ class DeterministicSemanticVerifier:
         # excerpt happens to contain the claimed value.
         if (
             len(selected) > 1
+            and self._claim_expects_one_value(claim.claim_text)
             and all(evidence_number_sets)
             and self._same_subject(selected)
-            and len({tuple(sorted(numbers)) for numbers in evidence_number_sets}) > 1
+            and self._same_fact_scope(selected)
+            and self._has_conflicting_claim_values(claim_numbers, evidence_number_sets)
         ):
             return VerificationResult(
                 claim_id=claim.claim_id,
@@ -114,6 +116,34 @@ class DeterministicSemanticVerifier:
             reason=reason,
         )
 
+    @staticmethod
+    def _claim_expects_one_value(text: str) -> bool:
+        """Only classify disagreement for a single-value factual assertion.
+
+        Comparative and change-over-time claims intentionally contain several
+        different values.  Treating those values as disagreement caused normal
+        W30/W34 comparisons to be surfaced as source conflicts.
+        """
+
+        lowered = text.casefold()
+        comparison_markers = (
+            "compare", "versus", " vs ", "change", "increase", "decrease",
+            "difference", "trend", "分别", "对比", "比较", "变化", "增加",
+            "减少", "从", "到", "各", "不同",
+        )
+        return not any(marker in lowered for marker in comparison_markers)
+
+    @staticmethod
+    def _has_conflicting_claim_values(
+        claim_numbers: set[str], evidence_number_sets: list[set[str]]
+    ) -> bool:
+        """Compare source-specific values after removing shared dates/versions."""
+
+        shared = set.intersection(*(set(values) for values in evidence_number_sets))
+        relevant = [numbers - shared for numbers in evidence_number_sets]
+        non_empty = [values for values in relevant if values]
+        return len(non_empty) > 1 and len({tuple(sorted(values)) for values in non_empty}) > 1
+
     @classmethod
     def _same_subject(cls, evidence: list[VerifiedEvidence]) -> bool:
         token_sets = [cls._tokens(item.excerpt) for item in evidence]
@@ -123,6 +153,29 @@ class DeterministicSemanticVerifier:
                 if smaller >= 4 and len(left & right) / smaller >= 0.35:
                     return True
         return False
+
+    @classmethod
+    def _same_fact_scope(cls, evidence: list[VerifiedEvidence]) -> bool:
+        """Different explicit periods are comparison inputs, not contradictions."""
+
+        scopes = [cls._scope_markers(item.excerpt) for item in evidence]
+        explicit = [scope for scope in scopes if scope]
+        if len(explicit) < 2:
+            return True
+        common = set.intersection(*(set(scope) for scope in explicit))
+        return bool(common)
+
+    @staticmethod
+    def _scope_markers(text: str) -> set[str]:
+        markers = {
+            item.upper()
+            for item in re.findall(r"\bW\d{1,2}\b|\b\d{4}-W\d{1,2}\b", text, re.IGNORECASE)
+        }
+        if markers:
+            return markers
+        # A year is a useful scope only when no more precise sprint/week marker
+        # is present. Shared years still permit conflict detection.
+        return set(re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", text))
 
     def verify_many(
         self,
@@ -148,7 +201,15 @@ class DeterministicSemanticVerifier:
 
     @staticmethod
     def _numbers(text: str) -> set[str]:
-        return set(re.findall(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?%?", text))
+        # Ignore numeric prefixes embedded in document IDs, hashes and other
+        # alphanumeric identifiers. Treating ``54892...abc`` as the factual
+        # number ``54892`` rejects otherwise supported multi-source claims.
+        return set(
+            re.findall(
+                r"(?<![A-Za-z0-9])\d+(?:\.\d+)?%?(?![A-Za-z0-9])",
+                text,
+            )
+        )
 
     @classmethod
     def _overlap_ratio(cls, claim: str, evidence: str) -> float:

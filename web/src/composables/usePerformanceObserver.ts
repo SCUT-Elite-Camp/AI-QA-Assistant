@@ -78,7 +78,8 @@ export function usePerformanceObserver() {
           }
         }
       })
-      observer.observe({ type: 'event', buffered: true, durationThreshold: 16 })
+      const options: PerformanceObserverInit & { durationThreshold: number } = { type: 'event', buffered: true, durationThreshold: 16 }
+      observer.observe(options)
 
       // 在页面隐藏时上报 INP
       const visibilityHandler = () => {

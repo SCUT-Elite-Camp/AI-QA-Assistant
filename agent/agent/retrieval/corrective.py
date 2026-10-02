@@ -22,7 +22,9 @@ class CorrectiveRetrievalPlanner:
 
     _FALLBACK_MODE = {
         "hybrid": "bm25",
-        "bm25": "vector",
+        # An explicit lexical-only request must not silently depend on a
+        # vector service. Retry target queries with a wider lexical window.
+        "bm25": "bm25",
         "vector": "bm25",
     }
 
@@ -49,7 +51,7 @@ class CorrectiveRetrievalPlanner:
             if gate_result.missing_targets
             else [query_plan.standalone_query]
         )
-        next_top_k = min(20, max(previous_top_k, policy.top_k) * 2)
+        next_top_k = min(20, max(previous_top_k * 2, policy.top_k))
         next_mode = self._FALLBACK_MODE[previous_mode]
 
         return [

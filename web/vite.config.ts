@@ -25,7 +25,13 @@ export default defineConfig({
       }
     }),
     nitro({
-      serverDir: './server'
+      serverDir: './server',
+      // Route segments such as [id] must not become Rollup placeholders.
+      rollupConfig: {
+        output: {
+          chunkFileNames: chunk => `chunks/${chunk.name.replace(/[^\w.-]/g, '_')}-[hash].mjs`
+        }
+      }
     })
   ],
   server: {

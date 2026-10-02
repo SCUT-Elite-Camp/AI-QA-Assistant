@@ -254,6 +254,48 @@ def _check_url(url: str, *, timeout_seconds: float = 15.0) -> dict[str, Any]:
         }
 
 
+def _check_research_source(
+    client: ApiClient,
+    research_id: str,
+    citation: dict[str, Any],
+    *,
+    timeout_seconds: float = 15.0,
+) -> dict[str, Any]:
+    """Validate the product's authenticated/local source-opening contract."""
+
+    source_url = str(citation.get("source_url") or "")
+    doc_id = str(citation.get("doc_id") or "")
+    checked_url = (
+        f"{client.base_url}/api/research/jobs/{research_id}/documents/{doc_id}/source"
+    )
+    started = time.perf_counter()
+    try:
+        request = Request(
+            checked_url,
+            method="GET",
+            headers={"X-User-ID": "benchmark-user"},
+        )
+        with urlopen(request, timeout=timeout_seconds) as response:
+            status = int(response.status)
+            body = response.read(1)
+        return {
+            "url": source_url,
+            "checked_url": checked_url,
+            "ok": 200 <= status < 400 and bool(body),
+            "status": status,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+        }
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        return {
+            "url": source_url,
+            "checked_url": checked_url,
+            "ok": False,
+            "status": getattr(exc, "code", None),
+            "error": str(exc),
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+        }
+
+
 def _run_fast_chat(client: ApiClient, case: dict[str, Any], top_k: int) -> dict[str, Any]:
     response = client.request(
         "POST",
@@ -270,13 +312,14 @@ def _run_fast_chat(client: ApiClient, case: dict[str, Any], top_k: int) -> dict[
     status = str(response.get("status") or "") if isinstance(response, dict) else ""
     if status != "success":
         raise RuntimeError(f"fast_chat_terminal_status:{status or 'missing'}")
-    return {
+    result = {
         "response": response,
         "citations": citations,
         "source_checks": [
             _check_url(str(item.get("source_url") or "")) for item in citations
         ],
     }
+    return result
 
 
 def _wait_for_status(
@@ -380,7 +423,7 @@ def _run_research(
     if job["status"] == "completed":
         report = client.request("GET", f"/api/research/jobs/{research_id}/report")
         citations = report.get("citations", [])
-    return {
+    result = {
         "research_id": research_id,
         "job": job,
         "plan": plan,
@@ -390,10 +433,16 @@ def _run_research(
         "report": report,
         "citations": citations,
         "source_checks": [
-            _check_url(str(item.get("source_url") or "")) for item in citations
+            _check_research_source(client, research_id, item) for item in citations
         ],
         "retrieval_profile": profile,
     }
+    if job["status"] != "completed":
+        raise BenchmarkRunError(
+            f"research_terminal_status:{job['status']}",
+            partial_result=result,
+        )
+    return result
 
 
 @dataclass

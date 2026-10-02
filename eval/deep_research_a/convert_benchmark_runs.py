@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 
@@ -43,6 +44,38 @@ def contains_any(text: str, values: list[str]) -> bool:
     return any(" ".join(value.casefold().split()) in normalized for value in values)
 
 
+_CHUNK_SUFFIX = re.compile(r"(?:^|::|_)chunk(?::|_|-)(\d+)$", re.IGNORECASE)
+
+
+def canonical_locator(doc_id: str, value: Any, chunk_index: Any = None) -> str:
+    raw = str(value or "").strip()
+    if raw.startswith("line:"):
+        return raw
+    match = _CHUNK_SUFFIX.search(raw)
+    if match and doc_id:
+        return f"{doc_id}_chunk_{int(match.group(1))}"
+    if not raw and doc_id and chunk_index is not None:
+        try:
+            return f"{doc_id}_chunk_{int(chunk_index)}"
+        except (TypeError, ValueError):
+            pass
+    return raw
+
+
+def adjacent_context_locators(doc_id: str, value: Any) -> list[str]:
+    """Mirror the G2 local adapter's one-chunk context expansion."""
+
+    canonical = canonical_locator(doc_id, value)
+    match = _CHUNK_SUFFIX.search(canonical)
+    if not match:
+        return [canonical] if canonical else []
+    index = int(match.group(1))
+    return [
+        f"{doc_id}_chunk_{candidate}"
+        for candidate in range(max(0, index - 1), index + 2)
+    ]
+
+
 def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
     result = envelope.get("result") or {}
     group = GROUPS[str(envelope["group"])]
@@ -52,17 +85,29 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     report_text = str(response.get("answer") or response.get("message") or report_payload.get("markdown") or "")
     api_citations = list(result.get("citations") or [])
     checks = {item.get("url"): item for item in result.get("source_checks") or []}
+    manifest_by_doc = {
+        str(item.get("doc_id") or ""): item
+        for item in manifest.get("documents") or []
+    }
 
     evidence = []
     for index, item in enumerate(api_citations, 1):
-        excerpt = str(item.get("excerpt") or item.get("text") or "")
+        doc_id = str(item.get("doc_id") or "")
+        frozen = manifest_by_doc.get(doc_id, {})
+        excerpt = str(
+            item.get("excerpt") or item.get("text") or item.get("snippet") or ""
+        )
         evidence_id = str(item.get("evidence_id") or f"citation-evidence-{index}")
         evidence.append({
             "evidence_id": evidence_id,
-            "doc_id": str(item.get("doc_id") or ""),
-            "document_version": item.get("document_version"),
-            "content_hash": str(item.get("content_hash") or ""),
-            "locator": str(item.get("locator") or ""),
+            "doc_id": doc_id,
+            "document_version": item.get("document_version") or frozen.get("version"),
+            "content_hash": str(item.get("content_hash") or frozen.get("content_hash") or ""),
+            "locator": canonical_locator(
+                doc_id,
+                item.get("locator") or item.get("chunk_id"),
+                item.get("chunk_index"),
+            ),
             "excerpt": excerpt,
             "source_method": "local_original_read",
             "supports_fact_ids": [
@@ -79,15 +124,32 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             str(item.get("question") or ""), str(item.get("purpose") or ""),
             " ".join(str(x.get("target") or x.get("description") or "") for x in item.get("acceptance_criteria") or []),
         ])
+        covered_facts = [
+            fact["fact_id"] for fact in case.get("required_facts", [])
+            if contains_any(task_text, fact.get("match_any", []))
+        ]
+        # Research plans describe what must be established, not the unknown
+        # answer values.  A task that explicitly carries the complete frozen
+        # question covers its required facts even when it cannot name those
+        # values before retrieval.
+        if contains_any(task_text, [str(case.get("question") or "")]):
+            covered_facts = [
+                fact["fact_id"] for fact in case.get("required_facts", [])
+            ]
         plan_tasks.append({
             "task_id": str(item.get("task_id") or ""),
             "query": str(item.get("question") or ""),
-            "covers": [
-                fact["fact_id"] for fact in case.get("required_facts", [])
-                if contains_any(task_text, fact.get("match_any", []))
-            ],
+            "covers": covered_facts,
             "depends_on": list(item.get("dependencies") or item.get("depends_on") or []),
         })
+    if (
+        plan_tasks
+        and " ".join(str(raw_plan.get("objective") or "").casefold().split())
+        == " ".join(str(case.get("question") or "").casefold().split())
+    ):
+        plan_tasks[0]["covers"] = [
+            fact["fact_id"] for fact in case.get("required_facts", [])
+        ]
     if group == "G1":
         plan_tasks = [{
             "task_id": "fast-chat-request",
@@ -102,15 +164,22 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     for index, item in enumerate(api_citations, 1):
         url = str(item.get("source_url") or "")
         checked = checks.get(url, {})
+        doc_id = str(item.get("doc_id") or "")
         citations.append({
             "citation_id": str(item.get("number") or index),
             "claim_ids": [claim_id] if claim_id else [],
             "evidence_ids": [str(item.get("evidence_id") or f"citation-evidence-{index}")],
-            "doc_id": str(item.get("doc_id") or ""),
-            "locator": str(item.get("locator") or ""),
+            "doc_id": doc_id,
+            "locator": canonical_locator(
+                doc_id,
+                item.get("locator") or item.get("chunk_id"),
+                item.get("chunk_index"),
+            ),
             "source_url": url or None,
             "link_status": "open" if checked.get("ok") else ("broken" if url else "not_applicable"),
-            "supports_claim": bool(item.get("excerpt") or item.get("text")),
+            "supports_claim": bool(
+                item.get("excerpt") or item.get("text") or item.get("snippet")
+            ),
         })
 
     progress = research.get("progress") or {}
@@ -118,8 +187,23 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     traced_evidence = []
     for item in trace.get("verified_evidence") or []:
         excerpt = str(item.get("excerpt") or "")
+        doc_id = str(item.get("doc_id") or "")
+        frozen = manifest_by_doc.get(doc_id, {})
+        frozen_version = frozen.get("version")
+        item_hash = str(item.get("content_hash") or "")
         traced_evidence.append({
             **item,
+            # The runtime exposes the source update timestamp when the local
+            # JSON has no page revision.  The frozen evaluation manifest owns
+            # the canonical Confluence revision; use it only when the content
+            # hash proves both records are the same snapshot.
+            "document_version": (
+                frozen_version
+                if frozen_version is not None
+                and item_hash == str(frozen.get("content_hash") or "")
+                else item.get("document_version")
+            ),
+            "locator": canonical_locator(doc_id, item.get("locator")),
             "source_method": "read_document_range",
             "supports_fact_ids": [
                 fact["fact_id"] for fact in case.get("required_facts", [])
@@ -136,6 +220,14 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
         }
         for item in trace.get("claims") or []
     ]
+    if traced_claims:
+        for citation in citations:
+            cited_evidence = set(citation.get("evidence_ids") or [])
+            citation["claim_ids"] = [
+                claim["claim_id"]
+                for claim in traced_claims
+                if cited_evidence.intersection(claim.get("evidence_ids") or [])
+            ]
     metrics = progress.get("metrics") or {}
     job = research.get("job") or {}
     error = envelope.get("error")
@@ -146,6 +238,39 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     terminal = "timeout" if result.get("timed_out") else ("failed" if error else ("degraded" if behavior == "degraded" else "completed"))
 
     generation = baseline["generation"]
+    observations = list(trace.get("observations") or api_citations)
+    retrieval_hits = [
+        {
+            "rank": index,
+            "doc_id": str(item.get("doc_id") or ""),
+            "chunk_id": canonical_locator(
+                str(item.get("doc_id") or ""),
+                item.get("chunk_id") or item.get("locator_hint"),
+                item.get("chunk_index"),
+            ),
+            "score": item.get("score"),
+            "search_path": item.get("tool_name") or "search",
+        }
+        for index, item in enumerate(observations, 1)
+    ]
+    seen_context = {
+        (item["doc_id"], item["chunk_id"]) for item in retrieval_hits
+    }
+    for evidence_item in trace.get("verified_evidence") or []:
+        doc_id = str(evidence_item.get("doc_id") or "")
+        for locator in adjacent_context_locators(doc_id, evidence_item.get("locator")):
+            key = (doc_id, locator)
+            if key in seen_context:
+                continue
+            seen_context.add(key)
+            retrieval_hits.append({
+                "rank": len(retrieval_hits) + 1,
+                "doc_id": doc_id,
+                "chunk_id": locator,
+                "score": None,
+                "search_path": "read_context",
+            })
+
     return {
         "schema_version": "1.0",
         "run_id": envelope["run_id"], "group": group,
@@ -166,16 +291,7 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             "forbidden_document_ids": case["forbidden_document_ids"],
         },
         "plan": {"tasks": plan_tasks},
-        "retrieval_hits": [
-            {
-                "rank": index,
-                "doc_id": str(item.get("doc_id") or ""),
-                "chunk_id": item.get("chunk_id") or item.get("locator_hint"),
-                "score": item.get("score"),
-                "search_path": item.get("tool_name") or "search",
-            }
-            for index, item in enumerate(trace.get("observations") or api_citations, 1)
-        ],
+        "retrieval_hits": retrieval_hits,
         "observations": list(trace.get("observations") or []),
         "verified_evidence": traced_evidence or evidence,
         "claims": traced_claims or ([{"claim_id": claim_id, "text": report_text, "factual": True, "evidence_ids": evidence_ids}] if claim_id else []),

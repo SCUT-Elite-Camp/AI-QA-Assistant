@@ -38,7 +38,7 @@ def _failed_gate(*, missing_targets: list[str] | None = None):
     ("previous_mode", "expected_mode"),
     [
         ("hybrid", "bm25"),
-        ("bm25", "vector"),
+        ("bm25", "bm25"),
         ("vector", "bm25"),
     ],
 )
@@ -98,6 +98,7 @@ def test_comparison_retries_only_missing_targets() -> None:
     )
 
     assert [request.query for request in requests] == ["Agent CP2"]
+    assert requests[0].mode == "bm25"
 
 
 def test_top_k_never_exceeds_contract_limit() -> None:

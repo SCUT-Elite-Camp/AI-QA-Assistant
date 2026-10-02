@@ -160,6 +160,7 @@ class Settings(BaseModel):
     LLM_MAX_TOKENS: int = _env_int("LLM_MAX_TOKENS", 2000)
     LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)
     LLM_THINKING_MODE: str = os.getenv("LLM_THINKING_MODE", "").strip().lower()
+    LLM_REASONING_EFFORT: str = os.getenv("LLM_REASONING_EFFORT", "").strip().lower()
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")

@@ -23,7 +23,10 @@ class LLMClient(BaseLLM):
             "temperature": settings.LLM_TEMPERATURE,
             "max_tokens": settings.LLM_MAX_TOKENS,
         }
-        if settings.LLM_THINKING_MODE in {"enabled", "disabled", "auto"}:
+        if settings.LLM_MODEL.casefold() == "glm-5.3":
+            if settings.LLM_REASONING_EFFORT in {"low", "high", "max"}:
+                payload["reasoning_effort"] = settings.LLM_REASONING_EFFORT
+        elif settings.LLM_THINKING_MODE in {"enabled", "disabled", "auto"}:
             payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
         if tools:
             payload["tools"] = tools
@@ -41,24 +44,36 @@ class LLMClient(BaseLLM):
             method="POST",
         )
 
-        try:
-            with urlopen(request, timeout=settings.LLM_TIMEOUT) as response:
-                data = json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            # OpenAI-compatible providers return the actionable error code in
-            # the response body. Preserve a bounded copy so model/parameter
-            # failures can be diagnosed without exposing request credentials.
-            try:
-                detail = exc.read().decode("utf-8", errors="replace")[:2000]
-            except Exception:
-                detail = ""
-            suffix = f"; response={detail}" if detail else ""
-            raise LLMError(f"LLM request failed: {exc}{suffix}") from exc
-        except (URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
-            raise LLMError(f"LLM request failed: {exc}") from exc
+        data = self._request_json(request)
 
         try:
             message = data["choices"][0]["message"]
             return message
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMError("LLM response format is invalid.") from exc
+
+    @staticmethod
+    def _request_json(request: Request) -> dict:
+        """Retry one transient transport failure, never deterministic HTTP errors."""
+        for attempt in range(2):
+            try:
+                with urlopen(request, timeout=settings.LLM_TIMEOUT) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except HTTPError as exc:
+                # OpenAI-compatible providers return the actionable error code
+                # in the response body. Preserve a bounded copy without
+                # exposing request credentials.
+                try:
+                    detail = exc.read().decode("utf-8", errors="replace")[:2000]
+                except Exception:
+                    detail = ""
+                suffix = f"; response={detail}" if detail else ""
+                raise LLMError(f"LLM request failed: {exc}{suffix}") from exc
+            except json.JSONDecodeError as exc:
+                raise LLMError(f"LLM request failed: {exc}") from exc
+            except (URLError, TimeoutError, OSError) as exc:
+                if attempt == 0:
+                    continue
+                raise LLMError(f"LLM request failed: {exc}") from exc
+
+        raise LLMError("LLM request failed after transient retry.")

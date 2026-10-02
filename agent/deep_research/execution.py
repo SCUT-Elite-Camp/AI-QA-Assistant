@@ -50,6 +50,7 @@ class ResearchRuntimeService:
             semantic_verifier=semantic_verifier,
             renderer=renderer,
             ledger=ledger,
+            max_candidates_per_task=3 if isinstance(renderer, EvidenceReportSynthesizer) else 2,
         )
         self.runtime = ResearchGraphRuntime(
             control_plane,

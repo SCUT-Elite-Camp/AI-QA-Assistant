@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from agent.agent import Agent
+from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
@@ -74,7 +75,7 @@ class ApplicationContainer:
             search_tool.search(
                 query="企业智能问答助手",
                 top_k=1,
-                mode="hybrid",
+                mode=settings.DEFAULT_RETRIEVAL_MODE,
                 filters=None,
                 min_score=0.0,
                 trace_id="startup-preload",

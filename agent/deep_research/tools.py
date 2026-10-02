@@ -6,10 +6,13 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 import hashlib
 import json
+import math
+from collections import Counter
 from pathlib import Path
 import re
 from typing import Any, Protocol
 
+from agent.evidence.locator import canonical_chunk_id
 from agent.schemas.research import SourceManifest
 from .manifest import LocalDocumentResolver
 
@@ -36,6 +39,7 @@ class LocalJsonSearchBackend:
         allowed_ids = {str(item) for item in filters.get("doc_ids", [])}
         query_tokens = self._tokens(query)
         rows: list[dict] = []
+        title_tokens: set[str] = set()
         for path in sorted(self.documents_dir.glob("*.json")):
             try:
                 payload = json.loads(path.read_text(encoding="utf-8"))
@@ -46,42 +50,91 @@ class LocalJsonSearchBackend:
             doc_id = str(payload.get("doc_id") or path.stem)
             if allowed_ids and doc_id not in allowed_ids:
                 continue
-            lines = self._lines(payload)
-            if not lines:
+            if payload.get("chunks"):
+                title_tokens.update(self._tokens(str(payload.get("title") or "")))
+            candidates = self._candidates(payload, doc_id)
+            if not candidates:
                 continue
-            best_index, best_line, overlap = max(
-                (
-                    (index, line, len(query_tokens & self._tokens(line)))
-                    for index, line in enumerate(lines)
-                ),
-                key=lambda item: (item[2], -item[0]),
-            )
-            score = overlap / max(1, len(query_tokens))
-            rows.append(
-                {
+            for index, locator, text in candidates:
+                rows.append({
                     "doc_id": doc_id,
-                    "chunk_id": f"line:{best_index + 1}-{best_index + 1}",
-                    "chunk_index": best_index,
-                    "chunk_text": best_line,
-                    "score": score,
-                }
-            )
-        rows.sort(key=lambda item: (-float(item["score"]), str(item["doc_id"])))
-        return rows[:top_k]
+                    "chunk_id": locator,
+                    "chunk_index": index,
+                    "chunk_text": text,
+                })
+        # Rank sections, not one flattened document. Rare query terms should
+        # outweigh recurring sprint headings and boilerplate.
+        token_sets = [self._tokens(row["chunk_text"]) for row in rows]
+        frequencies = Counter(token for tokens in token_sets for token in tokens)
+        # The planner often repeats the full document title in every task.
+        # Once a document is scoped, that must not swamp section-specific terms.
+        has_section_terms = bool(query_tokens - title_tokens)
+        weights = {token: math.log(1 + len(rows) / (1 + frequencies[token]))
+                   * (0.1 if has_section_terms and token in title_tokens else 1.0)
+                   for token in query_tokens}
+        denominator = sum(weights.values()) or 1.0
+        for row, tokens in zip(rows, token_sets):
+            row["score"] = sum(weights[t] for t in query_tokens & tokens) / denominator
+        rows.sort(key=lambda item: (-item["score"], item["doc_id"], item["chunk_index"]))
+        # Round-robin ranked documents preserves comparisons while allowing
+        # multiple distinct sections from the same document into the budget.
+        buckets: dict[str, list[dict]] = {}
+        for row in rows:
+            buckets.setdefault(row["doc_id"], []).append(row)
+        selected = []
+        while buckets and len(selected) < top_k:
+            for doc_id in list(buckets):
+                selected.append(buckets[doc_id].pop(0))
+                if not buckets[doc_id]:
+                    del buckets[doc_id]
+                if len(selected) == top_k:
+                    break
+        return selected
 
     @staticmethod
     def _lines(payload: dict[str, Any]) -> list[str]:
         content = LocalDocumentResolver._searchable_text(payload)
         return [line.strip() for line in content.splitlines() if line.strip()]
 
+    @classmethod
+    def _candidates(
+        cls,
+        payload: dict[str, Any],
+        doc_id: str,
+    ) -> list[tuple[int, str, str]]:
+        chunks = payload.get("chunks") or []
+        candidates: list[tuple[int, str, str]] = []
+        for position, chunk in enumerate(chunks):
+            if not isinstance(chunk, dict):
+                continue
+            text = str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+            if not text:
+                continue
+            try:
+                index = int(chunk.get("index", position))
+            except (TypeError, ValueError):
+                index = position
+            locator = canonical_chunk_id(doc_id, chunk.get("chunk_id"), index)
+            candidates.append((index, locator, text))
+        if candidates:
+            return candidates
+        return [
+            (index, f"line:{index + 1}-{index + 1}", line)
+            for index, line in enumerate(cls._lines(payload))
+        ]
+
     @staticmethod
     def _tokens(text: str) -> set[str]:
-        return set(
+        tokens = set(
             re.findall(
                 r"[A-Za-z][A-Za-z0-9_-]*|\d+(?:\.\d+)?%?|[\u4e00-\u9fff]",
                 text.casefold(),
             )
         )
+        # Preserve identifiers, but also match source-code paths such as
+        # intent_classifier.py against natural language 'intent classifier'.
+        tokens.update(part for token in list(tokens) for part in re.split(r"[_-]", token) if part)
+        return tokens
 
 
 class LocalToolError(RuntimeError):
@@ -186,16 +239,28 @@ class LocalResearchToolAdapter:
             snippet = str(row.get("chunk_text") or row.get("text") or "").strip()
             if not snippet:
                 continue
-            hits.append(SearchHit(
-                doc_id=doc_id,
-                locator_hint=str(row.get("chunk_id") or f"{doc_id}::chunk_{index}"),
-                snippet=snippet,
-                score=float(row.get("score", 0.0)),
-            ))
+            hits.append(
+                SearchHit(
+                    doc_id=doc_id,
+                    locator_hint=canonical_chunk_id(
+                        doc_id,
+                        row.get("chunk_id"),
+                        index,
+                    ),
+                    snippet=snippet,
+                    score=float(row.get("score", 0.0)),
+                )
+            )
         return hits
 
     def read_document_range(
-        self, doc_id: str, context: ToolCallContext, *, start_line: int = 1, end_line: int | None = None,
+        self,
+        doc_id: str,
+        context: ToolCallContext,
+        *,
+        start_line: int = 1,
+        end_line: int | None = None,
+        locator: str | None = None,
     ) -> OriginalRead:
         manifest_item = self._allowed(context).get(doc_id)
         if manifest_item is None:
@@ -218,6 +283,37 @@ class LocalResearchToolAdapter:
         content_hash = str(payload.get("content_hash") or hashlib.sha256(content.encode("utf-8")).hexdigest())
         if content_hash != manifest_item.content_hash:
             raise ManifestAccessError(f"document_version_changed:{doc_id}")
+        version = payload.get("version") or payload.get("last_updated")
+        if locator:
+            requested_locator = canonical_chunk_id(doc_id, locator)
+            chunks = payload.get("chunks") or []
+            for position, chunk in enumerate(chunks):
+                if not isinstance(chunk, dict):
+                    continue
+                try:
+                    index = int(chunk.get("index", position))
+                except (TypeError, ValueError):
+                    index = position
+                chunk_locator = canonical_chunk_id(
+                    doc_id,
+                    chunk.get("chunk_id"),
+                    index,
+                )
+                if chunk_locator != requested_locator:
+                    continue
+                excerpt = self._chunk_context(chunks, position)
+                if not excerpt:
+                    raise LocalToolError("empty_document_excerpt")
+                return OriginalRead(
+                    doc_id=doc_id,
+                    document_version=(
+                        str(version) if version is not None else None
+                    ),
+                    locator=chunk_locator,
+                    excerpt=excerpt,
+                    content_hash=content_hash,
+                )
+            raise LocalToolError(f"document_chunk_not_found:{requested_locator}")
         lines = content.splitlines() or [content]
         if start_line > len(lines):
             raise LocalToolError("document_range_out_of_bounds")
@@ -225,7 +321,6 @@ class LocalResearchToolAdapter:
         excerpt = "\n".join(lines[start_line - 1:effective_end]).strip()
         if not excerpt:
             raise LocalToolError("empty_document_excerpt")
-        version = payload.get("version") or payload.get("last_updated")
         return OriginalRead(
             doc_id=doc_id,
             document_version=str(version) if version is not None else None,
@@ -233,6 +328,49 @@ class LocalResearchToolAdapter:
             excerpt=excerpt,
             content_hash=content_hash,
         )
+
+    @classmethod
+    def _chunk_context(
+        cls,
+        chunks: list[Any],
+        anchor_position: int,
+        *,
+        radius: int = 1,
+    ) -> str:
+        """Read a bounded context window around a matched chunk.
+
+        Ingested chunks overlap, and headings/tables frequently cross a chunk
+        boundary.  Keep the matched chunk as the citation anchor while adding
+        one neighbouring chunk on either side for report synthesis.  Adjacent
+        overlap is removed so the model does not see duplicated assertions.
+        """
+
+        start = max(0, anchor_position - radius)
+        end = min(len(chunks), anchor_position + radius + 1)
+        texts = []
+        for chunk in chunks[start:end]:
+            if not isinstance(chunk, dict):
+                continue
+            text = str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+            if text:
+                texts.append(text)
+        if not texts:
+            return ""
+        merged = texts[0]
+        for text in texts[1:]:
+            merged = cls._merge_overlapping_text(merged, text)
+        return merged.strip()
+
+    @staticmethod
+    def _merge_overlapping_text(left: str, right: str) -> str:
+        max_overlap = min(len(left), len(right))
+        # Chunks may be tiny in tests and in short table sections.  Four
+        # characters is long enough to remove a repeated line while avoiding
+        # accidental one- or two-character joins in Chinese prose.
+        for size in range(max_overlap, 3, -1):
+            if left[-size:] == right[:size]:
+                return left + right[size:]
+        return left.rstrip() + "\n\n" + right.lstrip()
 
     def close(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)

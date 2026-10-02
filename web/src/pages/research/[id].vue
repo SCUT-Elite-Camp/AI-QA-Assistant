@@ -452,7 +452,7 @@ const statusTitle = computed(() => {
             <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
               <form
                 class="flex min-w-0 items-end gap-2 rounded-2xl border border-default bg-default p-2 shadow-lg"
-                @submit.prevent="sendConversationMessage"
+                @submit.prevent="sendConversationMessage()"
               >
                 <textarea
                   ref="conversationInputRef"
@@ -461,7 +461,7 @@ const statusTitle = computed(() => {
                   :placeholder="job.status === 'awaiting_approval' ? '回复“批准”，或直接描述要修改的步骤…' : job.status === 'completed' && report?.conflicts?.some(conflict => conflict.resolution_status === 'unresolved') ? '回复“采用来源 2”，或说明你的处理意见…' : '继续询问这项研究…'"
                   class="min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3 py-2.5 text-base leading-6 text-highlighted outline-none placeholder:text-muted"
                   aria-label="研究对话消息"
-                  @keydown.enter.exact.prevent="sendConversationMessage"
+                  @keydown.enter.exact.prevent="sendConversationMessage()"
                 />
                 <UButton
                   type="submit"

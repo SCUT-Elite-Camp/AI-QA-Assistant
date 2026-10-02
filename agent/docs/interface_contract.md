@@ -36,6 +36,19 @@ The frontend must render `progress_percent`, `stages`, and `tasks` as returned;
 it must not infer a second state machine from Job status or array position.
 Polling stops when `status` is `completed`, `failed`, or `cancelled`.
 
+### Research conversation commands
+
+`POST /api/research/jobs/{id}/messages` accepts `{ "message": "采用来源 2" }`
+for a completed report with a matching conflict alternative. It persists a new
+report revision, marks the selected conflict `resolved_by_user`, and retains
+the original evidence and citations. A user choice records a decision; it does
+not reverify claims or clear existing quality limitations. Unknown source
+numbers return `action=clarify` without revising the report. Clients should
+reload the report after `action=conflict_resolved`.
+
+The conflict-choice persistence, invalid-source behavior, and preservation of
+quality gaps are covered by `test_research_control_plane_api.py`.
+
 ## POST `/api/chat`
 
 Request:
@@ -82,7 +95,9 @@ separate Web contract revision approves an optional `run` field.
 - `title`: document title.
 - `source_url`: optional source link.
 - `doc_id`: document identifier.
-- `chunk_id`: chunk identifier.
+- `chunk_id`: stable chunk identifier in
+  `{doc_id}_chunk_{zero_based_index}` form. Agent normalizes the legacy
+  `{doc_id}::chunk_{index}` Tool Layer form before returning it to Web.
 - `score`: retrieval score.
 - `snippet`: document excerpt, defaulting to the first 120 characters of
   `chunk_text`.
@@ -132,6 +147,10 @@ separate Web contract revision approves an optional `run` field.
   `answer`.
 - Include `trace_id` in logs and issue reports.
 - Match citation markers such as `[1]` and `[2]` by `citation_id`.
+
+Models may emit duplicate parallel calls in one response. Agent deduplicates
+semantically identical calls within that response; the repeated-call limit is
+reserved for an identical call repeated across model turns.
 
 ## CP2 Conversation Rules
 

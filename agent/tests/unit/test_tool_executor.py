@@ -181,7 +181,7 @@ def test_search_uses_structured_result_without_latest_results() -> None:
         [
             {
                 "doc_id": "doc-1",
-                "chunk_id": "chunk-1",
+                "chunk_id": "doc-1::chunk_2",
                 "chunk_index": 2,
                 "title": "CP2 Plan",
                 "chunk_text": "ToolExecutor returns request-local evidence.",
@@ -208,7 +208,7 @@ def test_search_uses_structured_result_without_latest_results() -> None:
     assert result.evidence == [
         Evidence(
             doc_id="doc-1",
-            chunk_id="chunk-1",
+            chunk_id="doc-1_chunk_2",
             chunk_index=2,
             title="CP2 Plan",
             content="ToolExecutor returns request-local evidence.",

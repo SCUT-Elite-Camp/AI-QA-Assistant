@@ -8,6 +8,7 @@ from typing import Any, Callable
 from pydantic import ValidationError
 
 from agent.config.settings import settings
+from agent.evidence.locator import canonical_chunk_id
 from agent.schemas.tool_execution import Evidence, ToolExecutionResult
 from agent.tools.registry import ToolRegistryAdapter
 from toolset.tool_layer import BaseTool
@@ -212,7 +213,11 @@ class ToolExecutor:
         evidence = [
             Evidence(
                 doc_id=row["doc_id"],
-                chunk_id=row["chunk_id"],
+                chunk_id=canonical_chunk_id(
+                    row["doc_id"],
+                    row.get("chunk_id"),
+                    row.get("chunk_index"),
+                ),
                 chunk_index=row.get("chunk_index", 0),
                 title=row["title"],
                 content=row.get("chunk_text", row.get("content", "")),
