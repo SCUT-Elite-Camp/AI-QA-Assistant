@@ -148,3 +148,14 @@ def test_locating_documents_about_changes_remains_document_search():
     from agent.schemas.query_plan import QueryIntent
     result = IntentClassifier._enforce_explicit_intent('Find documents about files added in the release', [], IntentResult(intent=QueryIntent.DOCUMENT_SEARCH, confidence=0.9))
     assert result.intent == QueryIntent.DOCUMENT_SEARCH
+
+
+def test_selected_documents_do_not_inherit_guessed_metadata_filters():
+    query = 'Compare deliveries in the selected documents'
+    request = ChatRequest(query=query, filters={'doc_ids': ['a', 'b']})
+    plan = QueryPlan(original_query=query, standalone_query=query, filters={'space': 'guessed', 'doc_type': 'sprint'})
+    merged = AgentOrchestrator._merge_request_constraints(request, plan)
+    assert merged.filters == {'doc_ids': ['a', 'b']}
+    request = ChatRequest(query=query, filters={'doc_ids': ['a', 'b'], 'space': 'explicit'})
+    plan = plan.model_copy(update={'filters': {'space': 'explicit', 'doc_type': 'sprint'}})
+    assert AgentOrchestrator._merge_request_constraints(request, plan).filters == {'doc_ids': ['a', 'b'], 'space': 'explicit'}

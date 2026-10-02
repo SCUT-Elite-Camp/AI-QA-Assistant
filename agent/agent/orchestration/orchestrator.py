@@ -493,6 +493,11 @@ class AgentOrchestrator:
         merged_filters = dict(query_plan.filters)
         hard_doc_ids = (request.filters or {}).get("doc_ids")
         if hard_doc_ids is not None:
+            # Explicit document selections already define the source scope.
+            # Guessed metadata can exclude those sources or require absent index fields.
+            for key in ("space", "doc_type"):
+                if key not in (request.filters or {}):
+                    merged_filters.pop(key, None)
             for key in ("doc_id", "document_id"):
                 if key not in (request.filters or {}) and merged_filters.get(key) not in hard_doc_ids:
                     # A model may mistake a document title for its ID. Explicit
