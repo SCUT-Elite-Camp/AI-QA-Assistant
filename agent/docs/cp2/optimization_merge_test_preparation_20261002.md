@@ -60,3 +60,9 @@ $env:DR_EVAL_MANIFEST_PATH = 'D:/htc_qa/eval/deep_research_a/manifests/source_ma
 - Same-model judging is authorized. Use `agent/scripts/review_g1_g2_english.py <experiment-directory> --judge` after generation.
 - Before the replacement run, restore model access and repeat the DR-A-003 three-repetition pilot. The denied pilot does not establish answer quality.
 - Start `serve` and `run` with the same fresh output directory. The suggested replacement directory is `outputs/g1_g2_english_full_fixed_20261002`.
+
+## qwen-flash continuation — 2026-10-03
+
+The user selected `qwen-flash`; generation and judging now use that model with the same endpoint and key. Connection initially returned HTTP 200. New-model tool-selector and factual-intent issues were fixed in 259ec62; explicit document scope now overrides guessed metadata in 0e90828. The latest regression suite passed 640 tests. Eighteen corrected pilot runs passed core quality checks.
+
+The replacement full batch was stopped after the endpoint returned HTTP 403 `insufficient_quota` (free quota exhausted). It contains 17 completed envelopes including quota failures, and is not a completed 108-run evaluation. See `outputs/g1_g2_qwen_flash_status_20261003.md`. A conservative `resume_manifest.json` in the final cohort directory enumerates reusable and remaining case/group/repetition pairs, excluding results that overlap quota denial. Restore quota before further generation or judge requests.
