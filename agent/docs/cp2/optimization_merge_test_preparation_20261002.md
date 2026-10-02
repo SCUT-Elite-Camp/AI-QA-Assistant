@@ -31,12 +31,12 @@ Docker 的 Milvus、etcd、MinIO 已启动。本地 Agent 测试服务地址 `ht
 服务 ready 后，在另一个终端启动完整英文 G1/G2：
 
 ```powershell
-& D:/miniconda3/envs/htc_qa/python.exe -X utf8 agent/scripts/g1_g2_english.py run
+& D:/miniconda3/envs/htc_qa/python.exe -X utf8 agent/scripts/g1_g2_english.py run --parallel-groups --output-dir outputs/g1_g2_english_full_fixed_20261002
 ```
 
 共 `18 × 2 × 3 = 108` 次，只有 G1 `fast_chat` 和 G2 `deep_research_current`。使用独立的研究任务数据库与 checkpoint，防止恢复旧队列。输出位于 `outputs/g1_g2_english_20261002/`，保存配置、资料清单、原始响应和运行记录。下次新实验请给 serve/check/run 指定同一个新的 `--output-dir`。
 
-本次仅完成准备和连通性检查，尚未启动 108 次在线评测，尚未产生答案质量或 Judge 结论。
+The English pilot and targeted summary rerun have completed. A full attempt produced 23 records before a document-discovery evidence issue was found and the batch was stopped. That issue is patched and covered by 634 passing regression tests. Online revalidation and the replacement 108-run batch are blocked by Aliyun HTTP 403 AccessDenied.Unpurchased. See `outputs/g1_g2_english_status_20261002.md` for the preserved partial scores and resume steps.
 
 ## 比较边界
 
@@ -50,3 +50,13 @@ $env:DR_EVAL_MANIFEST_PATH = 'D:/htc_qa/eval/deep_research_a/manifests/source_ma
 ```
 
 历史 `frozen_baseline.json` 是旧实现的溯源记录；新模型和代码配置以当前实验目录的 `config/frozen_environment.json` 为准。密钥、模型权重、数据库、备份及运行日志均不应提交。
+
+## Online pilot fixes and resume
+
+- Test retrieval selects a separate 1,172-chunk BM25 index through `BM25_INDEX_PATH`; the original index is preserved.
+- Benchmark request timeout is 300 seconds; automatic chat-title generation is disabled for evaluation requests.
+- Independent groups can run in parallel; requests inside each group remain sequential.
+- Answer repair preserves citation numbers when selecting evidence subsets. Factual answers require source chunks instead of document-discovery summaries.
+- Same-model judging is authorized. Use `agent/scripts/review_g1_g2_english.py <experiment-directory> --judge` after generation.
+- Before the replacement run, restore model access and repeat the DR-A-003 three-repetition pilot. The denied pilot does not establish answer quality.
+- Start `serve` and `run` with the same fresh output directory. The suggested replacement directory is `outputs/g1_g2_english_full_fixed_20261002`.
