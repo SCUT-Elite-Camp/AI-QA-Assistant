@@ -164,7 +164,7 @@ def test_selected_documents_do_not_inherit_guessed_metadata_filters():
 @pytest.mark.parametrize('query', ['Retrieve details from the September 8 meeting notes', 'Read the meeting on September 8, 2026', 'Read the 2026-09-08 meeting'])
 def test_dated_comparison_target_resolves_only_inside_allowed_documents(tmp_path, query):
     import json
-    for doc_id, title in [('plan', 'Implementation Plan'), ('meeting', 'Meeting 2026-09-08'), ('forbidden', 'Meeting 2026-09-08')]:
+    for doc_id, title in [('plan', 'Implementation Plan'), ('meeting', 'Meeting+Minutes+of+2026+09+08'), ('forbidden', 'Meeting 2026-09-08')]:
         (tmp_path / f'{doc_id}.json').write_text(json.dumps({'title': title}), encoding='utf-8')
     tool = SearchTool(documents_dir=str(tmp_path))
     scope = {'doc_ids': ['plan', 'meeting']}
@@ -174,7 +174,7 @@ def test_dated_comparison_target_resolves_only_inside_allowed_documents(tmp_path
 
 def test_missing_or_multiple_dates_do_not_narrow_comparison_scope(tmp_path):
     import json
-    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting 2026-09-08'}), encoding='utf-8')
+    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting+Minutes+of+2026+09+08'}), encoding='utf-8')
     tool = SearchTool(documents_dir=str(tmp_path))
     scope = {'doc_ids': ['plan', 'meeting']}
     for query in ['Compare September 8 and September 9', 'Read the September 9 meeting', 'Read the 2025-09-08 meeting', 'Compare these plans']:
@@ -184,7 +184,7 @@ def test_missing_or_multiple_dates_do_not_narrow_comparison_scope(tmp_path):
 
 def test_comparison_executor_receives_dated_child_scope(tmp_path):
     import json
-    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting 2026-09-08'}), encoding='utf-8')
+    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting+Minutes+of+2026+09+08'}), encoding='utf-8')
     tool = SearchTool(documents_dir=str(tmp_path))
     calls = []
     class Executor:

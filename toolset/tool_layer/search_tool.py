@@ -475,7 +475,7 @@ class SearchTool(BaseTool):
     def _narrow_dated_scope(self, query: str, filters: Dict) -> Dict:
         """Resolve a dated comparison target within its authorized documents."""
         dates = {(int(y), int(m), int(d)) for y, m, d in re.findall(
-            r"(?<!\d)(\d{4})[-_/](\d{1,2})[-_/](\d{1,2})(?!\d)", query
+            r"(?<!\d)(\d{4})[-_/ +](\d{1,2})[-_/ +](\d{1,2})(?!\d)", query
         )}
         months = {name: i for i, name in enumerate(
             ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"), 1
@@ -491,7 +491,7 @@ class SearchTool(BaseTool):
         matching = []
         for doc_id in allowed:
             title = str(self._load_document_meta(doc_id).get("title", ""))
-            title_dates = re.findall(r"(?<!\d)(\d{4})[-_/](\d{1,2})[-_/](\d{1,2})(?!\d)", title)
+            title_dates = re.findall(r"(?<!\d)(\d{4})[-_/ +](\d{1,2})[-_/ +](\d{1,2})(?!\d)", title)
             if any(int(m) == month and int(d) == day and (not year or int(y) == year) for y, m, d in title_dates):
                 matching.append(doc_id)
         return {**filters, "doc_ids": matching} if matching else filters
