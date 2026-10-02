@@ -194,17 +194,12 @@ const deepResearchMode = ref(chatExplorationMode(
 ) === 'force')
 const plusMenuItems = computed(() => [[
   {
-    label: '上传附件 / 图片',
+    label: '上传附件与文档',
     icon: 'i-lucide-paperclip',
     onSelect: () => attachmentTray.value?.open()
   },
   {
-    label: '企业知识库检索',
-    icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
-    onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
-  },
-  {
-    label: 'Deep Research',
+    label: deepResearchMode.value ? '关闭深度调研 (Deep Research)' : '开启深度调研 (Deep Research)',
     icon: 'i-lucide-telescope',
     onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
@@ -636,99 +631,101 @@ onBeforeUnmount(() => {
           />
 
           <!-- Empty Chat / Branch New Chat Landing View -->
-          <UContainer v-if="!visibleMessages.length" class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8 min-h-[75vh]">
-            <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-              {{ greeting }}
-            </h1>
+          <div v-if="!visibleMessages.length" class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 w-full -mt-12 sm:-mt-16 min-h-[65vh]">
+            <div class="w-full max-w-2xl sm:max-w-3xl flex flex-col items-center gap-6 sm:gap-8">
+              <!-- Hero Title -->
+              <div class="text-center space-y-1.5 select-none">
+                <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
+                  今天有什么可以帮您？
+                </h1>
+              </div>
 
-            <UChatPrompt
-              v-if="isOwner"
-              v-model="input"
-              :error="chat.error"
-              :status="chat.status"
-              placeholder="Ask me anything..."
-              variant="subtle"
-              class="rounded-2xl shadow-lg"
-              :ui="{ base: 'px-1.5' }"
-              @submit="handleSubmit"
-            >
-              <template #header>
-                <AttachmentTray
-                  ref="attachmentTray"
-                  scope="chat"
-                  :chat-id="data?.id"
-                  :topic-id="topic?.id"
-                  hide-trigger
-                  :disabled="chat.status === 'streaming'"
-                  @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
-                />
-              </template>
-
-              <template #footer>
-                <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
-                <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-lucide-plus"
-                    aria-label="添加附件与更多功能"
-                    title="添加附件与更多功能"
-                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
-                  />
-                </UDropdownMenu>
-
-                <span
-                  v-if="useKnowledgeBase"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+              <!-- Prompt Box Capsule -->
+              <div class="w-full">
+                <UChatPrompt
+                  v-if="isOwner"
+                  v-model="input"
+                  :error="chat.error"
+                  :status="chat.status"
+                  placeholder="询问企业制度、业务规范或技术方案..."
+                  variant="subtle"
+                  class="[view-transition-name:chat-prompt] w-full rounded-2xl sm:rounded-3xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-md transition-all duration-200"
+                  :ui="{
+                    base: 'px-2 py-1',
+                    input: 'text-base placeholder:text-zinc-400 dark:placeholder:text-zinc-500'
+                  }"
+                  @submit="handleSubmit"
                 >
-                  <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
-                  <span>企业知识库检索</span>
-                  <button
-                    type="button"
-                    class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭企业知识库检索"
-                    @click.stop="useKnowledgeBase = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
-                <!-- Deep Research Indicator Badge -->
-                <span
-                  v-if="deepResearchMode"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
-                  <span>Deep Research</span>
-                  <button
-                    type="button"
-                    class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭 Deep Research"
-                    @click.stop="deepResearchMode = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
+                  <template #header>
+                    <AttachmentTray
+                      ref="attachmentTray"
+                      scope="chat"
+                      :chat-id="data?.id"
+                      :topic-id="topic?.id"
+                      hide-trigger
+                      :disabled="chat.status === 'streaming'"
+                      @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
+                    />
+                  </template>
 
-                <!-- Right: WeightMode + Submit -->
-                <div class="ms-auto flex items-center gap-1">
-                  <WeightModeSelect
-                    v-model="currentWeightMode"
-                    @change="handleUpdateWeightMode"
-                  />
-                  <UChatPromptSubmit
-                    :status="chat.status"
-                    color="neutral"
-                    size="sm"
-                    class="cursor-pointer"
-                    @stop="chat.stop()"
-                    @reload="chat.regenerate()"
-                  />
-                </div>
-              </template>
-            </UChatPrompt>
+                  <template #footer>
+                    <!-- Left: + Menu for Attachments & Deep Research -->
+                    <div class="flex items-center gap-2">
+                      <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
+                        <UButton
+                          color="neutral"
+                          variant="ghost"
+                          size="sm"
+                          icon="i-lucide-plus"
+                          aria-label="添加附件与更多功能"
+                          title="添加附件与更多功能"
+                          class="rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center p-0"
+                        />
+                      </UDropdownMenu>
 
-          </UContainer>
+                      <!-- Deep Research badge (only visible when active) -->
+                      <span
+                        v-if="deepResearchMode"
+                        class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+                      >
+                        <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
+                        <span>Deep Research</span>
+                        <button
+                          type="button"
+                          class="hover:bg-emerald-500/20 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center transition-colors"
+                          title="关闭 Deep Research"
+                          @click.stop="deepResearchMode = false"
+                        >
+                          <UIcon name="i-lucide-x" class="w-3 h-3" />
+                        </button>
+                      </span>
+                    </div>
+
+                    <!-- Right: Model/Weight selector & Submit button -->
+                    <div class="ms-auto flex items-center gap-1.5">
+                      <WeightModeSelect
+                        v-model="currentWeightMode"
+                        @change="handleUpdateWeightMode"
+                      />
+                      <UChatPromptSubmit
+                        :status="chat.status"
+                        color="neutral"
+                        size="sm"
+                        class="cursor-pointer rounded-full"
+                        @stop="chat.stop()"
+                        @reload="chat.regenerate()"
+                      />
+                    </div>
+                  </template>
+                </UChatPrompt>
+
+                <!-- Bottom Disclaimer -->
+                <p class="text-center text-xs text-zinc-400 dark:text-zinc-500 mt-3 select-none">
+                  AI 内容生成自企业知识库与大模型，仅供内部参考，请以原始业务规范为准
+                </p>
+              </div>
+            </div>
+          </div>
 
           <!-- Active Chat Messages View -->
           <UContainer v-else class="flex-1 flex flex-col gap-4 sm:gap-6 relative" @mouseup="handleTextSelection">
@@ -830,92 +827,86 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <UChatPrompt
-              v-if="isOwner"
-              v-model="input"
-              :error="chat.error"
-              :status="chat.status"
-              placeholder="Ask me anything..."
-              variant="subtle"
-              class="sticky bottom-6 mb-6 [view-transition-name:chat-prompt] rounded-2xl shadow-lg z-10"
-              :ui="{ base: 'px-1.5' }"
-              @submit="handleSubmit"
-            >
-              <template #header>
-                <AttachmentTray
-                  ref="attachmentTray"
-                  scope="chat"
-                  :chat-id="data?.id"
-                  :topic-id="topic?.id"
-                  hide-trigger
-                  :disabled="chat.status === 'streaming'"
-                  @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
-                />
-              </template>
-
-              <template #footer>
-                <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
-                <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-lucide-plus"
-                    aria-label="添加附件与更多功能"
-                    title="添加附件与更多功能"
-                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
+            <div v-if="isOwner" class="sticky bottom-4 z-10 w-full max-w-3xl mx-auto px-4 sm:px-0">
+              <UChatPrompt
+                v-model="input"
+                :error="chat.error"
+                :status="chat.status"
+                placeholder="发送消息或追问..."
+                variant="subtle"
+                class="[view-transition-name:chat-prompt] w-full rounded-2xl sm:rounded-3xl border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-lg transition-all duration-200"
+                :ui="{
+                  base: 'px-2 py-1',
+                  input: 'text-base placeholder:text-zinc-400 dark:placeholder:text-zinc-500'
+                }"
+                @submit="handleSubmit"
+              >
+                <template #header>
+                  <AttachmentTray
+                    ref="attachmentTray"
+                    scope="chat"
+                    :chat-id="data?.id"
+                    :topic-id="topic?.id"
+                    hide-trigger
+                    :disabled="chat.status === 'streaming'"
+                    @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
                   />
-                </UDropdownMenu>
+                </template>
 
-                <span
-                  v-if="useKnowledgeBase"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
-                  <span>企业知识库检索</span>
-                  <button
-                    type="button"
-                    class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭企业知识库检索"
-                    @click.stop="useKnowledgeBase = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
-                <!-- Deep Research Indicator Badge -->
-                <span
-                  v-if="deepResearchMode"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
-                  <span>Deep Research</span>
-                  <button
-                    type="button"
-                    class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭 Deep Research"
-                    @click.stop="deepResearchMode = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
+                <template #footer>
+                  <!-- Left: + Menu for Attachments & Deep Research -->
+                  <div class="flex items-center gap-2">
+                    <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-plus"
+                        aria-label="添加附件与更多功能"
+                        title="添加附件与更多功能"
+                        class="rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center p-0"
+                      />
+                    </UDropdownMenu>
 
-                <!-- Right: WeightMode + Submit -->
-                <div class="ms-auto flex items-center gap-1">
-                  <WeightModeSelect
-                    v-model="currentWeightMode"
-                    @change="handleUpdateWeightMode"
-                  />
-                  <UChatPromptSubmit
-                    :status="chat.status"
-                    color="neutral"
-                    size="sm"
-                    class="cursor-pointer"
-                    @stop="chat.stop()"
-                    @reload="chat.regenerate()"
-                  />
-                </div>
-              </template>
-            </UChatPrompt>
+                    <!-- Deep Research badge (only visible when active) -->
+                    <span
+                      v-if="deepResearchMode"
+                      class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+                    >
+                      <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
+                      <span>Deep Research</span>
+                      <button
+                        type="button"
+                        class="hover:bg-emerald-500/20 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center transition-colors"
+                        title="关闭 Deep Research"
+                        @click.stop="deepResearchMode = false"
+                      >
+                        <UIcon name="i-lucide-x" class="w-3 h-3" />
+                      </button>
+                    </span>
+                  </div>
+
+                  <!-- Right: Model/Weight selector & Submit button -->
+                  <div class="ms-auto flex items-center gap-1.5">
+                    <WeightModeSelect
+                      v-model="currentWeightMode"
+                      @change="handleUpdateWeightMode"
+                    />
+                    <UChatPromptSubmit
+                      :status="chat.status"
+                      color="neutral"
+                      size="sm"
+                      class="cursor-pointer rounded-full"
+                      @stop="chat.stop()"
+                      @reload="chat.regenerate()"
+                    />
+                  </div>
+                </template>
+              </UChatPrompt>
+              <p class="text-center text-[11px] text-zinc-400 dark:text-zinc-500 mt-2 select-none">
+                AI 内容生成自企业知识库与大模型，仅供内部参考，请以原始规范为准
+              </p>
+            </div>
 
           </UContainer>
         </div>
