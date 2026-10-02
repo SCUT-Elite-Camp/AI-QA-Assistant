@@ -105,7 +105,8 @@ class IntentClassifier:
             payload = json.loads(content.strip())
             if not isinstance(payload, list) or len(payload) != len(normalized):
                 raise ValueError("batch intent response size mismatch")
-            return [IntentResult.model_validate(item) for item in payload]
+            return [self._enforce_explicit_intent(query, [], IntentResult.model_validate(item))
+                    for query, item in zip(normalized, payload)]
         except Exception as exc:
             self.logger.warning(
                 "[SUBQUERY_INTENT_BATCH] action=fallback error=%s count=%d",
@@ -164,6 +165,22 @@ class IntentClassifier:
                     "reason": "explicit_summary_request",
                 }
             )
+        if result.intent == QueryIntent.DOCUMENT_SEARCH:
+            # Asking what changed or implements a feature requires contents;
+            # locating documents about those changes remains document search.
+            locates_documents = re.search(
+                r"\b(?:find|locate|list|show|which)\b.{0,40}\b(?:documents?|docs|pages?|reports?)\b",
+                query, re.IGNORECASE,
+            )
+            asks_change_facts = re.search(
+                r"\b(?:commits?|files?)\b.*\b(?:implement\w*|add(?:ed)?|chang(?:e|ed)|modif(?:y|ied)|remov(?:e|ed)|fix(?:ed)?)\b",
+                query, re.IGNORECASE | re.DOTALL,
+            )
+            if asks_change_facts and not locates_documents:
+                return result.model_copy(update={
+                    "intent": QueryIntent.KNOWLEDGE_QA,
+                    "reason": "explicit_change_fact_request",
+                })
         return result
 
     @staticmethod

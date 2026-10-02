@@ -1007,6 +1007,10 @@ class AgentRunner:
                 constrained.get("question") or query_plan.standalone_query
             )
         elif tool_name == "find_documents":
+            # Metadata selectors belong under filters. The server-owned plan
+            # already supplies the authoritative filters, including access scope.
+            for field in ("doc_id", "doc_ids", "title", "space", "doc_type"):
+                constrained.pop(field, None)
             if not constrained.get("query") and not constrained.get("filters"):
                 constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k

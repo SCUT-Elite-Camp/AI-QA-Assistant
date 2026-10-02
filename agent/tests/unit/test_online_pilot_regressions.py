@@ -127,3 +127,24 @@ def test_document_discovery_summary_does_not_support_factual_answers(policy_name
     assert result.eligible_evidence_count == 0
     identity = EvidenceGate().evaluate(plan, IntentPolicy(evidence_policy='document_identity'), [summary], retrieval_attempt=1)
     assert identity.accepted
+
+def test_document_metadata_argument_cannot_break_or_replace_server_filters():
+    plan = QueryPlan(original_query='Summarize goals', standalone_query='Summarize goals', filters={'doc_ids': ['allowed']})
+    args = AgentRunner._apply_execution_constraints(tool_name='find_documents', arguments={'query': 'goals', 'doc_type': 'meeting', 'doc_ids': ['forbidden'], 'filters': {'doc_ids': ['forbidden']}}, query_plan=plan, mode='bm25', top_k=5)
+    assert args == {'query': 'goals', 'filters': {'doc_ids': ['allowed']}, 'top_k': 5}
+
+@pytest.mark.parametrize('query', ['Which commits implement the authentication handler?', 'Which Python files were added in the release?', 'What files changed in the patch?'])
+def test_change_facts_require_contents_even_if_model_selects_document_search(query):
+    from agent.query.intent_classifier import IntentClassifier
+    from agent.query.intent_classifier import IntentResult
+    from agent.schemas.query_plan import QueryIntent
+    result = IntentClassifier._enforce_explicit_intent(query, [], IntentResult(intent=QueryIntent.DOCUMENT_SEARCH, confidence=0.9))
+    assert result.intent == QueryIntent.KNOWLEDGE_QA
+
+
+def test_locating_documents_about_changes_remains_document_search():
+    from agent.query.intent_classifier import IntentClassifier
+    from agent.query.intent_classifier import IntentResult
+    from agent.schemas.query_plan import QueryIntent
+    result = IntentClassifier._enforce_explicit_intent('Find documents about files added in the release', [], IntentResult(intent=QueryIntent.DOCUMENT_SEARCH, confidence=0.9))
+    assert result.intent == QueryIntent.DOCUMENT_SEARCH
