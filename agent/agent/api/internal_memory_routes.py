@@ -18,7 +18,7 @@ from agent.schemas.chat import (
     ResetShortWindowRequest,
 )
 from agent.memory.compaction_planner import CompactionPlanner
-from agent.streaming.sse import build_sse_event
+from agent.streaming.sse import build_sse_event, chat_response_events
 
 router = APIRouter()
 
@@ -60,31 +60,8 @@ def internal_retrieval_stream(
 
     def event_stream():
         response: ChatResponse = agent.chat(request)
-        yield build_sse_event(
-            "citations",
-            [citation.model_dump() for citation in response.citations],
-        )
-        if response.answer:
-            for offset in range(0, len(response.answer), 32):
-                yield build_sse_event(
-                    "token",
-                    {"content": response.answer[offset:offset + 32]},
-                )
-        if response.status == "success":
-            yield build_sse_event(
-                "done",
-                {
-                    "trace_id": response.trace_id,
-                    "status": response.status,
-                    "citations_count": len(response.citations),
-                    "chat_title": response.chat_title,
-                },
-            )
-        else:
-            yield build_sse_event(
-                "error",
-                {"message": response.message or "Agent retrieval failed"},
-            )
+        for event_name, event_data in chat_response_events(response):
+            yield build_sse_event(event_name, event_data)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

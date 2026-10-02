@@ -1,7 +1,10 @@
+<route lang="yaml">
+meta:
+  layout: admin
+</route>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import Navbar from '../../components/Navbar.vue'
-import AdminNav from '../../components/admin/AdminNav.vue'
 import DepartmentCreateDialog from '../../components/admin/DepartmentCreateDialog.vue'
 import ModalConfirm from '../../components/ModalConfirm.vue'
 import { useAdmin, useAdminAccess } from '../../composables/useAdmin'
@@ -54,7 +57,7 @@ async function load() {
 }
 
 function onSaved() {
-  toast.add({ title: 'Department saved', color: 'success' })
+  toast.add({ title: '部门信息已保存', color: 'success' })
   load()
 }
 
@@ -62,12 +65,12 @@ async function confirmDelete(confirmed: boolean) {
   if (!confirmed || !deletingDepartment.value) return
   try {
     await deleteDepartment(deletingDepartment.value.id)
-    toast.add({ title: 'Department deleted', color: 'success' })
+    toast.add({ title: '部门已删除', color: 'success' })
     deletingDepartment.value = null
     load()
   }
   catch (e: any) {
-    toast.add({ title: e?.data?.message || 'Failed to delete department', color: 'error' })
+    toast.add({ title: e?.data?.message || '删除部门失败', color: 'error' })
     deletingDepartment.value = null
   }
 }
@@ -79,125 +82,118 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardPanel
-    id="admin-departments"
-    class="min-h-0"
-    :ui="{ body: 'p-0 sm:p-0' }"
-  >
-    <template #header>
-      <Navbar />
+  <div class="space-y-6">
+    <!-- Header Title -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">组织与部门架构</h1>
+        <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理企业与系统层级架构部门，分配用户所属组织</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <UButton
+          label="新建部门"
+          icon="i-lucide-building-2"
+          color="primary"
+          size="sm"
+          class="shadow-xs font-medium"
+          @click="showCreate = true"
+        />
+        <UButton
+          icon="i-lucide-refresh-cw"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :loading="loading"
+          @click="load"
+        />
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <template v-if="checking || loading && !departments.length">
+      <div class="flex flex-col items-center justify-center py-20 gap-3">
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary-500" />
+        <p class="text-sm text-zinc-400">正在载入部门架构...</p>
+      </div>
     </template>
 
-    <template #body>
-      <UContainer class="flex-1 py-6 sm:py-8 space-y-6">
-        <AdminNav />
+    <template v-else>
+      <UAlert v-if="error" :title="error" color="error" variant="soft" icon="i-lucide-circle-alert" />
 
-        <template v-if="checking">
-          <div class="flex justify-center py-16">
-            <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-(--ui-text-muted)" />
-          </div>
-        </template>
-
-        <template v-else-if="!allowed">
-          <UCard>
-            <div class="flex flex-col items-center gap-3 py-12 text-center">
-              <UIcon name="i-lucide-shield-alert" class="size-10 text-(--ui-text-muted)" />
-              <h2 class="text-lg font-semibold">Access denied</h2>
-              <p class="text-sm text-(--ui-text-muted)">You need administrator privileges to view this page.</p>
+      <!-- Departments Table Card -->
+      <UCard :ui="{ body: 'p-0' }" class="border border-zinc-200 dark:border-zinc-800/80 shadow-xs overflow-hidden">
+        <UTable
+          :data="treeRows"
+          :columns="[
+            { accessorKey: 'name', header: '部门名称' },
+            { accessorKey: 'userCount', header: '成员人数' },
+            { id: 'actions', header: '操作' },
+          ]"
+          :loading="loading"
+          :ui="{ td: 'whitespace-nowrap py-3' }"
+        >
+          <template #name-cell="{ row }">
+            <div class="flex items-center gap-2">
+              <span
+                v-for="i in row.original.depth"
+                :key="i"
+                class="inline-block w-4 border-l border-zinc-300 dark:border-zinc-700"
+              />
+              <UIcon name="i-lucide-folder" class="size-4 text-primary-500" />
+              <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ row.original.name }}</span>
             </div>
-          </UCard>
-        </template>
+          </template>
 
-        <template v-else>
-          <UAlert v-if="error" :title="error" color="error" variant="soft" icon="i-lucide-circle-alert" />
+          <template #userCount-cell="{ row }">
+            <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ row.original.userCount }} 人</span>
+          </template>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-lg font-semibold">Departments</h2>
-              <p class="text-sm text-(--ui-text-muted)">Organize users into departments with hierarchy.</p>
+          <template #actions-cell="{ row }">
+            <div class="flex items-center justify-end gap-1">
+              <UButton
+                icon="i-lucide-pencil"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                title="编辑部门"
+                @click="editingDepartment = departments.find(d => d.id === row.original.id) ?? null"
+              />
+              <UButton
+                icon="i-lucide-trash-2"
+                color="error"
+                variant="ghost"
+                size="sm"
+                title="删除部门"
+                @click="deletingDepartment = departments.find(d => d.id === row.original.id) ?? null"
+              />
             </div>
-            <UButton
-              label="Create department"
-              icon="i-lucide-building-2-plus"
-              @click="showCreate = true"
-            />
-          </div>
+          </template>
+        </UTable>
+      </UCard>
 
-          <UCard :ui="{ body: 'p-0' }">
-            <UTable
-              :data="treeRows"
-              :columns="[
-                { accessorKey: 'name', header: 'Name' },
-                { accessorKey: 'userCount', header: 'Users' },
-                { id: 'actions', header: ' ' },
-              ]"
-              :loading="loading"
-              :ui="{ td: { base: 'whitespace-nowrap' } }"
-            >
-              <template #name-cell="{ row }">
-                <div class="flex items-center gap-2">
-                  <span
-                    v-for="i in row.original.depth"
-                    :key="i"
-                    class="inline-block w-4 border-l border-(--ui-border)"
-                  />
-                  <UIcon name="i-lucide-folder" class="size-4 text-(--ui-text-muted)" />
-                  <span class="text-sm font-medium">{{ row.original.name }}</span>
-                </div>
-              </template>
+      <DepartmentCreateDialog
+        v-if="showCreate"
+        :department="null"
+        :departments="departments"
+        @close="showCreate = false"
+        @saved="onSaved"
+      />
 
-              <template #userCount-cell="{ row }">
-                <span class="text-sm text-(--ui-text-muted)">{{ row.original.userCount }} user{{ row.original.userCount === 1 ? '' : 's' }}</span>
-              </template>
+      <DepartmentCreateDialog
+        v-if="editingDepartment"
+        :department="editingDepartment"
+        :departments="departments"
+        @close="editingDepartment = null"
+        @saved="onSaved"
+      />
 
-              <template #actions-cell="{ row }">
-                <div class="flex items-center justify-end gap-1">
-                  <UButton
-                    icon="i-lucide-pencil"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    title="Edit department"
-                    @click="editingDepartment = departments.find(d => d.id === row.original.id) ?? null"
-                  />
-                  <UButton
-                    icon="i-lucide-trash-2"
-                    color="error"
-                    variant="ghost"
-                    size="sm"
-                    title="Delete department"
-                    @click="deletingDepartment = departments.find(d => d.id === row.original.id) ?? null"
-                  />
-                </div>
-              </template>
-            </UTable>
-          </UCard>
-
-          <DepartmentCreateDialog
-            v-if="showCreate"
-            :department="null"
-            :departments="departments"
-            @close="showCreate = false"
-            @saved="onSaved"
-          />
-
-          <DepartmentCreateDialog
-            v-if="editingDepartment"
-            :department="editingDepartment"
-            :departments="departments"
-            @close="editingDepartment = null"
-            @saved="onSaved"
-          />
-
-          <ModalConfirm
-            v-if="deletingDepartment"
-            title="Delete department"
-            :description="`Delete ${deletingDepartment.name}? Child departments will be moved to top level and members will lose access via this department.`"
-            color="error"
-            @close="confirmDelete"
-          />
-        </template>
-      </UContainer>
+      <ModalConfirm
+        v-if="deletingDepartment"
+        title="确认删除部门"
+        :description="`确定要删除部门“${deletingDepartment.name}”吗？其子部门将被移至顶层，成员关联将被移除。`"
+        color="error"
+        @close="confirmDelete"
+      />
     </template>
-  </UDashboardPanel>
+  </div>
 </template>

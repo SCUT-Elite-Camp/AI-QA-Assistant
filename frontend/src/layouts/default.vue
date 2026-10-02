@@ -278,6 +278,10 @@ defineShortcuts({
             label: 'Favorites',
             to: '/favorites',
             icon: 'i-lucide-star'
+          }, {
+            label: 'Admin',
+            to: '/admin',
+            icon: 'i-lucide-shield-check'
           }]"
           :collapsed="collapsed"
           orientation="vertical"
@@ -421,6 +425,18 @@ defineShortcuts({
 
       <template #footer="{ collapsed }">
         <div class="flex items-center gap-2.5">
+          <!-- Admin Circle Button -->
+          <UButton
+            icon="i-lucide-shield-check"
+            color="neutral"
+            variant="ghost"
+            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-indigo-400 hover:bg-zinc-800 hover:border-indigo-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            aria-label="Admin Management"
+            title="管理后台"
+            :ui="{ leadingIcon: 'w-5 h-5' }"
+            to="/admin"
+          />
+
           <!-- Dashboard Circle Button -->
           <UButton
             icon="i-lucide-layout-dashboard"

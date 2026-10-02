@@ -30,7 +30,9 @@ request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
 -> memory write-back -> JSON response
 ```
 
-`stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
+`stream` on `POST /api/chat` is reserved and does not change its JSON response.
+The separate `POST /api/chat/stream` endpoint uses the same Agent execution
+pipeline and adapts its completed `ChatResponse` to the demo SSE contract below.
 
 ## Frozen internal persistent-Memory contract (Unit 04)
 
@@ -312,11 +314,24 @@ Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id
 
 ## Demo SSE Endpoint
 
-`POST /api/chat/stream` is available for Q1 Web demo streaming UI. It returns `text/event-stream` events:
+`POST /api/chat/stream` is available for the Web demo UI. It returns
+`text/event-stream` events from the same `Agent.chat()` result as the JSON
+endpoint. The demo adapter emits the completed answer in bounded chunks; it is
+not live model-token streaming. Event names are:
 
 - `token`
 - `citations`
 - `done`
+- `error`
+
+`citations` carries the citation array, `token` carries a `{ "content": ... }`
+chunk, and `done` carries the trace ID, status, citation count, and optional
+chat title. Non-success responses emit `citations` followed by `error` with a
+message. Concatenating `token` chunks reproduces the JSON answer exactly.
+
+The token-protected `/api/internal/chat/retrieval/stream` uses the same event
+adapter over its trusted request context. The private and public endpoints keep
+their separate authentication and request schemas.
 
 This endpoint reuses the normal chat response and emits demo streaming events. The stable integration contract remains `POST /api/chat`.
 

@@ -146,13 +146,20 @@ export const useAdmin = createSharedComposable(() => {
 /** 管理员访问守卫：刷新 session 后判断当前用户是否为 admin */
 export function useAdminAccess() {
   const { user, fetchSession } = useUserSession()
-  const checking = ref(true)
-  const allowed = computed(() => Boolean(user.value && user.value.role === 'admin'))
+  const checking = ref(false)
+  const allowed = computed(() => {
+    // 开发环境下免登录直接允许管理员访问
+    if (import.meta.env.DEV) return true
+    return Boolean(user.value && user.value.role === 'admin')
+  })
 
   const check = async () => {
     checking.value = true
-    await fetchSession()
-    checking.value = false
+    try {
+      await fetchSession()
+    } finally {
+      checking.value = false
+    }
   }
 
   return { checking, allowed, check }

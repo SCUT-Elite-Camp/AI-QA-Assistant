@@ -111,6 +111,25 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   await client.execute("CREATE TABLE IF NOT EXISTS library_cleanup_jobs (id TEXT PRIMARY KEY, action TEXT NOT NULL, document_id TEXT NOT NULL, version_id TEXT, remote_object_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, knowledge_base_id TEXT NOT NULL, idempotency_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempt_count INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 10, next_attempt_at INTEGER NOT NULL, claim_token TEXT, claimed_at INTEGER, lease_expires_at INTEGER, last_error_code TEXT NOT NULL DEFAULT '', last_error_message TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, completed_at INTEGER)")
   await client.execute("INSERT OR IGNORE INTO topic_members(topic_id,user_id,role,created_at) SELECT topics.id,chats.user_id,'owner',unixepoch() FROM topics JOIN chats ON chats.id=topics.main_chat_id")
 
+  await client.execute('CREATE TABLE IF NOT EXISTS departments (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, parent_id TEXT, created_at INTEGER NOT NULL)')
+  await client.execute('CREATE INDEX IF NOT EXISTS departments_parent_id_idx ON departments(parent_id)')
+  await client.execute('CREATE TABLE IF NOT EXISTS user_departments (user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, department_id TEXT NOT NULL REFERENCES departments(id) ON DELETE CASCADE, PRIMARY KEY(user_id, department_id))')
+  await client.execute('CREATE INDEX IF NOT EXISTS user_departments_user_idx ON user_departments(user_id)')
+  await client.execute('CREATE INDEX IF NOT EXISTS user_departments_dept_idx ON user_departments(department_id)')
+  await client.execute('CREATE TABLE IF NOT EXISTS files (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, original_name TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL, storage_path TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT \'private\', doc_id TEXT, created_at INTEGER NOT NULL)')
+  await client.execute('CREATE INDEX IF NOT EXISTS files_user_id_idx ON files(user_id)')
+  await client.execute('CREATE INDEX IF NOT EXISTS files_visibility_idx ON files(visibility)')
+  await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS files_doc_id_idx ON files(doc_id)')
+  await client.execute('CREATE TABLE IF NOT EXISTS file_permissions (id TEXT PRIMARY KEY, file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE, grant_type TEXT NOT NULL, grant_id TEXT, created_at INTEGER NOT NULL)')
+  await client.execute('CREATE INDEX IF NOT EXISTS file_permissions_file_idx ON file_permissions(file_id)')
+  await client.execute('CREATE INDEX IF NOT EXISTS file_permissions_grant_idx ON file_permissions(grant_type, grant_id)')
+  await client.execute('CREATE TABLE IF NOT EXISTS audit_logs (id TEXT PRIMARY KEY, user_id TEXT, action TEXT NOT NULL, resource_type TEXT NOT NULL, resource_id TEXT, detail TEXT, ip TEXT, user_agent TEXT, created_at INTEGER NOT NULL)')
+  await client.execute('CREATE INDEX IF NOT EXISTS audit_logs_user_id_idx ON audit_logs(user_id)')
+  await client.execute('CREATE INDEX IF NOT EXISTS audit_logs_action_idx ON audit_logs(action)')
+  await client.execute('CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON audit_logs(created_at)')
+  await client.execute('CREATE TABLE IF NOT EXISTS user_settings (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, theme TEXT NOT NULL DEFAULT \'system\', primary_color TEXT NOT NULL DEFAULT \'blue\', neutral_color TEXT NOT NULL DEFAULT \'zinc\', language TEXT NOT NULL DEFAULT \'zh-CN\', notifications_enabled INTEGER NOT NULL DEFAULT 1, auto_save_chats INTEGER NOT NULL DEFAULT 1, font_size TEXT NOT NULL DEFAULT \'medium\', updated_at INTEGER NOT NULL, created_at INTEGER NOT NULL)')
+  await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS user_settings_user_id_idx ON user_settings(user_id)')
+
   // Older local databases predate Topic/Branch and feedback support. Drizzle's
   // TypeScript schema does not migrate those existing SQLite tables by itself,
   // so add the nullable/defaulted columns before any route can insert a row.
