@@ -9,6 +9,7 @@ import time
 from urllib.request import Request, urlopen
 
 from agent.config.settings import settings
+from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
 from .renderer import MarkdownReportRenderer
 
 
@@ -29,11 +30,14 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
     def render(self, **kwargs):
         language = kwargs.get("language") or "en-US"
         base_report = super().render(**kwargs)
+        if needs_architecture_scope(str(kwargs["objective"])):
+            title, separator, body = base_report.markdown.partition("\n")
+            base_report = base_report.model_copy(update={"markdown": title + separator + "\n## Scope clarification\n\n" + ARCHITECTURE_SCOPE_QUESTION + "\nThe following evidence describes candidate snapshots, not a verified latest deployment.\n" + body})
         if not base_report.citations or not self.api_key:
             return base_report
 
         evidence_text = "\n\n".join(
-            f"[{item.number}] {item.title}（{item.document_version or '本地快照'}，{item.locator}）\n原文：{item.excerpt}"
+            f"[{item.number}] {item.title} ({item.document_version or 'local snapshot'}, {item.locator})\nSource excerpt: {item.excerpt}"
             for item in base_report.citations
         )
         output_instruction = (
@@ -43,6 +47,14 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             else "Write a complete research report with these sections: Executive summary, Key findings, Detailed analysis, Conflicts and resolution, and Limitations. "
             "Use tables when they make comparisons clearer. Explain conditions, dates, versions, and exceptions instead of only giving a direct answer."
         )
+        if needs_architecture_scope(str(kwargs["objective"])):
+            output_instruction += (
+                " This question does not define which architecture snapshot is wanted. "
+                "Your executive summary MUST ask the user to clarify current code implementation, "
+                "planned target architecture (such as CP2), or a dated demonstration. "
+                "Do not declare any plan or demonstration to be the uniquely latest deployed architecture. "
+                "Present retrieved documents only as dated candidate snapshots; the latest implementation remains unconfirmed."
+            )
         prompt = (
             "You are a rigorous research report writer. Use only the frozen, verified local evidence below. "
             "Do not browse, add facts from memory, or invent sources. "
@@ -74,7 +86,12 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 if content.startswith("```") and content.endswith("```"):
                     content = "\n".join(content.splitlines()[1:-1]).strip()
                 content = self._normalize_section_headings(content, language)
-                issues = self._structural_issues(content, len(base_report.citations), choice.get("finish_reason"))
+                issues = self._structural_issues(
+                    content,
+                    len(base_report.citations),
+                    choice.get("finish_reason"),
+                    evidence_text=evidence_text,
+                )
                 if not issues:
                     break
                 if attempt == 0:
@@ -86,11 +103,101 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                          "Do not invent facts or add citations to unsupported statements."},
                     ])
             if issues:
+                compact_prompt = (
+                    "Create a compact final answer from the same frozen evidence only. "
+                    "Use exactly five level-two headings matching the required report sections. "
+                    "Keep the body under 600 Chinese characters or 350 English words. "
+                    "Answer the requested facts directly; do not copy source Markdown. "
+                    "Every non-heading line containing a fact, number, status, date, name, or file path "
+                    "must end with one or more valid [n] citations. If a fact cannot be confirmed, say so. "
+                    "Do not output a title or source list.\n\n"
+                    f"Language and scope requirements: {output_instruction}\n\n"
+                    f"Question: {kwargs['objective']}\n\nEvidence:\n{evidence_text}"
+                )
+                rescue_payload = {
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": compact_prompt}],
+                    "temperature": 0,
+                    "max_tokens": 1800,
+                }
+                if settings.LLM_THINKING_MODE in {"enabled", "disabled"}:
+                    rescue_payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
+                data = self._chat(rescue_payload)
+                choice = data["choices"][0]
+                content = str(choice["message"].get("content") or "").strip()
+                if content.startswith("```") and content.endswith("```"):
+                    content = "\n".join(content.splitlines()[1:-1]).strip()
+                content = self._normalize_section_headings(content, language)
+                issues = self._structural_issues(
+                    content,
+                    len(base_report.citations),
+                    choice.get("finish_reason"),
+                    evidence_text=evidence_text,
+                )
+                if issues:
+                    uncited = self._uncited_factual_blocks(content)
+                    rescue_payload["messages"].extend([
+                        {"role": "assistant", "content": content},
+                        {"role": "user", "content":
+                         "Fix only the structural defects and return the complete compact report. "
+                         "Add valid citations to these uncited factual blocks or remove unsupported claims: "
+                         + json.dumps(uncited, ensure_ascii=False)},
+                    ])
+                    data = self._chat(rescue_payload)
+                    choice = data["choices"][0]
+                    content = self._normalize_section_headings(
+                        str(choice["message"].get("content") or "").strip(), language
+                    )
+                    issues = self._structural_issues(
+                        content,
+                        len(base_report.citations),
+                        choice.get("finish_reason"),
+                        evidence_text=evidence_text,
+                    )
+            if issues:
+                uncited = self._uncited_factual_blocks(content)
+                if uncited:
+                    logger.warning(
+                        "Research report rejected uncited blocks: %s",
+                        " | ".join(repr(block[:300]) for block in uncited[:5]),
+                    )
                 logger.warning("Research report model returned an incomplete report (%s); using verified fallback", "; ".join(issues))
                 return base_report
         except Exception as exc:
-            logger.warning("Research report model failed; using verified fallback: %s", exc)
-            return base_report
+            logger.warning("Research report model failed; trying compact rescue: %s", exc)
+            try:
+                compact_prompt = (
+                    "Create a compact final answer from the frozen evidence only. Use exactly five "
+                    f"level-two headings: {'结论摘要、关键发现、逐项分析、冲突与处理、局限与待确认事项' if language == 'zh-CN' else 'Executive summary, Key findings, Detailed analysis, Conflicts and resolution, Limitations'}. "
+                    "Keep the body under 600 Chinese characters or 350 English words. Answer requested facts directly; "
+                    "do not copy source Markdown. Every factual non-heading line must end with valid "
+                    "[n] citations. Do not output a title or source list.\n\n"
+                    f"Language and scope requirements: {output_instruction}\n\n"
+                    f"Question: {kwargs['objective']}\n\nEvidence:\n{evidence_text}"
+                )
+                rescue_payload = {
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": compact_prompt}],
+                    "temperature": 0,
+                    "max_tokens": 1800,
+                }
+                if settings.LLM_THINKING_MODE in {"enabled", "disabled"}:
+                    rescue_payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
+                data = self._chat(rescue_payload)
+                choice = data["choices"][0]
+                content = str(choice["message"].get("content") or "").strip()
+                content = self._normalize_section_headings(content, language)
+                rescue_issues = self._structural_issues(
+                    content,
+                    len(base_report.citations),
+                    choice.get("finish_reason"),
+                    evidence_text=evidence_text,
+                )
+                if rescue_issues:
+                    raise ValueError("; ".join(rescue_issues))
+            except Exception as rescue_exc:
+                logger.warning("Compact report rescue failed; using verified fallback: %s", rescue_exc)
+                return base_report
 
         source_lines = ["", "## 来源" if language == "zh-CN" else "## Sources", ""]
         for citation in base_report.citations:
@@ -102,8 +209,15 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         return base_report.model_copy(update={"markdown": markdown.strip() + "\n"})
 
     @classmethod
-    def _structural_issues(cls, content: str, citation_count: int, finish_reason: str | None) -> list[str]:
-        """Structural guard only: it does not claim semantic correctness."""
+    def _structural_issues(
+        cls,
+        content: str,
+        citation_count: int,
+        finish_reason: str | None,
+        *,
+        evidence_text: str = "",
+    ) -> list[str]:
+        """Reject structurally unsafe output and obvious source-copy reports."""
         issues = []
         numbers = [int(value) for value in cls._CITATION.findall(content)]
         if finish_reason == "length":
@@ -112,7 +226,72 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             issues.append("missing report sections or incomplete body")
         if not numbers or any(n < 1 or n > citation_count for n in numbers):
             issues.append("missing or out-of-range citations")
+        if not cls._all_factual_blocks_are_cited(content):
+            issues.append("one or more factual blocks lack citations")
+        if evidence_text and cls._copied_evidence_blocks(content, evidence_text):
+            issues.append("report copies long evidence blocks instead of synthesizing them")
         return issues
+
+    @classmethod
+    def _copied_evidence_blocks(cls, content: str, evidence_text: str) -> list[str]:
+        """Find long report blocks copied nearly verbatim from frozen evidence."""
+
+        normalized_evidence = cls._normalize_copy_text(evidence_text)
+        copied: list[str] = []
+        for block in re.split(r"\n\s*\n", content):
+            text = block.strip()
+            if not text or text.startswith("#"):
+                continue
+            without_citations = cls._CITATION.sub("", text)
+            normalized = cls._normalize_copy_text(without_citations)
+            # Short names, figures and table rows legitimately match sources.
+            # A 60-character prose/list block (already substantial in Chinese)
+            # should be synthesized instead of copied verbatim.
+            if len(normalized) >= 60 and normalized in normalized_evidence:
+                copied.append(text)
+        return copied
+
+    @staticmethod
+    def _normalize_copy_text(value: str) -> str:
+        return re.sub(r"\s+", "", value).casefold()
+
+    @classmethod
+    def _all_factual_blocks_are_cited(cls, content: str) -> bool:
+        """Require citations on prose/list/table blocks that contain assertions."""
+
+        return not cls._uncited_factual_blocks(content)
+
+    @classmethod
+    def _uncited_factual_blocks(cls, content: str) -> list[str]:
+        """Return concrete factual blocks that have no citation marker."""
+
+        uncited = []
+        for block in re.split(r"\n\s*\n", content):
+            text = block.strip()
+            if not text or text.startswith("#"):
+                continue
+            # Pure section labels and explicit insufficiency statements do not
+            # introduce facts. Everything else must remain traceable.
+            if any(marker in text for marker in ("无法确认", "资料不足", "cannot confirm", "insufficient evidence")):
+                continue
+            if cls._block_requires_citation(text) and not cls._CITATION.search(text):
+                uncited.append(text)
+        return uncited
+
+    @staticmethod
+    def _block_requires_citation(text: str) -> bool:
+        """Distinguish concrete factual content from connective report prose."""
+
+        if re.search(r"(?m)^(?:[-*+]\s+|\|.+\|)", text):
+            return True
+        if re.search(r"\d|`[^`]+`", text):
+            return True
+        factual_markers = (
+            "Finished", "Not started", "In progress", "提交", "作者", "日期",
+            "版本", "文件", "状态", "数量", "总计", "增加", "减少",
+            "completed", "author", "date", "version", "file", "status",
+        )
+        return any(marker.casefold() in text.casefold() for marker in factual_markers)
 
     @staticmethod
     def _normalize_section_headings(content: str, language: str) -> str:

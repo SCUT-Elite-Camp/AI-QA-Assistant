@@ -68,15 +68,51 @@ class ResearchEvaluationTrace(BaseModel):
 
 
 def _resolve_report_conflict(
-    report,
+    report: ResearchReport,
     *,
     conflict_id: str,
     source_number: int,
     reason: str,
-):
+) -> ResearchReport:
     conflict = next(item for item in report.conflicts if item.conflict_id == conflict_id)
     chosen = next(
         item for item in conflict.alternatives if item.citation_number == source_number
+    )
+
+    resolution = f"用户确认采用来源 {source_number}：{reason}"
+    conflicts = [
+        item.model_copy(
+            update={"resolution_status": "resolved_by_user", "resolution": resolution}
+        )
+        if item.conflict_id == conflict_id
+        else item
+        for item in report.conflicts
+    ]
+    resolved_section = (
+        "## 用户确认的冲突处理\n\n"
+        f"- **{conflict.subject}**：采用来源 [{source_number}]《{chosen.source_title}》。\n"
+        f"  原文：{chosen.value_summary}\n"
+        f"  处理理由：{reason}\n\n"
+    )
+    markdown = report.markdown
+    heading = re.match(r"^(#\s+[^\n]+\n+)", markdown)
+    if heading:
+        markdown = heading.group(1) + resolved_section + markdown[heading.end():]
+    else:
+        markdown = resolved_section + markdown
+    unresolved = any(item.resolution_status == "unresolved" for item in conflicts)
+    return report.model_copy(
+        update={
+            "report_id": f"report-revision-{uuid4().hex}",
+            "markdown": markdown,
+            "conflicts": conflicts,
+            "result_status": (
+                ResearchResultStatus.DEGRADED
+                if unresolved or report.limitations
+                else report.result_status
+            ),
+            "generated_at": datetime.now(timezone.utc),
+        }
     )
 
 
@@ -113,41 +149,6 @@ def _answer_report_followup(report: ResearchReport, message: str) -> str:
     except Exception:
         pass
     return "这份冻结证据目前无法可靠回答该追问。你可以补充本地资料后重新发起研究。"
-    resolution = f"用户确认采用来源 {source_number}：{reason}"
-    conflicts = [
-        item.model_copy(
-            update={"resolution_status": "resolved_by_user", "resolution": resolution}
-        )
-        if item.conflict_id == conflict_id
-        else item
-        for item in report.conflicts
-    ]
-    resolved_section = (
-        "## 用户确认的冲突处理\n\n"
-        f"- **{conflict.subject}**：采用来源 [{source_number}]《{chosen.source_title}》。\n"
-        f"  原文：{chosen.value_summary}\n"
-        f"  处理理由：{reason}\n\n"
-    )
-    markdown = report.markdown
-    heading = re.match(r"^(#\s+[^\n]+\n+)", markdown)
-    if heading:
-        markdown = heading.group(1) + resolved_section + markdown[heading.end():]
-    else:
-        markdown = resolved_section + markdown
-    unresolved = any(item.resolution_status == "unresolved" for item in conflicts)
-    return report.model_copy(
-        update={
-            "report_id": f"{report.report_id}-revision-{uuid4().hex[:8]}",
-            "markdown": markdown,
-            "conflicts": conflicts,
-            "result_status": (
-                ResearchResultStatus.DEGRADED
-                if unresolved
-                else ResearchResultStatus.COMPLETE
-            ),
-            "generated_at": datetime.now(timezone.utc),
-        }
-    )
 
 
 _default_control_plane: ResearchControlPlane | None = None
@@ -493,7 +494,7 @@ def send_research_message(
                     action = "conflict_resolved"
                     response_text = (
                         f"已采用来源 {source_number} 处理该项冲突，"
-                        "并重新生成了对应结论与引用。"
+                        "并保存了处理意见与对应来源引用。"
                     )
                 else:
                     response_text = f"来源 {source_number} 不属于当前待处理冲突，请打开引用后重新选择。"

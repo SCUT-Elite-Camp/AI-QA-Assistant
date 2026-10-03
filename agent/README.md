@@ -9,6 +9,8 @@
 - `ConversationMemory` 稳定接口及线程安全的进程内实现。
 - 基于 `session_id` 的上下文读取、写回、隔离、截断和清理。
 - `QueryIntent` / `QueryPlan` 严格 Pydantic 契约。
+- `SourceIntent` 使用结构化计划提供的来源意图；计划未提供时，由确定性启发式规则
+  推断来源。授权身份仍只来自可信请求上下文。
 - Agent Runner 动态读取工具 schema，支持连续多轮工具调用。
 - 同一模型轮次的等价并行工具调用只执行一次，跨轮重复调用仍由安全阈值熔断。
 - 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
@@ -35,10 +37,13 @@
 
 Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为公共协作准则，覆盖分支结构、日常开发流程、PR 合并、Commit 命名和团队目录边界。
 
-## Q1 范围
+## Q1 范围（历史验收范围）
+
+以下清单记录早期 Q1 的验收范围，不代表当前运行时的模块清单。
 
 - FastAPI 服务入口
 - `GET /health`
+- `GET /ready` 检索冷启动就绪状态
 - `POST /api/chat`
 - ChatRequest / ChatResponse / Citation 接口契约
 - Mock Retrieval
@@ -116,6 +121,7 @@ Deep Research Core Vertical Slice 的链路、恢复策略和场景验收见
 
 ```bash
 curl -X POST "http://localhost:8000/api/chat" \
+  -H "Authorization: Bearer <AGENT_API_KEY>" \
   -H "Content-Type: application/json" \
   -d "{\"query\":\"项目 Q1 阶段需要完成哪些功能？\",\"stream\":false,\"retrieval_mode\":\"hybrid\"}"
 ```
@@ -141,18 +147,71 @@ curl -X POST "http://localhost:8000/api/chat" \
 ## 运行配置
 
 ```env
-DEFAULT_RETRIEVAL_MODE=hybrid
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
+# Optional: use a faster model only for rewrite + retrieval planning.
+# Empty or omitted keeps the existing single-model behavior.
+QUERY_PREPARATION_MODEL=
+ANSWER_FAST_MODEL=
+ANSWER_FAST_MODEL_THINKING=false
 QUERY_UNDERSTANDING_ENABLED=true
-QUERY_REWRITE_ENABLED=true
+UNIFIED_QUERY_UNDERSTANDING_ENABLED=false
+CASCADED_QUERY_UNDERSTANDING_ENABLED=false
+HYBRID_INTENT_ROUTER_ENABLED=false
+INTENT_EMBEDDING_MODEL_PATH=
+INTENT_EMBEDDING_THRESHOLD=0.72
+INTENT_EMBEDDING_MARGIN=0.08
+CONVERSATION_REWRITE_ENABLED=true
 CLARIFICATION_ENABLED=true
 MEMORY_ENABLED=true
 MAX_MEMORY_MESSAGES=10
 MAX_AGENT_ITERATIONS=5
 MAX_REPEATED_TOOL_CALLS=2
+
+# When the Agent selects Wiki, append this many unique original Evidence items
+# after Direct Evidence. 0 restores legacy merge behavior; valid range: 0-10.
+WIKI_CONTEXT_TOP_K=3
+# This limit applies to the Direct branch before Wiki Evidence is appended.
+EXPLORATION_MAX_EVIDENCE=20
+
+# For retrieval-backed requests, exploration_mode=auto asks the Agent to choose
+# a Direct entry tool or wiki_search. force starts Direct+Wiki deterministically;
+# off exposes Direct tools only. When citations are required, the Runner rejects
+# pre-retrieval text answers and out-of-order Wiki subtool calls.
+
+# 接口共享密钥（必配）：Web 可信端调用 /api/* 业务接口时携带
+# `Authorization: Bearer <AGENT_API_KEY>`。未配置时业务接口返回 503，
+# 防止外部直连 agent 端口伪造 user_id 绕过权限隔离。
+AGENT_API_KEY=
+
+# 权限查询异常策略（默认 false = fail-closed，拒绝全部文档；故障时避免权限全开）
+PERMISSION_FAIL_OPEN=false
 ```
+
+`top_k=5` 和 `retrieval_mode=hybrid` 是 ChatRequest 的请求模型默认值，不是环境变量。
+旧的 `QUERY_REWRITE_ENABLED` 环境变量仍会作为 `CONVERSATION_REWRITE_ENABLED` 的兼容别名读取。
+
+### 接口认证说明
+
+Agent 服务仅接受 Web 可信端的调用（内网单向可信链路）。所有 `/api/*` 业务接口
+（`/api/chat`、`/api/chat/history`、`/api/chat/stream`、`/api/tools`、
+`/api/chat/memory/{id}`、`/api/topics/summarize`）都要求携带共享密钥：
+
+```bash
+curl -X POST "http://localhost:8000/api/chat" \
+  -H "Authorization: Bearer <AGENT_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\":\"...\",\"retrieval_mode\":\"hybrid\",\"user_id\":\"...\"}"
+```
+
+- `AGENT_API_KEY` 未配置：业务接口返回 `503`（拒绝服务）。
+- 缺少/错误的密钥：返回 `401`。
+- `GET /health` 保持匿名（供探活）。
+- 校验使用 `secrets.compare_digest` 恒定时间比较，防时序攻击。
+
+`AGENT_API_KEY` 需与 Web 层 `frontend/.env` 中配置的值保持一致（Web 转发 session 注入的
+`user_id` 并附带相同的 Bearer 密钥）。
 
 本地 Ollama 启动后，可通过兼容 OpenAI Chat Completions 的
 `/v1/chat/completions` 接口接入 `llama3.1`，通常不需要配置

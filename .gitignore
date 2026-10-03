@@ -2,6 +2,11 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+pytest-*/
+g2-pytest-*/
+agent/.tmp/
+pytest-work/
 node_modules/
 .output/
 .data/
@@ -10,3 +15,59 @@ web/auto-imports.d.ts
 web/components.d.ts
 data-persistence/volumes/
 data-persistence/data/research_jobs.db*
+.env
+.env.*
+*.env
+*.env.*
+*.env.local
+*.local.env
+agent/.env
+agent/.env.*
+frontend/.env
+frontend/.env.*
+data-persistence/volumes/
+# Confluence 凭据与拉取的源数据（含内部内容，勿提交）
+data-pipeline/.confluence.env
+data-pipeline/.confluence.env.*
+data-pipeline/data/raws/
+data-pipeline/data/documents/
+data-pipeline/confluence_pull*.log
+data-pipeline/confluence_metadata_*.json
+
+# 本地密钥与运行产物（勿提交）
+agent/.env
+agent/.env.*
+agent/data-persistence/
+data-persistence/data/
+data-persistence/data-persistence/
+*.log
+*.db
+*.sqlite
+data-persistence/models/
+eval/logs/
+.pytest-*/
+.pytest_tmp/
+.pytest_tmp_*/
+.bt/
+eval/wiki/runs/
+tmp_test_chat.py
+docs/memory-context-implementation-plan.local.md
+
+# Large third-party evaluation corpora stay local on the D: workspace.
+eval/datasets/external/*
+!eval/datasets/external/README.md
+
+# Local pretrained model weights stay on D: and must not be committed.
+models/
+
+# Local IDE, Codex artifact, preview, and generated evaluation outputs.
+.idea/
+.tmp/
+.pytest-tmp*/
+.codex_spreadsheet/
+outputs/
+eval/reports/
+eval/wiki/runs/
+~$*.xlsx
+.local-backups/
+.pnpm-store/

@@ -18,7 +18,17 @@ class Evidence(BaseModel):
 
     retrieval_query: str
     retrieval_mode: str
-    retrieval_attempt: int = Field(default=1, ge=1, le=2)
+    retrieval_attempt: int = Field(default=1, ge=1, le=5)
+    source_type: str = "knowledge"
+    attachment_id: str | None = None
+    evidence_id: str | None = None
+    locator: dict[str, Any] | None = None
+    version: int | None = None
+    confidence: float | None = None
+    source_scope: str | None = None
+    knowledge_base_id: str | None = None
+    document_id: str | None = None
+    version_id: str | None = None
 
     @field_validator(
         "doc_id",

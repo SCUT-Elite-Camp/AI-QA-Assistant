@@ -7,8 +7,10 @@ from agent.query import (
     IntentResult,
     QueryIntent,
     QueryEnrichment,
+    QueryPreparationResult,
     QueryUnderstanding,
     RewriteResult,
+    UnifiedQueryResult,
 )
 
 
@@ -51,7 +53,9 @@ def _components(
 
 def test_analyze_combines_internal_results_into_query_plan() -> None:
     classifier, clarifier, rewriter, planner = _components()
-    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
+    service = QueryUnderstanding(
+        classifier, clarifier, rewriter, planner, cascaded_enabled=False
+    )
 
     plan = service.analyze(
         "What about interns?",
@@ -86,7 +90,9 @@ def test_clarification_stops_query_rewriting() -> None:
         confidence=0.95,
         reason="comparison request",
     )
-    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
+    service = QueryUnderstanding(
+        classifier, clarifier, rewriter, planner, cascaded_enabled=False
+    )
 
     plan = service.analyze("Compare them.", [])
 
@@ -105,7 +111,9 @@ def test_analyze_preserves_exact_original_query() -> None:
         changed=False,
         reason="already standalone",
     )
-    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
+    service = QueryUnderstanding(
+        classifier, clarifier, rewriter, planner, cascaded_enabled=False
+    )
 
     plan = service.analyze("  What is RAG?  ")
 
@@ -115,7 +123,9 @@ def test_analyze_preserves_exact_original_query() -> None:
 
 def test_analyze_does_not_mutate_history_or_filters() -> None:
     classifier, clarifier, rewriter, planner = _components()
-    service = QueryUnderstanding(classifier, clarifier, rewriter, planner)
+    service = QueryUnderstanding(
+        classifier, clarifier, rewriter, planner, cascaded_enabled=False
+    )
     history = [{"role": "user", "content": "Previous question"}]
     filters = {"labels": ["cp2"]}
 
@@ -124,6 +134,178 @@ def test_analyze_does_not_mutate_history_or_filters() -> None:
 
     assert history == [{"role": "user", "content": "Previous question"}]
     assert filters == {"labels": ["cp2"]}
+
+
+def test_unified_path_returns_query_plan_without_calling_legacy_components() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    unified = Mock()
+    unified.analyze.return_value = UnifiedQueryResult(
+        intent=QueryIntent.COMPARISON,
+        confidence=0.97,
+        standalone_query="Compare ToolExecutor and Evidence Gate.",
+        sub_queries=["ToolExecutor responsibilities", "Evidence Gate responsibilities"],
+    )
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        unified_analyzer=unified,
+        unified_enabled=True,
+        cascaded_enabled=False,
+    )
+
+    plan = service.analyze("Compare them.", [], filters={"space": "cp2"})
+
+    assert plan.intent == QueryIntent.COMPARISON
+    assert plan.intent_confidence == 0.97
+    assert plan.filters == {"space": "cp2"}
+    assert len(plan.sub_queries) == 2
+    classifier.classify.assert_not_called()
+    clarifier.evaluate.assert_not_called()
+    rewriter.rewrite.assert_not_called()
+    planner.enrich.assert_not_called()
+
+
+def test_unified_failure_falls_back_to_legacy_pipeline() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    unified = Mock()
+    unified.analyze.side_effect = ValueError("invalid response")
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        unified_analyzer=unified,
+        unified_enabled=True,
+        cascaded_enabled=False,
+    )
+
+    plan = service.analyze("What about interns?", [])
+
+    assert plan.intent == QueryIntent.KNOWLEDGE_QA
+    classifier.classify.assert_called_once()
+    clarifier.evaluate.assert_called_once()
+    rewriter.rewrite.assert_called_once()
+    planner.enrich.assert_called_once()
+
+
+def test_cascaded_path_uses_intent_gate_and_query_preparation() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    gate = Mock()
+    gate.evaluate.return_value = ClarificationDecision(
+        needs_clarification=False,
+        reason="rule continue",
+    )
+    preparation = Mock()
+    preparation.prepare.return_value = QueryPreparationResult(
+        standalone_query="What is the leave policy for interns?",
+        sub_queries=[],
+        filters={"doc_type": "policy"},
+    )
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        clarification_gate=gate,
+        query_preparation=preparation,
+        cascaded_enabled=True,
+    )
+
+    plan = service.analyze("What about interns?", [])
+
+    assert plan.intent == QueryIntent.KNOWLEDGE_QA
+    assert plan.standalone_query == "What is the leave policy for interns?"
+    preparation.prepare.assert_called_once()
+    rewriter.rewrite.assert_not_called()
+    planner.enrich.assert_not_called()
+
+
+def test_cascaded_simple_single_target_bypasses_query_preparation() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    classifier.classify.return_value = IntentResult(
+        intent=QueryIntent.KNOWLEDGE_QA,
+        confidence=0.99,
+        is_follow_up=False,
+        is_clarification_reply=False,
+    )
+    gate = Mock()
+    gate.evaluate.return_value = ClarificationDecision(
+        needs_clarification=False,
+        reason="deterministic_clear_query",
+    )
+    preparation = Mock()
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        clarification_gate=gate,
+        query_preparation=preparation,
+        cascaded_enabled=True,
+    )
+
+    plan = service.analyze("Which system layer owns the ToolRegistry?", [])
+
+    assert plan.standalone_query == "Which system layer owns the ToolRegistry?"
+    assert plan.sub_queries == []
+    preparation.prepare.assert_not_called()
+    rewriter.rewrite.assert_not_called()
+    planner.enrich.assert_not_called()
+
+
+def test_cascaded_non_retrieval_intent_skips_gate_and_preparation() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    classifier.classify.return_value = IntentResult(
+        intent=QueryIntent.CASUAL_CHAT,
+        confidence=0.99,
+    )
+    gate = Mock()
+    preparation = Mock()
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        clarification_gate=gate,
+        query_preparation=preparation,
+        cascaded_enabled=True,
+    )
+
+    plan = service.analyze("Hello", [])
+
+    assert plan.intent == QueryIntent.CASUAL_CHAT
+    gate.evaluate.assert_not_called()
+    preparation.prepare.assert_not_called()
+
+
+def test_cascaded_preparation_failure_only_falls_back_rewrite_and_planner() -> None:
+    classifier, clarifier, rewriter, planner = _components()
+    gate = Mock()
+    gate.evaluate.return_value = ClarificationDecision(
+        needs_clarification=False,
+        reason="rule continue",
+    )
+    preparation = Mock()
+    preparation.prepare.side_effect = ValueError("invalid output")
+    service = QueryUnderstanding(
+        classifier,
+        clarifier,
+        rewriter,
+        planner,
+        clarification_gate=gate,
+        query_preparation=preparation,
+        cascaded_enabled=True,
+    )
+
+    plan = service.analyze("What about interns?", [])
+
+    assert plan.standalone_query == "What is the leave policy for interns?"
+    classifier.classify.assert_called_once()
+    gate.evaluate.assert_called_once()
+    rewriter.rewrite.assert_called_once()
+    planner.enrich.assert_called_once()
 
 
 def test_explicit_filters_override_semantic_filters() -> None:

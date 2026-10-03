@@ -229,7 +229,10 @@ class MarkdownReportRenderer:
             structured_limitations.append(
                 ResearchLimitation(
                     code="source_boundary",
-                    message=f"{prefix}{self._clean_display_text(claim_text)}",
+                    message=self._bounded_text(
+                        f"{prefix}{self._clean_display_text(claim_text)}",
+                        max_length=2_000,
+                    ),
                     evidence_ids=evidence_ids,
                 )
             )
@@ -318,6 +321,27 @@ class MarkdownReportRenderer:
             citation_by_evidence,
             source_metadata,
         )
+        if language == "en-US":
+            translations = {
+                "## 结论": "## Conclusions", "现有资料部分支持：": "Partially supported by available evidence: ",
+                "- 现有资料不足以支持确定结论。": "- Available evidence is insufficient for a definitive conclusion.",
+                "## 补充核验证据": "## Additional evidence",
+                "以下原文已完成读取，但没有被提升为确定结论：": "The following excerpts were read but do not establish verified conclusions:",
+                "## 资料冲突": "## Source conflicts",
+                "以下来源对同一问题给出了不一致的信息：": "The following sources provide inconsistent information about the same question:",
+                "**来源 ": "**Source ", "该项仅获得部分资料支持：": "This item is only partially supported: ",
+                "部分结论仅获得有限证据支持，建议补充核验。": "Some conclusions have limited support and require further verification.",
+                "部分候选结论因证据不足，未写入结论。": "Unsupported candidate claims were omitted from conclusions.",
+                "部分研究要求尚未获得足够证据支持。": "Some research requirements lack sufficient evidence.",
+                "## 仍需确认": "## Limitations and pending verification", "## 来源": "## Sources",
+                "- 未记录可引用来源。": "- No citable sources were recorded.",
+            }
+            def localize(text):
+                for original, translated in translations.items():
+                    text = text.replace(original, translated)
+                return text
+            lines = [localize(line) for line in lines]
+            structured_limitations = [item.model_copy(update={"message": localize(item.message)}) for item in structured_limitations]
         return ResearchReport(
             report_id=report_id or f"report-{research_id}",
             research_id=research_id,
@@ -532,6 +556,14 @@ class MarkdownReportRenderer:
             if 0 <= marker_index < 80:
                 cleaned = cleaned[marker_index + len(marker):].strip()
         return cleaned
+
+    @staticmethod
+    def _bounded_text(text: str, *, max_length: int) -> str:
+        """Keep user-facing derived text inside its persisted schema limit."""
+
+        if len(text) <= max_length:
+            return text
+        return text[: max_length - 1].rstrip() + "…"
 
     @staticmethod
     def _unique_text(values: Iterable[str]) -> list[str]:

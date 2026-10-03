@@ -31,18 +31,20 @@ class DocxParser(BaseParser):
 
         # iter_inner_content() 按文档顺序产出 Paragraph 和 Table
         # 优点：保持正文中段落与表格的交错顺序
-        for item in doc.iter_inner_content():
+        for block_index, item in enumerate(doc.iter_inner_content()):
             # 判断是 Paragraph 还是 Table
             if hasattr(item, "style") and hasattr(item, "text"):
                 # → Paragraph
                 cb = self._paragraph_to_block(item)
                 if cb is not None:
                     if not _is_page_number(cb.text):
+                        cb.locator = {"block": block_index}
                         all_blocks.append(cb)
             elif hasattr(item, "rows"):
                 # → Table
                 cb = self._table_to_block(item)
                 if cb is not None:
+                    cb.locator = {"block": block_index}
                     all_blocks.append(cb)
 
         # ── 渲染为 Markdown ──

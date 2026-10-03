@@ -34,6 +34,7 @@ def test_policy_conflict_demo_exercises_the_cp2_core_chain(tmp_path: Path) -> No
             ResearchRequest(
                 query=DEMO_QUERY,
                 source_scope=SourceScope(document_ids=DEMO_IDS),
+                report_spec={"language": "zh-CN"},
             ),
             user_id="demo-user",
         )

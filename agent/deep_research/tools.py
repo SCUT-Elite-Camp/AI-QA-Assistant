@@ -286,7 +286,8 @@ class LocalResearchToolAdapter:
         version = payload.get("version") or payload.get("last_updated")
         if locator:
             requested_locator = canonical_chunk_id(doc_id, locator)
-            for position, chunk in enumerate(payload.get("chunks") or []):
+            chunks = payload.get("chunks") or []
+            for position, chunk in enumerate(chunks):
                 if not isinstance(chunk, dict):
                     continue
                 try:
@@ -300,9 +301,7 @@ class LocalResearchToolAdapter:
                 )
                 if chunk_locator != requested_locator:
                     continue
-                excerpt = str(
-                    chunk.get("text") or chunk.get("chunk_text") or ""
-                ).strip()
+                excerpt = self._chunk_context(chunks, position)
                 if not excerpt:
                     raise LocalToolError("empty_document_excerpt")
                 return OriginalRead(
@@ -329,6 +328,49 @@ class LocalResearchToolAdapter:
             excerpt=excerpt,
             content_hash=content_hash,
         )
+
+    @classmethod
+    def _chunk_context(
+        cls,
+        chunks: list[Any],
+        anchor_position: int,
+        *,
+        radius: int = 1,
+    ) -> str:
+        """Read a bounded context window around a matched chunk.
+
+        Ingested chunks overlap, and headings/tables frequently cross a chunk
+        boundary.  Keep the matched chunk as the citation anchor while adding
+        one neighbouring chunk on either side for report synthesis.  Adjacent
+        overlap is removed so the model does not see duplicated assertions.
+        """
+
+        start = max(0, anchor_position - radius)
+        end = min(len(chunks), anchor_position + radius + 1)
+        texts = []
+        for chunk in chunks[start:end]:
+            if not isinstance(chunk, dict):
+                continue
+            text = str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+            if text:
+                texts.append(text)
+        if not texts:
+            return ""
+        merged = texts[0]
+        for text in texts[1:]:
+            merged = cls._merge_overlapping_text(merged, text)
+        return merged.strip()
+
+    @staticmethod
+    def _merge_overlapping_text(left: str, right: str) -> str:
+        max_overlap = min(len(left), len(right))
+        # Chunks may be tiny in tests and in short table sections.  Four
+        # characters is long enough to remove a repeated line while avoiding
+        # accidental one- or two-character joins in Chinese prose.
+        for size in range(max_overlap, 3, -1):
+            if left[-size:] == right[:size]:
+                return left + right[size:]
+        return left.rstrip() + "\n\n" + right.lstrip()
 
     def close(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)

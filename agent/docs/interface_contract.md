@@ -36,6 +36,19 @@ The frontend must render `progress_percent`, `stages`, and `tasks` as returned;
 it must not infer a second state machine from Job status or array position.
 Polling stops when `status` is `completed`, `failed`, or `cancelled`.
 
+### Research conversation commands
+
+`POST /api/research/jobs/{id}/messages` accepts `{ "message": "采用来源 2" }`
+for a completed report with a matching conflict alternative. It persists a new
+report revision, marks the selected conflict `resolved_by_user`, and retains
+the original evidence and citations. A user choice records a decision; it does
+not reverify claims or clear existing quality limitations. Unknown source
+numbers return `action=clarify` without revising the report. Clients should
+reload the report after `action=conflict_resolved`.
+
+The conflict-choice persistence, invalid-source behavior, and preservation of
+quality gaps are covered by `test_research_control_plane_api.py`.
+
 ## POST `/api/chat`
 
 Request:
@@ -60,6 +73,12 @@ Fields:
 - `stream`: whether streaming output is requested.
 - `retrieval_mode`: `vector`, `bm25`, or `hybrid`; defaults to `hybrid`.
 
+The public ChatRequest does not expose structural routing in P0. Query planning
+internally derives `navigation_mode` (`direct`, `hierarchical`, or `hybrid`) and
+passes non-direct values to `search_documents` or `search_library` only when
+`HIERARCHICAL_NAVIGATION_ENABLED=true`. This keeps retrieval backend selection
+and document/section navigation as separate contracts.
+
 ## ChatResponse
 
 ```json
@@ -75,6 +94,11 @@ Fields:
 The public response remains limited to these five fields in CP2. Iteration
 counts and tool traces stay in Agent logs and internal run summaries until a
 separate Web contract revision approves an optional `run` field.
+
+The Agent's Direct-only versus Direct+Wiki route and `WIKI_CONTEXT_TOP_K` are
+internal runtime details. They do not add fields to `ChatRequest`,
+`ChatResponse`, or citations. Wiki navigation metadata cannot populate citation
+fields; only accepted original Evidence can do so.
 
 ## Citation Fields
 

@@ -6,6 +6,7 @@ import json
 import logging
 import time
 from agent.config.settings import settings
+import re
 from typing import Protocol
 from urllib.request import Request, urlopen
 
@@ -123,12 +124,32 @@ class MockResearchPlanner:
             ),
         ]
 
+        if request.report_spec.language == "en-US":
+            names = ", ".join(document.title for document in scoped_documents)
+            versions = ", ".join(f"{document.title} ({document.version or 'version not recorded'})" for document in scoped_documents)
+            descriptions = [
+                (f'Individually verify facts, implementation status and original locators in {names} that answer "{request.query}".',
+                 f"Establish a traceable evidence summary for each source in {names}.", f"Specific facts and original excerpts from {names}"),
+                (f'Compare {versions} for agreement, version differences and genuine semantic conflicts when answering "{request.query}".',
+                 "Distinguish development over time and scope differences from factual conflicts requiring a decision.",
+                 "Document versions, agreements, differences and complete original excerpts"),
+                (f"Using {names}, identify unanswered parts of the question, evidence boundaries and additional evidence required.",
+                 "Keep speculation beyond the selected source scope out of the final report.", f"Items not covered or not established by {names}"),
+            ]
+            for task, (question, purpose, target) in zip(tasks, descriptions):
+                task.question = question
+                task.purpose = purpose
+                task.acceptance_criteria[0].target = target
+                task.acceptance_criteria[0].description = f"{task.acceptance_criteria[0].dimension}: {target}"
+
         plan = ResearchPlan(
             schema_version="research.v2",
             research_id=manifest.research_id,
             version=version,
             objective=request.query,
-            out_of_scope=["未列入 SourceManifest 的资料", "无法从原文核验的推测"],
+            out_of_scope=(["Sources outside SourceManifest", "Speculation not verifiable in original sources"]
+                          if request.report_spec.language == "en-US"
+                          else ["未列入 SourceManifest 的资料", "无法从原文核验的推测"]),
             source_scope=request.source_scope,
             report_spec=request.report_spec,
             manifest_hash=manifest.manifest_hash,
@@ -178,12 +199,15 @@ class ModelResearchPlanner:
             return self.fallback.create_plan(request, manifest, version=version)
         try:
             tasks = self._generate_tasks(request, manifest)
+            self._validate_task_coverage(request.query, tasks)
             plan = ResearchPlan(
                 schema_version="research.v2",
                 research_id=manifest.research_id,
                 version=version,
                 objective=request.query,
-                out_of_scope=["未列入 SourceManifest 的资料", "无法从原文核验的推测"],
+                out_of_scope=(["Sources outside SourceManifest", "Speculation not verifiable in original sources"]
+                              if request.report_spec.language == "en-US"
+                              else ["未列入 SourceManifest 的资料", "无法从原文核验的推测"]),
                 source_scope=request.source_scope,
                 report_spec=request.report_spec,
                 manifest_hash=manifest.manifest_hash,
@@ -278,6 +302,28 @@ class ModelResearchPlanner:
                 )
             )
         return tasks
+
+    @classmethod
+    def _validate_task_coverage(cls, objective: str, tasks: list[ResearchTask]) -> None:
+        """Reject generic model plans that do not mention the user's subject."""
+
+        combined = " ".join(
+            f"{task.question} {task.purpose} "
+            + " ".join(item.target for item in task.acceptance_criteria)
+            for task in tasks
+        ).casefold()
+        objective_terms = {
+            term.casefold()
+            for term in re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}|[\u4e00-\u9fff]{2,}", objective)
+        }
+        generic = (
+            "locate core facts", "organize conclusions", "定位核心事实",
+            "整理研究结论", "收集相关信息",
+        )
+        if any(marker in combined for marker in generic):
+            raise PlannerError("model returned a generic research plan")
+        if objective_terms and not any(term in combined for term in objective_terms):
+            raise PlannerError("research plan does not cover the objective")
 
     def _chat(self, payload: dict) -> dict:
         last_error: Exception | None = None

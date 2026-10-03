@@ -1,40 +1,79 @@
-import os
 import json
+import os
+import tempfile
+from pathlib import Path
 
-# 定义文档存放的默认目录（相对于工作目录）
-DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "documents")
+from data_persistence._paths import documents_dir
+
+DOCS_DIR = str(documents_dir())
+
+
+def _document_path(doc_id: str) -> Path:
+    """Return a validated path for one document directly under DOCS_DIR."""
+    if not isinstance(doc_id, str) or not doc_id:
+        raise ValueError("doc_id must be a non-empty string")
+    if any(character in doc_id for character in ("/", "\\", "\x00", ":")):
+        raise ValueError("doc_id must be a single filename component")
+
+    root = Path(DOCS_DIR).resolve()
+    candidate = root / f"{doc_id}.json"
+    try:
+        resolved = candidate.resolve(strict=False)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError("doc_id does not resolve to a safe document path") from exc
+
+    if resolved.parent != root or candidate.is_symlink():
+        raise ValueError("doc_id must resolve to a file directly under DOCS_DIR")
+    return candidate
+
 
 def save_document(doc_id: str, data: dict) -> None:
-    """Save a document as a JSON file in DOCS_DIR."""
+    """Atomically save a document as a JSON file in DOCS_DIR."""
     os.makedirs(DOCS_DIR, exist_ok=True)
-    file_path = os.path.join(DOCS_DIR, f"{doc_id}.json")
-    
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    file_path = _document_path(doc_id)
+    temp_path = None
+
+    try:
+        file_descriptor, temp_name = tempfile.mkstemp(
+            dir=DOCS_DIR,
+            prefix=".document-",
+            suffix=".tmp",
+        )
+        temp_path = Path(temp_name)
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as file:
+            json.dump(data, file, ensure_ascii=False, indent=2)
+        os.replace(temp_path, file_path)
+    finally:
+        if temp_path is not None:
+            try:
+                temp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
 
 def load_document(doc_id: str) -> dict | None:
-    """Load a document from a JSON file in DOCS_DIR by its doc_id."""
-    file_path = os.path.join(DOCS_DIR, f"{doc_id}.json")
-    
-    if not os.path.exists(file_path):
+    """Load a JSON document from DOCS_DIR by its doc_id."""
+    file_path = _document_path(doc_id)
+    if not file_path.exists():
         return None
-        
-    with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+
+    with file_path.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
 
 def delete_document(doc_id: str) -> None:
     """Delete a document JSON file from DOCS_DIR."""
-    file_path = os.path.join(DOCS_DIR, f"{doc_id}.json")
-    
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    file_path = _document_path(doc_id)
+    if file_path.exists():
+        file_path.unlink()
+
 
 def list_documents() -> list[str]:
     """List all stored document IDs (without file extensions)."""
     if not os.path.isdir(DOCS_DIR):
         return []
     return [
-        os.path.splitext(fname)[0]
-        for fname in sorted(os.listdir(DOCS_DIR))
-        if fname.endswith(".json") and fname != ".gitkeep"
+        os.path.splitext(filename)[0]
+        for filename in sorted(os.listdir(DOCS_DIR))
+        if filename.endswith(".json") and filename != ".gitkeep"
     ]

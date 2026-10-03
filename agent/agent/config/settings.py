@@ -1,19 +1,12 @@
 import os
+from pathlib import Path
 from typing import Optional
 
-from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, model_validator
 
-# Load environment variables from agent/.env and root .env
-_agent_env = Path(__file__).resolve().parent.parent.parent / ".env"
-if _agent_env.exists():
-    load_dotenv(_agent_env)
-_root_env = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-if _root_env.exists():
-    load_dotenv(_root_env)
-load_dotenv()
-
+# Load environment variables from .env file
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -21,6 +14,13 @@ def _env_bool(name: str, default: bool) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_bool_with_legacy(name: str, legacy_name: str, default: bool) -> bool:
+    """Read a new boolean setting while honoring the legacy name for one release."""
+    if os.getenv(name) is not None:
+        return _env_bool(name, default)
+    return _env_bool(legacy_name, default)
 
 
 def _env_int(name: str, default: int) -> int:
@@ -37,6 +37,14 @@ def _env_float(name: str, default: float) -> float:
     return float(value)
 
 
+def _find_project_root() -> Path:
+    cur = Path(__file__).resolve()
+    for parent in [cur] + list(cur.parents):
+        if (parent / "requirements.txt").exists() or (parent / "start_project.py").exists():
+            return parent
+    return cur.parents[3] if len(cur.parents) > 3 else cur.parent
+
+
 class Settings(BaseModel):
     """Global settings for Agent Layer."""
 
@@ -45,22 +53,78 @@ class Settings(BaseModel):
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = _env_int("PORT", 8000)
 
-    DEFAULT_TOP_K: int = Field(default_factory=lambda: _env_int("DEFAULT_TOP_K", 5), ge=1, le=20)
+    DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
+
     MIN_RETRIEVAL_SCORE: float = Field(
         default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.0),
         ge=0.0,
         le=1.0,
     )
-    DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
     QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
         "QUERY_UNDERSTANDING_ENABLED",
         True,
     )
-    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
+    UNIFIED_QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
+        "UNIFIED_QUERY_UNDERSTANDING_ENABLED",
+        False,
+    )
+    CASCADED_QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
+        "CASCADED_QUERY_UNDERSTANDING_ENABLED",
+        False,
+    )
+    HYBRID_INTENT_ROUTER_ENABLED: bool = _env_bool(
+        "HYBRID_INTENT_ROUTER_ENABLED",
+        False,
+    )
+    INTENT_EMBEDDING_MODEL_PATH: str = os.getenv(
+        "INTENT_EMBEDDING_MODEL_PATH",
+        "",
+    )
+    INTENT_EMBEDDING_THRESHOLD: float = Field(
+        default_factory=lambda: _env_float("INTENT_EMBEDDING_THRESHOLD", 0.72),
+        ge=-1.0,
+        le=1.0,
+    )
+    INTENT_EMBEDDING_MARGIN: float = Field(
+        default_factory=lambda: _env_float("INTENT_EMBEDDING_MARGIN", 0.08),
+        ge=0.0,
+        le=2.0,
+    )
+    CONVERSATION_REWRITE_ENABLED: bool = _env_bool_with_legacy(
+        "CONVERSATION_REWRITE_ENABLED",
+        "QUERY_REWRITE_ENABLED",
+        True,
+    )
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
+    )
+    TOOL_EXECUTOR_MAX_WORKERS: int = Field(
+        default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_WORKERS", 8),
+        ge=1,
+    )
+    TOOL_EXECUTOR_MAX_PENDING: int = Field(
+        default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_PENDING", 16),
+        ge=0,
+    )
+    AGENTIC_EXPLORATION_ENABLED: bool = _env_bool(
+        "AGENTIC_EXPLORATION_ENABLED", False,
+    )
+    KNOWLEDGE_NAVIGATION_ENABLED: bool = _env_bool(
+        "KNOWLEDGE_NAVIGATION_ENABLED", False,
+    )
+    EXPLORATION_MAX_ROUNDS: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_ROUNDS", 4), ge=1, le=5,
+    )
+    EXPLORATION_MAX_TOOL_CALLS: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_TOOL_CALLS", 8), ge=1, le=10,
+    )
+    EXPLORATION_MAX_EVIDENCE: int = Field(
+        default_factory=lambda: _env_int("EXPLORATION_MAX_EVIDENCE", 20), ge=5, le=50,
+    )
+    WIKI_CONTEXT_TOP_K: int = Field(
+        default_factory=lambda: _env_int("WIKI_CONTEXT_TOP_K", 3), ge=0, le=10,
     )
 
     RESEARCH_DATABASE_PATH: str = os.getenv(
@@ -156,10 +220,24 @@ class Settings(BaseModel):
         os.getenv("OPENAI_API_BASE", "http://127.0.0.1:11434/v1"),
     )
     LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.1")
+    QUERY_PREPARATION_MODEL: str = os.getenv("QUERY_PREPARATION_MODEL", "").strip()
+    ANSWER_COMPLETENESS_MODEL: str = os.getenv("ANSWER_COMPLETENESS_MODEL", "").strip()
+    ANSWER_COMPLETENESS_MODEL_THINKING: bool = _env_bool(
+        "ANSWER_COMPLETENESS_MODEL_THINKING",
+        False,
+    )
+    ANSWER_TARGET_EXTRACT_LLM: bool = _env_bool("ANSWER_TARGET_EXTRACT_LLM", False)
+    ANSWER_REPAIR_APPEND_ONLY: bool = _env_bool("ANSWER_REPAIR_APPEND_ONLY", True)
+    ANSWER_FAST_MODEL: str = os.getenv("ANSWER_FAST_MODEL", "").strip()
+    ANSWER_FAST_MODEL_THINKING: bool = _env_bool(
+        "ANSWER_FAST_MODEL_THINKING",
+        False,
+    )
     LLM_TEMPERATURE: float = _env_float("LLM_TEMPERATURE", 0.1)
     LLM_MAX_TOKENS: int = _env_int("LLM_MAX_TOKENS", 2000)
     LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)
     LLM_THINKING_MODE: str = os.getenv("LLM_THINKING_MODE", "").strip().lower()
+    LLM_REASONING_EFFORT: str = os.getenv("LLM_REASONING_EFFORT", "").strip().lower()
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
@@ -169,6 +247,22 @@ class Settings(BaseModel):
         if self.MEMORY_CACHE_ENABLED:
             raise ValueError("memory_cache_not_supported")
         return self
+    # Agent 服务共享密钥：Web 可信端调用 /api/* 业务接口时携带
+    # `Authorization: Bearer <AGENT_API_KEY>`。未配置时 agent 业务接口
+    # 返回 503，杜绝外部直连端口伪造 user_id 绕过权限隔离。
+    AGENT_API_KEY: str = os.getenv("AGENT_API_KEY", "")
+
+    # 权限服务查询异常时的策略：
+    # - False（默认，fail-closed）：返回空文档列表，拒绝全部文档访问，遵循最小权限。
+    # - True（fail-open）：返回 None（不过滤），供排查/降级使用，需谨慎开启。
+    PERMISSION_FAIL_OPEN: bool = _env_bool("PERMISSION_FAIL_OPEN", False)
+
+    # Web 层 SQLite 数据库路径，Agent 层权限服务据此查询文件权限。
+    # 默认定位到 AI-QA-Assistant/frontend/.data/sqlite.db。
+    WEB_SQLITE_PATH: str = os.getenv(
+        "WEB_SQLITE_PATH",
+        str(_find_project_root() / "frontend" / ".data" / "sqlite.db"),
+    )
 
 
 settings = Settings()

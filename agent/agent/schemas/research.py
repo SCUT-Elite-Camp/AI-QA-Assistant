@@ -181,7 +181,7 @@ class ReportSpec(ResearchContractModel):
     """Output constraints for the CP2 Markdown research report."""
 
     format: Literal["markdown"] = "markdown"
-    language: Literal["zh-CN", "en-US"] = "zh-CN"
+    language: Literal["zh-CN", "en-US"] = "en-US"
     title: str = Field(default="", max_length=200)
     sections: list[str] = Field(default_factory=list, max_length=20)
     include_citations: bool = True

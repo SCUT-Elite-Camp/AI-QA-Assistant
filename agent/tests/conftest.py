@@ -25,7 +25,13 @@ try:
     import pymilvus  # noqa: F401
 except ModuleNotFoundError:
     pymilvus_stub = ModuleType("pymilvus")
-    pymilvus_stub.connections = SimpleNamespace()
+    def unavailable_milvus(*args, **kwargs):
+        raise RuntimeError("pymilvus is unavailable in this test environment")
+
+    pymilvus_stub.connections = SimpleNamespace(
+        connect=unavailable_milvus,
+        disconnect=unavailable_milvus,
+    )
     pymilvus_stub.utility = SimpleNamespace()
     pymilvus_stub.Collection = object
     pymilvus_stub.CollectionSchema = object
@@ -74,7 +80,12 @@ def mock_llm_client_chat(monkeypatch):
             )
         }
 
+    def mock_stream_chat(self, messages, tools=None, **kwargs):
+        yield {"reasoning_content": "正在思考知识库检索到的内容..."}
+        yield {"content": "根据检索到的文档，我们发现以下规则：\n[1] 这是第一个文档段落。\n[2] 这是第二个测试说明段落。\n这些文档非常清晰地展示了项目要求。"}
+
     monkeypatch.setattr(LLMClient, "chat", mock_chat)
+    monkeypatch.setattr(LLMClient, "stream_chat", mock_stream_chat)
 
 
 @pytest.fixture(autouse=True)
@@ -121,7 +132,7 @@ def mock_sqlite_db_path(monkeypatch, tmp_path, request):
     if request.node.get_closest_marker("no_storage"):
         return
 
-    from storage.chat_history_store import ChatHistoryStore
+    from data_persistence.chat import ChatHistoryStore
     db_file = tmp_path / "test_chat_history.db"
     
     # Override initializer to use our temporary test database path
@@ -131,3 +142,18 @@ def mock_sqlite_db_path(monkeypatch, tmp_path, request):
         
     monkeypatch.setattr(ChatHistoryStore, "__init__", patched_init)
 
+
+@pytest.fixture(autouse=True)
+def mock_agent_auth(monkeypatch, request):
+    """General HTTP tests use a BFF credential; dedicated auth tests exercise rejection."""
+    if request.module.__name__.endswith("test_auth"):
+        return
+    from fastapi.testclient import TestClient
+    from agent.config.settings import settings
+    monkeypatch.setattr(settings, "AGENT_API_KEY", "integration-test-key")
+    original_init = TestClient.__init__
+    def authenticated_init(self, *args, **kwargs):
+        headers = dict(kwargs.pop("headers", {}) or {})
+        headers.setdefault("Authorization", "Bearer integration-test-key")
+        original_init(self, *args, headers=headers, **kwargs)
+    monkeypatch.setattr(TestClient, "__init__", authenticated_init)

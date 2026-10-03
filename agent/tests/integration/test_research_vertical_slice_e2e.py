@@ -146,6 +146,7 @@ def _request(query: str, *doc_ids: str) -> ResearchRequest:
     return ResearchRequest(
         query=query,
         source_scope=SourceScope(document_ids=list(doc_ids)),
+        report_spec={"language": "zh-CN"},
     )
 
 

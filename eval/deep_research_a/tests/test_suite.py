@@ -140,6 +140,29 @@ class DeepResearchASuiteTests(unittest.TestCase):
         self.assertFalse(result["hard_gate_pass"])
         self.assertEqual(result["root_cause"], "RETRIEVAL_PERMISSION_LEAK")
 
+    def test_unchecked_link_is_pending_not_broken(self) -> None:
+        record = perfect_record()
+        record["citations"][0]["link_status"] = "unchecked"
+        result = suite.score_run(record)
+        citation = result["layers"]["citation"]
+        gate = result["hard_gates"]["unopenable_source_link_count"]
+        self.assertEqual(citation["unchecked_source_link_count"], 1)
+        self.assertEqual(citation["unopenable_source_link_count"], 0)
+        self.assertIsNone(gate["value"])
+        self.assertIsNone(gate["passed"])
+        self.assertNotIn("CITATION_BROKEN_LINK", result["failure_codes"])
+        self.assertFalse(result["hard_gate_pass"])
+        self.assertTrue(result["requires_codex_review"])
+
+    def test_confirmed_broken_link_fails_gate(self) -> None:
+        record = perfect_record()
+        record["citations"][0]["link_status"] = "broken"
+        result = suite.score_run(record)
+        gate = result["hard_gates"]["unopenable_source_link_count"]
+        self.assertEqual(gate["value"], 1)
+        self.assertFalse(gate["passed"])
+        self.assertIn("CITATION_BROKEN_LINK", result["failure_codes"])
+
     def test_incomplete_batch_dry_run_emits_all_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -157,6 +180,9 @@ class DeepResearchASuiteTests(unittest.TestCase):
             summary = suite.load_json(output / "summary.json")
             self.assertEqual(summary["record_count"], 1)
             self.assertEqual(summary["expected_record_count"], 162)
+            self.assertEqual(summary["hard_gate_pass_count"], 1)
+            self.assertEqual(summary["hard_gate_pending_count"], 0)
+            self.assertEqual(summary["hard_gate_fail_count"], 0)
 
 
 if __name__ == "__main__":

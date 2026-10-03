@@ -1,28 +1,25 @@
-"""Document parsers with lazy public imports.
+"""Parser package with optional format dependencies loaded on demand."""
 
-Importing one lightweight parser must not require every optional format dependency
-(for example PyMuPDF for PDF files).
-"""
+from importlib import import_module
+from typing import Any
 
 from parsers.base import BaseParser
 
+
 __all__ = [
-    "BaseParser", "DocumentParser", "HtmlParser", "PptxParser", "XlsxParser",
-    "get_parser", "parse_file", "supported_extensions",
+    "BaseParser", "DocumentParser", "get_parser", "parse_file", "supported_extensions",
+    "PptxParser", "HtmlParser", "XlsxParser",
 ]
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name in {"DocumentParser", "get_parser", "parse_file", "supported_extensions"}:
-        from parsers import registry
-        return getattr(registry, name)
-    if name == "HtmlParser":
-        from parsers.html_parser import HtmlParser
-        return HtmlParser
-    if name == "PptxParser":
-        from parsers.pptx_parser import PptxParser
-        return PptxParser
-    if name == "XlsxParser":
-        from parsers.xlsx_parser import XlsxParser
-        return XlsxParser
+        return getattr(import_module("parsers.registry"), name)
+    modules = {
+        "PptxParser": "parsers.pptx_parser",
+        "HtmlParser": "parsers.html_parser",
+        "XlsxParser": "parsers.xlsx_parser",
+    }
+    if name in modules:
+        return getattr(import_module(modules[name]), name)
     raise AttributeError(name)

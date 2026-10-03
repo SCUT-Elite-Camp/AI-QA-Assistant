@@ -33,7 +33,7 @@
       "case_id": "PA-005",
       "source_case_id": "DR-A-012",
       "scenario": "table_and_unknown_status",
-      "checks": ["AG-M6、AG-M7、Research Graph 对应的 AG-M8、AG-M9 全部为 Finished", "AG-M10 为 Not started", "AG-M11 为未记录，不把空白解释为完成或未开始"]
+      "checks": ["AG-M6、AG-M7、Research Graph 对应的 AG-M8、可信报告对应的 AG-M9 均为 Finished", "明确区分重复 Goal ID：Skill Registry 对应的另一条 AG-M8 与 Scheduler 对应的另一条 AG-M9 均为 Not started", "AG-M10 为 Not started", "AG-M11 为未记录，不把空白解释为完成或未开始"]
     },
     {
       "case_id": "PA-006",

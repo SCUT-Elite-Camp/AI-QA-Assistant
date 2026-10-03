@@ -5,7 +5,13 @@ from __future__ import annotations
 import secrets
 from typing import Annotated
 
+from fastapi.responses import StreamingResponse
+from agent.streaming.sse import build_sse_event
+from agent.schemas.chat import ChatResponse
+
 from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi.routing import APIRoute
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from agent.agent import Agent
@@ -23,7 +29,18 @@ from agent.schemas.chat import (
 )
 
 
-router = APIRouter()
+class PrivateMemoryRoute(APIRoute):
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+        async def validated_handler(request):
+            try:
+                return await handler(request)
+            except RequestValidationError:
+                return JSONResponse(status_code=422, content={"detail": "invalid_memory_context"})
+        return validated_handler
+
+
+router = APIRouter(route_class=PrivateMemoryRoute)
 
 
 def require_agent_internal_token(
@@ -130,8 +147,11 @@ def compaction_plan(
     request: CompactionPlanRequest,
     _: Annotated[None, Depends(require_agent_internal_token)],
     __: Annotated[None, Depends(require_json_content_type)],
-) -> CompactionPlanResponse:
+) -> CompactionPlanResponse | JSONResponse:
     """Return a pure post-persistence plan; the BFF remains the sole writer."""
+
+    if not settings.PERSISTENT_MEMORY_ENABLED:
+        return JSONResponse(status_code=409, content={"code": "persistent_memory_disabled"})
 
     validate_compaction_request(request)
     return CompactionPlanner().plan(request)
@@ -148,3 +168,42 @@ def reset_short_window(
 
     agent.memory.clear(request.chat_id)
     return ResetShortWindowResponse(status="ok")
+
+
+@router.post("/chat/retrieval/stream")
+def internal_retrieval_stream(
+    request: InternalChatRequest,
+    _: Annotated[None, Depends(require_agent_internal_token)],
+    agent: Agent = Depends(get_agent),
+) -> StreamingResponse:
+    """Token-protected streaming adapter for server-authorized private sources."""
+
+    def event_stream():
+        response: ChatResponse = agent.chat(request)
+        yield build_sse_event(
+            "citations",
+            [citation.model_dump() for citation in response.citations],
+        )
+        if response.answer:
+            for offset in range(0, len(response.answer), 32):
+                yield build_sse_event(
+                    "token",
+                    {"content": response.answer[offset:offset + 32]},
+                )
+        if response.status == "success":
+            yield build_sse_event(
+                "done",
+                {
+                    "trace_id": response.trace_id,
+                    "status": response.status,
+                    "citations_count": len(response.citations),
+                    "chat_title": response.chat_title,
+                },
+            )
+        else:
+            yield build_sse_event(
+                "error",
+                {"message": response.message or "Agent retrieval failed"},
+            )
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

@@ -60,11 +60,17 @@ def cases(documents, metadata):
             version = versions.get(frozen['doc_id'])
             if str(version) != str(frozen.get("version")):
                 raise ValueError(f"version drift: {frozen['doc_id']}")
-            context.append({"doc_id": frozen["doc_id"], "title": doc.get("title"), "chunks": doc.get("chunks", [])})
+            context.append({"doc_id": frozen["doc_id"], "title": doc.get("title"),
+                            "content": doc.get("content", ""), "chunks": doc.get("chunks", [])})
         case["frozen_manifest"] = manifest
         case["judge_sources"] = context
         result.append(case)
     return result
+
+
+def _thinking_payload():
+    mode = os.environ.get("LLM_THINKING_MODE", "").strip().lower()
+    return {"type": mode} if mode in {"enabled", "disabled"} else None
 
 
 def judge(case, answer, citations):
@@ -83,9 +89,10 @@ def judge(case, answer, citations):
                     "citations": citations}, ensure_ascii=False)
     )
     payload = {"model": os.environ["LLM_MODEL"], "temperature": 0,
-               "thinking": {"type": "disabled"},
                "max_tokens": 1600, "response_format": {"type": "json_object"},
                "messages": [{"role": "user", "content": prompt}]}
+    if thinking := _thinking_payload():
+        payload["thinking"] = thinking
     request = Request(os.environ["LLM_API_BASE"].rstrip("/") + "/chat/completions",
                       data=json.dumps(payload).encode(),
                       headers={"Authorization": "Bearer " + os.environ["LLM_API_KEY"],
@@ -107,12 +114,23 @@ def score_sources(case, result):
     evidence = trace.get("verified_evidence") or citations
     available = {(d["doc_id"], c["chunk_id"]): str(c.get("text") or c.get("chunk_text") or "")
                  for d in case["judge_sources"] for c in d["chunks"]}
+    document_text = {
+        d["doc_id"]: str(d.get("content") or " ".join(
+            str(c.get("text") or c.get("chunk_text") or "") for c in d["chunks"]
+        ))
+        for d in case["judge_sources"]
+    }
     valid = 0
     supported_locations = set()
     for e in evidence:
         raw = available.get((e.get("doc_id"), e.get("locator") or e.get("chunk_id")), "")
         excerpt = e.get("excerpt") or e.get("snippet") or ""
-        if raw and excerpt and " ".join(excerpt.split()) in " ".join(raw.split()):
+        normalized_excerpt = " ".join(excerpt.split())
+        normalized_document = " ".join(document_text.get(e.get("doc_id"), "").split())
+        # Deep Research may expand an anchor chunk with adjacent chunks. The
+        # locator must still exist, while the complete excerpt is validated
+        # against the frozen source document rather than only the anchor text.
+        if raw and normalized_excerpt and normalized_excerpt in normalized_document:
             valid += 1
             supported_locations.add((e.get("doc_id"), e.get("locator") or e.get("chunk_id")))
     expected = {(x["doc_id"], x["chunk_id"]) for x in case["key_source_locations"]}
@@ -123,7 +141,7 @@ def score_sources(case, result):
             "out_of_scope_count": leaked}
 
 
-def run_one(client, case, group, repeat, output):
+def run_one(client, case, group, repeat, output, *, skip_judge=False, research_timeout=480):
     record = {"case_id": case["case_id"], "group": group, "repeat": repeat,
               "question": case["question"], "checks": case["checks"]}
     start = time.monotonic()
@@ -136,12 +154,18 @@ def run_one(client, case, group, repeat, output):
             record["runtime_ok"] = response.get("status") in {"success", "no_relevant_context"}
             answer = response.get("answer") or response.get("message", "")
         else:
-            result = _run_research(client, case, profile="current", timeout_seconds=480)
+            result = _run_research(client, case, profile="current", timeout_seconds=research_timeout)
             record["runtime_ok"] = result["job"]["status"] == "completed"
             answer = (result.get("report") or {}).get("markdown", "")
         record.update(result=result, answer=answer, latency_seconds=round(time.monotonic()-start, 3))
         record["source_metrics"] = score_sources(case, result)
         save(output / f"{case['case_id']}-{group}-r{repeat}.json", record)
+        if skip_judge:
+            record["judge"] = None
+            record["accepted"] = None
+            save(output / f"{case['case_id']}-{group}-r{repeat}.json", record)
+            print(case["case_id"], group, repeat, "generated=True", flush=True)
+            return record
         evaluation = judge(case, answer, result.get("citations", []))
         record["judge"] = evaluation
         metrics = record["source_metrics"]
@@ -152,7 +176,7 @@ def run_one(client, case, group, repeat, output):
     except Exception as exc:
         record.update(accepted=False, error=type(exc).__name__ + ": " + str(exc))
     save(output / f"{case['case_id']}-{group}-r{repeat}.json", record)
-    print(case["case_id"], group, repeat, "accepted=" + str(record["accepted"]), flush=True)
+    print(case["case_id"], group, repeat, "accepted=" + str(record.get("accepted")), flush=True)
     return record
 
 
@@ -167,6 +191,10 @@ def main():
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--groups", nargs="+", choices=["G1", "G2"], default=["G1", "G2"])
     parser.add_argument("--case-ids", nargs="*", help="optional subset for a focused rerun")
+    parser.add_argument("--skip-judge", action="store_true",
+                        help="generate answers and deterministic source metrics without calling an LLM judge")
+    parser.add_argument("--research-timeout", type=int, default=480,
+                        help="maximum seconds to wait for each Deep Research job")
     args = parser.parse_args()
     if args.repeats < 1:
         parser.error("--repeats must be positive")
@@ -193,7 +221,10 @@ def main():
          "query_rewrite_enabled": os.environ.get("QUERY_REWRITE_ENABLED"),
          "bm25_sha256": hashlib.sha256(args.bm25.read_bytes()).hexdigest(),
          "retrieval": "G1=frozen BM25; G2=manifest-scoped local JSON search/read; not hybrid end-to-end acceptance",
-         "repeats": args.repeats, "groups": args.groups, "judge": "same-provider pointwise; provisional until human reviewed"})
+         "repeats": args.repeats, "groups": args.groups,
+         "research_timeout_seconds": args.research_timeout,
+         "judge": "skipped; direct review required" if args.skip_judge else
+                  "same-provider pointwise; provisional until human reviewed"})
     env = {**os.environ, "PYTHONUTF8": "1", "RESEARCH_DOCUMENTS_DIR": str(args.documents),
            "RESEARCH_DATABASE_PATH": str(args.output / "research.db"),
            "RESEARCH_CHECKPOINT_PATH": str(args.output / "checkpoints.db")}
@@ -221,11 +252,14 @@ def main():
                     raise RuntimeError("server not ready; inspect server.log")
                 time.sleep(1)
             with ThreadPoolExecutor(max_workers=2) as pool:
-                futures = [pool.submit(run_one, client, c, g, r, args.output / "runs")
+                futures = [pool.submit(run_one, client, c, g, r, args.output / "runs",
+                                       skip_judge=args.skip_judge,
+                                       research_timeout=args.research_timeout)
                            for c in dataset for g in args.groups for r in range(1, args.repeats+1)]
                 records = [f.result() for f in futures]
             summary = {g: {"runs": len(rows := [r for r in records if r["group"] == g]),
-                          "accepted": sum(r["accepted"] for r in rows),
+                          "accepted": sum(r.get("accepted") is True for r in rows),
+                          "pending_review": sum(r.get("accepted") is None for r in rows),
                           "errors": sum("error" in r for r in rows)} for g in args.groups}
             save(args.output / "summary.json", summary)
             print(json.dumps(summary), flush=True)

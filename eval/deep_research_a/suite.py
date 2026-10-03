@@ -16,9 +16,9 @@ from typing import Any, Iterable
 
 SUITE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = SUITE_ROOT.parents[1]
-DATASET_PATH = SUITE_ROOT / "datasets" / "cases.v1.json"
-MANIFEST_PATH = SUITE_ROOT / "manifests" / "source_manifests.v1.json"
-BASELINE_PATH = SUITE_ROOT / "config" / "frozen_baseline.json"
+DATASET_PATH = Path(os.getenv("DR_EVAL_DATASET_PATH", SUITE_ROOT / "datasets" / "cases.v1.json")).resolve()
+MANIFEST_PATH = Path(os.getenv("DR_EVAL_MANIFEST_PATH", SUITE_ROOT / "manifests" / "source_manifests.v1.json")).resolve()
+BASELINE_PATH = Path(os.getenv("DR_EVAL_BASELINE_PATH", SUITE_ROOT / "config" / "frozen_baseline.json")).resolve()
 TAXONOMY_PATH = SUITE_ROOT / "failure_taxonomy.json"
 DOCUMENTS_DIR = Path(os.getenv(
     "DR_EVAL_DOCUMENTS_DIR",
@@ -265,6 +265,10 @@ def validate_assets(verbose: bool = True) -> list[str]:
         if path_key == "assembly_path" and g1_prompt.get("assembly_git_ref"):
             if git_blob_sha256(g1_prompt["assembly_git_ref"], g1_prompt[path_key]) != g1_prompt.get("assembly_git_sha256"):
                 errors.append("frozen G1 assembly source hash mismatch")
+            continue
+        if path_key == "path" and g1_prompt.get("git_ref"):
+            if git_blob_sha256(g1_prompt["git_ref"], g1_prompt[path_key]) != g1_prompt.get("git_sha256", g1_prompt.get(hash_key)):
+                errors.append("frozen G1 prompt source hash mismatch")
             continue
         prompt_path = PROJECT_ROOT / str(g1_prompt.get(path_key, ""))
         if not prompt_path.is_file():
@@ -536,7 +540,8 @@ def score_run(record: dict[str, Any]) -> dict[str, Any]:
     supported_citations = sum(bool(item.get("supports_claim")) for item in citations)
     required_links = [item for item in citations if item.get("source_url")]
     open_links = sum(item.get("link_status") == "open" for item in required_links)
-    broken_links = sum(item.get("link_status") in {"broken", "unchecked"} for item in required_links)
+    broken_links = sum(item.get("link_status") == "broken" for item in required_links)
+    unchecked_links = sum(item.get("link_status") in {None, "unchecked"} for item in required_links)
     locator_matches = 0
     permission_citation_count = 0
     for item in citations:
@@ -554,6 +559,7 @@ def score_run(record: dict[str, Any]) -> dict[str, Any]:
         "missing_citation_count": missing_citation_count,
         "broken_citation_count": sum(not item.get("supports_claim") for item in citations),
         "unopenable_source_link_count": broken_links,
+        "unchecked_source_link_count": unchecked_links,
         "permission_leak_count": permission_citation_count,
         "unsupported_factual_claim_count": len(unsupported_claim_ids),
     }
@@ -582,7 +588,10 @@ def score_run(record: dict[str, Any]) -> dict[str, Any]:
         "permission_leak_count": permission_leaks,
         "broken_citation_count": citation_layer["broken_citation_count"],
         "unsupported_factual_claim_count": citation_layer["unsupported_factual_claim_count"],
-        "unopenable_source_link_count": citation_layer["unopenable_source_link_count"],
+        "unopenable_source_link_count": (
+            None if citation_layer["unchecked_source_link_count"] else
+            citation_layer["unopenable_source_link_count"]
+        ),
         "factual_claim_citation_coverage": citation_layer["factual_claim_citation_coverage"],
         "faithfulness": report_layer["faithfulness"],
         "answer_relevance": report_layer["answer_relevance"],
@@ -810,6 +819,18 @@ def command_batch_score(
     }
     for group in selected_groups:
         selected = [result for result in scored if result.get("group") == group]
+        pending = [
+            result for result in selected
+            if any(
+                gate.get("passed") is None
+                for gate in result.get("hard_gates", {}).values()
+            )
+        ]
+        passed = [result for result in selected if result.get("hard_gate_pass")]
+        failed = [
+            result for result in selected
+            if not result.get("hard_gate_pass") and result not in pending
+        ]
         averages: dict[str, float | None] = {}
         for name, path in metric_paths.items():
             values = [_nested(item["layers"], *path) for item in selected]
@@ -817,13 +838,26 @@ def command_batch_score(
             averages[name] = round(sum(numeric) / len(numeric), 6) if numeric else None
         group_summary[group] = {
             "run_count": len(selected),
-            "hard_gate_pass_count": sum(item["hard_gate_pass"] for item in selected),
+            "hard_gate_pass_count": len(passed),
+            "hard_gate_pending_count": len(pending),
+            "hard_gate_fail_count": len(failed),
             "averages": averages,
         }
+    all_pending = [
+        result for result in scored
+        if any(
+            gate.get("passed") is None
+            for gate in result.get("hard_gates", {}).values()
+        )
+    ]
+    all_passed = [result for result in scored if result.get("hard_gate_pass")]
     summary = {
         "schema_version": "1.0", "record_count": len(records),
         "expected_record_count": len(expected), "missing_coordinates": missing,
         "batch_errors": batch_errors, "groups": group_summary,
+        "hard_gate_pass_count": len(all_passed),
+        "hard_gate_pending_count": len(all_pending),
+        "hard_gate_fail_count": len(scored) - len(all_passed) - len(all_pending),
         "all_hard_gates_pass": all(item["hard_gate_pass"] for item in scored),
     }
     write_json(output_dir / "summary.json", summary)

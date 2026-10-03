@@ -1,15 +1,31 @@
 # API Contract
 
+## Authentication (shared secret)
+
+All `/api/*` business endpoints require an `Authorization: Bearer <AGENT_API_KEY>`
+header. This prevents external clients from connecting directly to the Agent
+port and forging a `user_id` to bypass Web-layer permission isolation.
+
+- `AGENT_API_KEY` not configured -> `503 Service Unavailable`.
+- Missing or invalid key -> `401 Unauthorized`.
+- `GET /health` remains anonymous for health probes.
+- Validation uses `secrets.compare_digest` (constant-time comparison).
+
+The Agent trusts only the Web layer to forward a session-injected `user_id`;
+direct callers without a valid shared key are rejected.
+
 ## POST /api/chat
 
 Current stage: CP2 bounded Agent runtime with session memory, QueryPlan input,
 dynamic tool schemas, retrieval quality gates, and citation consistency checks.
 
+Endpoint requires header: `Authorization: Bearer <AGENT_API_KEY>`.
+
 The endpoint runs the CP2 orchestration flow:
 
 ```text
 request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
--> IntentPolicyRouter -> AgentRunner -> ToolExecutor -> EvidenceGate
+-> IntentPolicyRouter -> AgentRunner route selection -> ToolExecutor -> EvidenceGate
 -> corrective retrieval (at most once) -> AnswerFormatter/CitationChecker
 -> memory write-back -> JSON response
 ```
@@ -21,6 +37,79 @@ Local Deep Research uses the separate manual `/api/research/jobs` entry and an
 explicit Plan + SourceManifest approval flow. See `docs/cp2/chat_route_policy.md`.
 
 `stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
+
+## Frozen internal persistent-Memory contract (Unit 04)
+
+The token-protected `/api/internal/*` routes are enabled for BFF-to-Agent
+transport only. The public `/api/chat` route rejects browser-supplied
+`memory_context`, and its response remains unchanged.
+
+`InternalChatRequest` inherits the existing `ChatRequest` fields and adds a
+required `memory_context`. It is deliberately a separate model so the public
+route never consumes browser-provided Memory fields.
+
+```json
+{
+  "query": "继续刚才的话题",
+  "memory_context": {
+    "actor": { "user_id": "user-a", "authenticated": true },
+    "chat_id": "chat-a",
+    "revision": 2,
+    "current_message_id": "message-3",
+    "current_sequence": 3,
+    "snapshot": null,
+    "facts": [
+      {
+        "id": "fact-1",
+        "category": "PREFERENCE",
+        "value": "使用简洁中文回复",
+        "expires_at": null
+      }
+    ],
+    "tail": []
+  }
+}
+```
+
+- `actor.authenticated` is literal `true`; the browser never supplies this DTO.
+- `role` is `user`, `assistant`, or `system`; Fact categories are `GOAL`,
+  `PREFERENCE`, or `PLAN_CONSTRAINT`.
+- `snapshot` is nullable. `facts` and `tail` are arrays. `expires_at` is either
+  `null` or a non-negative Unix epoch-millisecond timestamp in UTC.
+- Snapshot and Tail revisions must equal `memory_context.revision`; Tail is
+  strictly sequence-ordered, follows `snapshot.covered_to_sequence` when a
+  Snapshot exists, precedes the current message, and cannot repeat it.
+- All internal DTOs reject unknown fields. `InternalChatResponse` wraps the
+  unchanged `ChatResponse` as `response` and places `MemoryDecision` only in
+  `memory_decision`; it must never be forwarded to the browser.
+- Every `/api/internal/*` request requires `X-Agent-Internal-Token` and returns
+  `403` for missing or incorrect tokens. `POST /api/internal/chat` and
+  `POST /api/internal/memory/compaction-plan` return
+  `409 {"code":"persistent_memory_disabled"}` when the Agent flag is off.
+- `POST /api/internal/memory/compaction-plan` accepts only BFF-supplied,
+  already-persisted messages, the current ACTIVE Snapshot (or `null`), and the
+  fixed Tail/threshold/token limits. It returns either
+  `{"should_compact": false}` or a pure optimistic plan:
+
+  ```json
+  {
+    "should_compact": true,
+    "expected_active_snapshot": { "id": "...", "version": 2, "revision": 1 },
+    "new_snapshot": {
+      "covered_from_sequence": 1,
+      "covered_to_sequence": 24,
+      "covered_from_message_id": "...",
+      "covered_to_message_id": "...",
+      "summary": "..."
+    }
+  }
+  ```
+
+  For an initial Snapshot, `expected_active_snapshot` is `null`. The Agent
+  performs neither database I/O nor LLM calls for this plan; Web applies it
+  atomically only after the assistant message is durable. `POST
+  /api/internal/memory/reset-short-window` clears only the legacy process-local
+  `ConversationMemory` after a successful Web history mutation.
 
 ## Request
 
@@ -210,6 +299,24 @@ been removed. Public `/api/chat` and its response remain unchanged.
 - Semantically identical tool calls emitted in parallel in one model turn are
   executed once and replayed with one matching tool response. An identical
   call repeated in a later model turn still triggers the loop safety limit.
+- When Wiki tools are available, the Agent selects the retrieval route before
+  retrieval: a Direct tool runs Direct-only, while `wiki_search` makes the
+  Runner execute Direct and Wiki branches together. This does not depend on a
+  post-retrieval evidence-sufficiency classifier.
+- `exploration_mode=auto` exposes only Direct entry tools and `wiki_search`
+  until the route is selected. A text answer without a route is rejected and
+  reprompted, and Wiki subtools cannot be called before `wiki_search`.
+  `exploration_mode=force` deterministically starts Direct+Wiki without asking
+  the model to choose; `off` exposes Direct tools only.
+- `WIKI_CONTEXT_TOP_K` (default `3`, range `0-10`) appends that many eligible,
+  versioned, unique `wiki_search_evidence` items after Direct Evidence without
+  reranking or displacing it. `EXPLORATION_MAX_EVIDENCE` remains the Direct
+  branch limit, so Direct 20 plus Wiki 3 produces 23 final Evidence items.
+  Setting `WIKI_CONTEXT_TOP_K=0` restores the legacy merge behavior.
+- Wiki pages, summaries, and relationship metadata never enter the Evidence
+  pool. The final prompt contains one versioned `[AUTHORITATIVE_EVIDENCE]`
+  block, and that ordered list is also used by run results, answer formatting,
+  citation output, and citation validation.
 - `CitationChecker` validates that exposed citations are backed by accepted
   request-local Evidence.
 - Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
@@ -243,8 +350,15 @@ SearchTool().search(
     filters=filters,
     min_score=min_score,
     trace_id=trace_id,
+    navigation_mode=navigation_mode,
 )
 ```
+
+`navigation_mode` is independent from `retrieval_mode` and accepts `direct`,
+`hierarchical`, or `hybrid`. The Agent planner may select it internally. The
+runtime keeps the legacy call shape when the value is `direct`, and the feature
+gate `HIERARCHICAL_NAVIGATION_ENABLED` defaults to disabled. Section metadata
+only guides retrieval; returned chunk Evidence remains the citation authority.
 
 The Agent trust boundary converts Tool Layer `dict` results into
 `RetrievalResult` with:
@@ -260,12 +374,29 @@ The Agent trust boundary converts Tool Layer `dict` results into
 At this boundary, parseable legacy chunk IDs are normalized to
 `{doc_id}_chunk_{index}`. Unknown non-empty locator formats are preserved
 rather than guessed.
+For document-level intents, Toolset also exposes:
+
+- `find_documents`: returns document identity and bounded match summaries;
+- `get_document`: returns ordered, paginated chunks for one known `doc_id`.
+
+`DOCUMENT_SEARCH` may call only `find_documents`. `SUMMARIZATION` may use
+`find_documents`, `get_document`, and `search_documents`. Agent re-applies the
+request-level `doc_ids` permission allowlist before `get_document`, converts
+document results into request-local Evidence, and keeps citation validation in
+the existing Evidence Gate path.
+
+`search_library` is opt-in (`PERSONAL_LIBRARY_ENABLED=true`). Source selection
+comes from the query, while owner ID, knowledge-base ID, and the signed scope
+token are accepted only by the token-protected internal Chat contract. Public
+Chat requests reject those trusted fields. Library results become request-local
+Evidence with document/version/scope/locator metadata; missing or invalid
+trusted context fails closed.
 
 Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
 The retrieval call always receives `standalone_query`, `top_k`,
 `retrieval_mode`, hard `filters`, `MIN_RETRIEVAL_SCORE`, and the request
-`trace_id`. Tests replace the LLM and search method with deterministic fakes;
+`trace_id`. Non-direct calls additionally receive `navigation_mode`. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
 ## Local Deep Research API
@@ -359,12 +490,20 @@ Runtime configuration:
 
 Web sources, parallel workers, Replan, and SSE replay are outside
 this Core Vertical Slice.
+## Permission Filtering
+
+Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id` 可访问的
+`doc_id` 白名单，并注入检索过滤器（Milvus / BM25），实现文档级权限隔离。
+
+- 管理员（`users.role == 'admin'`）返回 `None`，表示不过滤全部文档。
+- 权限查询异常时的行为由 `PERMISSION_FAIL_OPEN` 控制：
+  - `false`（默认，fail-closed）：返回空列表，拒绝全部文档访问。
+  - `true`（fail-open）：返回 `None`（不过滤），仅用于排查/降级。
 
 ## Not Implemented In Current Version
 
 - Production-level real LLM streaming.
 - Cross-process or restart-persistent conversation memory.
-- ACL permission filtering.
 - Production-level retrieval quality tuning.
 - Production secret management.
 
@@ -406,6 +545,20 @@ metadata response. See `docs/cp2/tool_registry.md` for the complete contract.
 
 Reports application-scoped resource initialization and retrieval warmup state.
 It does not create a Chat turn or a Research Job:
+## Service Health And Readiness
+
+`GET /health` remains the lightweight liveness endpoint and returns:
+
+```json
+{"status": "ok"}
+```
+
+`GET /ready` reports whether the Tool Layer completed retrieval cold-start
+loading. Startup invokes `SearchTool.search()` directly, so this internal
+preload does not enter intent classification, clarification, query planning, or
+answer generation and does not consume a conversation turn.
+
+Ready response:
 
 ```json
 {
@@ -421,3 +574,6 @@ It does not create a Chat turn or a Research Job:
 `status="degraded"` means the service remains alive for diagnostics but the
 shared retrieval tool did not complete warmup. `/api/chat` continues to use the
 existing public response contract.
+If local embedding, BM25, or Milvus initialization fails, the service remains
+available for diagnostics and returns `status="degraded"`,
+`retrieval_ready=false`, and a non-secret error summary in `detail`.

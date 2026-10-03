@@ -39,9 +39,26 @@ class AgentState(BaseModel):
     messages: list[dict[str, Any]] = Field(default_factory=list)
     iteration: int = 0
     retrieval_attempts: int = 0
+    wiki_evidence_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    wiki_evidence_supplements: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
+    coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
+    exploration_rounds: int = 0
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     stop_reason: StopReason | None = None
+    evidence_gate_reason: str = ""
+    covered_evidence_targets: list[str] = Field(default_factory=list)
+    missing_evidence_targets: list[str] = Field(default_factory=list)
+    eligible_evidence_count: int = 0
+    rejected_evidence_count: int = 0
+    answer_completeness_checked: bool = False
+    answer_complete: bool | None = None
+    missing_answer_aspects: list[str] = Field(default_factory=list)
+    missing_critical_facts: list[str] = Field(default_factory=list)
+    answer_repair_attempted: bool = False
+    answer_repair_rolled_back: bool = False
+    answer_repair_guard_reason: str = ""
+    llm_metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentRunResult(BaseModel):
@@ -54,5 +71,20 @@ class AgentRunResult(BaseModel):
     retrieval_attempts: int = 0
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
+    coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
+    exploration_rounds: int = 0
     messages: list[dict[str, Any]] = Field(default_factory=list)
     error_code: str = ""
+    evidence_gate_reason: str = ""
+    covered_evidence_targets: list[str] = Field(default_factory=list)
+    missing_evidence_targets: list[str] = Field(default_factory=list)
+    eligible_evidence_count: int = 0
+    rejected_evidence_count: int = 0
+    answer_completeness_checked: bool = False
+    answer_complete: bool | None = None
+    missing_answer_aspects: list[str] = Field(default_factory=list)
+    missing_critical_facts: list[str] = Field(default_factory=list)
+    answer_repair_attempted: bool = False
+    answer_repair_rolled_back: bool = False
+    answer_repair_guard_reason: str = ""
+    llm_metrics: dict[str, Any] = Field(default_factory=dict)
