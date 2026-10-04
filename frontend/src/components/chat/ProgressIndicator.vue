@@ -7,32 +7,35 @@ const props = defineProps<{
   messages?: UIMessage[]
 }>()
 
-const isCurrentAssistantPresent = computed(() => {
+const isTextStreamingOrDone = computed(() => {
   const msgs = props.messages ?? []
   const lastMsg = msgs[msgs.length - 1]
-  return lastMsg && lastMsg.role === 'assistant' && lastMsg.parts && lastMsg.parts.length > 0
+  if (!lastMsg || lastMsg.role !== 'assistant') return false
+
+  const textPart = lastMsg.parts?.find(
+    (p: any) => p.type === 'text' && typeof p.text === 'string' && p.text.trim().length > 0
+  )
+  return Boolean(textPart)
 })
 </script>
 
 <template>
-  <div v-if="!isCurrentAssistantPresent" class="my-2.5 select-none">
-    <div class="relative pl-6 py-1 flex flex-col gap-2.5">
-      <!-- Vertical connecting line -->
-      <div class="absolute left-[9px] top-2.5 bottom-2.5 w-[1.5px] bg-neutral-800"></div>
-
-      <!-- Step 1: Intention & Problem Analysis -->
-      <div class="relative flex items-center gap-2.5 text-sm">
-        <div class="absolute -left-6 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-950 text-amber-400">
-          <UIcon name="i-lucide-lightbulb" class="w-4 h-4 text-amber-400 animate-pulse" />
-        </div>
-        <span class="text-neutral-200 font-normal">Analyzing the query intent...</span>
-      </div>
+  <div
+    v-if="!isTextStreamingOrDone"
+    class="my-2.5 flex items-center gap-3 py-1 text-zinc-400 select-none animate-in fade-in duration-200"
+  >
+    <!-- Claude-style Sonar Radar Pulse Ring -->
+    <div class="relative flex items-center justify-center w-5 h-5 shrink-0">
+      <span
+        class="absolute inline-flex h-full w-full rounded-full bg-zinc-400/25 dark:bg-zinc-500/30 animate-ping opacity-75"
+        style="animation-duration: 1.8s;"
+      />
+      <span class="relative inline-flex rounded-full h-2 w-2 bg-zinc-400 dark:bg-zinc-300 shadow-[0_0_6px_rgba(161,161,170,0.5)]" />
     </div>
 
-    <!-- Bottom: Thinking... like Grok -->
-    <div class="mt-2.5 flex items-center gap-3">
-      <span class="text-xs text-neutral-400 font-sans animate-pulse">Thinking...</span>
-    </div>
+    <!-- Processing Text -->
+    <span class="text-xs sm:text-sm font-medium tracking-wide text-zinc-400 dark:text-zinc-400 select-none font-sans">
+      Processing...
+    </span>
   </div>
 </template>
-

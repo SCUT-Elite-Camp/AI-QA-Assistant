@@ -1,7 +1,7 @@
 import unittest
 from typing import Any, Dict
 from tool_layer.base_tool import BaseTool
-from tool_layer.registry import ToolRegistry, get_tools
+from tool_layer.registry import ToolRegistry
 
 
 class FakeCustomTool(BaseTool):
@@ -33,7 +33,7 @@ class FakeCustomTool(BaseTool):
 
 
 class ToolRegistryTest(unittest.TestCase):
-    """Unit tests for the ToolRegistry class and registry helper functions."""
+    """Unit tests for the ToolRegistry class."""
 
     def test_default_registry_initialization(self) -> None:
         registry = ToolRegistry()
@@ -65,6 +65,19 @@ class ToolRegistryTest(unittest.TestCase):
         # Get non-existent tool
         self.assertIsNone(registry.get_tool("non_existent"))
 
+    def test_register_duplicate_name_raises_without_replacing_tool(self) -> None:
+        original = FakeCustomTool()
+        registry = ToolRegistry(tools=[original])
+
+        with self.assertRaisesRegex(ValueError, "already registered: fake_custom_tool"):
+            registry.register_tool(FakeCustomTool())
+
+        self.assertIs(registry.get_tool("fake_custom_tool"), original)
+
+    def test_constructor_rejects_duplicate_tool_names(self) -> None:
+        with self.assertRaisesRegex(ValueError, "already registered: fake_custom_tool"):
+            ToolRegistry(tools=[FakeCustomTool(), FakeCustomTool()])
+
     def test_get_tool_descriptions(self) -> None:
         fake_tool = FakeCustomTool()
         registry = ToolRegistry(tools=[fake_tool])
@@ -82,14 +95,6 @@ class ToolRegistryTest(unittest.TestCase):
         self.assertEqual(schemas[0]["function"]["name"], "fake_custom_tool")
         self.assertEqual(schemas[0]["function"]["description"], "A custom tool for testing.")
         self.assertEqual(schemas[0]["function"]["parameters"], fake_tool.parameters)
-
-    def test_get_tools_backward_compatibility(self) -> None:
-        tools = get_tools()
-        self.assertEqual(
-            {tool.name for tool in tools},
-            {"search_documents", "find_documents", "get_document"},
-        )
-
 
 if __name__ == "__main__":
     unittest.main()

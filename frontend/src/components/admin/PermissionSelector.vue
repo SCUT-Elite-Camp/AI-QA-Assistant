@@ -3,7 +3,6 @@ import { ref, computed, watch } from 'vue'
 import type { GrantInput } from '../../composables/useAdmin'
 
 const props = defineProps<{
-  /** 当前授权记录，v-model */
   modelValue: GrantInput[]
   users: Array<{ id: string; name: string; username?: string }>
   departments: Array<{ id: string; name: string }>
@@ -64,10 +63,10 @@ const deptOptions = computed(() =>
 )
 
 const scopeOptions: Array<{ label: string; value: Scope }> = [
-  { label: '仅自己', value: 'private' },
-  { label: '全员', value: 'public' },
-  { label: '指定用户', value: 'user' },
-  { label: '指定部门', value: 'department' },
+  { label: 'Private (Owner Only)', value: 'private' },
+  { label: 'Public (All Users)', value: 'public' },
+  { label: 'Specific Users', value: 'user' },
+  { label: 'Specific Departments', value: 'department' },
 ]
 </script>
 
@@ -81,12 +80,12 @@ const scopeOptions: Array<{ label: string; value: Scope }> = [
     />
 
     <div v-if="scope === 'user'" class="space-y-2">
-      <p class="text-sm text-(--ui-text-muted)">选择可以访问此文件的用户：</p>
+      <p class="text-sm text-(--ui-text-muted)">Select members with access:</p>
       <UCheckboxGroup v-model="selectedUserIds" :items="userOptions" :disabled="disabled" />
     </div>
 
     <div v-else-if="scope === 'department'" class="space-y-2">
-      <p class="text-sm text-(--ui-text-muted)">选择可以访问此文件的部门：</p>
+      <p class="text-sm text-(--ui-text-muted)">Select departments with access:</p>
       <UCheckboxGroup v-model="selectedDeptIds" :items="deptOptions" :disabled="disabled" />
     </div>
   </div>

@@ -41,7 +41,7 @@ async function load() {
 async function save(item: any) {
   const result = await $fetch<any>(`/api/attachments/${props.attachment.id}/evidence/${item.evidence_id}`, {
     method: 'PATCH', headers: { [headerName]: csrf() },
-    body: { expected_version: item.version, corrected_content: editing.value[item.evidence_id], reason: '人工校正' }
+    body: { expected_version: item.version, corrected_content: editing.value[item.evidence_id], reason: 'Manual correction' }
   })
   evidence.value = result.items || evidence.value
   emit('updated')
@@ -59,25 +59,25 @@ watch(() => [props.open, props.attachment?.id], load, { immediate: true })
   <UModal :open="open" @update:open="emit('update:open', $event)">
     <template #content>
       <div class="max-h-[80vh] overflow-y-auto p-5 space-y-4">
-        <div class="flex justify-between"><div><h3 class="font-semibold">附件 Evidence 校正</h3><p class="text-xs text-muted">{{ attachment?.filename }} · 版本 {{ attachment?.evidenceVersion }}</p></div><UButton icon="i-lucide-x" variant="ghost" @click="emit('update:open', false)" /></div>
-        <a :href="`/api/attachments/${attachment?.id}/content`" target="_blank" class="text-sm text-primary">打开原文件或预览</a>
-        <div v-if="loading" class="text-sm text-muted">正在加载…</div>
+        <div class="flex justify-between"><div><h3 class="font-semibold">Attachment Evidence Correction</h3><p class="text-xs text-muted">{{ attachment?.filename }} · Version {{ attachment?.evidenceVersion }}</p></div><UButton icon="i-lucide-x" variant="ghost" @click="emit('update:open', false)" /></div>
+        <a :href="`/api/attachments/${attachment?.id}/content`" target="_blank" class="text-sm text-primary">Open original file or preview</a>
+        <div v-if="loading" class="text-sm text-muted">Loading…</div>
         <div v-for="item in evidence" :key="item.evidence_id" class="rounded-lg border border-default p-3 space-y-2">
-          <div class="text-xs text-muted">{{ item.source_type }} · v{{ item.version }} · 置信度 {{ item.confidence ?? '—' }} · {{ JSON.stringify(item.locator) }}</div>
+          <div class="text-xs text-muted">{{ item.source_type }} · v{{ item.version }} · Confidence {{ item.confidence ?? '—' }} · {{ JSON.stringify(item.locator) }}</div>
           <div
             v-if="(item.locator?.page || item.locator?.slide || item.locator?.bbox) && !previewFailed[item.evidence_id]"
             class="relative max-h-72 overflow-auto rounded border border-default bg-elevated"
           >
-            <img :src="previewUrl(item)" class="block w-full" alt="Evidence 页面或区域预览" @error="previewFailed[item.evidence_id] = true">
+            <img :src="previewUrl(item)" class="block w-full" alt="Evidence page or bbox preview" @error="previewFailed[item.evidence_id] = true">
             <span v-if="item.locator?.bbox" class="pointer-events-none absolute border-2 border-red-500 bg-red-500/10" :style="bboxStyle(item)" />
           </div>
           <div class="rounded bg-elevated p-2 text-sm">
-            <div class="mb-1 text-xs text-muted">原始识别结果（只读）</div>
+            <div class="mb-1 text-xs text-muted">Original recognition result (Read-only)</div>
             <div class="whitespace-pre-wrap break-words">{{ item.original_content }}</div>
           </div>
-          <div class="text-xs text-muted">当前采用内容</div>
+          <div class="text-xs text-muted">Current adopted content</div>
           <textarea v-model="editing[item.evidence_id]" class="w-full min-h-24 rounded border border-default bg-default p-2 text-sm" :readonly="!canEdit" />
-          <div class="flex gap-2"><UButton v-if="canEdit" label="保存校正" size="xs" @click="save(item)" /><UButton label="修订历史" size="xs" variant="soft" @click="loadRevisions(item)" /></div>
+          <div class="flex gap-2"><UButton v-if="canEdit" label="Save Correction" size="xs" @click="save(item)" /><UButton label="Revision History" size="xs" variant="soft" @click="loadRevisions(item)" /></div>
           <div v-for="revision in revisions[item.evidence_id] || []" :key="revision.id" class="text-xs text-muted">v{{ revision.from_version }}→v{{ revision.to_version }} · {{ revision.reason }} · {{ revision.actor_id }}</div>
         </div>
       </div>

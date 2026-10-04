@@ -184,19 +184,19 @@ function getStatusBadge(status: string) {
             </div>
             <div>
               <h2 class="text-xl font-bold text-zinc-100 tracking-tight flex items-center gap-2">
-                系统运行与实时监控 Dashboard
+                System Live Metrics Dashboard
                 <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20">
                   <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   Live
                 </span>
               </h2>
-              <p class="text-xs text-zinc-400">系统核心指标、LLM 调用与接口性能实况</p>
+              <p class="text-xs text-zinc-400">Core system health, LLM inferences, and real-time endpoint latency</p>
             </div>
           </div>
 
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs">
-              <span class="text-zinc-400">自动刷新 (3s):</span>
+              <span class="text-zinc-400">Auto-refresh (3s):</span>
               <USwitch v-model="autoRefresh" size="xs" color="emerald" />
             </div>
             <UButton
@@ -223,7 +223,7 @@ function getStatusBadge(status: string) {
           <!-- Card 1: System Uptime -->
           <div class="bg-zinc-900/80 border border-zinc-800/80 rounded-2xl p-4 space-y-2 relative overflow-hidden group hover:border-zinc-700 transition-colors">
             <div class="flex items-center justify-between text-xs text-zinc-400">
-              <span>系统运行时间</span>
+              <span>System Uptime</span>
               <UIcon name="i-lucide-clock" class="w-4 h-4 text-emerald-400" />
             </div>
             <div class="text-2xl font-bold font-mono text-emerald-400">
@@ -231,19 +231,19 @@ function getStatusBadge(status: string) {
             </div>
             <div class="text-[11px] text-zinc-500 flex items-center gap-1">
               <UIcon name="i-lucide-check-circle" class="w-3 h-3 text-emerald-500" />
-              Web / Agent 双端已连接
+              Web / Agent Connected
             </div>
           </div>
 
           <!-- Card 2: HTTP Requests & Latency -->
           <div class="bg-zinc-900/80 border border-zinc-800/80 rounded-2xl p-4 space-y-2 relative overflow-hidden group hover:border-zinc-700 transition-colors">
             <div class="flex items-center justify-between text-xs text-zinc-400">
-              <span>总 HTTP 请求量</span>
+              <span>HTTP Requests</span>
               <UIcon name="i-lucide-arrow-left-right" class="w-4 h-4 text-sky-400" />
             </div>
             <div class="text-2xl font-bold font-mono text-zinc-100 flex items-baseline gap-2">
               {{ metricsData?.requests?.total || 0 }}
-              <span class="text-xs font-normal text-zinc-400">次</span>
+              <span class="text-xs font-normal text-zinc-400">Reqs</span>
             </div>
             <div class="text-[11px] text-zinc-400 font-mono flex items-center gap-2">
               <span>P50: {{ metricsData?.requests?.p50 || 0 }}ms</span>
@@ -255,7 +255,7 @@ function getStatusBadge(status: string) {
           <!-- Card 3: AI / LLM Calls & Tokens -->
           <div class="bg-zinc-900/80 border border-zinc-800/80 rounded-2xl p-4 space-y-2 relative overflow-hidden group hover:border-zinc-700 transition-colors">
             <div class="flex items-center justify-between text-xs text-zinc-400">
-              <span>AI 调用与 Token</span>
+              <span>AI Calls & Tokens</span>
               <UIcon name="i-lucide-sparkles" class="w-4 h-4 text-purple-400" />
             </div>
             <div class="text-2xl font-bold font-mono text-purple-400 flex items-baseline gap-2">
@@ -270,7 +270,7 @@ function getStatusBadge(status: string) {
           <!-- Card 4: Knowledge & DB Queries -->
           <div class="bg-zinc-900/80 border border-zinc-800/80 rounded-2xl p-4 space-y-2 relative overflow-hidden group hover:border-zinc-700 transition-colors">
             <div class="flex items-center justify-between text-xs text-zinc-400">
-              <span>知识库与数据库</span>
+              <span>Knowledge & DB</span>
               <UIcon name="i-lucide-database" class="w-4 h-4 text-amber-400" />
             </div>
             <div class="text-2xl font-bold font-mono text-zinc-100 flex items-baseline gap-2">
@@ -288,7 +288,7 @@ function getStatusBadge(status: string) {
         <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
           <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
             <UIcon name="i-lucide-server" class="w-4 h-4 text-emerald-400" />
-            核心服务状态矩阵 (Service Matrix Status)
+            Service Matrix Status
           </h3>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <!-- Agent Python API -->
@@ -348,25 +348,25 @@ function getStatusBadge(status: string) {
           <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-4">
             <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
               <UIcon name="i-lucide-activity" class="w-4 h-4 text-sky-400" />
-              响应延迟分布监控 (Latency Metrics)
+              Latency Metrics & SLA
             </h3>
 
             <!-- Request Latency Quantiles -->
             <div class="space-y-3">
               <div class="text-xs text-zinc-300 font-medium flex items-center justify-between">
-                <span>全局 HTTP 响应耗时 (P50 / P95 / P99)</span>
+                <span>Global HTTP Latency (P50 / P95 / P99)</span>
               </div>
               <div class="grid grid-cols-3 gap-2 text-center font-mono">
                 <div class="p-2.5 bg-zinc-950 rounded-xl border border-zinc-800">
-                  <div class="text-[11px] text-zinc-500">P50 (中位数)</div>
+                  <div class="text-[11px] text-zinc-500">P50 (Median)</div>
                   <div class="text-lg font-bold text-emerald-400">{{ metricsData?.requests?.p50 || 0 }}<span class="text-xs font-normal">ms</span></div>
                 </div>
                 <div class="p-2.5 bg-zinc-950 rounded-xl border border-zinc-800">
-                  <div class="text-[11px] text-zinc-500">P95 (95%分位)</div>
+                  <div class="text-[11px] text-zinc-500">P95 (95th %)</div>
                   <div class="text-lg font-bold text-amber-400">{{ metricsData?.requests?.p95 || 0 }}<span class="text-xs font-normal">ms</span></div>
                 </div>
                 <div class="p-2.5 bg-zinc-950 rounded-xl border border-zinc-800">
-                  <div class="text-[11px] text-zinc-500">P99 (长尾峰值)</div>
+                  <div class="text-[11px] text-zinc-500">P99 (Peak)</div>
                   <div class="text-lg font-bold text-rose-400">{{ metricsData?.requests?.p99 || 0 }}<span class="text-xs font-normal">ms</span></div>
                 </div>
               </div>
@@ -375,7 +375,7 @@ function getStatusBadge(status: string) {
             <!-- AI TTFT Quantiles -->
             <div class="space-y-3 pt-2 border-t border-zinc-800/80">
               <div class="text-xs text-zinc-300 font-medium flex items-center justify-between">
-                <span>AI 流式首字延迟 TTFT (Time to First Token)</span>
+                <span>AI Stream TTFT (Time to First Token)</span>
               </div>
               <div class="grid grid-cols-3 gap-2 text-center font-mono">
                 <div class="p-2.5 bg-zinc-950 rounded-xl border border-zinc-800">
@@ -399,13 +399,13 @@ function getStatusBadge(status: string) {
             <div class="flex items-center justify-between">
               <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                 <UIcon name="i-lucide-file-text" class="w-4 h-4 text-emerald-400" />
-                已入库文档监控列表 (INDEXED DOCUMENTS)
+                Indexed Documents
               </h3>
-              <span class="text-[11px] text-zinc-500 font-mono">共 {{ indexedDocList.length }} 篇已入库文档</span>
+              <span class="text-[11px] text-zinc-500 font-mono">{{ indexedDocList.length }} indexed documents</span>
             </div>
 
             <div v-if="!indexedDocList.length" class="text-center py-8 text-xs text-zinc-500 italic">
-              暂无已入库文档数据
+              No indexed documents available
             </div>
 
             <!-- Scrollable List of Long Cards -->
@@ -443,7 +443,7 @@ function getStatusBadge(status: string) {
                   <!-- Word Count Badge -->
                   <div class="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[11px] flex items-center gap-1">
                     <span>{{ doc.char_count?.toLocaleString() || 0 }}</span>
-                    <span class="text-[9px] font-normal text-emerald-500">字</span>
+                    <span class="text-[9px] font-normal text-emerald-500">chars</span>
                   </div>
                 </div>
               </div>
@@ -453,7 +453,7 @@ function getStatusBadge(status: string) {
 
         <!-- Footer Info -->
         <div class="pt-2 text-center text-xs text-zinc-500 flex items-center justify-between border-t border-zinc-800/80">
-          <span>上次刷新时间: {{ lastUpdated || 'Just now' }}</span>
+          <span>Last updated: {{ lastUpdated || 'Just now' }}</span>
           <span>SCUT-Elite-Camp AI-QA-Assistant Metrics Engine</span>
         </div>
       </div>

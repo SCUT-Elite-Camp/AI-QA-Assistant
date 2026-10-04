@@ -150,22 +150,27 @@ export default defineHandler(async (event) => {
   }).parse)
 
   const { actor, chat: ownedChat } = await requireOwnedChat(event, id)
-  const chat = ownedChat || { id: id as string, topicId: undefined, title: undefined, messages: [] }
+  const chat = ownedChat || {
+    id: id as string,
+    topicId: undefined,
+    title: undefined,
+    messages: [],
+    weightMode: 'fast' as const,
+  }
 
   const body = await readValidatedBody(event, z.object({
     model: z.string().optional(),
-    messages: z.array(uiMessageSchema).min(1),
-    weightMode: z.string().optional()
+    messages: z.array(uiMessageSchema).min(1)
   }).parse)
 
   const messages = body.messages as UIMessage[]
   const db = useDrizzle()
+  const weightMode = chat.weightMode || 'fast'
 
   const lastMessage = messages[messages.length - 1]
   if (!lastMessage || lastMessage.role !== 'user') {
     throw new HTTPError({ statusCode: 400, statusMessage: 'The last message must be a user message' })
   }
-
   const queryText = lastMessage.content || (lastMessage as any)?.parts?.[0]?.text || ''
   const messageMetadata = (lastMessage as any)?.metadata || {}
   const useKnowledgeBase = knowledgeBaseRetrievalEnabled(
@@ -351,7 +356,7 @@ export default defineHandler(async (event) => {
             retrieval_mode: "hybrid",
             exploration_mode: explorationMode,
             topic_id: chat.topicId || undefined,
-            weight_mode: body.weightMode || topicInfo?.weightMode || "thinking",
+            weight_mode: weightMode,
             soul_content: soulContent || undefined,
             topic_doc_ids: topicDocIds,
             topic_titles: topicTitles,

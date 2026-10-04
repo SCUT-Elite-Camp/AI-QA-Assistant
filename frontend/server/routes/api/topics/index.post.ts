@@ -117,7 +117,6 @@ export default defineHandler(async (event) => {
     soulContent: `# Topic Cognition: ${initialTitle}`,
     tags: [initialTitle.slice(0, 10)],
     status: 'generating',
-    weightMode: 'auto',
     consecutiveNoNewDocsCount: 0
   }).returning()
   await db.insert(tables.topicMembers).values({ topicId: topic.id, userId, role: 'owner' }).onConflictDoNothing()

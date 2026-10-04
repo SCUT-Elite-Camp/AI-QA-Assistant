@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from contextvars import ContextVar
 from typing import Any
@@ -60,6 +61,8 @@ class _AttachmentTool(BaseTool):
 
 
 class SearchAttachmentsTool(_AttachmentTool):
+    MAX_QUERY_LENGTH = 4000
+
     @property
     def name(self) -> str:
         return "search_attachments"
@@ -71,16 +74,30 @@ class SearchAttachmentsTool(_AttachmentTool):
     @property
     def parameters(self) -> dict[str, Any]:
         return {"type": "object", "properties": {
-            "query": {"type": "string", "description": "要在附件中查找的问题或关键词"},
+            "query": {
+                "type": "string",
+                "description": "要在附件中查找的问题或关键词",
+                "minLength": 1,
+                "maxLength": self.MAX_QUERY_LENGTH,
+            },
             "top_k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 8},
         }, "required": ["query"], "additionalProperties": False}
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        try:
-            top_k = min(20, max(1, int(kwargs.get("top_k", 8))))
-        except (TypeError, ValueError):
+        query = kwargs.get("query")
+        if type(query) is not str or not query.strip():
             return {"error": "invalid_attachment_query", "items": []}
-        query = str(kwargs.get("query") or "")
+        top_k = kwargs.get("top_k", 8)
+        if type(top_k) is not int or not 1 <= top_k <= 20:
+            return {"error": "invalid_attachment_query", "items": []}
+        secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "")
+        context = self._context.get()
+        if not secret or context is None or not context[0]:
+            return {"error": "attachments_unavailable", "items": []}
+        if len(query) > self.MAX_QUERY_LENGTH:
+            return {"error": "invalid_attachment_query", "items": []}
+        allowed_ids, selected_ids = context
+
         query_vector: list[float] | None = None
         vector_enabled = os.getenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "false").lower() in {
             "1", "true", "yes",
@@ -92,10 +109,6 @@ class SearchAttachmentsTool(_AttachmentTool):
                 query_vector = embed_texts([query])[0]
             except (ImportError, RuntimeError, OSError, ValueError):
                 query_vector = None
-        context = self._context.get()
-        if context is None:
-            return {"error": "attachments_unavailable", "items": []}
-        allowed_ids, selected_ids = context
         ordered = list(dict.fromkeys((*selected_ids, *sorted(allowed_ids))))
         global_payload: dict[str, Any] = {
             "attachment_ids": ordered, "query": query, "top_k": top_k,
@@ -161,23 +174,55 @@ class InspectAttachmentTool(_AttachmentTool):
     @property
     def parameters(self) -> dict[str, Any]:
         return {"type": "object", "properties": {
-            "attachment_id": {"type": "string"},
-            "question": {"type": "string"},
+            "attachment_id": {"type": "string", "minLength": 1},
+            "question": {"type": "string", "minLength": 1, "maxLength": 4000},
             "page": {"type": "integer", "minimum": 1, "maximum": 200},
-            "bbox": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
+            "bbox": {
+                "type": "array",
+                "items": {"type": "number", "minimum": 0, "maximum": 1},
+                "minItems": 4,
+                "maxItems": 4,
+            },
         }, "required": ["attachment_id", "question"], "additionalProperties": False}
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        attachment_id = str(kwargs.get("attachment_id") or "")
+        attachment_id = kwargs.get("attachment_id")
+        if type(attachment_id) is not str or not attachment_id.strip():
+            return {"error": "invalid_attachment_query", "items": []}
         context = self._context.get()
         allowed_ids = context[0] if context is not None else frozenset()
         if attachment_id not in allowed_ids:
             return {"error": "attachment_forbidden", "items": []}
-        payload: dict[str, Any] = {"question": str(kwargs.get("question") or "")}
-        if kwargs.get("page") is not None:
-            payload["page"] = kwargs["page"]
-        if kwargs.get("bbox") is not None:
-            payload["bbox"] = kwargs["bbox"]
+        question = kwargs.get("question")
+        if not isinstance(question, str) or not 1 <= len(question) <= 4000:
+            return {"error": "invalid_attachment_query", "items": []}
+        page = kwargs.get("page")
+        if page is not None and (
+            isinstance(page, bool)
+            or not isinstance(page, int)
+            or not 1 <= page <= 200
+        ):
+            return {"error": "invalid_attachment_query", "items": []}
+        bbox = kwargs.get("bbox")
+        if bbox is not None:
+            if not isinstance(bbox, list) or len(bbox) != 4:
+                return {"error": "invalid_attachment_query", "items": []}
+            if any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or not 0 <= value <= 1
+                for value in bbox
+            ):
+                return {"error": "invalid_attachment_query", "items": []}
+            if bbox[0] >= bbox[2] or bbox[1] >= bbox[3]:
+                return {"error": "invalid_attachment_query", "items": []}
+
+        payload: dict[str, Any] = {"question": question}
+        if page is not None:
+            payload["page"] = page
+        if bbox is not None:
+            payload["bbox"] = bbox
         # Leave enough room for first-load model initialization plus inference.
         result = self._request(
             f"/v1/attachments/{attachment_id}/inspect",

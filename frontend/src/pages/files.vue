@@ -117,8 +117,8 @@ async function loadFiles() {
   try {
     files.value = await $fetch<FileItem[]>('/api/files')
   } catch (err: any) {
-    console.error('[loadFiles] 加载知识库文件失败:', err)
-    toast.add({ title: '加载知识库文档列表失败', color: 'error' })
+    console.error('[loadFiles] Failed to load files:', err)
+    toast.add({ title: 'Failed to load knowledge base document list', color: 'error' })
   } finally {
     loading.value = false
   }
@@ -128,7 +128,7 @@ async function handleSyncKnowledge() {
   syncing.value = true
   try {
     await loadFiles()
-    toast.add({ title: `已成功同步 ${files.value.length} 篇知识库文档`, color: 'success' })
+    toast.add({ title: `Synchronized ${files.value.length} knowledge base documents`, color: 'success' })
   } finally {
     syncing.value = false
   }
@@ -143,7 +143,7 @@ async function openPreview(item: FileItem) {
     const text = await $fetch<string>(`/api/files/${item.id}`)
     previewContent.value = typeof text === 'string' ? text : JSON.stringify(text, null, 2)
   } catch (err) {
-    previewContent.value = '加载文档内容失败'
+    previewContent.value = 'Failed to load document content'
   } finally {
     previewLoading.value = false
   }
@@ -154,16 +154,16 @@ function handleDownload(item: FileItem) {
 }
 
 async function handleDelete(item: FileItem) {
-  if (!confirm(`确定要删除知识库文件“${item.originalName}”吗？`)) return
+  if (!confirm(`Are you sure you want to delete file "${item.originalName}"?`)) return
   try {
     await $fetch(`/api/files/${item.id}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
     })
-    toast.add({ title: '文档已移除', color: 'success' })
+    toast.add({ title: 'Document removed', color: 'success' })
     await loadFiles()
   } catch (err: any) {
-    toast.add({ title: '删除失败', color: 'error' })
+    toast.add({ title: 'Failed to delete file', color: 'error' })
   }
 }
 
@@ -190,18 +190,22 @@ onMounted(async () => {
 <template>
   <div class="space-y-6">
     <!-- Header Title & Controls -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800">
-      <div>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-zinc-200/80 dark:border-zinc-800/80">
+      <div class="space-y-1">
         <div class="flex items-center gap-2.5">
-          <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">知识库文件与权限管理</h1>
-          <UBadge color="primary" variant="subtle" size="sm">已接入知识库</UBadge>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 dark:text-white">
+            Knowledge Base & File Permissions
+          </h1>
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            Connected
+          </span>
         </div>
-        <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          已连接系统知识库文档。文档访问权限对应其所属空间（<span class="font-semibold text-primary-500">Space Key</span>），可精细化控制各空间权限与部门授权。
+        <p class="text-sm text-zinc-500 dark:text-zinc-400">
+          Knowledge base documents connected. Access permissions correspond to respective <span class="font-semibold text-primary-500">Space Keys</span> with granular RBAC scoping.
         </p>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2.5 shrink-0">
         <input
           ref="fileInputRef"
           type="file"
@@ -214,18 +218,19 @@ onMounted(async () => {
           variant="outline"
           size="sm"
           :loading="syncing || loading"
+          class="rounded-xl shadow-2xs font-medium"
           @click="handleSyncKnowledge"
         >
-          同步知识库
+          Sync Knowledge Base
         </UButton>
         <UButton
           icon="i-lucide-upload"
           color="primary"
           size="sm"
-          class="shadow-xs font-medium"
+          class="rounded-xl shadow-xs font-semibold px-4 py-2"
           @click="fileInputRef?.click()"
         >
-          上传新文件
+          Upload Document
         </UButton>
       </div>
     </div>
@@ -233,67 +238,74 @@ onMounted(async () => {
     <!-- Space Metrics Bar -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div
-        class="p-4 rounded-xl border transition-all cursor-pointer bg-white dark:bg-zinc-900/60 shadow-2xs"
-        :class="selectedSpace === 'ALL' ? 'border-primary-500 ring-2 ring-primary-500/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'"
+        class="p-4 rounded-2xl border transition-all cursor-pointer bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl shadow-xs"
+        :class="selectedSpace === 'ALL' ? 'border-primary-500 ring-2 ring-primary-500/20' : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700'"
         @click="selectedSpace = 'ALL'"
       >
         <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400">全部知识库文档</span>
+          <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400">All Knowledge Documents</span>
           <UIcon name="i-lucide-library" class="w-4 h-4 text-primary-500" />
         </div>
-        <div class="text-2xl font-bold text-zinc-900 dark:text-white mt-1">{{ files.length }}</div>
-        <div class="text-xs text-zinc-400 mt-0.5">跨 {{ distinctSpaces.length }} 个空间</div>
+        <div class="text-2xl font-bold text-zinc-950 dark:text-white mt-1">{{ files.length }}</div>
+        <div class="text-xs text-zinc-400 mt-0.5">Across {{ distinctSpaces.length }} spaces</div>
       </div>
 
       <div
         v-for="space in distinctSpaces"
         :key="space"
-        class="p-4 rounded-xl border transition-all cursor-pointer bg-white dark:bg-zinc-900/60 shadow-2xs"
-        :class="selectedSpace === space ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'"
+        class="p-4 rounded-2xl border transition-all cursor-pointer bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl shadow-xs"
+        :class="selectedSpace === space ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700'"
         @click="selectedSpace = space"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Space 权限:</span>
+            <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Space:</span>
             <UBadge color="indigo" variant="soft" size="xs">{{ space }}</UBadge>
           </div>
           <UIcon name="i-lucide-key-round" class="w-4 h-4 text-indigo-500" />
         </div>
-        <div class="text-2xl font-bold text-zinc-900 dark:text-white mt-1">{{ spaceCounts[space] || 0 }}</div>
-        <div class="text-xs text-zinc-400 mt-0.5">对应权限: {{ space }}</div>
+        <div class="text-2xl font-bold text-zinc-950 dark:text-white mt-1">{{ spaceCounts[space] || 0 }}</div>
+        <div class="text-xs text-zinc-400 mt-0.5">Scope: {{ space }}</div>
       </div>
     </div>
 
     <!-- Search & Filter Controls -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900/60 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <div class="flex items-center gap-2 flex-1 max-w-md">
-        <UInput
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div class="relative flex-1 max-w-md">
+        <UIcon name="i-lucide-search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+        <input
           v-model="searchQuery"
-          icon="i-lucide-search"
-          placeholder="搜索知识库文档标题、文件名或 Doc ID..."
-          size="sm"
-          class="w-full"
-          clearable
+          type="text"
+          placeholder="Search document title, filename, or Doc ID..."
+          class="w-full pl-9 pr-4 py-2 text-sm bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/90 dark:border-zinc-800/80 rounded-xl outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 backdrop-blur-md transition-all"
         />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          @click="searchQuery = ''"
+        >
+          <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+        </button>
       </div>
 
       <div class="flex items-center gap-2">
-        <span class="text-xs text-zinc-400 hidden sm:inline">空间权限:</span>
-        <div class="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg text-xs">
+        <span class="text-xs text-zinc-400 hidden sm:inline">Space Filter:</span>
+        <div class="flex items-center gap-1 p-1 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-xl border border-zinc-300/40 dark:border-zinc-700/40 backdrop-blur-md">
           <button
             type="button"
-            class="px-2.5 py-1 rounded-md transition-colors font-medium"
-            :class="selectedSpace === 'ALL' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg text-xs transition-all font-medium"
+            :class="selectedSpace === 'ALL' ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
             @click="selectedSpace = 'ALL'"
           >
-            全部 ({{ files.length }})
+            All ({{ files.length }})
           </button>
           <button
             v-for="space in distinctSpaces"
             :key="space"
             type="button"
-            class="px-2.5 py-1 rounded-md transition-colors font-medium"
-            :class="selectedSpace === space ? 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'"
+            class="px-2.5 py-1 rounded-lg text-xs transition-all font-medium"
+            :class="selectedSpace === space ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-xs font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
             @click="selectedSpace = space"
           >
             {{ space }} ({{ spaceCounts[space] || 0 }})
@@ -304,8 +316,8 @@ onMounted(async () => {
 
     <!-- Loading -->
     <div v-if="loading && !files.length" class="flex flex-col items-center justify-center py-24 gap-3">
-      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary-500" />
-      <p class="text-sm text-zinc-400">正在载入知识库文档数据...</p>
+      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-zinc-900 dark:text-white" />
+      <p class="text-sm text-zinc-400">Loading knowledge base files...</p>
     </div>
 
     <!-- Empty -->
@@ -313,17 +325,17 @@ onMounted(async () => {
       <div class="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3 text-zinc-400">
         <UIcon name="i-lucide-folder-open" class="size-6" />
       </div>
-      <p class="font-medium text-zinc-900 dark:text-zinc-100">未找到匹配的文档</p>
-      <p class="text-sm text-zinc-500 mt-1">请尝试清除搜索关键词或切换空间筛选。</p>
+      <p class="font-medium text-zinc-900 dark:text-zinc-100">No matching documents found</p>
+      <p class="text-sm text-zinc-500 mt-1">Try adjusting search keyword or selecting a different space filter.</p>
     </div>
 
     <!-- Files Table -->
-    <UCard v-else :ui="{ body: 'p-0' }" class="border border-zinc-200 dark:border-zinc-800/80 shadow-xs overflow-hidden">
-      <div class="divide-y divide-zinc-200 dark:divide-zinc-800">
+    <div v-else class="rounded-2xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/90 dark:border-zinc-800/80 backdrop-blur-xl shadow-xs overflow-hidden">
+      <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
         <div
           v-for="item in filteredFiles"
           :key="item.id"
-          class="flex items-center gap-4 px-4 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+          class="flex items-center gap-4 px-5 py-4 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors"
         >
           <!-- Mime Icon -->
           <div class="size-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
@@ -333,16 +345,16 @@ onMounted(async () => {
           <!-- Document details -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate cursor-pointer hover:text-primary-500 transition-colors" @click="openPreview(item)">
+              <span class="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate cursor-pointer hover:text-primary-500 transition-colors" @click="openPreview(item)">
                 {{ item.originalName }}
               </span>
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5 text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              <!-- Space Key (核心对应权限) -->
+              <!-- Space Key -->
               <span class="inline-flex items-center gap-1 font-mono">
                 <UIcon name="i-lucide-key-round" class="w-3.5 h-3.5 text-indigo-500" />
-                <span class="text-zinc-400">权限(Space):</span>
+                <span class="text-zinc-400">Scope:</span>
                 <UBadge color="indigo" variant="soft" size="xs" class="font-semibold px-1.5">
                   {{ item.spaceKey || 'RAG' }}
                 </UBadge>
@@ -362,7 +374,7 @@ onMounted(async () => {
                 variant="subtle"
                 size="xs"
               >
-                {{ item.visibility === 'shared' ? '全员可见' : '私有权限' }}
+                {{ item.visibility === 'shared' ? 'Public Shared' : 'Private Restricted' }}
               </UBadge>
 
               <span>·</span>
@@ -377,7 +389,8 @@ onMounted(async () => {
               variant="outline"
               size="xs"
               color="primary"
-              label="在线预览"
+              label="Preview"
+              class="rounded-lg shadow-2xs font-medium"
               @click="openPreview(item)"
             />
             <UButton
@@ -385,7 +398,8 @@ onMounted(async () => {
               variant="ghost"
               size="sm"
               color="neutral"
-              title="配置权限"
+              class="rounded-lg"
+              title="Configure Access"
               @click="permissionFile = { id: item.id, originalName: item.originalName, visibility: item.visibility, grants: item.grants }"
             />
             <UButton
@@ -393,7 +407,8 @@ onMounted(async () => {
               variant="ghost"
               size="sm"
               color="neutral"
-              title="下载文档"
+              class="rounded-lg"
+              title="Download Document"
               @click="handleDownload(item)"
             />
             <UButton
@@ -401,15 +416,16 @@ onMounted(async () => {
               variant="ghost"
               size="sm"
               color="error"
-              title="删除文档"
+              class="rounded-lg"
+              title="Delete Document"
               @click="handleDelete(item)"
             />
           </div>
         </div>
       </div>
-    </UCard>
+    </div>
 
-    <!-- 在线预览抽屉/弹窗 -->
+    <!-- Modal Preview -->
     <UModal v-model:open="previewOpen" :ui="{ content: 'sm:max-w-3xl' }">
       <template #content>
         <div class="p-6 space-y-4">
@@ -424,7 +440,7 @@ onMounted(async () => {
                 </h3>
               </div>
               <p class="text-xs text-zinc-400 mt-1 font-mono">
-                Doc ID: {{ previewDoc?.docId }} · {{ formatSize(previewDoc?.size || 0) }} · 更新于 {{ formatTime(previewDoc?.createdAt || '') }}
+                Doc ID: {{ previewDoc?.docId }} · {{ formatSize(previewDoc?.size || 0) }} · {{ formatTime(previewDoc?.createdAt || '') }}
               </p>
             </div>
             <UButton
@@ -445,7 +461,7 @@ onMounted(async () => {
           </div>
 
           <div class="flex items-center justify-between pt-2">
-            <span class="text-xs text-zinc-400">对应权限：{{ previewDoc?.spaceKey || 'RAG' }} 空间可见范围</span>
+            <span class="text-xs text-zinc-400">Access Perimeter: Space [{{ previewDoc?.spaceKey || 'RAG' }}]</span>
             <div class="flex items-center gap-2">
               <UButton
                 v-if="previewDoc"
@@ -453,13 +469,15 @@ onMounted(async () => {
                 variant="outline"
                 size="sm"
                 color="neutral"
-                label="下载文件"
+                label="Download"
+                class="rounded-xl font-medium"
                 @click="handleDownload(previewDoc)"
               />
               <UButton
                 color="primary"
                 size="sm"
-                label="完成"
+                label="Done"
+                class="rounded-xl font-semibold px-4"
                 @click="previewOpen = false"
               />
             </div>
@@ -468,7 +486,7 @@ onMounted(async () => {
       </template>
     </UModal>
 
-    <!-- 上传权限配置（上传模式） -->
+    <!-- Upload dialog -->
     <FilePermissionDialog
       v-if="uploadFile"
       :file="null"
@@ -477,7 +495,7 @@ onMounted(async () => {
       @saved="onDialogSaved"
     />
 
-    <!-- 文件权限编辑（编辑模式） -->
+    <!-- Edit dialog -->
     <FilePermissionDialog
       v-if="permissionFile"
       :file="permissionFile"

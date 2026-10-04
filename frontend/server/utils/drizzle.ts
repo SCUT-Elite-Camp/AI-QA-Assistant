@@ -88,12 +88,11 @@ export function resetDrizzleForTests(): void {
 
 async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   await client.execute('PRAGMA busy_timeout=5000')
-  await client.execute("CREATE TABLE IF NOT EXISTS topics (id TEXT PRIMARY KEY, title TEXT NOT NULL, main_chat_id TEXT NOT NULL, soul_content TEXT NOT NULL DEFAULT '', description TEXT, weight_mode TEXT NOT NULL DEFAULT 'auto', tags TEXT, status TEXT NOT NULL DEFAULT 'ready', consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
+  await client.execute("CREATE TABLE IF NOT EXISTS topics (id TEXT PRIMARY KEY, title TEXT NOT NULL, main_chat_id TEXT NOT NULL, soul_content TEXT NOT NULL DEFAULT '', description TEXT, tags TEXT, status TEXT NOT NULL DEFAULT 'ready', consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
 
   await ensureColumns(client, 'topics', [
     ['soul_content', "ALTER TABLE topics ADD COLUMN soul_content TEXT NOT NULL DEFAULT ''"],
     ['description', 'ALTER TABLE topics ADD COLUMN description TEXT'],
-    ['weight_mode', "ALTER TABLE topics ADD COLUMN weight_mode TEXT NOT NULL DEFAULT 'auto'"],
     ['tags', 'ALTER TABLE topics ADD COLUMN tags TEXT'],
     ['status', "ALTER TABLE topics ADD COLUMN status TEXT NOT NULL DEFAULT 'ready'"],
     ['consecutive_no_new_docs_count', 'ALTER TABLE topics ADD COLUMN consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0'],
@@ -135,10 +134,26 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   // so add the nullable/defaulted columns before any route can insert a row.
   await ensureColumns(client, 'chats', [
     ['topic_id', 'ALTER TABLE chats ADD COLUMN topic_id TEXT REFERENCES topics(id) ON DELETE SET NULL'],
+    ['weight_mode', "ALTER TABLE chats ADD COLUMN weight_mode TEXT NOT NULL DEFAULT 'fast'"],
     ['is_branch', 'ALTER TABLE chats ADD COLUMN is_branch INTEGER NOT NULL DEFAULT 0'],
     ['parent_chat_id', 'ALTER TABLE chats ADD COLUMN parent_chat_id TEXT'],
     ['parent_message_id', 'ALTER TABLE chats ADD COLUMN parent_message_id TEXT'],
   ])
+  const topicColumns = await client.execute('PRAGMA table_info(topics)')
+  if (topicColumns.rows.some(row => String(row.name) === 'weight_mode')) {
+    await client.execute(`UPDATE chats SET weight_mode = COALESCE((
+      SELECT CASE topics.weight_mode
+        WHEN 'wider' THEN 'fast'
+        WHEN 'deeper' THEN 'thinking'
+        WHEN 'auto' THEN 'auto'
+        WHEN 'thinking' THEN 'thinking'
+        WHEN 'fast' THEN 'fast'
+        ELSE 'fast'
+      END
+      FROM topics WHERE topics.id = chats.topic_id
+    ), weight_mode) WHERE topic_id IS NOT NULL`)
+    await client.execute('ALTER TABLE topics DROP COLUMN weight_mode')
+  }
   await ensureColumns(client, 'messages', [
     ['is_favorite', 'ALTER TABLE messages ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0'],
     ['suggestion_text', 'ALTER TABLE messages ADD COLUMN suggestion_text TEXT'],

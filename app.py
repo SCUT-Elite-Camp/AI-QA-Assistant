@@ -1,9 +1,10 @@
-# app.py - Root Entrypoint for Local Backend Dev
+from dotenv import load_dotenv
 import sys
 from pathlib import Path
 import importlib.util
 
 root_dir = Path(__file__).resolve().parent
+load_dotenv(root_dir / ".env", override=True)
 agent_dir = root_dir / "agent"
 
 for folder in [

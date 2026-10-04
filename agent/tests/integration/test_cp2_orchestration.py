@@ -4,7 +4,6 @@ import time
 from typing import Any
 
 from agent.agent import Agent
-from agent.memory import InMemoryConversationMemory
 from agent.query import QueryUnderstanding
 from agent.schemas.chat import ChatRequest
 from agent.schemas.query_plan import QueryIntent, QueryPlan
@@ -210,9 +209,8 @@ class FixedQueryUnderstanding:
 
 def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() -> None:
     llm = PipelineLLM()
-    memory = InMemoryConversationMemory()
     search = RecordingSearchTool()
-    agent = Agent(llm=llm, tools=[search], memory=memory)
+    agent = Agent(llm=llm, tools=[search])
 
     response = agent.chat(
         ChatRequest(
@@ -234,7 +232,37 @@ def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() 
     assert agent.last_orchestration.policy.candidate_tools == ("search_documents",)
     assert agent.last_citation_check is not None
     assert agent.last_citation_check.valid is True
-    assert memory.get_messages("orchestration-session")[-1]["role"] == "assistant"
+
+
+def test_explicit_fast_dispatches_without_entering_runner() -> None:
+    plan = QueryPlan(
+        original_query="How does this feature work?",
+        standalone_query="feature behavior",
+        intent=QueryIntent.KNOWLEDGE_QA,
+    )
+    search = RecordingSearchTool()
+    agent = Agent(
+        llm=PipelineLLM(),
+        tools=[search],
+        query_understanding=FixedQueryUnderstanding(plan),  # type: ignore[arg-type]
+    )
+
+    def runner_must_not_run(*args, **kwargs):
+        raise AssertionError("eligible fast request entered AgentRunner")
+
+    agent.runner.run = runner_must_not_run  # type: ignore[method-assign]
+    response = agent.chat(ChatRequest(
+        query=plan.original_query,
+        session_id="fast-dispatch",
+        weight_mode="fast",
+        exploration_mode="off",
+    ))
+
+    assert response.status == "success"
+    assert len(search.calls) == 1
+    assert agent.last_orchestration is not None
+    assert agent.last_orchestration.execution_profile is not None
+    assert agent.last_orchestration.execution_profile.mode.value == "fast"
 
 
 def test_comparison_parallel_retrieval_isolates_failure_and_corrects_missing_side() -> None:
@@ -252,7 +280,6 @@ def test_comparison_parallel_retrieval_isolates_failure_and_corrects_missing_sid
     agent = Agent(
         llm=PipelineLLM(),
         tools=[search],
-        memory=InMemoryConversationMemory(),
         query_understanding=FixedQueryUnderstanding(plan),  # type: ignore[arg-type]
     )
 
@@ -266,6 +293,15 @@ def test_comparison_parallel_retrieval_isolates_failure_and_corrects_missing_sid
     assert result.retrieval_attempts == 2
     assert result.missing_evidence_targets == []
     assert sorted(call["query"] for call in search.calls) == ["A", "B", "B"]
+    corrective_calls = [
+        call for call in result.tool_calls
+        if call.tool_call_id.startswith("corrective-")
+    ]
+    assert len(corrective_calls) == 1
+    assert corrective_calls[0].tool_name == "search_documents"
+    assert corrective_calls[0].arguments["query"] == "B"
+    assert corrective_calls[0].success is True
+    assert len(result.tool_calls) == 2
     assert search.max_active_calls == 2
 
 
@@ -282,7 +318,6 @@ def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None
     agent = Agent(
         llm=llm,
         tools=[search],
-        memory=InMemoryConversationMemory(),
         query_understanding=understanding,  # type: ignore[arg-type]
     )
 
@@ -310,7 +345,6 @@ def test_comparison_parallel_retrieval_supports_three_bounded_targets() -> None:
     agent = Agent(
         llm=PipelineLLM(),
         tools=[search],
-        memory=InMemoryConversationMemory(),
         query_understanding=FixedQueryUnderstanding(plan),  # type: ignore[arg-type]
     )
 
@@ -337,7 +371,6 @@ def test_comparison_ignores_redundant_searches_after_batch_evidence_is_accepted(
     agent = Agent(
         llm=MultiSearchPipelineLLM(),
         tools=[search],
-        memory=InMemoryConversationMemory(),
         query_understanding=FixedQueryUnderstanding(plan),  # type: ignore[arg-type]
     )
 
@@ -364,7 +397,6 @@ def test_comparison_reprompts_instead_of_executing_post_evidence_tool_call() -> 
     agent = Agent(
         llm=PostEvidenceToolCallLLM(),
         tools=[search],
-        memory=InMemoryConversationMemory(),
         query_understanding=FixedQueryUnderstanding(plan),  # type: ignore[arg-type]
     )
 

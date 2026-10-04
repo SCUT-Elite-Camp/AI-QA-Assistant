@@ -127,23 +127,6 @@ def mock_search_tool(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def mock_sqlite_db_path(monkeypatch, tmp_path, request):
-    """Redirects the SQLite database to a temporary location for tests to ensure cleanliness."""
-    if request.node.get_closest_marker("no_storage"):
-        return
-
-    from data_persistence.chat import ChatHistoryStore
-    db_file = tmp_path / "test_chat_history.db"
-    
-    # Override initializer to use our temporary test database path
-    original_init = ChatHistoryStore.__init__
-    def patched_init(self, db_path=None):
-        original_init(self, db_path=str(db_file))
-        
-    monkeypatch.setattr(ChatHistoryStore, "__init__", patched_init)
-
-
-@pytest.fixture(autouse=True)
 def mock_agent_auth():
     """Bypass auth dependency for general integration tests on the main FastAPI app."""
     try:

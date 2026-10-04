@@ -77,9 +77,10 @@ class LLMClient(BaseLLM):
         fallback_models = self.fallback_models
         if fallback_models is None:
             fallback_models = (
-                "gemini-3-flash-preview",
-                "gemini-3.5-flash",
-                "gemini-flash-latest",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite-preview",
+                "gemma-4-26b-a4b-it",
             )
         for fallback in fallback_models:
             if fallback not in candidate_models:

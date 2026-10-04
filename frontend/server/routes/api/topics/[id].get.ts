@@ -16,7 +16,6 @@ export default defineHandler(async (event) => {
   const topic = await db.query.topics.findFirst({
     where: eq(tables.topics.id, id),
     with: {
-      chats: true,
       documents: true
     }
   })
@@ -34,7 +33,6 @@ export default defineHandler(async (event) => {
   return {
     ...topic,
     soulContent: diskData?.soulContent || topic.soulContent,
-    weightMode: diskData?.topicInfo?.weightMode || topic.weightMode,
     tags: diskData?.topicInfo?.tags || topic.tags || [],
     documents: userUploadedDocs
   }

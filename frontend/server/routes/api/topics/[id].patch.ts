@@ -15,7 +15,6 @@ export default defineHandler(async (event) => {
 
   const body = await readValidatedBody(event, z.object({
     title: z.string().optional(),
-    weightMode: z.enum(['thinking', 'auto', 'fast', 'deeper', 'wider']).optional(),
     soulContent: z.string().optional(),
     tags: z.array(z.string()).optional()
   }).parse)
@@ -32,7 +31,6 @@ export default defineHandler(async (event) => {
 
   const updateData: Record<string, any> = {}
   if (body.title !== undefined) updateData.title = body.title
-  if (body.weightMode !== undefined) updateData.weightMode = body.weightMode
   if (body.soulContent !== undefined) updateData.soulContent = body.soulContent
   if (body.tags !== undefined) updateData.tags = body.tags
 

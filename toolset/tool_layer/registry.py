@@ -104,7 +104,9 @@ class ToolRegistry:
             self.register_tool(tool)
 
     def register_tool(self, tool: BaseTool) -> None:
-        """Registers a new tool instance in the registry."""
+        """Register a tool, rejecting names that are already in use."""
+        if tool.name in self._tools:
+            raise ValueError(f"Tool name already registered: {tool.name}")
         self._tools[tool.name] = tool
 
     def get_tool(self, name: str) -> Optional[BaseTool]:
@@ -141,18 +143,3 @@ class ToolRegistry:
             A list of tool schemas in OpenAI function call representation.
         """
         return [tool.to_openai_schema() for tool in self._tools.values()]
-
-
-# Default global tool registry instance
-default_registry = ToolRegistry()
-
-
-def get_tools() -> List[BaseTool]:
-    """Returns instances of all registered tools from the default registry.
-
-    Provides backward compatibility for callers relying on the legacy tool list format.
-
-    Returns:
-        A list of registered tool instances.
-    """
-    return default_registry.get_all_tools()

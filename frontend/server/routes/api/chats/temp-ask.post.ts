@@ -109,7 +109,7 @@ export default defineHandler(async (event) => {
             retrieval_mode: "hybrid",
             exploration_mode: "auto",
             topic_id: topicId || undefined,
-            weight_mode: topicInfo?.weightMode || "auto",
+            weight_mode: "fast",
             soul_content: topicInfo?.soulContent || undefined,
             topic_doc_ids: topicDocIds,
             consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0

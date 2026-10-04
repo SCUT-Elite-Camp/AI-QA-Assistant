@@ -217,6 +217,23 @@ beforeEach(() => {
 })
 
 describe('chat to Fact proposal lifecycle', () => {
+  it('uses the persisted Chat mode for Agent requests instead of a client-supplied override', async () => {
+    mocks.requireOwnedChat.mockResolvedValueOnce({
+      actor: { isAuthenticated: true, userId: 'user-1' },
+      chat: { id: 'chat-1', topicId: null, title: 'Memory chat', weightMode: 'thinking', messages: [] }
+    })
+    mocks.readValidatedBody.mockResolvedValueOnce({
+      weightMode: 'fast',
+      messages: [{ id: 'message-1', parts: [{ text: 'Remember this.', type: 'text' }], role: 'user' }]
+    })
+
+    await executeChatTurn(false)
+
+    const requestBody = JSON.parse(mocks.agentFetch.mock.calls[0]?.[1]?.body)
+    expect(requestBody.weight_mode).toBe('thinking')
+    expect(mocks.useDrizzle.mock.results[0]?.value.update).toBeUndefined()
+  })
+
   it('creates an Agent Fact only after assistant persistence and ignores Agent expires_at', async () => {
     await executeChatTurn(false)
 

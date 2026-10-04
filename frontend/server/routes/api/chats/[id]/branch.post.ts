@@ -49,7 +49,6 @@ export default defineHandler(async (event) => {
       title: parentChat.title || '话题项目',
       mainChatId: parentChat.id,
       soulContent: `# 话题认知: ${parentChat.title || '分支探讨'}`,
-      weightMode: 'auto',
       consecutiveNoNewDocsCount: 0
     }).returning()
 
@@ -83,6 +82,7 @@ export default defineHandler(async (event) => {
     historyRevision: 1,
     title: branchTitle,
     userId: actor.userId,
+    weightMode: parentChat.weightMode,
     visibility: 'private',
     nextMessageSequence: 1,
     topicId,

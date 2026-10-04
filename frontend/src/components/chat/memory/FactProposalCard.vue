@@ -12,9 +12,9 @@ const emit = defineEmits<{
 }>()
 
 const categoryLabel: Record<FactView['category'], string> = {
-  GOAL: '目标',
-  PREFERENCE: '偏好',
-  PLAN_CONSTRAINT: '计划约束'
+  GOAL: 'Goal',
+  PREFERENCE: 'Preference',
+  PLAN_CONSTRAINT: 'Constraint'
 }
 </script>
 
@@ -27,7 +27,7 @@ const categoryLabel: Record<FactView['category'], string> = {
             name="i-lucide-brain"
             class="size-4 text-primary"
           />
-          <span class="text-sm font-medium">建议保存为会话记忆</span>
+          <span class="text-sm font-medium">Suggested Session Memory</span>
         </div>
         <UBadge
           color="primary"
@@ -49,7 +49,7 @@ const categoryLabel: Record<FactView['category'], string> = {
           :disabled="props.pending"
           @click="emit('revoke', props.fact.id)"
         >
-          拒绝
+          Dismiss
         </UButton>
         <UButton
           size="xs"
@@ -58,7 +58,7 @@ const categoryLabel: Record<FactView['category'], string> = {
           :disabled="props.pending"
           @click="emit('confirm', props.fact.id)"
         >
-          确认
+          Confirm
         </UButton>
       </div>
     </div>

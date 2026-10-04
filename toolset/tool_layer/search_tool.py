@@ -5,10 +5,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from data_persistence.vector import matches_filters, normalize_filters
-from tool_layer.base_tool import BaseTool
+from .base_tool import BaseTool
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+_PUBLIC_FILTER_KEYS = frozenset({"doc_id", "doc_ids", "space", "doc_type"})
 
 
 class RetrievalError(Exception):
@@ -63,6 +65,17 @@ def _matches_filters(item: Dict, filters: Dict, doc_meta: Optional[Dict] = None)
 
 
 def _normalize_public_filters(filters: Optional[Dict]) -> Dict:
+    if isinstance(filters, dict):
+        unknown = set(filters) - _PUBLIC_FILTER_KEYS
+        if unknown:
+            names = ", ".join(sorted(unknown))
+            raise RetrievalParameterError(
+                f"invalid_filters: unsupported filter keys: {names}"
+            )
+        if "doc_id" in filters and not isinstance(filters["doc_id"], str):
+            raise RetrievalParameterError("invalid_filters: doc_id must be a string")
+        if "doc_ids" in filters and not isinstance(filters["doc_ids"], list):
+            raise RetrievalParameterError("invalid_filters: doc_ids must be an array")
     try:
         return normalize_filters(filters)
     except ValueError as exc:
@@ -173,12 +186,15 @@ class SearchTool(BaseTool):
                 "top_k": {
                     "type": "integer",
                     "description": "Number of document chunks to retrieve (1-20).",
-                    "default": 5
+                    "default": 5,
+                    "minimum": 1,
+                    "maximum": 20,
                 },
                 "mode": {
                     "type": "string",
                     "description": "Retrieval mode: 'vector', 'bm25', or 'hybrid'.",
-                    "default": "hybrid"
+                    "default": "hybrid",
+                    "enum": ["vector", "bm25", "hybrid"],
                 },
                 "filters": {
                     "type": "object",
@@ -237,7 +253,9 @@ class SearchTool(BaseTool):
         navigation_mode: str = "direct",
     ) -> List[Dict]:
         self._validate_params(query, top_k, mode, filters, min_score)
-        if navigation_mode not in {"direct", "hierarchical", "hybrid"}:
+        if type(navigation_mode) is not str or navigation_mode not in {
+            "direct", "hierarchical", "hybrid",
+        }:
             raise RetrievalParameterError(
                 "invalid_navigation_mode: expected direct, hierarchical, or hybrid"
             )
@@ -336,6 +354,12 @@ class SearchTool(BaseTool):
             "1", "true", "yes",
         }:
             return []
+        if doc_ids is not None and (
+            not isinstance(doc_ids, list)
+            or len(doc_ids) > 100
+            or any(not isinstance(value, str) for value in doc_ids)
+        ):
+            raise RetrievalParameterError("doc_ids must contain at most 100 strings")
         self._validate_params(query, top_k, "bm25", None, 0.0)
         filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
         matched = self._search_sections(query.strip(), filters, top_k=max(1, top_k // 2))
@@ -359,10 +383,24 @@ class SearchTool(BaseTool):
             "1", "true", "yes",
         }:
             return []
+        if (
+            not isinstance(section_ids, list)
+            or not 1 <= len(section_ids) <= 20
+            or any(not isinstance(value, str) for value in section_ids)
+        ):
+            raise RetrievalParameterError("section_ids must contain 1 to 20 strings")
+        if doc_ids is not None and (
+            not isinstance(doc_ids, list)
+            or len(doc_ids) > 100
+            or any(not isinstance(value, str) for value in doc_ids)
+        ):
+            raise RetrievalParameterError("doc_ids must contain at most 100 strings")
         self._validate_params(query, top_k, mode, None, 0.0)
-        requested = list(dict.fromkeys(str(value) for value in section_ids if str(value)))[:20]
+        requested = list(dict.fromkeys(value for value in section_ids if value))
         if not requested:
-            raise RetrievalParameterError("section_ids must contain at least one Section ID")
+            raise RetrievalParameterError(
+                "section_ids must contain at least one Section ID"
+            )
         filters = _normalize_public_filters({"doc_ids": doc_ids} if doc_ids else None)
         sections = self._authorized_sections(filters)
         selected = [sections[value] for value in requested if value in sections]
@@ -474,8 +512,17 @@ class SearchTool(BaseTool):
         if mode == "bm25":
             return self._bm25_search(query, candidate_limit, filters)[:top_k]
 
-        vector_rows = self._vector_search(query, candidate_limit, filters)
+        vector_rows = []
+        try:
+            vector_rows = self._vector_search(query, candidate_limit, filters)
+        except Exception as e:
+            self.logger.warning(f"Vector search failed, falling back to BM25: {e}")
+
         bm25_rows = self._bm25_search(query, candidate_limit, filters)
+        if not vector_rows:
+            return bm25_rows[:top_k]
+        if not bm25_rows:
+            return vector_rows[:top_k]
         return _hybrid_search(vector_rows, bm25_rows, top_k, self.rrf_k)
 
     @staticmethod
@@ -568,13 +615,15 @@ class SearchTool(BaseTool):
         filters: Optional[Dict],
         min_score: float,
     ) -> None:
-        if query is None or not str(query).strip():
-            raise RetrievalParameterError("invalid_query: query must not be empty")
+        if type(query) is not str or not query.strip():
+            raise RetrievalParameterError(
+                "invalid_query: query must be a non-empty string"
+            )
 
-        if not isinstance(top_k, int) or not 1 <= top_k <= 20:
+        if type(top_k) is not int or not 1 <= top_k <= 20:
             raise RetrievalParameterError("invalid_top_k: top_k must be an integer from 1 to 20")
 
-        if mode not in self.VALID_MODES:
+        if type(mode) is not str or mode not in self.VALID_MODES:
             allowed = ", ".join(sorted(self.VALID_MODES))
             raise RetrievalParameterError(f"invalid_mode: mode must be one of {allowed}")
 

@@ -92,20 +92,20 @@ const boxStyle = computed(() => {
 </script>
 
 <template>
-  <span ref="anchorRef" class="inline-block align-middle select-none">
-    <!-- Circle badge matching UButton neutral outline rounded-full -->
-    <UButton
-      size="xs"
-      color="neutral"
-      variant="outline"
-      class="cite-badge-btn"
+  <span ref="anchorRef" class="inline-flex items-center align-baseline select-none mx-0.5 -translate-y-0.5">
+    <!-- Circle badge matching modern RAG citation badge -->
+    <button
+      type="button"
+      class="cite-badge-btn inline-flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-300/80 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition-all cursor-pointer font-mono font-bold text-[10px] w-4.5 h-4.5 min-w-[18px] min-h-[18px] shadow-xs"
+      :aria-label="`View Citation ${index}`"
       @mouseenter="show"
       @mouseleave="hide"
       @focusin="show"
       @focusout="hide"
+      @click="show"
     >
       {{ index }}
-    </UButton>
+    </button>
   </span>
 
   <Teleport to="body">
@@ -129,14 +129,14 @@ const boxStyle = computed(() => {
         </div>
         <!-- Scrollable content -->
         <div class="p-3 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed max-h-72 overflow-y-auto whitespace-pre-wrap select-text cite-scroll-container">
-          {{ citation.chunk_text || '（暂无摘要）' }}
+          {{ citation.chunk_text || '(No excerpt available)' }}
           <div v-if="citation.source_type === 'attachment'" class="mt-3 space-y-2">
             <div class="text-[11px] text-neutral-500">Evidence {{ citation.evidence_id }} · v{{ citation.version }} · {{ JSON.stringify(citation.locator || {}) }}</div>
             <div v-if="citation.locator?.bbox" class="relative overflow-hidden rounded border border-neutral-300 dark:border-neutral-700">
-              <img :src="attachmentPreviewUrl" class="block w-full" alt="附件引用区域预览">
+              <img :src="attachmentPreviewUrl" class="block w-full" alt="Attachment citation preview">
               <span class="pointer-events-none absolute border-2 border-red-500 bg-red-500/10" :style="boxStyle" />
             </div>
-            <a :href="attachmentUrl" target="_blank" rel="noopener" class="text-primary underline">打开附件证据定位</a>
+            <a :href="attachmentUrl" target="_blank" rel="noopener" class="text-primary underline">Open attachment evidence</a>
           </div>
         </div>
       </div>

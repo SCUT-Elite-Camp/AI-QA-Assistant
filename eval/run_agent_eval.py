@@ -52,13 +52,18 @@ def load_dataset(path: Path) -> dict[str, list[dict[str, Any]]]:
     return payload
 
 
-def evaluate_components(cases: list[dict[str, Any]]) -> dict[str, Any]:
+def evaluate_components(cases: list[dict[str, Any]], *, agent: Any | None = None) -> dict[str, Any]:
     from agent.agent import Agent
+    from agent.llm.observability import (
+        clear_llm_metrics,
+        snapshot_llm_metrics,
+        start_llm_metrics,
+    )
     from agent.policy import IntentPolicyRouter
 
     # Reuse production Agent wiring so stage-specific model routing and
     # preparation fallback behavior are included in component A/B tests.
-    understanding, router = Agent().query_understanding, IntentPolicyRouter()
+    understanding, router = (agent or Agent()).query_understanding, IntentPolicyRouter()
     rows: list[dict[str, Any]] = []
     stage_samples = {"query_understanding": [], "policy_routing": []}
     for case in cases:
@@ -68,9 +73,14 @@ def evaluate_components(cases: list[dict[str, Any]]) -> dict[str, Any]:
             case.get("required_rewrite_terms", []),
         )
         fallback_before = understanding.query_preparation.fallback_attempts
-        started = time.perf_counter()
-        plan = understanding.analyze(query, case.get("history", []))
-        understanding_ms = (time.perf_counter() - started) * 1000
+        metrics_token = start_llm_metrics()
+        try:
+            started = time.perf_counter()
+            plan = understanding.analyze(query, case.get("history", []))
+            understanding_ms = (time.perf_counter() - started) * 1000
+            llm_metrics = snapshot_llm_metrics()
+        finally:
+            clear_llm_metrics(metrics_token)
         started = time.perf_counter()
         policy = router.route(plan)
         policy_ms = (time.perf_counter() - started) * 1000
@@ -114,6 +124,7 @@ def evaluate_components(cases: list[dict[str, Any]]) -> dict[str, Any]:
             ),
             "policy": policy.model_dump(mode="json"),
             "query_understanding_ms": round(understanding_ms, 2), "policy_routing_ms": round(policy_ms, 2),
+            "llm_metrics": llm_metrics,
         })
     return {"summary": {
         "case_count": len(rows),
@@ -132,6 +143,7 @@ def evaluate_components(cases: list[dict[str, Any]]) -> dict[str, Any]:
             else 0.0
         ),
         "predicted_intents": dict(Counter(r["actual_intent"] for r in rows)),
+        "llm": _aggregate_llm_metrics(rows),
         "latency": {name: latency_summary(values) for name, values in stage_samples.items()},
     }, "cases": rows}
 
@@ -166,21 +178,37 @@ def _aggregate_llm_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def evaluate_quality(cases: list[dict[str, Any]], repeats: int, use_judge: bool, warmup_retrieval: bool = True) -> dict[str, Any]:
+def evaluate_quality(
+    cases: list[dict[str, Any]],
+    repeats: int,
+    use_judge: bool,
+    warmup_retrieval: bool = True,
+    *,
+    retrieval_mode: str = "hybrid",
+    agent: Any | None = None,
+) -> dict[str, Any]:
     from agent.agent import Agent
     from agent.schemas.chat import ChatRequest
     if use_judge:
         from metrics import evaluate_answer_relevance, evaluate_faithfulness
 
-    agent, rows, all_latencies = Agent(), [], []
+    if retrieval_mode not in {"hybrid", "vector", "bm25"}:
+        raise ValueError("retrieval_mode must be hybrid, vector, or bm25")
+
+    agent, rows, all_latencies = agent or Agent(), [], []
     if warmup_retrieval:
         search_tool = agent.registry.get_tool("search_documents")
         if search_tool is not None and hasattr(search_tool, "search"):
-            search_tool.search("financial report", top_k=1, mode="vector")
+            search_tool.search("financial report", top_k=1, mode=retrieval_mode)
     for repeat in range(repeats):
         for case in cases:
             query = case.get("online_query", case["query"])
-            request = ChatRequest(query=query, session_id=f"eval-{case['id']}-{repeat}-{uuid.uuid4().hex[:8]}", is_first_message=False)
+            request = ChatRequest(
+                query=query,
+                session_id=f"eval-{case['id']}-{repeat}-{uuid.uuid4().hex[:8]}",
+                is_first_message=False,
+                retrieval_mode=retrieval_mode,
+            )
             started = time.perf_counter()
             response = agent.chat(request)
             latency_ms = (time.perf_counter() - started) * 1000
@@ -298,6 +326,7 @@ def main() -> int:
     parser.add_argument("--online", action="store_true", help="confirm real model/API usage")
     parser.add_argument("--judge", action="store_true", help="two extra judge calls per quality run")
     parser.add_argument("--retrieval-namespace", help="isolated index name, e.g. financebench_eval")
+    parser.add_argument("--retrieval-mode", choices=("hybrid", "vector", "bm25"), default="hybrid")
     parser.add_argument("--limit", type=int, help="run only the first N cases for a low-cost smoke baseline")
     parser.add_argument("--case-id", action="append", help="run only the named case id; may be repeated")
     parser.add_argument("--no-retrieval-warmup", action="store_true", help="include retrieval cold start in measured requests")
@@ -320,7 +349,8 @@ def main() -> int:
     report: dict[str, Any] = {"metadata": {"created_at": datetime.now().astimezone().isoformat(), "suite": args.suite,
         "dataset": str(args.dataset), "model": os.getenv("LLM_MODEL") or os.getenv("MODEL_NAME") or "configured-default",
         "judge_enabled": args.judge, "repeats": args.repeats,
-        "retrieval_namespace": args.retrieval_namespace or "default"}}
+        "retrieval_namespace": args.retrieval_namespace or "default",
+        "retrieval_mode": args.retrieval_mode}}
     component_cases = dataset["component_cases"]
     quality_cases = dataset["quality_cases"]
     if args.case_id:
@@ -333,7 +363,14 @@ def main() -> int:
         component_cases = component_cases[:args.limit]
         quality_cases = quality_cases[:args.limit]
     if args.suite in ("components", "all"): report["components"] = evaluate_components(component_cases)
-    if args.suite in ("quality", "all"): report["quality"] = evaluate_quality(quality_cases, args.repeats, args.judge, not args.no_retrieval_warmup)
+    if args.suite in ("quality", "all"):
+        report["quality"] = evaluate_quality(
+            quality_cases,
+            args.repeats,
+            args.judge,
+            not args.no_retrieval_warmup,
+            retrieval_mode=args.retrieval_mode,
+        )
     if args.suite == "compound":
         compound_cases = [
             {
@@ -348,6 +385,7 @@ def main() -> int:
             args.repeats,
             args.judge,
             not args.no_retrieval_warmup,
+            retrieval_mode=args.retrieval_mode,
         )
     output = args.output or DEFAULT_REPORT_DIR / f"agent_cp2_{datetime.now():%Y%m%d_%H%M%S}.json"
     save_report(report, output)

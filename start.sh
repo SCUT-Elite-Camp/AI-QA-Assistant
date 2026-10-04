@@ -53,8 +53,23 @@ else:
 ' "$1" "$2" 2>/dev/null || printf 'unavailable'
 }
 
-# 1. Python Environment
-echo "[1/4] Checking Python backend environment..."
+# 1. Docker & Milvus Stack
+echo "[1/5] Checking Milvus & Docker environment..."
+if command -v docker &> /dev/null; then
+    if docker info &> /dev/null; then
+        echo "[INFO] Docker daemon active. Launching Milvus & Redis containers..."
+        docker compose up -d etcd minio milvus-standalone redis &> /dev/null || true
+        echo "[OK] Milvus & Redis containers ready."
+    else
+        echo "[WARN] Docker daemon not running. System will use BM25 fallback mode."
+    fi
+else
+    echo "[INFO] Docker not found. System will run with BM25 keyword search."
+fi
+
+# 2. Python Environment
+echo ""
+echo "[2/5] Checking Python backend environment..."
 PYTHON_BIN=""
 if [ -f ".venv/bin/python" ]; then
     PYTHON_BIN=".venv/bin/python"
@@ -72,9 +87,9 @@ else
     exit 1
 fi
 
-# 2. Frontend Environment
+# 3. Frontend Environment
 echo ""
-echo "[2/4] Checking frontend environment..."
+echo "[3/5] Checking frontend environment..."
 PKG_MGR="pnpm"
 if ! command -v pnpm &> /dev/null; then
     if command -v npm &> /dev/null; then
@@ -91,9 +106,9 @@ if [ ! -d "frontend/node_modules" ]; then
     cd frontend && $PKG_MGR install && cd ..
 fi
 
-# 3. Start Backend & Frontend
+# 4. Start Backend & Frontend
 echo ""
-echo "[3/4] Launching Backend & Frontend services..."
+echo "[4/5] Launching Backend & Frontend services..."
 $PYTHON_BIN -m app &
 BACKEND_PID=$!
 echo "[OK] Backend started (PID: $BACKEND_PID)"
@@ -104,9 +119,9 @@ FRONTEND_PID=$!
 cd ..
 echo "[OK] Frontend started (PID: $FRONTEND_PID)"
 
-# 4. Wait for truthful service readiness, then open the browser
+# 5. Wait for truthful service readiness, then open the browser
 echo ""
-echo "[4/4] Waiting for frontend and Agent readiness (up to 60 seconds)..."
+echo "[5/5] Waiting for frontend and Agent readiness (up to 60 seconds)..."
 FRONTEND_STATE="unavailable"
 AGENT_STATE="unavailable"
 STARTUP_STARTED_AT=$SECONDS
@@ -133,7 +148,7 @@ done
 
 echo "[INFO] Frontend: $FRONTEND_STATE; Agent /ready: $AGENT_STATE"
 if [ "$FRONTEND_STATE" = "ready" ]; then
-    echo "[4/4] Opening browser..."
+    echo "[OK] Opening browser..."
     if command -v xdg-open &> /dev/null; then
         if ! xdg-open http://localhost:3000; then
             echo "[WARN] Could not open a browser automatically. Visit http://localhost:3000."
@@ -161,6 +176,7 @@ fi
 echo "====================================================================="
 echo " - Frontend: http://localhost:3000"
 echo " - Backend:  http://localhost:8000/docs"
+echo " - Milvus:   localhost:19530"
 echo " Press Ctrl+C to terminate all services."
 echo "====================================================================="
 

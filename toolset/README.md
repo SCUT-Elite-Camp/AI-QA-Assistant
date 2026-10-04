@@ -18,6 +18,8 @@ AgentRunner -> ToolExecutor -> ToolRegistry -> SearchTool
 
 Registry 直接构造 `SearchTool`。Hybrid 模式在 `SearchTool` 内融合向量和 BM25 结果。
 
+Toolset 不在模块导入时创建全局注册表。Agent 在实例化时创建并持有一个 `ToolRegistry`，再通过只读适配器访问它；需要默认工具时直接使用 `ToolRegistry()`。
+
 ## SearchTool 接口
 
 ```python

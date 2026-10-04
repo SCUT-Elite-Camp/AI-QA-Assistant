@@ -9,19 +9,13 @@ import { useUserSession } from '../composables/useUserSession'
 import { useChatActions } from '../composables/useChatActions'
 import { useCsrf } from '../composables/useCsrf'
 import ModalSelectTopic from '../components/ModalSelectTopic.vue'
-import ModalDashboard from '../components/ModalDashboard.vue'
 import ModalSettings from '../components/ModalSettings.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { loggedIn, fetchSession } = useUserSession()
 
-const showDashboardModal = ref(false)
 const showSettingsModal = ref(false)
-
-function openDashboard() {
-  window.open('/dashboard', '_blank')
-}
 const { chats, groups, fetchChats } = useChats()
 const { renameChat, deleteChat, createTopicForChat, addChatToTopic } = useChatActions()
 const { csrf, headerName } = useCsrf()
@@ -40,6 +34,7 @@ async function loadTopics() {
 loadTopics().catch(() => {})
 
 const sidebarOpen = ref(false)
+const sidebarCollapsed = ref(true)
 const searchOpen = ref(false)
 // Track which topics are expanded in the sidebar
 const expandedTopics = ref<Set<string>>(new Set())
@@ -101,7 +96,7 @@ async function createChatInTopic(topicId: string) {
     expandedTopics.value = new Set([...expandedTopics.value, topicId])
     router.push(`/chat/${newChat.id}`)
   } catch (err: any) {
-    useToast().add({ title: '创建对话失败', description: err.message, color: 'error' })
+    useToast().add({ title: 'Failed to create chat', description: err.message, color: 'error' })
   }
 }
 
@@ -241,7 +236,8 @@ defineShortcuts({
     <UDashboardSidebar
       id="default"
       v-model:open="sidebarOpen"
-      :min-size="12"
+      v-model:collapsed="sidebarCollapsed"
+      :min-size="14"
       collapsible
       resizable
       class="border-r-0 py-4"
@@ -250,12 +246,14 @@ defineShortcuts({
         <ULink
           v-if="!collapsed"
           to="/"
-          class="flex items-center gap-0.5"
+          class="flex items-center gap-1 px-1"
         >
-          <span class="text-xl font-bold text-highlighted">Chat</span>
+          <span class="text-2xl font-bold tracking-tight text-highlighted">Chat</span>
         </ULink>
 
-        <UDashboardSidebarCollapse class="ms-auto" />
+        <div :class="[collapsed ? 'w-full flex justify-center' : 'ms-auto']">
+          <UDashboardSidebarCollapse />
+        </div>
       </template>
 
       <template #default="{ collapsed }">
@@ -275,15 +273,21 @@ defineShortcuts({
             to: '/topics',
             icon: 'i-heroicons-squares-2x2'
           }, {
+            label: 'Library',
+            to: '/library',
+            icon: 'i-lucide-library'
+          }, {
             label: 'Favorites',
             to: '/favorites',
             icon: 'i-lucide-star'
-          }, {
-            label: 'Admin',
-            to: '/admin',
-            icon: 'i-lucide-shield-check'
           }]"
           :collapsed="collapsed"
+          :ui="{
+            link: collapsed
+              ? 'py-2.5 px-0 justify-center rounded-xl'
+              : 'text-[15px] sm:text-base py-2.5 px-3 gap-3.5 font-medium rounded-xl',
+            linkLeadingIcon: 'size-5.5 min-w-[22px] min-h-[22px]'
+          }"
           orientation="vertical"
         >
           <template #item-trailing="{ item }">
@@ -295,25 +299,25 @@ defineShortcuts({
                 v-for="kbd in item.kbds"
                 :key="kbd"
                 :value="kbd"
-                size="sm"
+                size="md"
                 variant="soft"
-                class="bg-accented/50"
+                class="bg-accented/50 text-xs"
               />
             </div>
           </template>
         </UNavigationMenu>
 
         <!-- Sidebar chat list (custom, not UNavigationMenu) -->
-        <div v-if="!collapsed" class="flex-1 overflow-y-auto min-h-0 mt-1 px-2 space-y-0.5 text-sm">
+        <div v-if="!collapsed" class="flex-1 overflow-y-auto min-h-0 mt-2 px-1.5 space-y-1">
 
           <!-- Topic Groups (collapsible & drop targets) -->
           <template v-if="topics.length">
-            <p class="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 pt-3 pb-1">Topics</p>
-            <div v-for="topic in topics" :key="topic.id" class="space-y-0.5">
+            <p class="text-xs font-semibold text-muted uppercase tracking-wider px-2.5 pt-4 pb-1.5">Topics</p>
+            <div v-for="topic in topics" :key="topic.id" class="space-y-1">
               <!-- Topic header row (Drop target for dragging chats) -->
               <div
-                class="group flex items-center gap-1 rounded-lg px-1.5 py-1.5 hover:bg-accented/50 cursor-pointer transition-all"
-                :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10': dragOverTopicId === topic.id }"
+                class="group flex items-center gap-2 rounded-xl px-2.5 py-2 hover:bg-accented/50 cursor-pointer transition-all"
+                :class="{ 'ring-2 ring-zinc-400 dark:ring-zinc-600 bg-zinc-500/10': dragOverTopicId === topic.id }"
                 @click="toggleTopic(topic.id)"
                 @dragover.prevent="handleDragOver(topic.id, $event)"
                 @dragleave="handleDragLeave(topic.id)"
@@ -322,9 +326,9 @@ defineShortcuts({
                 <!-- Expand/collapse chevron -->
                 <UIcon
                   :name="expandedTopics.has(topic.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-                  class="w-3.5 h-3.5 text-muted shrink-0 transition-transform"
+                  class="w-4.5 h-4.5 text-muted shrink-0 transition-transform"
                 />
-                <span class="flex-1 truncate font-medium text-highlighted text-xs">
+                <span class="flex-1 truncate font-medium text-highlighted text-sm sm:text-[15px]">
                   {{ topic.title || 'Untitled Topic' }}
                 </span>
 
@@ -333,9 +337,9 @@ defineShortcuts({
                   icon="i-lucide-plus"
                   color="neutral"
                   variant="ghost"
-                  size="xs"
-                  class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 rounded"
-                  aria-label="在此话题下新建对话"
+                  size="sm"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 rounded-lg"
+                  aria-label="Create chat in this topic"
                   @click.stop="createChatInTopic(topic.id)"
                 />
               </div>
@@ -346,32 +350,32 @@ defineShortcuts({
                   v-for="chat in getTopicChats(topic.id)"
                   :key="chat.id"
                   draggable="true"
-                  class="group relative flex items-center ml-5 rounded-lg px-2 py-1.5 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
-                  :class="{ 'bg-accented': route.path === `/chat/${chat.id}` }"
+                  class="group relative flex items-center ml-5 rounded-xl px-2.5 py-2 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
+                  :class="{ 'bg-accented font-medium': route.path === `/chat/${chat.id}` }"
                   @click="router.push(`/chat/${chat.id}`)"
                   @dragstart="handleDragStart(chat.id, $event)"
                 >
-                  <UIcon name="i-lucide-message-circle" class="w-3 h-3 text-muted shrink-0 mr-1.5" />
-                  <span class="flex-1 truncate text-xs" :class="chat.label === 'Untitled' ? 'text-muted' : ''">
+                  <UIcon name="i-lucide-message-circle" class="w-4 h-4 text-muted shrink-0 mr-2" />
+                  <span class="flex-1 truncate text-sm" :class="chat.label === 'Untitled' ? 'text-muted' : ''">
                     {{ chat.label || 'Untitled' }}
                   </span>
                   <!-- Chat actions "..." -->
-                  <div class="absolute right-1 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
+                  <div class="absolute right-1.5 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
                     <UDropdownMenu :items="getChatActions({ id: chat.id, label: chat.label, topicId: (chat as any).topicId })" :content="{ align: 'end' }">
                       <UButton
                         as="div"
                         icon="i-lucide-ellipsis"
                         color="neutral"
                         variant="ghost"
-                        size="xs"
-                        class="rounded"
+                        size="sm"
+                        class="rounded-lg"
                         aria-label="Chat actions"
                       />
                     </UDropdownMenu>
                   </div>
                 </div>
                 <!-- Empty state for topic -->
-                <p v-if="!getTopicChats(topic.id).length" class="ml-5 text-[11px] text-muted px-2 py-1 italic">
+                <p v-if="!getTopicChats(topic.id).length" class="ml-6 text-xs text-muted px-2 py-1.5 italic">
                   No chats
                 </p>
               </template>
@@ -381,8 +385,8 @@ defineShortcuts({
           <!-- Standalone Chats (no topic, Draggable & Drop target to remove from topic) -->
           <template v-if="standaloneChats.length">
             <p
-              class="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 pt-3 pb-1 rounded-lg transition-all"
-              :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10 text-emerald-400': dragOverStandalone }"
+              class="text-xs font-semibold text-muted uppercase tracking-wider px-2.5 pt-4 pb-1.5 rounded-xl transition-all"
+              :class="{ 'ring-2 ring-zinc-400 dark:ring-zinc-600 bg-zinc-500/10 text-zinc-300': dragOverStandalone }"
               @dragover.prevent="handleDragOverStandalone($event)"
               @dragleave="handleDragLeaveStandalone()"
               @drop.prevent="handleDropOnStandalone($event)"
@@ -393,16 +397,16 @@ defineShortcuts({
               v-for="chat in standaloneChats"
               :key="chat.id"
               draggable="true"
-              class="group relative flex items-center rounded-lg px-1.5 py-1.5 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
-              :class="{ 'bg-accented': route.path === `/chat/${chat.id}` }"
+              class="group relative flex items-center rounded-xl px-3 py-2.5 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
+              :class="{ 'bg-accented font-medium text-highlighted shadow-xs': route.path === `/chat/${chat.id}` }"
               @click="router.push(`/chat/${chat.id}`)"
               @dragstart="handleDragStart(chat.id, $event)"
             >
-              <span class="flex-1 truncate" :class="chat.label === 'Untitled' ? 'text-muted' : ''">
+              <span class="flex-1 truncate text-[14.5px] sm:text-[15px] leading-relaxed" :class="chat.label === 'Untitled' ? 'text-muted' : ''">
                 {{ chat.label?.replace(/^🌱\s*/, '') || 'Untitled' }}
               </span>
               <!-- Chat actions "..." -->
-              <div class="absolute right-1 opacity-0 group-hover:opacity-100 group-has-data-[state=open]:opacity-100 transition-opacity" @click.stop>
+              <div class="absolute right-1.5 opacity-0 group-hover:opacity-100 group-has-data-[state=open]:opacity-100 transition-opacity" @click.stop>
                 <UDropdownMenu :items="getChatActions({ id: chat.id, label: chat.label, topicId: (chat as any).topicId })" :content="{ align: 'end' }">
                   <UButton
                     as="div"
@@ -410,7 +414,7 @@ defineShortcuts({
                     color="neutral"
                     variant="link"
                     size="sm"
-                    class="rounded-[5px] hover:bg-accented/50 focus-visible:bg-accented/50 data-[state=open]:bg-accented/50 cursor-pointer"
+                    class="rounded-lg hover:bg-accented/50 focus-visible:bg-accented/50 data-[state=open]:bg-accented/50 cursor-pointer p-1"
                     aria-label="Chat actions"
                     tabindex="-1"
                     @click.stop
@@ -424,38 +428,15 @@ defineShortcuts({
       </template>
 
       <template #footer="{ collapsed }">
-        <div class="flex items-center gap-2.5">
-          <!-- Admin Circle Button -->
-          <UButton
-            icon="i-lucide-shield-check"
-            color="neutral"
-            variant="ghost"
-            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-indigo-400 hover:bg-zinc-800 hover:border-indigo-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
-            aria-label="Admin Management"
-            title="管理后台"
-            :ui="{ leadingIcon: 'w-5 h-5' }"
-            to="/admin"
-          />
-
-          <!-- Dashboard Circle Button -->
-          <UButton
-            icon="i-lucide-layout-dashboard"
-            color="neutral"
-            variant="none"
-            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-emerald-400 hover:bg-zinc-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
-            aria-label="Dashboard"
-            :ui="{ leadingIcon: 'w-5 h-5' }"
-            @click="openDashboard"
-          />
-
+        <div :class="['flex items-center w-full', collapsed ? 'justify-center px-0' : 'px-1']">
           <!-- Settings Circle Button -->
           <UButton
             icon="i-lucide-settings"
             color="neutral"
             variant="none"
-            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-sky-400 hover:bg-zinc-800 hover:border-sky-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
             aria-label="Settings"
-            :ui="{ leadingIcon: 'w-5 h-5' }"
+            :ui="{ leadingIcon: 'w-5.5 h-5.5' }"
             @click="showSettingsModal = true"
           />
         </div>
@@ -471,11 +452,15 @@ defineShortcuts({
           label: 'New chat',
           to: '/',
           icon: 'i-lucide-circle-plus'
+        }, {
+          label: 'Library',
+          to: '/library',
+          icon: 'i-lucide-library'
         }]
       }, ...searchGroups]"
     />
 
-    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0 overflow-hidden">
+    <div class="flex-1 flex my-3.5 mr-3.5 ml-2.5 rounded-2xl ring-1 ring-zinc-200/80 dark:ring-zinc-800/80 bg-white dark:bg-zinc-900 shadow-sm min-w-0 overflow-hidden">
       <RouterView :key="route.path" />
     </div>
 
@@ -487,12 +472,6 @@ defineShortcuts({
       :topics="topics"
       @select-topic="handleSelectTopicForChat"
       @create-new-topic="targetChatIdForTopicModal ? createTopicForChat(targetChatIdForTopicModal) : null"
-    />
-
-    <!-- Modal for System Dashboard -->
-    <ModalDashboard
-      v-if="showDashboardModal"
-      v-model:open="showDashboardModal"
     />
 
     <!-- Modal for System Settings -->

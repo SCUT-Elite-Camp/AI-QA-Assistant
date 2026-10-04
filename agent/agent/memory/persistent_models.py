@@ -60,7 +60,7 @@ class PersistentFact(BaseModel):
 
 
 class PersistentMemoryContext(BaseModel):
-    """Trusted context consumed by :class:`ContextResolver` only."""
+    """Normalized trusted Memory projection shared within one Agent turn."""
 
     model_config = ConfigDict(extra="forbid")
 

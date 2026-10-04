@@ -9,8 +9,46 @@ Write-Host ""
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $RootDir
 
-# 1. Check Python & Virtual Environment
-Write-Host "[1/4] 检查 Python 后端环境..." -ForegroundColor Yellow
+# 1. Check Docker & Milvus / Redis Stack
+Write-Host "[1/5] 检查 Milvus 向量数据库与 Docker 环境..." -ForegroundColor Yellow
+$DockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+if ($DockerCmd) {
+    $dockerRunning = $false
+    try {
+        $res = & docker info 2>&1
+        if ($LASTEXITCODE -eq 0) { $dockerRunning = $true }
+    } catch {
+        $dockerRunning = $false
+    }
+
+    if ($dockerRunning) {
+        Write-Host "[INFO] Docker 守护进程运行中，正在唤醒 Milvus 向量库及依赖容器..." -ForegroundColor Cyan
+        & docker compose up -d etcd minio milvus-standalone redis *>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[OK] Milvus 向量数据库与 Redis 服务已在后台就绪 (Port: 19530, 6379)." -ForegroundColor Green
+        } else {
+            Write-Host "[WARN] 启动 Milvus 容器失败，系统将自动降级为 BM25 文本检索模式." -ForegroundColor DarkYellow
+        }
+    } else {
+        Write-Host "[INFO] Docker 守护进程未启动，尝试唤醒 Docker Desktop..." -ForegroundColor Cyan
+        $dockerExePaths = @(
+            "C:\Program Files\Docker\Docker\Docker Desktop.exe",
+            "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
+        )
+        $foundExe = $dockerExePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if ($foundExe) {
+            Start-Process $foundExe
+            Write-Host "[INFO] 已触发 Docker Desktop 启动 (后台加载中)..." -ForegroundColor Cyan
+        }
+        Write-Host "[WARN] Docker 尚未完全就绪，系统将自动使用 BM25 检索兜底保障正常运行." -ForegroundColor DarkYellow
+    }
+} else {
+    Write-Host "[INFO] 本地未检测到 Docker 命令，系统将以内置 BM25 模式运行." -ForegroundColor DarkYellow
+}
+
+# 2. Check Python & Virtual Environment
+Write-Host ""
+Write-Host "[2/5] 检查 Python 后端环境..." -ForegroundColor Yellow
 $PythonExe = ""
 if (Test-Path "$RootDir\.venv\Scripts\python.exe") {
     $PythonExe = "$RootDir\.venv\Scripts\python.exe"
@@ -37,9 +75,9 @@ if (Test-Path "$RootDir\.venv\Scripts\python.exe") {
     }
 }
 
-# 2. Check Node.js & Package Manager
+# 3. Check Node.js & Package Manager
 Write-Host ""
-Write-Host "[2/4] 检查前端运行环境..." -ForegroundColor Yellow
+Write-Host "[3/5] 检查前端运行环境..." -ForegroundColor Yellow
 $PkgMgr = "pnpm"
 if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
     if (Get-Command npm -ErrorAction SilentlyContinue) {
@@ -61,9 +99,9 @@ if (-not (Test-Path "$RootDir\frontend\node_modules")) {
     Write-Host "[OK] 前端依赖 node_modules 已就绪." -ForegroundColor Green
 }
 
-# 3. Start Backend and Frontend in separate windows
+# 4. Start Backend and Frontend in separate windows
 Write-Host ""
-Write-Host "[3/4] 正在启动服务..." -ForegroundColor Yellow
+Write-Host "[4/5] 正在启动服务..." -ForegroundColor Yellow
 Write-Host "[INFO] 启动后端 API 服务 (端口 8000)..." -ForegroundColor Cyan
 Start-Process cmd -ArgumentList "/k title AI-QA-Assistant Backend (:8000) && cd /d `"$RootDir`" && `"$PythonExe`" -m app"
 
@@ -72,9 +110,9 @@ Start-Sleep -Seconds 2
 Write-Host "[INFO] 启动前端 Web 服务 (端口 3000)..." -ForegroundColor Cyan
 Start-Process cmd -ArgumentList "/k title AI-QA-Assistant Frontend (:3000) && cd /d `"$RootDir\frontend`" && $PkgMgr run dev"
 
-# 4. Open Browser
+# 5. Open Browser
 Write-Host ""
-Write-Host "[4/4] 准备就绪，正在打开浏览器..." -ForegroundColor Yellow
+Write-Host "[5/5] 准备就绪，正在打开浏览器..." -ForegroundColor Yellow
 Start-Sleep -Seconds 3
 Start-Process "http://localhost:3000"
 
@@ -84,6 +122,7 @@ Write-Host "               所有服务已成功启动！" -ForegroundColor Gree
 Write-Host "=====================================================================" -ForegroundColor Green
 Write-Host " - 前端界面 (Web UI):   http://localhost:3000" -ForegroundColor White
 Write-Host " - 后端接口 (API Docs): http://localhost:8000/docs" -ForegroundColor White
+Write-Host " - 向量服务 (Milvus):   localhost:19530" -ForegroundColor White
 Write-Host ""
 Write-Host " 提示: 后端与前端在独立窗口运行，关闭窗口即可停止服务。" -ForegroundColor Gray
 Write-Host "=====================================================================" -ForegroundColor Green

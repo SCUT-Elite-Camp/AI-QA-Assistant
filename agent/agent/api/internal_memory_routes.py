@@ -15,7 +15,6 @@ from agent.schemas.chat import (
     InternalChatRequest,
     InternalChatResponse,
     ChatResponse,
-    ResetShortWindowRequest,
 )
 from agent.memory.compaction_planner import CompactionPlanner
 from agent.streaming.sse import build_sse_event, chat_response_events
@@ -83,13 +82,3 @@ def compaction_plan(
     # The frozen HTTP contract has two exact shapes: the no-op omits optional
     # fields, while an initial compaction explicitly carries a null expectation.
     return JSONResponse(content=plan.model_dump(exclude_none=not plan.should_compact))
-
-
-@router.post("/memory/reset-short-window")
-def reset_short_window(
-    request: ResetShortWindowRequest,
-    _: Annotated[None, Depends(require_agent_internal_token)],
-    agent: Agent = Depends(get_agent),
-) -> dict[str, str]:
-    agent.memory.clear(request.chat_id)
-    return {"status": "ok"}

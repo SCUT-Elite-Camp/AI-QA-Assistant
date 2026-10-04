@@ -50,32 +50,32 @@ const boxStyle = computed(() => {
 <template>
   <main class="mx-auto max-w-5xl p-6 space-y-5">
     <header class="flex items-start justify-between gap-4">
-      <div><h1 class="text-xl font-semibold">{{ metadata.filename }}</h1><p class="text-sm text-muted">附件证据定位 · {{ evidence?.source_type || '无 Evidence' }}</p></div>
-      <a :href="`/api/attachments/${attachmentId}/content`" class="text-primary underline">下载原件</a>
+      <div><h1 class="text-xl font-semibold">{{ metadata.filename }}</h1><p class="text-sm text-muted">Attachment Evidence Locator · {{ evidence?.source_type || 'No Evidence' }}</p></div>
+      <a :href="`/api/attachments/${attachmentId}/content`" class="text-primary underline">Download Original</a>
     </header>
     <div v-if="requestedVersion && evidence && requestedVersion !== evidence.version" class="rounded border border-warning p-3 text-sm text-warning">
-      此回答引用 Evidence v{{ requestedVersion }}；当前最新版本为 v{{ evidence.version }}。下方显示回答生成时使用的历史版本。
+      This answer cited Evidence v{{ requestedVersion }}; current latest version is v{{ evidence.version }}. Displaying the historical version used when generating the answer.
     </div>
     <section class="grid gap-4 md:grid-cols-2">
       <div v-if="canPreviewImage" class="relative self-start overflow-hidden rounded border border-default bg-elevated">
-        <img :src="previewUrl" class="block w-full" alt="附件证据页面预览">
+        <img :src="previewUrl" class="block w-full" alt="Attachment evidence page preview">
         <span v-if="locator.bbox" class="pointer-events-none absolute border-2 border-red-500 bg-red-500/10" :style="boxStyle" />
       </div>
       <div class="space-y-3">
         <div class="rounded border border-default p-3 text-sm">
-          <div v-if="locator.page">页码：{{ locator.page }}</div>
-          <div v-if="locator.slide">幻灯片：{{ locator.slide }}</div>
-          <div v-if="locator.sheet">工作表：{{ locator.sheet }}</div>
-          <div v-if="locator.cell_range">单元格：{{ locator.cell_range }}</div>
-          <div v-if="locator.bbox">区域：{{ locator.bbox.join(', ') }}</div>
-          <div>Evidence：{{ evidence?.evidence_id || '—' }} · v{{ evidence?.version || '—' }} · 置信度 {{ evidence?.confidence ?? '—' }}</div>
+          <div v-if="locator.page">Page: {{ locator.page }}</div>
+          <div v-if="locator.slide">Slide: {{ locator.slide }}</div>
+          <div v-if="locator.sheet">Sheet: {{ locator.sheet }}</div>
+          <div v-if="locator.cell_range">Cell: {{ locator.cell_range }}</div>
+          <div v-if="locator.bbox">Region: {{ locator.bbox.join(', ') }}</div>
+          <div>Evidence: {{ evidence?.evidence_id || '—' }} · v{{ evidence?.version || '—' }} · Confidence {{ evidence?.confidence ?? '—' }}</div>
         </div>
         <div class="rounded border border-default p-3">
-          <div class="mb-2 text-xs text-muted">{{ requestedVersion && requestedVersion !== evidence?.version ? `引用时内容（v${requestedVersion}）` : '当前采用内容' }}</div>
-          <pre class="whitespace-pre-wrap break-words text-sm">{{ citedContent || '没有可显示的 Evidence' }}</pre>
+          <div class="mb-2 text-xs text-muted">{{ requestedVersion && requestedVersion !== evidence?.version ? `Cited Content (v${requestedVersion})` : 'Current Content' }}</div>
+          <pre class="whitespace-pre-wrap break-words text-sm">{{ citedContent || 'No evidence to display' }}</pre>
         </div>
         <details v-if="evidence?.original_content && evidence.original_content !== evidence.content" class="rounded border border-default p-3">
-          <summary class="cursor-pointer text-sm">查看原始识别结果</summary>
+          <summary class="cursor-pointer text-sm">View original recognition results</summary>
           <pre class="mt-2 whitespace-pre-wrap break-words text-sm">{{ evidence.original_content }}</pre>
         </details>
       </div>

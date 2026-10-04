@@ -52,7 +52,6 @@ const selectedTopic = ref<any>(null)
 const editedTitle = ref('')
 const editedDescription = ref('')
 const localSoul = ref('')
-const selectedWeightMode = ref<'deeper' | 'auto' | 'wider'>('auto')
 const isSaving = ref(false)
 const isSummarizing = ref(false)
 
@@ -170,7 +169,6 @@ async function openSettingsModal(topic: any) {
   editedTitle.value = topic.title || ''
   editedDescription.value = topic.description || ''
   localSoul.value = topic.soulContent || ''
-  selectedWeightMode.value = topic.weightMode || 'auto'
   topicTags.value = Array.isArray(topic.tags) ? [...topic.tags] : []
   showSettingsModal.value = true
 
@@ -230,13 +228,11 @@ async function handleSaveSettings() {
       body: {
         title: editedTitle.value.trim() || selectedTopic.value.title,
         soulContent: localSoul.value,
-        weightMode: selectedWeightMode.value,
         tags: topicTags.value
       }
     })
     selectedTopic.value.title = updated.title
     selectedTopic.value.soulContent = updated.soulContent
-    selectedTopic.value.weightMode = updated.weightMode
     selectedTopic.value.tags = updated.tags
     toast.add({ title: 'Settings saved successfully', color: 'success' })
     showSettingsModal.value = false
@@ -315,15 +311,15 @@ async function handleDeleteTopic(topic: any) {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col min-w-0 bg-zinc-950 p-6 md:p-10 overflow-y-auto">
+  <div class="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-6 md:p-10 overflow-y-auto font-sans">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800/80">
       <div>
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+          <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center font-bold">
             <UIcon name="i-heroicons-squares-2x2" class="w-5 h-5" />
           </div>
-          <h1 class="text-2xl font-bold text-zinc-100 tracking-tight">Topics</h1>
+          <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Topics</h1>
         </div>
       </div>
 
@@ -336,10 +332,11 @@ async function handleDeleteTopic(topic: any) {
           class="w-56"
         />
         <UButton
-          color="success"
+          color="neutral"
+          variant="solid"
           icon="i-heroicons-plus"
           size="sm"
-          class="font-semibold shadow-xs"
+          class="font-semibold shadow-xs bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 cursor-pointer"
           @click="showCreateModal = true"
         >
           New
@@ -349,19 +346,20 @@ async function handleDeleteTopic(topic: any) {
 
     <!-- Loading State -->
     <div v-if="loading" class="py-20 text-center text-zinc-400 text-sm flex items-center justify-center gap-2">
-      <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin text-emerald-500" />
+      <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin text-zinc-500" />
       <span>Loading...</span>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="!filteredTopics.length" class="py-20 text-center space-y-3 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 my-8">
-      <UIcon name="i-heroicons-folder-open" class="w-12 h-12 text-zinc-700 mx-auto" />
-      <h3 class="text-sm font-semibold text-zinc-300">No Topics</h3>
+    <div v-else-if="!filteredTopics.length" class="py-20 text-center space-y-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 my-8">
+      <UIcon name="i-heroicons-folder-open" class="w-12 h-12 text-zinc-400 dark:text-zinc-600 mx-auto" />
+      <h3 class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No Topics</h3>
       <UButton
-        color="success"
-        variant="soft"
+        color="neutral"
+        variant="solid"
         size="xs"
         icon="i-heroicons-plus"
+        class="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 cursor-pointer"
         @click="showCreateModal = true"
       >
         New Topic
@@ -373,19 +371,19 @@ async function handleDeleteTopic(topic: any) {
       <div
         v-for="topic in filteredTopics"
         :key="topic.id"
-        class="group p-4 bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800/90 hover:border-emerald-500/40 rounded-2xl shadow-xs transition-all flex items-center justify-between gap-4"
+        class="group p-4 bg-zinc-50/70 hover:bg-zinc-100/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-900 border border-zinc-200/80 hover:border-zinc-300 dark:border-zinc-800/90 dark:hover:border-zinc-700 rounded-2xl shadow-xs transition-all flex items-center justify-between gap-4"
       >
         <!-- Left: Icon + Title Only -->
         <div
           class="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
           @click="router.push(`/chat/${topic.mainChatId}`)"
         >
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 group-hover:scale-105 transition-transform">
+          <div class="w-10 h-10 rounded-xl bg-zinc-200/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300/60 dark:border-zinc-700 flex items-center justify-center font-bold text-base shrink-0 group-hover:scale-105 transition-transform">
             {{ topic.title ? topic.title.slice(0, 1) : 'T' }}
           </div>
 
           <div class="min-w-0">
-            <h3 class="text-sm font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors truncate">
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 transition-colors truncate">
               {{ topic.title }}
             </h3>
 
@@ -394,11 +392,11 @@ async function handleDeleteTopic(topic: any) {
               <div
                 v-for="doc in topic.documents"
                 :key="doc.docId || doc.id"
-                class="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800/90 hover:bg-zinc-800 border border-zinc-700/60 hover:border-emerald-500/50 rounded-lg text-[11px] cursor-pointer transition-all shadow-2xs group/doc"
+                class="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-zinc-800/90 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/60 rounded-lg text-[11px] cursor-pointer transition-all shadow-2xs group/doc"
                 @click.stop="openSingleDocModal(doc, $event)"
               >
-                <UIcon name="i-heroicons-document-text" class="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span class="font-medium text-zinc-200 group-hover/doc:text-white truncate max-w-[180px]" :title="cleanDocTitle(doc)">
+                <UIcon name="i-heroicons-document-text" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                <span class="font-medium text-zinc-700 dark:text-zinc-200 group-hover/doc:text-zinc-900 dark:group-hover/doc:text-white truncate max-w-[180px]" :title="cleanDocTitle(doc)">
                   {{ cleanDocTitle(doc) }}
                 </span>
               </div>
@@ -409,8 +407,8 @@ async function handleDeleteTopic(topic: any) {
 
         <!-- Right Pure Icon Actions -->
         <UTooltip v-if="topic.status === 'generating'" text="Generating topic summary...">
-          <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0 shadow-2xs">
-            <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-emerald-400" />
+          <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 shrink-0 shadow-2xs">
+            <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
           </div>
         </UTooltip>
 
@@ -421,7 +419,7 @@ async function handleDeleteTopic(topic: any) {
               variant="ghost"
               icon="i-heroicons-folder-open"
               size="sm"
-              class="text-zinc-400 hover:text-white"
+              class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
               @click="openDocsModal(topic)"
             />
           </UTooltip>
@@ -432,7 +430,7 @@ async function handleDeleteTopic(topic: any) {
               variant="ghost"
               icon="i-heroicons-pencil"
               size="sm"
-              class="text-zinc-400 hover:text-white"
+              class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
               @click="openSettingsModal(topic)"
             />
           </UTooltip>
@@ -450,7 +448,7 @@ async function handleDeleteTopic(topic: any) {
               variant="ghost"
               icon="i-heroicons-ellipsis-vertical"
               size="sm"
-              class="text-zinc-400 hover:text-white"
+              class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
             />
           </UDropdownMenu>
         </div>
@@ -464,23 +462,23 @@ async function handleDeleteTopic(topic: any) {
       :ui="{ content: 'sm:max-w-6xl w-full sm:w-[1120px] rounded-3xl' }"
     >
       <template #content>
-        <div v-if="selectedTopic" class="p-8 space-y-6 max-h-[720px] w-full bg-zinc-950 text-zinc-100 rounded-3xl overflow-y-auto border border-zinc-800 shadow-2xl">
+        <div v-if="selectedTopic" class="p-8 space-y-6 max-h-[720px] w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-2xl font-sans">
 
           <!-- Back Header & Avatar Title -->
-          <div class="flex items-center justify-between pb-5 border-b border-zinc-800">
+          <div class="flex items-center justify-between pb-5 border-b border-zinc-200 dark:border-zinc-800">
             <div class="flex items-center gap-3">
               <UButton
                 color="neutral"
                 variant="ghost"
                 icon="i-heroicons-chevron-left"
                 size="sm"
-                class="rounded-full text-zinc-400 hover:text-white"
+                class="rounded-full text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
                 @click="showSettingsModal = false"
               />
-              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0">
+              <div class="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center font-bold text-base shrink-0">
                 {{ editedTitle ? editedTitle.slice(0, 1) : 'T' }}
               </div>
-              <h2 class="text-xl font-bold text-zinc-100 tracking-tight">{{ editedTitle || 'Topic Settings' }}</h2>
+              <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">{{ editedTitle || 'Topic Settings' }}</h2>
             </div>
             <span class="text-xs text-zinc-500 font-mono">ID: {{ selectedTopic.id.slice(0, 8) }}</span>
           </div>
@@ -492,45 +490,23 @@ async function handleDeleteTopic(topic: any) {
             <div class="space-y-6">
               <!-- Field 1: 标题 (Title) -->
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-zinc-300 block">Title</label>
+                <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300 block">Title</label>
                 <UInput
                   v-model="editedTitle"
                   placeholder="Enter topic title..."
                   size="md"
-                  class="w-full bg-zinc-900 border-zinc-800 rounded-xl text-sm"
+                  class="w-full bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-xl text-sm"
                 />
               </div>
 
               <!-- Field 2: 描述 (Description) -->
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-zinc-300 block">Description</label>
+                <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300 block">Description</label>
                 <UTextarea
                   v-model="editedDescription"
                   :rows="3"
                   placeholder="Brief description of this topic workspace purpose and scope..."
-                  class="w-full bg-zinc-900 border-zinc-800 rounded-xl text-xs"
-                />
-              </div>
-
-              <!-- Field 3: 预设工具/加权策略 (Preset Strategy Dropdown) -->
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-1.5 text-xs font-semibold text-zinc-300">
-                    <span>Preset Strategy</span>
-                    <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-zinc-500" />
-                  </div>
-                  <span class="text-[11px] text-zinc-500">RAG Vector Retrieval Threshold</span>
-                </div>
-
-                <USelect
-                  v-model="selectedWeightMode"
-                  :items="[
-                    { label: 'Auto (Smart Retrieval)', value: 'auto' },
-                    { label: 'Deeper (Focused & Precise)', value: 'deeper' },
-                    { label: 'Wider (Broad Domain Search)', value: 'wider' }
-                  ]"
-                  size="md"
-                  class="w-full bg-zinc-900 border-zinc-800 rounded-xl"
+                  class="w-full bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm"
                 />
               </div>
 
@@ -546,20 +522,20 @@ async function handleDeleteTopic(topic: any) {
               <!-- Field 4: 知识 (Knowledge Upload) -->
               <div class="space-y-2 pt-2">
                 <div class="flex items-center gap-1.5">
-                  <label class="text-xs font-semibold text-zinc-300">Knowledge</label>
-                  <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-zinc-500" />
+                  <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">Knowledge</label>
+                  <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-zinc-400" />
                 </div>
 
                 <!-- Sleek Minimal File Upload Button -->
                 <div
-                  class="p-4 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl flex items-center justify-between cursor-pointer transition-all group"
+                  class="p-4 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-850 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-between cursor-pointer transition-all group"
                   @click="triggerFilePicker"
                 >
-                  <span class="text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                  <span class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 transition-colors">
                     {{ uploadingFile ? 'Uploading & parsing document...' : 'Add reference document for topic...' }}
                   </span>
-                  <UIcon v-if="!uploadingFile" name="i-heroicons-plus" class="w-5 h-5 text-zinc-400 group-hover:text-white" />
-                  <UIcon v-else name="i-heroicons-arrow-path" class="w-5 h-5 text-emerald-400 animate-spin" />
+                  <UIcon v-if="!uploadingFile" name="i-heroicons-plus" class="w-5 h-5 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-white" />
+                  <UIcon v-else name="i-heroicons-arrow-path" class="w-5 h-5 text-zinc-500 animate-spin" />
                 </div>
 
                 <!-- File List Cards (Horizontal Rectangular Pills) -->
@@ -567,19 +543,19 @@ async function handleDeleteTopic(topic: any) {
                   <div
                     v-for="doc in topicDocs"
                     :key="doc.docId"
-                    class="flex items-center justify-between gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-emerald-500/50 rounded-xl text-xs cursor-pointer transition-all group/doc shrink-0 max-w-full"
+                    class="flex items-center justify-between gap-2 px-3 py-2 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-850 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm cursor-pointer transition-all group/doc shrink-0 max-w-full"
                     @click="openSingleDocModal(doc)"
                   >
                     <div class="flex items-center gap-2 truncate min-w-0">
-                      <UIcon name="i-heroicons-document-text" class="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span class="text-zinc-200 font-medium truncate max-w-[240px]" :title="cleanDocTitle(doc)">{{ cleanDocTitle(doc) }}</span>
+                      <UIcon name="i-heroicons-document-text" class="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                      <span class="text-zinc-800 dark:text-zinc-200 font-medium truncate max-w-[240px]" :title="cleanDocTitle(doc)">{{ cleanDocTitle(doc) }}</span>
                     </div>
                     <UButton
                       color="neutral"
                       variant="ghost"
                       icon="i-heroicons-trash"
                       size="xs"
-                      class="text-zinc-500 hover:text-rose-400 opacity-60 group-hover/doc:opacity-100 transition-opacity"
+                      class="text-zinc-400 hover:text-rose-500 opacity-60 group-hover/doc:opacity-100 transition-opacity cursor-pointer"
                       @click.stop="handleDeleteDoc(doc.docId)"
                     />
                   </div>
@@ -591,25 +567,25 @@ async function handleDeleteTopic(topic: any) {
             <div class="space-y-2 flex flex-col h-full">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
-                  <label class="text-xs font-semibold text-zinc-300">Instructions</label>
-                  <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-zinc-500" />
+                  <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">Instructions</label>
+                  <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-zinc-400" />
                 </div>
-                <span class="text-[11px] text-zinc-500 font-mono">System Core Cognition Document</span>
+                <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">System Core Cognition Document</span>
               </div>
 
               <!-- Tags Row -->
-              <div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-between gap-2 min-h-[46px]">
+              <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-between gap-2 min-h-[46px]">
                 <div class="flex flex-wrap items-center gap-2 flex-1">
                   <!-- Keyword Tags -->
                   <div
                     v-for="(tag, idx) in topicTags"
                     :key="idx"
-                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 rounded-lg text-xs font-medium text-sky-300 group/tag transition-all shadow-2xs cursor-default"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-200/70 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-300/60 dark:border-zinc-700 rounded-lg text-xs font-medium text-zinc-800 dark:text-zinc-200 group/tag transition-all shadow-2xs cursor-default"
                   >
                     <span>{{ tag }}</span>
                     <button
                       type="button"
-                      class="text-sky-400/70 hover:text-rose-400 transition-colors focus:outline-none ml-0.5 cursor-pointer"
+                      class="text-zinc-400 hover:text-rose-500 transition-colors focus:outline-none ml-0.5 cursor-pointer"
                       title="Remove tag"
                       @click="removeTag(idx)"
                     >
@@ -618,13 +594,13 @@ async function handleDeleteTopic(topic: any) {
                   </div>
 
                   <!-- Inline Add Tag Input -->
-                  <div v-if="isAddingTag" class="flex items-center px-2.5 py-1 bg-sky-950/80 border border-sky-500/50 rounded-lg text-xs w-32 shrink-0">
+                  <div v-if="isAddingTag" class="flex items-center px-2.5 py-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg text-xs w-32 shrink-0">
                     <input
                       ref="tagInputRef"
                       v-model="newTagInput"
                       type="text"
                       placeholder="Add new tag..."
-                      class="bg-transparent text-xs text-sky-200 placeholder-sky-400/50 focus:outline-none w-full"
+                      class="bg-transparent text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none w-full"
                       @keyup.enter="handleConfirmAddTag"
                       @blur="handleConfirmAddTag"
                     />
@@ -634,7 +610,7 @@ async function handleDeleteTopic(topic: any) {
                 <!-- Right Plus Circle Icon Button -->
                 <button
                   type="button"
-                  class="text-sky-400 hover:text-sky-200 hover:bg-sky-500/20 transition-all p-1 rounded-lg shrink-0 cursor-pointer flex items-center justify-center"
+                  class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all p-1 rounded-lg shrink-0 cursor-pointer flex items-center justify-center"
                   title="Add tag"
                   @click="triggerAddTag"
                 >
@@ -642,39 +618,36 @@ async function handleDeleteTopic(topic: any) {
                 </button>
               </div>
 
-              <div class="flex-1 bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col min-h-[300px]">
+              <div class="flex-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex flex-col min-h-[300px]">
                 <UTextarea
                   v-model="localSoul"
                   :rows="12"
-                  class="w-full h-full font-mono text-xs border-0 focus:ring-0 bg-transparent leading-relaxed text-zinc-200 resize-none"
+                  class="w-full h-full font-mono text-xs sm:text-sm border-0 focus:ring-0 bg-transparent leading-relaxed text-zinc-800 dark:text-zinc-200 resize-none"
                   placeholder="As a domain analysis expert, your goal is to assist users in answering specialized questions under this topic..."
                 />
               </div>
             </div>
           </div>
 
-
-
-
           <!-- Bottom Action Buttons -->
-          <div class="flex items-center justify-between pt-6 border-t border-zinc-800">
+          <div class="flex items-center justify-between pt-6 border-t border-zinc-200 dark:border-zinc-800">
             <UButton
               color="error"
               variant="ghost"
               size="xs"
               icon="i-heroicons-trash"
               label="Delete Topic"
-              class="border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all font-medium rounded-lg px-3 py-1.5"
+              class="border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all font-medium rounded-lg px-3 py-1.5 cursor-pointer"
               @click="handleDeleteTopic(selectedTopic)"
             />
             <div class="flex items-center gap-3">
               <UButton
-                color="info"
+                color="neutral"
                 variant="subtle"
                 size="sm"
                 icon="i-heroicons-sparkles"
                 :loading="isSummarizing"
-                class="border border-sky-500/40 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 hover:border-sky-400/60 transition-all font-semibold rounded-lg px-3.5 py-1.5 text-xs shadow-xs"
+                class="border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all font-semibold rounded-lg px-3.5 py-1.5 text-xs sm:text-sm shadow-xs cursor-pointer"
                 @click="handleTriggerSummarize"
               >
                 Regenerate
@@ -683,18 +656,18 @@ async function handleDeleteTopic(topic: any) {
                 color="neutral"
                 variant="subtle"
                 size="sm"
-                class="border border-zinc-700/80 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-700/80 hover:text-white transition-all font-medium rounded-lg px-3.5 py-1.5 text-xs"
+                class="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:text-zinc-950 dark:hover:text-white transition-all font-medium rounded-lg px-3.5 py-1.5 text-xs sm:text-sm cursor-pointer"
                 @click="showSettingsModal = false"
               >
                 Cancel
               </UButton>
               <UButton
-                color="success"
-                variant="subtle"
+                color="neutral"
+                variant="solid"
                 size="sm"
                 icon="i-heroicons-check"
                 :loading="isSaving"
-                class="border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-400/60 transition-all font-semibold rounded-lg px-3.5 py-1.5 text-xs shadow-xs"
+                class="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all font-semibold rounded-lg px-3.5 py-1.5 text-xs sm:text-sm shadow-xs cursor-pointer"
                 @click="handleSaveSettings"
               >
                 Save Changes
@@ -706,14 +679,14 @@ async function handleDeleteTopic(topic: any) {
     </UModal>
 
     <!-- Create Topic Modal -->
-    <UModal v-model:open="showCreateModal" title="新建话题空间 (Topic Project)">
+    <UModal v-model:open="showCreateModal" title="New Topic Project">
       <template #content>
-        <div class="p-6 space-y-4">
+        <div class="p-6 space-y-4 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl font-sans">
           <div class="space-y-1">
-            <label class="text-xs font-semibold text-zinc-300">话题空间名称</label>
+            <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">Topic Title</label>
             <UInput
               v-model="newTopicTitle"
-              placeholder="例如: AI Agent 架构研发 / 业务合规研读..."
+              placeholder="e.g. AI Agent Architecture / Enterprise Compliance Research..."
               size="sm"
               autofocus
               @keyup.enter="handleCreateTopic"
@@ -725,19 +698,19 @@ async function handleDeleteTopic(topic: any) {
               color="neutral"
               variant="subtle"
               size="sm"
-              class="border border-zinc-700/80 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-700/80 hover:text-white transition-all font-medium rounded-lg px-3.5 py-1.5 text-xs"
+              class="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all font-medium rounded-lg px-3.5 py-1.5 text-xs sm:text-sm cursor-pointer"
               @click="showCreateModal = false"
             >
               Cancel
             </UButton>
             <UButton
-              color="success"
-              variant="subtle"
+              color="neutral"
+              variant="solid"
               size="sm"
               icon="i-heroicons-check"
               :loading="creating"
               :disabled="!newTopicTitle.trim()"
-              class="border border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-400/60 transition-all font-semibold rounded-lg px-3.5 py-1.5 text-xs shadow-xs"
+              class="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all font-semibold rounded-lg px-3.5 py-1.5 text-xs sm:text-sm shadow-xs cursor-pointer disabled:opacity-50"
               @click="handleCreateTopic"
             >
               Create Topic

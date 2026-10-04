@@ -12,9 +12,7 @@ export interface FileWithPermission {
 }
 
 const props = defineProps<{
-  /** 编辑模式：传入目标文件 */
   file: FileWithPermission | null
-  /** 上传模式：传入待上传文件 */
   uploadFile: File | null
 }>()
 
@@ -26,12 +24,12 @@ const { fetchPermissionOptions } = useAdmin()
 
 const isEdit = computed(() => Boolean(props.file))
 
-// 权限下拉选项
+// Dropdown options
 const users = ref<Array<{ id: string; name: string; username: string }>>([])
 const departments = ref<Array<{ id: string; name: string }>>([])
 const optionsLoading = ref(false)
 
-// 当前授权（v-model 给 PermissionSelector）
+// Current grants
 const grants = ref<GrantInput[]>([])
 const submitting = ref(false)
 const error = ref('')
@@ -42,7 +40,6 @@ function onOpenChange(v: boolean) {
 }
 
 function scopeFromState(file: FileWithPermission): GrantInput[] {
-  // 编辑模式：根据已有 grants 与 visibility 还原选择器状态
   const existing = file.grants ?? []
   if (existing.length > 0) {
     return existing.map(g => ({
@@ -50,7 +47,6 @@ function scopeFromState(file: FileWithPermission): GrantInput[] {
       grantId: g.grantId,
     }))
   }
-  // 旧式共享文件视为全员公开
   if (file.visibility === 'shared') {
     return [{ grantType: 'public', grantId: null }]
   }
@@ -82,10 +78,6 @@ async function loadOptions() {
   }
 }
 
-// 保存时：统一权限语义
-//   public      -> visibility='shared'（全层一致：Web 列表 / Agent SQL 均按 shared 放行）
-//   user/dept   -> visibility='private' + grants
-//   private     -> visibility='private' + 无 grants
 function normalize() {
   const hasPublic = grants.value.some(g => g.grantType === 'public')
   if (hasPublic) {
@@ -107,7 +99,7 @@ async function submit() {
         headers: { [headerName]: csrf() },
         body: { visibility, grants: targetGrants },
       })
-      toast.add({ title: '权限已更新', color: 'success' })
+      toast.add({ title: 'Permissions updated', color: 'success' })
     }
     else if (props.uploadFile) {
       const formData = new FormData()
@@ -119,13 +111,13 @@ async function submit() {
         headers: { [headerName]: csrf() },
         body: formData,
       })
-      toast.add({ title: `已上传: ${props.uploadFile.name}`, color: 'success' })
+      toast.add({ title: `Uploaded: ${props.uploadFile.name}`, color: 'success' })
     }
     emit('saved')
     emit('close', true)
   }
   catch (e: any) {
-    error.value = e?.data?.message || '保存失败'
+    error.value = e?.data?.message || 'Failed to save permissions'
   }
   finally {
     submitting.value = false
@@ -139,8 +131,8 @@ loadOptions()
   <UModal
     v-model:open="open"
     @update:open="onOpenChange"
-    :title="isEdit ? '配置文件权限' : '上传文件'"
-    :description="isEdit ? `调整「${file?.originalName}」的访问范围。` : '选择文件的访问范围，权限立即生效。'"
+    :title="isEdit ? 'Configure File Access' : 'Upload File'"
+    :description="isEdit ? `Adjust access perimeter for &quot;${file?.originalName}&quot;.` : 'Configure access scope for the uploaded document.'"
     :ui="{
       footer: 'flex-row-reverse justify-start'
     }"
@@ -173,7 +165,7 @@ loadOptions()
 
     <template #footer>
       <UButton
-        :label="isEdit ? '保存' : '上传'"
+        :label="isEdit ? 'Save' : 'Upload'"
         icon="i-lucide-check"
         :loading="submitting"
         @click="submit"
@@ -181,7 +173,7 @@ loadOptions()
       <UButton
         color="neutral"
         variant="ghost"
-        label="取消"
+        label="Cancel"
         @click="emit('close', false)"
       />
     </template>

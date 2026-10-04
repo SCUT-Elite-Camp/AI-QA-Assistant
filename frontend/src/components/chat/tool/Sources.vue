@@ -78,8 +78,7 @@ const dedupedDocs = computed(() => {
         <span
           v-for="idx in indices"
           :key="idx"
-          class="inline-flex items-center justify-center size-4 text-[10px] font-semibold rounded-full"
-          style="background: color-mix(in srgb, var(--ui-color-primary-500, #6366f1) 15%, transparent); color: var(--ui-color-primary-400, #818cf8);"
+          class="inline-flex items-center justify-center size-4 text-[10px] font-mono font-semibold rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-300/80 dark:border-neutral-700"
         >{{ idx }}</span>
       </span>
 

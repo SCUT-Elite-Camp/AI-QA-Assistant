@@ -30,15 +30,6 @@ def chat(
     return agent.chat(request)
 
 
-@router.get("/chat/history")
-def chat_history(
-    limit: int = 50,
-    agent: Agent = Depends(get_agent),
-    _: None = Depends(verify_agent_key),
-) -> list[dict]:
-    return agent.get_history(limit)
-
-
 @router.get("/tools")
 def list_available_tools(
     agent: Agent = Depends(get_agent),

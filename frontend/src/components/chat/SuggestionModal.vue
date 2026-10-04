@@ -58,7 +58,7 @@ async function handleSubmit() {
               <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                 <UIcon name="i-heroicons-light-bulb" class="w-4 h-4" />
               </div>
-              <span>提出改进建议</span>
+              <span>Submit Improvement Suggestion</span>
             </div>
             <UButton
               color="neutral"
@@ -72,14 +72,14 @@ async function handleSubmit() {
 
           <!-- Description -->
           <p class="text-xs text-zinc-400 leading-relaxed">
-            您的改进建议会与问答对一同沉淀入话题空间的 Soul 认知库中，用以优化后续的精准生成。
+            Your feedback and suggestions are stored in the topic's Soul memory to refine future generations.
           </p>
 
           <!-- Input Textarea -->
           <textarea
             v-model="suggestion"
             rows="3"
-            placeholder="请说明回答不够准确的地方或具体的补充要求..."
+            placeholder="Describe areas for improvement or specific context corrections..."
             class="w-full px-3.5 py-2.5 text-xs bg-zinc-950/80 border border-zinc-800 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 resize-none transition-all"
           />
 
@@ -90,7 +90,7 @@ async function handleSubmit() {
               class="px-3.5 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 rounded-xl hover:bg-zinc-800/50 transition-colors"
               @click="emit('update:open', false)"
             >
-              取消
+              Cancel
             </button>
             <button
               type="button"
@@ -99,7 +99,7 @@ async function handleSubmit() {
               @click="handleSubmit"
             >
               <UIcon v-if="loading" name="i-heroicons-arrow-path" class="w-3.5 h-3.5 animate-spin" />
-              <span>提交建议</span>
+              <span>Submit Suggestion</span>
             </button>
           </div>
         </div>
@@ -107,4 +107,3 @@ async function handleSubmit() {
     </Transition>
   </Teleport>
 </template>
-

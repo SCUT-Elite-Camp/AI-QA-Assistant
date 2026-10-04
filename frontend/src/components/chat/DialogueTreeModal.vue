@@ -45,7 +45,7 @@ watch(() => props.open, (val) => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
             <UIcon name="i-heroicons-git-branch" class="w-5 h-5 text-emerald-500" />
-            <span>话题对话树脉络</span>
+            <span>Topic Dialogue Tree</span>
           </div>
           <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="xs" @click="emit('update:open', false)" />
         </div>
@@ -54,7 +54,7 @@ watch(() => props.open, (val) => {
       <div class="py-2 space-y-4 max-h-[60vh] overflow-y-auto">
         <div v-if="loading" class="text-center py-8 text-zinc-400 text-xs flex items-center justify-center gap-2">
           <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
-          <span>加载对话脉络...</span>
+          <span>Loading dialogue tree...</span>
         </div>
 
         <div v-else class="space-y-4">
@@ -62,7 +62,7 @@ watch(() => props.open, (val) => {
           <div v-if="mainChat" class="space-y-1.5">
             <div class="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
               <UIcon name="i-heroicons-pin" class="w-3.5 h-3.5 text-amber-500" />
-              <span>主对话</span>
+              <span>Main Dialogue</span>
             </div>
             <div
               class="p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-3"
@@ -72,10 +72,10 @@ watch(() => props.open, (val) => {
               @click="emit('selectChat', mainChat.id)"
             >
               <div class="truncate">
-                <div class="font-medium text-sm truncate">{{ mainChat.title || '主对话' }}</div>
-                <div class="text-xs text-zinc-400 mt-0.5">{{ mainChat.messages?.length || 0 }} 条消息</div>
+                <div class="font-medium text-sm truncate">{{ mainChat.title || 'Main Dialogue' }}</div>
+                <div class="text-xs text-zinc-400 mt-0.5">{{ mainChat.messages?.length || 0 }} messages</div>
               </div>
-              <UBadge v-if="mainChat.id === currentChatId" color="success" variant="subtle" size="xs">当前</UBadge>
+              <UBadge v-if="mainChat.id === currentChatId" color="success" variant="subtle" size="xs">Current</UBadge>
             </div>
           </div>
 
@@ -83,11 +83,11 @@ watch(() => props.open, (val) => {
           <div class="space-y-1.5">
             <div class="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
               <UIcon name="i-heroicons-git-fork" class="w-3.5 h-3.5 text-emerald-500" />
-              <span>正式分支对话 ({{ branchChats.length }})</span>
+              <span>Branch Dialogues ({{ branchChats.length }})</span>
             </div>
 
             <div v-if="!branchChats.length" class="text-xs text-zinc-400 italic py-4 text-center border border-dashed rounded-lg">
-              暂无分支对话。可以在 AI 回答中划选文本或点击「新建分支」开启分支探讨。
+              No branch dialogues yet. Select text in an AI response or click "New Branch" to start one.
             </div>
 
             <div v-else class="space-y-2">
@@ -106,10 +106,10 @@ watch(() => props.open, (val) => {
                     <span>{{ branch.title }}</span>
                   </div>
                   <div class="text-[11px] text-zinc-400 mt-1">
-                    {{ new Date(branch.createdAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
+                    {{ new Date(branch.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
                   </div>
                 </div>
-                <UBadge v-if="branch.id === currentChatId" color="success" variant="subtle" size="xs">当前</UBadge>
+                <UBadge v-if="branch.id === currentChatId" color="success" variant="subtle" size="xs">Current</UBadge>
               </div>
             </div>
           </div>

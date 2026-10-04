@@ -91,7 +91,7 @@ async function handleSaveStandalone() {
   try {
     const formattedMsgs = getFormattedMessages()
     if (!formattedMsgs.length) {
-      toast.add({ title: '暂无对话内容可保存', color: 'warning' })
+      toast.add({ title: 'No chat messages to save', color: 'warning' })
       return
     }
     const firstUserMsg = formattedMsgs.find(m => m.role === 'user')
@@ -109,17 +109,15 @@ async function handleSaveStandalone() {
     })
 
     if (res?.chat?.id) {
-      toast.add({ title: '已保存为独立会话', color: 'success' })
+      toast.add({ title: 'Saved as standalone chat', color: 'success' })
       emit('update:open', false)
       await fetchChats()
       router.push(`/chat/${res.chat.id}`)
     }
   } catch (err: any) {
-    toast.add({ title: '保存失败', description: err.message, color: 'error' })
+    toast.add({ title: 'Failed to save chat', description: err.message, color: 'error' })
   }
 }
-
-
 </script>
 
 <template>
@@ -132,7 +130,7 @@ async function handleSaveStandalone() {
       <div class="px-4 py-3 border-b border-default flex items-center justify-between bg-muted/30">
         <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
           <UIcon name="i-heroicons-sparkles" class="w-4 h-4 text-neutral-400" />
-          <span>划词提问</span>
+          <span>Selection Q&A</span>
         </div>
         <div class="flex items-center gap-1.5">
           <!-- Save as Standalone -->
@@ -140,7 +138,7 @@ async function handleSaveStandalone() {
             color="neutral"
             variant="soft"
             icon="i-lucide-bookmark"
-            label="保存"
+            label="Save"
             size="xs"
             class="cursor-pointer font-medium rounded-full"
             @click="handleSaveStandalone"
@@ -161,7 +159,7 @@ async function handleSaveStandalone() {
       <div class="px-4 py-3 bg-muted/20 border-b border-default/60 space-y-1.5">
         <div class="text-xs font-medium text-muted flex items-center gap-1">
           <UIcon name="i-heroicons-document-text" class="w-3.5 h-3.5" />
-          <span>划选内容</span>
+          <span>Selected Quote</span>
         </div>
         <p class="text-xs text-highlighted italic bg-elevated/60 p-2.5 rounded-lg border border-default/60 line-clamp-4 leading-relaxed">
           "{{ selectedText }}"
@@ -173,8 +171,8 @@ async function handleSaveStandalone() {
         <!-- Empty state -->
         <div v-if="!visibleMessages.length" class="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-12">
           <UIcon name="i-heroicons-chat-bubble-left-right" class="w-8 h-8 text-muted/50" />
-          <p class="text-xs text-muted">此为临时探索，不占用主对话上下文</p>
-          <p class="text-[11px] text-muted/60">右上角可保存为独立会话或 Topic 分支</p>
+          <p class="text-xs text-muted">Temporary exploration workspace (isolated from main context)</p>
+          <p class="text-[11px] text-muted/60">Click Save at top right to promote to a standalone chat</p>
         </div>
 
         <!-- Messages — using exact same UChatMessages / ChatMessageContent / ChatMessageActions as main page -->
@@ -184,7 +182,28 @@ async function handleSaveStandalone() {
           :messages="messages"
           :status="status"
           :spacing-offset="0"
-          :ui="{ actions: 'w-full flex items-center' }"
+          :user="{
+            side: 'right',
+            variant: 'soft',
+            ui: {
+              root: 'justify-end items-end w-full',
+              container: 'justify-end max-w-full',
+              body: 'items-end max-w-full',
+              content: 'w-fit max-w-[88%] rounded-2xl px-3.5 py-2 bg-zinc-100 dark:bg-zinc-800/90 text-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/60 shadow-sm ml-auto text-left leading-relaxed text-sm',
+              actions: 'w-full flex items-center justify-end'
+            }
+          }"
+          :assistant="{
+            side: 'left',
+            variant: 'naked',
+            ui: {
+              root: 'justify-start items-start w-full',
+              container: 'w-full max-w-full',
+              body: 'w-full max-w-full',
+              content: 'w-full max-w-full text-zinc-900 dark:text-zinc-100 text-sm',
+              actions: 'w-full flex items-center justify-between'
+            }
+          }"
           class="pt-2 pb-4 px-2 w-full"
         >
           <template #indicator>
@@ -195,10 +214,12 @@ async function handleSaveStandalone() {
           </template>
 
           <template #content="{ message }">
-            <ChatMessageContent
-              :message="message"
-              :editing="false"
-            />
+            <div :class="message.role === 'user' ? 'w-fit max-w-full text-left' : 'w-full text-left'">
+              <ChatMessageContent
+                :message="message"
+                :editing="false"
+              />
+            </div>
           </template>
 
           <template #actions="{ message }">
@@ -217,7 +238,7 @@ async function handleSaveStandalone() {
         <div class="flex items-center gap-2">
           <UInput
             v-model="input"
-            placeholder="输入追问内容..."
+            placeholder="Ask a follow-up question..."
             size="sm"
             class="flex-1"
             :disabled="status === 'streaming'"

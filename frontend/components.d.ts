@@ -14,6 +14,7 @@ declare module 'vue' {
     AdminNav: typeof import('./src/components/admin/AdminNav.vue')['default']
     AttachmentEvidenceModal: typeof import('./src/components/chat/AttachmentEvidenceModal.vue')['default']
     AttachmentTray: typeof import('./src/components/chat/AttachmentTray.vue')['default']
+    CascadingModeSelector: typeof import('./src/components/chat/CascadingModeSelector.vue')['default']
     Chart: typeof import('./src/components/chat/tool/Chart.vue')['default']
     ChatTitle: typeof import('./src/components/chat/ChatTitle.vue')['default']
     ChatVisibility: typeof import('./src/components/chat/ChatVisibility.vue')['default']
@@ -38,7 +39,6 @@ declare module 'vue' {
     PermissionSelector: typeof import('./src/components/admin/PermissionSelector.vue')['default']
     ProgressIndicator: typeof import('./src/components/chat/ProgressIndicator.vue')['default']
     QuickNavDial: typeof import('./src/components/chat/QuickNavDial.vue')['default']
-    ReasoningFloatingWindow: typeof import('./src/components/chat/ReasoningFloatingWindow.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SelectionDrawer: typeof import('./src/components/chat/SelectionDrawer.vue')['default']
@@ -55,8 +55,6 @@ declare module 'vue' {
     UButton: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/Button.vue')['default']
     UCard: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/Card.vue')['default']
     UChatMessages: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/ChatMessages.vue')['default']
-    UChatPrompt: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/ChatPrompt.vue')['default']
-    UChatPromptSubmit: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/ChatPromptSubmit.vue')['default']
     UChatShimmer: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/ChatShimmer.vue')['default']
     UCheckbox: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/Checkbox.vue')['default']
     UCheckboxGroup: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/CheckboxGroup.vue')['default']
@@ -85,6 +83,5 @@ declare module 'vue' {
     UTextarea: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
     UTooltip: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internationalized+date@3.12.1_@internationalized+number@3.6.6_@tiptap+extensi_4wfdmbcu3bgfpzp36srganrf34/node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']
     Weather: typeof import('./src/components/chat/tool/Weather.vue')['default']
-    WeightModeSelect: typeof import('./src/components/chat/WeightModeSelect.vue')['default']
   }
 }

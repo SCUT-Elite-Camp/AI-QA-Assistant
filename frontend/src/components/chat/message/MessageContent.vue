@@ -57,6 +57,21 @@ const citationMap = computed(() => {
   return map
 })
 
+const hasTextContent = computed(() => {
+  return otherParts.value.some(part => isTextUIPart(part) && (part.text || '').trim().length > 0)
+})
+
+/** Transform [1] or [1, 2] markers into <cite-mark index="1"></cite-mark> components */
+function formatMarkdownWithCitations(markdown: string): string {
+  if (!markdown) return ''
+  return markdown.replace(/(```[\s\S]*?```|`[^`\n]*`)|\[(\d+(?:\s*,\s*\d+)*)\]/g, (match, code, digits) => {
+    if (code) return code
+    if (!digits) return match
+    const numbers = digits.split(',').map((d: string) => d.trim()).filter(Boolean)
+    return numbers.map((n: string) => `<cite-mark index="${n}"></cite-mark>`).join('')
+  })
+}
+
 // Make citations available to all CiteMark children via inject
 provide('ragCitationMap', citationMap)
 </script>
@@ -83,6 +98,23 @@ provide('ragCitationMap', citationMap)
 
   <!-- Assistant Message -->
   <template v-else-if="message.role === 'assistant'">
+    <!-- Processing... Sonar Pulse Indicator (shown while waiting for first tokens) -->
+    <div
+      v-if="!hasTextContent"
+      class="flex items-center gap-3 py-1 text-zinc-400 select-none animate-in fade-in duration-200"
+    >
+      <div class="relative flex items-center justify-center w-5 h-5 shrink-0">
+        <span
+          class="absolute inline-flex h-full w-full rounded-full bg-zinc-400/25 dark:bg-zinc-500/30 animate-ping opacity-75"
+          style="animation-duration: 1.8s;"
+        />
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-zinc-400 dark:bg-zinc-300 shadow-[0_0_6px_rgba(161,161,170,0.5)]" />
+      </div>
+      <span class="text-xs sm:text-sm font-medium tracking-wide text-zinc-400 dark:text-zinc-400 select-none">
+        Processing...
+      </span>
+    </div>
+
     <!-- Other Assistant Parts (Charts, Weather, and Main Text) -->
     <template
       v-for="(part, index) in otherParts"
@@ -98,7 +130,7 @@ provide('ragCitationMap', citationMap)
       />
       <ChatComark
         v-else-if="isTextUIPart(part)"
-        :markdown="part.text"
+        :markdown="formatMarkdownWithCitations(part.text)"
         :streaming="isPartStreaming(part)"
       />
     </template>

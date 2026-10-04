@@ -14,6 +14,20 @@ from .base_tool import BaseTool
 
 _DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_.:-]+")
+_PUBLIC_FILTER_KEYS = frozenset({"doc_id", "doc_ids", "space", "doc_type"})
+
+
+def _normalize_public_filters(filters: Any) -> dict:
+    if isinstance(filters, dict):
+        unknown = set(filters) - _PUBLIC_FILTER_KEYS
+        if unknown:
+            names = ", ".join(sorted(unknown))
+            raise ValueError(f"unsupported filter keys: {names}")
+        if "doc_id" in filters and not isinstance(filters["doc_id"], str):
+            raise ValueError("doc_id must be a string")
+        if "doc_ids" in filters and not isinstance(filters["doc_ids"], list):
+            raise ValueError("doc_ids must be an array")
+    return normalize_filters(filters)
 
 
 def _document_type(document: dict) -> str:
@@ -86,7 +100,11 @@ class FindDocumentsTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Optional title or content query."},
+                "query": {
+                    "type": "string",
+                    "description": "Optional title or content query.",
+                    "maxLength": 512,
+                },
                 "filters": _filter_schema(),
                 "top_k": {
                     "type": "integer",
@@ -99,12 +117,15 @@ class FindDocumentsTool(BaseTool):
         }
 
     def execute(self, **kwargs: Any) -> Any:
-        query = str(kwargs.get("query") or "").strip()
-        filters = normalize_filters(kwargs.get("filters"))
+        query_value = kwargs.get("query", "")
+        if type(query_value) is not str:
+            raise ValueError("query must be a string")
+        query = query_value.strip()
+        filters = _normalize_public_filters(kwargs.get("filters"))
         top_k = kwargs.get("top_k", 5)
         if not query and not filters:
             raise ValueError("query or filters is required")
-        if not isinstance(top_k, int) or not 1 <= top_k <= 20:
+        if type(top_k) is not int or not 1 <= top_k <= 20:
             raise ValueError("top_k must be an integer from 1 to 20")
         if len(query) > 512:
             raise ValueError("query must not exceed 512 characters")
@@ -188,7 +209,12 @@ class GetDocumentTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "doc_id": {"type": "string"},
+                "doc_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                },
                 "offset": {"type": "integer", "minimum": 0, "default": 0},
                 "limit": {
                     "type": "integer",
@@ -205,9 +231,9 @@ class GetDocumentTool(BaseTool):
         doc_id = kwargs.get("doc_id")
         offset = kwargs.get("offset", 0)
         limit = kwargs.get("limit", 20)
-        if not isinstance(offset, int) or offset < 0:
+        if type(offset) is not int or offset < 0:
             raise ValueError("offset must be a non-negative integer")
-        if not isinstance(limit, int) or not 1 <= limit <= 50:
+        if type(limit) is not int or not 1 <= limit <= 50:
             raise ValueError("limit must be an integer from 1 to 50")
         document = self.repository.load(doc_id)
         if document is None:

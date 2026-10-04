@@ -57,16 +57,16 @@ function controlledMime(file: File): string {
 
 function statusText(item: TrayAttachment): string {
   const labels: Record<string, string> = {
-    uploading: '上传中',
-    scanning: '安全扫描',
-    parsing: '解析中',
-    ready: '就绪',
-    needs_review: '识别结果需要确认',
-    failed: '处理失败',
-    quarantined: '文件未通过安全检查',
-    expired: '文件已过期',
-    deleted: '文件已删除',
-    cancelled: '上传已取消',
+    uploading: 'Uploading...',
+    scanning: 'Security scan',
+    parsing: 'Processing...',
+    ready: 'Ready',
+    needs_review: 'Review needed',
+    failed: 'Failed',
+    quarantined: 'Quarantined',
+    expired: 'Expired',
+    deleted: 'Deleted',
+    cancelled: 'Cancelled',
   }
   return labels[item.status] || item.status
 }
@@ -149,7 +149,7 @@ async function poll(item: TrayAttachment) {
 }
 
 function addFiles(files: FileList | File[]) {
-  if (props.disabled || !serviceEnabled.value) return
+  if (props.disabled) return
   Array.from(files).slice(0, 10 - items.value.length).forEach(uploadFile)
   if (inputRef.value) inputRef.value.value = ''
 }
@@ -195,8 +195,12 @@ function hasBlockingAttachments(): boolean {
 
 onMounted(async () => {
   window.addEventListener('paste', onPaste)
-  const status = await $fetch<any>('/api/attachments/status').catch(() => ({ enabled: false }))
-  serviceEnabled.value = status.enabled === true
+  try {
+    const status = await $fetch<any>('/api/attachments/status').catch(() => ({ enabled: true }))
+    serviceEnabled.value = status.enabled !== false
+  } catch {
+    serviceEnabled.value = true
+  }
 })
 onBeforeUnmount(() => {
   window.removeEventListener('paste', onPaste)
@@ -204,7 +208,11 @@ onBeforeUnmount(() => {
   items.value.forEach(item => { item.cancelled = true; item.xhr?.abort() })
 })
 defineExpose({
-  open: () => { if (!props.disabled && serviceEnabled.value) inputRef.value?.click() },
+  open: () => {
+    if (!props.disabled) {
+      inputRef.value?.click()
+    }
+  },
   resetAfterSend,
   hasBlockingAttachments,
 })
@@ -219,8 +227,8 @@ defineExpose({
       variant="ghost"
       size="sm"
       :disabled="disabled || !serviceEnabled"
-      :title="serviceEnabled ? '上传图片或文件' : '附件服务不可用'"
-      aria-label="上传图片或文件"
+      :title="serviceEnabled ? 'Upload files or images' : 'Attachment service unavailable'"
+      aria-label="Upload files or images"
       @click="inputRef?.click()"
     />
     <input
@@ -236,18 +244,18 @@ defineExpose({
         <div class="flex items-center gap-1.5">
           <UIcon :name="item.mimeType.startsWith('image/') ? 'i-lucide-image' : 'i-lucide-file'" class="size-3.5 shrink-0 text-primary" aria-hidden="true" />
           <span class="truncate font-medium">{{ item.filename }}</span>
-          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" class="ml-auto rounded-full p-0.5 hover:bg-neutral/20" :aria-label="`移除 ${item.filename}`" @click="remove(item)" />
+          <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" class="ml-auto rounded-full p-0.5 hover:bg-neutral/20" :aria-label="`Remove ${item.filename}`" @click="remove(item)" />
         </div>
         <div class="text-muted text-[11px] mt-0.5" role="status" aria-live="polite">
           {{ statusText(item) }} · {{ Math.ceil(item.sizeBytes / 1024) }} KB
           <span v-if="item.status === 'uploading'"> · {{ item.progress }}%</span>
         </div>
-        <div v-if="item.expiresAt" class="text-muted text-[10px]">到期：{{ new Date(item.expiresAt * 1000).toLocaleString() }}</div>
+        <div v-if="item.expiresAt" class="text-muted text-[10px]">Expires: {{ new Date(item.expiresAt * 1000).toLocaleString() }}</div>
         <div v-if="item.errorCode" class="text-error text-[11px]">{{ item.errorCode }}</div>
         <div v-if="item.status === 'needs_review'" class="mt-1 flex items-center gap-1 text-[11px]">
-          <input v-model="item.acceptedReview" type="checkbox" @change="notify"><span>确认使用低置信度结果</span>
+          <input v-model="item.acceptedReview" type="checkbox" @change="notify"><span>Confirm low-confidence result</span>
         </div>
-        <UButton v-if="item.status === 'failed' && item.id" label="重试" size="xs" variant="soft" color="error" class="mt-1" @click="retry(item)" />
+        <UButton v-if="item.status === 'failed' && item.id" label="Retry" size="xs" variant="soft" color="error" class="mt-1" @click="retry(item)" />
       </div>
     </div>
   </div>
