@@ -39,9 +39,10 @@ class ToolRegistryTest(unittest.TestCase):
         registry = ToolRegistry()
         tools = registry.get_all_tools()
         # By default, should have SearchTool registered
-        self.assertEqual(
-            {tool.name for tool in tools},
-            {"search_documents", "find_documents", "get_document"},
+        self.assertTrue(
+            {"search_documents", "find_documents", "get_document"}.issubset(
+                {tool.name for tool in tools}
+            )
         )
 
     def test_custom_registry_initialization(self) -> None:

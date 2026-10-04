@@ -59,7 +59,11 @@ class EvidenceGate:
             )
 
         if policy.evidence_policy == "topic_coverage":
-            accepted = len(eligible) >= 2
+            content_chunks = [
+                item for item in eligible
+                if not item.chunk_id.endswith("::document")
+            ]
+            accepted = len(content_chunks) >= 2
             missing = [] if accepted else self._missing_targets(query_plan, covered)
             return self._result(
                 accepted=accepted,

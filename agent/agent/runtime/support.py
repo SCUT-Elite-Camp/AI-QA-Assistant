@@ -103,10 +103,10 @@ class RuntimeSupport:
             )
         if {"find_documents", "get_document"}.issubset(tools):
             return (
-                "\n\n工具选择规则：未知 doc_id 时先用 find_documents 定位文档；"
-                "已知 doc_id 且需要通读或摘要时用 get_document。"
-                "get_document 返回 has_more=true 时，按 next_offset 继续分页读取；"
-                "只需查找相关片段时用 search_documents。"
+                "\n\n【文档检索与阅读规则】：\n"
+                "1. 当用户要求总结、概括、通读特定文档或会议纪要时：必须先调用 find_documents 查找定位目标文档以获取确切 doc_id，然后调用 get_document(doc_id=...) 读取文档完整内容进行总结。严禁仅调用 search_documents 检索碎片片段来代替整篇文档总结！\n"
+                "2. 若已知 doc_id，直接调用 get_document(doc_id=...)。\n"
+                "3. 仅当用户查询跨文档分散知识点或特定孤立细节时，才使用 search_documents。"
             )
         if "find_documents" in tools:
             return (

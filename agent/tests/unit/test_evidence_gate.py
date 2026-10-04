@@ -150,6 +150,18 @@ def test_summarization_requires_multiple_valid_chunks() -> None:
     assert sufficient.accepted is True
 
 
+def test_summarization_rejects_document_identity_evidence_alone() -> None:
+    result = _evaluate(
+        QueryIntent.SUMMARIZATION,
+        [
+            _evidence(chunk_id="doc-1::document"),
+            _evidence(chunk_id="doc-2::document"),
+        ],
+    )
+    assert result.accepted is False
+    assert result.reason == "topic_coverage_insufficient"
+
+
 def test_comparison_requires_evidence_for_each_sub_query() -> None:
     sub_queries = ["Agent CP1", "Agent CP2"]
     result = _evaluate(

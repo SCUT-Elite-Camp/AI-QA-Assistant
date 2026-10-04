@@ -566,6 +566,29 @@ class AgentRunner:
                             tool_executor=tool_executor,
                             retrieval_attempt=state.retrieval_attempts + 1,
                         )
+                        if (
+                            tool_name == "search_documents"
+                            and query_plan.intent.value == "summarization"
+                            and tool_executor is not None
+                            and evidence
+                            and policy is not None
+                            and "get_document" in policy.candidate_tools
+                        ):
+                            target_doc_id = evidence[0].get("doc_id") or evidence[0].get("document_id")
+                            if target_doc_id:
+                                try:
+                                    doc_result = tool_executor.execute(
+                                        tool_call_id=f"{call_id}-full-doc",
+                                        tool_name="get_document",
+                                        arguments={"doc_id": target_doc_id},
+                                        trace_id=trace_id,
+                                        retrieval_attempt=state.retrieval_attempts + 1,
+                                    )
+                                    if doc_result.success and doc_result.evidence:
+                                        evidence = [item.model_dump() for item in doc_result.evidence]
+                                        observation = self._format_search_observation(evidence)
+                                except Exception as doc_exc:
+                                    logger.warning("[Runner] Auto full-document retrieval failed: %s", doc_exc)
                 except Exception as exc:
                     logger.exception(
                         "[AGENT_TOOL_ERROR] trace_id=%s iteration=%s tool=%s error=%s",
@@ -1052,6 +1075,8 @@ class AgentRunner:
                 "wiki_search_evidence",
             }:
                 return self._format_search_observation(evidence), evidence, True
+            if tool_name == "find_documents" and query_plan.intent.value != "document_search":
+                return self._stringify_result(result.data or {}), [], False
             is_retrieval = tool_name in {
                 "find_documents",
                 "get_document",
