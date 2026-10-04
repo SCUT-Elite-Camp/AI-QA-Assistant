@@ -23,9 +23,11 @@ from models.document import (
 )
 from parsers.base import BaseParser
 from parsers.ocr_backends import (
+    OCRRegion,
     PageOCRBackend,
     PageTextQuality,
     PyMuPDFOCRBackend,
+    detect_ocr_regions,
     evaluate_page_text_quality,
 )
 from parsers.pdf_layout import (
@@ -86,12 +88,14 @@ class PDFParser(BaseParser):
                 native_blocks = extract_layout_blocks(page, page_number)
                 quality = evaluate_page_text_quality(page, native_blocks)
                 selected_blocks = native_blocks
-                if quality.needs_ocr:
+                ocr_regions = detect_ocr_regions(page, native_blocks, quality)
+                if ocr_regions:
                     selected_blocks = self._select_page_text(
                         page,
                         page_number,
                         native_blocks,
                         quality,
+                        ocr_regions,
                         ocr_diagnostics,
                     )
                 layout_pages.append(selected_blocks)
@@ -106,6 +110,10 @@ class PDFParser(BaseParser):
             diagnostics.ocr_failed_pages = ocr_diagnostics.ocr_failed_pages
             diagnostics.ocr_empty_pages = ocr_diagnostics.ocr_empty_pages
             diagnostics.ocr_not_improved_pages = ocr_diagnostics.ocr_not_improved_pages
+            diagnostics.ocr_candidate_regions = ocr_diagnostics.ocr_candidate_regions
+            diagnostics.ocr_processed_regions = ocr_diagnostics.ocr_processed_regions
+            diagnostics.ocr_added_blocks = ocr_diagnostics.ocr_added_blocks
+            diagnostics.ocr_replaced_blocks = ocr_diagnostics.ocr_replaced_blocks
             diagnostics.ocr_messages = ocr_diagnostics.ocr_messages
             self.last_layout_diagnostics = diagnostics
 
@@ -223,6 +231,10 @@ class PDFParser(BaseParser):
             ocr_failed_pages=diagnostics.ocr_failed_pages,
             ocr_empty_pages=diagnostics.ocr_empty_pages,
             ocr_not_improved_pages=diagnostics.ocr_not_improved_pages,
+            ocr_candidate_regions=diagnostics.ocr_candidate_regions,
+            ocr_processed_regions=diagnostics.ocr_processed_regions,
+            ocr_added_blocks=diagnostics.ocr_added_blocks,
+            ocr_replaced_blocks=diagnostics.ocr_replaced_blocks,
             ocr_messages=diagnostics.ocr_messages,
             table_messages_by_page=table_messages_by_page,
             accepted_tables=sum(table.acceptance == "accepted" for table in final_tables),
@@ -243,9 +255,11 @@ class PDFParser(BaseParser):
         page_number: int,
         native_blocks: list[LayoutBlock],
         native_quality: PageTextQuality,
+        regions: list[OCRRegion],
         diagnostics: LayoutDiagnostics,
     ) -> list[LayoutBlock]:
-        """Use OCR only for a weak page and keep native text on any failure."""
+        """OCR selected regions and keep native text on any failure."""
+        diagnostics.ocr_candidate_regions += len(regions)
         try:
             available = self.ocr_backend.available()
         except Exception as error:
@@ -264,7 +278,14 @@ class PDFParser(BaseParser):
 
         diagnostics.ocr_attempted_pages.append(page_number)
         try:
-            ocr_blocks = self.ocr_backend.extract(page, page_number)
+            extract_regions = getattr(self.ocr_backend, "extract_regions", None)
+            used_regional_backend = callable(extract_regions)
+            if used_regional_backend:
+                ocr_blocks = extract_regions(page, page_number, regions)
+                diagnostics.ocr_processed_regions += len(regions)
+            else:
+                ocr_blocks = self.ocr_backend.extract(page, page_number)
+                diagnostics.ocr_processed_regions += 1
         except Exception as error:
             diagnostics.ocr_failed_pages.append(page_number)
             diagnostics.ocr_messages.append(f"page {page_number}: OCR failed: {error}")
@@ -275,10 +296,11 @@ class PDFParser(BaseParser):
             diagnostics.ocr_empty_pages.append(page_number)
             diagnostics.ocr_messages.append(f"page {page_number}: OCR returned no usable text")
             return native_blocks
-        selected = _fuse_native_and_ocr_blocks(
+        selected, added_blocks, replaced_blocks = _fuse_native_and_ocr_blocks(
             native_blocks,
             selected,
             float(page.rect.width),
+            keep_unmatched_unreliable=used_regional_backend,
         )
         ocr_quality = evaluate_page_text_quality(page, selected)
         if _page_text_rank(ocr_quality) <= _page_text_rank(native_quality):
@@ -288,6 +310,8 @@ class PDFParser(BaseParser):
             )
             return native_blocks
         diagnostics.ocr_applied_pages.append(page_number)
+        diagnostics.ocr_added_blocks += added_blocks
+        diagnostics.ocr_replaced_blocks += replaced_blocks
         return selected
 
     @staticmethod
@@ -528,24 +552,69 @@ def _fuse_native_and_ocr_blocks(
     native_blocks: list[LayoutBlock],
     ocr_blocks: list[LayoutBlock],
     page_width: float,
-) -> list[LayoutBlock]:
-    """Keep reliable native text and supplement only non-overlapping OCR."""
-    reliable_native = [block for block in native_blocks if _reliable_native_text(block.text)]
-    if reliable_native:
-        ocr_blocks = [
+    *,
+    keep_unmatched_unreliable: bool = True,
+) -> tuple[list[LayoutBlock], int, int]:
+    """Fuse OCR at block level, replacing only worse overlapping native text."""
+    reliable_native = [
+        block for block in native_blocks if _reliable_native_text(block.text)
+    ]
+    unreliable_native = [
+        block for block in native_blocks if not _reliable_native_text(block.text)
+    ]
+    kept_native: list[LayoutBlock] = list(reliable_native)
+    kept_ocr_ids = {id(block) for block in ocr_blocks}
+    for ocr_block in ocr_blocks:
+        if any(
+            _layout_overlap_ratio(ocr_block.bbox, native_block.bbox)
+            >= OCR_DUPLICATE_REGION_OVERLAP
+            for native_block in reliable_native
+        ):
+            kept_ocr_ids.discard(id(ocr_block))
+
+    replaced_count = 0
+    replacement_ocr_ids: set[int] = set()
+    for native_block in unreliable_native:
+        overlapping = [
             ocr_block
             for ocr_block in ocr_blocks
-            if not any(
-                _layout_overlap_ratio(ocr_block.bbox, native_block.bbox)
-                >= OCR_DUPLICATE_REGION_OVERLAP
-                for native_block in reliable_native
-            )
+            if id(ocr_block) in kept_ocr_ids
+            and _layout_overlap_ratio(ocr_block.bbox, native_block.bbox)
+            >= OCR_DUPLICATE_REGION_OVERLAP
         ]
-        selected = [*reliable_native, *ocr_blocks]
-    else:
-        selected = list(ocr_blocks)
+        if not overlapping:
+            if keep_unmatched_unreliable:
+                kept_native.append(native_block)
+            continue
+
+        best_ocr = max(overlapping, key=lambda block: _block_text_rank(block.text))
+        if _block_text_rank(best_ocr.text) > _block_text_rank(native_block.text):
+            replaced_count += 1
+            replacement_ocr_ids.add(id(best_ocr))
+            kept_ocr_ids.difference_update(
+                id(block) for block in overlapping if block is not best_ocr
+            )
+        else:
+            kept_native.append(native_block)
+            kept_ocr_ids.difference_update(id(block) for block in overlapping)
+
+    kept_ocr = [block for block in ocr_blocks if id(block) in kept_ocr_ids]
+    selected = [*kept_native, *kept_ocr]
     ordered = order_layout_blocks(selected, page_width)
-    return [replace(block, ordinal=index) for index, block in enumerate(ordered)]
+    result = [replace(block, ordinal=index) for index, block in enumerate(ordered)]
+    replacement_result_ids = replacement_ocr_ids.intersection(kept_ocr_ids)
+    added_count = len(kept_ocr) - len(replacement_result_ids)
+    return result, added_count, replaced_count
+
+
+def _block_text_rank(text: str) -> tuple[bool, int]:
+    characters = [character for character in text if not character.isspace()]
+    invalid = sum(
+        character == "\ufffd" or unicodedata.category(character).startswith("C")
+        for character in characters
+    )
+    usable = len(characters) - invalid
+    return invalid == 0, usable
 
 
 def _reliable_native_text(text: str) -> bool:

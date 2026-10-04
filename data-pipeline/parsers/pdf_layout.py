@@ -79,6 +79,10 @@ class LayoutDiagnostics:
     ocr_failed_pages: list[int] = field(default_factory=list)
     ocr_empty_pages: list[int] = field(default_factory=list)
     ocr_not_improved_pages: list[int] = field(default_factory=list)
+    ocr_candidate_regions: int = 0
+    ocr_processed_regions: int = 0
+    ocr_added_blocks: int = 0
+    ocr_replaced_blocks: int = 0
     ocr_messages: list[str] = field(default_factory=list)
 
 

@@ -25,6 +25,10 @@ def test_parse_diagnostics_normalizes_and_round_trips():
         page_count=3,
         ocr_attempted_pages=[3, 1, 3],
         ocr_failed_pages=[2, 2],
+        ocr_candidate_regions=5,
+        ocr_processed_regions=4,
+        ocr_added_blocks=3,
+        ocr_replaced_blocks=1,
         ocr_messages=["page 2: failed", "", "page 2: failed"],
         table_messages_by_page={
             3: ["backend_error:gmft", "backend_error:gmft"],
@@ -39,6 +43,10 @@ def test_parse_diagnostics_normalizes_and_round_trips():
     assert diagnostics.ocr_attempted_pages == [1, 3]
     assert diagnostics.ocr_failed_pages == [2]
     assert diagnostics.ocr_messages == ["page 2: failed"]
+    assert diagnostics.ocr_candidate_regions == 5
+    assert diagnostics.ocr_processed_regions == 4
+    assert diagnostics.ocr_added_blocks == 3
+    assert diagnostics.ocr_replaced_blocks == 1
     assert list(diagnostics.table_messages_by_page) == [1, 3]
     assert diagnostics.table_messages_by_page[3] == ["backend_error:gmft"]
     assert restored == diagnostics

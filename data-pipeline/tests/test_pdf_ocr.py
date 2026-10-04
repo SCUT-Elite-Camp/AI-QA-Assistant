@@ -11,9 +11,13 @@ if str(PIPELINE_ROOT) not in sys.path:
 
 from models.document import BlockType, BoundingBox, ContentBlock  # noqa: E402
 from parsers.ocr_backends import (  # noqa: E402
+    OCRRegion,
     PyMuPDFOCRBackend,
+    detect_ocr_regions,
     evaluate_page_text_quality,
 )
+from parsers import ocr_backends  # noqa: E402
+from parsers.pdf_layout import LayoutBlock  # noqa: E402
 from parsers.pdf_parser import PDFParser  # noqa: E402
 
 
@@ -36,6 +40,18 @@ class FakeOCRBackend:
 
     def extract(self, page, page_number):
         self.calls.append(page_number)
+        if self.error is not None:
+            raise self.error
+        return self.blocks_by_page.get(page_number, [])
+
+
+class FakeRegionOCRBackend(FakeOCRBackend):
+    def __init__(self, blocks_by_page=None, *, available=True, error=None):
+        super().__init__(blocks_by_page, available=available, error=error)
+        self.region_calls = []
+
+    def extract_regions(self, page, page_number, regions):
+        self.region_calls.append((page_number, list(regions)))
         if self.error is not None:
             raise self.error
         return self.blocks_by_page.get(page_number, [])
@@ -72,6 +88,91 @@ def make_mixed_pdf(path):
     page.insert_text((60, 40), "Native caption", fontsize=12)
     document.save(path)
     document.close()
+
+
+def native_layout(text, bbox, *, page=1, ordinal=0):
+    return LayoutBlock(
+        text=text,
+        bbox=bbox,
+        font_size=11,
+        font_name="Body",
+        flags=0,
+        rotation=0,
+        page_number=page,
+        ordinal=ordinal,
+        page_width=500,
+        page_height=600,
+    )
+
+
+def test_region_detector_targets_bad_native_without_ocring_images_on_good_page():
+    page = QualityPage((40, 250, 460, 500))
+    native = [
+        native_layout("Reliable native paragraph", (40, 40, 300, 70)),
+        native_layout("�", (50, 150, 90, 170), ordinal=1),
+    ]
+    quality = evaluate_page_text_quality(page, native)
+
+    regions = detect_ocr_regions(page, native, quality)
+
+    assert [region.bbox for region in regions] == [
+        (42.0, 142.0, 98.0, 178.0),
+    ]
+    assert regions[0].reasons == ("unreliable_native",)
+
+
+def test_region_detector_targets_image_blocks_when_page_quality_is_weak():
+    page = QualityPage((40, 250, 460, 500))
+    native = [native_layout("�", (50, 150, 90, 170))]
+    quality = evaluate_page_text_quality(page, native)
+
+    regions = detect_ocr_regions(page, native, quality)
+
+    assert [region.bbox for region in regions] == [
+        (42.0, 142.0, 98.0, 178.0),
+        (32.0, 242.0, 468.0, 508.0),
+    ]
+    assert regions[1].reasons == ("image",)
+
+
+def test_parser_uses_region_backend_and_persists_fusion_counts(tmp_path):
+    source = tmp_path / "mixed-regions.pdf"
+    make_mixed_pdf(source)
+    backend = FakeRegionOCRBackend({1: [
+        ocr_block("Native caption", bbox=(58, 25, 140, 46)),
+        ocr_block("Scanned body recovered", bbox=(40, 100, 460, 130)),
+    ]})
+
+    document = PDFParser(router=StaticRouter(), ocr_backend=backend).parse(str(source))
+
+    assert backend.calls == []
+    assert len(backend.region_calls) == 1
+    page_number, regions = backend.region_calls[0]
+    assert page_number == 1
+    assert regions
+    assert "Scanned body recovered" in document.content
+    diagnostics = document.parse_diagnostics
+    assert diagnostics is not None
+    assert diagnostics.ocr_candidate_regions == len(regions)
+    assert diagnostics.ocr_processed_regions == len(regions)
+    assert diagnostics.ocr_added_blocks == 1
+    assert diagnostics.ocr_replaced_blocks == 0
+
+
+def test_region_fusion_replaces_only_overlapping_unreliable_native_block(tmp_path):
+    source = tmp_path / "replace-region.pdf"
+    make_pdf(source, ["x"])
+    backend = FakeRegionOCRBackend({1: [
+        ocr_block("Recovered text", bbox=(55, 185, 180, 210)),
+    ]})
+
+    document = PDFParser(router=StaticRouter(), ocr_backend=backend).parse(str(source))
+
+    assert document.content == "Recovered text"
+    diagnostics = document.parse_diagnostics
+    assert diagnostics is not None
+    assert diagnostics.ocr_added_blocks == 0
+    assert diagnostics.ocr_replaced_blocks == 1
 
 
 def test_low_text_page_uses_injected_ocr_backend(tmp_path):
@@ -298,6 +399,77 @@ def test_pymupdf_backend_converts_ocr_dict_to_provenance_blocks(monkeypatch):
     assert blocks[0].source == "ocr"
     assert blocks[0].extraction_method == "ocr"
     assert blocks[0].confidence < 1.0
+
+
+def test_pymupdf_backend_crops_regions_and_maps_ocr_boxes_to_page(monkeypatch):
+    class RegionPixmap:
+        def __init__(self):
+            self.calls = []
+
+        def pdfocr_tobytes(self, **kwargs):
+            self.calls.append(kwargs)
+            return b"ocr-pdf"
+
+    class SourcePage:
+        rect = fitz.Rect(0, 0, 500, 600)
+
+        def __init__(self):
+            self.calls = []
+            self.pixmap = RegionPixmap()
+
+        def get_pixmap(self, **kwargs):
+            self.calls.append(kwargs)
+            return self.pixmap
+
+    class OCRPage:
+        rect = fitz.Rect(0, 0, 200, 100)
+
+        def get_text(self, kind, *, sort):
+            assert (kind, sort) == ("dict", False)
+            return {"blocks": [{
+                "type": 0,
+                "bbox": (20, 10, 180, 90),
+                "lines": [{
+                    "dir": (1, 0),
+                    "spans": [{
+                        "text": "Regional OCR",
+                        "size": 10,
+                        "font": "OCRFont",
+                        "flags": 0,
+                    }],
+                }],
+            }]}
+
+    class OCRDocument:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def __getitem__(self, index):
+            assert index == 0
+            return OCRPage()
+
+    monkeypatch.setattr(ocr_backends.fitz, "open", lambda **kwargs: OCRDocument())
+    backend = PyMuPDFOCRBackend()
+    backend._installed_languages_cache = ("eng",)
+    page = SourcePage()
+
+    blocks = backend.extract_regions(
+        page,
+        page_number=2,
+        regions=[OCRRegion((100, 200, 300, 300), ("image",))],
+    )
+
+    assert tuple(page.calls[0]["clip"]) == (100.0, 200.0, 300.0, 300.0)
+    assert page.calls[0]["dpi"] == 300
+    assert page.pixmap.calls == [{"compress": False, "language": "eng"}]
+    assert len(blocks) == 1
+    assert blocks[0].text == "Regional OCR"
+    assert blocks[0].page_number == 2
+    assert blocks[0].bbox == BoundingBox(x0=120, y0=210, x1=280, y1=290)
+    assert blocks[0].extraction_method == "ocr-region"
 
 
 def test_pymupdf_backend_falls_back_to_installed_english_and_uses_configured_dpi(
