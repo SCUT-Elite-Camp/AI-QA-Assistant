@@ -1,4 +1,5 @@
 from agent.agent import Agent
+from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.runtime.lifecycle import ApplicationContainer
 from toolset.tool_layer.base_tool import BaseTool
@@ -68,5 +69,6 @@ def test_warmup_uses_the_shared_search_tool() -> None:
     assert agent.registry.get_tool("search_documents") is tool
     assert len(calls) == 1
     assert calls[0]["trace_id"] == "startup-preload"
+    assert calls[0]["mode"] == settings.DEFAULT_RETRIEVAL_MODE
     assert container.snapshot().retrieval_ready is True
 

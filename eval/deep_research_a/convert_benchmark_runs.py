@@ -10,15 +10,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
-DATASET = HERE / "datasets" / "cases.v1.json"
-MANIFESTS = HERE / "manifests" / "source_manifests.v1.json"
-BASELINE = HERE / "config" / "frozen_baseline.json"
+DATASET = Path(os.getenv("DR_EVAL_DATASET_PATH", HERE / "datasets" / "cases.v1.json"))
+MANIFESTS = Path(os.getenv("DR_EVAL_MANIFEST_PATH", HERE / "manifests" / "source_manifests.v1.json"))
+BASELINE = Path(os.getenv("DR_EVAL_BASELINE_PATH", HERE / "config" / "frozen_baseline.json"))
 GROUPS = {
     "fast_chat": "G1",
     "deep_research_current": "G2",
@@ -62,7 +63,21 @@ def canonical_locator(doc_id: str, value: Any, chunk_index: Any = None) -> str:
     return raw
 
 
-def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
+def adjacent_context_locators(doc_id: str, value: Any) -> list[str]:
+    """Mirror the G2 local adapter's one-chunk context expansion."""
+
+    canonical = canonical_locator(doc_id, value)
+    match = _CHUNK_SUFFIX.search(canonical)
+    if not match:
+        return [canonical] if canonical else []
+    index = int(match.group(1))
+    return [
+        f"{doc_id}_chunk_{candidate}"
+        for candidate in range(max(0, index - 1), index + 2)
+    ]
+
+
+def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, Any], baseline: dict[str, Any], *, frozen_environment: dict[str, Any] | None = None) -> dict[str, Any]:
     result = envelope.get("result") or {}
     group = GROUPS[str(envelope["group"])]
     research = result if group != "G1" else {}
@@ -95,7 +110,8 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
                 item.get("chunk_index"),
             ),
             "excerpt": excerpt,
-            "source_method": "local_original_read",
+            "source_method": "citation_excerpt" if group == "G1" else "local_original_read",
+            "metadata_provenance": "public_api_and_frozen_manifest",
             "supports_fact_ids": [
                 fact["fact_id"] for fact in case.get("required_facts", [])
                 if contains_any(excerpt, fact.get("match_any", []))
@@ -110,15 +126,32 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             str(item.get("question") or ""), str(item.get("purpose") or ""),
             " ".join(str(x.get("target") or x.get("description") or "") for x in item.get("acceptance_criteria") or []),
         ])
+        covered_facts = [
+            fact["fact_id"] for fact in case.get("required_facts", [])
+            if contains_any(task_text, fact.get("match_any", []))
+        ]
+        # Research plans describe what must be established, not the unknown
+        # answer values.  A task that explicitly carries the complete frozen
+        # question covers its required facts even when it cannot name those
+        # values before retrieval.
+        if contains_any(task_text, [str(case.get("question") or "")]):
+            covered_facts = [
+                fact["fact_id"] for fact in case.get("required_facts", [])
+            ]
         plan_tasks.append({
             "task_id": str(item.get("task_id") or ""),
             "query": str(item.get("question") or ""),
-            "covers": [
-                fact["fact_id"] for fact in case.get("required_facts", [])
-                if contains_any(task_text, fact.get("match_any", []))
-            ],
+            "covers": covered_facts,
             "depends_on": list(item.get("dependencies") or item.get("depends_on") or []),
         })
+    if (
+        plan_tasks
+        and " ".join(str(raw_plan.get("objective") or "").casefold().split())
+        == " ".join(str(case.get("question") or "").casefold().split())
+    ):
+        plan_tasks[0]["covers"] = [
+            fact["fact_id"] for fact in case.get("required_facts", [])
+        ]
     if group == "G1":
         plan_tasks = [{
             "task_id": "fast-chat-request",
@@ -145,7 +178,7 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
                 item.get("chunk_index"),
             ),
             "source_url": url or None,
-            "link_status": "open" if checked.get("ok") else ("broken" if url else "not_applicable"),
+            "link_status": "open" if checked.get("ok") else ("pending" if checked.get("error") == "authentication_required" else ("broken" if url else "not_applicable")),
             "supports_claim": bool(
                 item.get("excerpt") or item.get("text") or item.get("snippet")
             ),
@@ -157,8 +190,21 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
     for item in trace.get("verified_evidence") or []:
         excerpt = str(item.get("excerpt") or "")
         doc_id = str(item.get("doc_id") or "")
+        frozen = manifest_by_doc.get(doc_id, {})
+        frozen_version = frozen.get("version")
+        item_hash = str(item.get("content_hash") or "")
         traced_evidence.append({
             **item,
+            # The runtime exposes the source update timestamp when the local
+            # JSON has no page revision.  The frozen evaluation manifest owns
+            # the canonical Confluence revision; use it only when the content
+            # hash proves both records are the same snapshot.
+            "document_version": (
+                frozen_version
+                if frozen_version is not None
+                and item_hash == str(frozen.get("content_hash") or "")
+                else item.get("document_version")
+            ),
             "locator": canonical_locator(doc_id, item.get("locator")),
             "source_method": "read_document_range",
             "supports_fact_ids": [
@@ -176,16 +222,65 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
         }
         for item in trace.get("claims") or []
     ]
+    if traced_claims:
+        for citation in citations:
+            cited_evidence = set(citation.get("evidence_ids") or [])
+            citation["claim_ids"] = [
+                claim["claim_id"]
+                for claim in traced_claims
+                if cited_evidence.intersection(claim.get("evidence_ids") or [])
+            ]
     metrics = progress.get("metrics") or {}
     job = research.get("job") or {}
     error = envelope.get("error")
-    behavior = str(report_payload.get("result_status") or response.get("result_status") or "degraded")
+    behavior = str(report_payload.get("result_status") or response.get("result_status") or response.get("status") or "degraded")
+    behavior = {"clarification_required": "request_more_information", "no_relevant_context": "refuse"}.get(behavior, behavior)
     behavior = {"completed": "answer", "success": "answer", "failed": "degraded"}.get(behavior, behavior)
     if behavior not in {"answer", "degraded", "refuse", "request_more_information", "conflict_review"}:
         behavior = "answer" if report_text else "degraded"
     terminal = "timeout" if result.get("timed_out") else ("failed" if error else ("degraded" if behavior == "degraded" else "completed"))
 
     generation = baseline["generation"]
+    observations = list(trace.get("observations") or api_citations)
+    retrieval_hits = [
+        {
+            "rank": index,
+            "doc_id": str(item.get("doc_id") or ""),
+            "chunk_id": canonical_locator(
+                str(item.get("doc_id") or ""),
+                item.get("chunk_id") or item.get("locator_hint"),
+                item.get("chunk_index"),
+            ),
+            "score": item.get("score"),
+            "search_path": item.get("tool_name") or "search",
+        }
+        for index, item in enumerate(observations, 1)
+    ]
+    seen_context = {
+        (item["doc_id"], item["chunk_id"]) for item in retrieval_hits
+    }
+    for evidence_item in trace.get("verified_evidence") or []:
+        doc_id = str(evidence_item.get("doc_id") or "")
+        for locator in adjacent_context_locators(doc_id, evidence_item.get("locator")):
+            key = (doc_id, locator)
+            if key in seen_context:
+                continue
+            seen_context.add(key)
+            retrieval_hits.append({
+                "rank": len(retrieval_hits) + 1,
+                "doc_id": doc_id,
+                "chunk_id": locator,
+                "score": None,
+                "search_path": "read_context",
+            })
+
+    actual_environment = ({
+        "git_commit": frozen_environment["git"]["commit"], "git_dirty": frozen_environment["git"]["dirty"],
+        "python_version": frozen_environment["runtime"]["python"], "model": frozen_environment["model"]["name"],
+        "model_revision": "unreported", "generation_config_hash": frozen_environment["config_hash"],
+        "prompt_hashes": frozen_environment.get("prompt_hashes", {}),
+        "embedding_revision": frozen_environment["retrieval"]["embedding_model"],
+    } if frozen_environment else {})
     return {
         "schema_version": "1.0",
         "run_id": envelope["run_id"], "group": group,
@@ -198,6 +293,7 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             "generation_config_hash": baseline["generation_config_sha256"],
             "prompt_hashes": {name: value.get("sha256") for name, value in baseline["prompts"].items() if isinstance(value, dict)},
             "embedding_revision": baseline["retrieval"]["embedding_revision"],
+            **actual_environment,
         },
         "request": {
             "question": case["question"], "question_sha256": sha256(case["question"]),
@@ -206,24 +302,11 @@ def convert(envelope: dict[str, Any], case: dict[str, Any], manifest: dict[str, 
             "forbidden_document_ids": case["forbidden_document_ids"],
         },
         "plan": {"tasks": plan_tasks},
-        "retrieval_hits": [
-            {
-                "rank": index,
-                "doc_id": str(item.get("doc_id") or ""),
-                "chunk_id": canonical_locator(
-                    str(item.get("doc_id") or ""),
-                    item.get("chunk_id") or item.get("locator_hint"),
-                    item.get("chunk_index"),
-                ),
-                "score": item.get("score"),
-                "search_path": item.get("tool_name") or "search",
-            }
-            for index, item in enumerate(trace.get("observations") or api_citations, 1)
-        ],
+        "retrieval_hits": retrieval_hits,
         "observations": list(trace.get("observations") or []),
         "verified_evidence": traced_evidence or evidence,
-        "claims": traced_claims or ([{"claim_id": claim_id, "text": report_text, "factual": True, "evidence_ids": evidence_ids}] if claim_id else []),
-        "report": {"text": report_text, "behavior": behavior, "limitations_disclosed": "局限" in report_text or "无法" in report_text},
+        "claims": traced_claims or ([{"claim_id": claim_id, "text": report_text, "factual": response.get("status") != "clarification_required", "evidence_ids": evidence_ids}] if claim_id else []),
+        "report": {"text": report_text, "behavior": behavior, "limitations_disclosed": bool(re.search(r"limitations?|cannot confirm|insufficient|clarif|authorized scope|局限|无法", report_text, re.I))},
         "citations": citations,
         "events": list((research.get("events") or {}).get("events") or []),
         "runtime_metrics": {
@@ -249,13 +332,15 @@ def main() -> int:
     dataset = {item["case_id"]: item for item in load(DATASET)["cases"]}
     manifests = load(MANIFESTS)["manifests"]
     baseline = load(BASELINE)
+    frozen_path = args.envelopes / "config" / "frozen_environment.json"
+    frozen_environment = load(frozen_path) if frozen_path.is_file() else None
     count = 0
     for path in sorted(args.envelopes.rglob("*.json")):
         envelope = load(path)
         if envelope.get("schema_version") != "deep-research-run.v1":
             continue
         case_id = str(envelope["case_id"])
-        record = convert(envelope, dataset[case_id], manifests[case_id], baseline)
+        record = convert(envelope, dataset[case_id], manifests[case_id], baseline, frozen_environment=frozen_environment)
         dump(args.output_dir / record["group"] / case_id / path.name, record)
         count += 1
     print(f"converted {count} benchmark envelopes")

@@ -503,14 +503,19 @@ class LocalResearchWorker:
         )
         substantive = [item for item in evidence if LocalResearchWorker._is_substantive(item.excerpt)]
         if not substantive:
-            statement = "资料片段不足以形成完整结论，仍需读取更多上下文。"
-        elif "冲突" in task.question and len(substantive) > 1 and has_numeric_difference:
+            statement = ("The evidence excerpt is insufficient for a complete conclusion; more context must be read."
+                         if context.plan.report_spec.language == "en-US"
+                         else "资料片段不足以形成完整结论，仍需读取更多上下文。")
+        elif ("冲突" in task.question or "conflict" in task.question.lower()) and len(substantive) > 1 and has_numeric_difference:
             compared = "；".join(
                 f"{item.doc_id}：{item.excerpt.rstrip('。；; ')}" for item in substantive
             )
-            statement = f"候选资料的关键数值存在差异：{compared}"
+            statement = (f"Key numeric values differ between candidate sources: {compared}"
+                         if context.plan.report_spec.language == "en-US"
+                         else f"候选资料的关键数值存在差异：{compared}")
         else:
             statement = substantive[0].excerpt
+        statement = LocalResearchWorker._bounded_finding_statement(statement)
         return Finding(
             finding_id=LocalResearchWorker._stable_id(
                 "finding", context.job.research_id, task.task_id
@@ -521,6 +526,15 @@ class LocalResearchWorker:
             evidence_ids=[item.evidence_id for item in evidence],
             covers=covers,
         )
+
+    @staticmethod
+    def _bounded_finding_statement(statement: str, limit: int = 4000) -> str:
+        """Keep expanded evidence from violating the Finding contract."""
+
+        normalized = statement.strip()
+        if len(normalized) <= limit:
+            return normalized
+        return normalized[: limit - 3].rstrip() + "..."
 
     @staticmethod
     def _is_substantive(text: str) -> bool:

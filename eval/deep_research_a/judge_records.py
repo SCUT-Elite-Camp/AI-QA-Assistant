@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -58,19 +59,17 @@ def parse_json(raw: str) -> dict[str, Any]:
     # every scored field; restoring this fixed metadata does not alter judgment.
     if value.get("judge_version") is None:
         value["judge_version"] = "judge.v1"
-    if value.get("required_fact_ids_supported") is None:
-        value["required_fact_ids_supported"] = []
-    if value.get("unsupported_claim_ids") is None:
-        # Never allow a low-faithfulness response that omitted claim IDs to
-        # pass the deterministic unsupported-claim gate.
-        value["unsupported_claim_ids"] = (
-            [] if value.get("faithfulness") == 5
-            else ["judge-unspecified-unsupported-claim"]
-        )
+    missing_audit_fields = [
+        key for key in ("required_fact_ids_supported", "unsupported_claim_ids")
+        if value.get(key) is None
+    ]
+    if missing_audit_fields:
+        raise ValueError(f"judge omitted auditable fields: {missing_audit_fields}")
     if value.get("rationale") is None:
-        value["rationale"] = "\n".join(dimension_rationales) or (
-            "The model returned dimension scores without a textual rationale."
-        )
+        if dimension_rationales:
+            value["rationale"] = "\n".join(dimension_rationales)
+        else:
+            raise ValueError("judge omitted rationale")
     if value.get("judge_version") != "judge.v1":
         raise ValueError(f"invalid judge_version:{value.get('judge_version')!r}")
     if any(not isinstance(value.get(key), int) or not 1 <= value[key] <= 5 for key in integer_fields):
@@ -80,7 +79,40 @@ def parse_json(raw: str) -> dict[str, Any]:
             raise ValueError(f"{key} must be a list; returned_keys={sorted(value)}")
     if not isinstance(value.get("rationale"), str):
         raise ValueError("rationale must be a string")
+    rationale = value["rationale"].casefold()
+    denies_unsupported = any(phrase in rationale for phrase in (
+        "no unsupported factual claims",
+        "no unsupported claims",
+        "does not make any unsupported factual claims",
+        "没有无证据事实",
+        "不存在无证据事实",
+    ))
+    if value["unsupported_claim_ids"] and denies_unsupported:
+        raise ValueError(
+            "judge rationale says no unsupported claims but unsupported_claim_ids is non-empty"
+        )
     return value
+
+
+def validate_judgment(
+    judgment: dict[str, Any],
+    case: dict[str, Any],
+    record: dict[str, Any],
+) -> None:
+    required_ids = {str(item["fact_id"]) for item in case.get("required_facts", [])}
+    supported_ids = {str(item) for item in judgment["required_fact_ids_supported"]}
+    unknown_facts = supported_ids - required_ids
+    if unknown_facts:
+        raise ValueError(f"judge returned unknown required fact ids: {sorted(unknown_facts)}")
+    claim_ids = {str(item.get("claim_id")) for item in record.get("claims", [])}
+    unsupported_ids = {str(item) for item in judgment["unsupported_claim_ids"]}
+    unknown_claims = unsupported_ids - claim_ids
+    if unknown_claims:
+        raise ValueError(f"judge returned unknown unsupported claim ids: {sorted(unknown_claims)}")
+    if required_ids and supported_ids == required_ids and judgment["completeness"] < 4:
+        raise ValueError(
+            "judge marked every required fact supported but scored completeness below 4"
+        )
 
 
 def judge_record(record: dict[str, Any], case: dict[str, Any], prompt: str, client: LLMClient) -> dict[str, Any]:
@@ -103,11 +135,25 @@ def judge_record(record: dict[str, Any], case: dict[str, Any], prompt: str, clie
         ],
         "frozen_excerpts": record.get("verified_evidence", []),
         "claims": record.get("claims", []),
+        # Link availability belongs to the deterministic Citation layer. Do not
+        # expose link_status to the semantic judge or it may leak into report
+        # limitation/faithfulness scores.
+        "citations": [
+            {
+                key: citation.get(key)
+                for key in (
+                    "citation_id", "claim_ids", "evidence_ids", "doc_id",
+                    "locator", "source_url",
+                )
+            }
+            for citation in record.get("citations", [])
+        ],
         "candidate_report": record.get("report", {}).get("text", ""),
     }
     raw = client.generate(prompt + "\n\n" + json.dumps(envelope, ensure_ascii=False))
     try:
         record["model_judge"] = parse_json(raw)
+        validate_judgment(record["model_judge"], case, record)
     except ValueError as exc:
         raise ValueError(f"{exc}; raw={raw[:2000]!r}") from exc
     return record
@@ -120,7 +166,7 @@ def main() -> int:
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=180)
     args = parser.parse_args()
-    dataset = {item["case_id"]: item for item in load(HERE / "datasets" / "cases.v1.json")["cases"]}
+    dataset = {item["case_id"]: item for item in load(Path(os.getenv("DR_EVAL_DATASET_PATH", HERE / "datasets" / "cases.v1.json")))["cases"]}
     prompt = (HERE / "prompts" / "model_judge.v1.md").read_text(encoding="utf-8")
     client = LLMClient()
     settings.LLM_TIMEOUT = args.timeout
@@ -141,6 +187,10 @@ def main() -> int:
                 last_error = exc
         if last_error is not None:
             failures += 1
+            # judge_record assigns the parsed response before semantic
+            # consistency validation. Never persist that rejected response as
+            # a usable score; downstream scoring must treat it as pending.
+            record["model_judge"] = None
             record["judge_error"] = {"type": type(last_error).__name__, "message": str(last_error)}
         dump(args.output_dir / relative, record)
         count += 1

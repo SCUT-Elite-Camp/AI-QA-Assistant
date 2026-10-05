@@ -1,0 +1,9 @@
+# Evaluation-only dependency. Install in the evaluator environment, not services.
+# Explicit companion bounds avoid resolver backtracking across incompatible majors.
+openai==3.3.0
+instructor==1.17.0
+langchain==1.4.0
+langchain-core==1.6.2
+langchain-community==0.4.1
+langchain-openai==1.6.2
+ragas==0.4.3

@@ -3,16 +3,19 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-
-from retrieval.orchestrator import (
-    RetrievalOrchestrator,
-    RetrievalOrchestratorConfig,
-)
-from retrieval.reranker import CrossEncoderReranker
-from retrieval.query_rewriter import OpenAICompatibleQueryRewriter, RewriteConfig
-from retrieval.query_router import QueryRouter
+from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 from .base_tool import BaseTool
+from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
+from .document_tools import FindDocumentsTool, GetDocumentTool
+from .navigation_tools import BrowseDocumentOutlineTool, SearchEvidenceInScopeTool
+from .wiki_tool import (
+    WikiReadPageTool,
+    WikiReadSourcesTool,
+    WikiSearchEvidenceTool,
+    WikiSearchTool,
+)
+from .search_library_tool import SearchLibraryTool
 from .search_tool import SearchTool
 
 
@@ -20,86 +23,66 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 
-def _build_default_search_tool() -> SearchTool:
-    rerank_enabled = os.getenv("RERANK_ENABLED", "false").strip().lower()
-    reranker = (
-        None
-        if rerank_enabled in {"0", "false", "no", "off"}
-        else CrossEncoderReranker()
-    )
-    rewrite_enabled = os.getenv("QUERY_REWRITE_ENABLED", "false").strip().lower()
-    enhanced_retrieval = rewrite_enabled not in {"0", "false", "no", "off"}
-    rewrite_timeout_ms = _env_int("QUERY_REWRITE_TIMEOUT_MS", 1200, minimum=1)
-    rewrite_max_variants = _env_int(
-        "QUERY_REWRITE_MAX_VARIANTS", 2, minimum=0, maximum=2
-    )
-    deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-    rewrite_api_base = (
-        os.getenv("QUERY_REWRITE_API_BASE")
-        or os.getenv("LLM_API_BASE")
-        or os.getenv("OPENAI_API_BASE")
-        or ("https://api.deepseek.com" if deepseek_api_key else None)
-    )
-    rewrite_api_key = (
-        os.getenv("QUERY_REWRITE_API_KEY")
-        or os.getenv("LLM_API_KEY")
-        or (
-            deepseek_api_key
-            if rewrite_api_base
-            and rewrite_api_base.rstrip("/") == "https://api.deepseek.com"
-            else os.getenv("OPENAI_API_KEY") or deepseek_api_key
-        )
-    )
-    orchestrator = None
-    if enhanced_retrieval:
-        rewriter = OpenAICompatibleQueryRewriter(
-            RewriteConfig(
-                api_base=rewrite_api_base,
-                api_key=rewrite_api_key,
-                model=(
-                    os.getenv("QUERY_REWRITE_MODEL")
-                    or os.getenv("LLM_MODEL")
-                    or ("deepseek-v4-flash" if deepseek_api_key else None)
-                ),
-                timeout_ms=rewrite_timeout_ms,
-                max_variants=rewrite_max_variants,
-            )
-        )
-        orchestrator = RetrievalOrchestrator(
-            query_rewriter=rewriter,
-            query_router=QueryRouter(),
-            config=RetrievalOrchestratorConfig(
-                rewrite_timeout_ms=rewrite_timeout_ms,
-                rewrite_max_variants=rewrite_max_variants,
-                total_budget_ms=2000,
-                fusion_candidate_limit=20,
-            ),
-        )
-
-    return SearchTool(
-        reranker=reranker,
-        rerank_top_n=20,
-        rerank_modes={"hybrid"},
-        retrieval_orchestrator=orchestrator,
-        backend_timeout_seconds=_env_int(
-            "RETRIEVAL_BACKEND_TIMEOUT_MS", 2000, minimum=1
-        )
-        / 1000.0,
-    )
-
-
-def _env_int(
-    name: str,
-    default: int,
-    minimum: int,
-    maximum: Optional[int] = None,
-) -> int:
-    try:
-        value = int(os.getenv(name, str(default)))
-    except ValueError:
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
         return default
-    value = max(minimum, value)
-    return min(value, maximum) if maximum is not None else value
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _build_default_search_tool() -> SearchTool:
+    """Build the default Agent-facing search tool."""
+    return SearchTool()
+
+
+def _build_default_tools() -> List[BaseTool]:
+    search_tool = _build_default_search_tool()
+    library_tool = SearchLibraryTool() if _env_bool("PERSONAL_LIBRARY_ENABLED") else None
+    tools: List[BaseTool] = [
+        search_tool,
+        FindDocumentsTool(search_tool),
+        GetDocumentTool(search_tool.documents_dir),
+    ]
+    if library_tool is not None:
+        tools.append(library_tool)
+    if _env_bool("ATTACHMENTS_ENABLED"):
+        tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
+    if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool(
+        "HIERARCHICAL_NAVIGATION_ENABLED"
+    ):
+        tools.extend([
+            BrowseDocumentOutlineTool(search_tool, library_tool),
+            SearchEvidenceInScopeTool(search_tool, library_tool),
+        ])
+    if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool(
+        "KNOWLEDGE_NAVIGATION_ENABLED"
+    ):
+        from pipeline.wiki.search import (
+            BgeM3WikiVectorSearch,
+            SQLiteFTSWikiSearch,
+            WikiSearchBackend,
+        )
+        from data_persistence.wiki import WikiStore
+
+        store = WikiStore(resolve_wiki_db_path(PROJECT_ROOT))
+        vector = (
+            BgeM3WikiVectorSearch(store)
+            if _env_bool("WIKI_VECTOR_SEARCH_ENABLED")
+            else None
+        )
+        backend = WikiSearchBackend(SQLiteFTSWikiSearch(store), vector)
+        kwargs = {
+            "enterprise_knowledge_base_id": os.getenv(
+                "ENTERPRISE_KNOWLEDGE_BASE_ID", "default"
+            )
+        }
+        tools.extend([
+            WikiSearchTool(store, search_backend=backend, **kwargs),
+            WikiReadPageTool(store, **kwargs),
+            WikiReadSourcesTool(store, **kwargs),
+            WikiSearchEvidenceTool(store, search_tool, library_tool, **kwargs),
+        ])
+    return tools
 
 
 class ToolRegistry:
@@ -113,7 +96,7 @@ class ToolRegistry:
         self._tools: Dict[str, BaseTool] = {}
         if tools is None:
             # Register default tools in the toolset layer
-            default_tools = [_build_default_search_tool()]
+            default_tools = _build_default_tools()
         else:
             default_tools = tools
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime, timezone
 from typing import Protocol, TypedDict
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -45,6 +46,10 @@ class ResearchRecoveryError(RuntimeError):
     """An interrupted Job does not have a trustworthy replay boundary."""
 
 
+class ResearchRuntimeTimeout(RuntimeError):
+    """The approved end-to-end runtime budget has been exhausted."""
+
+
 class ResearchGraphRuntime:
     def __init__(
         self,
@@ -69,6 +74,7 @@ class ResearchGraphRuntime:
 
     def _stage(self, state: RuntimeState, stage: str, ids: list[str]) -> RuntimeState:
         research_id = state["research_id"]
+        self._assert_runtime_budget(research_id)
         previous_stage = state.get("current_stage")
         checkpoint = WorkflowCheckpoint(
             research_id=research_id, current_stage=stage,
@@ -84,6 +90,15 @@ class ResearchGraphRuntime:
         if self.stage_hook is not None:
             self.stage_hook(research_id, f"checkpoint:{stage}")
         return {"current_stage": stage, "entity_ids": ids}
+
+    def _assert_runtime_budget(self, research_id: str) -> None:
+        job = self.repository.get_job(research_id)
+        if job.plan_version is None:
+            return
+        plan = self.repository.get_plan(research_id, job.plan_version)
+        elapsed = (datetime.now(timezone.utc) - job.updated_at).total_seconds()
+        if elapsed > plan.budget.max_runtime_seconds:
+            raise ResearchRuntimeTimeout("research_runtime_budget_exceeded")
 
     def _prepare(self, state: RuntimeState) -> RuntimeState:
         self.control_plane.approved_context(state["research_id"])
@@ -250,5 +265,6 @@ __all__ = [
     "IntelligencePipeline",
     "ResearchGraphRuntime",
     "ResearchRecoveryError",
+    "ResearchRuntimeTimeout",
     "RuntimeState",
 ]

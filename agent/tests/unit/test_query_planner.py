@@ -96,6 +96,39 @@ def test_non_retrieval_intents_skip_llm(intent: QueryIntent) -> None:
     assert llm.messages is None
 
 
+def test_simple_knowledge_qa_skips_planner_llm() -> None:
+    llm = FakeLLM(error=AssertionError("LLM must not be called"))
+    planner = QueryPlanner(llm=llm)
+
+    result = planner.enrich("CitationChecker 检查什么？", QueryIntent.KNOWLEDGE_QA)
+
+    assert result.sub_queries == []
+    assert result.filters == {}
+    assert result.reason == "simple_knowledge_qa_fast_path"
+    assert llm.messages is None
+
+
+def test_multi_aspect_knowledge_qa_keeps_planner_llm() -> None:
+    llm = FakeLLM(
+        _response(
+            {
+                "sub_queries": ["ToolRegistry ownership", "Agent tool schema discovery"],
+                "filters": {},
+                "reason": "two requested aspects",
+            }
+        )
+    )
+    planner = QueryPlanner(llm=llm)
+
+    result = planner.enrich(
+        "ToolRegistry 由哪一层拥有，Agent 如何通过它发现工具？",
+        QueryIntent.KNOWLEDGE_QA,
+    )
+
+    assert len(result.sub_queries) == 2
+    assert llm.messages is not None
+
+
 @pytest.mark.parametrize(
     "response",
     [
@@ -109,7 +142,10 @@ def test_non_retrieval_intents_skip_llm(intent: QueryIntent) -> None:
 def test_invalid_response_uses_empty_fallback(response: dict) -> None:
     planner = QueryPlanner(llm=FakeLLM(response))
 
-    result = planner.enrich("What is CP2?", QueryIntent.KNOWLEDGE_QA)
+    result = planner.enrich(
+        "What is CP2 and how does it differ from CP1?",
+        QueryIntent.KNOWLEDGE_QA,
+    )
 
     assert result.sub_queries == []
     assert result.filters == {}
@@ -119,7 +155,10 @@ def test_invalid_response_uses_empty_fallback(response: dict) -> None:
 def test_llm_error_uses_empty_fallback() -> None:
     planner = QueryPlanner(llm=FakeLLM(error=RuntimeError("unavailable")))
 
-    result = planner.enrich("What is CP2?", QueryIntent.KNOWLEDGE_QA)
+    result = planner.enrich(
+        "What is CP2 and how does it differ from CP1?",
+        QueryIntent.KNOWLEDGE_QA,
+    )
 
     assert result.sub_queries == []
     assert result.filters == {}
@@ -141,3 +180,30 @@ def test_at_most_four_sub_queries_are_returned() -> None:
     result = planner.enrich("Complex request", QueryIntent.SUMMARIZATION)
 
     assert result.sub_queries == ["q1", "q2", "q3", "q4"]
+
+
+def test_planner_returns_navigation_separately_from_retrieval_algorithm() -> None:
+    planner = QueryPlanner(llm=FakeLLM(_response({
+        "sub_queries": [],
+        "filters": {},
+        "source_intent": {"sources": ["enterprise_kb"], "mode": "inferred"},
+        "navigation_mode": "hybrid",
+        "scope": "multi_doc",
+        "needs_structure": True,
+        "needs_knowledge": False,
+        "needs_version_reasoning": True,
+        "reason": "cross-document version comparison",
+    })))
+    result = planner.enrich("比较两个版本的政策变化", QueryIntent.COMPARISON)
+    assert result.navigation_mode == "hybrid"
+    assert result.scope == "multi_doc"
+    assert result.needs_structure is True
+    assert result.needs_version_reasoning is True
+
+
+def test_planner_failure_uses_deterministic_complex_query_navigation() -> None:
+    planner = QueryPlanner(llm=FakeLLM(error=RuntimeError("unavailable")))
+    result = planner.enrich("请跨文档比较政策版本变化", QueryIntent.COMPARISON)
+    assert result.navigation_mode == "hybrid"
+    assert result.needs_structure is True
+    assert result.needs_version_reasoning is True

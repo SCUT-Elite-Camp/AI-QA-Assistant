@@ -6,10 +6,12 @@ from typing import Any
 
 from agent.schemas.research import (
     AcceptanceCriterion,
+    ClaimDraft,
     ClaimVerificationStatus,
     Finding,
     ResearchRequest,
     SourceScope,
+    VerifiedClaim,
     VerifiedEvidence,
 )
 from deep_research.claims import ClaimGenerator
@@ -323,3 +325,94 @@ def test_renderer_preserves_unclaimed_verified_evidence_as_supporting_material()
     assert report.evidence_ids == ["e-used", "e-extra"]
     assert "## 补充核验证据" in report.markdown
     assert "production performance results" in report.markdown
+
+
+def test_renderer_bounds_long_source_boundary_messages() -> None:
+    claim = VerifiedClaim(
+        claim_id="claim-long-boundary",
+        research_id="r-long-boundary",
+        claim_text="资料边界：" + ("架构信息" * 700),
+        evidence_ids=[],
+        criterion_ids=[],
+        status=ClaimVerificationStatus.PARTIAL,
+        reason="source boundary",
+    )
+    coverage = CoverageEngine().compute("r-long-boundary", [], [])
+
+    report = MarkdownReportRenderer().render(
+        research_id="r-long-boundary",
+        objective="确认当前架构",
+        claims=[claim],
+        coverage=coverage,
+        evidence=[],
+    )
+
+    boundary = next(item for item in report.limitations if item.code == "source_boundary")
+    assert len(boundary.message) == 2_000
+    assert boundary.message.endswith("…")
+
+
+def test_comparative_evidence_is_not_misclassified_as_a_conflict() -> None:
+    evidence = [
+        VerifiedEvidence(
+            evidence_id="e-w30", research_id="r-compare", task_id="t1",
+            doc_id="w30", locator="line:1-4",
+            excerpt="W30 had 9 commits, 5 features, and 1 bug fix.",
+            content_hash="hash-w30",
+        ),
+        VerifiedEvidence(
+            evidence_id="e-w34", research_id="r-compare", task_id="t1",
+            doc_id="w34", locator="line:1-4",
+            excerpt="W34 had 8 commits, 3 features, and 5 bug fixes.",
+            content_hash="hash-w34",
+        ),
+    ]
+    claim = ClaimDraft(
+        claim_id="claim-comparison", research_id="r-compare",
+        # The production Worker may preserve one source excerpt as the Claim
+        # text even though both periods are attached as evidence.
+        claim_text="W34 had 8 commits, 3 features, and 5 bug fixes.",
+        evidence_ids=["e-w30", "e-w34"], criterion_ids=["c1"],
+    )
+
+    result = DeterministicSemanticVerifier().verify(claim, evidence)
+
+    assert result.status != ClaimVerificationStatus.CONFLICTING
+
+
+def test_semantic_verifier_ignores_numeric_prefixes_in_document_ids() -> None:
+    evidence = [
+        VerifiedEvidence(
+            evidence_id="e-a", research_id="r-ids", task_id="t1",
+            doc_id="doc-a", locator="line:1-2",
+            excerpt="W34 Total Commits: 8; New Features: 3; Bug Fixes: 5.",
+            content_hash="hash-a-12345678",
+        ),
+        VerifiedEvidence(
+            evidence_id="e-b", research_id="r-ids", task_id="t1",
+            doc_id="doc-b", locator="line:1-2",
+            excerpt="W30 Total Commits: 9; New Features: 5; Bug Fixes: 1.",
+            content_hash="hash-b-12345678",
+        ),
+    ]
+    claim = ClaimDraft(
+        claim_id="claim-document-id-prefix", research_id="r-ids",
+        claim_text=(
+            "候选资料数值不同：54892d2bcaa53239e12a0013a309806a 为 8、3、5；"
+            "833ac861944160a33080f47f6a0d0302 为 9、5、1。"
+        ),
+        evidence_ids=["e-a", "e-b"], criterion_ids=["c1"],
+    )
+
+    result = DeterministicSemanticVerifier().verify(claim, evidence)
+
+    assert result.reason != "claim_numeric_detail_not_fully_present_in_evidence"
+
+
+def test_finding_builder_bounds_expanded_adjacent_chunk_context() -> None:
+    statement = "可核验原文。" * 1000
+
+    bounded = LocalResearchWorker._bounded_finding_statement(statement)
+
+    assert len(bounded) == 4000
+    assert bounded.endswith("...")

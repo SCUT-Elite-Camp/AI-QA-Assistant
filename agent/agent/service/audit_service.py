@@ -1,6 +1,6 @@
 import logging
 import time
-from storage.chat_history_store import ChatHistoryStore
+from data_persistence.chat import ChatHistoryStore
 from agent.logger.app_logger import log_chat_result
 
 logger = logging.getLogger("agent-layer")

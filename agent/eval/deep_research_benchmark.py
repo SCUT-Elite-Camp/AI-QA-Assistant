@@ -8,6 +8,7 @@ It never silently substitutes the current lexical fallback for Page Index.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
@@ -23,9 +24,11 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from uuid import uuid4
+from dotenv import load_dotenv
 
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(AGENT_ROOT / ".env")
 PROJECT_ROOT = AGENT_ROOT.parent
 DOCUMENTS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "documents"
 DEFAULT_OUTPUT_ROOT = AGENT_ROOT / "outputs" / "deep_research_benchmark"
@@ -124,12 +127,15 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             "branch": _git("branch", "--show-current"),
             "commit": _git("rev-parse", "HEAD"),
             "dirty": bool(_git("status", "--porcelain")),
+            "tracked_dirty": bool(_git("diff", "--name-only", "HEAD")),
         },
         "runtime": {
             "python": sys.version.split()[0],
             "platform": platform.platform(),
         },
         "model": {
+            "api_base": _safe_setting("LLM_API_BASE", ""),
+            "fallback_policy": "no_implicit_model_fallback",
             "name": _safe_setting("LLM_MODEL", "qwen3.7-flash-2026-07-15"),
             "temperature": float(_safe_setting("LLM_TEMPERATURE", 0.1)),
             "max_tokens": int(_safe_setting("LLM_MAX_TOKENS", 2000)),
@@ -140,8 +146,12 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             "top_k": int(_safe_setting("DEFAULT_TOP_K", 5)),
             "min_score": float(_safe_setting("MIN_RETRIEVAL_SCORE", 0.0)),
             "embedding_model": _safe_setting(
-                "LOCAL_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"
+                "LOCAL_EMBEDDING_MODEL_NAME", "BAAI/bge-small-en-v1.5"
             ),
+            "g1_backend": "hybrid_milvus_bm25",
+            "g2_backend": "local_json",
+            "bm25_index_sha256": (_sha256_bytes(Path(os.getenv("BM25_INDEX_PATH", str(PROJECT_ROOT / "data-persistence/data/bm25_index.pkl"))).read_bytes())
+                                  if Path(os.getenv("BM25_INDEX_PATH", str(PROJECT_ROOT / "data-persistence/data/bm25_index.pkl"))).is_file() else None),
             "page_index_provider": "unavailable_until_capability_probe_passes",
         },
         "research": {
@@ -155,6 +165,10 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
         },
         "documents_manifest_hash": manifest["manifest_hash"],
         "documents_count": manifest["document_count"],
+        "prompt_hashes": {name: _sha256_bytes((PROJECT_ROOT / path).read_bytes()) for name, path in {
+            "g1_answer": "agent/agent/prompt/templates.py", "g1_assembly": "agent/agent/runtime/runner.py",
+            "planner": "agent/deep_research/planner.py", "report": "agent/deep_research/model_report.py",
+        }.items()},
     }
     config["config_hash"] = _sha256_json(config)
     _json_dump(output_dir / "frozen_environment.json", config)
@@ -177,11 +191,14 @@ class ApiClient:
         self, method: str, path: str, payload: dict[str, Any] | None = None
     ) -> Any:
         body = None if payload is None else json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json", "X-User-ID": "benchmark-user"}
+        if api_key := os.getenv("AGENT_API_KEY", "").strip():
+            headers["Authorization"] = f"Bearer {api_key}"
         request = Request(
             f"{self.base_url}{path}",
             data=body,
             method=method,
-            headers={"Content-Type": "application/json", "X-User-ID": "benchmark-user"},
+            headers=headers,
         )
         try:
             with urlopen(request, timeout=self.timeout_seconds) as response:
@@ -239,9 +256,9 @@ def _check_url(url: str, *, timeout_seconds: float = 15.0) -> dict[str, Any]:
         # Authenticated Confluence may return 401/403 to this non-browser probe.
         return {
             "url": url,
-            "ok": False,
+            "ok": None if exc.code in (401, 403) else False,
             "status": exc.code,
-            "error": "http_error",
+            "error": "authentication_required" if exc.code in (401, 403) else "http_error",
             "latency_ms": int((time.perf_counter() - started) * 1000),
         }
     except (URLError, ValueError) as exc:
@@ -249,6 +266,48 @@ def _check_url(url: str, *, timeout_seconds: float = 15.0) -> dict[str, Any]:
             "url": url,
             "ok": False,
             "status": None,
+            "error": str(exc),
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+        }
+
+
+def _check_research_source(
+    client: ApiClient,
+    research_id: str,
+    citation: dict[str, Any],
+    *,
+    timeout_seconds: float = 15.0,
+) -> dict[str, Any]:
+    """Validate the product's authenticated/local source-opening contract."""
+
+    source_url = str(citation.get("source_url") or "")
+    doc_id = str(citation.get("doc_id") or "")
+    checked_url = (
+        f"{client.base_url}/api/research/jobs/{research_id}/documents/{doc_id}/source"
+    )
+    started = time.perf_counter()
+    try:
+        request = Request(
+            checked_url,
+            method="GET",
+            headers={"X-User-ID": "benchmark-user"},
+        )
+        with urlopen(request, timeout=timeout_seconds) as response:
+            status = int(response.status)
+            body = response.read(1)
+        return {
+            "url": source_url,
+            "checked_url": checked_url,
+            "ok": 200 <= status < 400 and bool(body),
+            "status": status,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+        }
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        return {
+            "url": source_url,
+            "checked_url": checked_url,
+            "ok": False,
+            "status": getattr(exc, "code", None),
             "error": str(exc),
             "latency_ms": int((time.perf_counter() - started) * 1000),
         }
@@ -264,19 +323,21 @@ def _run_fast_chat(client: ApiClient, case: dict[str, Any], top_k: int) -> dict[
             "filters": {"doc_ids": _case_scope(case)["document_ids"]},
             "retrieval_mode": "hybrid",
             "stream": False,
+            "is_first_message": False,
         },
     )
     citations = response.get("citations", []) if isinstance(response, dict) else []
     status = str(response.get("status") or "") if isinstance(response, dict) else ""
-    if status != "success":
-        raise RuntimeError(f"fast_chat_terminal_status:{status or 'missing'}")
-    return {
+    result = {
         "response": response,
         "citations": citations,
         "source_checks": [
             _check_url(str(item.get("source_url") or "")) for item in citations
         ],
     }
+    if status not in {"success", "clarification_required", "no_relevant_context", "unsupported"}:
+        raise BenchmarkRunError(f"fast_chat_terminal_status:{status or 'missing'}", partial_result=result)
+    return result
 
 
 def _wait_for_status(
@@ -321,7 +382,7 @@ def _run_research(
             "source_scope": _case_scope(case),
             "report_spec": {
                 "format": "markdown",
-                "language": case.get("report_language", "zh-CN"),
+                "language": case.get("report_language", "en-US"),
                 "include_citations": True,
                 "include_limitations": True,
             },
@@ -380,7 +441,7 @@ def _run_research(
     if job["status"] == "completed":
         report = client.request("GET", f"/api/research/jobs/{research_id}/report")
         citations = report.get("citations", [])
-    return {
+    result = {
         "research_id": research_id,
         "job": job,
         "plan": plan,
@@ -390,10 +451,16 @@ def _run_research(
         "report": report,
         "citations": citations,
         "source_checks": [
-            _check_url(str(item.get("source_url") or "")) for item in citations
+            _check_research_source(client, research_id, item) for item in citations
         ],
         "retrieval_profile": profile,
     }
+    if job["status"] != "completed":
+        raise BenchmarkRunError(
+            f"research_terminal_status:{job['status']}",
+            partial_result=result,
+        )
+    return result
 
 
 @dataclass
@@ -434,61 +501,75 @@ def run_benchmark(args: argparse.Namespace) -> int:
     client = ApiClient(args.base_url, timeout_seconds=args.request_timeout)
     failures = 0
 
-    for case in cases:
+    def run_case_group(case, group):
+        failures = 0
         case_id = str(case.get("case_id") or "").strip()
         question = str(case.get("question") or "").strip()
         if not case_id or not question:
             raise ValueError("every case requires case_id and question")
-        for group in args.groups:
-            for repetition in range(1, args.repetitions + 1):
-                run_id = f"{case_id}-{group}-r{repetition}-{uuid4().hex[:8]}"
-                started_at = datetime.now(timezone.utc)
-                started = time.perf_counter()
-                result = None
-                error = None
-                try:
-                    if group == "fast_chat":
-                        result = _run_fast_chat(client, case, args.top_k)
-                    elif group == "deep_research_current":
-                        result = _run_research(
-                            client,
-                            case,
-                            profile="current",
-                            timeout_seconds=args.run_timeout,
-                        )
-                    else:
-                        result = _run_research(
-                            client,
-                            case,
-                            profile="page_index",
-                            timeout_seconds=args.run_timeout,
-                        )
-                except Exception as exc:  # preserve every failed run
-                    failures += 1
-                    result = getattr(exc, "partial_result", result)
-                    error = {
-                        "type": type(exc).__name__,
-                        "message": str(exc),
-                        "http_status": getattr(exc, "status", None),
-                    }
-                completed_at = datetime.now(timezone.utc)
-                envelope = RunEnvelope(
-                    schema_version="deep-research-run.v1",
-                    run_id=run_id,
-                    case_id=case_id,
-                    group=group,
-                    repetition=repetition,
-                    started_at=started_at.isoformat(),
-                    completed_at=completed_at.isoformat(),
-                    elapsed_ms=int((time.perf_counter() - started) * 1000),
-                    config_hash=config["config_hash"],
-                    success=error is None,
-                    result=result,
-                    error=error,
-                )
-                _json_dump(output_root / "runs" / group / case_id / f"{run_id}.json", asdict(envelope))
-                state = "PASS" if envelope.success else "FAIL"
-                print(f"[{state}] {case_id} {group} repetition={repetition} run_id={run_id}")
+        for repetition in range(1, args.repetitions + 1):
+            run_id = f"{case_id}-{group}-r{repetition}-{uuid4().hex[:8]}"
+            started_at = datetime.now(timezone.utc)
+            started = time.perf_counter()
+            result = None
+            error = None
+            try:
+                if group == "fast_chat":
+                    result = _run_fast_chat(client, case, args.top_k)
+                elif group == "deep_research_current":
+                    result = _run_research(
+                        client,
+                        case,
+                        profile="current",
+                        timeout_seconds=args.run_timeout,
+                    )
+                else:
+                    result = _run_research(
+                        client,
+                        case,
+                        profile="page_index",
+                        timeout_seconds=args.run_timeout,
+                    )
+            except Exception as exc:  # preserve every failed run
+                failures += 1
+                result = getattr(exc, "partial_result", result)
+                error = {
+                    "type": type(exc).__name__,
+                    "message": str(exc),
+                    "http_status": getattr(exc, "status", None),
+                }
+            completed_at = datetime.now(timezone.utc)
+            envelope = RunEnvelope(
+                schema_version="deep-research-run.v1",
+                run_id=run_id,
+                case_id=case_id,
+                group=group,
+                repetition=repetition,
+                started_at=started_at.isoformat(),
+                completed_at=completed_at.isoformat(),
+                elapsed_ms=int((time.perf_counter() - started) * 1000),
+                config_hash=config["config_hash"],
+                success=error is None,
+                result=result,
+                error=error,
+            )
+            _json_dump(output_root / "runs" / group / case_id / f"{run_id}.json", asdict(envelope))
+            state = "PASS" if envelope.success else "FAIL"
+            print(f"[{state}] {case_id} {group} repetition={repetition} run_id={run_id}")
+        return failures
+
+    if getattr(args, "parallel_groups", False):
+        # G1 uses the shared Chat Agent; G2 uses its separate Research runtime.
+        # Keep Chat requests sequential, while the two independent groups overlap.
+        def run_group(group):
+            return sum(run_case_group(case, group) for case in cases)
+        with ThreadPoolExecutor(max_workers=len(args.groups)) as pool:
+            failures = sum(pool.map(run_group, args.groups))
+    else:
+        for case in cases:
+            for group in args.groups:
+                failures += run_case_group(case, group)
+
     return 1 if failures else 0
 
 
@@ -515,7 +596,7 @@ def summarize(output_root: Path) -> dict[str, Any]:
             "latency_mean_ms": round(statistics.mean(elapsed), 2) if elapsed else None,
             "latency_p50_ms": round(statistics.median(elapsed), 2) if elapsed else None,
             "source_links": len(source_checks),
-            "broken_source_links": sum(not bool(item.get("ok")) for item in source_checks),
+            "broken_source_links": sum(item.get("ok") is False for item in source_checks),
         }
     _json_dump(output_root / "summary.json", result)
     return result
@@ -534,6 +615,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--base-url", default="http://127.0.0.1:8000")
     run.add_argument("--groups", nargs="+", choices=GROUPS, default=list(GROUPS))
     run.add_argument("--case-ids", nargs="+", help="run only the selected frozen case IDs")
+    run.add_argument("--parallel-groups", action="store_true", help="Overlap independent groups while preserving sequential Chat requests")
     run.add_argument("--repetitions", type=int, default=3)
     run.add_argument("--top-k", type=int, default=5)
     run.add_argument("--request-timeout", type=float, default=120.0)

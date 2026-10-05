@@ -27,6 +27,32 @@ def test_profile_is_representative_and_checks_are_pointwise():
     assert "pending" in profile["review_status"]
 
 
+def test_judge_thinking_payload_follows_runtime_configuration(monkeypatch):
+    monkeypatch.setenv("LLM_THINKING_MODE", "enabled")
+    assert acceptance._thinking_payload() == {"type": "enabled"}
+    monkeypatch.setenv("LLM_THINKING_MODE", "disabled")
+    assert acceptance._thinking_payload() == {"type": "disabled"}
+    monkeypatch.delenv("LLM_THINKING_MODE")
+    assert acceptance._thinking_payload() is None
+
+
+def test_answer_only_run_skips_llm_judge(monkeypatch, tmp_path):
+    client = SimpleNamespace(request=lambda *args, **kwargs: {
+        "status": "success", "answer": "answer", "citations": []
+    })
+    monkeypatch.setattr(acceptance, "judge", lambda *args: pytest.fail("judge must not run"))
+    monkeypatch.setattr(acceptance, "score_sources", lambda *args: {
+        "out_of_scope_count": 0, "locator_excerpt_valid_rate": None
+    })
+    record = acceptance.run_one(client, {
+        "case_id": "PA-TEST", "question": "q", "checks": ["c"],
+        "allowed_document_ids": ["a"]
+    }, "G1", 1, tmp_path, skip_judge=True)
+    assert record["runtime_ok"] is True
+    assert record["judge"] is None
+    assert record["accepted"] is None
+
+
 def test_explicit_acceptance_scope_does_not_expand_to_whole_space():
     scope = _case_scope({"case_id": "PA-001", "source_manifest": "manifest:DR-A-010",
                          "source_scope": {"document_ids": ["a"], "knowledge_base_ids": []}})
@@ -41,6 +67,21 @@ def test_excerpt_scoring_rejects_wrong_section_and_out_of_scope():
         {"doc_id": "b", "chunk_id": "b_chunk_1", "snippet": "correct section"}]})
     assert result["valid_excerpt_count"] == 0
     assert result["out_of_scope_count"] == 1
+
+
+def test_excerpt_scoring_accepts_adjacent_chunk_expansion_from_same_document():
+    case = {"judge_sources": [{"doc_id": "a", "content": "first section second section", "chunks": [
+                {"chunk_id": "a_chunk_0", "text": "first section"},
+                {"chunk_id": "a_chunk_1", "text": "second section"},
+            ]}],
+            "allowed_document_ids": ["a"],
+            "key_source_locations": [{"doc_id": "a", "chunk_id": "a_chunk_1"}]}
+    result = acceptance.score_sources(case, {"citations": [{
+        "doc_id": "a", "chunk_id": "a_chunk_1",
+        "snippet": "first section second section",
+    }]})
+    assert result["locator_excerpt_valid_rate"] == 1.0
+    assert result["key_location_recall"] == 1.0
 
 
 def test_search_returns_multiple_sections_and_keeps_document_diversity(tmp_path):
@@ -89,8 +130,10 @@ def test_report_repair_is_bounded_and_preserves_fallback(monkeypatch):
         return {"choices": [{"message": {"content": "incomplete [0]"}, "finish_reason": "length"}]}
     monkeypatch.setattr(synth, "_chat", chat)
     assert synth.render(objective="question") is base
-    assert len(calls) == 2
+    assert len(calls) == 4
     assert "same evidence" in calls[1]["messages"][-1]["content"]
+    assert "compact final answer" in calls[2]["messages"][0]["content"]
+    assert "Fix only the structural defects" in calls[3]["messages"][-1]["content"]
 
 
 def test_report_accepts_complete_repair(monkeypatch):
@@ -101,6 +144,25 @@ def test_report_accepts_complete_repair(monkeypatch):
     replies = iter(["incomplete", valid_report()])
     monkeypatch.setattr(synth, "_chat", lambda payload: {"choices": [{"message": {"content": next(replies)}, "finish_reason": "stop"}]})
     assert "## Sources" in synth.render(objective="question")["markdown"]
+
+
+def test_report_uses_compact_rescue_after_primary_transport_failure(monkeypatch):
+    base = SimpleNamespace(
+        citations=[SimpleNamespace(number=1, title="source", document_version="1", locator="a_chunk_0", excerpt="source fact")],
+        model_copy=lambda update: update,
+    )
+    monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
+    synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
+    calls = []
+    def chat(payload):
+        calls.append(payload)
+        if len(calls) == 1:
+            raise OSError("transport failed")
+        return {"choices": [{"message": {"content": valid_report()}, "finish_reason": "stop"}]}
+    monkeypatch.setattr(synth, "_chat", chat)
+    assert "## Sources" in synth.render(objective="question")["markdown"]
+    assert len(calls) == 2
+    assert "compact final answer" in calls[1]["messages"][0]["content"]
 
 
 def test_research_planner_honors_configured_thinking_mode(monkeypatch):

@@ -10,6 +10,7 @@ from agent.schemas.research import (
     ResearchPlanValidator,
     ResearchRequest,
 )
+from deep_research.planner import ModelResearchPlanner, PlannerError
 
 
 FIXTURE_PATH = Path(__file__).resolve().parents[2] / "mock" / "research_contract_fixtures.json"
@@ -111,3 +112,13 @@ def test_empty_source_scope_has_a_deterministic_plan_error() -> None:
         ResearchPlanValidator.validate_or_raise(plan)
 
     assert exc_info.value.code == "research_source_scope_required"
+
+
+def test_model_plan_must_cover_the_user_objective(fixtures: dict) -> None:
+    plan = ResearchPlan.model_validate(next(iter(fixtures["valid_plans"].values())))
+
+    with pytest.raises(PlannerError, match="does not cover"):
+        ModelResearchPlanner._validate_task_coverage(
+            "compare W30 and W34 delivery metrics",
+            plan.tasks,
+        )

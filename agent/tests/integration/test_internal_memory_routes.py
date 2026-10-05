@@ -397,7 +397,7 @@ def test_compaction_is_a_noop_and_reset_clears_only_short_window(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client, agent = internal_client
-    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", False)
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
 
     compaction = client.post(
         "/api/internal/memory/compaction-plan",

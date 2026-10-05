@@ -122,7 +122,32 @@ def test_local_json_search_preserves_canonical_chunk_locator(tmp_path) -> None:
             locator="doc-a::chunk_1",
         )
         assert read.locator == "doc-a_chunk_1"
-        assert read.excerpt == "利润保持稳定。"
+        assert read.excerpt == "收入增长。\n\n利润保持稳定。"
+    finally:
+        adapter.close()
+
+
+def test_chunk_read_includes_adjacent_context_and_removes_overlap(tmp_path) -> None:
+    _, _, documents_dir, _, tool_context = setup_research(tmp_path)
+    payload = {
+        **DOCUMENT,
+        "content_hash": tool_context.source_manifest.documents[0].content_hash,
+        "chunks": [
+            {"index": 0, "text": "概览\n总提交：8\n关键指标"},
+            {"index": 1, "text": "总提交：8\n关键指标\n新功能：3\n修复：5"},
+            {"index": 2, "text": "新功能：3\n修复：5\n后续计划"},
+        ],
+    }
+    (documents_dir / "doc-a.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+    adapter = LocalResearchToolAdapter(LocalJsonSearchBackend(documents_dir), documents_dir)
+    try:
+        read = adapter.read_document_range(
+            "doc-a", tool_context, locator="doc-a_chunk_1"
+        )
+        assert read.locator == "doc-a_chunk_1"
+        assert read.excerpt == "概览\n总提交：8\n关键指标\n新功能：3\n修复：5\n后续计划"
     finally:
         adapter.close()
 

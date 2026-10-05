@@ -1,6 +1,25 @@
 from unittest.mock import MagicMock
+
 import pytest
+
 from agent.schemas.chat import ChatRequest, InternalChatRequest
+
+from agent.schemas.common import StatusCode
+
+from agent.schemas.retrieval import RetrievalResult
+
+from agent.agent import Agent
+
+from agent.llm.llm_client import LLMClient
+
+from toolset.tool_layer.search_tool import SearchTool
+
+from agent.errors.exceptions import LLMError
+
+
+from unittest.mock import MagicMock
+import pytest
+from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
 from agent.agent import Agent
@@ -128,6 +147,53 @@ def test_empty_llm_answer_returns_llm_error(monkeypatch) -> None:
     assert response.status == StatusCode.LLM_ERROR
     assert response.answer == ""
     assert response.citations == []
+
+
+def test_agent_routes_only_query_preparation_to_configured_model(monkeypatch) -> None:
+    monkeypatch.setattr("agent.agent.settings.LLM_MODEL", "main-answer-model")
+    monkeypatch.setattr(
+        "agent.agent.settings.QUERY_PREPARATION_MODEL",
+        "fast-preparation-model",
+    )
+
+    agent = Agent()
+    analyzer = agent.query_understanding.query_preparation
+
+    assert agent.llm.model == "main-answer-model"
+    assert analyzer.llm.llm.model == "fast-preparation-model"
+    assert analyzer.fallback_llm.llm.model == "main-answer-model"
+    assert agent.runtime_llm.llm.model == "main-answer-model"
+
+
+def test_agent_configures_non_thinking_fast_answer_model(monkeypatch) -> None:
+    monkeypatch.setattr("agent.agent.settings.LLM_MODEL", "main-answer-model")
+    monkeypatch.setattr("agent.agent.settings.ANSWER_FAST_MODEL", "qwen-flash")
+    monkeypatch.setattr("agent.agent.settings.ANSWER_FAST_MODEL_THINKING", False)
+
+    agent = Agent()
+
+    assert agent.answer_llm.llm.model == "main-answer-model"
+    assert agent.fast_answer_llm.llm.model == "qwen-flash"
+    assert agent.fast_answer_llm.llm.enable_thinking is False
+    assert agent.runner.fast_answer_llm is agent.fast_answer_llm
+
+
+def test_agent_routes_complex_completeness_check_to_configured_model(monkeypatch) -> None:
+    monkeypatch.setattr("agent.agent.settings.LLM_MODEL", "main-answer-model")
+    monkeypatch.setattr(
+        "agent.agent.settings.ANSWER_COMPLETENESS_MODEL",
+        "fast-completeness-model",
+    )
+    monkeypatch.setattr(
+        "agent.agent.settings.ANSWER_COMPLETENESS_MODEL_THINKING",
+        False,
+    )
+
+    agent = Agent()
+
+    assert agent.completeness_llm.llm.model == "fast-completeness-model"
+    assert agent.completeness_llm.llm.enable_thinking is False
+    assert agent.runner.answer_completeness_checker.llm is agent.completeness_llm
 
 
 def test_explicit_internal_fact_command_bypasses_llm_and_rag(monkeypatch) -> None:

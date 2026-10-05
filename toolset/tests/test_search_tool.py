@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tool_layer import RetrievalError, RetrievalParameterError, SearchTool
@@ -36,6 +37,46 @@ class FakeBackend:
 
 
 class SearchToolTest(unittest.TestCase):
+    def test_legacy_navigation_mode_does_not_auto_search_sections(self):
+        class NavigationBackend:
+            def search(self, query, top_k, mode, filters=None):
+                return [
+                    {"doc_id": "doc_1", "chunk_id": "c_direct", "chunk_index": 0,
+                     "text": "general risk", "score": 1.0},
+                ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            docs = Path(tmp)
+            (docs / "doc_1.json").write_text(json.dumps({
+                "doc_id": "doc_1", "active_version": True,
+                "title": "Policy", "version_id": "ver-1",
+                "chunks": [
+                    {"chunk_id": "c_direct", "index": 0, "text": "general risk"},
+                    {"chunk_id": "c_scoped", "index": 1, "text": "special control"},
+                ],
+                "sections": [{
+                    "id": "s1", "title": "Special controls",
+                    "section_path": ["Policy", "Special controls"],
+                    "summary": "special control", "evidence_ids": ["c_scoped"],
+                    "quality": "high", "level": 1,
+                }],
+            }), encoding="utf-8")
+            tool = SearchTool(backend=NavigationBackend(), documents_dir=str(docs))
+            with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "true"}):
+                rows = tool.search(
+                    "special control", top_k=2, navigation_mode="hybrid",
+                )
+        self.assertEqual([row["chunk_id"] for row in rows], ["c_direct"])
+
+    def test_navigation_is_direct_when_feature_flag_is_disabled(self):
+        tool = SearchTool(backend=FakeBackend())
+        with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "false"}):
+            rows = tool.search("query", top_k=2, navigation_mode="hierarchical")
+        self.assertEqual(rows[0]["doc_id"], "doc_001")
+
+    def test_search_schema_does_not_advertise_automatic_navigation(self):
+        self.assertNotIn("navigation_mode", SearchTool(backend=FakeBackend()).parameters["properties"])
+
     def test_accepts_all_cp1_modes(self):
         backend = FakeBackend()
         tool = SearchTool(backend=backend)
@@ -86,6 +127,49 @@ class SearchToolTest(unittest.TestCase):
             tool.search("query", top_k=0)
         with self.assertRaises(RetrievalParameterError):
             tool.search("query", mode="dense")
+        with self.assertRaises(RetrievalParameterError):
+            tool.search("query", filters={"unsupported": "value"})
+
+    def test_normalizes_filters_before_backend_call(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        tool.search(
+            "query",
+            filters={"doc_id": " doc_001 ", "doc_type": "application/PDF"},
+        )
+
+        self.assertEqual(
+            backend.calls[0]["filters"],
+            {"doc_ids": ["doc_001"], "doc_type": "pdf"},
+        )
+
+    def test_empty_doc_allowlist_does_not_call_backend(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        self.assertEqual(tool.search("query", filters={"doc_ids": []}), [])
+        self.assertEqual(backend.calls, [])
+
+    def test_vector_search_passes_all_filters_to_milvus(self):
+        class FakeMilvus:
+            def __init__(self):
+                self.filters = None
+
+            def search_similar(self, query_vector, top_k, filters):
+                self.filters = filters
+                return []
+
+        tool = SearchTool()
+        milvus = FakeMilvus()
+        tool._milvus_store = milvus
+
+        from unittest.mock import patch
+
+        with patch("pipeline.embedder.embed_texts", return_value=[[0.1, 0.2]]):
+            tool.search("query", mode="vector", filters={"space": "HR"})
+
+        self.assertEqual(milvus.filters, {"space": "HR"})
 
     def test_wraps_backend_failures(self):
         class BrokenBackend:

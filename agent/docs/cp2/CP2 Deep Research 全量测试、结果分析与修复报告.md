@@ -1,411 +1,343 @@
 # CP2 Deep Research 全量测试、结果分析与修复报告
 
-> 报告日期：2026-09-15  
-> 评测范围：Fast Chat（G1）与当前 Deep Research（G2）  
-> 数据集：`cp2-deep-research-cases.v1`，18 个用例，每组每题运行 3 次  
-> Page Index（G3）：未纳入本轮验收，因为当前代码库没有工具/数据层提供的 Page Index Provider
+> 报告日期：2026-09-22
+>
+> 有效基线：G1 Fast Chat 正式批次、G2 Current Deep Research 正式批次
+>
+> 数据集：`cp2-deep-research-cases.v1`，18 题，每组每题运行 3 次
+>
+> 结果口径：正式批次中的瞬时故障坐标由同配置定点重试结果替换
+>
+> Page Index（G3）：本轮不测试，等待工具层/数据层提供正式 Provider
 
-## 1. 报告结论
+## 1. 执行摘要
 
-本轮完成了 18 个冻结问题、G1/G2 两个实验组、每题 3 次的 108 次基线运行，并对全部运行生成了六层评分记录。原始执行中，Fast Chat 成功 6 次、失败 48 次；Deep Research 成功 46 次、失败 8 次。完成 Judge 补评分后，108 条记录均进入最终评分集，无坐标缺失和批次结构错误。
+本报告已废弃此前混合模型、混合配置、异常运行和后补评分组成的旧基线，改为只使用本次重新执行的 G1 与 G2 正式批次。两组都使用同一份冻结的 18 题评测集，每题运行 3 次，共 108 个有效坐标。
 
-最终硬门槛结果为：
+| 实验组 | 正式坐标 | 首轮成功 | 定点重试后有效成功 | 有效失败 | 完成率 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| G1 Fast Chat | 54 | 42 | 46 | 8 | 85.2% |
+| G2 Current Deep Research | 54 | 51 | 54 | 0 | 100% |
 
-| 实验组 | 运行数 | 原始执行成功 | 硬门槛通过 | 结论 |
-| --- | ---: | ---: | ---: | --- |
-| G1 Fast Chat | 54 | 6 | 0 | 不满足 Deep Research 质量门槛 |
-| G2 Current Deep Research | 54 | 46 | 13 | 明显优于 G1，但尚不满足正式质量门槛 |
+核心结论：
 
-G2 相较 G1 在正确性、完整性、忠实度和答案相关性上均有提升，但平均分仍低于 4/5 的目标。当前最明确的问题集中在计划覆盖、报告完整性、答案相关性和忠实度；历史结果中的 Retrieval/Evidence 指标由于运行时尚未输出内部 Trace，只能视为暂定结论，不能据此直接认定检索层实现失败。
+1. G2 已跑通 18×3 的完整链路，定点重试后 54/54 坐标均有有效结果。
+2. G1 定点排除网络关闭、读取超时和外层超时后，仍有 8 次稳定失败，全部为 `no_relevant_context`。
+3. G2 首轮的 3 次失败中，两次是 HTTP 502，一次是报告边界字段过长；字段长度问题已修复并通过回归测试，三个坐标重试均成功。
+4. 当前数据能够支持“运行完成率、失败类型、耗时和链路稳定性”结论；新批次尚未重新执行六层 Judge 评分，因此不能沿用旧报告的 Faithfulness、Answer Relevance、硬门槛通过率等数值。
+5. G1 与 G2 实际使用的模型不完全相同，本轮可以比较系统链路完成情况，但不能把差异全部归因于 Fast Chat 与 Deep Research 架构本身。
 
-本轮同时完成了评测可观测性、来源链路、Judge 兼容性、模型配置、报告生成和超时诊断数据保留等修复。新版本已经能够从持久化 Job 读取 Observation、Evidence、Finding、Claim 和 Verification，后续定向复测可得到真实的六层数据。
+## 2. 评测目标
 
-## 2. 评测目标与范围
+本轮评测回答以下问题：
 
-本轮评测用于回答两个问题：
+- 普通 Fast Chat 与当前 Deep Research 能否在同一冻结数据集上完成稳定执行；
+- 失败发生在检索、回答生成、研究执行、报告渲染还是外部模型服务；
+- Deep Research 的计划、检索、证据、报告、引用和运行时数据是否具备分层评分条件；
+- 当前实现中有哪些可复现缺陷，修复后是否能够通过定点复测。
 
-1. 当前 Deep Research 是否比普通 Fast Chat 更完整、可靠；
-2. 当前失败主要发生在 Plan、Retrieval、Evidence、Report、Citation 还是 Runtime。
+本轮暂不回答“Page Index 是否提升效果”。仓库当前没有可用的正式 Page Index Provider，不能用本地词法或普通混合检索冒充 Page Index 组。
 
-本轮不回答“Page Index 是否提升效果”。Page Index 属于工具层/数据层能力，当前仓库没有注册 `page_index`、`search_page_index` 或 `navigate_page_index` Provider。评测框架保留 G3 定义，但不会用本地词法检索冒充 Page Index，也不会把 G3 缺失计为 B 侧交付失败。
+## 3. 评测集说明
 
-## 3. 冻结评测配置
+### 3.1 冻结数据集
 
-### 3.1 数据与代码基线
-
-- 仓库：`SCUT-Elite-Camp/AI-QA-Assistant`
-- 分支：`agent-dev`
-- 冻结提交：`74f2d44e3eaf67739c87bb888db940051b30991b`
-- 数据来源：Confluence `RAG` 空间的本地冻结快照
+- 数据集 ID：`cp2-deep-research-cases.v1`
+- 语言：`zh-CN`
 - 用例数：18
-- 重复次数：每题每组 3 次
-- SourceManifest：逐题冻结允许文档、禁止文档、版本、内容哈希、来源 URL 和权限范围
+- 数据来源：Confluence `RAG` 空间的冻结快照
+- 每题均绑定 SourceManifest
+- 每个实验组每题运行 3 次
 
-### 3.2 生成与检索配置
+每个 Case 至少包含：
 
-- 当前冻结模型：`doubao-seed-2-1-turbo-260628`
-- API：火山引擎 OpenAI-compatible API
-- Temperature：`0.1`
-- Max tokens：`2000`
-- Timeout：`60s`
-- Retrieval mode：`hybrid`
+| 字段 | 用途 |
+| --- | --- |
+| `case_id` | 稳定用例编号 |
+| `question` | 三组实验共用的问题原文 |
+| `expected_behavior` | 应回答、降级、拒绝或提示信息不足 |
+| `allowed_document_ids` | 允许访问的文档硬范围 |
+| `forbidden_document_ids` | 越权检查所需的禁止文档 |
+| `required_facts` | 回答必须覆盖的事实 |
+| `forbidden_claims` | 回答不得出现的结论 |
+| `key_source_locations` | 正确文档、Chunk、章节和短引用 |
+| `source_manifest` | 文档版本、哈希、URL 与权限范围 |
+
+### 3.2 场景覆盖
+
+18 题覆盖：多文档信息汇总、跨章节关联、新旧版本冲突、信息不足时拒绝下结论、数字比较与条件判断、表格信息解析、引用定位和原文打开、无关文档干扰、权限范围限制，以及当前状态与历史会议记录综合。
+
+## 4. 实验组与配置
+
+### 4.1 G1：Fast Chat
+
+- 运行目录：`outputs/deep_research_benchmark/g1-a95b-formal-18x3-0922`
+- 实际服务模型：`qwen3.8-2.4t-a95b`
+- Thinking：启用；该模型在当前服务配置下要求开启 Thinking
+- 检索模式：`hybrid`
 - Top K：`5`
+- 最低分数：`0`
 - Embedding：`BAAI/bge-small-en-v1.5`
-- Rerank：关闭
-- 权限限制：SourceManifest 的 `document_ids` 作为硬 allowlist
+- Milvus：已启动并用于混合检索
 
-注意：108 次候选答案生成主要来自此前的 `qwen3.8-flash` 运行；其中 70 条无有效报告的记录由确定性规则保留，38 条包含报告但缺失 Judge 的记录后来使用当前 Doubao 配置补评分。因此该目录是“完整评分结果”，不是单一 Doubao 生成模型的纯净对照基线。后续做模型横向比较时必须重新冻结并分目录运行，不能混合聚合。
+定点重试目录：
 
-## 4. 评测集覆盖
+- `g1-a95b-transient-retry-0922-dr005`
+- `g1-a95b-transient-retry-0922-final`
+- `g1-a95b-transient-retry-0922-last`
 
-### 4.1 评测集是什么
+### 4.2 G2：Current Deep Research
 
-本轮使用的是冻结评测集 `cp2-deep-research-cases.v1`，而不是测试时临时提出问题。每个 Case 都是一个可重复执行的测试契约，至少包含：
+- 运行目录：`outputs/deep_research_benchmark/g2-formal-18x3-0921`
+- 实际服务模型：`qwen3.8-27b`
+- 检索模式：`hybrid`
+- Top K：`5`
+- 最低分数：`0`
+- Embedding：`BAAI/bge-small-en-v1.5`
+- Research Graph：计划、审批、任务执行、覆盖检查、报告生成、完成状态
 
-| 字段 | 作用 |
-| --- | --- |
-| `case_id` | 用例稳定编号，例如 `DR-A-001` |
-| `question` | 三组实验必须使用的同一问题原文 |
-| `expected_behavior` | 预期应回答、降级、拒绝、补充信息或进入冲突复核 |
-| `allowed_document_ids` | 当前用例唯一允许访问的文档集合 |
-| `forbidden_document_ids` | 明确禁止访问的文档，用于检测越权 |
-| `required_facts` | 回答必须覆盖的事实及其稳定 `fact_id` |
-| `forbidden_claims` | 报告中不得出现的错误结论 |
-| `key_source_locations` | 金标准文档、Chunk、章节和短引用，用于计算检索命中 |
-| `source_manifest` | 绑定文档版本、哈希、URL 与权限范围的冻结清单 |
+定点重试目录：`g2-formal-failed-retry-0922`。
 
-金标准不依赖测试结束后人工凭印象评分：题目、必要事实、禁止结论和关键来源位置都已预先固化。人工或 Codex 复核只用于调查失败原因，不直接篡改机器评分。
+### 4.3 配置可比性说明
 
-### 4.2 覆盖场景
+两组使用相同数据集、问题、SourceManifest、检索模式、Top K 和 Embedding，但实际生成模型不同。因此可以比较端到端完成率、稳定失败类型和链路可恢复性，但不应直接宣称 G2 的回答质量优势完全来自 Deep Research 架构。严格架构对照仍需在同一模型、同一参数、同一服务窗口下重跑 G1/G2。
 
-18 个真实问题覆盖以下类型：
+此外，两个运行目录内的 `frozen_environment.json` 仍错误记录为 `qwen3.7-flash-2026-07-15`。该字段与实际服务模型不一致，属于评测元数据捕获缺陷。本报告以运行时实际配置和执行记录为准，后续需要修复配置快照的模型读取逻辑。
 
-- 多文档汇总与生命周期比较；
-- 跨章节关联；
-- 新旧版本冲突与版本范围歧义；
-- 信息不足，应拒绝下结论；
-- 数字比较与条件判断；
-- 表格信息理解；
-- 引用定位和原文打开；
-- 无关文档干扰；
-- 权限范围与越权隔离；
-- 当前状态综合判断。
+## 5. 评测方法
 
-用例不仅包含容易命中的直接问答，还包含冲突、干扰、信息不足、权限和跨文档推理场景。
+### 5.1 六层评价框架
 
-### 4.3 单次运行记录
+| 层级 | 评价内容 | 主要数据 |
+| --- | --- | --- |
+| Plan | 是否覆盖问题、任务是否重复、依赖是否合理 | Research Plan、Task、Dependency |
+| Retrieval | 正确文档命中率、Evidence Recall@K、噪声比例 | Observation、命中文档、检索排名 |
+| Evidence | 是否读取正确原文、证据是否充分 | Evidence、Chunk、相邻上下文 |
+| Report | 正确性、完整性、Faithfulness、相关性 | Claim、Finding、最终报告 |
+| Citation | 引用是否支持断言、来源链接能否打开 | Citation、Source URL、Source Route |
+| Runtime | 延时、动作数、工具调用数、Fallback 次数 | Job Event、Trace、统计字段 |
 
-每个 Case 在每个实验组重复 3 次。每次运行生成独立 `run_id`，并记录同一份问题哈希、Manifest 哈希、允许/禁止文档、模型配置哈希和文档版本。单次 Run Record 包含 Plan、Retrieval Hit、Observation、Verified Evidence、Claim、Report、Citation、Event 与 Runtime Metrics，失败运行同样保留。
+### 5.2 硬门槛
 
-批量聚合前会检查 18 × 2 × 3 = 108 个坐标是否完整，并检查同一 Case 在不同组和不同重复之间是否发生问题、权限、Manifest、模型配置或 Prompt 漂移。坐标缺失、重复或关键配置漂移都会产生 `batch_errors`，该批次不能作为有效对照。
+正式质量验收硬门槛：越权证据 0、断裂引用 0、无证据结论 0、原文链接打不开 0、引用覆盖率 100%、Faithfulness 平均不低于 4/5、Answer Relevance 平均不低于 4/5。
 
-## 5. 六层评估标准
+本次报告只公布由新批次重新产生的运行数据。当前两批尚未完成新的六层 Judge 批量评分，因此上述质量硬门槛暂不判定，不复用旧批次评分。
 
-| 层级 | 评估内容 |
-| --- | --- |
-| Plan | 问题覆盖、任务重复、依赖合法性、任务可执行性 |
-| Retrieval | 正确文档命中、Evidence Recall@K、MRR、噪声、权限泄漏 |
-| Evidence | 是否读取原文、事实覆盖、Locator 有效性、冲突识别 |
-| Report | 正确性、完整性、Faithfulness、相关性、限制披露、冲突处理 |
-| Citation | 引用支持率、断言覆盖率、链接可打开率、Locator 匹配率 |
-| Runtime | 总耗时、工具调用、Token、重试、fallback、恢复和 Provider 失败 |
+### 5.3 有效结果替换规则
 
-硬门槛：越权证据、断裂引用、无证据断言、打不开的来源链接均为 0；事实引用覆盖率为 100%；Faithfulness 和 Answer Relevance 均不低于 4/5。
+正式批次遇到 HTTP 502、远端连接关闭、Read Timeout、测试执行器外层 Timeout，或已经修复且有回归测试覆盖的确定性代码异常时，只重跑失败坐标，不重跑全部 108 次。重试成功结果替换同一 `case_id + run_index + group` 的瞬时失败；稳定业务失败如 `no_relevant_context` 保留为有效失败，不通过无限重试掩盖。
 
-### 5.1 一条结果是怎样产生的
+## 6. Deep Research 被测流程
 
 ```text
-冻结 Case + SourceManifest
-        │
-        ├── G1：调用 Fast Chat
-        └── G2：创建 Research Job → 生成/批准 Plan → 执行任务 → 生成 Report
-                                      │
-                                      ▼
-                    保存原始 Run Envelope（成功与失败都保留）
-                                      │
-                                      ▼
-              转换成六层 Run Record，并执行 Schema / Invariant 校验
-                         │                         │
-                         │                         └── 确定性检查
-                         └── 冻结证据 + 候选报告 → Model Judge（1–5 分）
-                                                   │
-                                                   ▼
-                         硬门槛判定 → Failure Code → Root Cause → 批量聚合
+用户问题 + SourceManifest
+        |
+        v
+创建 Research Job，立即返回 research_id
+        |
+        v
+Planner 生成研究计划
+        |
+        v
+用户审批或修改计划
+        |
+        v
+Research Graph 按依赖执行任务
+        |
+        +--> Search / Read 工具检索授权知识库
+        |        |
+        |        v
+        |   Observation -> Evidence
+        |        |
+        |        v
+        |   Finding / Claim / Citation
+        |
+        v
+Coverage / Verification 检查
+        |
+        +--> 信息不足：降级、说明限制或等待处理
+        |
+        v
+Renderer 生成研究报告
+        |
+        v
+保存事件、Checkpoint、状态与最终报告
+        |
+        v
+前端对话展示报告，右侧展示执行状态
 ```
 
-评分不是让模型直接给一个“总分”。Manifest、权限、哈希、Locator、引用存在性和链接状态由代码确定性计算；只有语义质量交给 Model Judge。最终结果以硬门槛是否全部通过为准，平均分只用于比较趋势。
+## 7. G1 正式结果
 
-### 5.2 Plan 层计算
+### 7.1 数量与完成率
 
-| 指标 | 计算方式 |
+| 指标 | 结果 |
+| --- | ---: |
+| 正式坐标 | 54 |
+| 首轮成功 | 42 |
+| 首轮失败 | 12 |
+| 瞬时故障经定点重试恢复 | 4 |
+| 最终有效成功 | 46 |
+| 最终有效失败 | 8 |
+| 有效完成率 | 85.2% |
+| 有效平均耗时 | 123.2 秒 |
+| 有效耗时中位数 | 81.5 秒 |
+
+平均耗时受 `DR-A-018 r2` 约 34 分钟的异常等待显著拉高，因此中位数比平均数更能代表常规体验。
+
+### 7.2 首轮瞬时故障
+
+- `DR-A-005` 三次：远端连接关闭或读取超时；
+- `DR-A-006 r2`：外层执行超时。
+
+定点重试后，这四个坐标均获得成功结果，因此不计入最终业务失败。
+
+### 7.3 稳定业务失败
+
+最终 8 次失败全部为 `fast_chat_terminal_status:no_relevant_context`：
+
+| 用例 | 失败次数 | 场景 | 观察 |
+| --- | ---: | --- | --- |
+| `DR-A-012` | 3/3 | 表格状态核对 | Fast Chat 未稳定检索到 Goals 表中的目标行 |
+| `DR-A-015` | 2/3 | 权限范围限制 | 同题三次结果不稳定，仅 1 次得到可用上下文 |
+| `DR-A-018` | 3/3 | 多文档当前状态综合 | 未能同时取得 Goals 与会议纪要所需上下文 |
+
+这些失败集中在结构化表格、严格权限过滤和多文档综合，说明 Fast Chat 的单轮检索在复杂资料定位上仍存在稳定性缺口。
+
+## 8. G2 正式结果
+
+### 8.1 数量与完成率
+
+| 指标 | 结果 |
+| --- | ---: |
+| 正式坐标 | 54 |
+| 首轮成功 | 51 |
+| 首轮失败 | 3 |
+| 定点重试恢复 | 3 |
+| 最终有效成功 | 54 |
+| 最终有效失败 | 0 |
+| 有效完成率 | 100% |
+| 平均耗时 | 107.0 秒 |
+| 耗时中位数 | 6.9 秒 |
+| 平均动作数 | 7.63 |
+| 平均工具调用数 | 7.63 |
+| 平均证据数 | 4.39 |
+
+有效报告状态中包含 51 个 `complete` 和 3 个 `degraded`。`degraded` 是系统在证据不足或边界条件下给出的受控结果，不等于执行失败。
+
+### 8.2 首轮失败与处理
+
+| 坐标 | 首轮失败 | 处理 | 重试结果 |
+| --- | --- | --- | --- |
+| `DR-A-001 r3` | HTTP 502 | 同配置定点重试 | 成功 |
+| `DR-A-002 r2` | HTTP 502 | 同配置定点重试 | 成功 |
+| `DR-A-008 r2` | `ResearchLimitation.message` 超过 2000 字触发 ValidationError | 修复 Renderer 边界并回归测试 | 成功 |
+
+### 8.3 G2 缺陷根因
+
+`DR-A-008 r2` 已完成主要研究执行，但报告渲染阶段把过长的 limitation 文本写入受长度约束的数据模型，导致最终报告失败。该问题属于输出边界处理缺陷，不是检索失败。
+
+修复内容：
+
+- 在 `deep_research/renderer.py` 对 limitation message 使用统一的 `_bounded_text(..., max_length=2000)`；
+- 增加报告边界回归测试；
+- 对原失败 Job 重新执行报告渲染，状态恢复为 `complete`；
+- 复核生成 Markdown 长度为 11109，单条 limitation 最大长度为 2000；
+- 定点重跑 `DR-A-008` 后成功。
+
+## 9. G1 与 G2 对照
+
+| 维度 | G1 Fast Chat | G2 Deep Research | 当前结论 |
+| --- | --- | --- | --- |
+| 有效完成率 | 85.2% | 100% | G2 链路完成率更高 |
+| 稳定业务失败 | 8 次 `no_relevant_context` | 0 | G2 对复杂检索场景覆盖更稳定 |
+| 瞬时服务故障 | 有 | 有 | 两组均受外部模型服务影响 |
+| 结构化流程 | 单轮检索回答 | 计划、执行、验证、报告 | G2 可记录更多分层过程数据 |
+| 受控降级 | 能力有限 | 3 个 degraded 报告 | G2 能保留边界与限制说明 |
+| 严格质量分 | 未重算 | 未重算 | 暂不做质量优劣定论 |
+
+当前最可靠的结论是：G2 在这 18 题上的端到端可完成性优于 G1。但由于实际模型不同、六层 Judge 评分尚未重算，不能把 100% 完成率解释为 100% 回答正确，也不能将差异完全归因于系统架构。
+
+## 10. 本轮完成的修复
+
+### 10.1 检索与证据
+
+- 增加相邻 Chunk 读取，避免证据只包含命中单行或局部碎片；
+- 对相邻 Chunk 的重叠内容进行去重；
+- 保留 SourceManifest 的文档允许范围，防止越权扩展；
+- 来源打开链路支持本地 Source Route；
+- 基准检查能够识别来源链接与终态失败。
+
+### 10.2 Planner、Worker 与验证
+
+- 修复计划任务校验和资料范围冲突；
+- Worker 的 finding statement 增加 4000 字边界；
+- Verifier 的数字识别正则避免把字母数字 ID 误判为数值结论；
+- 保留失败 Job 的 Observation、Evidence、Finding、Claim 与 Verification，便于定位六层问题。
+
+### 10.3 报告生成
+
+- 修复 `ResearchLimitation.message` 超过 2000 字导致的报告渲染失败；
+- 对历史失败 Job 验证可重新渲染完整报告；
+- 为边界截断增加回归测试。
+
+### 10.4 运行环境与产物管理
+
+- 启动并验证 Milvus，支持 Hybrid Retrieval；
+- 补齐 `rank-bm25` 运行依赖；
+- 按正式批次、重试批次和归档结果整理 `outputs/deep_research_benchmark`；
+- 增加输出目录 README；
+- 将 Pytest 临时目录、缓存和旧临时文件集中到 `D:\htc_qa\pytest-work`，避免系统临时目录权限异常；
+- 更新 Pytest 配置并验证测试可正常写入新目录。
+
+## 11. 验证情况
+
+- G1 18 题 × 3 次正式执行；
+- G1 瞬时失败坐标定点重试并完成替换；
+- G2 18 题 × 3 次正式执行；
+- G2 三个失败坐标定点重试并全部成功；
+- 报告边界相关测试 16 项通过；
+- 原失败 Job 可重新渲染完整报告；
+- Pytest 新临时目录配置验证通过；
+- 输出目录已按正式结果、重试结果和历史归档分类。
+
+## 12. 当前未完成项与风险
+
+### 12.1 六层质量评分尚未重跑
+
+当前报告已完成执行结果统计，但以下指标不能使用旧批次数据代替：Plan 覆盖率、任务重复率、依赖合理性、正确文档命中率、Evidence Recall@K、噪声比例、Evidence 充分性、Correctness、Completeness、Faithfulness、Answer Relevance、引用覆盖率、引用支持率、来源链接通过率和最终硬门槛通过率。
+
+下一步应直接对本报告中的 G1/G2 有效坐标生成新的六层评分，不再读取旧报告或旧混合批次。
+
+### 12.2 模型配置快照不准确
+
+`frozen_environment.json` 的模型字段没有记录实际服务模型，会削弱复现实验的可信度。正式发布前应修复快照生成逻辑，并在启动批次时同时记录请求模型名、Provider 与 Base URL 标识、Thinking 开关、Temperature、Max Tokens、Timeout、代码提交 SHA、检索与 Embedding 配置。
+
+### 12.3 G1/G2 模型不同
+
+本次对照可作为工程链路基线，但不是严格的算法 A/B 实验。若要形成面向评审的最终质量结论，需要使用同一模型再做一次同配置对照，或将模型差异明确设为实验变量。
+
+### 12.4 Page Index 未测试
+
+G3 需要工具层/数据层提供正式的 Page Index 搜索与层级导航 Provider。本轮不实现、不模拟，也不把缺失算作当前 B 侧失败。
+
+## 13. 交付物索引
+
+| 产物 | 路径 |
 | --- | --- |
-| Question Coverage | `计划覆盖的 required fact 数 / required fact 总数` |
-| Duplicate Task Rate | `重复规范化 Query 数 / Task 总数` |
-| Dependency Valid | 对 Task 依赖图做环检测，无环才为真 |
-| Task Executable Rate | 同时具有 `task_id` 和非空 Query 的 Task 数 / Task 总数 |
-
-计划中的 `covers` 由 Task 问题、目的和验收条件与冻结 `required_facts` 匹配得到。Coverage 小于 100% 记为 `PLAN_COVERAGE`；出现重复记为 `PLAN_DUPLICATION`；循环或非法依赖记为 `PLAN_DEPENDENCY`。
-
-### 5.3 Retrieval 层计算
-
-| 指标 | 计算方式 |
-| --- | --- |
-| Correct Document Recall | `命中的关键文档数 / 金标准关键文档数` |
-| Evidence Recall@K | `Top-K 命中的关键 Chunk 数 / 金标准关键 Chunk 数` |
-| MRR | 第一个关键文档命中排名的倒数；无命中为 0 |
-| Noise Ratio | `非关键文档 Hit 数 / 全部 Hit 数` |
-| Permission Leak Count | Hit 中不属于 allowlist 的文档数 |
-
-正确文档未全部命中记为 `RETRIEVAL_DOCUMENT_MISS`；文档命中但关键 Chunk 未全部命中记为 `RETRIEVAL_SECTION_MISS`；噪声比例大于 0.5 记为 `RETRIEVAL_NOISE`；任何越权 Hit 直接触发权限硬门槛。
-
-### 5.4 Evidence 层计算
-
-| 指标 | 计算方式 |
-| --- | --- |
-| Original Read Rate | 通过 `read_document_range` 或本地原文读取产生的 Evidence 数 / Evidence 总数 |
-| Required Fact Coverage | Evidence 支持的 required fact 数 / required fact 总数 |
-| Locator Valid Rate | 文档版本、内容哈希和 Locator 均与冻结 Manifest 一致的 Evidence 数 / Evidence 总数 |
-| Conflict Identified | 冲突题是否出现 `conflict` 或 `version_evolution` 标记 |
-
-搜索摘要只是 Observation，不能直接作为 Verified Evidence。必须读取冻结原文，且版本、哈希、Locator 可校验，才能进入证据层。事实覆盖不足、未读原文、定位错误和冲突误判分别映射到对应 Evidence Failure Code。
-
-### 5.5 Report 的确定性检查与 Model Judge
-
-报告层由两部分共同评分：
-
-1. **确定性检查**：用冻结用例中的 `match_any` 检查必要事实是否出现在报告；检查 `forbidden_claims` 是否被错误输出；检查报告行为是否与 `expected_behavior` 一致。
-2. **Model Judge**：Judge 只能看到问题、预期行为、必要事实描述、冻结原文 Evidence、Claim 及候选报告，不允许使用外部知识，也不能修改确定性结果。
-
-Judge 对以下六个维度分别给出 1–5 的整数分：
-
-| Judge 维度 | 5 分含义 | 低分典型原因 |
-| --- | --- | --- |
-| Correctness | 结论与冻结原文一致，数字推理正确 | 事实错误、数值或版本判断错误 |
-| Completeness | 覆盖全部问题和 required facts | 漏项、只回答部分比较维度 |
-| Faithfulness | 每项事实均由引用的已核验证据支持 | 引入证据外推断或引用不支持断言 |
-| Answer Relevance | 直接回答问题且没有无关展开 | 答非所问、重复流程描述 |
-| Limitation Disclosure | 缺失信息、权限边界和降级原因披露完整 | 信息不足时仍强行下结论 |
-| Conflict Handling | 正确区分冲突与版本演进，并使用日期和权威性 | 把普通版本变化误判为冲突 |
-
-Judge 必须同时返回其认为已支持的 `required_fact_ids_supported`、`unsupported_claim_ids` 和简短理由。Judge 不能覆盖权限、哈希、Locator、引用存在性或链接检查。若 Judge 给出低 Faithfulness 却遗漏 unsupported claim IDs，Parser 会保守加入待复核标记，避免错误通过。
-
-### 5.6 Citation 层计算
-
-| 指标 | 计算方式 |
-| --- | --- |
-| Citation Support Rate | 标记为确实支持 Claim 的 Citation 数 / Citation 总数 |
-| Factual Claim Citation Coverage | 有 Citation 的事实 Claim 数 / 全部事实 Claim 数 |
-| Link Open Rate | 实际检查成功的必需来源 URL 数 / 必需来源 URL 总数 |
-| Locator Match Rate | Citation Locator 与所引用 Evidence Locator 一致的数量 / Citation 总数 |
-| Unsupported Claim Count | 无 Evidence、Evidence ID 无效或 Judge 判为不支持的事实 Claim 数 |
-
-引用缺失、不支持结论、来源链接打不开、越权来源都会单独记录，不能被报告文字质量分抵消。
-
-### 5.7 Runtime 层记录
-
-Runtime 不用单一分数掩盖异常，而是保存总延时、各阶段延时、Search/Read/总工具调用数、输入输出 Token、重试、Fallback、Checkpoint 恢复、Provider Failure、终态、失败阶段和错误码。超时、Provider 失败、Fallback 与恢复失败分别映射为 Runtime Failure Code。
-
-### 5.8 硬门槛如何判定
-
-单次运行只有同时满足以下条件才记为 `hard_gate_pass = true`：
-
-| 硬门槛 | 通过条件 |
-| --- | --- |
-| Permission Leak Count | `= 0` |
-| Broken Citation Count | `= 0` |
-| Unsupported Factual Claim Count | `= 0` |
-| Unopenable Source Link Count | `= 0` |
-| Factual Claim Citation Coverage | `>= 1.0`，即 100% |
-| Faithfulness | `>= 4/5` |
-| Answer Relevance | `>= 4/5` |
-| Invariant Errors | 为空 |
-
-因此“Job completed”不等于“评测通过”。任意一项硬门槛不通过，该次运行即失败。
-
-### 5.9 根因和批量均值如何计算
-
-每次运行可以产生多个 Failure Code。系统按照 `Plan → Retrieval → Evidence → Report → Citation → Runtime` 的预定义顺序选择第一个 Failure Code 作为 `root_cause`，其余作为 `downstream_effects`。这是稳定的工程归因规则，不代表后续层的问题不需要修复。
-
-批量报告按实验组分别计算：
-
-- `hard_gate_pass_count`：该组通过全部硬门槛的运行数；
-- 各 Judge 维度均值：该组所有具有数值评分的运行之算术平均值；
-- Evidence Recall、Latency、Tool Calls：同样按有效数值做算术平均；
-- 不删除失败运行，不用成功运行替换失败运行；
-- 缺少模型分数时不按 0 随意填充，而是先保留缺失并进入补评分流程。
-
-### 5.10 如何阅读本报告中的分数
-
-- 1–5 分是 Judge 对语义维度的分项评价，不是系统总分；
-- 0–1 比率由代码根据冻结金标准计算；
-- 硬门槛是最终验收条件；
-- G1/G2 均值用于观察相对趋势，不能掩盖越权、断链或无证据结论；
-- 本轮旧记录缺少内部 Retrieval Trace，因此旧 `Evidence Recall@K = 0` 不具备最终诊断效力；该限制已经在结果部分单独披露。
-
-## 6. 执行过程
-
-### 6.1 108 次基线运行
-
-- G1：18 题 × 3 次，共 54 次；成功 6 次，失败 48 次；平均耗时约 82.7 秒。
-- G2：18 题 × 3 次，共 54 次；成功 46 次，失败 8 次；平均耗时约 147.4 秒。
-- G1/G2 合计：108 次，运行坐标完整。
-
-### 6.2 Judge 评分恢复
-
-第一次 Judge 阶段有 38 条失败。根因不是答案本身，而是评分进程被错误代理 `127.0.0.1:9` 阻断，无法访问模型 Provider。
-
-处理过程包括：
-
-1. 保留全部失败记录，没有删除或伪造分数；
-2. 多次验证 Qwen、DeepSeek、Kimi 和 Doubao 的模型名称、权限、额度及返回结构；
-3. 将最终评分模型切换到可用的 Doubao 配置；
-4. 禁用该模型不需要的 Thinking 输出；
-5. 扩展 Judge Parser，使其兼容嵌套评分结构、展示型字段名和缺失列表字段；
-6. 仅重跑失败的 38 条 Judge，不重复执行全部 108 次候选答案生成；
-7. 将 38 条有效评分合并回总目录，得到 108 条完整评分记录。
-
-### 6.3 最终评分完整性
-
-- `record_count`：108
-- `expected_record_count`：108
-- `missing_coordinates`：0
-- `batch_errors`：0
-- 全部记录均经过确定性硬门槛计算
-
-## 7. 量化结果
-
-| 指标 | G1 Fast Chat | G2 Deep Research | G2 相对表现 |
-| --- | ---: | ---: | --- |
-| Correctness | 1.22 | 2.39 | 提升 |
-| Completeness | 1.17 | 2.06 | 提升 |
-| Faithfulness | 1.22 | 2.74 | 提升 |
-| Answer Relevance | 1.24 | 2.04 | 提升 |
-| 硬门槛通过 | 0/54 | 13/54 | 提升，但仍不达标 |
-| 平均耗时 | 82.7s | 147.4s | G2 更慢 |
-| 平均工具调用 | 0 | 5.67 | G2 执行了研究工具链 |
-
-`evidence_recall_at_k` 在历史聚合中为 0。该数值不能解释为真实检索 Recall 为 0，因为旧评测转换器只能从最终 Citation 反推 Retrieval Hit，缺少原始 Observation、chunk 和 score。此问题已修复，新运行需要通过定向复测重新计算。
-
-## 8. 失败分析
-
-### 8.1 G1
-
-G1 的 54 次运行全部未通过硬门槛。主要表现为：
-
-- Answer Relevance 未通过：52 次；
-- Faithfulness 未通过：51 次；
-- 无法形成足够 Evidence 和完整 Report；
-- 4 次断裂或不支持结论的 Citation；
-- 2 次事实断言引用覆盖不足。
-
-这说明普通 Fast Chat 不适合作为复杂多文档研究任务的可靠完成路径。
-
-### 8.2 G2
-
-G2 有 13/54 次通过硬门槛。历史评分中的主要失败计数为：
-
-- `PLAN_COVERAGE`：46 次；
-- `REPORT_INCOMPLETE`：46 次；
-- `REPORT_INCORRECT`：38 次；
-- `REPORT_UNFAITHFUL`：37 次；
-- Answer Relevance 硬门槛失败：41 次；
-- Faithfulness 硬门槛失败：35 次；
-- Unsupported factual claim：15 次。
-
-Retrieval/Evidence 相关代码在旧结果中出现较多，但由于旧运行缺失内部 Trace，其根因排序只能暂定。后续应优先复测 Plan Coverage、Report 完整性和硬门槛失败用例，再根据新 Observation/Evidence 数据确认是否真的需要修改检索策略。
-
-## 9. 已完成的修复
-
-### 9.1 数据接入与来源链路
-
-- 拉取并保存 Confluence RAG 空间文档快照；
-- SourceManifest 补充文档版本、哈希、URL 和权限范围；
-- 来源 URL 缺失时支持本地原文路由；
-- 修复前端来源入口和引用卡片的打开行为；
-- 原文读取仍严格受当前 Job 的冻结 Manifest 限制。
-
-### 9.2 计划、证据与报告质量
-
-- Planner 从生硬固定模板改为模型生成并保留确定性回退；
-- Worker 从命中单行扩展为带上下文的原文区间读取；
-- Search Observation 与 Verified Evidence 分离持久化；
-- 报告生成失败时使用已核验证据回退，不输出无依据内容；
-- 改进冲突识别，避免仅因标题、日期或描述范围不同就判定语义冲突；
-- 最终报告保留引用、原文、版本、限制和冲突处理信息。
-
-### 9.3 模型与 Judge 兼容性
-
-- 支持统一配置模型、API Base、Temperature、Timeout 和 Thinking Mode；
-- HTTP 错误保留受限长度的 Provider 响应信息，便于诊断且不暴露 API Key；
-- Judge Parser 兼容 Kimi 嵌套格式和 Doubao 展示型字段名；
-- Faithfulness 低于满分但未返回 unsupported claim IDs 时，保守生成待复核标记，避免错误放行。
-
-### 9.4 六层评测可观测性
-
-- 新增只读接口：`GET /api/research/jobs/{research_id}/evaluation-trace`；
-- 接口返回持久化 Observation、Verified Evidence、Finding、Claim 和 Verification；
-- Observation 新增检索 score；
-- 转换器优先使用真实 Trace 构造 Retrieval/Evidence/Claim 层，不再仅依赖最终引用；
-- 支持 `--case-ids` 定向运行指定冻结用例；
-- 超时运行仍保留 `research_id`、Job 状态、事件和已有 Trace；
-- 新增确定性失败归因与硬门槛报告生成器。
-
-## 10. 修复验证
-
-针对本轮新增和修改的链路执行了以下验证：
-
-- Worker Observation/Evidence 分离与 score 持久化；
-- Research Control Plane API；
-- Benchmark case scope 与运行汇总；
-- Judge Parser 多 Provider 返回格式；
-- Failure Analysis 聚合；
-- Evaluation Trace API。
-
-最终针对性测试结果：`20 passed`，`git diff --check` 通过。
-
-在线持久化 Job 验证结果：
-
-- Job 最终状态：`completed`；
-- Observation：6；
-- Verified Evidence：6；
-- Finding：3；
-- Claim：3；
-- Verification：6；
-- Observation 中可读取 `tool_name`、`doc_id`、`locator_hint` 和 `score`。
-
-另一次 `DR-A-001 / G2 / 1 次` 定向运行超过 600 秒评测期限，报告模型阶段发生连接中止。该次运行按 Runtime 超时保留，不计为通过。任务后来在持久化运行时完成，说明还存在“模型调用阻塞导致评测等待超时”的性能与超时边界问题。
-
-## 11. 当前仍未完成或不能宣称完成的事项
-
-1. **G2 尚未达到质量门槛**：当前只有 13/54 次通过硬门槛。
-2. **新 Trace 下的定向复测尚未形成完整新评分批次**：旧 Retrieval/Evidence 结论仍需复核。
-3. **Runtime 延迟仍高**：G2 平均约 147 秒，个别任务超过 600 秒。
-4. **Token 指标仍不可用**：公共 API 返回未完整暴露各阶段 Token 用量。
-5. **Page Index 未实现**：应由工具/数据层提供 Provider 后，B 侧再做 Worker 适配和 G3 对照实验。
-6. **不能把混合模型结果作为纯模型对比**：本轮生成与补评分存在不同模型阶段，后续纯模型对照必须重新冻结。
-
-## 12. 下一轮建议
-
-1. 使用新 Trace 对 G2 的硬门槛失败用例做定向复测，不重跑已确认无关的全部任务；
-2. 优先修复 Plan Coverage、Report Completeness、Faithfulness 和 Answer Relevance；
-3. 对每个失败用例输出 Observation → Evidence → Claim → Citation 的完整链路，确认根因后再决定是否修改检索层；
-4. 将模型调用设置为可中断的阶段级超时，避免 Job 已完成但 Benchmark 先超时；
-5. 工具/数据层交付 Page Index 后，再建立独立 G3 基线；
-6. 模型横向实验按 Provider/Model 独立目录运行，禁止混合聚合。
-
-## 13. 交付产物
-
-面向评审和汇报只保留两个主要入口：
-
-| 主要交付 | 内容 | 路径 |
-| --- | --- | --- |
-| 完整说明报告 | 评测集、方法、量化规则、结果、失败分析、修复、验证、限制与下一步 | `agent/docs/cp2/CP2 Deep Research 全量测试、结果分析与修复报告.md` |
-| 评测数据与结果工作簿 | 总览图表、108 条运行明细、18 个用例、失败分布与产物索引 | `agent/docs/cp2/CP2 Deep Research 评测数据与结果.xlsx` |
-
-JSON、JSONL、CSV、SourceManifest、Schema 和生成脚本仍保留在 `eval/deep_research_a` 与 `eval/reports/qwen38-full-g1-g2-0915` 下，作为机器复算和审计证据。日常评审不需要逐个打开；具体路径已经集中列在 Excel 的 `Artifact index` 工作表中。
-
-## 14. 最终验收判断
-
-本轮“建立基线、完成 G1/G2 对照、分层评分、保留失败、分析根因、补齐评测可观测性和范围内 P0 修复”的工作已完成。
-
-当前 Deep Research 可以证明比 Fast Chat 更适合复杂研究任务，但尚不能宣称达到正式质量门槛。最准确的交付状态是：**评测基础设施和第一版完整基线已交付，主要缺陷已定位并完成可观测性修复；效果优化仍需基于新 Trace 做定向迭代。**
+| 本报告 | `docs/cp2/CP2 Deep Research 全量测试、结果分析与修复报告.md` |
+| G1 正式结果 | `outputs/deep_research_benchmark/g1-a95b-formal-18x3-0922` |
+| G1 定点重试 | `outputs/deep_research_benchmark/g1-a95b-transient-retry-0922-*` |
+| G2 正式结果 | `outputs/deep_research_benchmark/g2-formal-18x3-0921` |
+| G2 定点重试 | `outputs/deep_research_benchmark/g2-formal-failed-retry-0922` |
+| 评测集快照 | 各正式运行目录下的 `dataset_snapshot.json` |
+| 配置快照 | 各正式运行目录下的 `config/frozen_environment.json` |
+| 文档清单 | 各正式运行目录下的 `config/documents_manifest.json` |
+| 基准输出说明 | `outputs/deep_research_benchmark/README.md` |
+| 总输出说明 | `outputs/README.md` |
+
+## 14. 验收结论
+
+本轮“正式执行与故障修复”已完成：G1、G2 均完成 18×3 坐标执行；瞬时故障已按坐标重试，不再污染主要结论；G2 报告边界缺陷已修复并回归验证；G2 有效完成率达到 100%；G1 剩余 8 次失败均为可复现的 `no_relevant_context`；旧的混合批次与旧评分不再作为当前结论。
+
+本轮尚不能宣告“质量硬门槛全部通过”。完整质量验收还需要对这两次新 G1/G2 有效结果执行六层评分，并修复模型配置快照。完成后才能正式给出引用覆盖率、Faithfulness、Answer Relevance 和总硬门槛通过率。

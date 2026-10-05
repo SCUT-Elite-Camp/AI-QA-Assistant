@@ -1,0 +1,14 @@
+{
+  "说明": "Confluence 空间 → 系统可见范围映射。confluence_pull.py 入库时，每个文档按所属 space_key 登记到 web 层 files/file_permissions 表，使检索阶段按用户可见范围过滤。",
+  "spaces": {
+    "test": {
+      "visibility": "shared",
+      "owner_user_id": "demo-admin",
+      "grants": []
+    }
+  },
+  "defaults": {
+    "owner_user_id": "demo-admin",
+    "visibility": "private"
+  }
+}
