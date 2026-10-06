@@ -4,7 +4,7 @@ import { useHead } from '@unhead/vue'
 import { useColorMode } from '@vueuse/core'
 
 const colorMode = useColorMode()
-const themeColor = computed(() => colorMode.value === 'dark' ? '#09090b' : '#fafafa')
+const themeColor = computed(() => colorMode.value === 'dark' ? '#1c1917' : '#f6f5f1')
 
 useHead({
   meta: [

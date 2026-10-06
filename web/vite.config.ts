@@ -21,8 +21,8 @@ export default defineConfig({
       prose: true,
       ui: {
         colors: {
-          primary: 'blue',
-          neutral: 'zinc'
+          primary: 'indigo',
+          neutral: 'stone'
         }
       }
     }),

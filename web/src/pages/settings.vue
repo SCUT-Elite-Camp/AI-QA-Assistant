@@ -54,8 +54,8 @@ async function devLogin() {
 
 const settings = ref<Settings>({
   theme: 'system',
-  primaryColor: 'blue',
-  neutralColor: 'zinc',
+  primaryColor: 'indigo',
+  neutralColor: 'stone',
   language: 'zh-CN',
   notificationsEnabled: true,
   autoSaveChats: true,
@@ -145,7 +145,7 @@ async function saveSettings() {
 
         <div v-else class="space-y-8">
           <div>
-            <h1 class="text-2xl font-bold text-highlighted">设置</h1>
+            <h1 class="page-title text-2xl text-highlighted">设置</h1>
             <p class="text-dimmed mt-1">自定义您的应用偏好，设置会自动保存到您的账户。</p>
           </div>
 

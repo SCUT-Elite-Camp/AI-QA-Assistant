@@ -63,7 +63,7 @@ watch(currentWeightMode, (newMode) => {
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
-const { loggedIn } = useUserSession()
+const { loggedIn, user } = useUserSession()
 const sessionFacts = useSessionFacts()
 const memoryRecallMessageIds = ref<string[]>([])
 const hasPendingTrustedMemoryRecall = ref(false)
@@ -180,10 +180,9 @@ const useKnowledgeBase = ref(knowledgeBaseRetrievalEnabled(
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  let timeGreeting = 'Good evening'
-  if (hour < 12) timeGreeting = 'Good morning'
-  else if (hour < 18) timeGreeting = 'Good afternoon'
-  return timeGreeting
+  const timeGreeting = hour < 11 ? '早上好' : hour < 14 ? '中午好' : hour < 18 ? '下午好' : '晚上好'
+  const name = user.value?.name?.split(' ')[0] || user.value?.username
+  return name ? `${timeGreeting}，${name}` : timeGreeting
 })
 
 const visibleMessages = computed(() => {
@@ -207,7 +206,7 @@ const plusMenuItems = computed(() => [[
     onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
   {
-    label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
+    label: deepResearchMode.value ? '深度检索：开' : '深度检索',
     icon: 'i-lucide-telescope',
     onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
@@ -639,19 +638,24 @@ onBeforeUnmount(() => {
           />
 
           <!-- Empty Chat / Branch New Chat Landing View -->
-          <UContainer v-if="!visibleMessages.length" class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8 min-h-[75vh]">
-            <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-              {{ greeting }}
-            </h1>
+          <UContainer v-if="!visibleMessages.length" class="flex-1 flex flex-col justify-center gap-6 max-w-2xl w-full py-16 min-h-[75vh]">
+            <div class="space-y-2">
+              <h1 class="display-title">
+                {{ greeting }}
+              </h1>
+              <p class="home-lead">
+                从这里接着问。回答会带上来源。
+              </p>
+            </div>
 
             <UChatPrompt
               v-if="isOwner"
               v-model="input"
               :error="chat.error"
               :status="chat.status"
-              placeholder="Ask me anything..."
+              placeholder="问一个问题…"
               variant="subtle"
-              class="rounded-2xl shadow-lg"
+              class="composer"
               :ui="{ base: 'px-1.5' }"
               @submit="handleSubmit"
             >
@@ -671,13 +675,12 @@ onBeforeUnmount(() => {
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-plus"
-                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
+                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-primary rotate-45' : 'text-muted hover:text-highlighted']"
                   />
                 </UDropdownMenu>
 
-                <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
-                <!-- Deep Research Indicator Badge -->
-                <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+                <span v-if="useKnowledgeBase" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库</span>
+                <span v-if="deepResearchMode" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">深度检索</span>
 
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">
@@ -804,9 +807,9 @@ onBeforeUnmount(() => {
               v-model="input"
               :error="chat.error"
               :status="chat.status"
-              placeholder="Ask me anything..."
+              placeholder="问一个问题…"
               variant="subtle"
-              class="sticky bottom-6 mb-6 [view-transition-name:chat-prompt] rounded-2xl shadow-lg z-10"
+              class="composer composer-sticky sticky bottom-0 z-10 pb-4"
               :ui="{ base: 'px-1.5' }"
               @submit="handleSubmit"
             >
@@ -826,13 +829,12 @@ onBeforeUnmount(() => {
                     variant="ghost"
                     size="sm"
                     icon="i-lucide-plus"
-                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
+                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-primary rotate-45' : 'text-muted hover:text-highlighted']"
                   />
                 </UDropdownMenu>
 
-                <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
-                <!-- Deep Research Indicator Badge -->
-                <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+                <span v-if="useKnowledgeBase" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库</span>
+                <span v-if="deepResearchMode" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">深度检索</span>
 
                 <!-- Right: WeightMode + Submit -->
                 <div class="ms-auto flex items-center gap-1">

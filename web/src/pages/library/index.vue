@@ -111,8 +111,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
       <UContainer class="py-16 max-w-4xl">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h1 class="text-2xl font-bold">
-              Personal Knowledge Library
+            <h1 class="page-title text-2xl">
+              我的资料库
             </h1>
             <p class="text-sm text-muted mt-1">
               长期保存个人文件，并在聊天中通过“我的资料库”检索。
