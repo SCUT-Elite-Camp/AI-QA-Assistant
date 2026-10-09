@@ -2,6 +2,7 @@ import os
 import random
 import pytest
 from pymilvus import connections
+from storage import document_store
 from storage.document_store import save_document, load_document, delete_document
 from storage.milvus_store import MilvusStore
 
@@ -49,6 +50,73 @@ def test_document_store():
     # 3. 删除验证
     delete_document(TEST_DOC_ID)
     assert load_document(TEST_DOC_ID) is None
+
+
+@pytest.mark.parametrize(
+    "doc_id",
+    [None, "", "../escape", r"..\escape", "/absolute", r"C:\escape", "bad\x00id"],
+)
+def test_document_store_rejects_path_sensitive_ids(tmp_path, monkeypatch, doc_id):
+    docs_dir = tmp_path / "documents"
+    monkeypatch.setattr(document_store, "DOCS_DIR", str(docs_dir))
+
+    for operation in (
+        lambda: document_store.save_document(doc_id, {}),
+        lambda: document_store.load_document(doc_id),
+        lambda: document_store.delete_document(doc_id),
+    ):
+        with pytest.raises(ValueError):
+            operation()
+
+    assert not (tmp_path / "escape.json").exists()
+
+
+@pytest.mark.parametrize(
+    "doc_id",
+    ["test_doc_001", "31dcd0570123456789abcdef01234567", "hyphenated-id", "文档. 1"],
+)
+def test_document_store_accepts_safe_document_ids(tmp_path, monkeypatch, doc_id):
+    monkeypatch.setattr(document_store, "DOCS_DIR", str(tmp_path / "documents"))
+    document = {"doc_id": doc_id, "content": "content"}
+
+    document_store.save_document(doc_id, document)
+    assert document_store.load_document(doc_id) == document
+    document_store.delete_document(doc_id)
+    assert document_store.load_document(doc_id) is None
+
+
+def test_failed_serialization_preserves_document_and_cleans_temporary_file(tmp_path, monkeypatch):
+    docs_dir = tmp_path / "documents"
+    monkeypatch.setattr(document_store, "DOCS_DIR", str(docs_dir))
+    original = {"doc_id": "stable", "content": "valid"}
+    document_store.save_document("stable", original)
+
+    with pytest.raises(TypeError):
+        document_store.save_document("stable", {"unsupported": object()})
+
+    assert document_store.load_document("stable") == original
+    assert list(docs_dir.glob(".document-*.tmp")) == []
+
+
+@pytest.mark.parametrize(
+    ("configured", "expected"),
+    [(None, 5.0), ("7.5", 7.5), ("invalid", 5.0), ("0", 5.0)],
+)
+def test_milvus_connect_timeout_is_configurable(monkeypatch, configured, expected):
+    calls = []
+    if configured is None:
+        monkeypatch.delenv("MILVUS_CONNECT_TIMEOUT_SECONDS", raising=False)
+    else:
+        monkeypatch.setenv("MILVUS_CONNECT_TIMEOUT_SECONDS", configured)
+    monkeypatch.setattr(
+        "storage.milvus_store.connections.connect",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    store = MilvusStore()
+    store.connect()
+
+    assert calls == [(("default",), {"host": "localhost", "port": "19530", "timeout": expected})]
 
 
 @pytest.mark.skipif(not MILVUS_AVAILABLE, reason="本地 Milvus 服务未运行，跳过向量存储测试")

@@ -21,8 +21,8 @@ from models.document import Document
 from parsers.registry import parse_file
 from pipeline.chunker import chunk_text, chunk_from_blocks
 from pipeline.embedder import embed_texts
-from storage.document_store import save_document
-from storage.milvus_store import MilvusStore
+from data_persistence.documents import save_document
+from data_persistence.vector import MilvusStore
 from retrieval.bm25_index import BM25Index
 
 def process_specific_files(

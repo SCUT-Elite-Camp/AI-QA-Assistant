@@ -23,10 +23,10 @@ class EvidenceGate:
         *,
         retrieval_attempt: int,
     ) -> EvidenceGateResult:
-        if retrieval_attempt not in {1, 2}:
-            raise ValueError("retrieval_attempt must be one or two")
+        if not 1 <= retrieval_attempt <= 5:
+            raise ValueError("retrieval_attempt must be between one and five")
 
-        eligible = self._filter_and_deduplicate(evidence)
+        eligible = self.select_eligible(evidence)
         covered = self._covered_targets(eligible)
         counts = {
             "candidate_evidence_count": len(evidence),
@@ -59,7 +59,11 @@ class EvidenceGate:
             )
 
         if policy.evidence_policy == "topic_coverage":
-            accepted = len(eligible) >= 2
+            content_chunks = [
+                item for item in eligible
+                if not item.chunk_id.endswith("::document")
+            ]
+            accepted = len(content_chunks) >= 2
             missing = [] if accepted else self._missing_targets(query_plan, covered)
             return self._result(
                 accepted=accepted,
@@ -106,15 +110,21 @@ class EvidenceGate:
 
         raise ValueError(f"unsupported evidence policy: {policy.evidence_policy}")
 
-    def _filter_and_deduplicate(
+    def select_eligible(
         self,
         evidence: list[Evidence],
+        *,
+        require_version_id: bool = False,
     ) -> list[Evidence]:
-        best_by_chunk: dict[tuple[str, str], Evidence] = {}
+        """Apply the canonical score, identity, and deduplication rules."""
+
+        best_by_chunk: dict[tuple[str, str, str, str], Evidence] = {}
         for item in evidence:
             if item.score < self.min_score:
                 continue
-            key = (item.doc_id, item.chunk_id)
+            if require_version_id and not (item.version_id or "").strip():
+                continue
+            key = self.evidence_key(item)
             current = best_by_chunk.get(key)
             if current is None or item.score > current.score:
                 best_by_chunk[key] = item
@@ -122,6 +132,17 @@ class EvidenceGate:
             best_by_chunk.values(),
             key=lambda item: item.score,
             reverse=True,
+        )
+
+    @staticmethod
+    def evidence_key(item: Evidence) -> tuple[str, str, str, str]:
+        """Return the stable identity used across candidate pools."""
+
+        return (
+            (item.source_scope or "").strip(),
+            (item.document_id or item.doc_id).strip(),
+            (item.version_id or "").strip(),
+            item.chunk_id.strip(),
         )
 
     @staticmethod

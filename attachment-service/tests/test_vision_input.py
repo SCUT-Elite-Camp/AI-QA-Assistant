@@ -7,8 +7,15 @@ import fitz
 import pytest
 from PIL import Image
 
+import base64
 from attachment_service.config import AttachmentSettings
 from attachment_service.vision import LocalVisionBackend
+
+
+@pytest.fixture(autouse=True)
+def _set_test_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", "test-secret")
+    monkeypatch.setenv("ATTACHMENT_ENCRYPTION_KEY", base64.urlsafe_b64encode(b"k" * 32).decode())
 
 
 def test_prepare_vision_image_renders_requested_pdf_page_and_crop(tmp_path: Path) -> None:
@@ -120,10 +127,14 @@ def test_isolated_vision_worker_failure_keeps_parent_backend_available(
     image = tmp_path / "image.png"
     Image.new("RGB", (20, 20), "white").save(image)
 
+    real_run = sys.modules["subprocess"].run
+
     def crashed_worker(command, **kwargs):
-        result_path = Path(command[-1])
-        result_path.write_text(json.dumps({"error": "vision_unavailable"}), encoding="utf-8")
-        return SimpleNamespace(returncode=1)
+        if isinstance(command, (list, tuple)) and len(command) > 0 and str(command[-1]).endswith(".json"):
+            result_path = Path(command[-1])
+            result_path.write_text(json.dumps({"error": "vision_unavailable"}), encoding="utf-8")
+            return SimpleNamespace(returncode=1, stdout="", stderr="")
+        return real_run(command, **kwargs)
 
     monkeypatch.setattr("attachment_service.vision.subprocess.run", crashed_worker)
 

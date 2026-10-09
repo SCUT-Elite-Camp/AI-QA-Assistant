@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from agent.exploration.schemas import CoverageAssessment
 from agent.schemas.query_plan import QueryPlan
 
 
@@ -39,8 +40,11 @@ class AgentState(BaseModel):
     messages: list[dict[str, Any]] = Field(default_factory=list)
     iteration: int = 0
     retrieval_attempts: int = 0
+    answer_model_preference: str = "auto"
+    wiki_evidence_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    wiki_evidence_supplements: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
-    coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
+    coverage_assessments: list[CoverageAssessment] = Field(default_factory=list)
     exploration_rounds: int = 0
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     stop_reason: StopReason | None = None

@@ -17,8 +17,7 @@ from parsers.registry import parse_file, supported_extensions
 from pipeline.confluence_snapshot import deduplicate_confluence_paths
 from pipeline.auto_process import _index_document
 from retrieval.bm25_index import BM25Index
-from retrieval.section_bm25_index import SectionBM25Index
-from storage.milvus_store import MilvusStore
+from data_persistence.vector import MilvusStore
 
 def _scan_folder(folder_path: str) -> list[str]:
     """扫描文件夹，返回所有支持的文件路径列表"""
@@ -100,10 +99,6 @@ def process_folder(
     bm25_index_path = BM25Index.default_index_path()
     bm25.save(bm25_index_path)
     print(f"  → BM25 索引已保存: {bm25_index_path}")
-    section_bm25 = SectionBM25Index()
-    section_bm25.build_from_documents()
-    section_bm25.save(SectionBM25Index.default_index_path())
-    print(f"  → Section BM25 索引已保存: {SectionBM25Index.default_index_path()}")
 
     print(f"\n处理完成！共 {len(documents)} 个文档")
     return documents

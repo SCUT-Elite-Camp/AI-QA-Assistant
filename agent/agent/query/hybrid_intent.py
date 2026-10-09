@@ -27,8 +27,12 @@ def _load_local_sentence_transformer(model_path: str):
 class SentenceTransformerIntentEncoder:
     """Lazy local encoder; never downloads a model implicitly."""
 
-    def __init__(self, model_path: str) -> None:
-        self.model_path = model_path.strip()
+    def __init__(self, model_path: str = "") -> None:
+        path_str = model_path.strip() if model_path else (settings.INTENT_EMBEDDING_MODEL_PATH or "")
+        if not path_str:
+            default_path = Path(__file__).resolve().parents[3] / "data-persistence" / "models" / "bge-small-en-v1.5"
+            path_str = str(default_path) if default_path.exists() else ""
+        self.model_path = path_str
         self._model = None
 
     def encode(self, texts: list[str]) -> list[list[float]]:

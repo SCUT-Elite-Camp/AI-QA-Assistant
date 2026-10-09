@@ -9,7 +9,7 @@ from eval.wiki.export_review_bundle import main as export_review_bundle
 from eval.wiki.publish_reviewed_subset import (
     _verify_database_matches_bundle, select_reviewed_pages,
 )
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 
 
 def test_selection_excludes_any_page_with_rejected_review_chain():

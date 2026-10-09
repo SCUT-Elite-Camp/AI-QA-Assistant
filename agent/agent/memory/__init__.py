@@ -1,20 +1,14 @@
-from agent.config.settings import settings
-from agent.memory.base import ConversationMemory
-from agent.memory.conversation_memory import InMemoryConversationMemory
+"""Agent-owned orchestration for caller-supplied persistent Memory."""
 
-_default_memory = InMemoryConversationMemory(
-    max_messages=settings.MAX_MEMORY_MESSAGES,
-)
-
-
-def get_default_memory() -> ConversationMemory:
-    """Return the process-wide memory shared by request-scoped Agent objects."""
-
-    return _default_memory
-
+from agent.memory.compaction_planner import CompactionPlanner
+from agent.memory.context_resolver import ContextResolver
+from agent.memory.coordinator import MemoryCoordinator, MemoryView
+from agent.memory.memory_response_policy import MemoryResponsePolicy
 
 __all__ = [
-    "ConversationMemory",
-    "InMemoryConversationMemory",
-    "get_default_memory",
+    "CompactionPlanner",
+    "ContextResolver",
+    "MemoryCoordinator",
+    "MemoryResponsePolicy",
+    "MemoryView",
 ]

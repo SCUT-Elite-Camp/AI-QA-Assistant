@@ -1,0 +1,31 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install pnpm 9 via fast registry
+RUN npm install -g pnpm@9 --registry=https://registry.npmmirror.com
+RUN pnpm config set registry https://registry.npmmirror.com
+
+# Copy manifests
+COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
+
+# Install dependencies in container
+RUN pnpm install --frozen-lockfile || pnpm install
+
+# Copy source
+COPY web/ ./
+
+# Prepare local data directory
+RUN mkdir -p .data
+
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV AGENT_BASE_URL="http://agent:8000"
+ENV TURSO_DATABASE_URL="file:/app/.data/sqlite.db"
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=5 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
+
+CMD ["pnpm", "run", "dev", "--host", "0.0.0.0", "--port", "3000"]

@@ -17,7 +17,7 @@ from pipeline.rag_lifecycle import (  # noqa: E402
     finish_retraction, mark_retraction_pending, pending_confluence_retractions,
 )
 from retrieval.bm25_index import BM25Index  # noqa: E402
-from storage.milvus_store import MilvusStore  # noqa: E402
+from data_persistence.vector import MilvusStore  # noqa: E402
 from toolset.tool_layer.search_tool import SearchTool  # noqa: E402
 
 

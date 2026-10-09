@@ -16,6 +16,13 @@ def _env_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_bool_with_legacy(name: str, legacy_name: str, default: bool) -> bool:
+    """Read a new boolean setting while honoring the legacy name for one release."""
+    if os.getenv(name) is not None:
+        return _env_bool(name, default)
+    return _env_bool(legacy_name, default)
+
+
 def _env_int(name: str, default: int) -> int:
     value = os.getenv(name)
     if value is None:
@@ -30,6 +37,14 @@ def _env_float(name: str, default: float) -> float:
     return float(value)
 
 
+def _find_project_root() -> Path:
+    cur = Path(__file__).resolve()
+    for parent in [cur] + list(cur.parents):
+        if (parent / "requirements.txt").exists() or (parent / "start_project.py").exists():
+            return parent
+    return cur.parents[3] if len(cur.parents) > 3 else cur.parent
+
+
 class Settings(BaseModel):
     """Global settings for Agent Layer."""
 
@@ -38,13 +53,11 @@ class Settings(BaseModel):
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = _env_int("PORT", 8000)
 
-    DEFAULT_TOP_K: int = Field(default_factory=lambda: _env_int("DEFAULT_TOP_K", 5), ge=1, le=20)
     MIN_RETRIEVAL_SCORE: float = Field(
         default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.0),
         ge=0.0,
         le=1.0,
     )
-    DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
     QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
         "QUERY_UNDERSTANDING_ENABLED",
         True,
@@ -75,11 +88,23 @@ class Settings(BaseModel):
         ge=0.0,
         le=2.0,
     )
-    QUERY_REWRITE_ENABLED: bool = _env_bool("QUERY_REWRITE_ENABLED", True)
+    CONVERSATION_REWRITE_ENABLED: bool = _env_bool_with_legacy(
+        "CONVERSATION_REWRITE_ENABLED",
+        "QUERY_REWRITE_ENABLED",
+        True,
+    )
     CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
+    )
+    TOOL_EXECUTOR_MAX_WORKERS: int = Field(
+        default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_WORKERS", 8),
+        ge=1,
+    )
+    TOOL_EXECUTOR_MAX_PENDING: int = Field(
+        default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_PENDING", 16),
+        ge=0,
     )
     AGENTIC_EXPLORATION_ENABLED: bool = _env_bool(
         "AGENTIC_EXPLORATION_ENABLED", False,
@@ -96,9 +121,11 @@ class Settings(BaseModel):
     EXPLORATION_MAX_EVIDENCE: int = Field(
         default_factory=lambda: _env_int("EXPLORATION_MAX_EVIDENCE", 20), ge=5, le=50,
     )
+    WIKI_CONTEXT_TOP_K: int = Field(
+        default_factory=lambda: _env_int("WIKI_CONTEXT_TOP_K", 3), ge=0, le=10,
+    )
 
 
-    MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
     PERSISTENT_MEMORY_ENABLED: bool = _env_bool("PERSISTENT_MEMORY_ENABLED", False)
     SESSION_FACT_ENABLED: bool = _env_bool("SESSION_FACT_ENABLED", False)
     AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
@@ -116,10 +143,6 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
         ge=256,
         le=60000,
-    )
-    MAX_MEMORY_MESSAGES: int = Field(
-        default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
-        ge=1,
     )
     MAX_AGENT_ITERATIONS: int = Field(
         default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
@@ -167,10 +190,10 @@ class Settings(BaseModel):
     PERMISSION_FAIL_OPEN: bool = _env_bool("PERMISSION_FAIL_OPEN", False)
 
     # Web 层 SQLite 数据库路径，Agent 层权限服务据此查询文件权限。
-    # 默认定位到 AI-QA-Assistant/web/.data/sqlite.db。
+    # 默认定位到 AI-QA-Assistant/frontend/.data/sqlite.db。
     WEB_SQLITE_PATH: str = os.getenv(
         "WEB_SQLITE_PATH",
-        str(Path(__file__).resolve().parents[3] / "web" / ".data" / "sqlite.db"),
+        str(_find_project_root() / "frontend" / ".data" / "sqlite.db"),
     )
 
 

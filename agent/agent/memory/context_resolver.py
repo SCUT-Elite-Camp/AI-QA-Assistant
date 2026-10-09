@@ -1,9 +1,9 @@
 """Deterministically assemble a bounded persistent-Memory context artifact."""
 
 from collections.abc import Callable
-import time
 
 from agent.config.settings import settings
+from agent.memory.fact_visibility import current_time_ms, visible_session_facts
 from agent.memory.persistent_models import (
     PersistentFact,
     PersistentMemoryContext,
@@ -42,7 +42,7 @@ class ContextResolver:
             if model_history_max_chars is None
             else model_history_max_chars
         )
-        self._now_ms = now_ms or self._current_time_ms
+        self._now_ms = now_ms or current_time_ms
 
         if self._tail_messages < 1:
             raise ValueError("tail_messages must be at least 1")
@@ -54,8 +54,10 @@ class ContextResolver:
     def resolve(
         self,
         memory_context: MemoryContextInput | PersistentMemoryContext | None,
+        *,
+        visibility_cutoff_ms: int | None = None,
     ) -> ContextArtifact | None:
-        """Return ``None`` when the legacy short-window path must remain active."""
+        """Return ``None`` when persistent Memory is disabled or unavailable."""
         if not settings.PERSISTENT_MEMORY_ENABLED or memory_context is None:
             return None
 
@@ -66,7 +68,10 @@ class ContextResolver:
         snapshot = self._active_snapshot(context)
         covered_to_sequence = snapshot.covered_to_sequence if snapshot else 0
         tail = self._select_tail(context, covered_to_sequence)
-        facts = self._visible_session_facts(context.facts)
+        facts = visible_session_facts(
+            context.facts,
+            now_ms=self._now_ms() if visibility_cutoff_ms is None else visibility_cutoff_ms,
+        )
         memory_brief = self._build_memory_brief(facts, snapshot)
         model_history = self._build_model_history(context, memory_brief, tail)
 
@@ -92,10 +97,6 @@ class ContextResolver:
         return PersistentMemoryContext.from_input(memory_context)
 
     @staticmethod
-    def _current_time_ms() -> int:
-        return int(time.time() * 1000)
-
-    @staticmethod
     def _active_snapshot(
         context: PersistentMemoryContext,
     ) -> PersistentSnapshot | None:
@@ -108,20 +109,6 @@ class ContextResolver:
         ):
             return None
         return snapshot
-
-    def _visible_session_facts(
-        self,
-        facts: list[PersistentFact],
-    ) -> list[PersistentFact]:
-        now_ms = self._now_ms()
-        return [
-            fact
-            for fact in facts
-            if fact.status == "CONFIRMED"
-            and fact.scope == "SESSION"
-            and fact.value.strip()
-            and (fact.expires_at is None or fact.expires_at > now_ms)
-        ]
 
     def _select_tail(
         self,

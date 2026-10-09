@@ -1,0 +1,75 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+
+const props = defineProps<{
+  open: boolean
+  topicId: string
+  soulContent: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:open', val: boolean): void
+  (e: 'saveSoul', newSoul: string): void
+}>()
+
+const isEditing = ref(false)
+const localSoul = ref(props.soulContent)
+
+watch(() => props.soulContent, (val) => {
+  localSoul.value = val
+})
+
+function handleSave() {
+  emit('saveSoul', localSoul.value)
+  isEditing.value = false
+}
+</script>
+
+<template>
+  <UModal :model-value="open" prevent-close :ui="{ content: 'sm:max-w-2xl' }" @update:model-value="emit('update:open', $event)">
+    <UCard :ui="{ root: 'ring-0 divide-y divide-zinc-200 dark:divide-zinc-800' }">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+            <UIcon name="i-heroicons-cpu-chip" class="w-5 h-5 text-emerald-500" />
+            <span>Topic Memory (Soul.md)</span>
+          </div>
+          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="xs" @click="emit('update:open', false)" />
+        </div>
+      </template>
+
+      <div class="py-2 space-y-4">
+        <div class="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/60 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-between">
+          <span>Soul.md stores core entities, scenario boundaries, and background knowledge that shape the Agent's reasoning.</span>
+          <UButton
+            v-if="!isEditing"
+            color="success"
+            variant="soft"
+            size="xs"
+            icon="i-heroicons-pencil-square"
+            @click="isEditing = true"
+          >
+            Edit Memory
+          </UButton>
+        </div>
+
+        <div v-if="!isEditing" class="p-4 bg-zinc-900 text-zinc-100 rounded-lg font-mono text-xs leading-relaxed whitespace-pre-wrap max-h-[50vh] overflow-y-auto border border-zinc-800">
+          {{ localSoul || 'No Soul memory content available yet.' }}
+        </div>
+
+        <div v-else class="space-y-3">
+          <UTextarea
+            v-model="localSoul"
+            :rows="12"
+            class="font-mono text-xs"
+            placeholder="Edit Soul.md content..."
+          />
+          <div class="flex justify-end gap-2">
+            <UButton color="neutral" size="xs" @click="isEditing = false">Cancel</UButton>
+            <UButton color="success" size="xs" icon="i-heroicons-check" @click="handleSave">Save Changes</UButton>
+          </div>
+        </div>
+      </div>
+    </UCard>
+  </UModal>
+</template>

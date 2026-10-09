@@ -5,7 +5,6 @@ from agent.query.hybrid_intent import HybridIntentRouter, SentenceTransformerInt
 from agent.query.planner import QueryPlanner
 from agent.query.preparation import QueryPreparationAnalyzer
 from agent.query.rewriter import QueryRewriter
-from agent.query.source_intent import heuristic_source_intent
 from agent.query.understanding import QueryUnderstanding
 from agent.query.unified import UnifiedQueryAnalyzer
 from agent.query.schemas import (
@@ -18,6 +17,8 @@ from agent.query.schemas import (
     RewriteResult,
     UnifiedQueryResult,
 )
+from agent.query.source_intent import heuristic_source_intent
+from agent.schemas.query_plan import SourceIntent, SourceIntentMode, SourceKind
 
 __all__ = [
     "ClarificationDecision",
@@ -33,10 +34,13 @@ __all__ = [
     "QueryPreparationAnalyzer",
     "QueryPreparationResult",
     "QueryRewriter",
-    "heuristic_source_intent",
     "QueryUnderstanding",
     "RewriteResult",
     "UnifiedQueryAnalyzer",
     "UnifiedQueryResult",
     "SentenceTransformerIntentEncoder",
+    "heuristic_source_intent",
+    "SourceIntent",
+    "SourceIntentMode",
+    "SourceKind",
 ]

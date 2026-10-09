@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import requests
 
@@ -13,12 +14,30 @@ class LLMClient(BaseLLM):
         *,
         model: str | None = None,
         enable_thinking: bool | None = None,
+        fallback_models: tuple[str, ...] | None = None,
+        attempts_per_model: int = 2,
+        retry_delay_seconds: float = 2.0,
     ) -> None:
+        if attempts_per_model < 1:
+            raise ValueError("attempts_per_model must be at least 1")
+        if retry_delay_seconds < 0:
+            raise ValueError("retry_delay_seconds cannot be negative")
+
         self.model = model.strip() if isinstance(model, str) and model.strip() else settings.LLM_MODEL
         self.enable_thinking = enable_thinking
+        self.fallback_models = fallback_models
+        self.attempts_per_model = attempts_per_model
+        self.retry_delay_seconds = retry_delay_seconds
         self._session = requests.Session()
-        # Do not inherit broken local environment proxy configurations unless explicit
-        self._session.trust_env = False
+        proxy = os.getenv("LLM_HTTP_PROXY") or os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY")
+        if proxy:
+            self._session.proxies.update({"http": proxy, "https": proxy})
+        else:
+            self._session.trust_env = True
+
+    def close(self) -> None:
+        """Release the underlying HTTP connection pool when the client is request-scoped."""
+        self._session.close()
 
     def generate(self, prompt: str) -> str:
         """Helper to generate a response for a single text prompt."""
@@ -26,7 +45,15 @@ class LLMClient(BaseLLM):
         msg = self.chat(messages)
         return (msg.get("content") or "").strip()
 
-    def chat(self, messages: list[dict], tools: list[dict] = None, temperature: float = None, max_tokens: int = None, **kwargs) -> dict:
+    def chat(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        **kwargs,
+    ) -> dict:
         """Calls the OpenAI-compatible chat/completions endpoint with messages and tools, with retry on 503/429."""
         endpoint = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
         payload = {
@@ -46,41 +73,55 @@ class LLMClient(BaseLLM):
         if settings.LLM_API_KEY:
             headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
 
-        max_retries = 3
+        candidate_models = [self.model]
+        fallback_models = self.fallback_models
+        if fallback_models is None:
+            fallback_models = (
+                "gemini-3.6-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite-preview",
+                "gemma-4-26b-a4b-it",
+            )
+        for fallback in fallback_models:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
         last_error = None
-        for attempt in range(max_retries):
-            try:
-                resp = self._session.post(
-                    endpoint,
-                    json=payload,
-                    headers=headers,
-                    timeout=settings.LLM_TIMEOUT,
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    try:
-                        message = data["choices"][0]["message"]
-                        return message
-                    except (KeyError, IndexError, TypeError) as exc:
-                        raise LLMError("LLM response format is invalid.") from exc
+        for current_model in candidate_models:
+            payload["model"] = current_model
+            for attempt in range(self.attempts_per_model):
+                try:
+                    resp = self._session.post(
+                        endpoint,
+                        json=payload,
+                        headers=headers,
+                        timeout=settings.LLM_TIMEOUT,
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        try:
+                            message = data["choices"][0]["message"]
+                            return message
+                        except (KeyError, IndexError, TypeError) as exc:
+                            raise LLMError("LLM response format is invalid.") from exc
 
-                # If 503 (High Demand) or 429 (Rate Limit), sleep and retry
-                if resp.status_code in (429, 503, 500, 502) and attempt < max_retries - 1:
-                    sleep_time = (attempt + 1) * 3
-                    time.sleep(sleep_time)
-                    continue
+                    # If 429 / 503 / 404, retry or try next model
+                    if resp.status_code in (429, 503, 500, 502, 404):
+                        last_error = LLMError(f"LLM API returned status {resp.status_code} for {current_model}: {resp.text}")
+                        if self.retry_delay_seconds:
+                            time.sleep(self.retry_delay_seconds)
+                        continue
 
-                raise LLMError(f"LLM API returned status {resp.status_code}: {resp.text}")
-            except requests.RequestException as exc:
-                last_error = exc
-                if attempt < max_retries - 1:
-                    time.sleep((attempt + 1) * 2)
+                    raise LLMError(f"LLM API returned status {resp.status_code}: {resp.text}")
+                except requests.RequestException as exc:
+                    last_error = exc
+                    if self.retry_delay_seconds:
+                        time.sleep(self.retry_delay_seconds)
                     continue
-                raise LLMError(f"LLM request failed: {exc}") from exc
 
         if last_error:
-            raise LLMError(f"LLM request failed after retries: {last_error}")
-        raise LLMError("LLM request failed after retries.")
+            raise LLMError(f"LLM request failed across candidate models: {last_error}")
+        raise LLMError("LLM request failed.")
 
     def stream_chat(self, messages: list[dict], tools: list[dict] = None, temperature: float = None, max_tokens: int = None, **kwargs):
         """Streams chat completion deltas (content and reasoning_content) from OpenAI-compatible endpoint."""

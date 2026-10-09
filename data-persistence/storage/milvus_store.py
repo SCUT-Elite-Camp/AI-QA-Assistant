@@ -13,12 +13,12 @@ class MilvusStore:
     
     def __init__(
         self,
-        host: str = "localhost",
-        port: str = "19530",
+        host: str | None = None,
+        port: str | None = None,
         collection_name: str | None = None,
     ):
-        self.host = host
-        self.port = port
+        self.host = host or os.getenv("MILVUS_HOST", "localhost")
+        self.port = str(port or os.getenv("MILVUS_PORT", "19530"))
         self.collection_name = collection_name or os.getenv(
             "MILVUS_COLLECTION",
             "doc_chunks",
@@ -27,18 +27,37 @@ class MilvusStore:
 
     def connect(self) -> None:
         if not self._connected:
-            connections.connect("default", host=self.host, port=self.port, timeout=0.5)
+            try:
+                timeout = float(os.getenv("MILVUS_CONNECT_TIMEOUT_SECONDS", "5"))
+            except ValueError:
+                timeout = 5.0
+            if timeout <= 0:
+                timeout = 5.0
+            connections.connect("default", host=self.host, port=self.port, timeout=timeout)
             self._connected = True
 
     def delete_document_chunks(self, doc_id: str) -> None:
         """Remove one document without creating a missing collection."""
-        if not doc_id or len(doc_id) > 128:
+        self.delete_documents_chunks([doc_id])
+
+    def delete_documents_chunks(self, doc_ids: list[str]) -> None:
+        """Remove a batch of documents with one safely quoted Milvus filter."""
+        if not isinstance(doc_ids, list):
+            raise ValueError("doc_ids must be a list")
+        if any(not isinstance(doc_id, str) or not doc_id or len(doc_id) > 128 for doc_id in doc_ids):
             raise ValueError("invalid Milvus document ID")
+        normalized_ids = list(dict.fromkeys(doc_ids))
+        if not normalized_ids:
+            return
+
         self.connect()
         if not utility.has_collection(self.collection_name):
             return
         collection = Collection(self.collection_name)
-        collection.delete(expr=f"doc_id == {json.dumps(doc_id, ensure_ascii=False)}")
+        values = ", ".join(
+            json.dumps(doc_id, ensure_ascii=False) for doc_id in normalized_ids
+        )
+        collection.delete(expr=f"doc_id in [{values}]")
         collection.flush()
 
     def init_collection(
@@ -94,7 +113,6 @@ class MilvusStore:
         doc_types: list | None = None,
         collection_name: str | None = None,
     ):
-        self.connect()
         if not embeddings:
             return None
 
@@ -154,8 +172,6 @@ class MilvusStore:
         collection_name: str | None = None,
         timeout_seconds: float = 2.0,
     ):
-        self.connect()
-  
         dim = len(query_vector)
         collection = self.init_collection(collection_name, dim=dim)
 

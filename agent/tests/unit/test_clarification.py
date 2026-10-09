@@ -2,28 +2,9 @@ import json
 
 import pytest
 
-from agent.llm.base import BaseLLM
 from agent.query import Clarifier
 from agent.schemas.common import StatusCode
-
-
-pytestmark = pytest.mark.no_storage
-
-
-class FakeLLM(BaseLLM):
-    def __init__(self, response: dict | None = None, error: Exception | None = None):
-        self.response = response or {}
-        self.error = error
-        self.messages: list[dict] | None = None
-
-    def generate(self, prompt: str) -> str:
-        return ""
-
-    def chat(self, messages: list[dict], tools: list[dict] = None) -> dict:
-        self.messages = messages
-        if self.error:
-            raise self.error
-        return self.response
+from tests.helpers import FakeLLM
 
 
 def llm_decision(

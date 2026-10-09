@@ -43,7 +43,7 @@ flowchart TD
     B --> C[RetrievalAdapter 检索]
     C --> D{是否存在有效结果}
     D -- 否 --> E[返回 no_relevant_context]
-    D -- 是 --> F[ContextAssembler 组装上下文]
+    D -- 是 --> F[Agent runtime 组装证据上下文]
     F --> G[PromptBuilder 构造提示词]
     G --> H[LLMClient 生成回答]
     H --> I[AnswerFormatter 整理答案和引用]
@@ -70,7 +70,7 @@ API Layer
     ↓
 ChatService
     ├── RetrievalAdapter ──→ Tool/Retrieval Layer
-    ├── ContextAssembler
+    ├── Agent runtime evidence/context handling
     ├── PromptBuilder
     ├── LLMClient ─────────→ Model Service
     └── AnswerFormatter

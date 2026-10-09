@@ -1,6 +1,8 @@
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from contextvars import ContextVar
+from dataclasses import dataclass
+from typing import Any, Optional
 
 from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
@@ -14,7 +16,7 @@ from agent.llm.observability import (
     snapshot_llm_metrics,
     start_llm_metrics,
 )
-from agent.memory import ConversationMemory, get_default_memory
+from agent.memory.coordinator import MemoryCoordinator
 from agent.orchestration import AgentOrchestrator, OrchestrationResult
 from agent.policy import IntentPolicyRouter
 from agent.query import (
@@ -29,12 +31,12 @@ from agent.query import (
 )
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
-from agent.schemas.chat import ChatRequest, ChatResponse, InternalChatRequest
+from agent.schemas.chat import ChatRequest, ChatResponse, Citation
 from agent.schemas.common import StatusCode
-from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan
 from agent.schemas.retrieval import RetrievalResult
 from agent.service import AuditService, PermissionService, TraceService
+from agent.streaming.sse import chat_response_events
 from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool, SearchTool
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
@@ -43,15 +45,23 @@ from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
 logger = logging.getLogger("agent-layer")
 
 
+@dataclass(frozen=True)
+class AgentChatExecution:
+    """Request-local result retained across response and audit assembly."""
+
+    response: ChatResponse
+    orchestration: OrchestrationResult | None = None
+
+
 class Agent:
-    """Chat orchestrator for CP2 memory, permissions, and bounded Agent execution."""
+    """Chat orchestrator for trusted Memory, permissions, and bounded execution."""
 
     def __init__(
         self,
         llm: BaseLLM | None = None,
         tools: list[BaseTool] | None = None,
         answer_formatter: AnswerFormatter | None = None,
-        memory: ConversationMemory | None = None,
+        memory_coordinator: MemoryCoordinator | None = None,
         runner: AgentRunner | None = None,
         query_understanding: QueryUnderstanding | None = None,
         policy_router: IntentPolicyRouter | None = None,
@@ -103,7 +113,6 @@ class Agent:
         # Toolset owns registration; Agent only consumes it through an adapter.
         toolset_registry = ToolsetRegistry(tools=tools)
         self.registry = ToolRegistryAdapter(toolset_registry)
-        self.memory = memory or get_default_memory()
 
         search_tool = self.registry.get_tool("search_documents")
         if isinstance(search_tool, SearchTool):
@@ -161,7 +170,7 @@ class Agent:
         )
         self.citation_checker = citation_checker or CitationChecker()
         self.orchestrator = orchestrator or AgentOrchestrator(
-            memory=self.memory,
+            memory_coordinator=memory_coordinator,
             query_understanding=self.query_understanding,
             policy_router=self.policy_router,
             runner=self.runner,
@@ -170,9 +179,46 @@ class Agent:
             corrective_retrieval=self.corrective_retrieval,
             citation_checker=self.citation_checker,
         )
-        self.last_run_result: AgentRunResult | None = None
-        self.last_orchestration: OrchestrationResult | None = None
-        self.last_citation_check = None
+        # Compatibility diagnostics stay local to the current request context.
+        self._last_run_result: ContextVar[AgentRunResult | None] = ContextVar(
+            f"agent_last_run_result_{id(self)}",
+            default=None,
+        )
+        self._last_orchestration: ContextVar[OrchestrationResult | None] = ContextVar(
+            f"agent_last_orchestration_{id(self)}",
+            default=None,
+        )
+        self._last_citation_check: ContextVar[Any | None] = ContextVar(
+            f"agent_last_citation_check_{id(self)}",
+            default=None,
+        )
+
+    @property
+    def last_run_result(self) -> AgentRunResult | None:
+        """Return diagnostics for this request context, for compatibility only."""
+        return self._last_run_result.get()
+
+    @last_run_result.setter
+    def last_run_result(self, value: AgentRunResult | None) -> None:
+        self._last_run_result.set(value)
+
+    @property
+    def last_orchestration(self) -> OrchestrationResult | None:
+        """Return diagnostics for this request context, for compatibility only."""
+        return self._last_orchestration.get()
+
+    @last_orchestration.setter
+    def last_orchestration(self, value: OrchestrationResult | None) -> None:
+        self._last_orchestration.set(value)
+
+    @property
+    def last_citation_check(self) -> Any | None:
+        """Return diagnostics for this request context, for compatibility only."""
+        return self._last_citation_check.get()
+
+    @last_citation_check.setter
+    def last_citation_check(self, value: Any | None) -> None:
+        self._last_citation_check.set(value)
 
     @property
     def tools(self) -> dict[str, BaseTool]:
@@ -191,32 +237,15 @@ class Agent:
         self.last_run_result = None
         self.last_orchestration = None
         self.last_citation_check = None
-        persistent_memory_request = self._is_persistent_memory_request(request)
-
         try:
-            response = self._chat_internal(request, trace_id, query_plan=query_plan)
+            execution = self._chat_internal(request, trace_id, query_plan=query_plan)
+            response = execution.response
             latency_ms = self.audit_service.stop_timer(start_time)
-            if not persistent_memory_request:
-                self.audit_service.record(
-                    trace_id=trace_id,
-                    query=request.query,
-                    answer=self._audit_answer(response),
-                    status=response.status,
-                    latency_ms=latency_ms,
-                    session_id=request.session_id,
-                )
+            logger.debug("Agent request completed trace_id=%s latency_ms=%s", trace_id, latency_ms)
             return response
         except Exception as exc:
             latency_ms = self.audit_service.stop_timer(start_time)
-            if not persistent_memory_request:
-                self.audit_service.record(
-                    trace_id=trace_id,
-                    query=request.query,
-                    answer=f"Error: {exc}",
-                    status=StatusCode.AGENT_LIMIT_REACHED,
-                    latency_ms=latency_ms,
-                    session_id=request.session_id,
-                )
+            logger.debug("Agent request failed trace_id=%s latency_ms=%s", trace_id, latency_ms)
             raise exc
         finally:
             clear_llm_metrics(metrics_token)
@@ -246,10 +275,10 @@ class Agent:
         trace_id: str,
         *,
         query_plan: QueryPlan | None = None,
-    ) -> ChatResponse:
+    ) -> "AgentChatExecution":
         query = request.query.strip()
         if not query:
-            return self._error_response(
+            return AgentChatExecution(self._error_response(
                 trace_id=trace_id,
                 query=request.query,
                 status=StatusCode.INVALID_QUERY,
@@ -257,7 +286,7 @@ class Agent:
                 stage="validation",
                 retrieval_mode=request.retrieval_mode,
                 top_k=request.top_k,
-            )
+            ))
 
         # Inject permission filters into request
         resolved_filters = self._resolve_filters(request)
@@ -265,13 +294,6 @@ class Agent:
             request = request.model_copy(update={"filters": resolved_filters})
 
         try:
-            search_tool = self.registry.get_tool("search_documents")
-            if isinstance(search_tool, SearchTool):
-                search_tool.topic_doc_ids = request.topic_doc_ids
-                search_tool.topic_titles = request.topic_titles
-                search_tool.weight_mode = request.weight_mode or "auto"
-                search_tool.consecutive_no_new_docs_count = request.consecutive_no_new_docs_count or 0
-
             orchestration = self.orchestrator.run(
                 request,
                 trace_id=trace_id,
@@ -279,7 +301,7 @@ class Agent:
             )
 
         except ValueError as exc:
-            return self._error_response(
+            return AgentChatExecution(self._error_response(
                 trace_id=trace_id,
                 query=request.query,
                 status=StatusCode.INVALID_QUERY,
@@ -288,7 +310,7 @@ class Agent:
                 retrieval_mode=request.retrieval_mode,
                 top_k=request.top_k,
                 error=str(exc),
-            )
+            ))
 
         self.last_orchestration = orchestration
         plan = orchestration.query_plan
@@ -297,13 +319,13 @@ class Agent:
 
         memory_recall = orchestration.memory_recall
         if memory_recall is not None and memory_recall.handled:
-            return ChatResponse(
+            return AgentChatExecution(ChatResponse(
                 trace_id=trace_id,
                 status=StatusCode.SUCCESS,
                 answer=memory_recall.answer or "",
                 message="",
                 citations=[],
-            )
+            ), orchestration)
 
         if run_result is None:
             raise RuntimeError("orchestration returned no runtime result")
@@ -315,11 +337,12 @@ class Agent:
             retrieval_mode=orchestration.retrieval_mode,
             top_k=orchestration.top_k,
         )
-
         is_first = request.is_first_message
         if is_first is None:
-            history_msgs = self.memory.get_messages(request.session_id) if request.session_id else []
-            is_first = (len(history_msgs) == 0)
+            is_first = not any(
+                message.get("role") != "system"
+                for message in orchestration.history
+            )
 
         extracted_title, clean_answer = self._separate_title_and_answer(response.answer)
         if extracted_title:
@@ -328,16 +351,17 @@ class Agent:
         elif is_first:
             response.chat_title = self._generate_fallback_title(request.query)
 
-        self.last_citation_check = self.orchestrator.validate_citations(
+        citation_check = self.orchestrator.validate_citations(
             response.answer,
             response.citations,
             run_result.evidence,
         )
-        if not self.last_citation_check.valid:
+        self.last_citation_check = citation_check
+        if not citation_check.valid:
             logger.warning(
                 "[CITATION_CHECK] trace_id=%s errors=%s",
                 trace_id,
-                self.last_citation_check.errors,
+                citation_check.errors,
             )
         run_result.llm_metrics = snapshot_llm_metrics()
         logger.info(
@@ -345,13 +369,7 @@ class Agent:
             trace_id,
             run_result.llm_metrics,
         )
-        self._save_conversation_turn(
-            session_id=request.session_id,
-            query=plan.original_query,
-            response=response,
-            persistent_memory=self._is_persistent_memory_request(request),
-        )
-        return response
+        return AgentChatExecution(response, orchestration)
 
     @staticmethod
     def _separate_title_and_answer(answer_text: str) -> tuple[Optional[str], str]:
@@ -387,124 +405,6 @@ class Agent:
             logger.warning(f"[AgentTitle] Fallback title generation error: {e}")
         clean_query = query.replace("我想知道", "").replace("请问", "").strip()
         return clean_query[:15] if len(clean_query) > 15 else clean_query
-
-    def run_plan(
-        self,
-        query_plan: QueryPlan,
-        *,
-        history: list[dict[str, Any]] | None = None,
-        trace_id: str,
-        mode: str = "hybrid",
-        top_k: int = 5,
-        max_iterations: int | None = None,
-        policy: IntentPolicy | None = None,
-    ) -> AgentRunResult:
-        """Public CP2 Runner boundary consumed after Query Understanding."""
-        runner_kwargs: dict[str, Any] = {
-            "history": history,
-            "trace_id": trace_id,
-            "mode": mode,
-            "top_k": top_k,
-            "max_iterations": max_iterations,
-        }
-        if policy is not None:
-            runner_kwargs["policy"] = policy
-        return self.runner.run(query_plan, **runner_kwargs)
-
-    def run(
-        self,
-        query: str,
-        max_iterations: int = 5,
-        mode: str = "hybrid",
-        top_k: int = 5,
-        filters: Optional[dict[str, Any]] = None,
-    ) -> str:
-        """Executes the core RAG pipeline directly for direct callers."""
-        tool = self.registry.get_tool("search_documents")
-        self.audit_service.log_step(0, query)
-        if tool:
-            self.audit_service.log_tool_call(tool.name, {"query": query, "mode": mode, "top_k": top_k})
-            context_text = tool.execute(query=query, mode=mode, top_k=top_k, filters=filters)
-        else:
-            context_text = ""
-
-        from agent.prompt.prompt_builder import PromptBuilder
-        prompt = PromptBuilder().build(query=query, context=context_text)
-        messages = [{"role": "user", "content": prompt}]
-        self.audit_service.log_step(1, query)
-        response = self.llm.chat(messages)
-        return (response.get("content") or "").strip()
-
-    def _merge_explicit_filters(
-        self,
-        request: ChatRequest,
-        query_plan: QueryPlan,
-    ) -> QueryPlan:
-        if not request.filters:
-            return query_plan
-        merged_filters = dict(query_plan.filters or {})
-        for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
-            merged_filters[key] = value
-        return query_plan.model_copy(update={"filters": merged_filters})
-
-    def _get_conversation_history(
-        self,
-        session_id: str | None,
-    ) -> list[dict[str, Any]]:
-        if not settings.MEMORY_ENABLED or not session_id:
-            return []
-        return self.memory.get_messages(session_id)
-
-    def _save_conversation_turn(
-        self,
-        *,
-        session_id: str | None,
-        query: str,
-        response: ChatResponse,
-        persistent_memory: bool = False,
-    ) -> None:
-        if (
-            not settings.MEMORY_ENABLED
-            or not session_id
-            or persistent_memory
-            or response.status
-            not in {StatusCode.SUCCESS, StatusCode.CLARIFICATION_REQUIRED}
-        ):
-            return
-
-        assistant_content = response.answer or response.message
-        if not assistant_content:
-            return
-        self.memory.add_message(session_id, "user", query)
-        self.memory.add_message(session_id, "assistant", assistant_content)
-
-    @staticmethod
-    def _resolve_query_plan(request: ChatRequest, plan: QueryPlan) -> QueryPlan:
-        merged_filters = dict(plan.filters or {})
-        for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
-            merged_filters[key] = value
-        return plan.model_copy(update={"filters": merged_filters})
-
-    @staticmethod
-    def _is_persistent_memory_request(request: ChatRequest) -> bool:
-        return settings.PERSISTENT_MEMORY_ENABLED and isinstance(
-            request,
-            InternalChatRequest,
-        )
-
-    def _audit_answer(self, response: ChatResponse) -> str:
-        memory_recall = (
-            self.last_orchestration.memory_recall
-            if self.last_orchestration is not None
-            else None
-        )
-        if memory_recall is not None and memory_recall.handled:
-            return "[memory_recall]"
-        return response.answer or response.message
 
     def _map_run_result(
         self,
@@ -697,7 +597,9 @@ class Agent:
             error=error,
         )
 
-    def get_history(self, limit: int = 50) -> list[dict]:
-        """Return persisted audit records (not ConversationMemory messages)."""
-        return self.audit_service.store.get_records(limit)
-
+    def stream_chat(self, request: ChatRequest):
+        """Run the canonical chat pipeline and adapt its response to SSE events."""
+        try:
+            yield from chat_response_events(self.chat(request))
+        except Exception as exc:
+            yield "error", {"message": str(exc)}

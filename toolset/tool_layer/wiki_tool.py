@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from contextvars import ContextVar
 from typing import Any
 
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 
 from .base_tool import BaseTool
 from .search_library_tool import SearchLibraryTool
@@ -17,8 +18,10 @@ class _ScopedWikiTool(BaseTool):
     def __init__(self, store: WikiStore, *, enterprise_knowledge_base_id: str = "") -> None:
         self.store = store
         self.enterprise_knowledge_base_id = enterprise_knowledge_base_id.strip()
-        self._personal_owner_id = ""
-        self._personal_knowledge_base_id = ""
+        self._personal_scope: ContextVar[tuple[str, str] | None] = ContextVar(
+            f"wiki_personal_scope_{id(self)}",
+            default=None,
+        )
 
     def set_personal_context(
         self, owner_id: str, knowledge_base_id: str, token: str, *, secret: str,
@@ -29,22 +32,35 @@ class _ScopedWikiTool(BaseTool):
         if not expected or not hmac.compare_digest(token, expected):
             self.clear_request_context()
             return
-        self._personal_owner_id = owner_id
-        self._personal_knowledge_base_id = knowledge_base_id
+        self._personal_scope.set((owner_id, knowledge_base_id))
 
     def clear_request_context(self) -> None:
-        self._personal_owner_id = ""
-        self._personal_knowledge_base_id = ""
+        self._personal_scope.set(None)
+
+    @staticmethod
+    def _validated_top_k(value: Any, *, maximum: int) -> int | None:
+        if type(value) is not int or not 1 <= value <= maximum:
+            return None
+        return value
 
     def _scope(self, value: Any) -> tuple[str, str, str] | None:
-        scope = str(value or "enterprise")
+        scope = value
         if scope == "personal":
-            if not self._personal_owner_id or not self._personal_knowledge_base_id:
+            personal_scope = self._personal_scope.get()
+            if personal_scope is None or not all(personal_scope):
                 return None
-            return scope, self._personal_owner_id, self._personal_knowledge_base_id
+            owner_id, knowledge_base_id = personal_scope
+            return scope, owner_id, knowledge_base_id
         if scope != "enterprise" or not self.enterprise_knowledge_base_id:
             return None
         return scope, "", self.enterprise_knowledge_base_id
+
+    @staticmethod
+    def _valid_source_scope(kwargs: dict[str, Any]) -> bool:
+        if "source_scope" not in kwargs:
+            return True
+        value = kwargs["source_scope"]
+        return type(value) is str and value in {"enterprise", "personal"}
 
 
 class WikiSearchTool(_ScopedWikiTool):
@@ -80,14 +96,31 @@ class WikiSearchTool(_ScopedWikiTool):
         }
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        context = self._scope(kwargs.get("source_scope"))
+        if not self._valid_source_scope(kwargs):
+            return {
+                "error": "invalid_wiki_query", "pages": [],
+                "citation_authority": False,
+            }
+        query = kwargs.get("query")
+        if type(query) is not str or not query.strip():
+            return {
+                "error": "invalid_wiki_query", "pages": [],
+                "citation_authority": False,
+            }
+        top_k = self._validated_top_k(kwargs.get("top_k", 8), maximum=12)
+        if top_k is None:
+            return {
+                "error": "invalid_wiki_query", "pages": [],
+                "citation_authority": False,
+            }
+        context = self._scope(kwargs.get("source_scope", "enterprise"))
         if context is None:
             return {"error": "wiki_context_unavailable", "pages": [], "citation_authority": False}
         scope, owner, kb = context
         search = self.search_backend.search if self.search_backend is not None else self.store.search_pages
         pages = search(
-            str(kwargs.get("query") or ""), source_scope=scope, owner_id=owner,
-            knowledge_base_id=kb, top_k=min(12, max(1, int(kwargs.get("top_k", 8)))),
+            query, source_scope=scope, owner_id=owner,
+            knowledge_base_id=kb, top_k=top_k,
         )
         return {"pages": pages, "citation_authority": False}
 
@@ -109,7 +142,11 @@ class WikiReadPageTool(_ScopedWikiTool):
         return {
             "type": "object",
             "properties": {
-                "page_ref": {"type": "string", "description": "Wiki page ID or slug returned by wiki_search."},
+                "page_ref": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Wiki page ID or slug returned by wiki_search.",
+                },
                 "source_scope": {"type": "string", "enum": ["enterprise", "personal"], "default": "enterprise"},
             },
             "required": ["page_ref"],
@@ -117,12 +154,23 @@ class WikiReadPageTool(_ScopedWikiTool):
         }
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        context = self._scope(kwargs.get("source_scope"))
+        page_ref = kwargs.get("page_ref")
+        if type(page_ref) is not str or not page_ref.strip():
+            return {
+                "error": "invalid_wiki_query", "page": None,
+                "citation_authority": False,
+            }
+        if not self._valid_source_scope(kwargs):
+            return {
+                "error": "invalid_wiki_query", "page": None,
+                "citation_authority": False,
+            }
+        context = self._scope(kwargs.get("source_scope", "enterprise"))
         if context is None:
             return {"error": "wiki_context_unavailable", "page": None, "citation_authority": False}
         scope, owner, kb = context
         page = self.store.read_page(
-            str(kwargs.get("page_ref") or ""), source_scope=scope, owner_id=owner,
+            page_ref, source_scope=scope, owner_id=owner,
             knowledge_base_id=kb,
         )
         return {"page": page, "citation_authority": False}
@@ -145,7 +193,7 @@ class WikiReadSourcesTool(_ScopedWikiTool):
         return {
             "type": "object",
             "properties": {
-                "page_id": {"type": "string"},
+                "page_id": {"type": "string", "minLength": 1},
                 "claim_id": {"type": "string", "default": ""},
                 "source_scope": {"type": "string", "enum": ["enterprise", "personal"], "default": "enterprise"},
             },
@@ -154,12 +202,28 @@ class WikiReadSourcesTool(_ScopedWikiTool):
         }
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        context = self._scope(kwargs.get("source_scope"))
+        page_id = kwargs.get("page_id")
+        claim_id = kwargs.get("claim_id", "")
+        if (
+            type(page_id) is not str
+            or not page_id.strip()
+            or type(claim_id) is not str
+        ):
+            return {
+                "error": "invalid_wiki_query", "sources": [],
+                "citation_authority": False,
+            }
+        if not self._valid_source_scope(kwargs):
+            return {
+                "error": "invalid_wiki_query", "sources": [],
+                "citation_authority": False,
+            }
+        context = self._scope(kwargs.get("source_scope", "enterprise"))
         if context is None:
             return {"error": "wiki_context_unavailable", "sources": [], "citation_authority": False}
         scope, owner, kb = context
         values = self.store.read_sources(
-            str(kwargs.get("page_id") or ""), claim_id=str(kwargs.get("claim_id") or ""),
+            page_id, claim_id=claim_id,
             source_scope=scope, owner_id=owner, knowledge_base_id=kb,
         )
         sources = [{
@@ -171,6 +235,8 @@ class WikiReadSourcesTool(_ScopedWikiTool):
 
 class WikiSearchEvidenceTool(_ScopedWikiTool):
     """Return to authoritative RAG Evidence using Wiki-derived document priors."""
+
+    VALID_MODES = frozenset({"hybrid", "vector", "bm25"})
 
     def __init__(
         self,
@@ -201,7 +267,7 @@ class WikiSearchEvidenceTool(_ScopedWikiTool):
             "type": "object",
             "properties": {
                 "query": {"type": "string"},
-                "page_id": {"type": "string"},
+                "page_id": {"type": "string", "minLength": 1},
                 "claim_id": {"type": "string", "default": ""},
                 "source_scope": {
                     "type": "string", "enum": ["enterprise", "personal"],
@@ -218,7 +284,36 @@ class WikiSearchEvidenceTool(_ScopedWikiTool):
         }
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        context = self._scope(kwargs.get("source_scope"))
+        page_id = kwargs.get("page_id")
+        claim_id = kwargs.get("claim_id", "")
+        if (
+            type(page_id) is not str
+            or not page_id.strip()
+            or type(claim_id) is not str
+        ):
+            return {
+                "error": "invalid_wiki_query", "items": [],
+                "citation_authority": True,
+            }
+        if not self._valid_source_scope(kwargs):
+            return {
+                "error": "invalid_wiki_query", "items": [],
+                "citation_authority": True,
+            }
+        query_value = kwargs.get("query")
+        if type(query_value) is not str or not query_value.strip():
+            return {
+                "error": "invalid_wiki_query", "items": [],
+                "citation_authority": True,
+            }
+        top_k = self._validated_top_k(kwargs.get("top_k", 10), maximum=20)
+        mode = kwargs.get("mode", "hybrid")
+        if top_k is None or not isinstance(mode, str) or mode not in self.VALID_MODES:
+            return {
+                "error": "invalid_wiki_query", "items": [],
+                "citation_authority": True,
+            }
+        context = self._scope(kwargs.get("source_scope", "enterprise"))
         if context is None:
             return {
                 "error": "wiki_context_unavailable", "items": [],
@@ -226,8 +321,8 @@ class WikiSearchEvidenceTool(_ScopedWikiTool):
             }
         scope, owner, kb = context
         sources = self.store.read_sources(
-            str(kwargs.get("page_id") or ""),
-            claim_id=str(kwargs.get("claim_id") or ""),
+            page_id,
+            claim_id=claim_id,
             source_scope=scope,
             owner_id=owner,
             knowledge_base_id=kb,
@@ -252,9 +347,7 @@ class WikiSearchEvidenceTool(_ScopedWikiTool):
             return (returned_scope == scope and bool(version_id)
                     and version_id in allowed_versions.get(document_id, set()))
 
-        query = str(kwargs.get("query") or "").strip()
-        top_k = min(20, max(1, int(kwargs.get("top_k", 10))))
-        mode = str(kwargs.get("mode") or "hybrid")
+        query = query_value.strip()
         if scope == "personal":
             if self.library_tool is None:
                 return {

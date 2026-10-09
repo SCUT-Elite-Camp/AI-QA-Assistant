@@ -24,7 +24,7 @@ from eval.wiki.ragas_evaluator import (
 from pipeline.wiki.search import (
     BgeM3Encoder, BgeM3WikiVectorSearch, SQLiteFTSWikiSearch, WikiSearchBackend,
 )
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 
 
 def _digest(path: Path) -> str:

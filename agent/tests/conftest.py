@@ -25,7 +25,13 @@ try:
     import pymilvus  # noqa: F401
 except ModuleNotFoundError:
     pymilvus_stub = ModuleType("pymilvus")
-    pymilvus_stub.connections = SimpleNamespace()
+    def unavailable_milvus(*args, **kwargs):
+        raise RuntimeError("pymilvus is unavailable in this test environment")
+
+    pymilvus_stub.connections = SimpleNamespace(
+        connect=unavailable_milvus,
+        disconnect=unavailable_milvus,
+    )
     pymilvus_stub.utility = SimpleNamespace()
     pymilvus_stub.Collection = object
     pymilvus_stub.CollectionSchema = object
@@ -118,23 +124,6 @@ def mock_search_tool(monkeypatch):
         ][:top_k]
 
     monkeypatch.setattr(SearchTool, "search", mock_search)
-
-
-@pytest.fixture(autouse=True)
-def mock_sqlite_db_path(monkeypatch, tmp_path, request):
-    """Redirects the SQLite database to a temporary location for tests to ensure cleanliness."""
-    if request.node.get_closest_marker("no_storage"):
-        return
-
-    from storage.chat_history_store import ChatHistoryStore
-    db_file = tmp_path / "test_chat_history.db"
-    
-    # Override initializer to use our temporary test database path
-    original_init = ChatHistoryStore.__init__
-    def patched_init(self, db_path=None):
-        original_init(self, db_path=str(db_file))
-        
-    monkeypatch.setattr(ChatHistoryStore, "__init__", patched_init)
 
 
 @pytest.fixture(autouse=True)

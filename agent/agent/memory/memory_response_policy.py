@@ -1,8 +1,8 @@
 """Deterministic handling for explicit confirmed-Fact recall requests."""
 
 from collections.abc import Callable, Sequence
-import time
 
+from agent.memory.fact_visibility import current_time_ms, visible_session_facts
 from agent.memory.persistent_models import PersistentFact
 from agent.schemas.chat import MemoryRecall
 
@@ -43,16 +43,25 @@ class MemoryResponsePolicy:
     }
 
     def __init__(self, *, now_ms: Callable[[], int] | None = None) -> None:
-        self._now_ms = now_ms or self._current_time_ms
+        self._now_ms = now_ms or current_time_ms
 
-    def resolve(self, query: str, facts: Sequence[PersistentFact]) -> MemoryRecall:
+    def resolve(
+        self,
+        query: str,
+        facts: Sequence[PersistentFact],
+        *,
+        visibility_cutoff_ms: int | None = None,
+    ) -> MemoryRecall:
         """Handle only explicit category recall; ordinary questions remain model-bound."""
         normalized_query = query.casefold().strip()
         requested_categories = self._requested_categories(normalized_query)
         if not requested_categories or not self._is_explicit_recall(normalized_query):
             return MemoryRecall(handled=False)
 
-        visible_facts = self._visible_session_facts(facts)
+        visible_facts = visible_session_facts(
+            facts,
+            now_ms=self._now_ms() if visibility_cutoff_ms is None else visibility_cutoff_ms,
+        )
         sections: list[str] = []
         for category in requested_categories:
             values = [fact.value.strip() for fact in visible_facts if fact.category == category]
@@ -63,24 +72,6 @@ class MemoryResponsePolicy:
                 sections.append(f"当前没有可见且未过期的已确认{label}。")
 
         return MemoryRecall(handled=True, answer="\n\n".join(sections))
-
-    @staticmethod
-    def _current_time_ms() -> int:
-        return int(time.time() * 1000)
-
-    def _visible_session_facts(
-        self,
-        facts: Sequence[PersistentFact],
-    ) -> list[PersistentFact]:
-        now_ms = self._now_ms()
-        return [
-            fact
-            for fact in facts
-            if fact.status == "CONFIRMED"
-            and fact.scope == "SESSION"
-            and fact.value.strip()
-            and (fact.expires_at is None or fact.expires_at > now_ms)
-        ]
 
     @classmethod
     def _requested_categories(cls, query: str) -> list[str]:

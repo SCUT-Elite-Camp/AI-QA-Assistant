@@ -15,7 +15,7 @@ from pipeline.wiki.quality import WikiQualityGate
 from pipeline.wiki.taxonomy import TaxonomyPlanner
 from pipeline.wiki.worker import WikiStageWorker
 from pipeline.wiki.search import BgeM3WikiVectorSearch, SQLiteFTSWikiSearch, WikiSearchBackend
-from storage.wiki_store import WikiStore
+from data_persistence.wiki import WikiStore
 from tool_layer.wiki_tool import (
     WikiReadPageTool, WikiReadSourcesTool, WikiSearchEvidenceTool, WikiSearchTool,
 )
@@ -165,6 +165,35 @@ def test_full_build_publishes_only_reviewed_pages_and_exact_rerun_uses_zero_call
 def test_ingest_feature_flag_is_off_by_default() -> None:
     with pytest.raises(RuntimeError, match="WIKI_INGEST_ENABLED"):
         _service(FakeRepository(), FakeLLM(), enabled=False).run([_document(1)])
+
+
+def test_worker_preserves_stage_error_when_failure_recording_rejects_stale_lease() -> None:
+    repository = FakeRepository()
+    lease = {
+        "job_id": "job-1", "stage": "EXTRACT", "payload": {}, "attempt": 2,
+        "lease_generation": 7,
+        "source_scope": "enterprise", "owner_id": "", "knowledge_base_id": "kb",
+    }
+    repository.lease_wiki_job = lambda **kwargs: lease
+    stage_error = RuntimeError("original stage failure")
+
+    def load_documents(_lease):
+        raise stage_error
+
+    def reject_stale_failure(job_id, *, worker_id, attempt, stage, lease_generation, error, retry_at):
+        assert job_id == "job-1" and worker_id == "worker"
+        assert attempt == lease["attempt"]
+        assert stage == lease["stage"]
+        assert lease_generation == lease["lease_generation"]
+        raise ValueError("Wiki job is not leased by this worker")
+
+    repository.fail_wiki_job = reject_stale_failure
+    worker = WikiStageWorker(_service(repository, FakeLLM()), load_documents, worker_id="worker")
+
+    with pytest.raises(RuntimeError, match="original stage failure") as raised:
+        worker.run_once()
+
+    assert raised.value is stage_error
 
 
 def test_stage_worker_resumes_and_document_deletion_rebuilds_published_scope(tmp_path) -> None:

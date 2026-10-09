@@ -16,7 +16,7 @@ direct callers without a valid shared key are rejected.
 
 ## POST /api/chat
 
-Current stage: CP2 bounded Agent runtime with session memory, QueryPlan input,
+Current stage: CP2 bounded Agent runtime with caller-supplied persistent Memory, QueryPlan input,
 dynamic tool schemas, retrieval quality gates, and citation consistency checks.
 
 Endpoint requires header: `Authorization: Bearer <AGENT_API_KEY>`.
@@ -24,13 +24,21 @@ Endpoint requires header: `Authorization: Bearer <AGENT_API_KEY>`.
 The endpoint runs the CP2 orchestration flow:
 
 ```text
-request validation -> ConversationMemory -> QueryUnderstanding -> QueryPlan
--> IntentPolicyRouter -> AgentRunner -> ToolExecutor -> EvidenceGate
+request validation -> MemoryCoordinator -> QueryUnderstanding -> QueryPlan
+-> IntentPolicyRouter -> ExecutionProfileResolver -> FastLoop or AgentRunner
+-> ToolExecutor -> EvidenceGate
 -> corrective retrieval (at most once) -> AnswerFormatter/CitationChecker
--> memory write-back -> JSON response
+-> JSON response
 ```
 
-`stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
+The Agent does not cache or restore conversation history by `session_id`. The
+Web/BFF must explicitly include a trusted `memory_context` on the internal
+request when prior conversation context is needed. Public `/api/chat` requests
+without that trusted context are stateless across requests.
+
+`stream` on `POST /api/chat` is reserved and does not change its JSON response.
+The separate `POST /api/chat/stream` endpoint uses the same Agent execution
+pipeline and adapts its completed `ChatResponse` to the demo SSE contract below.
 
 ## Frozen internal persistent-Memory contract (Unit 04)
 
@@ -101,9 +109,9 @@ route never consumes browser-provided Memory fields.
 
   For an initial Snapshot, `expected_active_snapshot` is `null`. The Agent
   performs neither database I/O nor LLM calls for this plan; Web applies it
-  atomically only after the assistant message is durable. `POST
-  /api/internal/memory/reset-short-window` clears only the legacy process-local
-  `ConversationMemory` after a successful Web history mutation.
+  atomically only after the assistant message is durable. The Agent exposes no
+  session-history recovery or reset endpoint; persistent state remains owned by
+  the Web/BFF.
 
 ## Request
 
@@ -121,12 +129,22 @@ route never consumes browser-provided Memory fields.
 Fields:
 
 - `query`: Required user question. After trimming whitespace, it must not be empty.
-- `session_id`: Optional session identifier. Reusing it enables process-local
-  short-term conversation memory.
+- `session_id`: Optional request/session identifier. Reusing it does not cause
+  the Agent to recover or share conversation history.
 - `top_k`: Optional retrieval count. Default is `5`, valid range is `1-20`.
 - `filters`: Optional retrieval filters. Default is `null`.
 - `stream`: Optional streaming flag. Default is `false`; current version returns JSON.
 - `retrieval_mode`: Optional retrieval mode. Supported values are `vector`, `bm25`, and `hybrid`; default is `hybrid`.
+- `weight_mode`: Optional execution preference; defaults to `fast` when omitted.
+  `fast` uses the deterministic
+  FastLoop for no-retrieval chat/help and simple enterprise knowledge Q&A;
+  unsupported requests safely fall back to Thinking. `thinking` uses the
+  bounded tool-selection runner. `auto` currently defaults to Fast and uses the
+  same eligibility checks and safe Thinking fallback. Only `auto`, `fast`, and
+  `thinking` are accepted. The JSON response shape is unchanged.
+- `exploration_mode`: Optional cross-document Wiki exploration policy. Fast
+  execution resolves exploration to `off`; Thinking honors `auto`, `off`, or
+  `force` subject to configured policy and source scope.
 
 ## Success Response
 
@@ -193,9 +211,29 @@ question in `message`, matching the existing Web error/status rendering path.
 - Empty retrieval results return `no_relevant_context` before LLM calls.
 - Retrieval results below `MIN_RETRIEVAL_SCORE` are filtered out; if none remain, Agent returns `no_relevant_context`.
 - Intent policies constrain candidate tools, iteration/tool/retrieval budgets,
-  and retrieval strategy before the Runner executes.
+  and retrieval strategy in both Fast and Thinking execution. Fast enforces
+  `max_tool_calls` before its initial Direct search and any corrective search.
 - Evidence is accepted by `EvidenceGate` before final answer generation; a
-  failed first attempt may trigger one bounded corrective retrieval.
+  failed first attempt may trigger bounded corrective retrieval. Every
+  executed search is recorded and consumes one `max_tool_calls` slot. The
+  corrective retrieval batch is bounded by `max_retrieval_attempts`; multiple
+  missing-target searches in that batch share one retrieval attempt.
+- Thinking performs Direct retrieval first and applies `EvidenceGate` before
+  `CoverageAssessor` / `ExplorationController` can decide whether Wiki starts.
+  `exploration_mode=auto` starts the bounded Wiki sequence only for an accepted
+  Direct-evidence coverage gap; `force` remains Direct-first and starts Wiki
+  after accepted Direct evidence; `off` never starts Wiki. Fast remains
+  Direct-only. Runner iteration, tool-call, exploration-round, evidence, and
+  retrieval budgets continue to bound execution.
+- `WIKI_CONTEXT_TOP_K` (default `3`, range `0-10`) appends that many eligible,
+  versioned, unique `wiki_search_evidence` items after Direct Evidence without
+  reranking or displacing it. `EXPLORATION_MAX_EVIDENCE` remains the Direct
+  branch limit, so Direct 20 plus Wiki 3 produces 23 final Evidence items.
+  Setting `WIKI_CONTEXT_TOP_K=0` restores the legacy merge behavior.
+- Wiki pages, summaries, and relationship metadata never enter the Evidence
+  pool. The final prompt contains one versioned `[AUTHORITATIVE_EVIDENCE]`
+  block, and that ordered list is also used by run results, answer formatting,
+  citation output, and citation validation.
 - `CitationChecker` validates that exposed citations are backed by accepted
   request-local Evidence.
 - Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
@@ -294,11 +332,24 @@ Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id
 
 ## Demo SSE Endpoint
 
-`POST /api/chat/stream` is available for Q1 Web demo streaming UI. It returns `text/event-stream` events:
+`POST /api/chat/stream` is available for the Web demo UI. It returns
+`text/event-stream` events from the same `Agent.chat()` result as the JSON
+endpoint. The demo adapter emits the completed answer in bounded chunks; it is
+not live model-token streaming. Event names are:
 
 - `token`
 - `citations`
 - `done`
+- `error`
+
+`citations` carries the citation array, `token` carries a `{ "content": ... }`
+chunk, and `done` carries the trace ID, status, citation count, and optional
+chat title. Non-success responses emit `citations` followed by `error` with a
+message. Concatenating `token` chunks reproduces the JSON answer exactly.
+
+The token-protected `/api/internal/chat/retrieval/stream` uses the same event
+adapter over its trusted request context. The private and public endpoints keep
+their separate authentication and request schemas.
 
 This endpoint reuses the normal chat response and emits demo streaming events. The stable integration contract remains `POST /api/chat`.
 

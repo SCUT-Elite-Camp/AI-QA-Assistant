@@ -111,7 +111,14 @@ def create_reviewed_revision(
             )
 
         def retain(table: str, column: str, selected: set[str]) -> None:
-            placeholders = ",".join("?" for _ in selected) or "NULL"
+            if not selected:
+                db.execute(
+                    f"DELETE FROM {table} WHERE source_scope=? AND owner_id=? "
+                    "AND knowledge_base_id=? AND revision=?",
+                    target_key,
+                )
+                return
+            placeholders = ",".join("?" for _ in selected)
             db.execute(
                 f"DELETE FROM {table} WHERE source_scope=? AND owner_id=? "
                 f"AND knowledge_base_id=? AND revision=? AND {column} NOT IN ({placeholders})",
@@ -127,6 +134,30 @@ def create_reviewed_revision(
             "wiki_page_links", "wiki_claim_audits", "wiki_claim_repairs",
         ):
             retain(table, "page_id", pages)
+
+        retained_folders = {
+            row[0] for row in db.execute(
+                "SELECT folder_id FROM wiki_page_revisions WHERE source_scope=? "
+                "AND owner_id=? AND knowledge_base_id=? AND revision=? "
+                "AND folder_id IS NOT NULL AND folder_id != ''",
+                target_key,
+            )
+        }
+        folder_parents = {
+            row["folder_id"]: row["parent_id"]
+            for row in db.execute(
+                "SELECT folder_id,parent_id FROM wiki_folders WHERE source_scope=? "
+                "AND owner_id=? AND knowledge_base_id=? AND revision=?",
+                target_key,
+            )
+        }
+        pending_folders = list(retained_folders)
+        while pending_folders:
+            parent_id = folder_parents.get(pending_folders.pop())
+            if parent_id and parent_id not in retained_folders:
+                retained_folders.add(parent_id)
+                pending_folders.append(parent_id)
+        retain("wiki_folders", "folder_id", retained_folders)
 
         slugs = {row["slug"] for row in db.execute(
             "SELECT slug FROM wiki_page_revisions WHERE source_scope=? AND owner_id=? "

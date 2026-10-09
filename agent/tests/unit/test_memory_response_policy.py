@@ -34,6 +34,23 @@ def test_explicit_recall_reports_no_visible_confirmed_fact_without_model_guessin
     assert recall.answer == "当前没有可见且未过期的已确认偏好。"
 
 
+def test_explicit_visibility_cutoff_overrides_policy_clock() -> None:
+    policy = MemoryResponsePolicy(now_ms=lambda: 5000)
+    recall = policy.resolve(
+        "我之前确认的目标是什么？",
+        [PersistentFact(
+            id="near-expiry",
+            category="GOAL",
+            value="Visible at the request cutoff.",
+            expires_at=1500,
+        )],
+        visibility_cutoff_ms=1000,
+    )
+
+    assert recall.handled is True
+    assert "Visible at the request cutoff." in recall.answer
+
+
 def test_non_explicit_question_does_not_trigger_memory_recall() -> None:
     policy = MemoryResponsePolicy()
     recall = policy.resolve(

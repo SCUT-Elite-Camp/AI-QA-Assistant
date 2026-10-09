@@ -31,13 +31,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 
 def _build_default_search_tool() -> SearchTool:
-    """构造默认的检索工具。
-
-    注：SearchTool 在权限集成后已简化为内置的 hybrid 检索（bm25 + milvus），
-    不再接收 reranker / retrieval_orchestrator 等参数。此前的 orchestrator /
-    reranker 构造逻辑已随之移除；如需启用 query 改写 / 重排，应在 SearchTool
-    内部或独立的检索编排层实现，而不是在此处注入。
-    """
+    """Build the default Agent-facing search tool."""
     return SearchTool()
 
 
@@ -68,7 +62,7 @@ def _build_default_tools() -> List[BaseTool]:
             SQLiteFTSWikiSearch,
             WikiSearchBackend,
         )
-        from storage.wiki_store import WikiStore
+        from data_persistence.wiki import WikiStore
 
         store = WikiStore(resolve_wiki_db_path(PROJECT_ROOT))
         vector = (
@@ -110,7 +104,9 @@ class ToolRegistry:
             self.register_tool(tool)
 
     def register_tool(self, tool: BaseTool) -> None:
-        """Registers a new tool instance in the registry."""
+        """Register a tool, rejecting names that are already in use."""
+        if tool.name in self._tools:
+            raise ValueError(f"Tool name already registered: {tool.name}")
         self._tools[tool.name] = tool
 
     def get_tool(self, name: str) -> Optional[BaseTool]:
@@ -147,18 +143,3 @@ class ToolRegistry:
             A list of tool schemas in OpenAI function call representation.
         """
         return [tool.to_openai_schema() for tool in self._tools.values()]
-
-
-# Default global tool registry instance
-default_registry = ToolRegistry()
-
-
-def get_tools() -> List[BaseTool]:
-    """Returns instances of all registered tools from the default registry.
-
-    Provides backward compatibility for callers relying on the legacy tool list format.
-
-    Returns:
-        A list of registered tool instances.
-    """
-    return default_registry.get_all_tools()

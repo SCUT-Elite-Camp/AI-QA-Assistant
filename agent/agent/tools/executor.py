@@ -2,8 +2,13 @@ import json
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from concurrent.futures import (
+    Future,
+    ThreadPoolExecutor,
+    TimeoutError as FutureTimeout,
+)
 from contextvars import copy_context
+from threading import BoundedSemaphore
 from typing import Any, Callable
 
 from pydantic import ValidationError
@@ -12,6 +17,44 @@ from agent.config.settings import settings
 from agent.schemas.tool_execution import Evidence, ToolExecutionResult
 from agent.tools.registry import ToolRegistryAdapter
 from toolset.tool_layer import BaseTool
+
+
+class ToolCapacityExhausted(RuntimeError):
+    """Raised when all process-wide tool execution slots are occupied."""
+
+
+class _BoundedToolExecutor:
+    """Share a fixed worker pool and bound queued plus running tool work."""
+
+    def __init__(self, max_workers: int, max_pending: int) -> None:
+        self._executor = ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix="agent-tool",
+        )
+        self._capacity = BoundedSemaphore(max_workers + max_pending)
+
+    def submit(
+        self,
+        function: Callable[..., Any],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Future:
+        if not self._capacity.acquire(blocking=False):
+            raise ToolCapacityExhausted("tool execution capacity exhausted")
+        try:
+            future = self._executor.submit(function, *args, **kwargs)
+        except Exception:
+            self._capacity.release()
+            raise
+        future.add_done_callback(lambda _future: self._capacity.release())
+        return future
+
+
+_SHARED_TOOL_EXECUTOR = _BoundedToolExecutor(
+    max_workers=settings.TOOL_EXECUTOR_MAX_WORKERS,
+    max_pending=settings.TOOL_EXECUTOR_MAX_PENDING,
+)
 
 
 class ToolExecutor:
@@ -109,12 +152,20 @@ class ToolExecutor:
                     + 5000,
                 )
             data, evidence = self._run_with_timeout(operation, timeout_ms=timeout_ms)
+        except ToolCapacityExhausted:
+            return self._failure(
+                tool_call_id,
+                tool_name,
+                "tool_capacity_exhausted",
+                "Tool execution capacity is temporarily exhausted.",
+                started,
+            )
         except FutureTimeout:
             return self._failure(
                 tool_call_id,
                 tool_name,
                 "tool_timeout",
-                f"Tool execution exceeded {self.timeout_ms} ms.",
+                f"Tool execution exceeded {timeout_ms} ms.",
                 started,
             )
         except (ValidationError, TypeError, ValueError, KeyError) as exc:
@@ -177,12 +228,14 @@ class ToolExecutor:
         *,
         timeout_ms: int | None = None,
     ) -> tuple[dict[str, Any] | None, list[Evidence]]:
-        pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="agent-tool")
-        future = pool.submit(copy_context().run, operation)
+        future = _SHARED_TOOL_EXECUTOR.submit(copy_context().run, operation)
         try:
             return future.result(timeout=(timeout_ms or self.timeout_ms) / 1000)
-        finally:
-            pool.shutdown(wait=False, cancel_futures=True)
+        except FutureTimeout:
+            # Queued work can be prevented from starting. Running Python threads
+            # cannot be stopped safely and retain their capacity until completion.
+            future.cancel()
+            raise
 
     @staticmethod
     def _execute_generic(
@@ -275,7 +328,24 @@ class ToolExecutor:
                 raise ValueError("get_document must return document metadata")
             doc_id = str(document.get("doc_id") or arguments.get("doc_id") or "")
             title = str(document.get("title") or doc_id)
-            for chunk in data.get("chunks", []):
+            all_chunks = list(data.get("chunks", []))
+            next_offset = data.get("next_offset")
+            if arguments.get("offset", 0) == 0:
+                while next_offset is not None and data.get("has_more") and len(all_chunks) < 100:
+                    try:
+                        more_data = tool.execute(doc_id=doc_id, offset=next_offset, limit=50)
+                    except Exception:
+                        break
+                    if not isinstance(more_data, dict) or "error" in more_data:
+                        break
+                    new_chunks = more_data.get("chunks", [])
+                    if not new_chunks:
+                        break
+                    all_chunks.extend(new_chunks)
+                    if not more_data.get("has_more"):
+                        break
+                    next_offset = more_data.get("next_offset")
+            for chunk in all_chunks:
                 if not isinstance(chunk, dict):
                     continue
                 index = int(chunk.get("index", 0))

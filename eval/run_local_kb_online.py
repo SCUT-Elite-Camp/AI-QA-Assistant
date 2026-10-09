@@ -141,6 +141,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int, help="run the first N selected cases in each class")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--judge", action="store_true", help="add relevance and faithfulness judge calls")
+    parser.add_argument(
+        "--retrieval-mode",
+        choices=("hybrid", "vector", "bm25"),
+        default="hybrid",
+        help="retrieval strategy for measured Agent requests and warmup",
+    )
     parser.add_argument("--no-retrieval-warmup", action="store_true")
     parser.add_argument("--retrieval-namespace")
     parser.add_argument("--output", type=Path)
@@ -201,6 +207,7 @@ def main() -> int:
             "judge_enabled": args.judge,
             "repeats": args.repeats,
             "retrieval_namespace": namespace,
+            "retrieval_mode": args.retrieval_mode,
         }
     }
     for name, cases in selected.items():
@@ -209,6 +216,7 @@ def main() -> int:
             repeats=args.repeats,
             use_judge=args.judge,
             warmup_retrieval=not args.no_retrieval_warmup,
+            retrieval_mode=args.retrieval_mode,
         )
 
     output = args.output or DEFAULT_REPORT_DIR / (

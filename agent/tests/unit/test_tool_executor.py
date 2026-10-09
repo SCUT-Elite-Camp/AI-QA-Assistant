@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import time
 from typing import Any
 
@@ -7,6 +9,7 @@ from agent.schemas.tool_execution import Evidence, ToolExecutionResult
 from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
+from toolset.tool_layer.wiki_tool import WikiSearchTool
 
 
 pytestmark = pytest.mark.no_storage
@@ -176,6 +179,29 @@ def test_generic_tool_returns_request_local_structured_data() -> None:
     assert result.data == {"echo": "hello"}
     assert result.evidence == []
     assert result.error_code == ""
+
+
+def test_tool_executor_propagates_wiki_personal_scope_to_worker_thread() -> None:
+    class WikiStoreStub:
+        def search_pages(self, query: str, **kwargs: Any) -> list[dict[str, Any]]:
+            return [{"owner_id": kwargs["owner_id"], "kb_id": kwargs["knowledge_base_id"]}]
+
+    secret = "test-secret"
+    tool = WikiSearchTool(WikiStoreStub())
+    token = hmac.new(
+        secret.encode(), b"alice:alice-kb", hashlib.sha256,
+    ).hexdigest()
+    tool.set_personal_context("alice", "alice-kb", token, secret=secret)
+
+    result = _executor(tool).execute(
+        tool_call_id="call-wiki",
+        tool_name="wiki_search",
+        arguments={"query": "RAG", "source_scope": "personal"},
+        trace_id="trace-wiki",
+    )
+
+    assert result.success is True
+    assert result.data["pages"] == [{"owner_id": "alice", "kb_id": "alice-kb"}]
 
 
 def test_missing_tool_returns_tool_not_found() -> None:

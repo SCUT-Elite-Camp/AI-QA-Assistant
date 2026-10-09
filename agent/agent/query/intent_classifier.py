@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any
 
 from pydantic import ValidationError
@@ -12,6 +13,11 @@ from agent.query.schemas import IntentResult, QueryIntent
 
 class IntentClassifier:
     """Classify a user query into the frozen CP2 intent taxonomy."""
+
+    _SUMMARY_REQUEST = re.compile(
+        r"(?:总结|概括|摘要|归纳|summari[sz]e|\bsummary\b)",
+        re.IGNORECASE,
+    )
 
     def __init__(
         self,
@@ -53,6 +59,11 @@ class IntentClassifier:
         try:
             response = self.llm.chat(messages)
             result = self._parse_response(response)
+            result = self._enforce_explicit_intent(
+                normalized_query,
+                history,
+                result,
+            )
         except Exception as exc:
             self.logger.warning(
                 "[INTENT_CLASSIFICATION] action=fallback error=%s query=%s",
@@ -113,6 +124,9 @@ class IntentClassifier:
             "knowledge_qa asks for a factual answer from knowledge sources. "
             "document_search asks to find or list documents. "
             "summarization asks to summarize provided or retrievable material. "
+            "A request to summarize a named document is summarization, not "
+            "document_search. document_search only locates or lists documents "
+            "without synthesizing their contents. "
             "comparison asks to compare two or more objects. "
             "casual_chat is ordinary conversation that does not need retrieval. "
             "system_help asks about this system's real capabilities or usage. "
@@ -125,6 +139,29 @@ class IntentClassifier:
             '"is_follow_up":false,"is_clarification_reply":false,'
             '"reason":"..."}'
         )
+
+    @classmethod
+    def _enforce_explicit_intent(
+        cls,
+        query: str,
+        history: list[dict],
+        result: IntentResult,
+    ) -> IntentResult:
+        """Correct narrow, explicit intent cues when the model under-classifies."""
+        if (
+            cls._SUMMARY_REQUEST.search(query)
+            and result.intent
+            in {QueryIntent.KNOWLEDGE_QA, QueryIntent.DOCUMENT_SEARCH}
+        ):
+            return result.model_copy(
+                update={
+                    "intent": QueryIntent.SUMMARIZATION,
+                    "confidence": max(result.confidence, 0.95),
+                    "is_follow_up": result.is_follow_up or bool(history),
+                    "reason": "explicit_summary_request",
+                }
+            )
+        return result
 
     @staticmethod
     def _build_input(query: str, history: list[dict]) -> str:
@@ -163,19 +200,39 @@ class IntentClassifier:
 
     @staticmethod
     def _extract_json_object(content: str) -> dict[str, Any]:
-        if content.startswith("```") and content.endswith("```"):
-            lines = content.splitlines()
-            if len(lines) >= 3:
-                content = "\n".join(lines[1:-1]).strip()
-
+        import re
+        raw = content.strip()
+        # Try direct parse first
         try:
-            payload = json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise ValueError("LLM intent response is not valid JSON") from exc
+            payload = json.loads(raw)
+            if isinstance(payload, dict):
+                return payload
+        except json.JSONDecodeError:
+            pass
 
-        if not isinstance(payload, dict):
-            raise ValueError("LLM intent response must be a JSON object")
-        return payload
+        # Try stripping markdown blocks
+        if "```" in raw:
+            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
+            if match:
+                try:
+                    payload = json.loads(match.group(1))
+                    if isinstance(payload, dict):
+                        return payload
+                except json.JSONDecodeError:
+                    pass
+
+        # Try finding outermost { ... }
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                payload = json.loads(raw[start : end + 1])
+                if isinstance(payload, dict):
+                    return payload
+            except json.JSONDecodeError:
+                pass
+
+        raise ValueError(f"LLM intent response is not valid JSON: {raw[:100]}")
 
     @staticmethod
     def _fallback(reason: str) -> IntentResult:

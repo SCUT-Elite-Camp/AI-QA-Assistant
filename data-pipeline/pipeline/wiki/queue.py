@@ -37,6 +37,7 @@ class WikiJobLease(BaseModel):
     content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     stage: WikiJobStage
     attempt: int = Field(ge=1)
+    lease_generation: int = Field(ge=1)
     lease_owner: str = Field(min_length=1)
     lease_expires_at: int = Field(gt=0)
     payload: dict[str, Any] = Field(default_factory=dict)
@@ -44,12 +45,26 @@ class WikiJobLease(BaseModel):
 
 class WikiQueueRepository(Protocol):
     def enqueue_wiki_job(self, **kwargs: Any) -> str: ...
-    def lease_wiki_job(self, *, worker_id: str, lease_seconds: int = 60) -> dict[str, Any] | None: ...
+    def lease_wiki_job(
+        self, *, worker_id: str, lease_seconds: int = 60,
+        source_scope: str | None = None, owner_id: str = "", knowledge_base_id: str = "",
+    ) -> dict[str, Any] | None: ...
     def advance_wiki_job(
         self, job_id: str, *, worker_id: str, next_stage: WikiJobStage | None,
+        payload: dict[str, Any] | None = None, attempt: int, lease_generation: int,
     ) -> None: ...
+    def renew_wiki_job_lease(
+        self, job_id: str, *, worker_id: str, attempt: int, lease_generation: int,
+        lease_seconds: int = 600,
+    ) -> bool: ...
+    def complete_wiki_finalize(
+        self, *, source_scope: str, owner_id: str, knowledge_base_id: str,
+        generation: int, lease_guard: tuple[str, str, int, int],
+    ) -> bool: ...
     def fail_wiki_job(
-        self, job_id: str, *, worker_id: str, error: str, retry_at: int,
+        self, job_id: str, *, worker_id: str, attempt: int, stage: str,
+        lease_generation: int,
+        error: str, retry_at: int,
     ) -> None: ...
     def upsert_pending_wiki_op(self, **kwargs: Any) -> str: ...
     def schedule_pending_wiki_jobs(self, **kwargs: Any) -> list[str]: ...
