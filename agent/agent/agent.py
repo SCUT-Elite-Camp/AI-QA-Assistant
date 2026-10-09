@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from contextvars import ContextVar
 from typing import Any, Dict, List, Optional
 
 from agent.answer import AnswerCompletenessChecker
@@ -41,6 +42,7 @@ from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan, QueryIntent
 from agent.schemas.retrieval import RetrievalResult
 from agent.service import AuditService, PermissionService, TraceService
+from agent.service.access_guard import AccessGuard, CURRENT_ACCESS_GUARD, check_model_access
 from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool, SearchTool
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
@@ -117,6 +119,12 @@ class Agent:
             raise ValueError("tools and toolset_registry cannot both be provided")
         toolset_registry = toolset_registry or ToolsetRegistry(tools=tools)
         self.registry = ToolRegistryAdapter(toolset_registry)
+        if permission_service is None:
+            read_tool = self.registry.get_tool("get_document")
+            repository = getattr(read_tool, "repository", None)
+            if repository is not None:
+                self.permission_service.source_provider.documents_dir = repository.documents_dir
+                self.permission_service.source_provider.document_loader = repository.load
         self.memory = memory or get_default_memory()
 
         search_tool = self.registry.get_tool("search_documents")
@@ -184,9 +192,36 @@ class Agent:
             corrective_retrieval=self.corrective_retrieval,
             citation_checker=self.citation_checker,
         )
+        self._last_run_result = ContextVar(f"agent_run_{id(self)}", default=None)
+        self._last_orchestration = ContextVar(f"agent_orchestration_{id(self)}", default=None)
+        self._last_citation_check = ContextVar(f"agent_citations_{id(self)}", default=None)
         self.last_run_result: AgentRunResult | None = None
         self.last_orchestration: OrchestrationResult | None = None
         self.last_citation_check = None
+
+    @property
+    def last_run_result(self):
+        return self._last_run_result.get()
+
+    @last_run_result.setter
+    def last_run_result(self, value):
+        self._last_run_result.set(value)
+
+    @property
+    def last_orchestration(self):
+        return self._last_orchestration.get()
+
+    @last_orchestration.setter
+    def last_orchestration(self, value):
+        self._last_orchestration.set(value)
+
+    @property
+    def last_citation_check(self):
+        return self._last_citation_check.get()
+
+    @last_citation_check.setter
+    def last_citation_check(self, value):
+        self._last_citation_check.set(value)
 
     @property
     def tools(self) -> dict[str, BaseTool]:
@@ -206,8 +241,11 @@ class Agent:
         self.last_orchestration = None
         self.last_citation_check = None
         persistent_memory_request = self._is_persistent_memory_request(request)
+        guard = AccessGuard(self.permission_service, request, trace_id)
+        guard_token = CURRENT_ACCESS_GUARD.set(guard)
 
         try:
+            request = guard.sanitize_request()
             context = getattr(request, "attachment_context", None)
             for tool_name in ("search_attachments", "inspect_attachment"):
                 tool = self.registry.get_tool(tool_name)
@@ -237,6 +275,7 @@ class Agent:
                         secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
                     )
             response = self._chat_internal(request, trace_id, query_plan=query_plan)
+            response.evidence_provenance = guard.provenance()
             latency_ms = self.audit_service.stop_timer(start_time)
             if not persistent_memory_request:
                 self.audit_service.record(
@@ -261,6 +300,7 @@ class Agent:
                 )
             raise exc
         finally:
+            CURRENT_ACCESS_GUARD.reset(guard_token)
             clear_llm_metrics(metrics_token)
             for tool_name in (
                 "search_attachments", "inspect_attachment", "search_library",
@@ -275,12 +315,10 @@ class Agent:
     def _resolve_filters(self, request: ChatRequest) -> Optional[dict[str, Any]]:
         """Merge request filters with user permission isolation."""
         filters: dict[str, Any] = dict(request.filters) if request.filters else {}
-        if not request.user_id:
-            return filters or None
-
-        accessible_doc_ids = self.permission_service.get_accessible_doc_ids(request.user_id)
-        if accessible_doc_ids is None:
-            return filters or None
+        candidates = filters.get("doc_ids", filters.get("doc_id"))
+        if isinstance(candidates, str):
+            candidates = [candidates]
+        accessible_doc_ids = self.permission_service.get_accessible_doc_ids_strict(request.user_id or "", doc_ids=candidates)
 
         accessible = set(accessible_doc_ids)
         existing = filters.get("doc_ids") if "doc_ids" in filters else filters.get("doc_id")
@@ -541,6 +579,8 @@ class Agent:
         persistent_memory: bool = False,
     ) -> None:
         if (
+            CURRENT_ACCESS_GUARD.get() is not None
+            or
             not settings.MEMORY_ENABLED
             or not session_id
             or persistent_memory
@@ -719,6 +759,12 @@ class Agent:
                     knowledge_base_id=item.get("knowledge_base_id"),
                     document_id=item.get("document_id"),
                     version_id=item.get("version_id"),
+                    evidence_ref=item.get("evidence_ref"),
+                    content_hash=item.get("content_hash"),
+                    normalized_content_hash=item.get("normalized_content_hash"),
+                    source_content_hash=item.get("source_content_hash"),
+                    source_version=item.get("source_version"),
+                    read_status=item.get("read_status"),
                 )
             except (KeyError, TypeError, ValueError):
                 logger.warning("[EVIDENCE_DROPPED] malformed evidence: %r", item)
@@ -799,7 +845,11 @@ class Agent:
             scoped_filters = filters
             selected = []
             if len(queries) > 1 and discovery is not None:
-                documents = discovery.execute(query=query[:512], filters=filters, top_k=20).get("documents", [])
+                discovery_result = discovery.execute(query=query[:512], filters=filters, top_k=20)
+                guard = CURRENT_ACCESS_GUARD.get()
+                if guard:
+                    guard.capture_tool("find_documents", discovery_result, [])
+                documents = discovery_result.get("documents", [])
                 selected = self._matching_target_documents(query, documents)
                 if "doc_ids" in filters:
                     selected = [doc_id for doc_id in selected if doc_id in filters["doc_ids"]]
@@ -809,11 +859,14 @@ class Agent:
                 query=query, top_k=request.top_k or 5,
                 mode=request.retrieval_mode or "hybrid", filters=scoped_filters, trace_id=trace_id,
             )
+            guard = CURRENT_ACCESS_GUARD.get()
+            if guard:
+                guard.capture_tool("search_documents", {"items": hits}, [])
             reader = self.registry.get_tool("get_document")
             context = []
             if reader is not None:
                 for doc_id in selected:
-                    page = reader.execute(doc_id=doc_id, limit=8)
+                    page = self._guarded_document_read(reader, doc_id=doc_id, limit=8)
                     snapshot_dates[doc_id] = page.get('document', {}).get('last_updated')
                     # Short meeting notes often place limitations after the
                     # highest-scoring passage. Read the complete bounded note.
@@ -821,7 +874,7 @@ class Agent:
                         continue
                     document = page.get("document", {})
                     context.extend({
-                        "doc_id": doc_id, "chunk_id": chunk.get("chunk_id"),
+                        "doc_id": doc_id, **chunk, "chunk_id": chunk.get("chunk_id"),
                         "title": document.get("title"), "source_url": document.get("source_url"),
                         "snapshot_date": document.get("last_updated"),
                         "chunk_text": chunk.get("text", ""),
@@ -833,13 +886,13 @@ class Agent:
         reader = self.registry.get_tool("get_document")
         if reader is not None and 0 < len(filters.get("doc_ids", [])) <= 4:
             for doc_id in filters["doc_ids"]:
-                page = reader.execute(doc_id=doc_id, limit=8)
+                page = self._guarded_document_read(reader, doc_id=doc_id, limit=8)
                 if page.get("error"):
                     continue
                 document = page.get("document", {})
                 snapshot_dates[doc_id] = document.get("last_updated")
                 batches.insert(0, [{
-                    "doc_id": doc_id, "chunk_id": chunk.get("chunk_id"),
+                    "doc_id": doc_id, **chunk, "chunk_id": chunk.get("chunk_id"),
                     "title": document.get("title"), "source_url": document.get("source_url"),
                     "snapshot_date": document.get("last_updated"), "chunk_text": chunk.get("text", ""),
                 } for chunk in page.get("chunks", [])])
@@ -860,7 +913,7 @@ class Agent:
             for row in results:
                 doc_id = row.get('doc_id')
                 if doc_id not in snapshot_dates and reader is not None:
-                    page = reader.execute(doc_id=doc_id, limit=1)
+                    page = self._guarded_document_read(reader, doc_id=doc_id, limit=1)
                     snapshot_dates[doc_id] = page.get('document', {}).get('last_updated')
                 row['snapshot_date'] = snapshot_dates.get(doc_id)
         return results
@@ -884,7 +937,51 @@ class Agent:
         # A weak match should not suppress potentially relevant content matches.
         return [str(d["doc_id"]) for score, d in scored if score == best][:3] if best >= 2 else []
 
+    def _guarded_document_read(self, reader, **arguments):
+        guard = CURRENT_ACCESS_GUARD.get()
+        if guard:
+            arguments = guard.prepare_tool("get_document", arguments)
+        result = reader.execute(**arguments)
+        if guard and not result.get("error"):
+            guard.capture_tool("get_document", result, [])
+        return result
+
     def stream_chat(self, request: ChatRequest):
+        """Buffer source-bearing output until live access and provenance pass."""
+        # The mature Runner owns private-source routing; the partner's independent
+        # Fast enterprise path and its quality checks remain intact below.
+        from agent.query.source_intent import heuristic_source_intent
+        from agent.schemas.query_plan import SourceKind
+        private = isinstance(request, InternalChatRequest) and (
+            request.attachment_context is not None and bool(request.attachment_context.allowed_attachment_ids)
+            or request.personal_library_context is not None and SourceKind.PERSONAL_LIBRARY in heuristic_source_intent(request.query).sources)
+        if request.weight_mode != "fast" or private:
+            decision = None
+            if isinstance(request, InternalChatRequest):
+                response, decision = self.chat_with_memory(request)
+            else:
+                response = self.chat(request)
+            yield "citations", [c.model_dump() for c in response.citations]
+            yield "token", {"content": response.answer or response.message or ""}
+            yield "done", {"trace_id": response.trace_id, "status": response.status,
+                           "citations_count": len(response.citations), "chat_title": response.chat_title,
+                           "memory_decision": decision.model_dump() if decision is not None else None,
+                           "evidence_provenance": response.evidence_provenance.model_dump()}
+            return
+        guard = AccessGuard(self.permission_service, request, "fast-stream")
+        token = CURRENT_ACCESS_GUARD.set(guard)
+        try:
+            request = guard.sanitize_request()
+            events = list(self._stream_chat_unchecked(request))
+            provenance = guard.provenance().model_dump()
+            for name, value in events:
+                if name == "done":
+                    value = {**value, "evidence_provenance": provenance}
+                yield name, value
+        finally:
+            CURRENT_ACCESS_GUARD.reset(token)
+
+    def _stream_chat_unchecked(self, request: ChatRequest):
         """Execute streaming chat turn yielding (event_name, event_payload) tuples."""
         trace_id = self.trace_service.start_trace()
         start_time = self.audit_service.start_timer()
@@ -893,7 +990,7 @@ class Agent:
             # FAST MODE: Independent direct RAG pipeline without agent multi-turn loops
             # =========================================================================
             if needs_architecture_scope(request.query):
-                if request.session_id:
+                if request.session_id and CURRENT_ACCESS_GUARD.get() is None:
                     self.orchestrator.memory.add_message(request.session_id, "user", request.query)
                     self.orchestrator.memory.add_message(request.session_id, "assistant", ARCHITECTURE_SCOPE_QUESTION)
                 yield "citations", []
@@ -921,6 +1018,10 @@ class Agent:
                         evidence_id=r.get("evidence_id"),
                         locator=r.get("locator"),
                         version=r.get("version"),
+                        evidence_ref=r.get("evidence_ref"), content_hash=r.get("content_hash"),
+                        normalized_content_hash=r.get("normalized_content_hash"),
+                        source_content_hash=r.get("source_content_hash"),
+                        source_version=r.get("source_version"), read_status=r.get("read_status"),
                         source_scope=r.get("source_scope"),
                         knowledge_base_id=r.get("knowledge_base_id"),
                         document_id=r.get("document_id"),
@@ -936,7 +1037,7 @@ class Agent:
                 if unsupported_entity and not re.search(r"[\u3400-\u9fff]", request.query):
                     answer = f"The authorized excerpts do not establish the requested exact {unsupported_entity} counts. Counts for another module cannot substitute for them."
                     answer += ' ' + ''.join(f'[{c.citation_id}]' for c in citations[:3])
-                    if request.session_id:
+                    if request.session_id and CURRENT_ACCESS_GUARD.get() is None:
                         self.orchestrator.memory.add_message(request.session_id, "user", request.query)
                         self.orchestrator.memory.add_message(request.session_id, "assistant", answer)
                     yield "token", {"content": answer}
@@ -948,7 +1049,8 @@ class Agent:
                     context_blocks.append(f"[{idx}] Title: {c.title}\nSource URL: {c.source_url or 'not recorded'}\nLocator: {c.chunk_id}\nContent: {c.snippet}")
                 context_text = "\n\n".join(context_blocks) if context_blocks else "无相关参考文档"
 
-                history = self.orchestrator._read_history(request.session_id)
+                history = ([{"role": m.role, "content": m.content} for m in request.memory_context.tail]
+                           if isinstance(request, InternalChatRequest) else [])
                 is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
                 title_directive = (
                     "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
@@ -1030,6 +1132,7 @@ class Agent:
                             and re.search(r'\blatest\b',request.query,re.I))
                         or re.search(r'\bPython files\b',request.query,re.I))
                 )
+                check_model_access()
                 for delta in self.llm.stream_chat(fast_messages):
                     reasoning = delta.get("reasoning_content")
                     content = delta.get("content")
@@ -1051,6 +1154,7 @@ class Agent:
                     evidence = "\n\n".join(
                         f"[{c.citation_id}] {c.title} ({row.get('snapshot_date') or row.get('last_updated') or 'undated'}, {c.chunk_id})\nSource URL: {c.source_url or 'not recorded'}\nSource excerpt: {c.snippet}"
                         for c, row in zip(citations, results))
+                    check_model_access()
                     checked = validator.repair_answer(accumulated_answer, request.query, evidence)
                     quality_ok = checked is not None
                     accumulated_answer = checked or (
@@ -1064,7 +1168,7 @@ class Agent:
                 if not chat_title and is_first:
                     chat_title = self._generate_fallback_title(request.query)
 
-                if request.session_id:
+                if request.session_id and CURRENT_ACCESS_GUARD.get() is None:
                     self.orchestrator.memory.add_message(request.session_id, "user", request.query)
                     self.orchestrator.memory.add_message(request.session_id, "assistant", clean_answer)
 

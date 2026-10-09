@@ -354,8 +354,10 @@ class ModelResearchPlanner:
             raise PlannerError("research plan does not cover the objective")
 
     def _chat(self, payload: dict) -> dict:
+        from .access import check_research_model_access
         last_error: Exception | None = None
         for attempt in range(2):
+            check_research_model_access()
             request = Request(
                 f"{self.api_base}/chat/completions",
                 data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -367,7 +369,9 @@ class ModelResearchPlanner:
             )
             try:
                 with urlopen(request, timeout=self.timeout_seconds) as response:
-                    return json.loads(response.read().decode("utf-8"))
+                    result = json.loads(response.read().decode("utf-8"))
+                    check_research_model_access()
+                    return result
             except Exception as exc:
                 last_error = exc
                 if attempt == 0:

@@ -125,6 +125,12 @@ class CompactionPlanner:
                     covered_from_message_id=coverable[0].id,
                     covered_to_message_id=coverable[-1].id,
                     summary=self._build_summary(request, coverable),
+                    source_dependencies=list({
+                        item.model_dump_json(): item
+                        for record in [*coverable, *([active_snapshot] if active_snapshot else [])]
+                        for item in record.source_dependencies
+                    }.values()),
+                    provenance_complete=all(record.provenance_complete for record in [*coverable, *([active_snapshot] if active_snapshot else [])]),
                 ),
             )
             self._record("planned", tail_count, snapshot_version)

@@ -16,6 +16,8 @@ from pydantic import ValidationError
 from agent.config.settings import settings
 from agent.evidence.locator import canonical_chunk_id
 from agent.schemas.tool_execution import Evidence, ToolExecutionResult
+from agent.service.access_guard import CURRENT_ACCESS_GUARD
+from agent.service.permission_service import PermissionResolutionError
 from agent.tools.registry import ToolRegistryAdapter
 from toolset.tool_layer import BaseTool
 
@@ -111,6 +113,9 @@ class ToolExecutor:
             )
 
         try:
+            guard = CURRENT_ACCESS_GUARD.get()
+            if guard is not None:
+                parsed_arguments = guard.prepare_tool(tool.name, parsed_arguments)
             if tool.name == "search_documents" and callable(
                 getattr(tool, "search", None)
             ):
@@ -153,6 +158,11 @@ class ToolExecutor:
                     + 5000,
                 )
             data, evidence = self._run_with_timeout(operation, timeout_ms=timeout_ms)
+            if guard is not None:
+                guard.capture_tool(tool.name, data, evidence)
+        except PermissionResolutionError:
+            # Authorization failure terminates the turn, not a recoverable tool error.
+            raise
         except ToolCapacityExhausted:
             return self._failure(
                 tool_call_id,
@@ -251,6 +261,14 @@ class ToolExecutor:
         return data, []
 
     @staticmethod
+    def _provenance_fields(row: dict) -> dict:
+        return {key: row[key] for key in (
+            "evidence_ref", "content_hash", "normalized_content_hash",
+            "source_content_hash", "source_version", "read_status",
+            "locator", "source_scope", "knowledge_base_id", "document_id", "version_id",
+        ) if row.get(key) is not None}
+
+    @staticmethod
     def _execute_search(
         tool: BaseTool,
         arguments: dict[str, Any],
@@ -284,6 +302,7 @@ class ToolExecutor:
                 retrieval_query=query,
                 retrieval_mode=mode,
                 retrieval_attempt=retrieval_attempt,
+                **ToolExecutor._provenance_fields(row),
             )
             for row in rows
         ]
@@ -322,6 +341,7 @@ class ToolExecutor:
                     retrieval_query=query,
                     retrieval_mode="document",
                     retrieval_attempt=retrieval_attempt,
+                    **ToolExecutor._provenance_fields(document),
                 ))
         elif "error" not in data:
             document = data.get("document") or {}
@@ -347,6 +367,7 @@ class ToolExecutor:
                     retrieval_query=doc_id,
                     retrieval_mode="document",
                     retrieval_attempt=retrieval_attempt,
+                    **ToolExecutor._provenance_fields({**document, **chunk}),
                 ))
         return data, evidence
 
@@ -359,6 +380,8 @@ class ToolExecutor:
         data = tool.execute(**arguments)
         if not isinstance(data, dict):
             raise ValueError("search_library must return a dictionary")
+        if data.get("error"):
+            raise RuntimeError("personal_source_service_unavailable")
 
         query = str(arguments.get("query") or "personal library search")
         mode = str(arguments.get("mode") or "hybrid")
@@ -389,6 +412,10 @@ class ToolExecutor:
                 knowledge_base_id=str(item.get("knowledge_base_id") or "") or None,
                 document_id=document_id,
                 version_id=str(item.get("version_id") or "") or None,
+                content_hash=item.get("content_hash"),
+                source_version=item.get("source_version"),
+                evidence_ref=item.get("evidence_ref"),
+                read_status=item.get("read_status"),
             ))
         return data, evidence
 
@@ -401,6 +428,8 @@ class ToolExecutor:
         data = tool.execute(**arguments)
         if not isinstance(data, dict):
             raise ValueError("attachment tools must return a dictionary")
+        if data.get("error"):
+            raise RuntimeError("attachment_source_service_unavailable")
 
         query = str(
             arguments.get("query")
@@ -431,12 +460,17 @@ class ToolExecutor:
                 retrieval_query=query,
                 retrieval_mode="attachment",
                 retrieval_attempt=retrieval_attempt,
-                source_type=str(item.get("source_type") or "attachment"),
+                source_type="attachment",
                 attachment_id=attachment_id,
                 evidence_id=evidence_id,
                 locator=item.get("locator") if isinstance(item.get("locator"), dict) else {},
                 version=max(1, int(item.get("version", 1))),
                 confidence=item.get("confidence"),
+                content_hash=item.get("content_hash"),
+                evidence_ref=item.get("evidence_ref"),
+                source_version=item.get("source_version"),
+                normalized_content_hash=item.get("normalized_content_hash"),
+                read_status=item.get("read_status"),
             ))
         return data, evidence
 

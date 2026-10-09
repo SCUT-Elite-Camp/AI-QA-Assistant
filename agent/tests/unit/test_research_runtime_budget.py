@@ -26,6 +26,7 @@ class _Repository:
 def test_runtime_budget_rejects_an_overdue_stage() -> None:
     runtime = ResearchGraphRuntime.__new__(ResearchGraphRuntime)
     runtime.repository = _Repository(elapsed_seconds=31, budget_seconds=30)
+    runtime.control_plane = SimpleNamespace(authorize_job=lambda *args: None, get_manifest=lambda *args: None)
 
     with pytest.raises(ResearchRuntimeTimeout, match="research_runtime_budget_exceeded"):
         runtime._assert_runtime_budget("research-overdue")
@@ -34,5 +35,6 @@ def test_runtime_budget_rejects_an_overdue_stage() -> None:
 def test_runtime_budget_allows_a_stage_with_time_remaining() -> None:
     runtime = ResearchGraphRuntime.__new__(ResearchGraphRuntime)
     runtime.repository = _Repository(elapsed_seconds=5, budget_seconds=30)
+    runtime.control_plane = SimpleNamespace(authorize_job=lambda *args: None, get_manifest=lambda *args: None)
 
     runtime._assert_runtime_budget("research-active")

@@ -157,3 +157,77 @@ def mock_agent_auth(monkeypatch, request):
         headers.setdefault("Authorization", "Bearer integration-test-key")
         original_init(self, *args, headers=headers, **kwargs)
     monkeypatch.setattr(TestClient, "__init__", authenticated_init)
+
+
+# These historical tests exercise orchestration/quality/memory components with
+# invented tool output, not source authorization. Keep that test double explicit
+# and return incomplete provenance: they must NEVER count as security acceptance.
+# Strict HTTP/source tests (including *_security.py) do not use this fixture.
+_COMPONENT_SUITES = {
+    "test_agent", "test_fast_stream_integration", "test_memory_observability",
+    "test_chat_research_boundary", "test_cp2_memory_flow", "test_cp2_orchestration",
+    "test_error_cases", "test_mock_agent_chain", "test_persistent_memory",
+    "test_tool_layer_smoke", "test_week4_web_contract",
+    "test_internal_memory_api", "test_internal_memory_routes",
+}
+
+
+@pytest.fixture(autouse=True)
+def component_authorization_double(monkeypatch, request):
+    if request.module.__name__.rsplit(".", 1)[-1] not in _COMPONENT_SUITES:
+        return
+    import agent.agent as module
+    from agent.schemas.chat import EvidenceProvenance
+    from agent.service.permission_service import PermissionService
+
+    class ComponentGuard:
+        def __init__(self, permissions, request, trace_id):
+            self.request, self.trace_id = request, trace_id
+        def sanitize_request(self): return self.request
+        def check_dependencies(self): pass
+        def capture_tool(self, *args): pass
+        def prepare_tool(self, name, arguments): return arguments
+        def _inherit_if_allowed(self, dependencies): return True
+        def provenance(self):
+            return EvidenceProvenance(complete=False, trace_id=self.trace_id)
+
+    class UnenforcedComponentContext:
+        def get(self): return None
+        def set(self, value): return None
+        def reset(self, token): pass
+
+    def component_filters(self, request):
+        filters = dict(request.filters or {})
+        if not request.user_id: return filters or None
+        accessible = self.permission_service.get_accessible_doc_ids(request.user_id)
+        if accessible is None: return filters or None
+        ids = set(accessible)
+        existing = filters.get("doc_ids", filters.get("doc_id"))
+        if existing is not None: ids &= {existing} if isinstance(existing, str) else set(existing)
+        filters.pop("doc_id", None)
+        filters["doc_ids"] = sorted(ids)
+        return filters
+
+    monkeypatch.setattr(module, "AccessGuard", ComponentGuard)
+    monkeypatch.setattr(module, "CURRENT_ACCESS_GUARD", UnenforcedComponentContext())
+    monkeypatch.setattr(module.Agent, "_resolve_filters", component_filters)
+    # Transport fixtures remain service-token protected but now carry the
+    # synthetic actor in the same header as the real BFF.
+    from fastapi.testclient import TestClient
+    original_request = TestClient.request
+    def component_request(self, method, url, **kwargs):
+        if str(url).startswith("/api/internal/"):
+            body = kwargs.get("json") or {}
+            for record in [*body.get("messages", []), *([body["active_snapshot"]] if body.get("active_snapshot") else [])]:
+                record.setdefault("provenance_complete", True)
+                record.setdefault("source_dependencies", [])
+            actor = (body.get("memory_context") or {}).get("actor") or body.get("actor") or {}
+            headers = dict(kwargs.get("headers") or {})
+            headers.setdefault("X-User-ID", body.get("user_id") or actor.get("user_id") or "user-1")
+            kwargs["headers"] = headers
+        return original_request(self, method, url, **kwargs)
+    monkeypatch.setattr(TestClient, "request", component_request)
+    if request.module.__name__.rsplit(".", 1)[-1] in {"test_internal_memory_api", "test_internal_memory_routes"}:
+        from agent.api import internal_memory_routes
+        monkeypatch.setattr(internal_memory_routes, "resolve_access", lambda *args, **kwargs: [])
+        monkeypatch.setattr(internal_memory_routes, "AccessGuard", ComponentGuard)

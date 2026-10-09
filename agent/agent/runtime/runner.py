@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextvars import copy_context
 from typing import Any
 
 from agent.answer import AnswerCompletenessChecker, should_accept_repair
@@ -18,7 +19,7 @@ from agent.runtime.state import (
     ToolCallRecord,
 )
 from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryPlan, SourceKind
 from agent.schemas.tool_execution import Evidence
 from agent.service.audit_service import AuditService
 from agent.tools.executor import ToolExecutor
@@ -153,6 +154,7 @@ class AgentRunner:
             ),
         )
         schemas = self._tool_schemas(policy)
+        source_tools = self._required_source_tools(query_plan, policy)
         navigation_enabled = (
             settings.AGENTIC_EXPLORATION_ENABLED
             and exploration_mode != "off"
@@ -175,6 +177,15 @@ class AgentRunner:
             self.audit_service.log_step(iteration - 1, query_plan.original_query)
 
             try:
+                attempted = {record.tool_name for record in state.tool_calls if record.success}
+                pending_source_tools = [name for name in source_tools if name not in attempted]
+                if source_tools and not pending_source_tools:
+                    found_types = {item.get("source_type", "knowledge") for item in state.evidence}
+                    expected_types = {self._source_type_for_tool(name) for name in source_tools}
+                    if not expected_types.issubset(found_types):
+                        return self._result(state, StopReason.NO_RELEVANT_CONTEXT,
+                            message="未能从每个请求的来源读取有效证据，不能用其他资料替代。",
+                            error_code="requested_source_evidence_missing")
                 # Once retrieval evidence has passed the evidence policy, the
                 # next model turn is answer generation. Hiding tool schemas at
                 # that point prevents providers from requesting the identical
@@ -191,7 +202,16 @@ class AgentRunner:
                         schema for schema in schemas
                         if schema.get("function", {}).get("name") == next_wiki_tool
                     ]
-                if (
+                if pending_source_tools:
+                    # Explicit private/mixed scopes are a product constraint,
+                    # not an optional LLM tool hint. Read each scope once before
+                    # the partner's evidence-only answer optimization kicks in.
+                    name = pending_source_tools[0]
+                    response = {"role": "assistant", "content": None, "tool_calls": [{
+                        "id": f"source-{iteration}-{name}", "type": "function",
+                        "function": {"name": name, "arguments": json.dumps({"query": query_plan.standalone_query})},
+                    }]}
+                elif (
                     navigation_enabled
                     and exploration_mode == "force"
                     and retrieval_route is None
@@ -239,7 +259,7 @@ class AgentRunner:
                     error_code="invalid_tool_calls",
                 )
 
-            if state.evidence and tool_calls and not next_wiki_tool:
+            if state.evidence and tool_calls and not next_wiki_tool and not pending_source_tools:
                 logger.warning(
                     "[POST_EVIDENCE_TOOL_CALL_IGNORED] trace_id=%s iteration=%s calls=%s",
                     trace_id,
@@ -656,22 +676,20 @@ class AgentRunner:
                     if navigation_enabled and tool_name != "wiki_search_evidence":
                         state.evidence = state.evidence[:settings.EXPLORATION_MAX_EVIDENCE]
 
+                    # Do not judge an intentionally partial multi-source batch
+                    # as a complete answer, nor correct it with another source.
+                    remaining_sources = [name for name in source_tools
+                        if name not in {record.tool_name for record in state.tool_calls if record.success}]
                     try:
-                        evidence, corrective_observations = self._apply_evidence_policy(
-                            query_plan=query_plan,
-                            policy=policy,
-                            evidence_gate=evidence_gate,
-                            corrective_retrieval=corrective_retrieval,
-                            tool_executor=tool_executor,
-                            trace_id=trace_id,
-                            state=state,
-                            previous_mode=mode,
-                            previous_top_k=top_k,
-                            preserve_evidence_order=(
-                                tool_name == "wiki_search_evidence"
-                                and settings.WIKI_CONTEXT_TOP_K > 0
-                            ),
-                        )
+                        if remaining_sources:
+                            evidence = list(state.evidence)
+                        else:
+                            evidence, corrective_observations = self._apply_evidence_policy(
+                                query_plan=query_plan, policy=policy, evidence_gate=evidence_gate,
+                                corrective_retrieval=corrective_retrieval, tool_executor=tool_executor,
+                                trace_id=trace_id, state=state, previous_mode=mode, previous_top_k=top_k,
+                                preserve_evidence_order=(tool_name == "wiki_search_evidence" and settings.WIKI_CONTEXT_TOP_K > 0),
+                            )
                     except ToolExecutionFailure as exc:
                         return self._result(
                             state,
@@ -817,6 +835,21 @@ class AgentRunner:
             and isinstance(schema.get("function"), dict)
             and schema["function"].get("name") in allowed
         ]
+
+    @staticmethod
+    def _source_type_for_tool(name: str) -> str:
+        return {"search_library": "personal", "search_attachments": "attachment"}.get(name, "knowledge")
+
+    @staticmethod
+    def _required_source_tools(plan: QueryPlan, policy: IntentPolicy | None) -> tuple[str, ...]:
+        if policy is None or not set(plan.source_intent.sources).intersection({
+            SourceKind.PERSONAL_LIBRARY, SourceKind.CONVERSATION_ATTACHMENT,
+        }):
+            return ()
+        mapping = {SourceKind.ENTERPRISE_KB: "search_documents", SourceKind.PERSONAL_LIBRARY: "search_library",
+            SourceKind.CONVERSATION_ATTACHMENT: "search_attachments"}
+        return tuple(mapping[source] for source in dict.fromkeys(plan.source_intent.sources)
+            if mapping[source] in policy.candidate_tools)
 
     @classmethod
     def _route_entry_schemas(
@@ -992,13 +1025,9 @@ class AgentRunner:
             constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
             constrained["mode"] = mode
-            doc_ids = query_plan.filters.get("doc_ids")
-            if doc_ids is None and query_plan.filters.get("doc_id") is not None:
-                doc_ids = [query_plan.filters["doc_id"]]
-            if doc_ids is not None:
-                constrained["doc_ids"] = (
-                    [doc_ids] if isinstance(doc_ids, str) else list(doc_ids)
-                )
+            # Chat hard filters refer to the enterprise catalog. Its IDs are
+            # neither personal-document selections nor personal ACL grants.
+            constrained.pop("doc_ids", None)
         elif tool_name == "search_attachments":
             constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
@@ -1180,7 +1209,7 @@ class AgentRunner:
             thread_name_prefix="comparison-retrieval",
         ) as pool:
             futures = {
-                pool.submit(execute, index, query): (index, query)
+                pool.submit(copy_context().run, execute, index, query): (index, query)
                 for index, query in enumerate(queries, start=1)
             }
             for future in as_completed(futures):
@@ -1399,6 +1428,8 @@ class AgentRunner:
             ), []
 
         if (
+            "search_documents" not in policy.candidate_tools
+            or
             not gate_result.should_retry
             or gate_result.retrieval_attempt != 1
             or corrective_retrieval is None

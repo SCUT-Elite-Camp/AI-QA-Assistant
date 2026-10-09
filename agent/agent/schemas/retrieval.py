@@ -22,3 +22,9 @@ class RetrievalResult(BaseModel):
     knowledge_base_id: Optional[str] = None
     document_id: Optional[str] = None
     version_id: Optional[str] = None
+    evidence_ref: Optional[str] = None
+    content_hash: Optional[str] = None
+    normalized_content_hash: Optional[str] = None
+    source_content_hash: Optional[str] = None
+    source_version: Optional[int | str] = None
+    read_status: Optional[str] = None

@@ -191,11 +191,15 @@ def test_expired_worker_cannot_fail_job_or_create_dead_letter(tmp_path, monkeypa
     from storage import wiki_store
 
     now = 1000
-    monkeypatch.setattr(wiki_store.time, "time", lambda: now + 11)
+    monkeypatch.setattr(wiki_store.time, "time", lambda: now)
     store = WikiStore(tmp_path / "wiki.sqlite3")
     job_id = _enqueue(store, max_attempts=1)
     lease = store.lease_wiki_job(worker_id="worker", lease_seconds=10, now=now)
     assert lease and lease["job_id"] == job_id
+
+    # Advance only after enqueue/lease; creating a future-dated job and asking
+    # for a lease in its past does not exercise expired-worker protection.
+    monkeypatch.setattr(wiki_store.time, "time", lambda: now + 11)
 
     with pytest.raises(ValueError, match="not leased"):
         store.fail_wiki_job(job_id, worker_id="worker", attempt=lease["attempt"], stage=lease["stage"],

@@ -19,7 +19,10 @@ class ManifestResolutionError(ValueError):
 
 
 class SourceResolver(Protocol):
-    def resolve(self, research_id: str, scope: SourceScope) -> SourceManifest:
+    def list_documents(self) -> list[SourceManifestDocument]:
+        """List catalog metadata; callers must apply the current user's ACL."""
+
+    def resolve(self, research_id: str, scope: SourceScope, *, allowed_doc_ids: set[str] | None = None) -> SourceManifest:
         """Resolve an explicit local scope into an immutable manifest."""
 
     def read_document(self, doc_id: str) -> tuple[str, str]:
@@ -40,7 +43,7 @@ class LocalDocumentResolver:
         )
         self.documents_dir = self.documents_dir.resolve()
 
-    def resolve(self, research_id: str, scope: SourceScope) -> SourceManifest:
+    def resolve(self, research_id: str, scope: SourceScope, *, allowed_doc_ids: set[str] | None = None) -> SourceManifest:
         if not scope.has_explicit_scope():
             raise ManifestResolutionError(
                 "research_source_scope_required",
@@ -53,6 +56,8 @@ class LocalDocumentResolver:
             )
 
         records = self._load_catalog()
+        if allowed_doc_ids is not None:
+            records = {key: value for key, value in records.items() if key in allowed_doc_ids}
         selected: dict[str, dict[str, Any]] = {}
 
         for doc_id in scope.document_ids:
@@ -96,6 +101,13 @@ class LocalDocumentResolver:
             catalog[doc_id] = payload
         return catalog
 
+    def list_documents(self) -> list[SourceManifestDocument]:
+        if not self.documents_dir.is_dir():
+            raise ManifestResolutionError(
+                "source_manifest_catalog_unavailable", "local document catalog is unavailable"
+            )
+        return [self._snapshot(doc_id, record) for doc_id, record in self._load_catalog().items()]
+
     def read_document(self, doc_id: str) -> tuple[str, str]:
         """Read one catalog document without accepting a filesystem path."""
 
@@ -135,12 +147,12 @@ class LocalDocumentResolver:
 
     @staticmethod
     def _snapshot(doc_id: str, record: dict[str, Any]) -> SourceManifestDocument:
-        content = LocalDocumentResolver._searchable_text(record)
-        raw_hash = record.get("content_hash")
-        content_hash = str(raw_hash) if raw_hash else hashlib.sha256(
-            content.encode("utf-8")
-        ).hexdigest()
-        version = record.get("version") or record.get("last_updated")
+        # Compute from the actual normalized body, never a cached index hash.
+        # Chat, Research and the evidence reader share the same projection.
+        from toolset.tool_layer.evidence_metadata import source_metadata
+        projection = source_metadata(record)
+        content_hash = projection["content_hash"]
+        version = projection["source_version"]
         supersedes = record.get("supersedes") or []
         if isinstance(supersedes, str):
             supersedes = [supersedes]
@@ -175,7 +187,13 @@ class InMemoryDocumentResolver:
     def __init__(self, documents: dict[str, dict[str, Any]]) -> None:
         self.documents = dict(documents)
 
-    def resolve(self, research_id: str, scope: SourceScope) -> SourceManifest:
+    def list_documents(self) -> list[SourceManifestDocument]:
+        return [
+            LocalDocumentResolver._snapshot(doc_id, record)
+            for doc_id, record in self.documents.items()
+        ]
+
+    def resolve(self, research_id: str, scope: SourceScope, *, allowed_doc_ids: set[str] | None = None) -> SourceManifest:
         selected: dict[str, dict[str, Any]] = {}
         for doc_id in scope.document_ids:
             if doc_id not in self.documents:
@@ -188,6 +206,8 @@ class InMemoryDocumentResolver:
         topic = scope.topic.casefold()
         knowledge_base_ids = set(scope.knowledge_base_ids)
         for doc_id, record in self.documents.items():
+            if allowed_doc_ids is not None and doc_id not in allowed_doc_ids:
+                continue
             searchable = LocalDocumentResolver._searchable_text(record).casefold()
             if topic and topic not in searchable:
                 continue

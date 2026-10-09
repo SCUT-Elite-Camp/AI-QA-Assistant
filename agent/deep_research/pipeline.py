@@ -61,6 +61,7 @@ class ManifestScopedWorkerTools:
             user_id=self.context.job.user_id,
             source_manifest=self.context.manifest,
             timeout_seconds=self.timeout_seconds,
+            retrieval_mode=self.context.job.request.retrieval_mode,
         )
 
     def search(
@@ -94,6 +95,7 @@ class ManifestScopedWorkerTools:
                 snippet=item.snippet,
                 locator_hint=item.locator_hint,
                 score=item.score,
+                retrieval_metadata=item.retrieval_metadata,
             )
             for item in hits
         ]

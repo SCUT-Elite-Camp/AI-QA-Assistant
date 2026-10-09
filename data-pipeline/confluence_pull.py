@@ -13,6 +13,8 @@ from confluence_export import (
     ConfluenceError,
     ConfluenceExporter,
     load_confluence_config,
+    build_source_url,
+    normalize_confluence_base,
 )
 
 
@@ -20,6 +22,14 @@ HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent
 DEFAULT_OUTPUT = PROJECT_ROOT / "data-persistence" / "data" / "raws" / "confluence"
 DEFAULT_ENV = HERE / ".confluence.env"
+
+
+def merge_metadata(existing: dict, incoming: list[dict], targeted_page_ids: set[str]) -> list[dict]:
+    """Compatibility utility for older selected-page export callers.
+
+    The new exporter writes its own manifest; this never changes or indexes it.
+    """
+    return [row for row in existing.get("pages", []) if str(row.get("page_id")) not in targeted_page_ids] + list(incoming)
 
 
 def build_parser() -> argparse.ArgumentParser:

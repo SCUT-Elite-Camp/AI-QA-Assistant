@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from langgraph.checkpoint.memory import InMemorySaver
 
-from agent.api.research_routes import get_research_control_plane, router
+from agent.api.research_routes import (
+    get_research_access_policy, get_research_actor, get_research_control_plane, router,
+)
+from deep_research.access import ResearchAccessPolicy
 from agent.schemas.research import (
     AcceptanceCriterion,
     ClaimVerificationStatus,
@@ -171,6 +175,13 @@ def test_manual_api_entry_dispatches_to_traceable_report(tmp_path: Path) -> None
     application.dependency_overrides[get_research_control_plane] = (
         lambda: service.control_plane
     )
+    application.dependency_overrides[get_research_actor] = lambda: "alice"
+    application.dependency_overrides[get_research_access_policy] = lambda: ResearchAccessPolicy(
+        SimpleNamespace(get_accessible_doc_ids_strict=lambda user_id, **_: None,
+            source_provider=SimpleNamespace(_load=lambda doc_id: (
+                service.control_plane.source_resolver.documents.get(doc_id)
+                if hasattr(service.control_plane.source_resolver, "documents") else service.control_plane.source_resolver._load_catalog().get(doc_id))))
+    )
 
     with TestClient(application) as client:
         created = client.post(
@@ -222,6 +233,10 @@ def test_cancelled_job_is_terminal_and_not_dispatched(tmp_path: Path) -> None:
     application.include_router(router, prefix="/api")
     application.dependency_overrides[get_research_control_plane] = (
         lambda: service.control_plane
+    )
+    application.dependency_overrides[get_research_actor] = lambda: "alice"
+    application.dependency_overrides[get_research_access_policy] = lambda: ResearchAccessPolicy(
+        SimpleNamespace(get_accessible_doc_ids_strict=lambda user_id, **_: None)
     )
 
     with TestClient(application) as client:

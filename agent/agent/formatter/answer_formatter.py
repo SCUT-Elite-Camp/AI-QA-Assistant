@@ -65,6 +65,12 @@ class AnswerFormatter:
                 knowledge_base_id=result.knowledge_base_id,
                 document_id=result.document_id,
                 version_id=result.version_id,
+                evidence_ref=result.evidence_ref,
+                content_hash=result.content_hash,
+                normalized_content_hash=result.normalized_content_hash,
+                source_content_hash=result.source_content_hash,
+                source_version=result.source_version,
+                read_status=result.read_status,
             )
             for index, result in enumerate(selected_results, start=1)
         ]

@@ -114,6 +114,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 [{'id':identifier,'goal_name':name,'recorded_status':status or 'not recorded'}
                  for identifier,name,status in goal_records], ensure_ascii=False)
         fallback = base_report.model_copy(update={
+            "generation_method": "verified_fallback",
             "result_status": ResearchResultStatus.DEGRADED,
             "limitations": [*base_report.limitations, ResearchLimitation(code="synthesis_quality_failed", message="The model synthesis did not pass the report quality checks.")],
         })
@@ -456,7 +457,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 f"{citation.document_version or '本地快照'} · {citation.locator}"
             )
         markdown = f"# {kwargs.get('title') or kwargs['objective']}\n\n{content}\n" + "\n".join(source_lines)
-        return base_report.model_copy(update={"markdown": markdown.strip() + "\n"})
+        return base_report.model_copy(update={"markdown": markdown.strip() + "\n", "generation_method": "model"})
 
     @classmethod
     def _complete_scope_comparison(cls, content: str, objective: str) -> str:
@@ -2191,6 +2192,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         return "\n".join(lines)
 
     def _chat(self, payload: dict) -> dict:
+        from .access import check_research_model_access
         request_payload = dict(payload)
         if request_payload.get('response_format', {}).get('type') == 'json_object':
             # Some compatible endpoints require the literal lowercase word,
@@ -2223,6 +2225,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             if proxy:
                 session.proxies.update({"http": proxy, "https": proxy})
             for attempt in range(2):
+                check_research_model_access()
                 try:
                     response = session.post(
                         f"{self.api_base}/chat/completions", json=request_payload,
@@ -2230,7 +2233,9 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                         timeout=self.timeout_seconds,
                     )
                     response.raise_for_status()
-                    return response.json()
+                    result = response.json()
+                    check_research_model_access()
+                    return result
                 except requests.HTTPError as http_error:
                     try:
                         rejected_response = http_error.response

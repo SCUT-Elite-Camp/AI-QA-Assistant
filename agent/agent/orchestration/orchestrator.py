@@ -340,19 +340,12 @@ class AgentOrchestrator:
                 "score_order" if policy.assembly_strategy == "none" else policy.assembly_strategy
             ),
             "top_k": max(5, policy.top_k),
-            "max_iterations": max(2, policy.max_iterations),
+            "max_iterations": max(len(sources) + 1, policy.max_iterations),
             "max_tool_calls": max(
-                2 if SourceKind.CONVERSATION_ATTACHMENT in sources else 1,
+                len(sources) + (1 if SourceKind.CONVERSATION_ATTACHMENT in sources else 0),
                 policy.max_tool_calls,
             ),
-            "max_retrieval_attempts": (
-                2
-                if sources.intersection({
-                    SourceKind.ENTERPRISE_KB,
-                    SourceKind.CONVERSATION_ATTACHMENT,
-                })
-                else 1
-            ),
+            "max_retrieval_attempts": max(len(sources), policy.max_retrieval_attempts),
             "requires_citations": True,
         })
 
@@ -412,6 +405,10 @@ class AgentOrchestrator:
         return tuple(scopes)
 
     def _read_history(self, session_id: str | None) -> list[dict[str, Any]]:
+        from agent.service.access_guard import CURRENT_ACCESS_GUARD
+        if CURRENT_ACCESS_GUARD.get() is not None:
+            # Legacy process memory has neither actor scope nor source lineage.
+            return []
         if not settings.MEMORY_ENABLED or not session_id:
             return []
         return self.memory.get_messages(session_id)
@@ -426,7 +423,8 @@ class AgentOrchestrator:
 
         artifact = self.context_resolver.resolve(memory_context)
         if artifact is None:
-            return None, None
+            # Trusted conversational history is independent of persistent Facts.
+            return ContextArtifact(memory_brief="", model_history=memory_context.tail), None
 
         persistent_context = PersistentMemoryContext.from_input(memory_context)
         return artifact, self.memory_response_policy.resolve(

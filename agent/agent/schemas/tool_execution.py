@@ -29,6 +29,12 @@ class Evidence(BaseModel):
     knowledge_base_id: str | None = None
     document_id: str | None = None
     version_id: str | None = None
+    evidence_ref: str | None = None
+    content_hash: str | None = None
+    normalized_content_hash: str | None = None
+    source_content_hash: str | None = None
+    source_version: int | str | None = None
+    read_status: str | None = None
 
     @field_validator(
         "doc_id",

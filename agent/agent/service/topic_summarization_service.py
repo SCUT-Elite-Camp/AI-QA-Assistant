@@ -2,6 +2,8 @@ import json
 from typing import List, Dict, Any, Optional
 from agent.llm.base import BaseLLM
 from data_persistence.topics import TopicArtifactRepository
+from agent.service.access_guard import check_model_access, CURRENT_ACCESS_GUARD
+from agent.service.permission_service import PermissionResolutionError
 
 
 class TopicSummarizationService:
@@ -19,11 +21,15 @@ class TopicSummarizationService:
     def _call_llm(self, messages: List[Dict[str, str]], max_tokens: int = 2500, temperature: float = 0.2) -> str:
         """Return model text while keeping transport and configuration in Agent."""
         try:
+            check_model_access()
             message = self.llm.chat(messages, max_tokens=max_tokens, temperature=temperature) or {}
+            check_model_access()
             content = (message.get("content") or "").strip()
             if content:
                 return content
             return (message.get("reasoning_content") or "").strip()
+        except PermissionResolutionError:
+            raise
         except Exception:
             return ""
 
@@ -40,7 +46,9 @@ class TopicSummarizationService:
             custom_title = None
 
         # Read existing topic state or preserve the caller-supplied state.
-        existing_info = repository.load_existing(topic_id, existing_info)
+        # Guarded HTTP requests may use only server-verified state, not a disk
+        # fallback without provenance. Direct component callers retain their API.
+        existing_info = (existing_info or {}) if CURRENT_ACCESS_GUARD.get() else repository.load_existing(topic_id, existing_info)
 
         # Truncate discussion text to prevent context window overflow (~6000 chars max)
         MAX_DISCUSSION_CHARS = 6000
@@ -111,6 +119,7 @@ class TopicSummarizationService:
         soul_content = parsed["soul_content"]
         tags = parsed["tags"]
 
+        check_model_access()
         persisted = repository.save_summary(
             topic_id,
             title=title,

@@ -41,7 +41,8 @@ class FakeSession:
         self.auth: tuple[str, str] | None = None
         self.calls: list[tuple[str, dict[str, Any] | None]] = []
 
-    def get(self, url: str, params: dict[str, Any] | None = None, timeout: float = 0) -> FakeResponse:
+    def get(self, url: str, params: dict[str, Any] | None = None, timeout: float = 0, *, allow_redirects: bool = True) -> FakeResponse:
+        assert allow_redirects is False
         self.calls.append((url, params))
         return self.handler(url=url, params=params, timeout=timeout)
 
@@ -76,6 +77,16 @@ def client_for(handler: Callable[..., FakeResponse], sleeps: list[float] | None 
         session=FakeSession(handler),
         sleep=(sleeps.append if sleeps is not None else lambda _value: None),
     )
+
+
+def test_source_credentials_never_follow_cross_origin_or_redirects():
+    client = client_for(lambda **_: FakeResponse(302, {}, {"Location": "https://other.test/collect"}))
+    with pytest.raises(ConfluenceResponseError, match="Cross-origin"):
+        client._get_json("https://other.test/api/v2/pages")
+    assert client.session.calls == []
+    with pytest.raises(ConfluenceHTTPError):
+        client._get_json("/api/v2/pages")
+    assert len(client.session.calls) == 1
 
 
 def test_v2_cursor_pagination_and_storage_body() -> None:

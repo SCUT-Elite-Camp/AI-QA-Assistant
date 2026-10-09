@@ -35,12 +35,12 @@ def heuristic_source_intent(
         "uploaded pdf", "this attachment", "attached file",
     )
     personal_markers = (
-        "我的资料库", "个人资料库", "我的文件", "个人文件", "我保存的",
+        "我的资料库", "个人资料库", "我的个人库", "我的文件", "个人文件", "我保存的",
         "my library", "my files", "personal library",
     )
     enterprise_markers = (
         "公司", "企业知识库", "公司制度", "公司政策", "corporate policy",
-        "company policy", "enterprise knowledge",
+        "company policy", "enterprise knowledge", "confluence",
     )
     if any(marker in normalized for marker in attachment_markers):
         sources.append(SourceKind.CONVERSATION_ATTACHMENT)

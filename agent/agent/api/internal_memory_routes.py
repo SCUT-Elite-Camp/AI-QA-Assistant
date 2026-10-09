@@ -16,6 +16,10 @@ from fastapi.responses import JSONResponse
 
 from agent.agent import Agent
 from agent.api.chat_routes import get_agent
+from agent.api.access_routes import require_user_id, resolve_access
+from agent.auth import verify_agent_key
+from agent.service.access_guard import AccessGuard
+from agent.service.permission_service import PermissionResolutionError
 from agent.config.settings import settings
 from agent.memory.compaction_planner import CompactionPlanner
 from agent.schemas.chat import (
@@ -26,6 +30,8 @@ from agent.schemas.chat import (
     MemoryContextInput,
     ResetShortWindowRequest,
     ResetShortWindowResponse,
+    ChatRequest,
+    NoCompactionPlan,
 )
 
 
@@ -40,7 +46,7 @@ class PrivateMemoryRoute(APIRoute):
         return validated_handler
 
 
-router = APIRouter(route_class=PrivateMemoryRoute)
+router = APIRouter(route_class=PrivateMemoryRoute, dependencies=[Depends(verify_agent_key)])
 
 
 def require_agent_internal_token(
@@ -125,6 +131,7 @@ def internal_chat(
     _: Annotated[None, Depends(require_agent_internal_token)],
     __: Annotated[None, Depends(require_json_content_type)],
     agent: Annotated[Agent, Depends(get_agent)],
+    user_id: str = Depends(require_user_id),
 ) -> InternalChatResponse | JSONResponse:
     """Resolve trusted Memory context and keep the result inside the BFF contract."""
 
@@ -135,6 +142,9 @@ def internal_chat(
         )
 
     validate_memory_context(request.memory_context)
+    if request.user_id not in {None, user_id} or user_id != request.memory_context.actor.user_id:
+        raise HTTPException(403, "trusted_actor_mismatch")
+    request = request.model_copy(update={"user_id": user_id})
     response, memory_decision = agent.chat_with_memory(request)
     return InternalChatResponse(
         response=response,
@@ -147,6 +157,8 @@ def compaction_plan(
     request: CompactionPlanRequest,
     _: Annotated[None, Depends(require_agent_internal_token)],
     __: Annotated[None, Depends(require_json_content_type)],
+    user_id: str = Depends(require_user_id),
+    agent: Agent = Depends(get_agent),
 ) -> CompactionPlanResponse | JSONResponse:
     """Return a pure post-persistence plan; the BFF remains the sole writer."""
 
@@ -154,6 +166,17 @@ def compaction_plan(
         return JSONResponse(status_code=409, content={"code": "persistent_memory_disabled"})
 
     validate_compaction_request(request)
+    if user_id != request.actor.user_id:
+        raise HTTPException(403, "trusted_actor_mismatch")
+    resolve_access(agent, user_id, [])
+    records = [*request.messages, *([request.active_snapshot] if request.active_snapshot else [])]
+    if any(not item.provenance_complete for item in records):
+        return NoCompactionPlan(should_compact=False)
+    guard = AccessGuard(agent.permission_service, ChatRequest(query="", user_id=user_id, session_id=request.chat_id), "compaction")
+    for item in records:
+        if not guard._inherit_if_allowed(item.source_dependencies):
+            return NoCompactionPlan(should_compact=False)
+    guard.check_dependencies()
     return CompactionPlanner().plan(request)
 
 
@@ -163,9 +186,11 @@ def reset_short_window(
     _: Annotated[None, Depends(require_agent_internal_token)],
     __: Annotated[None, Depends(require_json_content_type)],
     agent: Annotated[Agent, Depends(get_agent)],
+    user_id: str = Depends(require_user_id),
 ) -> ResetShortWindowResponse:
     """Clear only legacy in-process ConversationMemory after a Web transaction."""
 
+    resolve_access(agent, user_id, [])
     agent.memory.clear(request.chat_id)
     return ResetShortWindowResponse(status="ok")
 
@@ -175,35 +200,19 @@ def internal_retrieval_stream(
     request: InternalChatRequest,
     _: Annotated[None, Depends(require_agent_internal_token)],
     agent: Agent = Depends(get_agent),
+    user_id: str = Depends(require_user_id),
 ) -> StreamingResponse:
     """Token-protected streaming adapter for server-authorized private sources."""
 
+    if request.user_id not in {None, user_id} or user_id != request.memory_context.actor.user_id:
+        raise HTTPException(403, "trusted_actor_mismatch")
+    request = request.model_copy(update={"user_id": user_id})
+    validate_memory_context(request.memory_context)
+    try:
+        events = list(agent.stream_chat(request))
+    except PermissionResolutionError as exc:
+        raise HTTPException(exc.status_code, exc.code, headers={"Cache-Control": "no-store"}) from exc
     def event_stream():
-        response: ChatResponse = agent.chat(request)
-        yield build_sse_event(
-            "citations",
-            [citation.model_dump() for citation in response.citations],
-        )
-        if response.answer:
-            for offset in range(0, len(response.answer), 32):
-                yield build_sse_event(
-                    "token",
-                    {"content": response.answer[offset:offset + 32]},
-                )
-        if response.status == "success":
-            yield build_sse_event(
-                "done",
-                {
-                    "trace_id": response.trace_id,
-                    "status": response.status,
-                    "citations_count": len(response.citations),
-                    "chat_title": response.chat_title,
-                },
-            )
-        else:
-            yield build_sse_event(
-                "error",
-                {"message": response.message or "Agent retrieval failed"},
-            )
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+        for name, data in events:
+            yield build_sse_event(name, data)
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})

@@ -10,6 +10,7 @@ from typing import Any, Dict
 from data_persistence.vector import matches_filters, normalize_filters
 
 from .base_tool import BaseTool
+from .evidence_metadata import check_expected_source, chunk_metadata, source_metadata
 
 
 _DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -46,7 +47,7 @@ class DocumentRepository:
             return None
         with path.open(encoding="utf-8") as handle:
             value = json.load(handle)
-        return value if isinstance(value, dict) else None
+        return value if isinstance(value, dict) and value.get("active_version", True) is True else None
 
     def list(self) -> list[dict]:
         if not self.documents_dir.is_dir():
@@ -134,12 +135,14 @@ class FindDocumentsTool(BaseTool):
         normalized_query = query.casefold()
         for document in self.repository.list():
             metadata = {
+                **source_metadata(document),
                 "doc_id": str(document.get("doc_id", "")),
                 "title": str(document.get("title", "")),
                 "space": str(document.get("space", "")),
                 "doc_type": _document_type(document),
                 "last_updated": str(document.get("last_updated", "")),
                 "source_url": str(document.get("source_url", "")),
+                "read_status": "retrieval_hit",
             }
             if not matches_filters(metadata, filters):
                 continue
@@ -190,6 +193,8 @@ class GetDocumentTool(BaseTool):
             "properties": {
                 "doc_id": {"type": "string"},
                 "offset": {"type": "integer", "minimum": 0, "default": 0},
+                "expected_version": {"type": "string"},
+                "expected_hash": {"type": "string"},
                 "limit": {
                     "type": "integer",
                     "minimum": 1,
@@ -212,16 +217,18 @@ class GetDocumentTool(BaseTool):
         document = self.repository.load(doc_id)
         if document is None:
             return {"error": "document_not_found", "doc_id": doc_id}
+        check_expected_source(document, expected_version=kwargs.get("expected_version"), expected_hash=kwargs.get("expected_hash"))
 
         chunks = sorted(
             (chunk for chunk in document.get("chunks", []) if isinstance(chunk, dict)),
             key=lambda chunk: int(chunk.get("index", 0)),
         )
-        page = chunks[offset : offset + limit]
+        page = [{**chunk, **chunk_metadata(document, chunk)} for chunk in chunks[offset : offset + limit]]
         next_offset = offset + len(page)
         total = len(chunks)
         return {
             "document": {
+                **source_metadata(document),
                 "doc_id": str(document.get("doc_id", doc_id)),
                 "title": str(document.get("title", "")),
                 "space": str(document.get("space", "")),

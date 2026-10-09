@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from data_persistence.vector import matches_filters, normalize_filters
 from tool_layer.base_tool import BaseTool
+from tool_layer.evidence_metadata import chunk_metadata, source_metadata
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -640,6 +641,8 @@ class SearchTool(BaseTool):
             chunk_index = int(chunk_index)
 
             doc_meta = self._load_document_meta(doc_id)
+            if doc_meta.get("active_version", True) is not True:
+                continue
             if not _matches_filters(item, filters, doc_meta):
                 continue
 
@@ -648,11 +651,14 @@ class SearchTool(BaseTool):
 
             title = item.get("title") or doc_meta.get("title") or doc_id
             source_url = item.get("source_url") or doc_meta.get("source_url") or ""
+            provenance = self._read_provenance(doc_meta, chunk_index, str(chunk_text))
 
             normalized.append(
                 {
+                    **source_metadata(doc_meta),
+                    **provenance,
                     "doc_id": doc_id,
-                    "chunk_id": item.get("chunk_id") or f"{doc_id}::chunk_{chunk_index}",
+                    "chunk_id": provenance.get("locator", {}).get("chunk_id") if provenance.get("locator") else item.get("chunk_id") or f"{doc_id}::chunk_{chunk_index}",
                     "chunk_index": chunk_index,
                     "chunk_text": str(chunk_text),
                     "title": str(title),
@@ -666,7 +672,22 @@ class SearchTool(BaseTool):
         normalized.sort(key=lambda row: row["score"], reverse=True)
         return normalized
 
+    @staticmethod
+    def _read_provenance(document: Dict, chunk_index: int, text: str) -> Dict:
+        for chunk in document.get("chunks") or []:
+            if not isinstance(chunk, dict):
+                continue
+            try:
+                matches_index = int(chunk.get("index", -1)) == chunk_index
+            except (TypeError, ValueError):
+                continue
+            if matches_index and str(chunk.get("text") or chunk.get("chunk_text") or "") == text:
+                return chunk_metadata(document, chunk)
+        return {"read_status": "retrieval_hit", "evidence_ref": None, "locator": None}
+
     def _load_document_meta(self, doc_id: str) -> Dict:
+        if not doc_id or doc_id in {".", ".."} or any(char in doc_id for char in ("/", "\\", ":")):
+            return {}
         path = self.documents_dir / f"{doc_id}.json"
         if not path.exists():
             return {}

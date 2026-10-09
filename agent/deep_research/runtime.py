@@ -93,6 +93,7 @@ class ResearchGraphRuntime:
 
     def _assert_runtime_budget(self, research_id: str) -> None:
         job = self.repository.get_job(research_id)
+        self.control_plane.authorize_job(job, self.control_plane.get_manifest(research_id))
         if job.plan_version is None:
             return
         plan = self.repository.get_plan(research_id, job.plan_version)
@@ -137,7 +138,11 @@ class ResearchGraphRuntime:
         return self._stage(state, "render_report", [item.claim_id for item in results])
 
     def _render(self, state: RuntimeState) -> RuntimeState:
-        report = self.pipeline.render_report(state["research_id"])
+        self._assert_runtime_budget(state["research_id"])
+        from .access import model_access_scope
+        with model_access_scope(lambda: self._assert_runtime_budget(state["research_id"])):
+            report = self.pipeline.render_report(state["research_id"])
+        self._assert_runtime_budget(state["research_id"])
         self.repository.save_report(report)
         self.events.report_ready(state["research_id"], report.report_id)
         if self.stage_hook is not None:
@@ -145,6 +150,7 @@ class ResearchGraphRuntime:
         return self._stage(state, "finalize", [report.report_id])
 
     def _finalize(self, state: RuntimeState) -> RuntimeState:
+        self._assert_runtime_budget(state["research_id"])
         report = self.repository.get_report(state["research_id"])
         completed = self.repository.transition_job(
             state["research_id"], expected_statuses=[ResearchJobStatus.SYNTHESIZING],

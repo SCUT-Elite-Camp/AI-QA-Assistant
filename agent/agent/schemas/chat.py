@@ -12,6 +12,25 @@ class _InternalMemoryContractModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
+class SourceDependency(_InternalMemoryContractModel):
+    """Every source introduced into model context, not only cited sources."""
+
+    source_type: Literal["knowledge", "attachment", "personal"] = "knowledge"
+    doc_id: str = Field(min_length=1, max_length=200)
+    knowledge_base_id: Optional[str] = None
+    document_id: Optional[str] = None
+    version_id: Optional[str] = None
+    version: Optional[int | str] = None
+    content_hash: Optional[str] = None
+
+
+class EvidenceProvenance(_InternalMemoryContractModel):
+    schema_version: Literal["evidence.provenance.v1"] = "evidence.provenance.v1"
+    complete: bool
+    dependencies: list[SourceDependency] = Field(default_factory=list)
+    trace_id: str
+
+
 class ChatRequest(BaseModel):
     # Public routes must reject, rather than silently ignore, internal-only fields.
     model_config = ConfigDict(extra="forbid")
@@ -63,11 +82,17 @@ class Citation(BaseModel):
     attachment_id: Optional[str] = None
     evidence_id: Optional[str] = None
     locator: Optional[dict[str, Any]] = None
-    version: Optional[int] = None
+    version: Optional[int | str] = None
     source_scope: Optional[str] = None
     knowledge_base_id: Optional[str] = None
     document_id: Optional[str] = None
     version_id: Optional[str] = None
+    evidence_ref: Optional[str] = None
+    content_hash: Optional[str] = None
+    normalized_content_hash: Optional[str] = None
+    source_content_hash: Optional[str] = None
+    source_version: Optional[int | str] = None
+    read_status: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -77,6 +102,8 @@ class ChatResponse(BaseModel):
     message: str
     citations: list[Citation]
     chat_title: Optional[str] = None
+    evidence_provenance: Optional[EvidenceProvenance] = None
+    diagnostics: Optional[dict[str, Any]] = None
 
 
 class InternalActor(_InternalMemoryContractModel):
@@ -90,6 +117,8 @@ class MemoryMessage(_InternalMemoryContractModel):
     revision: int = Field(gt=0)
     role: Literal["user", "assistant", "system"]
     content: str
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
 class MemorySnapshotInput(_InternalMemoryContractModel):
@@ -98,6 +127,8 @@ class MemorySnapshotInput(_InternalMemoryContractModel):
     revision: int = Field(gt=0)
     covered_to_sequence: int = Field(gt=0)
     summary: str
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
 class MemoryFactInput(_InternalMemoryContractModel):
@@ -106,6 +137,8 @@ class MemoryFactInput(_InternalMemoryContractModel):
     value: str
     # Unix epoch milliseconds in UTC, or null when the Fact does not expire.
     expires_at: Optional[int] = Field(ge=0)
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
 class MemoryContextInput(_InternalMemoryContractModel):
@@ -117,6 +150,8 @@ class MemoryContextInput(_InternalMemoryContractModel):
     snapshot: Optional[MemorySnapshotInput] = None
     facts: list[MemoryFactInput]
     tail: list[MemoryMessage]
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
     @model_validator(mode="after")
@@ -256,6 +291,8 @@ class NewMemorySnapshot(_InternalMemoryContractModel):
     covered_from_message_id: str = Field(min_length=1)
     covered_to_message_id: str = Field(min_length=1)
     summary: str
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
 class NoCompactionPlan(_InternalMemoryContractModel):

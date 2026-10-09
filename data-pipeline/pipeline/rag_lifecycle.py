@@ -63,6 +63,9 @@ def mark_retraction_pending(retraction: Retraction) -> None:
     metadata = dict(raw.get("metadata") or {})
     raw["active_version"] = False
     metadata["rag_retraction_pending"] = True
+    metadata["sync_status"] = "quarantined"
+    metadata["source_visibility"] = "not_visible"
+    metadata["deletion_confirmed"] = False
     raw["metadata"] = metadata
     _atomic_write(retraction.path, raw)
 

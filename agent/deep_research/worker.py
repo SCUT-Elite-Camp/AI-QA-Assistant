@@ -40,6 +40,7 @@ class SearchHit:
     document_version: str | None = None
     score: float | None = None
     candidate_origin: str = "search"
+    retrieval_metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_value(cls, value: "SearchHit | Mapping[str, Any]") -> "SearchHit":
@@ -67,6 +68,8 @@ class SearchHit:
             locator_hint=str(locator) if locator is not None else None,
             document_version=str(version) if version is not None else None,
             score=float(value["score"]) if value.get("score") is not None else None,
+            candidate_origin=str(value.get("candidate_origin") or "search"),
+            retrieval_metadata=dict(value.get("retrieval_metadata") or {}),
         )
 
 
@@ -410,6 +413,7 @@ class LocalResearchWorker:
                 doc_id=hit.doc_id,
                 locator_hint=hit.locator_hint,
                 score=hit.score,
+                retrieval_metadata=hit.retrieval_metadata,
                 snippet=hit.snippet or "search result without snippet",
                 query=task.question,
             )

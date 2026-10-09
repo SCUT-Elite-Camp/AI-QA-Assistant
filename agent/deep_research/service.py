@@ -22,6 +22,7 @@ from agent.schemas.research import (
 )
 
 from .manifest import LocalDocumentResolver, ManifestResolutionError, SourceResolver
+from .access import ResearchAccessPolicy
 from .events import ResearchEventRecorder
 from .planner import MockResearchPlanner, ResearchPlanner
 from .repository import (
@@ -68,6 +69,7 @@ class ResearchControlPlane:
         planner: ResearchPlanner | None = None,
         id_factory=None,
         event_recorder: ResearchEventRecorder | None = None,
+        access_policy: ResearchAccessPolicy | None = None,
     ) -> None:
         if repository is None:
             project_root = Path(__file__).resolve().parents[2]
@@ -79,6 +81,11 @@ class ResearchControlPlane:
         self.planner = planner or MockResearchPlanner()
         self.id_factory = id_factory or self._new_research_id
         self.events = event_recorder or ResearchEventRecorder(repository)
+        self.access_policy = access_policy
+
+    def authorize_job(self, job: ResearchJob, manifest: SourceManifest | None = None) -> None:
+        if self.access_policy is not None:
+            self.access_policy.authorize_job(job, manifest)
 
     def create_job(
         self,
@@ -97,6 +104,8 @@ class ResearchControlPlane:
     ) -> ResearchJob:
         """Persist a durable created Job before any planning work starts."""
 
+        if self.access_policy is not None:
+            request = self.access_policy.authorize_request(request, user_id, self.source_resolver)
         research_id = self.id_factory()
         job = ResearchJob(
             research_id=research_id,
@@ -117,6 +126,7 @@ class ResearchControlPlane:
 
         try:
             job = self.repository.get_job(research_id)
+            self.authorize_job(job)
             if job.status == ResearchJobStatus.CREATED:
                 planning_job = self.repository.transition_job(
                     research_id,
@@ -149,6 +159,7 @@ class ResearchControlPlane:
                     "research_manifest_identity_mismatch",
                     "SourceManifest must belong to the newly created Research Job",
                 )
+            self.authorize_job(planning_job, manifest)
             self.repository.save_manifest(manifest)
             planning_job = self.repository.transition_job(
                 research_id,
@@ -166,11 +177,13 @@ class ResearchControlPlane:
             try:
                 plan = self.repository.get_plan(research_id, version=1)
             except ResearchNotFoundError:
-                plan = self.planner.create_plan(
-                    planning_job.request,
-                    manifest,
-                    version=1,
-                )
+                from .access import model_access_scope
+                with model_access_scope(lambda: self.authorize_job(planning_job, manifest)):
+                    plan = self.planner.create_plan(
+                        planning_job.request,
+                        manifest,
+                        version=1,
+                    )
             if plan.research_id != research_id:
                 raise ResearchControlPlaneError(
                     "research_plan_identity_mismatch",
@@ -181,6 +194,7 @@ class ResearchControlPlane:
                     "research_plan_manifest_mismatch",
                     "ResearchPlan must be bound to the frozen SourceManifest",
                 )
+            self.authorize_job(planning_job, manifest)
             self.repository.save_plan(plan)
             awaiting_job = self.repository.transition_job(
                 research_id,
@@ -404,6 +418,7 @@ class ResearchControlPlane:
         plan = self.get_plan(research_id, job.plan_version)
         manifest = self.get_manifest(research_id)
         approval = self.repository.get_approval(research_id, job.plan_version)
+        self.authorize_job(job, manifest)
         if plan.status != ResearchPlanStatus.APPROVED:
             raise ResearchControlPlaneError(
                 "research_plan_not_approved",

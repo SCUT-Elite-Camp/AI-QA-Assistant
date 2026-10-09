@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from agent.api.research_routes import get_research_control_plane, router
+from agent.api.research_routes import (
+    get_research_access_policy, get_research_actor, get_research_control_plane, router,
+)
+from deep_research.access import ResearchAccessPolicy
 from deep_research.manifest import InMemoryDocumentResolver
 from deep_research.repository import SQLiteResearchRepository
 from deep_research.service import ResearchControlPlane
@@ -32,6 +36,13 @@ def _client(tmp_path: Path) -> tuple[TestClient, ResearchControlPlane]:
     application = FastAPI()
     application.include_router(router, prefix="/api")
     application.dependency_overrides[get_research_control_plane] = lambda: control_plane
+    application.dependency_overrides[get_research_actor] = lambda: "alice"
+    application.dependency_overrides[get_research_access_policy] = lambda: ResearchAccessPolicy(
+        SimpleNamespace(get_accessible_doc_ids_strict=lambda user_id, **_: None,
+            source_provider=SimpleNamespace(_load=lambda doc_id: (
+                control_plane.source_resolver.documents.get(doc_id)
+                if hasattr(control_plane.source_resolver, "documents") else control_plane.source_resolver._load_catalog().get(doc_id))))
+    )
     return TestClient(application), control_plane
 
 
@@ -183,6 +194,7 @@ def test_conflict_choice_persists_report_without_clearing_quality_gaps(tmp_path:
         'source_scope': {'document_ids': ['doc-a', 'doc-b']},
     }).json()
     research_id = created['research_id']
+    control_plane.resume_planning_job(research_id)
     repository = control_plane.repository
     job = repository.get_job(research_id)
     repository.update_job(job.model_copy(update={
@@ -303,6 +315,7 @@ def test_long_research_conversation_keeps_complete_bodies_and_bounded_progress(t
     try:
         created = client.post('/api/research/jobs', json={'query': 'Compare A and B.', 'source_scope': {'document_ids': ['doc-a', 'doc-b']}}).json()
         rid = created['research_id']
+        control_plane.resume_planning_job(rid)
         job = repository.get_job(rid)
         repository.update_job(job.model_copy(update={'status': ResearchJobStatus.COMPLETED, 'current_stage': 'completed'}))
         repository.save_report(ResearchReport(report_id='r', research_id=rid, markdown='Report', result_status=ResearchResultStatus.COMPLETE))

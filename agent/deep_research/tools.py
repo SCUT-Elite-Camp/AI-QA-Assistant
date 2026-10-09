@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import math
@@ -15,6 +15,7 @@ from typing import Any, Protocol
 from agent.evidence.locator import canonical_chunk_id
 from agent.schemas.research import SourceManifest
 from .manifest import LocalDocumentResolver
+from .access import ResearchAccessPolicy
 
 
 class SearchBackend(Protocol):
@@ -157,6 +158,7 @@ class ToolCallContext:
     user_id: str
     source_manifest: SourceManifest
     timeout_seconds: float = 30.0
+    retrieval_mode: str = "hybrid"
 
 
 @dataclass(frozen=True)
@@ -165,6 +167,7 @@ class SearchHit:
     locator_hint: str
     snippet: str
     score: float
+    retrieval_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -197,7 +200,7 @@ class LocalResearchToolAdapter:
             raise LocalToolTimeout("research_tool_timeout") from exc
 
     def list_documents(self, context: ToolCallContext) -> list[dict]:
-        return [item.model_dump(mode="json") for item in context.source_manifest.documents]
+        return [item.model_dump(mode="json") for item in self._allowed(context).values()]
 
     def search(
         self,
@@ -223,6 +226,8 @@ class LocalResearchToolAdapter:
                 for doc_id in source_ids
                 if doc_id in manifest_allowed
             }
+        if not allowed:
+            return []
         rows = self._run(
             lambda: self.search_backend.search(
                 query=query, top_k=top_k, mode=mode,
@@ -249,6 +254,7 @@ class LocalResearchToolAdapter:
                     ),
                     snippet=snippet,
                     score=float(row.get("score", 0.0)),
+                    retrieval_metadata=dict(row.get("retrieval_metadata") or {}),
                 )
             )
         return hits
@@ -280,10 +286,11 @@ class LocalResearchToolAdapter:
 
         payload = self._run(load, context.timeout_seconds)
         content = LocalDocumentResolver._searchable_text(payload)
-        content_hash = str(payload.get("content_hash") or hashlib.sha256(content.encode("utf-8")).hexdigest())
+        snapshot = LocalDocumentResolver._snapshot(doc_id, payload)
+        content_hash = snapshot.content_hash
         if content_hash != manifest_item.content_hash:
             raise ManifestAccessError(f"document_version_changed:{doc_id}")
-        version = payload.get("version") or payload.get("last_updated")
+        version = snapshot.version
         if locator:
             requested_locator = canonical_chunk_id(doc_id, locator)
             chunks = payload.get("chunks") or []
@@ -376,7 +383,87 @@ class LocalResearchToolAdapter:
         self._executor.shutdown(wait=False, cancel_futures=True)
 
 
+class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
+    """Use the Chat tool instances, live ACL and approved source versions."""
+
+    def __init__(self, search_tool, read_tool, access_policy: ResearchAccessPolicy) -> None:
+        super().__init__(search_tool, search_tool.documents_dir)
+        if read_tool.repository.documents_dir != self.documents_dir:
+            raise ValueError("research_tool_catalog_mismatch")
+        self.read_tool = read_tool
+        self.access_policy = access_policy
+
+    def _allowed(self, context: ToolCallContext) -> dict[str, object]:
+        frozen = super()._allowed(context)
+        current = self.access_policy.accessible_doc_ids(context.user_id)
+        if current is not None and not set(frozen).issubset(current):
+            raise ManifestAccessError("research_source_access_revoked")
+        return frozen
+
+    def search(self, query: str, context: ToolCallContext, **kwargs) -> list[SearchHit]:
+        # The request's persisted mode governs both keyword/semantic worker calls.
+        kwargs["mode"] = context.retrieval_mode
+        hits = super().search(query, context, **kwargs)
+        self._allowed(context)  # A revocation during a slow retrieval also blocks its output.
+        return [SearchHit(
+            doc_id=hit.doc_id, locator_hint=hit.locator_hint,
+            snippet=hit.snippet, score=hit.score,
+            retrieval_metadata={"retrieval_mode": context.retrieval_mode,
+                                "retrieval_backend": "toolset.search_documents",
+                                "retrieval_fallback_used": False},
+        ) for hit in hits]
+
+    def read_document_range(self, doc_id: str, context: ToolCallContext, *,
+                            start_line: int = 1, end_line: int | None = None,
+                            locator: str | None = None) -> OriginalRead:
+        item = self._allowed(context).get(doc_id)
+        if item is None:
+            raise ManifestAccessError("document_outside_manifest")
+
+        def read():
+            payload = self.read_tool.repository.load(doc_id)
+            if payload is None:
+                raise ManifestAccessError("document_not_found")
+            snapshot = LocalDocumentResolver._snapshot(doc_id, payload)
+            if snapshot.content_hash != item.content_hash or snapshot.version != item.version:
+                raise ManifestAccessError("document_version_changed")
+            chunks = sorted((c for c in payload.get("chunks", []) if isinstance(c, dict)),
+                            key=lambda c: int(c.get("index", 0)))
+            if locator:
+                target = canonical_chunk_id(doc_id, locator)
+                position = next((pos for pos, chunk in enumerate(chunks)
+                                 if canonical_chunk_id(doc_id, chunk.get("chunk_id"),
+                                                       int(chunk.get("index", pos))) == target), None)
+                if position is None:
+                    raise LocalToolError("document_chunk_not_found")
+                offset = max(0, position - 2)
+                page = self.read_tool.execute(doc_id=doc_id, offset=offset, limit=5,
+                                              expected_hash=item.content_hash, expected_version=item.version)
+                # Reader adds provenance fields; compare authoritative chunk identity/text,
+                # not dictionaries whose projection metadata deliberately differs.
+                identity = lambda rows: [(c.get("chunk_id"), c.get("text", c.get("chunk_text", ""))) for c in rows]
+                if page.get("error") or identity(page.get("chunks", [])) != identity(chunks[offset:offset + 5]):
+                    raise ManifestAccessError("document_version_changed")
+                excerpt = self._chunk_context(page["chunks"], position - offset)
+                location = target
+            else:
+                body = str(payload.get("content") or "") or "\n\n".join(str(c.get("text") or c.get("chunk_text") or "") for c in chunks)
+                lines = body.splitlines()
+                if start_line < 1 or start_line > len(lines) or (end_line is not None and end_line < start_line):
+                    raise LocalToolError("invalid_document_range")
+                last = min(end_line or len(lines), len(lines))
+                excerpt = "\n".join(lines[start_line - 1:last]).strip()
+                location = f"line:{start_line}-{last}"
+            if not excerpt:
+                raise LocalToolError("empty_document_excerpt")
+            self._allowed(context)
+            return OriginalRead(doc_id, snapshot.version, location, excerpt, snapshot.content_hash)
+
+        return self._run(read, context.timeout_seconds)
+
+
 __all__ = [
+    "EnterpriseResearchToolAdapter",
     "LocalJsonSearchBackend", "LocalResearchToolAdapter", "LocalToolError", "LocalToolTimeout", "ManifestAccessError",
     "OriginalRead", "SearchHit", "ToolCallContext",
 ]

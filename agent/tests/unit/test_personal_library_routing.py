@@ -43,6 +43,9 @@ def _internal_request(query: str) -> InternalChatRequest:
     ("query", "expected"),
     [
         ("在我的资料库找项目风险", {SourceKind.PERSONAL_LIBRARY}),
+        ("根据我的个人库中的策略，允许重试几次？", {SourceKind.PERSONAL_LIBRARY}),
+        ("分别汇总 Confluence 周报、我的个人库策略与当前附件手册", {
+            SourceKind.ENTERPRISE_KB, SourceKind.PERSONAL_LIBRARY, SourceKind.CONVERSATION_ATTACHMENT}),
         ("我上周上传的合同付款周期是多少", {SourceKind.PERSONAL_LIBRARY}),
         ("公司的请假制度是什么", {SourceKind.ENTERPRISE_KB}),
         (

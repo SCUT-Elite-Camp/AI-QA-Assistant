@@ -19,7 +19,8 @@ from .planner import ModelResearchPlanner, ResearchPlanner
 from .repository import SQLiteResearchRepository
 from .runtime import ResearchGraphRuntime
 from .service import ApprovedResearchContext, ResearchControlPlane
-from .tools import LocalJsonSearchBackend, LocalResearchToolAdapter
+from .tools import EnterpriseResearchToolAdapter, LocalJsonSearchBackend, LocalResearchToolAdapter
+from .access import ResearchAccessPolicy
 from .verifier import MockSemanticVerifier, SemanticVerifier
 from .worker import ResearchLedger
 
@@ -65,6 +66,16 @@ class ResearchRuntimeService:
         )
 
     @classmethod
+    def from_enterprise_catalog(cls, *, search_tool, read_tool,
+                                access_policy: ResearchAccessPolicy, **kwargs) -> "ResearchRuntimeService":
+        """Production composition reuses the application-scoped Chat tools."""
+        if search_tool is None or read_tool is None or access_policy is None:
+            raise ValueError("research_shared_tools_required")
+        return cls.from_local_catalog(documents_dir=search_tool.documents_dir,
+                                      search_tool=search_tool, read_tool=read_tool,
+                                      access_policy=access_policy, **kwargs)
+
+    @classmethod
     def from_local_catalog(
         cls,
         *,
@@ -79,8 +90,11 @@ class ResearchRuntimeService:
         report_api_base: str = "",
         report_api_key: str = "",
         report_model: str = "",
+        search_tool=None,
+        read_tool=None,
+        access_policy: ResearchAccessPolicy | None = None,
     ) -> "ResearchRuntimeService":
-        """Build a durable, network-free runtime over fixed local documents."""
+        """Build a durable catalog runtime with fixture or shared production tools."""
 
         database_path = Path(database_path)
         documents_dir = Path(documents_dir)
@@ -101,10 +115,12 @@ class ResearchRuntimeService:
             source_resolver=LocalDocumentResolver(documents_dir),
             planner=active_planner,
             id_factory=id_factory,
+            access_policy=access_policy,
         )
-        adapter = LocalResearchToolAdapter(
-            LocalJsonSearchBackend(documents_dir),
-            documents_dir,
+        adapter = (
+            EnterpriseResearchToolAdapter(search_tool, read_tool, access_policy)
+            if search_tool is not None and access_policy is not None
+            else LocalResearchToolAdapter(LocalJsonSearchBackend(documents_dir), documents_dir)
         )
         checkpoint_connection = sqlite3.connect(
             str(checkpoint_path),

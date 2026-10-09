@@ -19,7 +19,7 @@ from enum import StrEnum
 import hashlib
 import json
 import re
-from typing import Iterable, Literal
+from typing import Any, Iterable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -208,6 +208,7 @@ class ResearchRequest(ResearchContractModel):
     source_scope: SourceScope
     report_spec: ReportSpec = Field(default_factory=ReportSpec)
     profile: ResearchProfile = ResearchProfile.STANDARD
+    retrieval_mode: Literal["hybrid", "bm25", "vector"] = "hybrid"
     user_notes: str | None = Field(default=None, max_length=2000)
 
     @field_validator("query")
@@ -487,6 +488,7 @@ class Observation(ResearchContractModel):
     locator_hint: str | None = Field(default=None, max_length=300)
     score: float | None = None
     snippet: str = Field(min_length=1, max_length=10_000)
+    retrieval_metadata: dict[str, Any] = Field(default_factory=dict)
     query: str = Field(min_length=1, max_length=2_000)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -676,6 +678,7 @@ class ResearchReport(ResearchContractModel):
     markdown: str = Field(min_length=1, max_length=100_000)
     result_status: ResearchResultStatus
     claim_ids: list[str] = Field(default_factory=list, max_length=200)
+    generation_method: Literal["deterministic", "model", "verified_fallback"] = "deterministic"
     evidence_ids: list[str] = Field(default_factory=list, max_length=200)
     citations: list[ResearchCitation] = Field(default_factory=list, max_length=200)
     conflicts: list[ResearchConflict] = Field(default_factory=list, max_length=100)

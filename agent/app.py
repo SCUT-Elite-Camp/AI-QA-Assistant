@@ -21,10 +21,13 @@ from agent.api.chat_routes import router as chat_router
 from agent.api.config_routes import router as config_router
 from agent.api.internal_memory_routes import router as internal_memory_router
 from agent.api.research_routes import router as research_router
+from agent.api.access_routes import router as access_router
+from agent.service.permission_service import PermissionResolutionError
 from agent.config.settings import settings
 from agent.logger.logger import get_logger, setup_logger
 from agent.runtime.lifecycle import get_application_container
 from deep_research.execution import ResearchRuntimeService
+from deep_research.access import ResearchAccessPolicy
 
 
 # 初始化日志
@@ -64,10 +67,13 @@ async def lifespan(app: FastAPI):
     warmup_task = asyncio.create_task(asyncio.to_thread(container.warmup_retrieval))
     app.state.retrieval_warmup_task = warmup_task
 
-    research_runtime = ResearchRuntimeService.from_local_catalog(
+    app.state.research_access_policy = ResearchAccessPolicy(app.state.agent.permission_service)
+    research_runtime = ResearchRuntimeService.from_enterprise_catalog(
         database_path=settings.RESEARCH_DATABASE_PATH,
         checkpoint_path=settings.RESEARCH_CHECKPOINT_PATH,
-        documents_dir=settings.RESEARCH_DOCUMENTS_DIR,
+        search_tool=app.state.agent.registry.get_tool("search_documents"),
+        read_tool=app.state.agent.registry.get_tool("get_document"),
+        access_policy=app.state.research_access_policy,
         report_api_base=settings.LLM_API_BASE,
         report_api_key=settings.LLM_API_KEY,
         report_model=settings.LLM_MODEL,
@@ -136,6 +142,12 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(config_router)
 app.include_router(internal_memory_router, prefix="/api/internal")
 app.include_router(research_router, prefix="/api")
+app.include_router(access_router, prefix="/api")
+
+
+@app.exception_handler(PermissionResolutionError)
+async def access_error(request: Request, exc: PermissionResolutionError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.code}, headers={"Cache-Control": "no-store"})
 
 
 # 添加直接运行的入口

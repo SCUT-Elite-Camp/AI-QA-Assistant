@@ -46,6 +46,7 @@ class RecordingMemory:
 
 @dataclass
 class RecordingAgent:
+    permission_service: object = None  # Explicit component-only authorization double.
     memory: RecordingMemory = field(default_factory=RecordingMemory)
     requests: list[ChatRequest] = field(default_factory=list)
 
@@ -237,6 +238,11 @@ def test_production_lifespan_reuses_one_agent_without_deep_research(
     monkeypatch.setattr(Agent, "chat", controlled_chat)
     monkeypatch.setattr(Agent, "chat_with_memory", controlled_memory_chat)
     monkeypatch.setattr(app_module, "get_application_container", lambda: container)
+    # Research has its own startup composition. This test isolates Chat/Memory
+    # request handling; Research's real shared-tool wiring is tested separately.
+    from types import SimpleNamespace
+    monkeypatch.setattr(app_module.ResearchRuntimeService, "from_enterprise_catalog",
+                        lambda **kwargs: SimpleNamespace(scan_once=lambda: [], close=lambda: None))
     monkeypatch.setattr(chat_routes, "get_application_container", lambda: container)
     monkeypatch.setattr(sys, "meta_path", [guard, *sys.meta_path])
 
@@ -436,6 +442,8 @@ def test_compaction_returns_a_pure_plan_without_using_the_shared_agent(
         "should_compact": True,
         "expected_active_snapshot": None,
         "new_snapshot": {
+            "source_dependencies": [],
+            "provenance_complete": True,
             "covered_from_sequence": 1,
             "covered_to_sequence": 12,
             "covered_from_message_id": "message-1",

@@ -12,6 +12,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from deep_research.manifest import ManifestResolutionError
+from deep_research.access import ResearchAccessError, ResearchAccessPolicy
 from deep_research.model_report import EvidenceReportSynthesizer
 from deep_research.repository import (
     ResearchConflictError,
@@ -29,11 +30,26 @@ from agent.schemas.research import (
     ResearchReport,
     ResearchRequest,
     ResearchResultStatus,
+    SourceManifestDocument,
+    SourceScope,
 )
 from agent.config.settings import settings
+from agent.auth import verify_agent_key
 
 
-router = APIRouter(prefix="/research", tags=["research"])
+def get_research_actor(
+    user_id: Annotated[str | None, Header(alias="X-User-ID")] = None,
+) -> str:
+    """Identity is injected by the authenticated BFF, never defaulted."""
+    if not user_id or not user_id.strip() or len(user_id) > 200:
+        raise HTTPException(status_code=401, detail={"code": "research_identity_required"})
+    return user_id.strip()
+
+
+router = APIRouter(
+    prefix="/research", tags=["research"],
+    dependencies=[Depends(verify_agent_key), Depends(get_research_actor)],
+)
 
 
 class ResearchApprovalRequest(BaseModel):
@@ -181,7 +197,33 @@ def get_research_progress_service(
     return ResearchProgressService(control_plane.repository)
 
 
+def get_research_access_policy(request: Request) -> ResearchAccessPolicy:
+    return getattr(request.app.state, "research_access_policy", None) or ResearchAccessPolicy()
+
+
+def get_authorized_research_job(
+    research_id: str,
+    user_id: str = Depends(get_research_actor),
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    access: ResearchAccessPolicy = Depends(get_research_access_policy),
+) -> ResearchJob:
+    try:
+        job = control_plane.get_job(research_id)
+        if job.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Research job not found")
+        manifest = control_plane.get_manifest(research_id) if job.manifest_hash else None
+        access.authorize_job(job, manifest)
+        return job
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
 def _raise_http_error(exc: Exception) -> None:
+    if isinstance(exc, HTTPException):
+        raise exc
+    if isinstance(exc, ResearchAccessError):
+        raise HTTPException(status_code=exc.status_code, detail={"code": exc.code}) from exc
     if isinstance(exc, ResearchNotFoundError):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     if isinstance(exc, (ResearchConflictError, ResearchControlPlaneError)):
@@ -198,6 +240,19 @@ def _raise_http_error(exc: Exception) -> None:
     raise exc
 
 
+@router.get("/documents", response_model=list[SourceManifestDocument])
+def list_research_documents(
+    user_id: str = Depends(get_research_actor),
+    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    access: ResearchAccessPolicy = Depends(get_research_access_policy),
+) -> list[SourceManifestDocument]:
+    try:
+        return access.list_documents(user_id, control_plane.source_resolver)
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
 @router.post(
     "/jobs",
     response_model=ResearchJob,
@@ -205,13 +260,15 @@ def _raise_http_error(exc: Exception) -> None:
 )
 def create_research_job(
     request: ResearchRequest,
-    user_id: Annotated[str, Header(alias="X-User-ID")] = "local-user",
+    user_id: str = Depends(get_research_actor),
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    access: ResearchAccessPolicy = Depends(get_research_access_policy),
 ) -> ResearchJob:
     """Persist a Job and return before durable planning starts."""
 
     try:
-        return control_plane.enqueue_job(request, user_id=user_id)
+        authorized_request = access.authorize_request(request, user_id, control_plane.source_resolver)
+        return control_plane.enqueue_job(authorized_request, user_id=user_id)
     except Exception as exc:
         _raise_http_error(exc)
         raise AssertionError("unreachable")
@@ -220,19 +277,16 @@ def create_research_job(
 @router.get("/jobs/{research_id}", response_model=ResearchJob)
 def get_research_job(
     research_id: str,
-    control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
 ) -> ResearchJob:
-    try:
-        return control_plane.get_job(research_id)
-    except Exception as exc:
-        _raise_http_error(exc)
-        raise AssertionError("unreachable")
+    return job
 
 
 @router.get("/jobs/{research_id}/plan", response_model=ResearchPlan)
 def get_research_plan(
     research_id: str,
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
 ) -> ResearchPlan:
     try:
         return control_plane.get_plan(research_id)
@@ -245,8 +299,9 @@ def get_research_plan(
 def revise_research_plan(
     research_id: str,
     revision: ResearchPlanRevisionRequest,
-    user_id: Annotated[str, Header(alias="X-User-ID")] = "local-user",
+    user_id: str = Depends(get_research_actor),
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
 ) -> ResearchPlan:
     """Persist a new Plan version and invalidate execution until re-approved."""
 
@@ -265,8 +320,9 @@ def revise_research_plan(
 def approve_research_job(
     research_id: str,
     request: ResearchApprovalRequest,
-    user_id: Annotated[str, Header(alias="X-User-ID")] = "local-user",
+    user_id: str = Depends(get_research_actor),
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
 ) -> ResearchJob:
     try:
         return control_plane.approve_job(
@@ -284,6 +340,7 @@ def approve_research_job(
 def cancel_research_job(
     research_id: str,
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
 ) -> ResearchJob:
     try:
         return control_plane.cancel_job(research_id)
@@ -296,9 +353,13 @@ def cancel_research_job(
 def get_research_report(
     research_id: str,
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
+    access: ResearchAccessPolicy = Depends(get_research_access_policy),
 ) -> ResearchReport:
     try:
-        return control_plane.repository.get_report(research_id)
+        report = control_plane.repository.get_report(research_id)
+        access.validate_report(report, job, control_plane.get_manifest(research_id))
+        return report
     except Exception as exc:
         _raise_http_error(exc)
         raise AssertionError("unreachable")
@@ -307,6 +368,7 @@ def get_research_report(
 @router.get("/jobs/{research_id}/progress", response_model=ResearchProgress)
 def get_research_progress(
     research_id: str,
+    job: ResearchJob = Depends(get_authorized_research_job),
     progress_service: ResearchProgressService = Depends(
         get_research_progress_service
     ),
@@ -325,6 +387,7 @@ def get_research_events(
     research_id: str,
     after_event_id: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
+    job: ResearchJob = Depends(get_authorized_research_job),
     progress_service: ResearchProgressService = Depends(
         get_research_progress_service
     ),
@@ -349,6 +412,7 @@ def get_research_events(
 def get_research_evaluation_trace(
     research_id: str,
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
 ) -> ResearchEvaluationTrace:
     """Expose persisted research artifacts; this never reruns retrieval."""
 
@@ -375,15 +439,18 @@ def get_research_document_source(
     research_id: str,
     doc_id: str,
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    job: ResearchJob = Depends(get_authorized_research_job),
+    access: ResearchAccessPolicy = Depends(get_research_access_policy),
 ) -> PlainTextResponse:
     """Open complete source text only for documents frozen into this Job."""
 
     try:
         manifest = control_plane.get_manifest(research_id)
-        if doc_id not in {item.doc_id for item in manifest.documents}:
-            raise ResearchNotFoundError(
-                f"document '{doc_id}' is not part of research job '{research_id}'"
-            )
+        access.authorize_document(job, manifest, doc_id)
+        current = control_plane.source_resolver.resolve(research_id, SourceScope(document_ids=[doc_id]))
+        frozen = next(item for item in manifest.documents if item.doc_id == doc_id)
+        if current.documents[0].content_hash != frozen.content_hash or current.documents[0].version != frozen.version:
+            raise ResearchAccessError("research_source_version_changed", 409)
         _, content = control_plane.source_resolver.read_document(doc_id)
         return PlainTextResponse(
             content,
@@ -401,8 +468,10 @@ def get_research_document_source(
 def send_research_message(
     research_id: str,
     request: ResearchInteractionRequest,
-    user_id: Annotated[str, Header(alias="X-User-ID")] = "local-user",
+    user_id: str = Depends(get_research_actor),
     control_plane: ResearchControlPlane = Depends(get_research_control_plane),
+    authorized_job: ResearchJob = Depends(get_authorized_research_job),
+    access: ResearchAccessPolicy = Depends(get_research_access_policy),
 ) -> ResearchInteractionResponse:
     """Apply a persisted conversational command to the Research control plane."""
 
@@ -470,6 +539,7 @@ def send_research_message(
                     response_text = "Reply \"approve\" to start, or use Edit plan to revise individual tasks." if english else "你可以回复“批准”，或说“把第 2 步改为……”。"
         elif job.status.value == "completed":
             report = repository.get_report(research_id)
+            access.validate_report(report, job, control_plane.get_manifest(research_id))
             source_match = re.search(r"(?:采用|选择|以)\s*来源\s*(\d+)", message)
             if source_match and report.conflicts:
                 source_number = int(source_match.group(1))
@@ -509,10 +579,13 @@ def send_research_message(
                     response_text = f"来源 {source_number} 不属于当前待处理冲突，请打开引用后重新选择。"
             else:
                 action = "followup_answered"
-                response_text = _answer_report_followup(report, message, job.request.report_spec.language, objective=job.request.query)
+                from deep_research.access import model_access_scope
+                with model_access_scope(lambda: access.authorize_job(job, control_plane.get_manifest(research_id))):
+                    response_text = _answer_report_followup(report, message, job.request.report_spec.language, objective=job.request.query)
         elif job.status.value in {"ready", "researching", "synthesizing"}:
             response_text = "研究正在执行中。我会持续更新任务进度；你也可以随时点击取消。"
 
+        access.authorize_job(job, control_plane.get_manifest(research_id) if job.manifest_hash else None)
         repository.append_event(
             research_id=research_id,
             event_key=f"conversation:{interaction_id}:assistant",
@@ -533,6 +606,8 @@ def send_research_message(
 
 
 __all__ = [
+    "get_research_actor",
+    "get_research_access_policy",
     "get_research_control_plane",
     "get_research_progress_service",
     "router",

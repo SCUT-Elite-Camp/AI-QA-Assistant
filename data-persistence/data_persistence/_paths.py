@@ -1,6 +1,7 @@
 """Private, side-effect-free filesystem layout for persistence backends."""
 
 from pathlib import Path
+import os
 
 
 _PERSISTENCE_ROOT = Path(__file__).resolve().parent.parent
@@ -9,7 +10,7 @@ _DATA_ROOT = _PERSISTENCE_ROOT / "data"
 
 def data_dir() -> Path:
     """Return the shared persistence data directory without creating it."""
-    return _DATA_ROOT
+    return Path(os.getenv('AI_QA_DATA_DIR', str(_DATA_ROOT))).resolve()
 
 
 def documents_dir() -> Path:

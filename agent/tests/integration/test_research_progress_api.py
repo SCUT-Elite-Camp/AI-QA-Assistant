@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from agent.schemas.research import ResearchRequest, SourceScope
 
-from agent.api.research_routes import get_research_control_plane, router
+from agent.api.research_routes import (
+    get_research_access_policy, get_research_actor, get_research_control_plane, router,
+)
+from deep_research.access import ResearchAccessPolicy
 from deep_research.execution import ResearchRuntimeService
 
 
@@ -19,6 +24,13 @@ def _application(service: ResearchRuntimeService) -> FastAPI:
     application.include_router(router, prefix="/api")
     application.dependency_overrides[get_research_control_plane] = (
         lambda: service.control_plane
+    )
+    application.dependency_overrides[get_research_actor] = lambda: "alice"
+    application.dependency_overrides[get_research_access_policy] = lambda: ResearchAccessPolicy(
+        SimpleNamespace(get_accessible_doc_ids_strict=lambda user_id, **_: None,
+            source_provider=SimpleNamespace(_load=lambda doc_id: (
+                service.control_plane.source_resolver.documents.get(doc_id)
+                if hasattr(service.control_plane.source_resolver, "documents") else service.control_plane.source_resolver._load_catalog().get(doc_id))))
     )
     return application
 
@@ -119,8 +131,12 @@ def test_progress_api_returns_404_and_validates_event_cursor(tmp_path: Path) -> 
         ).status_code == 404
         assert client.get(
             "/api/research/jobs/missing/events?after_event_id=-1"
-        ).status_code == 422
+        ).status_code == 404
         assert client.get(
             "/api/research/jobs/missing/events?limit=101"
-        ).status_code == 422
+        ).status_code == 404
+        job = service.control_plane.create_job(ResearchRequest(
+            query="Compare", source_scope=SourceScope(document_ids=["project-alpha"])), user_id="alice")
+        assert client.get(f"/api/research/jobs/{job.research_id}/events?after_event_id=-1").status_code == 422
+        assert client.get(f"/api/research/jobs/{job.research_id}/events?limit=101").status_code == 422
     service.close()

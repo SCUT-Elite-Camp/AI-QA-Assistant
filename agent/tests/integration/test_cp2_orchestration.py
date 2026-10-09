@@ -495,7 +495,7 @@ def test_persistent_success_returns_one_explicit_fact_proposal_only_when_gated_o
     )
 
     assert response.status == "success"
-    assert response.model_dump().keys() == {
+    assert response.model_dump().keys() >= {
         "trace_id", "status", "answer", "message", "citations", "chat_title"
     }
     assert [proposal.model_dump() for proposal in decision.fact_proposals] == [

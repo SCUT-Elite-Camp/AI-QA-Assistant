@@ -13,9 +13,11 @@
 
 import logging
 import sqlite3
+from contextlib import contextmanager
 from typing import Optional
 
 from agent.config.settings import settings
+from agent.service.source_access import SourceAccessProvider, SourceAccessError
 
 logger = logging.getLogger("agent-layer")
 
@@ -51,14 +53,64 @@ WHERE f.doc_id IS NOT NULL
 """
 
 
+class PermissionResolutionError(RuntimeError):
+    """Strict authorization cannot establish an active, permitted actor."""
+
+    def __init__(self, code: str, status_code: int) -> None:
+        self.code = code
+        self.status_code = status_code
+        super().__init__(code)
+
+
 class PermissionService:
     """根据用户身份计算其可访问的 doc_id 列表。"""
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
+    def __init__(self, db_path: Optional[str] = None, *, source_provider=None) -> None:
         self.db_path = db_path or settings.WEB_SQLITE_PATH
+        self.source_provider = source_provider or SourceAccessProvider()
 
-    def _connect(self) -> sqlite3.Connection:
-        return sqlite3.connect(self.db_path)
+    @contextmanager
+    def _connect(self):
+        # sqlite3.Connection's own context manager commits but does not close.
+        # Thousands of per-boundary reads must not retain connections/locks.
+        connection = sqlite3.connect(self.db_path, timeout=5)
+        try:
+            yield connection
+        finally:
+            connection.close()
+
+    def get_accessible_doc_ids_strict(self, user_id: str, *, doc_ids: Optional[list[str]] = None) -> list[str]:
+        """Resolve Research ACL atomically; never honor the Chat fail-open flag.
+
+        An unrestricted result is reserved for a known, enabled administrator.
+        Actor validation and the document allowlist use the same live connection.
+        """
+        if not user_id or not user_id.strip():
+            raise PermissionResolutionError("research_identity_required", 401)
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT role, disabled FROM users WHERE id = ?", (user_id,)
+                ).fetchone()
+                if row is None or bool(row[1]):
+                    raise PermissionResolutionError("research_actor_forbidden", 403)
+                if row[0] == "admin":
+                    ids = doc_ids if doc_ids is not None else self.source_provider.list_document_ids()
+                else:
+                    rows = conn.execute(
+                        _ACCESSIBLE_DOC_IDS_SQL, (user_id, user_id, user_id)
+                    ).fetchall()
+                    ids = [str(item[0]) for item in rows if item[0]]
+                    if doc_ids is not None:
+                        ids = list(set(ids).intersection(doc_ids))
+            return self.source_provider.filter_allowed(user_id, ids)
+        except SourceAccessError as exc:
+            raise PermissionResolutionError(exc.code, exc.status_code) from exc
+        except PermissionResolutionError:
+            raise
+        except Exception as exc:
+            logger.warning("[PERMISSION] strict Research ACL lookup failed: %s", type(exc).__name__)
+            raise PermissionResolutionError("research_permission_unavailable", 503) from exc
 
     def is_admin(self, user_id: str) -> bool:
         """判断用户是否为管理员。查询失败时保守返回 False。"""

@@ -8,6 +8,7 @@ import re
 import tempfile
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 from urllib.parse import quote, urljoin, urlparse
@@ -61,6 +62,26 @@ class RenderedMarkdown:
     warnings: list[dict[str, str]]
 
 
+def normalize_confluence_base(base_url: str) -> str:
+    parsed = urlparse(base_url)
+    if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+        raise ValueError("Confluence Cloud base URL must be an absolute HTTPS URL without credentials")
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    return f"{origin}/wiki" if (parsed.hostname or "").endswith(".atlassian.net") or "/wiki" in parsed.path else origin + parsed.path.rstrip("/")
+
+
+def build_source_url(base_url: str, webui: str | None, page_id: str) -> str:
+    base = normalize_confluence_base(base_url)
+    if not webui:
+        return f"{base}/pages/{quote(str(page_id))}"
+    if webui.startswith(("https://", "http://")):
+        return webui
+    parsed = urlparse(base)
+    if webui.startswith("/wiki/"):
+        return f"{parsed.scheme}://{parsed.netloc}{webui}"
+    return urljoin(base + "/", webui.lstrip("/"))
+
+
 class ConfluenceClient:
     """Minimal read-only client for the Confluence Cloud REST API v2."""
 
@@ -85,7 +106,7 @@ class ConfluenceClient:
         origin = f"{parsed_base.scheme}://{parsed_base.netloc}"
         # People commonly paste a browser page/space URL. For direct Cloud
         # tenants every such URL shares the same REST root at <origin>/wiki.
-        self.base_url = f"{origin}/wiki" if "/wiki" in parsed_base.path else base_url.rstrip("/")
+        self.base_url = normalize_confluence_base(base_url)
         self.origin = origin
         self.session = session or requests.Session()
         self.session.auth = (email, token)
@@ -189,10 +210,14 @@ class ConfluenceClient:
 
     def _get_json(self, path_or_url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         url = self._url(path_or_url)
+        parsed = urlparse(url)
+        origin = urlparse(self.origin)
+        if parsed.scheme != origin.scheme or parsed.netloc != origin.netloc or parsed.username or parsed.password:
+            raise ConfluenceResponseError("Cross-origin Confluence request refused")
         last_error: Exception | None = None
         for attempt in range(self.max_attempts):
             try:
-                response = self.session.get(url, params=params, timeout=self.timeout)
+                response = self.session.get(url, params=params, timeout=self.timeout, allow_redirects=False)
             except requests.RequestException as exc:
                 last_error = exc
                 if attempt + 1 >= self.max_attempts:
@@ -210,7 +235,7 @@ class ConfluenceClient:
                     delay = float(min(2 ** attempt, 30))
                 self.sleep(max(0.0, min(delay, 60.0)))
                 continue
-            if response.status_code >= 400:
+            if 300 <= response.status_code < 400 or response.status_code >= 400:
                 raise ConfluenceHTTPError(response.status_code, url)
             try:
                 payload = response.json()
@@ -247,7 +272,7 @@ class ConfluenceClient:
         version = value.get("version") or {}
         links = value.get("_links") or {}
         webui = str(links.get("webui") or "")
-        source_url = self._url(webui) if webui else f"{self.base_url}/pages/{page_id}"
+        source_url = build_source_url(self.base_url, webui, page_id)
         return ConfluencePage(
             page_id=page_id,
             title=title,
@@ -546,6 +571,8 @@ class ConfluenceExporter:
         errors: list[dict[str, str]] = []
         exported = 0
         skipped = 0
+        checked_at = datetime.now(timezone.utc).isoformat()
+        quarantined_pages = dict(old_manifest.get("quarantined_pages") or {})
 
         for page in sorted(targets, key=lambda item: (paths[item.page_id].as_posix(), item.position)):
             relative = paths[page.page_id]
@@ -577,6 +604,11 @@ class ConfluenceExporter:
                     "title": page.title,
                     "version": page.version,
                     "last_updated": page.last_updated,
+                    "fetched_at": checked_at,
+                    "source_latest_checked_at": checked_at,
+                    "source_latest_version": page.version,
+                    "sync_status": "export_ready",
+                    "indexed_at": None,
                     "source_url": page.source_url,
                     "source_content_sha256": source_content_hash,
                     "normalized_content_sha256": normalized_content_hash,
@@ -643,6 +675,7 @@ class ConfluenceExporter:
                     )
                     exported += 1
                 new_pages[page.page_id] = entry
+                quarantined_pages.pop(page.page_id, None)
             except Exception as exc:  # noqa: BLE001 - preserve the last good page on any conversion error
                 logger.exception("Failed to export Confluence page %s", page.page_id)
                 errors.append({"page_id": page.page_id, "title": page.title, "error": str(exc)})
@@ -653,6 +686,8 @@ class ConfluenceExporter:
             active_ids = {page.page_id for page in pages if page.node_type == "page"}
             for stale_id, stale in old_pages.items():
                 if stale_id not in active_ids:
+                    quarantined_pages[stale_id] = {**stale, "status": "not_visible", "checked_at": checked_at,
+                        "reason": "omitted_from_visible_current_pages; deletion_not_confirmed"}
                     self._remove_tracked_artifacts(space_root, stale)
             for page_id, entry in new_pages.items():
                 old = old_pages.get(page_id) or {}
@@ -671,6 +706,11 @@ class ConfluenceExporter:
             "space_id": space_id,
             "space_key": space_key,
             "full_sync": full,
+            "fetched_at": checked_at,
+            "source_latest_checked_at": checked_at,
+            "last_successful_sync": checked_at if not errors else old_manifest.get("last_successful_sync"),
+            "index_status": "unknown",
+            "quarantined_pages": quarantined_pages,
             "status": "ok" if not errors else "partial",
             "exported": exported,
             "skipped": skipped,
