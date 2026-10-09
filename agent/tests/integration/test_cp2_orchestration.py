@@ -218,6 +218,7 @@ def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() 
             session_id="orchestration-session",
             retrieval_mode="bm25",
             top_k=3,
+            weight_mode="auto",
         )
     )
 
@@ -232,6 +233,30 @@ def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() 
     assert agent.last_orchestration.policy.candidate_tools == ("search_documents",)
     assert agent.last_citation_check is not None
     assert agent.last_citation_check.valid is True
+
+
+def test_fast_mode_bypasses_query_understanding_and_directly_retrieves() -> None:
+    llm = PipelineLLM()
+    search = RecordingSearchTool()
+    agent = Agent(llm=llm, tools=[search])
+
+    response = agent.chat(
+        ChatRequest(
+            query="这个功能怎么用？",
+            session_id="fast-direct-session",
+            retrieval_mode="bm25",
+            top_k=3,
+            weight_mode="fast",
+        )
+    )
+
+    assert response.status == "success"
+    # Fast 模式跳过改写，直接以原始 query 检索
+    assert search.calls[0]["query"] == "这个功能怎么用？"
+    assert search.calls[0]["mode"] == "bm25"
+    assert agent.last_orchestration is not None
+    assert agent.last_orchestration.query_plan.standalone_query == "这个功能怎么用？"
+    assert agent.last_orchestration.execution_profile.mode.value == "fast"
 
 
 def test_explicit_fast_dispatches_without_entering_runner() -> None:
