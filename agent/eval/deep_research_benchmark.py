@@ -19,6 +19,7 @@ import platform
 import statistics
 import subprocess
 import sys
+from threading import Event
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -500,6 +501,18 @@ def run_benchmark(args: argparse.Namespace) -> int:
     _json_dump(output_root / "dataset_snapshot.json", dataset)
     client = ApiClient(args.base_url, timeout_seconds=args.request_timeout)
     failures = 0
+    quota_stop = Event()
+    completed_path=getattr(args,'completed_coordinates',None)
+    completed=set()
+    if completed_path:
+        rows=_json_load(Path(completed_path))
+        if not isinstance(rows,list):raise ValueError('completed coordinates must be a list')
+        for row in rows:
+            coordinate=(str(row['case_id']),str(row['group']),row['repetition'])
+            if coordinate[1] not in GROUPS or type(coordinate[2]) is not int or coordinate[2]<1:
+                raise ValueError('invalid completed coordinate')
+            completed.add(coordinate)
+        _json_dump(output_root/'completed_coordinates.json',rows)
 
     def run_case_group(case, group):
         failures = 0
@@ -508,11 +521,16 @@ def run_benchmark(args: argparse.Namespace) -> int:
         if not case_id or not question:
             raise ValueError("every case requires case_id and question")
         for repetition in range(1, args.repetitions + 1):
+            if (case_id,group,repetition) in completed:
+                continue
+            if quota_stop.is_set():
+                break
             run_id = f"{case_id}-{group}-r{repetition}-{uuid4().hex[:8]}"
             started_at = datetime.now(timezone.utc)
             started = time.perf_counter()
             result = None
             error = None
+            quota_exhausted = False
             try:
                 if group == "fast_chat":
                     result = _run_fast_chat(client, case, args.top_k)
@@ -538,6 +556,13 @@ def run_benchmark(args: argparse.Namespace) -> int:
                     "message": str(exc),
                     "http_status": getattr(exc, "status", None),
                 }
+                provider_errors = [error['message'], *[
+                    str(event.get('data')) for event in (result or {}).get('stream_events', [])
+                    if event.get('event') == 'error'
+                ]]
+                quota_exhausted = any('insufficient_quota' in message for message in provider_errors)
+                if quota_exhausted:
+                    quota_stop.set()
             completed_at = datetime.now(timezone.utc)
             envelope = RunEnvelope(
                 schema_version="deep-research-run.v1",
@@ -556,13 +581,23 @@ def run_benchmark(args: argparse.Namespace) -> int:
             _json_dump(output_root / "runs" / group / case_id / f"{run_id}.json", asdict(envelope))
             state = "PASS" if envelope.success else "FAIL"
             print(f"[{state}] {case_id} {group} repetition={repetition} run_id={run_id}")
+            if quota_exhausted:
+                _json_dump(output_root / 'provider_interruption.json', {
+                    'reason': 'insufficient_quota', 'run_id': run_id,
+                    'message': 'No further runs will be started; already in-flight runs may finish. Missing coordinates remain unrun.',
+                })
         return failures
 
     if getattr(args, "parallel_groups", False):
         # G1 uses the shared Chat Agent; G2 uses its separate Research runtime.
         # Keep Chat requests sequential, while the two independent groups overlap.
         def run_group(group):
-            return sum(run_case_group(case, group) for case in cases)
+            failures = 0
+            for case in cases:
+                if quota_stop.is_set():
+                    break
+                failures += run_case_group(case, group)
+            return failures
         with ThreadPoolExecutor(max_workers=len(args.groups)) as pool:
             failures = sum(pool.map(run_group, args.groups))
     else:
@@ -617,6 +652,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--case-ids", nargs="+", help="run only the selected frozen case IDs")
     run.add_argument("--parallel-groups", action="store_true", help="Overlap independent groups while preserving sequential Chat requests")
     run.add_argument("--repetitions", type=int, default=3)
+    run.add_argument("--completed-coordinates", help="Skip explicitly recorded completed case/group/repetition coordinates; preserve their provenance separately")
     run.add_argument("--top-k", type=int, default=5)
     run.add_argument("--request-timeout", type=float, default=120.0)
     run.add_argument("--run-timeout", type=float, default=600.0)

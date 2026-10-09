@@ -217,6 +217,20 @@ beforeEach(() => {
 })
 
 describe('chat to Fact proposal lifecycle', () => {
+  it.each([true, false])('persists after normal response closure only (writableEnded=%s)', async (writableEnded) => {
+    let responseClose!: () => void
+    const requestOn = vi.fn()
+    const handler = await loadChatHandler()
+    const stream = await handler({ runtime: { node: {
+      req: { on: requestOn },
+      res: { writableEnded, on: (_name: string, callback: () => void) => { responseClose = callback } }
+    } } })
+    expect(requestOn).not.toHaveBeenCalled()
+    await stream.execute({ writer: { write: vi.fn() } })
+    responseClose()
+    await stream.onFinish({ isAborted: false })
+    expect(mocks.appendMessage).toHaveBeenCalledTimes(writableEnded ? 1 : 0)
+  })
   it('creates an Agent Fact only after assistant persistence and ignores Agent expires_at', async () => {
     await executeChatTurn(false)
 
@@ -294,8 +308,17 @@ describe('chat to Fact proposal lifecycle', () => {
     const write = vi.fn()
     await executeChatTurn(false, write)
 
+    expect(write).toHaveBeenCalledWith({ type: 'start', messageId: 'assistant-1' })
+    expect(mocks.appendMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ id: 'assistant-1' }))
+
     expect(write).toHaveBeenCalledWith(expect.objectContaining({
       type: 'tool-output-available'
+    }))
+    const emitted = write.mock.calls.map(([value]) => value).find(value => value.type === 'tool-output-available')
+    expect(mocks.appendMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      parts: expect.arrayContaining([expect.objectContaining({
+        type: 'tool-rag_search', state: 'output-available', output: emitted.output,
+      })]),
     }))
   })
 
@@ -333,7 +356,7 @@ describe('chat to Fact proposal lifecycle', () => {
 
     expect(write).toHaveBeenCalledWith(expect.objectContaining({
       type: 'text-delta',
-      delta: expect.stringContaining('响应生成受阻')
+      delta: expect.stringContaining('Unable to generate an answer')
     }))
     expect(mocks.appendMessage).not.toHaveBeenCalled()
   })

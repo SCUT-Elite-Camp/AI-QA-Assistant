@@ -31,7 +31,7 @@ async function togglePicker() {
   try {
     documents.value = await $fetch<CatalogDocument[]>('/api/research/documents')
   } catch {
-    loadError.value = '无法读取本地知识库，请稍后重试。'
+    loadError.value = 'Unable to load knowledge base documents. Close and reopen the picker to retry.'
   } finally {
     loading.value = false
   }
@@ -51,9 +51,9 @@ function toggleDocument(docId: string) {
         <UIcon name="i-lucide-telescope" class="size-4" />
       </span>
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold text-highlighted">深度研究已开启</p>
+        <p class="text-sm font-semibold text-highlighted">Deep Research enabled</p>
         <p class="mt-0.5 text-xs leading-5 text-muted">
-          指定本地知识库资料后，系统将冻结来源范围并生成计划，等待你确认后再执行。
+          Choose knowledge base documents to freeze the source scope. Review and approve the plan before research starts.
         </p>
         <button
           type="button"
@@ -62,27 +62,28 @@ function toggleDocument(docId: string) {
           @click="togglePicker"
         >
           <UIcon name="i-lucide-files" class="size-4 text-muted" />
-          {{ selectedDocumentIds.length ? `已选 ${selectedDocumentIds.length} 份资料` : '选择本地知识库资料' }}
+          {{ selectedDocumentIds.length ? `${selectedDocumentIds.length} documents selected` : 'Select knowledge base documents' }}
           <UIcon :name="expanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3.5 text-muted" />
         </button>
       </div>
     </div>
 
     <div v-if="expanded" class="mt-3 border-t border-default pt-3 sm:ml-11">
-      <label class="sr-only" for="research-source-filter">筛选知识库资料</label>
+      <label class="sr-only" for="research-source-filter">Filter knowledge base documents</label>
       <input
         id="research-source-filter"
         v-model="filter"
         type="search"
-        placeholder="按文件名筛选…"
+        placeholder="Filter by file name…"
         class="h-9 w-full rounded-lg border border-default bg-default px-3 text-sm text-highlighted outline-none placeholder:text-dimmed focus:border-primary"
       >
-      <p v-if="loading" class="py-5 text-center text-xs text-muted">正在读取知识库…</p>
+      <p v-if="loading" class="py-5 text-center text-xs text-muted">Loading knowledge base documents…</p>
       <p v-else-if="loadError" class="py-4 text-xs text-error" role="alert">{{ loadError }}</p>
       <div v-else class="mt-2 max-h-56 overflow-y-auto rounded-lg border border-default bg-default p-1">
         <button
           v-for="document in filteredDocuments"
           :key="document.doc_id"
+          :aria-pressed="selectedDocumentIds.includes(document.doc_id)"
           type="button"
           class="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-elevated focus-visible:outline-2 focus-visible:outline-primary"
           @click="toggleDocument(document.doc_id)"
@@ -95,7 +96,7 @@ function toggleDocument(docId: string) {
           <span class="min-w-0 flex-1 truncate text-highlighted">{{ document.title }}</span>
         </button>
         <p v-if="!filteredDocuments.length" class="px-3 py-5 text-center text-xs text-muted">
-          没有匹配的本地资料
+          No matching documents
         </p>
       </div>
     </div>

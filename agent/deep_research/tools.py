@@ -335,13 +335,13 @@ class LocalResearchToolAdapter:
         chunks: list[Any],
         anchor_position: int,
         *,
-        radius: int = 1,
+        radius: int = 2,
     ) -> str:
         """Read a bounded context window around a matched chunk.
 
         Ingested chunks overlap, and headings/tables frequently cross a chunk
         boundary.  Keep the matched chunk as the citation anchor while adding
-        one neighbouring chunk on either side for report synthesis.  Adjacent
+        two neighbouring chunks on either side for report synthesis. Adjacent
         overlap is removed so the model does not see duplicated assertions.
         """
 

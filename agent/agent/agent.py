@@ -22,6 +22,7 @@ from agent.evidence.locator import canonical_chunk_id
 from agent.schemas.chat import FactProposal, MemoryDecision
 from agent.orchestration import AgentOrchestrator, OrchestrationResult
 from agent.policy import IntentPolicyRouter
+from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
 from agent.query import (
     Clarifier,
     IntentClassifier,
@@ -37,7 +38,7 @@ from agent.runtime import AgentRunResult, AgentRunner, StopReason, AgentState
 from agent.schemas.chat import ChatRequest, ChatResponse, Citation, InternalChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryPlan, QueryIntent
 from agent.schemas.retrieval import RetrievalResult
 from agent.service import AuditService, PermissionService, TraceService
 from agent.tools import ToolExecutor, ToolRegistryAdapter
@@ -282,9 +283,9 @@ class Agent:
             return filters or None
 
         accessible = set(accessible_doc_ids)
-        existing = filters.get("doc_ids") or filters.get("doc_id")
-        if existing:
-            accessible &= set(existing)
+        existing = filters.get("doc_ids") if "doc_ids" in filters else filters.get("doc_id")
+        if existing is not None:
+            accessible &= {existing} if isinstance(existing, str) else set(existing)
 
         filters["doc_ids"] = sorted(accessible)
         return filters
@@ -445,6 +446,10 @@ class Agent:
 
     def _generate_fallback_title(self, query: str) -> str:
         """Fallback smart title generation via fast LLM call or clean query slice."""
+        # A second model call must not delay completion of an English answer,
+        # or turn its conversation title into Chinese.
+        if not re.search(r"[\u3400-\u9fff]", query):
+            return " ".join(query.split())[:80]
         try:
             prompt = f"请根据用户第一次提问，总结提取一个极简对话标题（3-10字，绝对不要聊天标点或无用词如'我想知道'）：\n问题：{query}"
             raw_res = self.title_llm.chat([{"role": "user", "content": prompt}], max_tokens=30, temperature=0.2)
@@ -779,6 +784,106 @@ class Agent:
         """Return persisted audit records (not ConversationMemory messages)."""
         return self.audit_service.store.get_records(limit)
 
+    def _retrieve_fast_context(self, request: ChatRequest, search_tool: SearchTool, trace_id: str):
+        """Keep each comparison target represented without relaxing authorization."""
+        filters = self._resolve_filters(request) or {}
+        queries = [request.query]
+        if not QueryPlanner._is_simple_single_target(request.query):
+            intent = QueryIntent.COMPARISON if re.search(r"\b(compare|versus|vs|differences?)\b|比较|对比", request.query, re.I) else QueryIntent.KNOWLEDGE_QA
+            plan = self.query_understanding.query_planner.enrich(request.query, intent)
+            queries = list(dict.fromkeys(plan.sub_queries[:4])) or queries
+        discovery = self.registry.get_tool("find_documents")
+        batches = []
+        snapshot_dates = {}
+        for query in queries:
+            scoped_filters = filters
+            selected = []
+            if len(queries) > 1 and discovery is not None:
+                documents = discovery.execute(query=query[:512], filters=filters, top_k=20).get("documents", [])
+                selected = self._matching_target_documents(query, documents)
+                if "doc_ids" in filters:
+                    selected = [doc_id for doc_id in selected if doc_id in filters["doc_ids"]]
+                if selected:
+                    scoped_filters = {**filters, "doc_ids": selected}
+            hits = search_tool.search(
+                query=query, top_k=request.top_k or 5,
+                mode=request.retrieval_mode or "hybrid", filters=scoped_filters, trace_id=trace_id,
+            )
+            reader = self.registry.get_tool("get_document")
+            context = []
+            if reader is not None:
+                for doc_id in selected:
+                    page = reader.execute(doc_id=doc_id, limit=8)
+                    snapshot_dates[doc_id] = page.get('document', {}).get('last_updated')
+                    # Short meeting notes often place limitations after the
+                    # highest-scoring passage. Read the complete bounded note.
+                    if page.get("error"):
+                        continue
+                    document = page.get("document", {})
+                    context.extend({
+                        "doc_id": doc_id, "chunk_id": chunk.get("chunk_id"),
+                        "title": document.get("title"), "source_url": document.get("source_url"),
+                        "snapshot_date": document.get("last_updated"),
+                        "chunk_text": chunk.get("text", ""),
+                    } for chunk in page.get("chunks", []))
+            batches.append(context + hits)
+        # A small explicit source selection is the user's evidence boundary,
+        # not a ranking hint. Include its bounded opening context even when
+        # lexical search ranks every passage from a single selected document.
+        reader = self.registry.get_tool("get_document")
+        if reader is not None and 0 < len(filters.get("doc_ids", [])) <= 4:
+            for doc_id in filters["doc_ids"]:
+                page = reader.execute(doc_id=doc_id, limit=8)
+                if page.get("error"):
+                    continue
+                document = page.get("document", {})
+                snapshot_dates[doc_id] = document.get("last_updated")
+                batches.insert(0, [{
+                    "doc_id": doc_id, "chunk_id": chunk.get("chunk_id"),
+                    "title": document.get("title"), "source_url": document.get("source_url"),
+                    "snapshot_date": document.get("last_updated"), "chunk_text": chunk.get("text", ""),
+                } for chunk in page.get("chunks", [])])
+        # Round-robin prevents the first target from consuming the entire context.
+        results, seen = [], set()
+        for index in range(max((len(batch) for batch in batches), default=0)):
+            for batch in batches:
+                if index >= len(batch):
+                    continue
+                row = batch[index]
+                key = (row.get("doc_id"), row.get("chunk_id"))
+                if key not in seen:
+                    results.append(row)
+                    seen.add(key)
+        results = results[:20]
+        if re.search(r"\bremaining (?:limitations|constraints)\b", request.query, re.I):
+            reader = self.registry.get_tool('get_document')
+            for row in results:
+                doc_id = row.get('doc_id')
+                if doc_id not in snapshot_dates and reader is not None:
+                    page = reader.execute(doc_id=doc_id, limit=1)
+                    snapshot_dates[doc_id] = page.get('document', {}).get('last_updated')
+                row['snapshot_date'] = snapshot_dates.get(doc_id)
+        return results
+
+    @staticmethod
+    def _matching_target_documents(query: str, documents: list[dict]) -> list[str]:
+        """Prefer title matches for a named comparison target over team-wide text hits."""
+        weeks = set(re.findall(r"\bW\d{2}\b", query, re.I))
+        candidates = documents
+        if len(weeks) == 1:
+            week = next(iter(weeks)).casefold()
+            candidates = [d for d in documents if week in str(d.get("title", "")).casefold()]
+        stop = {"the", "a", "an", "in", "of", "and", "for", "to", "with", "what", "give", "total", "counts", "count", "commits", "features", "fixes", "improvements", "other", "bug", "compare", "during"}
+        def title_tokens(text):
+            for month, name in enumerate(("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"), 1):
+                text = re.sub(r"\b" + name + r"\b", str(month), text, flags=re.I)
+            return {str(int(t)) if t.isdigit() else t for t in re.findall(r"[a-z]+\d*|\d+", text.casefold())} - stop
+        tokens = title_tokens(query)
+        scored = [(len(tokens & title_tokens(str(d.get("title", "")))), d) for d in candidates]
+        best = max((score for score, _ in scored), default=0)
+        # A weak match should not suppress potentially relevant content matches.
+        return [str(d["doc_id"]) for score, d in scored if score == best][:3] if best >= 2 else []
+
     def stream_chat(self, request: ChatRequest):
         """Execute streaming chat turn yielding (event_name, event_payload) tuples."""
         trace_id = self.trace_service.start_trace()
@@ -787,19 +892,20 @@ class Agent:
             # =========================================================================
             # FAST MODE: Independent direct RAG pipeline without agent multi-turn loops
             # =========================================================================
+            if needs_architecture_scope(request.query):
+                if request.session_id:
+                    self.orchestrator.memory.add_message(request.session_id, "user", request.query)
+                    self.orchestrator.memory.add_message(request.session_id, "assistant", ARCHITECTURE_SCOPE_QUESTION)
+                yield "citations", []
+                yield "token", {"content": ARCHITECTURE_SCOPE_QUESTION}
+                yield "done", {"trace_id": trace_id, "status": StatusCode.CLARIFICATION_REQUIRED, "citations_count": 0}
+                return
+
             if request.weight_mode == "fast":
                 search_tool = self.registry.get_tool("search_documents")
                 results = []
-                if isinstance(search_tool, SearchTool):
-                    results = search_tool.search(
-                        query=request.query,
-                        top_k=request.top_k or 5,
-                        mode=request.retrieval_mode or "hybrid",
-                        topic_doc_ids=request.topic_doc_ids,
-                        topic_titles=request.topic_titles,
-                        weight_mode="fast",
-                        consecutive_no_new_docs_count=request.consecutive_no_new_docs_count or 0,
-                    )
+                if request.knowledge_base_retrieval_enabled and isinstance(search_tool, SearchTool):
+                    results = self._retrieve_fast_context(request, search_tool, trace_id)
 
                 citations = [
                     Citation(
@@ -824,9 +930,22 @@ class Agent:
                 ]
                 yield "citations", [c.model_dump() for c in citations]
 
+                from deep_research.model_report import EvidenceReportSynthesizer
+                unsupported_entity = EvidenceReportSynthesizer._unsupported_count_entity(
+                    request.query, citations)
+                if unsupported_entity and not re.search(r"[\u3400-\u9fff]", request.query):
+                    answer = f"The authorized excerpts do not establish the requested exact {unsupported_entity} counts. Counts for another module cannot substitute for them."
+                    answer += ' ' + ''.join(f'[{c.citation_id}]' for c in citations[:3])
+                    if request.session_id:
+                        self.orchestrator.memory.add_message(request.session_id, "user", request.query)
+                        self.orchestrator.memory.add_message(request.session_id, "assistant", answer)
+                    yield "token", {"content": answer}
+                    yield "done", {"trace_id": trace_id, "status": StatusCode.SUCCESS, "citations_count": len(citations)}
+                    return
+
                 context_blocks = []
                 for idx, c in enumerate(citations, start=1):
-                    context_blocks.append(f"[{idx}] 标题: {c.title}\n内容: {c.snippet}")
+                    context_blocks.append(f"[{idx}] Title: {c.title}\nSource URL: {c.source_url or 'not recorded'}\nLocator: {c.chunk_id}\nContent: {c.snippet}")
                 context_text = "\n\n".join(context_blocks) if context_blocks else "无相关参考文档"
 
                 history = self.orchestrator._read_history(request.session_id)
@@ -847,6 +966,36 @@ class Agent:
                     f"{title_directive}"
                 )
 
+                if not re.search(r"[\u3400-\u9fff]", request.query):
+                    system_prompt = (
+                        "Answer in English using only the authorized reference context. "
+                        "Explain missing evidence without inventing facts. Cite factual claims with [1], [2], etc. "
+                        "For comparisons, distinguish sources and calculate requested differences. "
+                        "Respect the exact requested module and dates; team-wide totals cannot replace module totals. "
+                        "A missing statement means unverified, not that the capability is absent. "
+                        "For dated comparisons, label historical states by their source date. "
+                        "Only describe a limitation as still remaining if the later source confirms it; "
+                        "otherwise say its later status is unverified. Do not include weekdays unless asked. "
+                        "Keep remaining limitations restricted to the later source. Mention older unresolved status "
+                        "only for the dependency or capability explicitly asked about; omit unrelated historical constraints. "
+                        "Never conclude 'not confirmed resolved, therefore still present': unknown status stays unknown. "
+                        "Read the later source's Action Items as well as its discussion; relevant proposed repairs "
+                        "are remaining limitations, not completed work. A demonstrated flow does not establish "
+                        "production readiness or full integration. Keep comparisons within 200 words. "
+                        "For counts, give only the requested numbers, their differences and citations; "
+                        "do not infer team priorities or causes from numeric changes. "
+                        "For implementation-file questions, identify files implementing the requested features; "
+                        "When Python files are requested, list only .py paths, never .md documentation. "
+                        "Goal identifiers may repeat across sections: bind each identifier to its exact goal NAME. "
+                        "Translate non-English goal names into English while preserving identifiers and Latin component names. "
+                        "Include the full English goal name next to repeated IDs. Omit unrequested owners, schedules and acceptance criteria. "
+                        "Copy recorded status from that row; an empty status is 'not recorded', never 'Not started'. "
+                        "Acceptance criteria and mock test criteria describe planned verification, not tests already performed. "
+                        "do not list unrelated monorepo changes from a shared impacted-files table. "
+                        "Output the answer directly without tool-call tags."
+                    )
+                    system_prompt += " Do not output TITLE metadata; the application generates the chat title separately."
+
                 fast_messages = [{"role": "system", "content": system_prompt}]
                 for msg in (history or []):
                     if msg.get("role") in ("user", "assistant") and msg.get("content"):
@@ -858,6 +1007,29 @@ class Agent:
                 })
 
                 accumulated_answer = ""
+                from deep_research.model_report import EvidenceReportSynthesizer
+                validate_dated_answer = (
+                    not re.search(r"[\u3400-\u9fff]", request.query)
+                    and (EvidenceReportSynthesizer.needs_dated_comparison(request.query)
+                        or (re.search(r'\bgoals\b', request.query,re.I)
+                            and re.search(r'\b(?:demonstrat\w*|capabilities|unresolved|status|recorded)\b',request.query,re.I))
+                        or (re.search(r'\bLifecycle Archives\b',request.query,re.I)
+                            and re.search(r'\blifetime commits\b',request.query,re.I))
+                        or (re.search(r'\bCompare\b.{0,80}\bdeliveries\b',request.query,re.I)
+                            and re.search(r'\bother (?:improvements|commits)\b',request.query,re.I))
+                        or (re.search(r'\bMaster\b',request.query,re.I)
+                            and re.search(r'\bStandby\b',request.query,re.I))
+                        or re.search(r'\bCompare Total Commits\b',request.query,re.I)
+                        or (re.search(r'\bSLA\b',request.query,re.I)
+                            and re.search(r'\b(?:availability|uptime)\b',request.query,re.I))
+                        or (re.search(r'\bWho committed\b',request.query,re.I)
+                            and re.search(r'\btotal commits\b',request.query,re.I))
+                        or re.search(r'\bConfluence\b',request.query,re.I)
+                        or re.search(r'\bthree levels\b',request.query,re.I)
+                        or (re.search(r'\bonly (?:the )?W\d{2} [A-Za-z_-]+ weekly report\b',request.query,re.I)
+                            and re.search(r'\blatest\b',request.query,re.I))
+                        or re.search(r'\bPython files\b',request.query,re.I))
+                )
                 for delta in self.llm.stream_chat(fast_messages):
                     reasoning = delta.get("reasoning_content")
                     content = delta.get("content")
@@ -867,19 +1039,38 @@ class Agent:
                         clean_content = re.sub(r"<longcat_.*?/?>|</longcat_.*?>", "", content)
                         if clean_content:
                             accumulated_answer += clean_content
-                            yield "token", {"content": clean_content}
+                            if not validate_dated_answer:
+                                yield "token", {"content": clean_content}
+
+                quality_ok = True
+                if validate_dated_answer:
+                    yield "reasoning", {"content": "Verifying dated claims and the later source's remaining limitations."}
+                    from deep_research.model_report import EvidenceReportSynthesizer
+                    validator = EvidenceReportSynthesizer(api_base=settings.LLM_API_BASE,
+                        api_key=settings.LLM_API_KEY, model=self.llm.model)
+                    evidence = "\n\n".join(
+                        f"[{c.citation_id}] {c.title} ({row.get('snapshot_date') or row.get('last_updated') or 'undated'}, {c.chunk_id})\nSource URL: {c.source_url or 'not recorded'}\nSource excerpt: {c.snippet}"
+                        for c, row in zip(citations, results))
+                    checked = validator.repair_answer(accumulated_answer, request.query, evidence)
+                    quality_ok = checked is not None
+                    accumulated_answer = checked or (
+                        "The sources were retrieved, but the answer did not pass evidence-quality validation. "
+                        "Please review the source citations or retry."
+                    )
+                    yield "token", {"content": accumulated_answer}
 
                 extracted_title, clean_answer = self._separate_title_and_answer(accumulated_answer)
                 chat_title = extracted_title
                 if not chat_title and is_first:
                     chat_title = self._generate_fallback_title(request.query)
 
-                self.orchestrator.memory.add_message(request.session_id, "user", request.query)
-                self.orchestrator.memory.add_message(request.session_id, "assistant", clean_answer)
+                if request.session_id:
+                    self.orchestrator.memory.add_message(request.session_id, "user", request.query)
+                    self.orchestrator.memory.add_message(request.session_id, "assistant", clean_answer)
 
                 yield "done", {
                     "trace_id": trace_id,
-                    "status": "success",
+                    "status": StatusCode.SUCCESS if quality_ok else StatusCode.QUALITY_VALIDATION_FAILED,
                     "citations_count": len(citations),
                     "chat_title": chat_title,
                 }

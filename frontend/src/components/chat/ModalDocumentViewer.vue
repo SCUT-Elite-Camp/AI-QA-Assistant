@@ -229,32 +229,32 @@ function getDocIcon(title?: string): string {
   <UModal
     :open="open"
     :ui="{
-      content: 'sm:max-w-5xl md:max-w-6xl w-[92vw] rounded-3xl p-0 overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950'
+      content: 'sm:max-w-5xl md:max-w-6xl w-[92vw] rounded-3xl p-0 overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950'
     }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="flex flex-col bg-zinc-950 text-zinc-100 rounded-3xl min-h-[560px] max-h-[85vh] w-full border border-zinc-800 shadow-2xl overflow-hidden font-sans">
+      <div class="flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl min-h-[560px] max-h-[85vh] w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden font-sans">
         <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-800 shrink-0 bg-zinc-900/70 backdrop-blur-md">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-50/70 dark:bg-zinc-900/70 backdrop-blur-md">
           <div class="flex items-center gap-3 min-w-0 pr-4">
-            <div class="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
+            <div class="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
               <UIcon :name="getDocIcon(fullDoc?.title || doc?.title)" class="w-6 h-6" />
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2.5 flex-wrap">
-                <h2 class="text-lg font-bold text-zinc-100 truncate tracking-tight">
+                <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">
                   {{ fullDoc?.title || doc?.title || 'Document' }}
                 </h2>
                 <span
                   v-if="relevantChunks.length > 0"
-                  class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/90 font-medium shrink-0 flex items-center gap-1"
+                  class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600/90 dark:text-emerald-400/90 font-medium shrink-0 flex items-center gap-1"
                 >
-                  <UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 text-emerald-400/80" />
+                  <UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80" />
                   {{ relevantChunks.length }} {{ relevantChunks.length === 1 ? 'chunk' : 'chunks' }} matched
                 </span>
               </div>
-              <p class="text-xs text-zinc-400 truncate mt-0.5 font-mono">
+              <p class="text-xs text-zinc-600 dark:text-zinc-400 truncate mt-0.5 font-mono">
                 Doc ID: {{ fullDoc?.doc_id || doc?.doc_id || 'N/A' }}
               </p>
             </div>
@@ -269,7 +269,7 @@ function getDocIcon(title?: string): string {
               color="neutral"
               variant="outline"
               icon="i-lucide-external-link"
-              class="text-zinc-300 hover:text-white rounded-xl px-3 py-1.5"
+              class="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white rounded-xl px-3 py-1.5"
             >
               Open Source
             </UButton>
@@ -278,7 +278,7 @@ function getDocIcon(title?: string): string {
               variant="ghost"
               icon="i-lucide-x"
               size="sm"
-              class="rounded-xl text-zinc-400 hover:text-white"
+              class="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               @click="emit('update:open', false)"
             />
           </div>
@@ -287,10 +287,10 @@ function getDocIcon(title?: string): string {
         <!-- Minimalist Quick Jump Bar -->
         <div
           v-if="relevantChunks.length > 0"
-          class="px-6 py-2 bg-zinc-900/40 border-b border-zinc-800/60 flex items-center justify-between gap-3 flex-wrap text-xs shrink-0"
+          class="px-6 py-2 bg-zinc-50/40 dark:bg-zinc-900/40 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between gap-3 flex-wrap text-xs shrink-0"
         >
-          <div class="flex items-center gap-2 text-zinc-400 font-mono text-[11px]">
-            <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-emerald-400/80 shrink-0" />
+          <div class="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 font-mono text-[11px]">
+            <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80 shrink-0" />
             <span>{{ relevantChunks.length }} {{ relevantChunks.length === 1 ? 'chunk' : 'chunks' }} highlighted</span>
           </div>
 
@@ -300,10 +300,10 @@ function getDocIcon(title?: string): string {
               v-for="(_c, idx) in relevantChunks"
               :key="`jump-${idx}`"
               type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 hover:text-emerald-300 border border-zinc-700/50 text-zinc-300 font-mono text-[11px] font-medium transition-all cursor-pointer select-none active:scale-95"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-emerald-700 dark:hover:text-emerald-300 border border-zinc-300/50 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-300 font-mono text-[11px] font-medium transition-all cursor-pointer select-none active:scale-95"
               @click="scrollToChunk(idx + 1)"
             >
-              <UIcon name="i-lucide-locate" class="w-3 h-3 text-emerald-400/70" />
+              <UIcon name="i-lucide-locate" class="w-3 h-3 text-emerald-600/70 dark:text-emerald-400/70" />
               <span>Chunk #{{ idx + 1 }}</span>
             </button>
           </div>
@@ -312,22 +312,22 @@ function getDocIcon(title?: string): string {
         <!-- Body / Content Viewer -->
         <div class="flex-1 p-6 md:p-8 overflow-y-auto min-h-[360px]">
           <!-- Loading State -->
-          <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3 text-zinc-400">
-            <UIcon name="i-lucide-loader-2" class="w-9 h-9 animate-spin text-emerald-400" />
+          <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3 text-zinc-600 dark:text-zinc-400">
+            <UIcon name="i-lucide-loader-2" class="w-9 h-9 animate-spin text-emerald-600 dark:text-emerald-400" />
             <span class="text-sm">Loading document content...</span>
           </div>
 
           <!-- Error State -->
           <div v-else-if="error" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
-            <UIcon name="i-lucide-alert-circle" class="w-10 h-10 text-rose-400" />
-            <span class="text-sm text-zinc-300">{{ error }}</span>
+            <UIcon name="i-lucide-alert-circle" class="w-10 h-10 text-rose-600 dark:text-rose-400" />
+            <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ error }}</span>
             <UButton size="xs" color="neutral" variant="outline" class="rounded-xl" @click="loadFullDocument">
               Retry
             </UButton>
           </div>
 
           <!-- Document Content Rendered in Segments -->
-          <div v-else class="space-y-4 max-w-none text-zinc-200">
+          <div v-else class="space-y-4 max-w-none text-zinc-800 dark:text-zinc-200">
             <template v-for="seg in contentSegments" :key="seg.id">
               <!-- Highlighted Chunk Segment -->
               <div
@@ -336,19 +336,19 @@ function getDocIcon(title?: string): string {
                 class="chunk-highlighted-box relative my-5 p-5 rounded-2xl bg-emerald-500/[0.035] border border-emerald-500/20 border-l-[3.5px] border-l-emerald-500/70 shadow-md shadow-emerald-950/10 scroll-mt-6"
               >
                 <!-- Segment Badge Header -->
-                <div class="flex items-center gap-1.5 mb-3 text-xs font-medium text-emerald-400/90 font-mono tracking-wide">
-                  <UIcon name="i-lucide-bookmark" class="w-3.5 h-3.5 text-emerald-400/80" />
+                <div class="flex items-center gap-1.5 mb-3 text-xs font-medium text-emerald-600/90 dark:text-emerald-400/90 font-mono tracking-wide">
+                  <UIcon name="i-lucide-bookmark" class="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80" />
                   <span>Chunk #{{ seg.chunkIndex }}</span>
                 </div>
 
                 <!-- Inner Markdown Render with Clean White Text -->
-                <div class="chunk-highlighted-body text-zinc-200">
+                <div class="chunk-highlighted-body text-zinc-800 dark:text-zinc-200">
                   <ChatComark :markdown="seg.text" />
                 </div>
               </div>
 
               <!-- Normal Document Markdown Segment -->
-              <div v-else class="document-normal-body text-zinc-200">
+              <div v-else class="document-normal-body text-zinc-800 dark:text-zinc-200">
                 <ChatComark :markdown="seg.text" />
               </div>
             </template>
@@ -356,7 +356,7 @@ function getDocIcon(title?: string): string {
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-3.5 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-400 bg-zinc-900/50 shrink-0">
+        <div class="px-6 py-3.5 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
           <span v-if="fullDoc?.last_updated">
             Updated: {{ new Date(fullDoc.last_updated).toLocaleString() }}
           </span>
@@ -378,14 +378,14 @@ function getDocIcon(title?: string): string {
 </template>
 
 <style scoped>
-/* Ensure clean, crisp white text across all markdown elements inside highlighted chunks */
+/* Highlighted evidence follows the active theme, including Markdown and code. */
 .chunk-highlighted-body :deep(p),
 .chunk-highlighted-body :deep(li),
 .chunk-highlighted-body :deep(span),
 .chunk-highlighted-body :deep(td),
 .chunk-highlighted-body :deep(th),
 .chunk-highlighted-body :deep(blockquote) {
-  color: rgb(228, 228, 231) !important; /* text-zinc-200 */
+  color: var(--ui-text) !important;
 }
 
 .chunk-highlighted-body :deep(h1),
@@ -395,17 +395,17 @@ function getDocIcon(title?: string): string {
 .chunk-highlighted-body :deep(h5),
 .chunk-highlighted-body :deep(h6),
 .chunk-highlighted-body :deep(strong) {
-  color: rgb(244, 244, 245) !important; /* text-zinc-100 */
+  color: var(--ui-text-highlighted) !important;
 }
 
 .chunk-highlighted-body :deep(code) {
-  background-color: rgba(39, 39, 42, 0.8) !important; /* zinc-800 */
-  color: rgb(228, 228, 231) !important;
-  border: 1px solid rgba(63, 63, 70, 0.5) !important;
+  background-color: var(--ui-bg-elevated) !important;
+  color: var(--ui-text) !important;
+  border: 1px solid var(--ui-border) !important;
 }
 
 .chunk-highlighted-body :deep(pre) {
-  background-color: rgba(24, 24, 27, 0.9) !important; /* zinc-900 */
-  border: 1px solid rgba(63, 63, 70, 0.5) !important;
+  background-color: var(--ui-bg-muted) !important;
+  border: 1px solid var(--ui-border) !important;
 }
 </style>

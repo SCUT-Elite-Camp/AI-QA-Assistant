@@ -1017,6 +1017,13 @@ class SQLiteResearchRepository:
 
     @staticmethod
     def _event_from_row(row: sqlite3.Row) -> ResearchEvent:
+        message = row["message"]
+        payload = json.loads(row["payload_json"])
+        # Older writers committed long conversation bodies before validating
+        # the event summary. Recover those persisted answers without data loss.
+        if row["event_type"] in {"user_message", "assistant_message"} and len(message) > 500:
+            payload.setdefault("content", message)
+            message = message[:500]
         return ResearchEvent(
             event_id=row["event_id"],
             research_id=row["research_id"],
@@ -1024,8 +1031,8 @@ class SQLiteResearchRepository:
             event_type=row["event_type"],
             stage=row["stage"],
             task_id=row["task_id"],
-            message=row["message"],
-            payload=json.loads(row["payload_json"]),
+            message=message,
+            payload=payload,
             created_at=row["created_at"],
         )
 

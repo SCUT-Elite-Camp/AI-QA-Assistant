@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
 import { isPartStreaming } from '@nuxt/ui/utils/ai'
@@ -7,7 +7,9 @@ import ChatComark from '../Comark'
 import ChatToolChart from '../tool/Chart.vue'
 import ChatToolWeather from '../tool/Weather.vue'
 import ChatMessageEdit from './MessageEdit.vue'
+import ChatModalDocumentViewer from '../ModalDocumentViewer.vue'
 import { getMergedParts } from '../../../utils/ai'
+import { formatResearchCitations } from '../../../utils/researchMarkdown'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
 import type { ChunkCitation } from '../tool/Sources.vue'
@@ -59,6 +61,14 @@ const citationMap = computed(() => {
 
 // Make citations available to all CiteMark children via inject
 provide('ragCitationMap', citationMap)
+const citationOpen = ref(false)
+const selectedCitation = ref<ChunkCitation | null>(null)
+provide('openCitation', (index: number) => {
+  const citation = citationMap.value.get(index)
+  if (!citation) return
+  selectedCitation.value = citation
+  citationOpen.value = true
+})
 </script>
 
 <template>
@@ -98,9 +108,14 @@ provide('ragCitationMap', citationMap)
       />
       <ChatComark
         v-else-if="isTextUIPart(part)"
-        :markdown="part.text"
+        :markdown="citationMap.size ? formatResearchCitations(part.text) : part.text"
         :streaming="isPartStreaming(part)"
       />
     </template>
   </template>
+  <ChatModalDocumentViewer
+    v-model:open="citationOpen"
+    :doc="selectedCitation"
+    :all-citations="Array.from(citationMap.values())"
+  />
 </template>

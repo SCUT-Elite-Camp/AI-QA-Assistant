@@ -28,6 +28,8 @@ class LLMClient(BaseLLM):
 
         self.model = model.strip() if isinstance(model, str) and model.strip() else settings.LLM_MODEL
         self.enable_thinking = enable_thinking
+        if enable_thinking is None and self.model.lower().startswith(('qwen3', 'qwen-flash', 'qwen-turbo', 'deepseek')):
+            self.enable_thinking = settings.LLM_THINKING_MODE == 'enabled'
         self.fallback_models = fallback_models
         self.attempts_per_model = attempts_per_model
         self.retry_delay_seconds = retry_delay_seconds
@@ -142,6 +144,31 @@ class LLMClient(BaseLLM):
         if settings.LLM_API_KEY:
             headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
 
+        answer_emitted = False
+        for attempt in range(2):
+            try:
+                yield from self._stream_response(endpoint, payload, headers)
+                return
+            except requests.RequestException as exc:
+                # Retrying after answer tokens were delivered would duplicate
+                # or splice two independently generated answers.
+                answer_emitted = getattr(exc, 'answer_emitted', False)
+                if attempt == 0 and not answer_emitted:
+                    continue
+                if not answer_emitted and str(exc) == 'LLM stream produced no answer content':
+                    # Some compatible providers finish a stream without any
+                    # content deltas. A non-stream response is safe here because
+                    # no answer body has been exposed or stored yet.
+                    message = self.chat(messages, tools=tools, temperature=temperature, max_tokens=max_tokens)
+                    content = message.get('content') or ''
+                    if isinstance(content, str) and content.strip():
+                        yield {'content':content,'reasoning_content':''}
+                        return
+                raise LLMError(f"LLM streaming request failed: {exc}") from exc
+
+    def _stream_response(self, endpoint: str, payload: dict, headers: dict):
+        answer_emitted = False
+        resp = None
         try:
             resp = self._session.post(
                 endpoint,
@@ -167,14 +194,21 @@ class LLMClient(BaseLLM):
                         content = delta.get("content") or ""
                         reasoning = delta.get("reasoning_content") or ""
                         if content or reasoning:
+                            answer_emitted = answer_emitted or bool(content)
                             yield {
                                 "content": content,
                                 "reasoning_content": reasoning,
                             }
                 except json.JSONDecodeError:
                     continue
+            if not answer_emitted:
+                raise requests.ConnectionError('LLM stream produced no answer content')
         except requests.RequestException as exc:
-            raise LLMError(f"LLM streaming request failed: {exc}") from exc
+            exc.answer_emitted = answer_emitted
+            raise
+        finally:
+            if resp is not None and callable(getattr(resp, 'close', None)):
+                resp.close()
 
     @staticmethod
     def _request_json(request: Request) -> dict:

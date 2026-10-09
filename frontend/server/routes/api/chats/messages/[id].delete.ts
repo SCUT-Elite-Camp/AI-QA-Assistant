@@ -18,8 +18,9 @@ export default defineHandler(async (event) => {
     id: z.string()
   }).parse)
 
-  const { chatId } = await readValidatedBody(event, z.object({
-    chatId: z.string()
+  const { chatId, type } = await readValidatedBody(event, z.object({
+    chatId: z.string(),
+    type: z.enum(['edit', 'regenerate'])
   }).parse)
 
   const { actor } = await requireOwnedChat(event, chatId)
@@ -32,7 +33,8 @@ export default defineHandler(async (event) => {
     result = await truncateHistoryAndInvalidateMemory(db, {
       actorUserId: actor.userId,
       chatId,
-      firstDeletedMessageId: id
+      messageId: id,
+      type
     })
   } catch (err) {
     if (err instanceof HistoryMutationError) {

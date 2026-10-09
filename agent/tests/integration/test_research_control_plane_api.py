@@ -232,3 +232,98 @@ def test_conflict_choice_persists_report_without_clearing_quality_gaps(tmp_path:
         assert any(event.event_type.value == 'conflict_resolved' for event in events)
     finally:
         repository.close()
+
+
+def test_english_research_conversation_approve_and_cancel(tmp_path: Path) -> None:
+    client, control_plane = _client(tmp_path)
+    try:
+        for command, expected in [('approve', 'approved'), ('cancel', 'cancelled')]:
+            created = client.post('/api/research/jobs', json={
+                'query': 'Compare source A and B.',
+                'source_scope': {'document_ids': ['doc-a', 'doc-b']},
+                'report_spec': {'language': 'en-US'},
+            }).json()
+            research_id = created['research_id']
+            control_plane.resume_planning_job(research_id)
+            response = client.post(f'/api/research/jobs/{research_id}/messages', json={'message': command})
+            assert response.status_code == 200
+            assert response.json()['action'] == expected
+            assert not __import__('re').search(r'[\u3400-\u9fff]', response.json()['message'])
+    finally:
+        control_plane.repository.close()
+
+
+def test_english_followup_distinguishes_provider_failure_from_missing_evidence(monkeypatch):
+    from agent.api.research_routes import _answer_report_followup, EvidenceReportSynthesizer, settings
+    from agent.schemas.research import ResearchCitation, ResearchReport, ResearchResultStatus
+    report = ResearchReport(
+        report_id='report-test', research_id='research-test', markdown='Count: 9 [1]',
+        result_status=ResearchResultStatus.COMPLETE, evidence_ids=['ev1'],
+        citations=[ResearchCitation(number=1, evidence_id='ev1', doc_id='doc-a', title='Source A', locator='line:1', excerpt='Total commits: 9', content_hash='12345678')],
+    )
+    monkeypatch.setattr(settings, 'LLM_API_KEY', 'test-only')
+    prompts = []
+    def unavailable(self, payload):
+        prompts.append(payload['messages'][0]['content'])
+        raise RuntimeError('provider quota exhausted')
+    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', unavailable)
+    answer = _answer_report_followup(report, 'What is the count?', 'en-US')
+    assert 'quota' in answer
+    assert 'English' in prompts[0]
+    assert 'Chinese' not in prompts[0]
+    assert 'does not reliably answer' not in answer
+
+
+def test_followup_receives_report_context_and_rejects_unknown_citation(monkeypatch):
+    from agent.api.research_routes import _answer_report_followup, EvidenceReportSynthesizer, settings
+    from agent.schemas.research import ResearchCitation, ResearchReport, ResearchResultStatus
+    report = ResearchReport(report_id='report-test', research_id='research-test', markdown='Release B minus A: -2 [3]', result_status=ResearchResultStatus.COMPLETE, evidence_ids=['ev1'], citations=[ResearchCitation(number=3, evidence_id='ev1', doc_id='doc-a', title='Counts', locator='line:1', excerpt='A: 7; B: 5', content_hash='12345678')])
+    monkeypatch.setattr(settings, 'LLM_API_KEY', 'test-only')
+    prompts = []
+    def answer(self, payload):
+        prompts.append(payload['messages'][0]['content'])
+        return {'choices': [{'message': {'content': 'B minus A is -2 [3].'}}]}
+    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', answer)
+    assert _answer_report_followup(report, 'Repeat the change in this report.', objective='Compare releases A and B.') == 'B minus A is -2 [3].'
+    assert report.markdown in prompts[0]
+    assert 'Compare releases A and B.' in prompts[0]
+    assert 'direction of subtraction' in prompts[0]
+    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', lambda *args: {'choices': [{'message': {'content': 'A false claim [1].'}}]})
+    assert 'does not reliably answer' in _answer_report_followup(report, 'Repeat the change.')
+
+
+def test_long_research_conversation_keeps_complete_bodies_and_bounded_progress(tmp_path, monkeypatch):
+    from agent.schemas.research import ResearchJobStatus, ResearchReport, ResearchResultStatus
+    import agent.api.research_routes as routes
+    client, control_plane = _client(tmp_path)
+    repository = control_plane.repository
+    answer = 'The dependency is unverified; the workflow is hard-coded. [1]\n\n' * 20
+    question = 'Explain the confirmed state and the remaining limitations. ' * 12
+    monkeypatch.setattr(routes, '_answer_report_followup', lambda *args, **kwargs: answer)
+    try:
+        created = client.post('/api/research/jobs', json={'query': 'Compare A and B.', 'source_scope': {'document_ids': ['doc-a', 'doc-b']}}).json()
+        rid = created['research_id']
+        job = repository.get_job(rid)
+        repository.update_job(job.model_copy(update={'status': ResearchJobStatus.COMPLETED, 'current_stage': 'completed'}))
+        repository.save_report(ResearchReport(report_id='r', research_id=rid, markdown='Report', result_status=ResearchResultStatus.COMPLETE))
+        response = client.post(f'/api/research/jobs/{rid}/messages', json={'message': question})
+        assert response.status_code == 200
+        assert response.json()['message'] == answer
+        events = client.get(f'/api/research/jobs/{rid}/events').json()['events']
+        conversation = [e for e in events if e['event_type'] in {'user_message', 'assistant_message'}]
+        assert len(conversation) == 2
+        assert all(len(e['message']) <= 500 for e in conversation)
+        assert conversation[0]['payload']['content'] == question.strip()
+        assert conversation[1]['payload']['content'] == answer
+        # Reproduce the legacy writer: SQLite stored the full body before its
+        # post-insert schema validation raised. Reload must recover that row.
+        repository._connection.execute('update research_events set message=?, payload_json=? where event_id=?',
+                                       (answer, '{"action":"followup_answered"}', conversation[1]['event_id']))
+        repository._connection.commit()
+        restored = client.get(f'/api/research/jobs/{rid}/events')
+        assert restored.status_code == 200
+        legacy = next(e for e in restored.json()['events'] if e['event_id'] == conversation[1]['event_id'])
+        assert len(legacy['message']) == 500
+        assert legacy['payload']['content'] == answer
+    finally:
+        repository.close()

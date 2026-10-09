@@ -79,7 +79,7 @@ class MockResearchPlanner:
                     AcceptanceCriterion(
                         criterion_id="criterion-1",
                         dimension="evidence",
-                        target=f"{source_names}的具体事实与原文",
+                        target="所选资料的具体事实与原文",
                         required=True,
                     )
                 ],
@@ -115,7 +115,7 @@ class MockResearchPlanner:
                     AcceptanceCriterion(
                         criterion_id="criterion-3",
                         dimension="limitation",
-                        target=f"{source_names}未覆盖或无法确认的事项",
+                        target="所选资料未覆盖或无法确认的事项",
                         required=False,
                     )
                 ],
@@ -139,8 +139,10 @@ class MockResearchPlanner:
             for task, (question, purpose, target) in zip(tasks, descriptions):
                 task.question = question
                 task.purpose = purpose
-                task.acceptance_criteria[0].target = target
-                task.acceptance_criteria[0].description = f"{task.acceptance_criteria[0].dimension}: {target}"
+                # Source IDs already bind the task to its manifest. Long titles
+                # must not create a plan that cannot be read back from storage.
+                task.acceptance_criteria[0].target = target if len(target) <= 200 else "Specific facts and original excerpts from the task's selected sources"
+                task.acceptance_criteria[0].description = f"{task.acceptance_criteria[0].dimension}: {task.acceptance_criteria[0].target}"
 
         plan = ResearchPlan(
             schema_version="research.v2",
@@ -242,26 +244,41 @@ class ModelResearchPlanner:
         language = "Chinese" if request.report_spec.language == "zh-CN" else "English"
         prompt = (
             "Create a specific research plan for the question and frozen local documents below. "
-            "Return JSON only: {\"tasks\":[{\"question\":string,\"purpose\":string,"
-            "\"acceptance_target\":string}]}. Create 2 to 5 non-overlapping tasks in execution order. "
+            "Return JSON only: {\"tasks\":[{\"question\":string,\"purpose\":string}]}. "
+            "Create 2 to 5 non-overlapping tasks in execution order. "
+            "Document titles and metadata do not establish their contents. Never predict source findings. "
             "Tasks must name the concrete facts, comparisons, dates, versions, or uncertainties to verify; "
             "do not use generic phrases such as locate core facts or organize conclusions. "
             "Keep technical identifiers and source-language keywords in task questions "
             "so local lexical search can find the relevant sections. Separate questions "
             "about summary counts, commit details, and changed files when all are requested. "
+            "Cover every requested comparison and remaining limitation explicitly. "
+            "Preserve arithmetic conditions exactly: a minimum for features plus bug fixes is a combined minimum, "
+            "never a feature-only minimum. Read canonical totals rather than recounting partial commit history. "
+            "Use neutral verification questions: do not assume dependencies were resolved, "
+            "planned work was completed, or a working frontend-to-backend demo proves independence "
+            "from external services. Distinguish document snapshot/version dates from the event "
+            "dates in the document; verify the event dates from source text. For development "
+            "over time, check limitations in the later source and whether earlier dependencies "
+            "were explicitly resolved, rather than treating historical gaps as current facts. "
             f"Write task text in {language}. Do not browse or add sources.\n\n"
             f"Question: {request.query}\n"
             f"Documents: {json.dumps(documents, ensure_ascii=False)}"
         )
         payload = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {"role": "system", "content": prompt.partition("\n\nQuestion:")[0]},
+                {"role": "user", "content": "Question:" + prompt.partition("\n\nQuestion:")[2]},
+            ],
             "temperature": 0.1,
             "max_tokens": 1200,
             "response_format": {"type": "json_object"},
         }
         if settings.LLM_THINKING_MODE in {"enabled", "disabled"}:
             payload["thinking"] = {"type": settings.LLM_THINKING_MODE}
+        if self.model.casefold().startswith(("qwen", "deepseek")):
+            payload['enable_thinking'] = settings.LLM_THINKING_MODE == 'enabled'
         raw = self._chat(payload)["choices"][0]["message"]["content"]
         parsed = json.loads(str(raw).strip().removeprefix("```json").removesuffix("```").strip())
         specs = parsed.get("tasks")
@@ -274,7 +291,12 @@ class ModelResearchPlanner:
                 raise PlannerError("task must be an object")
             question = str(spec.get("question", "")).strip()
             purpose = str(spec.get("purpose", "")).strip()
-            target = str(spec.get("acceptance_target", "")).strip()
+            target = (
+                "Cited original excerpts answer this task, separating confirmed facts, "
+                "planned work and unknown status; source silence is not proof of absence."
+                if language == "English" else
+                "引用原文回答此任务，区分已确认事实、计划工作与未知状态；资料未提及不等于不存在。"
+            )
             if min(len(question), len(purpose), len(target)) < 4:
                 raise PlannerError("model returned an incomplete task")
             tasks.append(
@@ -322,6 +344,12 @@ class ModelResearchPlanner:
         )
         if any(marker in combined for marker in generic):
             raise PlannerError("model returned a generic research plan")
+        if re.search(r'features\s*(?:plus|\+)\s*bug fixes',objective,re.I):
+            if re.search(r'\bminimum(?:\s+of)?\s+\d+\s+features\b|\bfeatures\s*(?:>=|≥)\s*\d+',combined):
+                raise PlannerError('research plan changes a combined minimum into a feature-only minimum')
+        for marker in ("independence", "fully internal", "offline operation"):
+            if marker in combined and marker not in objective.casefold():
+                raise PlannerError("research plan introduces an unrequested independence claim")
         if objective_terms and not any(term in combined for term in objective_terms):
             raise PlannerError("research plan does not cover the objective")
 

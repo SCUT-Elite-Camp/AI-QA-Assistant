@@ -33,6 +33,16 @@ Calibration anchors:
   accurate, or Completeness when every requested fact is explicitly present.
 - A requested source URL or locator displayed in the report's source/citation
   section counts as present and complete even when it is not repeated in prose.
+- Citation metadata (`source_url`, `locator`, `doc_id`) is frozen provenance
+  evidence for source-identification claims. A matching URL or locator is
+  supported by that metadata even when it is absent from the document's prose
+  excerpt. Metadata does not support unrelated factual claims about content.
+- Required facts describe required coverage, not an exclusive list of allowed
+  answers. Additional requested, sourced Python test files remain Python files.
+  Distinct named goals sharing an identifier must retain their own statuses;
+  exposing both rows is not a contradiction or misassignment.
+- `unsupported_claim_ids` must use the supplied candidate claim IDs. Missing
+  required facts belong in completeness scoring, not this list.
 - Faithfulness evaluates support for factual claims that are present, not whether
   the report performed enough synthesis. A report containing only supported
   copied excerpts can be incomplete and irrelevant while still scoring 5 for
@@ -56,6 +66,15 @@ Rules:
 1. A workflow status of `completed` provides no quality credit.
 2. A correct refusal/degraded answer can score 5 when that is the expected behavior.
 3. A plausible statement not present in the supplied excerpts is unsupported.
+   Treat causal explanations and claims about mock implementations, production
+   readiness, permissions, or scalability as unsupported unless the excerpts
+   establish them. Source silence establishes uncertainty, not absence.
+   Before assigning scores, independently check each requested number, its
+   module and period, and any arithmetic against the frozen excerpts. Nearby
+   team totals or different periods cannot substitute for the requested facts.
+   For English cases, mixed-language narrative and pasted source history lower
+   Answer relevance. A correct clarification must stay focused on the missing
+   scope; adding unrelated source dumps does not earn completeness credit.
 4. Do not repair the report or infer a missing citation.
 5. Deterministic checks for manifest scope, hashes, locators, citation presence,
    and link status are outside your authority and cannot be overridden.

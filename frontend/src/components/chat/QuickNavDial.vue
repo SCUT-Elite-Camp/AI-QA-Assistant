@@ -145,20 +145,20 @@ onUnmounted(() => {
       <!-- Semi-circular Right Dock Container -->
       <div
         :class="[
-          'flex flex-col py-3 px-2 rounded-l-2xl bg-zinc-950/90 dark:bg-zinc-900/95 backdrop-blur-md border-l border-t border-b border-zinc-700/70 shadow-2xl transition-all duration-300',
+          'flex flex-col py-3 px-2 rounded-l-2xl bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md border-l border-t border-b border-zinc-300/70 dark:border-zinc-700/70 shadow-2xl transition-all duration-300',
           isCollapsed ? 'w-11 items-center' : 'w-56 sm:w-64 max-w-[85vw]'
         ]"
       >
         <!-- Header: Quick Nav Title & Controls -->
-        <div class="flex items-center justify-between pb-2 mb-1 border-b border-zinc-800/80 px-1">
-          <div v-if="!isCollapsed" class="flex items-center gap-1.5 text-xs font-semibold text-zinc-200">
-            <UIcon name="i-heroicons-list-bullet" class="w-4 h-4 text-emerald-400" />
+        <div class="flex items-center justify-between pb-2 mb-1 border-b border-zinc-200/80 dark:border-zinc-800/80 px-1">
+          <div v-if="!isCollapsed" class="flex items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            <UIcon name="i-heroicons-list-bullet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Nav ({{ turns.length }})</span>
           </div>
           <button
             type="button"
             :title="isCollapsed ? 'Expand navigation' : 'Collapse navigation'"
-            class="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors mx-auto sm:mx-0 cursor-pointer"
+            class="p-1 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors mx-auto sm:mx-0 cursor-pointer"
             @click="isCollapsed = !isCollapsed"
           >
             <UIcon :name="isCollapsed ? 'i-heroicons-chevron-left' : 'i-heroicons-chevron-right'" class="w-4 h-4" />
@@ -170,7 +170,7 @@ onUnmounted(() => {
           <button
             type="button"
             title="Scroll to Top"
-            class="w-7 h-7 rounded-full bg-zinc-800 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-700 flex items-center justify-center transition-all cursor-pointer"
+            class="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-all cursor-pointer"
             @click="scrollToTop"
           >
             <UIcon name="i-heroicons-arrow-up" class="w-3.5 h-3.5" />
@@ -186,7 +186,7 @@ onUnmounted(() => {
                 'w-7 h-7 rounded-full text-[11px] font-mono font-medium flex items-center justify-center transition-all cursor-pointer border',
                 activeTurnIndex === turn.turnIndex
                   ? 'bg-emerald-500 text-white border-emerald-400 font-bold scale-105 shadow-sm shadow-emerald-500/20'
-                  : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-800 dark:hover:text-zinc-200'
               ]"
               @click="scrollToMessage(turn.assistantMessage.id, turn.turnIndex)"
             >
@@ -197,7 +197,7 @@ onUnmounted(() => {
           <button
             type="button"
             title="Scroll to Bottom"
-            class="w-7 h-7 rounded-full bg-zinc-800 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-700 flex items-center justify-center transition-all cursor-pointer"
+            class="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-all cursor-pointer"
             @click="scrollToBottom"
           >
             <UIcon name="i-heroicons-arrow-down" class="w-3.5 h-3.5" />
@@ -213,15 +213,15 @@ onUnmounted(() => {
             :class="[
               'group text-left px-2.5 py-2 rounded-xl text-xs flex items-center gap-2 border transition-all cursor-pointer truncate',
               activeTurnIndex === turn.turnIndex
-                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300 font-medium shadow-xs'
-                : 'bg-zinc-900/60 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800/80 hover:border-zinc-700 hover:text-white'
+                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-xs'
+                : 'bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-white'
             ]"
             @click="scrollToMessage(turn.assistantMessage.id, turn.turnIndex)"
           >
             <span
               :class="[
                 'w-5 h-5 rounded-full shrink-0 font-mono text-[10px] flex items-center justify-center font-bold',
-                activeTurnIndex === turn.turnIndex ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-400 group-hover:bg-zinc-700 group-hover:text-zinc-200'
+                activeTurnIndex === turn.turnIndex ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:text-zinc-800 dark:group-hover:text-zinc-200'
               ]"
             >
               {{ turn.turnIndex }}
@@ -233,10 +233,10 @@ onUnmounted(() => {
         </div>
 
         <!-- Bottom Actions Bar (Expanded View) -->
-        <div v-if="!isCollapsed" class="flex items-center justify-between pt-2 mt-1 border-t border-zinc-800/80 px-1 text-[11px] text-zinc-400">
+        <div v-if="!isCollapsed" class="flex items-center justify-between pt-2 mt-1 border-t border-zinc-200/80 dark:border-zinc-800/80 px-1 text-[11px] text-zinc-500 dark:text-zinc-400">
           <button
             type="button"
-            class="hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors"
+            class="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors"
             @click="scrollToTop"
           >
             <UIcon name="i-heroicons-arrow-up" class="w-3.5 h-3.5" />
@@ -244,7 +244,7 @@ onUnmounted(() => {
           </button>
           <button
             type="button"
-            class="hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors"
+            class="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors"
             @click="scrollToBottom"
           >
             <UIcon name="i-heroicons-arrow-down" class="w-3.5 h-3.5" />

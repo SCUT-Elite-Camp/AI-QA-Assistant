@@ -158,7 +158,14 @@ class DeterministicSemanticVerifier:
     def _same_fact_scope(cls, evidence: list[VerifiedEvidence]) -> bool:
         """Different explicit periods are comparison inputs, not contradictions."""
 
-        scopes = [cls._scope_markers(item.excerpt) for item in evidence]
+        scopes = []
+        for item in evidence:
+            scope = cls._scope_markers(item.excerpt)
+            if not scope:
+                date = re.match(r"\d{4}-\d{2}-\d{2}", item.document_version or "")
+                if date:
+                    scope = {date.group()}
+            scopes.append(scope)
         explicit = [scope for scope in scopes if scope]
         if len(explicit) < 2:
             return True
@@ -173,6 +180,9 @@ class DeterministicSemanticVerifier:
         }
         if markers:
             return markers
+        dates = set(re.findall(r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)", text))
+        if dates:
+            return dates
         # A year is a useful scope only when no more precise sprint/week marker
         # is present. Shared years still permit conflict detection.
         return set(re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", text))

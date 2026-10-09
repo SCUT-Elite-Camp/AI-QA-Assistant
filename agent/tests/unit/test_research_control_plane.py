@@ -35,6 +35,17 @@ def _control_plane(database_path: Path) -> ResearchControlPlane:
     return ResearchControlPlane(repository, source_resolver=resolver)
 
 
+def test_english_fallback_plan_with_long_source_title_reads_back(tmp_path):
+    repository=SQLiteResearchRepository(tmp_path/'long-title.db')
+    resolver=InMemoryDocumentResolver({'doc-long':{'doc_id':'doc-long','title':'Long source title '*14,'content':'Recorded evidence.'}})
+    control=ResearchControlPlane(repository,source_resolver=resolver)
+    job=control.create_job(ResearchRequest(query='Summarize the recorded evidence.',
+        source_scope=SourceScope(document_ids=['doc-long']),report_spec={'language':'en-US'}),user_id='test')
+    plan=control.get_plan(job.research_id)
+    assert all(len(c.target)<=200 for t in plan.tasks for c in t.acceptance_criteria)
+    assert all(t.source_ids==['doc-long'] for t in plan.tasks)
+
+
 def test_create_persists_real_job_manifest_plan_and_tasks_after_repository_restart(
     tmp_path: Path,
 ) -> None:

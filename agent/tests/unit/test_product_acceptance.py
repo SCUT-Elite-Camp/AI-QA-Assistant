@@ -11,7 +11,7 @@ from deep_research.renderer import MarkdownReportRenderer
 from deep_research.tools import LocalJsonSearchBackend
 from deep_research.planner import ModelResearchPlanner
 from agent.config.settings import settings
-from agent.schemas.research import ResearchRequest, SourceScope, ResearchPlanValidator
+from agent.schemas.research import ResearchRequest, SourceScope, ResearchPlanValidator, ResearchReport, ResearchCitation, ResearchResultStatus
 from agent.orchestration.orchestrator import AgentOrchestrator
 from agent.schemas.chat import ChatRequest
 from agent.schemas.intent_policy import IntentPolicy
@@ -108,6 +108,11 @@ def valid_report():
     return "\n\n".join(f"## Section {i}\nA supported statement with sufficient explanation from the original evidence. [1]" for i in range(5))
 
 
+def source_report():
+    return ResearchReport(report_id="r", research_id="job", markdown="source fallback", result_status=ResearchResultStatus.COMPLETE,
+                          citations=[ResearchCitation(number=1, evidence_id="e", doc_id="a", title="source", locator="a_chunk_0", excerpt="source fact", content_hash="12345678")])
+
+
 @pytest.mark.parametrize("body,reason", [("[0]", "stop"), ("[2]", "stop"), ("[1]", "length")])
 def test_report_guard_rejects_invalid_citations_and_truncation(body, reason):
     assert EvidenceReportSynthesizer._structural_issues(valid_report().replace("[1]", body), 1, reason)
@@ -121,7 +126,7 @@ def test_report_normalizes_known_markdown_headings():
 
 
 def test_report_repair_is_bounded_and_preserves_fallback(monkeypatch):
-    base = SimpleNamespace(citations=[SimpleNamespace(number=1, title="source", document_version="1", locator="a_chunk_0", excerpt="source fact")])
+    base = source_report()
     monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
     synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
     calls = []
@@ -129,7 +134,9 @@ def test_report_repair_is_bounded_and_preserves_fallback(monkeypatch):
         calls.append(json.loads(json.dumps(payload)))
         return {"choices": [{"message": {"content": "incomplete [0]"}, "finish_reason": "length"}]}
     monkeypatch.setattr(synth, "_chat", chat)
-    assert synth.render(objective="question") is base
+    result = synth.render(objective="question")
+    assert result.result_status == ResearchResultStatus.DEGRADED
+    assert "incomplete" not in result.markdown
     assert len(calls) == 4
     assert "same evidence" in calls[1]["messages"][-1]["content"]
     assert "compact final answer" in calls[2]["messages"][0]["content"]
@@ -137,20 +144,16 @@ def test_report_repair_is_bounded_and_preserves_fallback(monkeypatch):
 
 
 def test_report_accepts_complete_repair(monkeypatch):
-    base = SimpleNamespace(citations=[SimpleNamespace(number=1, title="source", document_version="1", locator="a_chunk_0", excerpt="source fact")],
-                           model_copy=lambda update: update)
+    base = source_report()
     monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
     synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
-    replies = iter(["incomplete", valid_report()])
+    replies = iter(["incomplete", valid_report(), '{"issues": []}'])
     monkeypatch.setattr(synth, "_chat", lambda payload: {"choices": [{"message": {"content": next(replies)}, "finish_reason": "stop"}]})
-    assert "## Sources" in synth.render(objective="question")["markdown"]
+    assert "## Sources" in synth.render(objective="question").markdown
 
 
 def test_report_uses_compact_rescue_after_primary_transport_failure(monkeypatch):
-    base = SimpleNamespace(
-        citations=[SimpleNamespace(number=1, title="source", document_version="1", locator="a_chunk_0", excerpt="source fact")],
-        model_copy=lambda update: update,
-    )
+    base = source_report()
     monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
     synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
     calls = []
@@ -158,10 +161,10 @@ def test_report_uses_compact_rescue_after_primary_transport_failure(monkeypatch)
         calls.append(payload)
         if len(calls) == 1:
             raise OSError("transport failed")
-        return {"choices": [{"message": {"content": valid_report()}, "finish_reason": "stop"}]}
+        return {"choices": [{"message": {"content": valid_report() if len(calls) == 2 else '{"issues": []}'}, "finish_reason": "stop"}]}
     monkeypatch.setattr(synth, "_chat", chat)
-    assert "## Sources" in synth.render(objective="question")["markdown"]
-    assert len(calls) == 2
+    assert "## Sources" in synth.render(objective="question").markdown
+    assert len(calls) == 3
     assert "compact final answer" in calls[1]["messages"][0]["content"]
 
 

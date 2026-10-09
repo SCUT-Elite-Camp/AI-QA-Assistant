@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("check", "freeze", "serve", "run"))
+    parser.add_argument("--frontend-db", type=Path, help="Use an isolated frontend DB for browser permission checks")
     parser.add_argument("--port", type=int, default=8010)
     parser.add_argument("--case-ids", nargs="+", help="Run a selected pilot subset of the English cases")
     parser.add_argument("--repetitions", type=int, default=3)
@@ -28,6 +29,8 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "g1_g2_english_20261002")
     args = parser.parse_args()
     load_dotenv(AGENT / ".env", override=True)
+    if args.frontend_db:
+        os.environ["WEB_SQLITE_PATH"] = str(args.frontend_db.resolve())
     os.chdir(ROOT)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)

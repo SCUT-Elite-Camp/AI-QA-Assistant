@@ -128,7 +128,8 @@ describe('history mutation short-window reset boundary', () => {
     expect(mocks.truncateHistoryAndInvalidateMemory).toHaveBeenCalledWith(expect.anything(), {
       actorUserId: 'user-1',
       chatId: 'chat-1',
-      firstDeletedMessageId: 'message-1'
+      messageId: 'message-1',
+      type: 'edit'
     })
     expect(mocks.resetShortWindow).toHaveBeenCalledOnce()
     expect(mocks.resetShortWindow).toHaveBeenCalledWith('chat-1')

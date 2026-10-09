@@ -16,7 +16,8 @@ export const useUserSession = createSharedComposable(() => {
     session.value = null
   }
 
-  const fetchSession = async () => {
+  let pendingSession: Promise<UserSession | null> | null = null
+  const loadSession = async () => {
     session.value = await $fetch<UserSession>('/api/session').catch(() => null)
     if (!session.value?.user) {
       try {
@@ -38,6 +39,13 @@ export const useUserSession = createSharedComposable(() => {
       }
     }
     return session.value
+  }
+
+  const fetchSession = () => {
+    if (!pendingSession) {
+      pendingSession = loadSession().finally(() => { pendingSession = null })
+    }
+    return pendingSession
   }
 
   const popupListener = (e: StorageEvent) => {

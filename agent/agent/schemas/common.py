@@ -9,5 +9,6 @@ class StatusCode(StrEnum):
     NO_RELEVANT_CONTEXT = "no_relevant_context"
     RETRIEVAL_ERROR = "retrieval_error"
     LLM_ERROR = "llm_error"
+    QUALITY_VALIDATION_FAILED = "quality_validation_failed"
     UNSUPPORTED = "unsupported"
 

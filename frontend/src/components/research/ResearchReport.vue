@@ -5,16 +5,16 @@ import ChatComark from '../chat/Comark'
 import ResearchMessageActions from './ResearchMessageActions.vue'
 import ResearchSources from './ResearchSources.vue'
 import type { ChunkCitation } from '../chat/tool/Sources.vue'
+import { formatResearchCitations } from '../../utils/researchMarkdown'
 
 const props = defineProps<{ job: ResearchJob, report: ResearchReport, plan?: ResearchPlan | null, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ restart: [], askSelectedText: [text: string], regenerate: [] }>()
 const selectedText = ref('')
 const selectionPosition = ref<{ x: number, y: number } | null>(null)
 const latestRecovery = computed(() => [...(props.events ?? [])].reverse().find(event => event.event_type === 'job_recovered'))
-const reportMarkdown = computed(() => props.report.markdown
+const reportMarkdown = computed(() => formatResearchCitations(props.report.markdown
   .replace(/^#\s+[^\n]+\n+/, '')
-  .replace(/\n##\s+来源\s*\n[\s\S]*$/u, '')
-  .replace(/\[(\d+)]/g, '<cite-mark index="$1"></cite-mark>'))
+  .replace(/\n##\s+来源\s*\n[\s\S]*$/u, '')))
 const sourceCitations = computed<ChunkCitation[]>(() => props.report.citations.map(citation => ({
     index: citation.number,
     doc_id: citation.doc_id,
@@ -28,13 +28,27 @@ const citationMap = computed(() => new Map(sourceCitations.value.map(citation =>
 provide('ragCitationMap', citationMap)
 
 function downloadMarkdown() {
+  if (import.meta.env.VITE_RESEARCH_USE_MOCK !== 'true') {
+    const link = document.createElement('a')
+    link.href = `/api/research/download?researchId=${encodeURIComponent(props.job.research_id)}`
+    link.download = `${props.report.report_id}.md`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    return
+  }
   const blob = new Blob([props.report.markdown], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = `${props.report.report_id}.md`
+  link.hidden = true
+  document.body.appendChild(link)
   link.click()
-  URL.revokeObjectURL(url)
+  link.remove()
+  // Keep the blob alive until the browser has consumed the download request.
+  // Immediate revocation can cancel an asynchronous download.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function handleTextSelection() {
@@ -68,7 +82,7 @@ function askSelectedText() {
 <template>
   <div class="space-y-6">
     <p class="max-w-[72ch] text-base leading-7 text-highlighted">
-      研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.conflicts?.length">；其中仍有资料冲突，需要你结合实际情况复核</span><span v-else-if="report.result_status !== 'complete'">；部分结论的证据仍不足，已在报告中标明</span>。
+      研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.conflicts?.length">；其中仍有资料冲突，需要你结合实际情况复核</span><span v-else-if="report.result_status !== 'complete'">；报告存在待确认事项或未通过质量核验，请查看说明</span>。
     </p>
 
     <article

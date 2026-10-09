@@ -261,12 +261,16 @@ export default defineHandler(async (event) => {
   const abortController = new AbortController()
   const assistantState = createAssistantStreamState()
   let assistantMessageId: string | undefined
+  let assistantSourcePart: UIMessage['parts'][number] | undefined
   const agentFactProposals: FactProposal[] = []
   let shouldAttemptCompaction = false
 
   const timeoutId = setTimeout(() => abortController.abort(), 90000)
-  event.runtime?.node?.req?.on('close', () => {
+  // IncomingMessage.close also fires when the request body finishes normally.
+  // Only an unfinished response closing means the streaming client left.
+  event.runtime?.node?.res?.on('close', () => {
     clearTimeout(timeoutId)
+    if (event.runtime?.node?.res?.writableEnded) return
     assistantState.clientAborted = true
     abortController.abort()
   })
@@ -386,6 +390,7 @@ export default defineHandler(async (event) => {
         const reasoningId = `reasoning-${Date.now()}`
         const currentAssistantMessageId = createAssistantMessageId()
         assistantMessageId = currentAssistantMessageId
+        writer.write({ type: 'start', messageId: currentAssistantMessageId })
         const responseId = currentAssistantMessageId
 
         let hasReasoningStarted = false
@@ -417,11 +422,7 @@ export default defineHandler(async (event) => {
                 if (currentEvent === 'citations' || Array.isArray(data)) {
                   citationsList = Array.isArray(data) ? data : (data.citations || [])
 
-                  // Write citations to client
-                  writer.write({
-                    type: 'tool-output-available',
-                    toolCallId,
-                    output: citationsList.map((cit: any, i: number) => {
+                  const citationOutput = citationsList.map((cit: any, i: number) => {
                       let docUpdated = cit.last_updated || null
                       if (!docUpdated && cit.doc_id) {
                         try {
@@ -454,6 +455,14 @@ export default defineHandler(async (event) => {
                         version_id: cit.version_id || null,
                       }
                     })
+                  assistantSourcePart = {
+                    type: 'tool-rag_search', toolCallId, state: 'output-available',
+                    input: { query: queryText }, output: citationOutput,
+                  }
+                  // Persist the same citations the client received, so reload
+                  // retains the evidence behind each numbered claim.
+                  writer.write({
+                    type: 'tool-output-available', toolCallId, output: citationOutput,
                   })
 
                   // If chat belongs to a topic, accumulate citations into topic_documents pool & update counter
@@ -625,9 +634,16 @@ export default defineHandler(async (event) => {
         console.error('[web-post] error in agent call:', err)
         const responseId = `err-msg-${Date.now()}`
         const isTimeout = err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timeout')
-        const msg = isTimeout
-          ? `目前远端大模型响应超时，但知识库检索引擎仍正常运行。请稍后再试或精简提问。`
-          : `响应生成受阻：${err.message || '网络连接中断'}`
+        const englishQuery = !/[\u3400-\u9fff]/.test(queryText)
+        const msg = englishQuery
+          ? (isTimeout
+              ? 'The model service timed out. Please retry or shorten your question.'
+              : (String(err.message).includes('403')
+                  ? 'The model provider rejected the request (403). Check API access and model quota, then retry.'
+                  : 'Unable to generate an answer. Please retry; if the problem persists, check the model and retrieval services.'))
+          : (isTimeout
+              ? '目前远端大模型响应超时，请稍后再试或精简提问。'
+              : '回答生成失败，请重试并检查模型与检索服务。')
 
         writer.write({
           type: 'text-start',
@@ -642,9 +658,13 @@ export default defineHandler(async (event) => {
           type: 'text-end',
           id: responseId
         })
+        // Preserve the retryable failure in the SDK state as well as the
+        // visible explanation; this response has no persisted history row.
+        writer.write({ type: 'error', errorText: msg })
       }
     },
     onFinish: async ({ isAborted }) => {
+      clearTimeout(timeoutId)
       if (isAborted || abortController.signal.aborted) {
         assistantState.clientAborted = true
       }
@@ -657,7 +677,10 @@ export default defineHandler(async (event) => {
         const persistedAssistant = await appendMessage(db, {
           id: assistantMessageId,
           chatId: chat.id,
-          parts: [{ type: 'text', text: assistantState.assistantContent }],
+          parts: [
+            ...(assistantSourcePart ? [assistantSourcePart] : []),
+            { type: 'text', text: assistantState.assistantContent },
+          ],
           role: 'assistant'
         })
         if (shouldAttemptCompaction) {

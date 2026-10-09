@@ -302,8 +302,8 @@ watch(
 // Auto-expand and open on new stream submission
 watch(
   () => props.status,
-  (newStatus) => {
-    if (newStatus === 'streaming' || newStatus === 'submitted') {
+  (newStatus, previousStatus) => {
+    if (newStatus === 'submitted' || (newStatus === 'streaming' && previousStatus !== 'submitted')) {
       isWindowOpen.value = true
       isWindowMinimized.value = false
     }
@@ -403,6 +403,20 @@ const stage1Index = computed(() => getVariantIndex(variantSeed.value, queryInten
 const stage3Index = computed(() => getVariantIndex(variantSeed.value, reasoningActiveVariants.length, 7))
 const stage4Index = computed(() => getVariantIndex(variantSeed.value, writingActiveVariants.length, 13))
 
+// Derive the compact status from received parts so it updates without opening the history.
+const currentStep = computed(() => {
+  if ((textPart.value as any)?.text) {
+    return isAnyActive.value ? writingActiveVariants[stage4Index.value] : writingDoneVariants[stage4Index.value]
+  }
+  if (reasoningPart.value) {
+    return isReasoningStreaming.value ? reasoningActiveVariants[stage3Index.value] : reasoningDoneVariants[stage3Index.value]
+  }
+  if (searchPart.value || citations.value.length) {
+    return isAnyActive.value || props.status === 'submitted' ? 'Searching knowledge base...' : 'Knowledge base searched'
+  }
+  return queryIntentActiveVariants[stage1Index.value]
+})
+
 const hasReasoningOrSearch = computed(() => {
   return Boolean(searchPart.value || reasoningPart.value || citations.value.length > 0)
 })
@@ -420,41 +434,23 @@ defineExpose({
     v-if="hasReasoningOrSearch && isWindowOpen"
     class="absolute top-4 right-4 z-30 select-none font-sans transition-all duration-300 pointer-events-auto"
   >
-    <!-- Collapsed Pill View while Active Streaming -->
+    <!-- Header stays anchored while the history folds upward. -->
     <div
-      v-if="isWindowMinimized && isAnyActive"
-      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 hover:bg-neutral-800/90 border border-emerald-500/60 shadow-lg shadow-emerald-950/30 backdrop-blur-md text-xs cursor-pointer transition-all hover:scale-105 active:scale-95"
-      title="点击展开实时推理小窗"
-      @click="toggleMinimize"
-    >
-      <UIcon
-        name="i-lucide-sparkles"
-        class="w-3.5 h-3.5 text-emerald-400 animate-spin"
-      />
-      <span class="font-medium text-neutral-200">
-        思考中...
-      </span>
-      <UIcon name="i-lucide-maximize-2" class="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
-    </div>
-
-    <!-- Expanded Floating Small Window -->
-    <div
-      v-else-if="!isWindowMinimized"
-      class="w-80 sm:w-96 max-h-[calc(100vh-160px)] flex flex-col rounded-2xl bg-neutral-950/95 border border-neutral-800 shadow-2xl backdrop-blur-xl overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95"
+      class="w-80 sm:w-96 max-h-[calc(100vh-160px)] flex flex-col rounded-2xl bg-white/95 dark:bg-neutral-950/95 border border-neutral-200 dark:border-neutral-800 shadow-2xl backdrop-blur-xl overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95"
     >
       <!-- Top Window Header Bar -->
-      <div class="flex items-center justify-between px-3.5 py-2.5 bg-neutral-900/80 border-b border-neutral-800/80 shrink-0">
+      <div class="flex items-center justify-between px-3.5 py-2.5 bg-neutral-50/80 dark:bg-neutral-900/80 border-b border-neutral-200/80 dark:border-neutral-800/80 shrink-0">
         <div class="flex items-center gap-2 min-w-0">
-          <div class="flex items-center justify-center w-5 h-5 rounded-md bg-neutral-800 text-amber-400">
+          <div class="flex items-center justify-center w-5 h-5 rounded-md bg-neutral-200 dark:bg-neutral-800 text-amber-600 dark:text-amber-400">
             <UIcon name="i-lucide-brain" class="w-3.5 h-3.5" />
           </div>
-          <span class="text-xs font-semibold text-neutral-100 tracking-wide truncate">
-            实时推理过程
+          <span class="text-xs font-semibold text-neutral-900 dark:text-neutral-100 tracking-wide truncate">
+            {{ isWindowMinimized ? currentStep : '实时推理过程' }}
           </span>
           <!-- Live Status Indicator Badge -->
           <span
-            v-if="isAnyActive"
-            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse"
+            v-if="isAnyActive && !isWindowMinimized"
+            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 animate-pulse"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             {{ liveTimer > 0 ? `${liveTimer}s` : '思考中' }}
@@ -464,17 +460,18 @@ defineExpose({
         <!-- Window Controls -->
         <div class="flex items-center gap-1 shrink-0">
           <button
-            v-if="isAnyActive"
             type="button"
-            class="p-1 rounded-md text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors cursor-pointer"
-            title="最小化"
+            class="p-1 rounded-md text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            :title="isWindowMinimized ? '展开实时推理过程' : '折叠实时推理过程'"
+            :aria-label="isWindowMinimized ? '展开实时推理过程' : '折叠实时推理过程'"
+            :aria-expanded="!isWindowMinimized"
             @click="toggleMinimize"
           >
-            <UIcon name="i-lucide-minus" class="w-3.5 h-3.5" />
+            <UIcon :name="isWindowMinimized ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'" class="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
-            class="p-1 rounded-md text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors cursor-pointer"
+            class="p-1 rounded-md text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             title="关闭小窗"
             @click="closeWindow"
           >
@@ -484,26 +481,26 @@ defineExpose({
       </div>
 
       <!-- Scrollable Window Content Body -->
-      <div class="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar text-xs">
+      <div v-if="!isWindowMinimized" class="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar text-xs">
         <!-- 4-Stage Step Tree -->
         <div class="relative pl-5 py-0.5 flex flex-col gap-2">
           <!-- Vertical Step Line -->
-          <div v-show="isStepTreeOpen" class="absolute left-[7px] top-2 bottom-2 w-[1.5px] bg-neutral-800"></div>
+          <div v-show="isStepTreeOpen" class="absolute left-[7px] top-2 bottom-2 w-[1.5px] bg-neutral-200 dark:bg-neutral-800"></div>
 
           <!-- Step 1: Intention & Problem Analysis -->
           <div
             class="relative flex items-center gap-2 cursor-pointer select-none group/step py-0.5"
             @click="toggleStepTree"
           >
-            <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-neutral-950 text-amber-400">
-              <UIcon name="i-lucide-lightbulb" class="w-3 h-3 text-amber-400" />
+            <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-white dark:bg-neutral-950 text-amber-600 dark:text-amber-400">
+              <UIcon name="i-lucide-lightbulb" class="w-3 h-3 text-amber-600 dark:text-amber-400" />
             </div>
-            <span class="text-neutral-200 font-medium group-hover/step:text-amber-300 transition-colors flex-1 truncate">
-              {{ stepStage === 1 ? queryIntentActiveVariants[stage1Index] : queryIntentDoneVariants[stage1Index] }}
+            <span class="text-neutral-800 dark:text-neutral-200 font-medium group-hover/step:text-amber-700 dark:group-hover/step:text-amber-300 transition-colors flex-1 truncate">
+              {{ stepStage === 1 ? queryIntentActiveVariants[stage1Index] : queryIntentDoneVariants[stage1Index % queryIntentDoneVariants.length] }}
             </span>
             <UIcon
               name="i-lucide-chevron-down"
-              class="w-3 h-3 text-neutral-500 group-hover/step:text-neutral-300 transition-transform duration-200"
+              class="w-3 h-3 text-neutral-500 group-hover/step:text-neutral-600 dark:group-hover/step:text-neutral-300 transition-transform duration-200"
               :class="{ '-rotate-90': !isStepTreeOpen }"
             />
           </div>
@@ -513,11 +510,11 @@ defineExpose({
             <!-- Step 2: Knowledge Base Search -->
             <div v-if="searchPart || citations.length > 0 || stepStage >= 2" class="relative flex flex-col gap-1.5">
               <div class="flex items-center gap-2">
-                <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-neutral-950 text-neutral-400">
-                  <UIcon v-if="isSearchStreaming" name="i-lucide-loader-2" class="w-3 h-3 animate-spin text-emerald-400" />
-                  <div v-else class="w-2 h-2 rounded-full border border-neutral-600 bg-neutral-950"></div>
+                <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400">
+                  <UIcon v-if="isSearchStreaming" name="i-lucide-loader-2" class="w-3 h-3 animate-spin text-emerald-600 dark:text-emerald-400" />
+                  <div v-else class="w-2 h-2 rounded-full border border-neutral-400 dark:border-neutral-600 bg-white dark:bg-neutral-950"></div>
                 </div>
-                <span :class="isSearchStreaming ? 'text-emerald-400 font-medium animate-pulse' : 'text-neutral-300'" class="truncate">
+                <span :class="isSearchStreaming ? 'text-emerald-600 dark:text-emerald-400 font-medium animate-pulse' : 'text-neutral-600 dark:text-neutral-300'" class="truncate">
                   {{ isSearchStreaming ? 'Searching knowledge base...' : 'Knowledge base searched' }}
                 </span>
                 <span v-if="uniqueDocuments.length > 0" class="text-[10px] text-neutral-500 font-mono">
@@ -535,13 +532,13 @@ defineExpose({
                   <div
                     v-for="(doc, idx) in visibleDocuments"
                     :key="doc.doc_id || doc.title || idx"
-                    class="group inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-neutral-800 bg-neutral-900/90 hover:bg-neutral-800 hover:border-emerald-500/40 text-[11px] text-neutral-300 hover:text-neutral-100 transition-all cursor-pointer shrink-0 max-w-[180px]"
+                    class="group inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50/90 dark:bg-neutral-900/90 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:border-emerald-500/40 text-[11px] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-all cursor-pointer shrink-0 max-w-[180px]"
                     :title="doc.title || doc.doc_id"
                     @click="handlePillClick(doc)"
                   >
-                    <UIcon :name="getDocIcon(doc.title, doc.doc_id)" class="w-3 h-3 text-emerald-400 shrink-0" />
+                    <UIcon :name="getDocIcon(doc.title, doc.doc_id)" class="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span class="truncate">{{ formatDocName(doc.title, doc.doc_id, idx) }}</span>
-                    <span class="text-[9px] font-mono text-emerald-400 shrink-0">{{ getRelevanceScore(doc.score, idx) }}%</span>
+                    <span class="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 shrink-0">{{ getRelevanceScore(doc.score, idx) }}%</span>
                   </div>
                 </TransitionGroup>
               </div>
@@ -549,21 +546,21 @@ defineExpose({
 
             <!-- Step 3: Deep Reasoning Thinking -->
             <div v-if="reasoningPart || stepStage >= 3" class="relative flex items-center gap-2">
-              <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-neutral-950 text-neutral-400">
-                <UIcon v-if="isReasoningStreaming" name="i-lucide-loader-2" class="w-3 h-3 animate-spin text-neutral-300" />
-                <div v-else class="w-2 h-2 rounded-full border border-neutral-600 bg-neutral-950"></div>
+              <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400">
+                <UIcon v-if="isReasoningStreaming" name="i-lucide-loader-2" class="w-3 h-3 animate-spin text-neutral-600 dark:text-neutral-300" />
+                <div v-else class="w-2 h-2 rounded-full border border-neutral-400 dark:border-neutral-600 bg-white dark:bg-neutral-950"></div>
               </div>
-              <span :class="isReasoningStreaming ? 'text-neutral-200 font-medium' : 'text-neutral-400'" class="truncate">
+              <span :class="isReasoningStreaming ? 'text-neutral-800 dark:text-neutral-200 font-medium' : 'text-neutral-500 dark:text-neutral-400'" class="truncate">
                 {{ isReasoningStreaming ? reasoningActiveVariants[stage3Index] : reasoningDoneVariants[stage3Index] }}
               </span>
             </div>
 
             <!-- Step 4: Formulating Response -->
             <div v-if="textPart || stepStage >= 4" class="relative flex items-center gap-2">
-              <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-neutral-950 text-neutral-400">
-                <div class="w-2 h-2 rounded-full border border-neutral-600 bg-neutral-950"></div>
+              <div class="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400">
+                <div class="w-2 h-2 rounded-full border border-neutral-400 dark:border-neutral-600 bg-white dark:bg-neutral-950"></div>
               </div>
-              <span :class="isTextStreaming ? 'text-neutral-200 animate-pulse' : 'text-neutral-400'" class="truncate">
+              <span :class="isTextStreaming ? 'text-neutral-800 dark:text-neutral-200 animate-pulse' : 'text-neutral-500 dark:text-neutral-400'" class="truncate">
                 {{ isTextStreaming ? writingActiveVariants[stage4Index] : writingDoneVariants[stage4Index] }}
               </span>
             </div>
@@ -571,14 +568,14 @@ defineExpose({
         </div>
 
         <!-- Collapsible Thinking Process Trace Accordion -->
-        <div v-if="(reasoningPart as any)?.text" class="border-t border-neutral-800/80 pt-2.5">
+        <div v-if="(reasoningPart as any)?.text" class="border-t border-neutral-200/80 dark:border-neutral-800/80 pt-2.5">
           <button
             type="button"
-            class="flex items-center justify-between w-full text-[11px] font-medium text-neutral-300 hover:text-neutral-100 py-1 cursor-pointer transition-colors"
+            class="flex items-center justify-between w-full text-[11px] font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 py-1 cursor-pointer transition-colors"
             @click="isReasoningOpen = !isReasoningOpen"
           >
             <span class="inline-flex items-center gap-1.5">
-              <UIcon name="i-lucide-file-code" class="w-3.5 h-3.5 text-neutral-400" />
+              <UIcon name="i-lucide-file-code" class="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
               <span>思维链详情</span>
             </span>
             <UIcon
@@ -590,7 +587,7 @@ defineExpose({
 
           <div
             v-if="isReasoningOpen"
-            class="mt-1.5 p-2.5 rounded-xl bg-neutral-900/80 border border-neutral-800 text-[11px] text-neutral-300 max-h-48 overflow-y-auto custom-scrollbar"
+            class="mt-1.5 p-2.5 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 text-[11px] text-neutral-600 dark:text-neutral-300 max-h-48 overflow-y-auto custom-scrollbar"
           >
             <ChatComark
               :markdown="(reasoningPart as any).text"
@@ -600,14 +597,14 @@ defineExpose({
         </div>
 
         <!-- Collapsible Retrieved Sources Accordion -->
-        <div v-if="citations.length > 0" class="border-t border-neutral-800/80 pt-2.5">
+        <div v-if="citations.length > 0" class="border-t border-neutral-200/80 dark:border-neutral-800/80 pt-2.5">
           <button
             type="button"
-            class="flex items-center justify-between w-full text-[11px] font-medium text-neutral-300 hover:text-neutral-100 py-1 cursor-pointer transition-colors"
+            class="flex items-center justify-between w-full text-[11px] font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 py-1 cursor-pointer transition-colors"
             @click="isSourcesOpen = !isSourcesOpen"
           >
             <span class="inline-flex items-center gap-1.5">
-              <UIcon name="i-lucide-library" class="w-3.5 h-3.5 text-emerald-400" />
+              <UIcon name="i-lucide-library" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>检索知识库来源 ({{ citations.length }})</span>
             </span>
             <UIcon
@@ -651,10 +648,10 @@ defineExpose({
   height: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--ui-text-muted) 30%, transparent);
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--ui-text-muted) 50%, transparent);
 }
 </style>

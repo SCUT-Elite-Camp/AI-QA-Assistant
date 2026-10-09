@@ -116,19 +116,24 @@ def _resolve_report_conflict(
     )
 
 
-def _answer_report_followup(report: ResearchReport, message: str) -> str:
+def _answer_report_followup(report: ResearchReport, message: str, language: str = "en-US", *, objective: str = "") -> str:
+    english = language == "en-US"
     if not report.citations or not settings.LLM_API_KEY:
-        return "当前报告没有足够的已核验证据来回答这个追问。"
+        return ("The report does not contain enough verified evidence to answer this follow-up." if english else "当前报告没有足够的已核验证据来回答这个追问。")
     evidence = "\n\n".join(
-        f"[{item.number}] {item.title}\n原文：{item.excerpt}"
+        f"[{item.number}] {item.title}\nSource excerpt: {item.excerpt}"
         for item in report.citations
     )
     prompt = (
-        "Answer the user's follow-up in Chinese using only the frozen verified evidence below. "
+        f"Answer the user's follow-up in {'English' if english else 'Chinese'} using the existing report and its frozen verified evidence below. "
         "Do not browse or add facts from memory. Give a direct but complete answer. "
+        "Use the report to resolve references such as 'these changes' or 'this report'. "
+        "You may calculate differences from cited source values; state the direction of subtraction. "
+        "For counts and acceptance arithmetic, use plain text such as 5 + 1 = 6, >= and <=; omit LaTeX dollar delimiters. "
+        "The report is context, not independent evidence: verify its claims against the source excerpts. "
         "Every factual paragraph must contain its matching [n] citation. "
         "If the evidence cannot answer it, clearly say what is missing.\n\n"
-        f"Follow-up: {message}\n\nEvidence:\n{evidence}"
+        f"Original research question: {objective}\n\nFollow-up: {message}\n\nExisting report:\n{report.markdown}\n\nEvidence:\n{evidence}"
     )
     client = EvidenceReportSynthesizer(
         api_base=settings.LLM_API_BASE,
@@ -144,11 +149,13 @@ def _answer_report_followup(report: ResearchReport, message: str) -> str:
         })
         answer = str(data["choices"][0]["message"]["content"]).strip()
         citation_numbers = [int(value) for value in re.findall(r"\[(\d+)]", answer)]
-        if answer and citation_numbers and max(citation_numbers) <= len(report.citations):
+        if answer and citation_numbers and set(citation_numbers).issubset({item.number for item in report.citations}):
             return answer
     except Exception:
-        pass
-    return "这份冻结证据目前无法可靠回答该追问。你可以补充本地资料后重新发起研究。"
+        return ("The model service is unavailable. Check API access and model quota, then retry this follow-up."
+                if english else "模型服务暂时不可用，请检查接口权限与模型额度后重试。")
+    return ("The frozen evidence does not reliably answer this follow-up. Add local sources and start a new research task."
+            if english else "这份冻结证据目前无法可靠回答该追问。你可以补充本地资料后重新发起研究。")
 
 
 _default_control_plane: ResearchControlPlane | None = None
@@ -409,15 +416,17 @@ def send_research_message(
             event_key=f"conversation:{interaction_id}:user",
             event_type=ResearchEventType.USER_MESSAGE,
             stage=job.current_stage,
-            message=message,
+            message=message[:500],
+            payload={"content": message},
         )
-        response_text = "我还不能在当前阶段执行这条指令。"
+        english = job.request.report_spec.language == "en-US"
+        response_text = "This command is unavailable at the current research stage." if english else "我还不能在当前阶段执行这条指令。"
         action = "clarify"
         plan: ResearchPlan | None = None
 
         if job.status.value == "awaiting_approval":
             plan = control_plane.get_plan(research_id)
-            if re.search(r"(^|[，。\s])(批准|同意|确认|开始执行|按此执行)([，。\s]|$)", message):
+            if re.search(r"(^|[，。\s])(批准|同意|确认|开始执行|按此执行)([，。\s]|$)", message) or re.fullmatch(r"(?:please\s+)?(?:approve|confirm|start)(?:\s+(?:the\s+)?(?:plan|research))?[.!]?", message, re.I):
                 job = control_plane.approve_job(
                     research_id,
                     plan_version=plan.version,
@@ -425,11 +434,11 @@ def send_research_message(
                     approved_by=user_id,
                 )
                 action = "approved"
-                response_text = f"已批准计划 v{plan.version}，现在开始执行研究。"
-            elif re.search(r"(^|[，。\s])(取消|停止)([，。\s]|$)", message):
+                response_text = f"Plan v{plan.version} approved. Research is starting." if english else f"已批准计划 v{plan.version}，现在开始执行研究。"
+            elif re.search(r"(^|[，。\s])(取消|停止)([，。\s]|$)", message) or re.fullmatch(r"(?:please\s+)?(?:cancel|stop)(?:\s+(?:the\s+)?(?:task|research))?[.!]?", message, re.I):
                 job = control_plane.cancel_job(research_id)
                 action = "cancelled"
-                response_text = "研究任务已取消，已有状态仍会保留。"
+                response_text = "Research cancelled. Existing state has been preserved." if english else "研究任务已取消，已有状态仍会保留。"
             else:
                 match = re.search(r"把?第\s*([一二三四五六七八九十\d]+)\s*(?:步|个任务|项任务)?\s*(?:改为|修改为|调整为)\s*(.+)", message)
                 if match:
@@ -458,7 +467,7 @@ def send_research_message(
                         action = "plan_revised"
                         response_text = f"已将第 {index} 步修改为“{match.group(2).strip()}”，生成计划 v{revised.version}，请重新确认。"
                 else:
-                    response_text = "你可以回复“批准”，或说“把第 2 步改为……”。"
+                    response_text = "Reply \"approve\" to start, or use Edit plan to revise individual tasks." if english else "你可以回复“批准”，或说“把第 2 步改为……”。"
         elif job.status.value == "completed":
             report = repository.get_report(research_id)
             source_match = re.search(r"(?:采用|选择|以)\s*来源\s*(\d+)", message)
@@ -500,7 +509,7 @@ def send_research_message(
                     response_text = f"来源 {source_number} 不属于当前待处理冲突，请打开引用后重新选择。"
             else:
                 action = "followup_answered"
-                response_text = _answer_report_followup(report, message)
+                response_text = _answer_report_followup(report, message, job.request.report_spec.language, objective=job.request.query)
         elif job.status.value in {"ready", "researching", "synthesizing"}:
             response_text = "研究正在执行中。我会持续更新任务进度；你也可以随时点击取消。"
 
@@ -509,8 +518,8 @@ def send_research_message(
             event_key=f"conversation:{interaction_id}:assistant",
             event_type=ResearchEventType.ASSISTANT_MESSAGE,
             stage=job.current_stage,
-            message=response_text,
-            payload={"action": action},
+            message=response_text[:500],
+            payload={"action": action, "content": response_text},
         )
         return ResearchInteractionResponse(
             action=action,

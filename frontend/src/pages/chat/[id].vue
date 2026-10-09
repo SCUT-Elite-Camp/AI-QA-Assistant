@@ -37,6 +37,7 @@ import type { Vote } from '../../../server/utils/drizzle'
 import type { FactCategory } from '../../types/memory'
 import { extractAttachmentSelection } from '../../../shared/utils/attachmentParts'
 import { knowledgeBaseRetrievalEnabled } from '../../../shared/utils/chatRetrieval'
+import { canRetryMissingResponse } from '../../utils/regeneration'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
@@ -66,7 +67,7 @@ const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
 const selectedResearchDocumentIds = ref<string[]>([])
-const { loggedIn } = useUserSession()
+const { loggedIn, fetchSession } = useUserSession()
 const sessionFacts = useSessionFacts()
 const memoryRecallMessageIds = ref<string[]>([])
 const hasPendingTrustedMemoryRecall = ref(false)
@@ -78,6 +79,9 @@ const {
 } = sessionFacts
 
 
+// A private conversation must wait for session recovery, including dev login.
+// Loading it first can cache a 404 until the next manual page refresh.
+await fetchSession()
 const data = await $fetch(`/api/chats/${route.params.id}`).catch((e) => {
   console.error('[chat/[id]] fetch failed:', e)
   return null
@@ -318,10 +322,10 @@ function cancelEdit() {
 
 async function saveEdit(message: UIMessage, text: string) {
   try {
-    await $fetch(`/api/chats/messages/${data!.id}`, {
+    await $fetch(`/api/chats/messages/${message.id}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
-      body: { messageId: message.id, type: 'edit' },
+      body: { chatId: data!.id, type: 'edit' },
     })
   } catch {
     toast.add({
@@ -350,18 +354,25 @@ async function saveEdit(message: UIMessage, text: string) {
 
 async function regenerateMessage(message: UIMessage) {
   try {
-    await $fetch(`/api/chats/messages/${data!.id}`, {
+    await $fetch(`/api/chats/messages/${message.id}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
-      body: { messageId: message.id, type: 'regenerate' },
+      body: { chatId: data!.id, type: 'regenerate' },
     })
-  } catch {
-    toast.add({
-      description: 'Failed to regenerate message',
-      icon: 'i-lucide-alert-circle',
-      color: 'error' as const,
-    })
-    return
+  } catch (error: any) {
+    // A failed stream can leave a client-only assistant response. Only its
+    // missing history row may be skipped; other mutation failures still stop.
+    const missingFailedResponse = canRetryMissingResponse(
+      error, chat.status, message, chat.messages[chat.messages.length - 1]?.id,
+    )
+    if (!missingFailedResponse) {
+      toast.add({
+        description: 'Failed to regenerate message',
+        icon: 'i-lucide-alert-circle',
+        color: 'error' as const,
+      })
+      return
+    }
   }
 
   chat.regenerate({ messageId: message.id })
@@ -636,13 +647,14 @@ onBeforeUnmount(() => {
     <template #body>
       <div class="flex-1 flex flex-row min-h-0 relative overflow-hidden w-full h-full">
         <!-- Main Chat Area (Left Panel) -->
-        <div class="flex-1 flex flex-col min-w-0 h-full overflow-y-auto relative">
+        <div class="flex-1 flex flex-col min-w-0 h-full relative">
           <!-- Top-Right Floating Reasoning Window -->
           <ReasoningFloatingWindow
             :message="activeReasoningMessage"
             :status="launchingResearch ? 'streaming' : chat.status"
           />
 
+          <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
           <!-- Empty Chat / Branch New Chat Landing View -->
           <UContainer v-if="!visibleMessages.length" class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8 min-h-[75vh]">
             <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
@@ -930,6 +942,7 @@ onBeforeUnmount(() => {
             <p v-if="researchLaunchError" class="text-sm text-error" role="alert">{{ researchLaunchError }}</p>
 
           </UContainer>
+          </div>
         </div>
 
         <!-- In-Flow Right Side Panel Window for Hit Rate Monitoring (Same plane layout, non-overlay) -->
@@ -953,6 +966,16 @@ onBeforeUnmount(() => {
 
         <!-- Right Semi-Circular Quick Navigation Dial Widget (Attached to Dark Gray Chat Panel Edge, hidden when HitRate side drawer is open) -->
         <QuickNavDial v-if="!showHitRateDrawer" :messages="chat.messages" />
+      </div>
+    </template>
+  </UDashboardPanel>
+
+  <UDashboardPanel v-else id="chat-unavailable">
+    <template #body>
+      <div class="flex flex-col gap-4 p-6">
+        <h1 class="text-xl font-semibold">Conversation unavailable</h1>
+        <p>Sign in and try again. This conversation may be unavailable or outside your access.</p>
+        <ULink to="/">Return to chat</ULink>
       </div>
     </template>
   </UDashboardPanel>

@@ -15,6 +15,7 @@ import { useChats } from '../../composables/useChats'
 import { useCsrf } from '../../composables/useCsrf'
 import type { ResearchPlan, ResearchPlanRevisionRequest, ResearchReport } from '../../types/research'
 import { formatResearchError } from '../../utils/research'
+import { formatResearchCitations, researchConversationText } from '../../utils/researchMarkdown'
 
 const route = useRoute()
 const router = useRouter()
@@ -121,18 +122,20 @@ function regenerateConversationEvent(eventId: number) {
 }
 
 function regenerateReport() {
-  void sendConversationMessage('请基于当前已核验的证据重新生成一份结构更完整、表达更清晰的研究回答，并保留可追踪引用。')
+  void sendConversationMessage(job.value?.request.report_spec.language === 'en-US'
+    ? 'Regenerate the research answer in English using the verified evidence, with a clearer structure and traceable citations.'
+    : '请基于当前已核验的证据重新生成一份结构更完整、表达更清晰的研究回答，并保留可追踪引用。')
 }
 
 async function askAboutSelectedText(text: string) {
-  conversationInput.value = `关于“${text}”：`
+  conversationInput.value = job.value?.request.report_spec.language === 'en-US' ? `Regarding "${text}": ` : `关于“${text}”：`
   await nextTick()
   conversationInputRef.value?.focus()
 }
 
 const conversationEvents = computed(() => events.value.filter(event =>
   ['user_message', 'assistant_message'].includes(event.event_type),
-))
+).map(event => ({ ...event, message: researchConversationText(event) })))
 const citationMap = computed(() => new Map<number, ChunkCitation>((report.value?.citations ?? []).map(citation => [
   citation.number,
   {
@@ -148,7 +151,7 @@ const citationMap = computed(() => new Map<number, ChunkCitation>((report.value?
 provide('ragCitationMap', citationMap)
 
 function conversationMarkdown(message: string) {
-  return message.replace(/\[(\d+)]/g, '<cite-mark index="$1"></cite-mark>')
+  return formatResearchCitations(message)
 }
 
 const statusTitle = computed(() => {
@@ -206,7 +209,7 @@ const statusTitle = computed(() => {
                 {{ formatResearchError(pollingError) }}
               </p><div class="mt-5 flex justify-center gap-2">
                 <UButton
-                  to="/"
+                  to="/research/new"
                   color="neutral"
                   variant="soft"
                   label="新建研究"
@@ -320,7 +323,7 @@ const statusTitle = computed(() => {
                         :plan="plan"
                         :progress="progress"
                         :events="events"
-                        @restart="router.push('/')"
+                        @restart="router.push('/research/new')"
                         @ask-selected-text="askAboutSelectedText"
                         @regenerate="regenerateReport"
                       />
@@ -350,7 +353,7 @@ const statusTitle = computed(() => {
                           {{ progress?.error?.message || '研究任务执行失败，请稍后重试。' }}
                         </p><div class="mt-6 flex justify-center gap-2">
                           <UButton
-                            to="/"
+                            to="/research/new"
                             color="neutral"
                             variant="soft"
                             label="新建研究"
@@ -374,7 +377,7 @@ const statusTitle = computed(() => {
                           已保留取消前的任务状态和资料快照。
                         </p><UButton
                           class="mt-6"
-                          to="/"
+                          to="/research/new"
                           label="发起新的研究"
                         />
                       </div>

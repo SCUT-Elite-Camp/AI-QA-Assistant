@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
 import { useToast } from '@nuxt/ui/composables'
 import { useChats } from '../composables/useChats'
@@ -9,6 +9,8 @@ import { useUserSession } from '../composables/useUserSession'
 import Navbar from '../components/Navbar.vue'
 import WeightModeSelect from '../components/chat/WeightModeSelect.vue'
 import AttachmentTray from '../components/chat/AttachmentTray.vue'
+import ResearchModeNotice from '../components/research/ResearchModeNotice.vue'
+import { useResearchLaunch } from '../composables/useResearchLaunch'
 
 const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
@@ -19,9 +21,14 @@ const attachmentIds = ref<string[]>([])
 const acceptedNeedsReviewIds = ref<string[]>([])
 const attachmentTray = ref<InstanceType<typeof AttachmentTray> | null>(null)
 const useKnowledgeBase = ref(true)
-const deepResearchMode = ref(false)
+const route = useRoute()
+const deepResearchMode = ref(route.query.research === '1')
+const selectedResearchDocumentIds = ref<string[]>([])
+const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
+watch(() => route.query.research, value => { deepResearchMode.value = value === '1' })
 const loading = ref(false)
 const router = useRouter()
+const submitting = computed(() => loading.value || launchingResearch.value)
 
 function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -51,7 +58,19 @@ const greeting = computed(() => {
 })
 
 async function createChat(prompt: string) {
-  if (loading.value || (!prompt.trim() && !attachmentIds.value.length)) return
+  if (submitting.value || (!prompt.trim() && !attachmentIds.value.length)) return
+  if (deepResearchMode.value) {
+    if (attachmentIds.value.length) {
+      toast.add({ description: 'Deep Research uses selected knowledge base documents. Remove draft attachments or switch to chat.', color: 'warning' })
+      return
+    }
+    if (await launchResearch(prompt, selectedResearchDocumentIds.value)) input.value = ''
+    return
+  }
+  if (attachmentTray.value?.hasBlockingAttachments()) {
+    toast.add({ description: 'Wait for attachment processing and confirm any items that need review.', color: 'warning' })
+    return
+  }
   const chosenMode = currentWeightMode.value
   loading.value = true
   try {
@@ -66,7 +85,7 @@ async function createChat(prompt: string) {
         attachment_ids: attachmentIds.value,
         accepted_needs_review_ids: acceptedNeedsReviewIds.value,
         knowledge_base_retrieval_enabled: useKnowledgeBase.value,
-        exploration_mode: deepResearchMode.value ? 'force' : 'auto',
+        exploration_mode: 'auto',
       }
     })
     await fetchChats()
@@ -85,16 +104,7 @@ async function createChat(prompt: string) {
 }
 
 function onSubmit() {
-  if (attachmentTray.value?.hasBlockingAttachments()) {
-    toast.add({
-      description: '请等待附件解析完成；低置信度附件需要确认后才能发送。',
-      icon: 'i-lucide-alert-circle',
-      color: 'warning',
-    })
-    return
-  }
-  const text = input.value
-  createChat(text)
+  void createChat(input.value)
 }
 
 const quickChats = [
@@ -109,12 +119,13 @@ const quickChats = [
 
 const plusMenuItems = computed(() => [[
   {
-    label: '上传附件 / 图片',
+    label: 'Upload attachments / images',
     icon: 'i-lucide-paperclip',
+    disabled: deepResearchMode.value || submitting.value,
     onSelect: () => attachmentTray.value?.open()
   },
   {
-    label: '企业知识库检索',
+    label: 'Knowledge base retrieval',
     icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
     onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
@@ -144,7 +155,7 @@ const plusMenuItems = computed(() => [[
 
         <UChatPrompt
           v-model="input"
-          :status="loading ? 'streaming' : 'ready'"
+          :status="submitting ? 'streaming' : 'ready'"
           class="[view-transition-name:chat-prompt] rounded-2xl shadow-md"
           variant="subtle"
           :ui="{ base: 'px-1.5' }"
@@ -152,11 +163,13 @@ const plusMenuItems = computed(() => [[
           @submit="onSubmit"
         >
           <template #header>
+            <ResearchModeNotice v-if="deepResearchMode" v-model="selectedResearchDocumentIds" />
+            <p v-if="deepResearchMode && researchLaunchError" role="alert" class="px-3 py-2 text-sm text-error">{{ researchLaunchError }}</p>
             <AttachmentTray
               ref="attachmentTray"
               scope="draft"
               hide-trigger
-              :disabled="loading"
+              :disabled="submitting"
               @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
             />
           </template>
@@ -169,22 +182,22 @@ const plusMenuItems = computed(() => [[
                 variant="ghost"
                 size="sm"
                 icon="i-lucide-plus"
-                aria-label="添加附件与更多功能"
-                title="添加附件与更多功能"
+                aria-label="Attachments and more"
+                title="Attachments and more"
                 :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
               />
             </UDropdownMenu>
 
             <span
-              v-if="useKnowledgeBase"
+              v-if="useKnowledgeBase && !deepResearchMode"
               class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
             >
               <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
-              <span>企业知识库检索</span>
+              <span>Knowledge base retrieval</span>
               <button
                 type="button"
                 class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                title="关闭企业知识库检索"
+                title="Disable knowledge base retrieval" aria-label="Disable knowledge base retrieval"
                 @click.stop="useKnowledgeBase = false"
               >
                 <UIcon name="i-lucide-x" class="w-3 h-3" />
@@ -200,7 +213,7 @@ const plusMenuItems = computed(() => [[
               <button
                 type="button"
                 class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                title="关闭 Deep Research"
+                title="Disable Deep Research" aria-label="Disable Deep Research"
                 @click.stop="deepResearchMode = false"
               >
                 <UIcon name="i-lucide-x" class="w-3 h-3" />
@@ -209,8 +222,8 @@ const plusMenuItems = computed(() => [[
 
             <!-- Right: WeightMode + Submit -->
             <div class="ms-auto flex items-center gap-1">
-              <WeightModeSelect v-model="currentWeightMode" />
-              <UChatPromptSubmit color="neutral" size="sm" class="cursor-pointer" />
+              <WeightModeSelect v-if="!deepResearchMode" v-model="currentWeightMode" />
+              <UChatPromptSubmit :disabled="submitting" color="neutral" size="sm" class="cursor-pointer" />
             </div>
           </template>
         </UChatPrompt>
@@ -219,6 +232,7 @@ const plusMenuItems = computed(() => [[
           <UButton
             v-for="quickChat in quickChats"
             :key="quickChat.label"
+            :disabled="submitting"
             :icon="quickChat.icon"
             :label="quickChat.label"
             size="sm"
