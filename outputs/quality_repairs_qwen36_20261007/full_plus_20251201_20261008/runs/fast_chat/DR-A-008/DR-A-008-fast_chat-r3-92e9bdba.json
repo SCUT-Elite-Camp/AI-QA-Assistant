@@ -1,0 +1,45 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-008-fast_chat-r3-92e9bdba",
+  "case_id": "DR-A-008",
+  "group": "fast_chat",
+  "repetition": 3,
+  "started_at": "2026-10-08T07:45:47.485929+00:00",
+  "completed_at": "2026-10-08T07:45:47.496532+00:00",
+  "elapsed_ms": 10,
+  "config_hash": "42c462814462b691f4a1dfa56d1a18e605bcc0624881e9ac4ed682c1926bdd11",
+  "success": true,
+  "result": {
+    "response": {
+      "trace_id": "trace-285ff7d9-547494",
+      "status": "clarification_required",
+      "citations_count": 0,
+      "answer": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation.",
+      "citations": []
+    },
+    "citations": [],
+    "source_checks": [],
+    "stream_events": [
+      {
+        "event": "citations",
+        "data": []
+      },
+      {
+        "event": "token",
+        "data": {
+          "content": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation."
+        }
+      },
+      {
+        "event": "done",
+        "data": {
+          "trace_id": "trace-285ff7d9-547494",
+          "status": "clarification_required",
+          "citations_count": 0
+        }
+      }
+    ],
+    "evaluation_path": "frontend-compatible Fast SSE"
+  },
+  "error": null
+}

@@ -1,0 +1,1481 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-004-deep_research_current-r3-11d622bc",
+  "case_id": "DR-A-004",
+  "group": "deep_research_current",
+  "repetition": 3,
+  "started_at": "2026-10-08T07:43:01.564936+00:00",
+  "completed_at": "2026-10-08T07:43:19.499166+00:00",
+  "elapsed_ms": 17935,
+  "config_hash": "42c462814462b691f4a1dfa56d1a18e605bcc0624881e9ac4ed682c1926bdd11",
+  "success": true,
+  "result": {
+    "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "What does each of the engineering knowledge-base directory's three levels contain? Using the Agent Lifecycle Archive, identify the level for long-term Agent evolution, its module root and lifetime commits.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "f592494c2ca41c77bfa2daafb223f679",
+            "5206845e81108d7e4fd77581f0bf7bc5"
+          ],
+          "topic": "cross_section_association"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "bb35e9c954bbef41959598b889090cb3f579d69cc07a5dd99d221369450089a9",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 4,
+      "task_completed": 4,
+      "evidence_count": 12,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T07:43:01.567590Z",
+      "updated_at": "2026-10-08T07:43:18.755365Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+      "version": 1,
+      "objective": "What does each of the engineering knowledge-base directory's three levels contain? Using the Agent Lifecycle Archive, identify the level for long-term Agent evolution, its module root and lifetime commits.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "f592494c2ca41c77bfa2daafb223f679",
+          "5206845e81108d7e4fd77581f0bf7bc5"
+        ],
+        "topic": "cross_section_association"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "bb35e9c954bbef41959598b889090cb3f579d69cc07a5dd99d221369450089a9",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What are the three directory levels defined in the engineering knowledge-base structure, and what specific content or purpose is assigned to each level according to the 'M1+-+Agent+Module+Lifecycle+Archive' document?",
+          "purpose": "Identify the explicit naming, ordering, and functional description of each of the three levels in the engineering knowledge-base directory hierarchy",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "5206845e81108d7e4fd77581f0bf7bc5",
+            "f592494c2ca41c77bfa2daafb223f679"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, which of the three engineering knowledge-base directory levels is designated for long-term Agent evolution?",
+          "purpose": "Verify the exact level label (e.g., 'Level 1', 'core', or other canonical term) assigned to long-term Agent evolution",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "5206845e81108d7e4fd77581f0bf7bc5",
+            "f592494c2ca41c77bfa2daafb223f679"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the module root path or identifier associated with the level designated for long-term Agent evolution?",
+          "purpose": "Extract the concrete module root string (e.g., '/agents/evolution/', 'agent-lifecycle-core', or equivalent) tied to long-term Agent evolution",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "5206845e81108d7e4fd77581f0bf7bc5",
+            "f592494c2ca41c77bfa2daafb223f679"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-4",
+          "question": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the total count of lifetime commits attributed to the module root for long-term Agent evolution?",
+          "purpose": "Retrieve the canonical, explicitly stated lifetime commit count—not inferred from date ranges or partial logs—for the long-term Agent evolution module root",
+          "dependencies": [
+            "task-3"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "5206845e81108d7e4fd77581f0bf7bc5",
+            "f592494c2ca41c77bfa2daafb223f679"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-4",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 4,
+      "task_completed": 4,
+      "evidence_count": 12,
+      "claim_count": 4,
+      "started_at": "2026-10-08T07:43:01.567590Z",
+      "updated_at": "2026-10-08T07:43:18.755365Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:01.569154Z",
+          "completed_at": "2026-10-08T07:43:02.883186Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:02.886274Z",
+          "completed_at": "2026-10-08T07:43:16.320278Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:16.321068Z",
+          "completed_at": "2026-10-08T07:43:16.568727Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:16.569845Z",
+          "completed_at": "2026-10-08T07:43:18.341905Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.343419Z",
+          "completed_at": "2026-10-08T07:43:18.720650Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.720650Z",
+          "completed_at": "2026-10-08T07:43:18.725172Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.726176Z",
+          "completed_at": "2026-10-08T07:43:18.731479Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.731479Z",
+          "completed_at": "2026-10-08T07:43:18.737795Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.737795Z",
+          "completed_at": "2026-10-08T07:43:18.745579Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.746579Z",
+          "completed_at": "2026-10-08T07:43:18.751327Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.752832Z",
+          "completed_at": "2026-10-08T07:43:18.756370Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:18.756370Z",
+          "completed_at": "2026-10-08T07:43:18.757372Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What are the three directory levels defined in the engineering knowledge-base structure, and what specific content or purpose is assigned to each level according to the 'M1+-+Agent+Module+Lifecycle+Archive' document?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, which of the three engineering knowledge-base directory levels is designated for long-term Agent evolution?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the module root path or identifier associated with the level designated for long-term Agent evolution?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-4",
+          "question": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the total count of lifetime commits attributed to the module root for long-term Agent evolution?",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2186,
+        "actions_used": 16,
+        "tool_calls": 16,
+        "documents_read": 2,
+        "evidence_accepted": 12,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-e764ac28bfb4ca3e24be03f7",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What are the three directory levels defined in the engineering knowledge-base structure, and what specific content or purpose is assigned to each level according to the 'M1+-+Agent+Module+Lifecycle+Archive' document?",
+          "created_at": "2026-10-08T07:43:18.481331Z"
+        },
+        {
+          "observation_id": "observation-14e7638fcc3176a41fd1fbda",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "locator_hint": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What are the three directory levels defined in the engineering knowledge-base structure, and what specific content or purpose is assigned to each level according to the 'M1+-+Agent+Module+Lifecycle+Archive' document?",
+          "created_at": "2026-10-08T07:43:18.485811Z"
+        },
+        {
+          "observation_id": "observation-8b83c357c8d3e9f4fedabb6b",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "locator_hint": "5206845e81108d7e4fd77581f0bf7bc5_chunk_3",
+          "score": 0.1683395724899796,
+          "snippet": "| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 65cf2366a | 2026-06-05 | YourGitHubUsername | Maintenance / Chore | Initialize project skeleton structure |\n| 73252593d | 2026-06-17 | Tao | Maintenance / Chore | Create .gitkeep |\n| 61f91e885 | 2026-06-22 | Ivan | Feature | feat(agent): add week2 rag integration |\n| 21f7a308e | 2026-06-29 | Ivan | Feature | feat(agent): sync week3 quality controls |\n| 2b1350a1d | 2026-07-03 | Ivan | Feature | feat(agent): complete q1 week4 handoff |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 53217c7fb | 2026-07-04 | YourGitHubUsername | Feature | feat: make MockLLM dynamic by reading prompt context and generating realistic answers |\n| 54a97a3df | 2026-07-04 | YourGitHubUsername | Bug Fix | fix: adjust MockLLM parser to handle colon-separated fields from ContextAssembler |\n| cd0add9a2 | 2026-07-04 | YourGitHubUsername | Feature | feat: return raw retrieval context directly in MockLLM |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| 539e24d91 | 2026-07-05 | YourGitHubUsername | Feature | feat: implement SQLite chat history audit logging store and GET history API endpoint |\n| d03fa544d | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: replace single-turn RAG with autonomous Agent Loop, remove RetrievalAdapter & MockLLM, rewrite unit tests with standard mocks |\n| 5b33d37ed | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: delete service folder, place agent.py directly in agent package root, rename unit test to test_agent.py |\n| 3dd3fef78 | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: extract AOP auxiliary concerns into trace and audit services in service folder, call them within Agent run loop |\n| 8136bebaa | 2026-07-05 | YourGitHubUsername | Maintenance / Chore | chore: set default max_iterations to 1 in Agent run() |\n| 64e76cc78 | 2026-07-05 | YourGitHubUsername | Feature | feat: support bypass_llm setting in Agent to directly return tool search outcomes, disable bypass in tests |\n| 43c9c75eb | 2026-07-05 | YourGitHubUsername | Bug Fix | fix: inject project folders into sys.path in app.py to prevent ModuleNotFoundErrors when running server directly |\n| b56957250 | 2026-07-09 | YourGitHubUsername | Feature | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API |\n| 1739c6004 | 2026-07-09 | YourGitHubUsername | Bug Fix | fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 32a1bfc45 | 2026-07-10 | YourGitHubUsername | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| 42376c860 | 2026-07-24 | fionaxi | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | Feature | feat: add intent classifier |\n| b555c8db1 | 2026-07-27 | fionaxi | Feature | feat: align cp2 query contracts and routing |\n| ce26046c2 | 2026-07-28 | fionaxi | Feature | feat: add structured tool executor |\n| 145f085e7 | 2026-07-28 | fionaxi | Feature | feat: add cp2 evidence quality controls |\n| c48dc9fbb | 2026-07-28 | fionaxi | Feature | feat: add query planning enrichment |\n| e51fee3e5 | 2026-07-29 | fionaxi | Documentation | docs: refresh cp2 unit test report |\n| f16ef8552 | 2026-07-30 | Ivan | Feature | feat(agent): integrate CP2 memory and bounded runner |\n| f72968339 | 2026-07-30 | Ivan | Documentation | docs(agent): record merged CP2 verification baseline |\n| 70b8c3b2c | 2026-08-02 | Ivan | Feature | feat(agent): orchestrate CP2 components in chat flow |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 80f3e4462 | 2026-08-07 | YourGitHubUsername | Feature | feat: complete topic management, dialogue branching, multi-turn chat, data persistence, and integrate remote dev |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |",
+          "query": "What are the three directory levels defined in the engineering knowledge-base structure, and what specific content or purpose is assigned to each level according to the 'M1+-+Agent+Module+Lifecycle+Archive' document?",
+          "created_at": "2026-10-08T07:43:18.488826Z"
+        },
+        {
+          "observation_id": "observation-2b08f544e3c78b61a71807e7",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, which of the three engineering knowledge-base directory levels is designated for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.558881Z"
+        },
+        {
+          "observation_id": "observation-8ab0bc0bb9e6cb24172f3d6b",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "locator_hint": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, which of the three engineering knowledge-base directory levels is designated for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.564152Z"
+        },
+        {
+          "observation_id": "observation-44d69e13557fba8d922824db",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "score": 0.33079371063571955,
+          "snippet": "es: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, which of the three engineering knowledge-base directory levels is designated for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.568517Z"
+        },
+        {
+          "observation_id": "observation-8157782d2b28b47420280cad",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the module root path or identifier associated with the level designated for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.635356Z"
+        },
+        {
+          "observation_id": "observation-220b9adcd023ec6d037963b4",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "locator_hint": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the module root path or identifier associated with the level designated for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.639063Z"
+        },
+        {
+          "observation_id": "observation-8bc98bb5653ab90de493e73f",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "score": 0.3252069957163992,
+          "snippet": "es: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the module root path or identifier associated with the level designated for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.641059Z"
+        },
+        {
+          "observation_id": "observation-caabb2edec918a946745c5f5",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the total count of lifetime commits attributed to the module root for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.706221Z"
+        },
+        {
+          "observation_id": "observation-c343bbc0ecfbf82ff2be3195",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "locator_hint": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the total count of lifetime commits attributed to the module root for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.710587Z"
+        },
+        {
+          "observation_id": "observation-1f00bd3286a6f5f1f7bafd8c",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "tool_name": "search",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "locator_hint": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "score": 0.3422939281749594,
+          "snippet": "es: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "query": "In the 'M1+-+Agent+Module+Lifecycle+Archive' document, what is the total count of lifetime commits attributed to the module root for long-term Agent evolution?",
+          "created_at": "2026-10-08T07:43:18.713589Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-f1494194b8257ccb052b132d",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.484307Z"
+        },
+        {
+          "evidence_id": "evidence-fc7e717675400c754982712b",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "excerpt": "# Agent Module (Orchestration & Reasoning) - Complete Lifecycle Archive\n\n**Module Key:agent|Root Directory:/agentTotal Lifetime Commits:49|Contributors: Ivan, Tao, YourGitHubUsername, fionaxi, mgy2006@outlook.com**\n\n## 1. Module Description & Responsibilities\n\nCore LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "created_at": "2026-10-08T07:43:18.487824Z"
+        },
+        {
+          "evidence_id": "evidence-a9de71b6cb8ef76bc7adea66",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 65cf2366a | 2026-06-05 | YourGitHubUsername | Maintenance / Chore | Initialize project skeleton structure |\n| 73252593d | 2026-06-17 | Tao | Maintenance / Chore | Create .gitkeep |\n| 61f91e885 | 2026-06-22 | Ivan | Feature | feat(agent): add week2 rag integration |\n| 21f7a308e | 2026-06-29 | Ivan | Feature | feat(agent): sync week3 quality controls |\n| 2b1350a1d | 2026-07-03 | Ivan | Feature | feat(agent): complete q1 week4 handoff |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 53217c7fb | 2026-07-04 | YourGitHubUsername | Feature | feat: make MockLLM dynamic by reading prompt context and generating realistic answers |\n| 54a97a3df | 2026-07-04 | YourGitHubUsername | Bug Fix | fix: adjust MockLLM parser to handle colon-separated fields from ContextAssembler |\n| cd0add9a2 | 2026-07-04 | YourGitHubUsername | Feature | feat: return raw retrieval context directly in MockLLM |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| 539e24d91 | 2026-07-05 | YourGitHubUsername | Feature | feat: implement SQLite chat history audit logging store and GET history API endpoint |\n| d03fa544d | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: replace single-turn RAG with autonomous Agent Loop, remove RetrievalAdapter & MockLLM, rewrite unit tests with standard mocks |\n| 5b33d37ed | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: delete service folder, place agent.py directly in agent package root, rename unit test to test_agent.py |\n| 3dd3fef78 | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: extract AOP auxiliary concerns into trace and audit services in service folder, call them within Agent run loop |\n| 8136bebaa | 2026-07-05 | YourGitHubUsername | Maintenance / Chore | chore: set default max_iterations to 1 in Agent run() |\n| 64e76cc78 | 2026-07-05 | YourGitHubUsername | Feature | feat: support bypass_llm setting in Agent to directly return tool search outcomes, disable bypass in tests |\n| 43c9c75eb | 2026-07-05 | YourGitHubUsername | Bug Fix | fix: inject project folders into sys.path in app.py to prevent ModuleNotFoundErrors when running server directly |\n| b56957250 | 2026-07-09 | YourGitHubUsername | Feature | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API |\n| 1739c6004 | 2026-07-09 | YourGitHubUsername | Bug Fix | fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 32a1bfc45 | 2026-07-10 | YourGitHubUsername | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| 42376c860 | 2026-07-24 | fionaxi | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | Feature | feat: add intent classifier |\n| b555c8db1 | 2026-07-27 | fionaxi | Feature | feat: align cp2 query contracts and routing |\n| ce26046c2 | 2026-07-28 | fionaxi | Feature | feat: add structured tool executor |\n| 145f085e7 | 2026-07-28 | fionaxi | Feature | feat: add cp2 evidence quality controls |\n| c48dc9fbb | 2026-07-28 | fionaxi | Feature | feat: add query planning enrichment |\n| e51fee3e5 | 2026-07-29 | fionaxi | Documentation | docs: refresh cp2 unit test report |\n| f16ef8552 | 2026-07-30 | Ivan | Feature | feat(agent): integrate CP2 memory and bounded runner |\n| f72968339 | 2026-07-30 | Ivan | Documentation | docs(agent): record merged CP2 verification baseline |\n| 70b8c3b2c | 2026-08-02 | Ivan | Feature | feat(agent): orchestrate CP2 components in chat flow |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 80f3e4462 | 2026-08-07 | YourGitHubUsername | Feature | feat: complete topic management, dialogue branching, multi-turn chat, data persistence, and integrate remote dev |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "created_at": "2026-10-08T07:43:18.491820Z"
+        },
+        {
+          "evidence_id": "evidence-c5391c56c565b6cb0cde2221",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.562035Z"
+        },
+        {
+          "evidence_id": "evidence-79bdf2f8fb38218c11ced255",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "excerpt": "# Agent Module (Orchestration & Reasoning) - Complete Lifecycle Archive\n\n**Module Key:agent|Root Directory:/agentTotal Lifetime Commits:49|Contributors: Ivan, Tao, YourGitHubUsername, fionaxi, mgy2006@outlook.com**\n\n## 1. Module Description & Responsibilities\n\nCore LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "created_at": "2026-10-08T07:43:18.566861Z"
+        },
+        {
+          "evidence_id": "evidence-9145d375552add0c0ca502f2",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.570118Z"
+        },
+        {
+          "evidence_id": "evidence-0cf10f286a4af58ad5ef6f03",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.637058Z"
+        },
+        {
+          "evidence_id": "evidence-72edf81f8060a36d1d319f39",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "excerpt": "# Agent Module (Orchestration & Reasoning) - Complete Lifecycle Archive\n\n**Module Key:agent|Root Directory:/agentTotal Lifetime Commits:49|Contributors: Ivan, Tao, YourGitHubUsername, fionaxi, mgy2006@outlook.com**\n\n## 1. Module Description & Responsibilities\n\nCore LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "created_at": "2026-10-08T07:43:18.640059Z"
+        },
+        {
+          "evidence_id": "evidence-65f3d3b9854f04c8990fc730",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.642058Z"
+        },
+        {
+          "evidence_id": "evidence-4f81d889572ee311376c83ef",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.708592Z"
+        },
+        {
+          "evidence_id": "evidence-90d61f68fb2e8a4d1832bc42",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "excerpt": "# Agent Module (Orchestration & Reasoning) - Complete Lifecycle Archive\n\n**Module Key:agent|Root Directory:/agentTotal Lifetime Commits:49|Contributors: Ivan, Tao, YourGitHubUsername, fionaxi, mgy2006@outlook.com**\n\n## 1. Module Description & Responsibilities\n\nCore LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560",
+          "created_at": "2026-10-08T07:43:18.712594Z"
+        },
+        {
+          "evidence_id": "evidence-ce47f76860519188fd062752",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9",
+          "created_at": "2026-10-08T07:43:18.715614Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-0951da736464424c50d8c93a",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-1",
+          "statement": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-f1494194b8257ccb052b132d",
+            "evidence-fc7e717675400c754982712b",
+            "evidence-a9de71b6cb8ef76bc7adea66"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-13e8e71ce3dc82a46b85d20b",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-2",
+          "statement": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-c5391c56c565b6cb0cde2221",
+            "evidence-79bdf2f8fb38218c11ced255",
+            "evidence-9145d375552add0c0ca502f2"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-b290d9f5539d9e665289cc9d",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-3",
+          "statement": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-0cf10f286a4af58ad5ef6f03",
+            "evidence-72edf81f8060a36d1d319f39",
+            "evidence-65f3d3b9854f04c8990fc730"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        },
+        {
+          "finding_id": "finding-cccb2325231ac175b5e91768",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "task_id": "task-4",
+          "statement": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-4f81d889572ee311376c83ef",
+            "evidence-90d61f68fb2e8a4d1832bc42",
+            "evidence-ce47f76860519188fd062752"
+          ],
+          "covers": [
+            "criterion-4"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-0951da736464424c50d8c93a",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "claim_text": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-f1494194b8257ccb052b132d",
+            "evidence-fc7e717675400c754982712b",
+            "evidence-a9de71b6cb8ef76bc7adea66"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-13e8e71ce3dc82a46b85d20b",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "claim_text": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-c5391c56c565b6cb0cde2221",
+            "evidence-79bdf2f8fb38218c11ced255",
+            "evidence-9145d375552add0c0ca502f2"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-b290d9f5539d9e665289cc9d",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "claim_text": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-0cf10f286a4af58ad5ef6f03",
+            "evidence-72edf81f8060a36d1d319f39",
+            "evidence-65f3d3b9854f04c8990fc730"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-cccb2325231ac175b5e91768",
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "claim_text": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "evidence_ids": [
+            "evidence-4f81d889572ee311376c83ef",
+            "evidence-90d61f68fb2e8a4d1832bc42",
+            "evidence-ce47f76860519188fd062752"
+          ],
+          "criterion_ids": [
+            "criterion-4"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-0951da736464424c50d8c93a",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-f1494194b8257ccb052b132d",
+            "evidence-fc7e717675400c754982712b",
+            "evidence-a9de71b6cb8ef76bc7adea66"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-13e8e71ce3dc82a46b85d20b",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c5391c56c565b6cb0cde2221",
+            "evidence-79bdf2f8fb38218c11ced255",
+            "evidence-9145d375552add0c0ca502f2"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-b290d9f5539d9e665289cc9d",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-0cf10f286a4af58ad5ef6f03",
+            "evidence-72edf81f8060a36d1d319f39",
+            "evidence-65f3d3b9854f04c8990fc730"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-cccb2325231ac175b5e91768",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-4f81d889572ee311376c83ef",
+            "evidence-90d61f68fb2e8a4d1832bc42",
+            "evidence-ce47f76860519188fd062752"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-0951da736464424c50d8c93a",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-f1494194b8257ccb052b132d",
+            "evidence-fc7e717675400c754982712b",
+            "evidence-a9de71b6cb8ef76bc7adea66"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-13e8e71ce3dc82a46b85d20b",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c5391c56c565b6cb0cde2221",
+            "evidence-79bdf2f8fb38218c11ced255",
+            "evidence-9145d375552add0c0ca502f2"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-b290d9f5539d9e665289cc9d",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-0cf10f286a4af58ad5ef6f03",
+            "evidence-72edf81f8060a36d1d319f39",
+            "evidence-65f3d3b9854f04c8990fc730"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-cccb2325231ac175b5e91768",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-4f81d889572ee311376c83ef",
+            "evidence-90d61f68fb2e8a4d1832bc42",
+            "evidence-ce47f76860519188fd062752"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+      "events": [
+        {
+          "event_id": 12447,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:01.568096Z"
+        },
+        {
+          "event_id": 12448,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:01.569154Z"
+        },
+        {
+          "event_id": 12449,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:02.883186Z"
+        },
+        {
+          "event_id": 12450,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:02.886274Z"
+        },
+        {
+          "event_id": 12451,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:16.320278Z"
+        },
+        {
+          "event_id": 12452,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:16.321068Z"
+        },
+        {
+          "event_id": 12453,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T07:43:16.568208Z"
+        },
+        {
+          "event_id": 12454,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:16.568727Z"
+        },
+        {
+          "event_id": 12455,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:16.569845Z"
+        },
+        {
+          "event_id": 12456,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.341905Z"
+        },
+        {
+          "event_id": 12457,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.343419Z"
+        },
+        {
+          "event_id": 12459,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.370840Z"
+        },
+        {
+          "event_id": 12460,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:18.494328Z"
+        },
+        {
+          "event_id": 12461,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.494328Z"
+        },
+        {
+          "event_id": 12462,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:18.572125Z"
+        },
+        {
+          "event_id": 12463,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.572125Z"
+        },
+        {
+          "event_id": 12464,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:18.644581Z"
+        },
+        {
+          "event_id": 12465,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-4:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.646088Z"
+        },
+        {
+          "event_id": 12466,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:task:task-4:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:18.717650Z"
+        },
+        {
+          "event_id": 12467,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.720650Z"
+        },
+        {
+          "event_id": 12468,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.720650Z"
+        },
+        {
+          "event_id": 12469,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.725172Z"
+        },
+        {
+          "event_id": 12470,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.726176Z"
+        },
+        {
+          "event_id": 12471,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.731479Z"
+        },
+        {
+          "event_id": 12472,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.731479Z"
+        },
+        {
+          "event_id": 12473,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.737795Z"
+        },
+        {
+          "event_id": 12474,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.737795Z"
+        },
+        {
+          "event_id": 12475,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.745579Z"
+        },
+        {
+          "event_id": 12476,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.746579Z"
+        },
+        {
+          "event_id": 12477,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:report:report-research-b2209ec81b3045358e3430d804c985ca:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-b2209ec81b3045358e3430d804c985ca"
+          },
+          "created_at": "2026-10-08T07:43:18.750287Z"
+        },
+        {
+          "event_id": 12478,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.751327Z"
+        },
+        {
+          "event_id": 12479,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.752832Z"
+        },
+        {
+          "event_id": 12480,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.756370Z"
+        },
+        {
+          "event_id": 12481,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.756370Z"
+        },
+        {
+          "event_id": 12482,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:18.757372Z"
+        },
+        {
+          "event_id": 12483,
+          "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+          "event_key": "research-b2209ec81b3045358e3430d804c985ca:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T07:43:18.758371Z"
+        }
+      ],
+      "next_after_event_id": 12483
+    },
+    "report": {
+      "report_id": "report-research-b2209ec81b3045358e3430d804c985ca",
+      "research_id": "research-b2209ec81b3045358e3430d804c985ca",
+      "markdown": "## Directory levels\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog. [2]\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages. [2]\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite. [2]\n\n## Long-term module evolution\n\nThe agent lifecycle belongs to level 02, Module Lifecycle Archives. [2] Its recorded root directory is `/agent` and its lifetime total is **49 commits**. [3]\n\nThese are the selected directory and historical archive records, not a claim about subsequent work.\n\n## Sources\n\n1. [**M1+-+Agent+Module+Lifecycle+Archive**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive) · 2026-09-04T08:41:57.826Z · 5206845e81108d7e4fd77581f0bf7bc5_chunk_3\n2. [**AI-QA-Assistant+Project+Engineering+Records+Sprints**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints) · 2026-09-04T08:39:01.582Z · f592494c2ca41c77bfa2daafb223f679_chunk_0\n3. [**M1+-+Agent+Module+Lifecycle+Archive**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive) · 2026-09-04T08:41:57.826Z · 5206845e81108d7e4fd77581f0bf7bc5_chunk_0\n4. [**AI-QA-Assistant+Project+Engineering+Records+Sprints**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints) · 2026-09-04T08:39:01.582Z · f592494c2ca41c77bfa2daafb223f679_chunk_1\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-0951da736464424c50d8c93a",
+        "claim-finding-13e8e71ce3dc82a46b85d20b",
+        "claim-finding-b290d9f5539d9e665289cc9d",
+        "claim-finding-cccb2325231ac175b5e91768"
+      ],
+      "evidence_ids": [
+        "evidence-a9de71b6cb8ef76bc7adea66",
+        "evidence-f1494194b8257ccb052b132d",
+        "evidence-fc7e717675400c754982712b",
+        "evidence-79bdf2f8fb38218c11ced255",
+        "evidence-9145d375552add0c0ca502f2",
+        "evidence-c5391c56c565b6cb0cde2221",
+        "evidence-0cf10f286a4af58ad5ef6f03",
+        "evidence-65f3d3b9854f04c8990fc730",
+        "evidence-72edf81f8060a36d1d319f39",
+        "evidence-4f81d889572ee311376c83ef",
+        "evidence-90d61f68fb2e8a4d1832bc42",
+        "evidence-ce47f76860519188fd062752"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-a9de71b6cb8ef76bc7adea66",
+          "evidence_ids": [
+            "evidence-a9de71b6cb8ef76bc7adea66"
+          ],
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "title": "M1+-+Agent+Module+Lifecycle+Archive",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 65cf2366a | 2026-06-05 | YourGitHubUsername | Maintenance / Chore | Initialize project skeleton structure |\n| 73252593d | 2026-06-17 | Tao | Maintenance / Chore | Create .gitkeep |\n| 61f91e885 | 2026-06-22 | Ivan | Feature | feat(agent): add week2 rag integration |\n| 21f7a308e | 2026-06-29 | Ivan | Feature | feat(agent): sync week3 quality controls |\n| 2b1350a1d | 2026-07-03 | Ivan | Feature | feat(agent): complete q1 week4 handoff |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 53217c7fb | 2026-07-04 | YourGitHubUsername | Feature | feat: make MockLLM dynamic by reading prompt context and generating realistic answers |\n| 54a97a3df | 2026-07-04 | YourGitHubUsername | Bug Fix | fix: adjust MockLLM parser to handle colon-separated fields from ContextAssembler |\n| cd0add9a2 | 2026-07-04 | YourGitHubUsername | Feature | feat: return raw retrieval context directly in MockLLM |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| 539e24d91 | 2026-07-05 | YourGitHubUsername | Feature | feat: implement SQLite chat history audit logging store and GET history API endpoint |\n| d03fa544d | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: replace single-turn RAG with autonomous Agent Loop, remove RetrievalAdapter & MockLLM, rewrite unit tests with standard mocks |\n| 5b33d37ed | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: delete service folder, place agent.py directly in agent package root, rename unit test to test_agent.py |\n| 3dd3fef78 | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: extract AOP auxiliary concerns into trace and audit services in service folder, call them within Agent run loop |\n| 8136bebaa | 2026-07-05 | YourGitHubUsername | Maintenance / Chore | chore: set default max_iterations to 1 in Agent run() |\n| 64e76cc78 | 2026-07-05 | YourGitHubUsername | Feature | feat: support bypass_llm setting in Agent to directly return tool search outcomes, disable bypass in tests |\n| 43c9c75eb | 2026-07-05 | YourGitHubUsername | Bug Fix | fix: inject project folders into sys.path in app.py to prevent ModuleNotFoundErrors when running server directly |\n| b56957250 | 2026-07-09 | YourGitHubUsername | Feature | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API |\n| 1739c6004 | 2026-07-09 | YourGitHubUsername | Bug Fix | fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 32a1bfc45 | 2026-07-10 | YourGitHubUsername | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| 42376c860 | 2026-07-24 | fionaxi | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | Feature | feat: add intent classifier |\n| b555c8db1 | 2026-07-27 | fionaxi | Feature | feat: align cp2 query contracts and routing |\n| ce26046c2 | 2026-07-28 | fionaxi | Feature | feat: add structured tool executor |\n| 145f085e7 | 2026-07-28 | fionaxi | Feature | feat: add cp2 evidence quality controls |\n| c48dc9fbb | 2026-07-28 | fionaxi | Feature | feat: add query planning enrichment |\n| e51fee3e5 | 2026-07-29 | fionaxi | Documentation | docs: refresh cp2 unit test report |\n| f16ef8552 | 2026-07-30 | Ivan | Feature | feat(agent): integrate CP2 memory and bounded runner |\n| f72968339 | 2026-07-30 | Ivan | Documentation | docs(agent): record merged CP2 verification baseline |\n| 70b8c3b2c | 2026-08-02 | Ivan | Feature | feat(agent): orchestrate CP2 components in chat flow |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 80f3e4462 | 2026-08-07 | YourGitHubUsername | Feature | feat: complete topic management, dialogue branching, multi-turn chat, data persistence, and integrate remote dev |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-f1494194b8257ccb052b132d",
+          "evidence_ids": [
+            "evidence-f1494194b8257ccb052b132d",
+            "evidence-c5391c56c565b6cb0cde2221",
+            "evidence-0cf10f286a4af58ad5ef6f03",
+            "evidence-4f81d889572ee311376c83ef"
+          ],
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-fc7e717675400c754982712b",
+          "evidence_ids": [
+            "evidence-fc7e717675400c754982712b",
+            "evidence-79bdf2f8fb38218c11ced255",
+            "evidence-72edf81f8060a36d1d319f39",
+            "evidence-90d61f68fb2e8a4d1832bc42"
+          ],
+          "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+          "title": "M1+-+Agent+Module+Lifecycle+Archive",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:57.826Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:57.826Z",
+          "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+          "excerpt": "# Agent Module (Orchestration & Reasoning) - Complete Lifecycle Archive\n\n**Module Key:agent|Root Directory:/agentTotal Lifetime Commits:49|Contributors: Ivan, Tao, YourGitHubUsername, fionaxi, mgy2006@outlook.com**\n\n## 1. Module Description & Responsibilities\n\nCore LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-9145d375552add0c0ca502f2",
+          "evidence_ids": [
+            "evidence-9145d375552add0c0ca502f2",
+            "evidence-65f3d3b9854f04c8990fc730",
+            "evidence-ce47f76860519188fd062752"
+          ],
+          "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+          "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:39:01.582Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:39:01.582Z",
+          "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+          "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+          "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T07:43:18.748579Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-a9de71b6cb8ef76bc7adea66",
+        "evidence_ids": [
+          "evidence-a9de71b6cb8ef76bc7adea66"
+        ],
+        "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+        "title": "M1+-+Agent+Module+Lifecycle+Archive",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:57.826Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:57.826Z",
+        "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_3",
+        "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 65cf2366a | 2026-06-05 | YourGitHubUsername | Maintenance / Chore | Initialize project skeleton structure |\n| 73252593d | 2026-06-17 | Tao | Maintenance / Chore | Create .gitkeep |\n| 61f91e885 | 2026-06-22 | Ivan | Feature | feat(agent): add week2 rag integration |\n| 21f7a308e | 2026-06-29 | Ivan | Feature | feat(agent): sync week3 quality controls |\n| 2b1350a1d | 2026-07-03 | Ivan | Feature | feat(agent): complete q1 week4 handoff |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 53217c7fb | 2026-07-04 | YourGitHubUsername | Feature | feat: make MockLLM dynamic by reading prompt context and generating realistic answers |\n| 54a97a3df | 2026-07-04 | YourGitHubUsername | Bug Fix | fix: adjust MockLLM parser to handle colon-separated fields from ContextAssembler |\n| cd0add9a2 | 2026-07-04 | YourGitHubUsername | Feature | feat: return raw retrieval context directly in MockLLM |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| 539e24d91 | 2026-07-05 | YourGitHubUsername | Feature | feat: implement SQLite chat history audit logging store and GET history API endpoint |\n| d03fa544d | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: replace single-turn RAG with autonomous Agent Loop, remove RetrievalAdapter & MockLLM, rewrite unit tests with standard mocks |\n| 5b33d37ed | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: delete service folder, place agent.py directly in agent package root, rename unit test to test_agent.py |\n| 3dd3fef78 | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: extract AOP auxiliary concerns into trace and audit services in service folder, call them within Agent run loop |\n| 8136bebaa | 2026-07-05 | YourGitHubUsername | Maintenance / Chore | chore: set default max_iterations to 1 in Agent run() |\n| 64e76cc78 | 2026-07-05 | YourGitHubUsername | Feature | feat: support bypass_llm setting in Agent to directly return tool search outcomes, disable bypass in tests |\n| 43c9c75eb | 2026-07-05 | YourGitHubUsername | Bug Fix | fix: inject project folders into sys.path in app.py to prevent ModuleNotFoundErrors when running server directly |\n| b56957250 | 2026-07-09 | YourGitHubUsername | Feature | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API |\n| 1739c6004 | 2026-07-09 | YourGitHubUsername | Bug Fix | fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 32a1bfc45 | 2026-07-10 | YourGitHubUsername | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| 42376c860 | 2026-07-24 | fionaxi | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | Feature | feat: add intent classifier |\n| b555c8db1 | 2026-07-27 | fionaxi | Feature | feat: align cp2 query contracts and routing |\n| ce26046c2 | 2026-07-28 | fionaxi | Feature | feat: add structured tool executor |\n| 145f085e7 | 2026-07-28 | fionaxi | Feature | feat: add cp2 evidence quality controls |\n| c48dc9fbb | 2026-07-28 | fionaxi | Feature | feat: add query planning enrichment |\n| e51fee3e5 | 2026-07-29 | fionaxi | Documentation | docs: refresh cp2 unit test report |\n| f16ef8552 | 2026-07-30 | Ivan | Feature | feat(agent): integrate CP2 memory and bounded runner |\n| f72968339 | 2026-07-30 | Ivan | Documentation | docs(agent): record merged CP2 verification baseline |\n| 70b8c3b2c | 2026-08-02 | Ivan | Feature | feat(agent): orchestrate CP2 components in chat flow |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 80f3e4462 | 2026-08-07 | YourGitHubUsername | Feature | feat: complete topic management, dialogue branching, multi-turn chat, data persistence, and integrate remote dev |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |",
+        "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-f1494194b8257ccb052b132d",
+        "evidence_ids": [
+          "evidence-f1494194b8257ccb052b132d",
+          "evidence-c5391c56c565b6cb0cde2221",
+          "evidence-0cf10f286a4af58ad5ef6f03",
+          "evidence-4f81d889572ee311376c83ef"
+        ],
+        "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+        "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:39:01.582Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:39:01.582Z",
+        "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_0",
+        "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+        "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-fc7e717675400c754982712b",
+        "evidence_ids": [
+          "evidence-fc7e717675400c754982712b",
+          "evidence-79bdf2f8fb38218c11ced255",
+          "evidence-72edf81f8060a36d1d319f39",
+          "evidence-90d61f68fb2e8a4d1832bc42"
+        ],
+        "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+        "title": "M1+-+Agent+Module+Lifecycle+Archive",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:57.826Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:57.826Z",
+        "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_0",
+        "excerpt": "# Agent Module (Orchestration & Reasoning) - Complete Lifecycle Archive\n\n**Module Key:agent|Root Directory:/agentTotal Lifetime Commits:49|Contributors: Ivan, Tao, YourGitHubUsername, fionaxi, mgy2006@outlook.com**\n\n## 1. Module Description & Responsibilities\n\nCore LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module",
+        "content_hash": "ccca87eb6b02be6ec2e886ea74550cf7c00f1d6c9331350ed00893bb3f2ed560"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-9145d375552add0c0ca502f2",
+        "evidence_ids": [
+          "evidence-9145d375552add0c0ca502f2",
+          "evidence-65f3d3b9854f04c8990fc730",
+          "evidence-ce47f76860519188fd062752"
+        ],
+        "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+        "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:39:01.582Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:39:01.582Z",
+        "locator": "f592494c2ca41c77bfa2daafb223f679_chunk_1",
+        "excerpt": "# AI-QA-Assistant Project Engineering Records & Sprint Deliverables\n\n**Documentation Hub: Comprehensive Historical & Sprint Records for AI-QA-Assistant.Project Scope: 5 Parallel Development Modules + Evaluation & Infrastructure.**\n\n## Documentation Directory Structure\n\nThis documentation knowledge base is organized into three main sections:\n\n- 00. Project Overall Records & Milestones: High-level roadmaps, system architecture evolution, cross-module delivery matrix, and changelog.\n\n- 01. Weekly Agile Sprints (W23 - W34): Detailed week-by-week sprint delivery reports and individual module breakdown pages.\n\n- 02. Module Lifecycle Archives: Long-term vertical evolution histories for each of the 5 core modules and the evaluation suite.",
+        "content_hash": "7e92e89df102205a95969db55518462ce8a70071f5fcd92a64cd51e3d560b1c9"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-b2209ec81b3045358e3430d804c985ca/documents/5206845e81108d7e4fd77581f0bf7bc5/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 72
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-b2209ec81b3045358e3430d804c985ca/documents/f592494c2ca41c77bfa2daafb223f679/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 91
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-b2209ec81b3045358e3430d804c985ca/documents/5206845e81108d7e4fd77581f0bf7bc5/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 103
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-b2209ec81b3045358e3430d804c985ca/documents/f592494c2ca41c77bfa2daafb223f679/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 77
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

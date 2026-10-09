@@ -1,0 +1,1332 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-003-deep_research_current-r2-27a23f78",
+  "case_id": "DR-A-003",
+  "group": "deep_research_current",
+  "repetition": 2,
+  "started_at": "2026-10-08T11:41:36.465855+00:00",
+  "completed_at": "2026-10-08T11:41:49.045118+00:00",
+  "elapsed_ms": 12578,
+  "config_hash": "7f6e04b3ae2cd3812749dd2a9fc8f0d6afb41c504d87b187834227ffa345db0e",
+  "success": true,
+  "result": {
+    "research_id": "research-a71771499b384affb247b033985c66b7",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-a71771499b384affb247b033985c66b7",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Which W30 Agent commits implement the query rewriter, clarification decision and intent classifier? Which Python files were added in the impacted-files records?",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "topic": "cross_section_association"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "68063c17911edd29b5d2593edbd342a35ad22a7887252ad4e99aec7d3c0fc462",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T11:41:36.469569Z",
+      "updated_at": "2026-10-08T11:41:47.936580Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-a71771499b384affb247b033985c66b7",
+      "version": 1,
+      "objective": "Which W30 Agent commits implement the query rewriter, clarification decision and intent classifier? Which Python files were added in the impacted-files records?",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "833ac861944160a33080f47f6a0d0302"
+        ],
+        "topic": "cross_section_association"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "68063c17911edd29b5d2593edbd342a35ad22a7887252ad4e99aec7d3c0fc462",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "Which specific commit hashes in the W30 Agent module are explicitly linked to the implementation of the 'query rewriter', 'clarification decision', and 'intent classifier' components?",
+          "purpose": "Identify the exact commits responsible for the three requested features without assuming their completion status based on sprint titles.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "What are the specific Python file paths listed as 'added' in the impacted-files records associated with the identified W30 Agent commits?",
+          "purpose": "Extract the concrete list of new Python files from the impact records, separating file additions from modifications or deletions.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "Do the document text or commit messages explicitly state that dependencies for the query rewriter, clarification decision, and intent classifier were resolved, or do they indicate remaining limitations?",
+          "purpose": "Verify the operational status and unresolved constraints of the implemented features rather than inferring readiness from the presence of code.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-a71771499b384affb247b033985c66b7",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "claim_count": 3,
+      "started_at": "2026-10-08T11:41:36.469569Z",
+      "updated_at": "2026-10-08T11:41:47.936580Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:36.473063Z",
+          "completed_at": "2026-10-08T11:41:37.713483Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:37.715073Z",
+          "completed_at": "2026-10-08T11:41:45.335908Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:45.337426Z",
+          "completed_at": "2026-10-08T11:41:45.758305Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:45.759304Z",
+          "completed_at": "2026-10-08T11:41:47.334918Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.335914Z",
+          "completed_at": "2026-10-08T11:41:47.853743Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.855742Z",
+          "completed_at": "2026-10-08T11:41:47.864649Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.866157Z",
+          "completed_at": "2026-10-08T11:41:47.876223Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.878256Z",
+          "completed_at": "2026-10-08T11:41:47.888845Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.889851Z",
+          "completed_at": "2026-10-08T11:41:47.911549Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.913550Z",
+          "completed_at": "2026-10-08T11:41:47.928574Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.930584Z",
+          "completed_at": "2026-10-08T11:41:47.937580Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T11:41:47.938084Z",
+          "completed_at": "2026-10-08T11:41:47.939090Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "Which specific commit hashes in the W30 Agent module are explicitly linked to the implementation of the 'query rewriter', 'clarification decision', and 'intent classifier' components?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "What are the specific Python file paths listed as 'added' in the impacted-files records associated with the identified W30 Agent commits?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "Do the document text or commit messages explicitly state that dependencies for the query rewriter, clarification decision, and intent classifier were resolved, or do they indicate remaining limitations?",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2177,
+        "actions_used": 12,
+        "tool_calls": 12,
+        "documents_read": 1,
+        "evidence_accepted": 9,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-28eb219c264096b3094319d5",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_5",
+          "score": 0.2856257918165082,
+          "snippet": "| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+          "query": "Which specific commit hashes in the W30 Agent module are explicitly linked to the implementation of the 'query rewriter', 'clarification decision', and 'intent classifier' components?",
+          "created_at": "2026-10-08T11:41:47.471156Z"
+        },
+        {
+          "observation_id": "observation-2431711733762cd999d9a5de",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "score": 0.20271841543800065,
+          "snippet": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+          "query": "Which specific commit hashes in the W30 Agent module are explicitly linked to the implementation of the 'query rewriter', 'clarification decision', and 'intent classifier' components?",
+          "created_at": "2026-10-08T11:41:47.477156Z"
+        },
+        {
+          "observation_id": "observation-aa3f58f9de2d89eb8e9ffc81",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "score": 0.16121312350559444,
+          "snippet": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)",
+          "query": "Which specific commit hashes in the W30 Agent module are explicitly linked to the implementation of the 'query rewriter', 'clarification decision', and 'intent classifier' components?",
+          "created_at": "2026-10-08T11:41:47.483667Z"
+        },
+        {
+          "observation_id": "observation-617cec1de091a417c52fc01f",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "score": 0.08600352784993656,
+          "snippet": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+          "query": "What are the specific Python file paths listed as 'added' in the impacted-files records associated with the identified W30 Agent commits?",
+          "created_at": "2026-10-08T11:41:47.584995Z"
+        },
+        {
+          "observation_id": "observation-4806a02c7f0d9ba60dcf70a2",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_2",
+          "score": 0.07523395207961346,
+          "snippet": "by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "query": "What are the specific Python file paths listed as 'added' in the impacted-files records associated with the identified W30 Agent commits?",
+          "created_at": "2026-10-08T11:41:47.592074Z"
+        },
+        {
+          "observation_id": "observation-e2fd5f0cd25cacd34153c704",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": 0.04839642659592899,
+          "snippet": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables",
+          "query": "What are the specific Python file paths listed as 'added' in the impacted-files records associated with the identified W30 Agent commits?",
+          "created_at": "2026-10-08T11:41:47.599135Z"
+        },
+        {
+          "observation_id": "observation-ea1378eaef39f4d25a2f8a42",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_5",
+          "score": 0.1902741708722735,
+          "snippet": "| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+          "query": "Do the document text or commit messages explicitly state that dependencies for the query rewriter, clarification decision, and intent classifier were resolved, or do they indicate remaining limitations?",
+          "created_at": "2026-10-08T11:41:47.815388Z"
+        },
+        {
+          "observation_id": "observation-9e12dea09e67a89e6be3ad25",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "score": 0.1550213213048013,
+          "snippet": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)",
+          "query": "Do the document text or commit messages explicitly state that dependencies for the query rewriter, clarification decision, and intent classifier were resolved, or do they indicate remaining limitations?",
+          "created_at": "2026-10-08T11:41:47.822902Z"
+        },
+        {
+          "observation_id": "observation-497fa988937d22d186a98b9b",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "score": 0.11297781751767363,
+          "snippet": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+          "query": "Do the document text or commit messages explicitly state that dependencies for the query rewriter, clarification decision, and intent classifier were resolved, or do they indicate remaining limitations?",
+          "created_at": "2026-10-08T11:41:47.834710Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-9505842131f4708e260c3811",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_5",
+          "excerpt": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.474156Z"
+        },
+        {
+          "evidence_id": "evidence-bf664a578289cf53ab684ba2",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "excerpt": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.480666Z"
+        },
+        {
+          "evidence_id": "evidence-900e5a67fdfeba32e59a98ec",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.487173Z"
+        },
+        {
+          "evidence_id": "evidence-3bbeeefaa27b28004bba377b",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "excerpt": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.589880Z"
+        },
+        {
+          "evidence_id": "evidence-70acbaa20873a01e33c41ec3",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_2",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.596453Z"
+        },
+        {
+          "evidence_id": "evidence-5b7e6779dcc2edc20a72cf5d",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.602141Z"
+        },
+        {
+          "evidence_id": "evidence-c756de754689f1ff9990231f",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_5",
+          "excerpt": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.819904Z"
+        },
+        {
+          "evidence_id": "evidence-413382ae64c9784c29dc6c68",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.831206Z"
+        },
+        {
+          "evidence_id": "evidence-54494071df7cde4955ad494f",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "excerpt": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:41:47.840233Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-83dbd3f003118fb4306429c6",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-1",
+          "statement": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[...",
+          "evidence_ids": [
+            "evidence-9505842131f4708e260c3811",
+            "evidence-bf664a578289cf53ab684ba2",
+            "evidence-900e5a67fdfeba32e59a98ec"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-773e72154bc8818fccfcb5d7",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-2",
+          "statement": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process....",
+          "evidence_ids": [
+            "evidence-3bbeeefaa27b28004bba377b",
+            "evidence-70acbaa20873a01e33c41ec3",
+            "evidence-5b7e6779dcc2edc20a72cf5d"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-b03f6fde6adbb30f57047b55",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "task_id": "task-3",
+          "statement": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[...",
+          "evidence_ids": [
+            "evidence-c756de754689f1ff9990231f",
+            "evidence-413382ae64c9784c29dc6c68",
+            "evidence-54494071df7cde4955ad494f"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-83dbd3f003118fb4306429c6",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "claim_text": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[...",
+          "evidence_ids": [
+            "evidence-9505842131f4708e260c3811",
+            "evidence-bf664a578289cf53ab684ba2",
+            "evidence-900e5a67fdfeba32e59a98ec"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-773e72154bc8818fccfcb5d7",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "claim_text": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process....",
+          "evidence_ids": [
+            "evidence-3bbeeefaa27b28004bba377b",
+            "evidence-70acbaa20873a01e33c41ec3",
+            "evidence-5b7e6779dcc2edc20a72cf5d"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-b03f6fde6adbb30f57047b55",
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "claim_text": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[...",
+          "evidence_ids": [
+            "evidence-c756de754689f1ff9990231f",
+            "evidence-413382ae64c9784c29dc6c68",
+            "evidence-54494071df7cde4955ad494f"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-83dbd3f003118fb4306429c6",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-9505842131f4708e260c3811",
+            "evidence-bf664a578289cf53ab684ba2",
+            "evidence-900e5a67fdfeba32e59a98ec"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-773e72154bc8818fccfcb5d7",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-3bbeeefaa27b28004bba377b",
+            "evidence-70acbaa20873a01e33c41ec3",
+            "evidence-5b7e6779dcc2edc20a72cf5d"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-b03f6fde6adbb30f57047b55",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c756de754689f1ff9990231f",
+            "evidence-413382ae64c9784c29dc6c68",
+            "evidence-54494071df7cde4955ad494f"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-83dbd3f003118fb4306429c6",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-9505842131f4708e260c3811",
+            "evidence-bf664a578289cf53ab684ba2",
+            "evidence-900e5a67fdfeba32e59a98ec"
+          ],
+          "reason": "claim_tokens_supported_by_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-773e72154bc8818fccfcb5d7",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-3bbeeefaa27b28004bba377b",
+            "evidence-70acbaa20873a01e33c41ec3",
+            "evidence-5b7e6779dcc2edc20a72cf5d"
+          ],
+          "reason": "claim_tokens_supported_by_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-b03f6fde6adbb30f57047b55",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c756de754689f1ff9990231f",
+            "evidence-413382ae64c9784c29dc6c68",
+            "evidence-54494071df7cde4955ad494f"
+          ],
+          "reason": "claim_tokens_supported_by_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-a71771499b384affb247b033985c66b7",
+      "events": [
+        {
+          "event_id": 13467,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:36.472058Z"
+        },
+        {
+          "event_id": 13468,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:36.473063Z"
+        },
+        {
+          "event_id": 13469,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:37.713483Z"
+        },
+        {
+          "event_id": 13470,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:37.715073Z"
+        },
+        {
+          "event_id": 13471,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:45.335908Z"
+        },
+        {
+          "event_id": 13472,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:45.337426Z"
+        },
+        {
+          "event_id": 13473,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T11:41:45.758305Z"
+        },
+        {
+          "event_id": 13474,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:45.758305Z"
+        },
+        {
+          "event_id": 13475,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:45.759304Z"
+        },
+        {
+          "event_id": 13476,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.334918Z"
+        },
+        {
+          "event_id": 13477,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.335914Z"
+        },
+        {
+          "event_id": 13479,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.350542Z"
+        },
+        {
+          "event_id": 13480,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:41:47.491179Z"
+        },
+        {
+          "event_id": 13481,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.492179Z"
+        },
+        {
+          "event_id": 13482,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:41:47.607989Z"
+        },
+        {
+          "event_id": 13483,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.609755Z"
+        },
+        {
+          "event_id": 13484,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:41:47.847731Z"
+        },
+        {
+          "event_id": 13485,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.853743Z"
+        },
+        {
+          "event_id": 13486,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.855742Z"
+        },
+        {
+          "event_id": 13487,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.864649Z"
+        },
+        {
+          "event_id": 13488,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.866157Z"
+        },
+        {
+          "event_id": 13489,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.876223Z"
+        },
+        {
+          "event_id": 13490,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.878256Z"
+        },
+        {
+          "event_id": 13491,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.888845Z"
+        },
+        {
+          "event_id": 13492,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.889851Z"
+        },
+        {
+          "event_id": 13493,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.911549Z"
+        },
+        {
+          "event_id": 13494,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.913550Z"
+        },
+        {
+          "event_id": 13495,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:report:report-research-a71771499b384affb247b033985c66b7:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-a71771499b384affb247b033985c66b7"
+          },
+          "created_at": "2026-10-08T11:41:47.925065Z"
+        },
+        {
+          "event_id": 13496,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.928574Z"
+        },
+        {
+          "event_id": 13497,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.930584Z"
+        },
+        {
+          "event_id": 13498,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.937580Z"
+        },
+        {
+          "event_id": 13499,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.938084Z"
+        },
+        {
+          "event_id": 13500,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:41:47.939090Z"
+        },
+        {
+          "event_id": 13501,
+          "research_id": "research-a71771499b384affb247b033985c66b7",
+          "event_key": "research-a71771499b384affb247b033985c66b7:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T11:41:47.941093Z"
+        }
+      ],
+      "next_after_event_id": 13501
+    },
+    "report": {
+      "report_id": "report-research-a71771499b384affb247b033985c66b7",
+      "research_id": "research-a71771499b384affb247b033985c66b7",
+      "markdown": "## Implementation commits\n\n| Recorded implementation | Commit | Source |\n| --- | --- | --- |\n| query rewriter | `32559e07a` | [1] |\n| clarification decision | `e93c32fbf` | [1] |\n| intent classifier | `3d3f27dda` | [1] |\n\n## Added Python files\n\n- `agent/agent/query/clarifier.py` [1]\n- `agent/agent/query/intent_classifier.py` [1]\n- `agent/agent/query/rewriter.py` [1]\n- `agent/tests/integration/test_tools_api.py` [1]\n- `agent/tests/unit/test_clarification.py` [1]\n- `agent/tests/unit/test_intent_classifier.py` [1]\n- `agent/tests/unit/test_query_plan.py` [1]\n- `agent/tests/unit/test_query_rewriter.py` [1]\n\nThese are recorded sprint changes; they do not establish later deployment or behavior.\n\n## Sources\n\n1. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_3\n2. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_0\n3. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_2\n4. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_1\n5. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_5\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-773e72154bc8818fccfcb5d7",
+        "claim-finding-83dbd3f003118fb4306429c6",
+        "claim-finding-b03f6fde6adbb30f57047b55"
+      ],
+      "evidence_ids": [
+        "evidence-3bbeeefaa27b28004bba377b",
+        "evidence-5b7e6779dcc2edc20a72cf5d",
+        "evidence-70acbaa20873a01e33c41ec3",
+        "evidence-900e5a67fdfeba32e59a98ec",
+        "evidence-9505842131f4708e260c3811",
+        "evidence-bf664a578289cf53ab684ba2",
+        "evidence-413382ae64c9784c29dc6c68",
+        "evidence-54494071df7cde4955ad494f",
+        "evidence-c756de754689f1ff9990231f"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-3bbeeefaa27b28004bba377b",
+          "evidence_ids": [
+            "evidence-3bbeeefaa27b28004bba377b",
+            "evidence-bf664a578289cf53ab684ba2",
+            "evidence-54494071df7cde4955ad494f"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_3",
+          "excerpt": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-5b7e6779dcc2edc20a72cf5d",
+          "evidence_ids": [
+            "evidence-5b7e6779dcc2edc20a72cf5d"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-70acbaa20873a01e33c41ec3",
+          "evidence_ids": [
+            "evidence-70acbaa20873a01e33c41ec3"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_2",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-900e5a67fdfeba32e59a98ec",
+          "evidence_ids": [
+            "evidence-900e5a67fdfeba32e59a98ec",
+            "evidence-413382ae64c9784c29dc6c68"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_1",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        },
+        {
+          "number": 5,
+          "evidence_id": "evidence-9505842131f4708e260c3811",
+          "evidence_ids": [
+            "evidence-9505842131f4708e260c3811",
+            "evidence-c756de754689f1ff9990231f"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_5",
+          "excerpt": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T11:41:47.919059Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-3bbeeefaa27b28004bba377b",
+        "evidence_ids": [
+          "evidence-3bbeeefaa27b28004bba377b",
+          "evidence-bf664a578289cf53ab684ba2",
+          "evidence-54494071df7cde4955ad494f"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_3",
+        "excerpt": "alogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-5b7e6779dcc2edc20a72cf5d",
+        "evidence_ids": [
+          "evidence-5b7e6779dcc2edc20a72cf5d"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+        "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-70acbaa20873a01e33c41ec3",
+        "evidence_ids": [
+          "evidence-70acbaa20873a01e33c41ec3"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_2",
+        "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-900e5a67fdfeba32e59a98ec",
+        "evidence_ids": [
+          "evidence-900e5a67fdfeba32e59a98ec",
+          "evidence-413382ae64c9784c29dc6c68"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_1",
+        "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      },
+      {
+        "number": 5,
+        "evidence_id": "evidence-9505842131f4708e260c3811",
+        "evidence_ids": [
+          "evidence-9505842131f4708e260c3811",
+          "evidence-c756de754689f1ff9990231f"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_5",
+        "excerpt": "| Action | File Path |\n| --- | --- |\n| MODIFIED | agent/.env.example |\n| MODIFIED | agent/README.md |\n| MODIFIED | agent/agent/agent.py |\n| MODIFIED | agent/agent/api/chat_routes.py |\n| MODIFIED | agent/agent/config/settings.py |\n| MODIFIED | agent/agent/query/__init__.py |\n| ADDED | agent/agent/query/clarifier.py |\n| ADDED | agent/agent/query/intent_classifier.py |\n| ADDED | agent/agent/query/rewriter.py |\n| MODIFIED | agent/agent/query/schemas.py |\n| MODIFIED | agent/agent/schemas/common.py |\n| MODIFIED | agent/agent/tools/__init__.py |\n| MODIFIED | agent/agent/tools/registry.py |\n| MODIFIED | agent/docs/API_CONTRACT.md |\n| MODIFIED | agent/docs/agent_layer_design.md    agent/docs/cp1/agent_layer_design.md |\n| ADDED | agent/docs/clarification.md |\n| MODIFIED | agent/docs/clarification.md agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/clarification.md |\n| MODIFIED | agent/docs/cp2/cp2_integration_contract.md |\n| ADDED | agent/docs/cp2/intent_classifier.md |\n| MODIFIED | agent/docs/cp2/query_plan_contract.md |\n| MODIFIED | agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/division_of_work.md  agent/docs/cp1/division_of_work.md |\n| MODIFIED | agent/docs/final_handoff.md agent/docs/cp1/final_handoff.md |\n| MODIFIED | agent/docs/four_week_plan.md    agent/docs/cp1/four_week_plan.md |\n| MODIFIED | agent/docs/integration_branch_guide.md |\n| MODIFIED | agent/docs/integration_record.md    agent/docs/cp1/integration_record.md |\n| MODIFIED | agent/docs/q1_requirements.md   agent/docs/cp1/q1_requirements.md |\n| ADDED | agent/docs/query_plan_contract.md |\n| MODIFIED | agent/docs/query_plan_contract.md   agent/docs/cp2/query_plan_contract.md |\n| ADDED | agent/docs/query_rewriter.md |\n| MODIFIED | agent/docs/query_rewriter.md    agent/docs/cp2/query_rewriter.md |\n| MODIFIED | agent/docs/test_cases.md    agent/docs/cp1/test_cases.md |\n| MODIFIED | agent/docs/tool_layer_interface.md  agent/docs/cp1/tool_layer_interface.md |\n| MODIFIED | agent/docs/tool_registry.md |\n| MODIFIED | agent/docs/tool_registry.md agent/docs/cp2/tool_registry.md |\n| MODIFIED | agent/docs/web_integration_guide.md agent/docs/cp1/web_integration_guide.md |\n| MODIFIED | agent/docs/week3_report.md  agent/docs/cp1/week3_report.md |\n| MODIFIED | agent/docs/week4_report.md  agent/docs/cp1/week4_report.md |\n| MODIFIED | agent/pytest.ini |\n| MODIFIED | agent/tests/conftest.py |\n| ADDED | agent/tests/integration/test_tools_api.py |\n| MODIFIED | agent/tests/unit/test_answer_formatter.py |\n| ADDED | agent/tests/unit/test_clarification.py |\n| ADDED | agent/tests/unit/test_intent_classifier.py |\n| ADDED | agent/tests/unit/test_query_plan.py |\n| ADDED | agent/tests/unit/test_query_rewriter.py |\n| MODIFIED | agent/tests/unit/test_tool_registry.py |\n| MODIFIED | data-persistence/storage/milvus_store.py |\n| MODIFIED | data-persistence/tests/test_storage.py |\n| ADDED | data-pipeline/pipeline/auto_process.py |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | docs/api.md |\n| ADDED | docs/requirements.md |\n| ADDED | eval/README.md |\n| ADDED | eval/eval_questions_msmarco.json |\n| ADDED | eval/eval_results_msmarco_run.json |\n| ADDED | eval/evaluator.py |\n| ADDED | eval/import_local_msmarco.py |\n| ADDED | eval/metrics.py |\n| ADDED | eval/ms_marco_eval.py |\n| ADDED | eval/msmarco_qa_pairs.json |\n| ADDED | eval/msmarco_qa_pairs.jsonl |\n| ADDED | eval/prepare_msmarco_eval.py |\n| ADDED | eval/run_eval.py |\n| ADDED | eval/test_eval.py |\n| MODIFIED | start_project.py |\n| ADDED | toolset/tests/test_registry.py |\n| MODIFIED | toolset/tool_layer/__init__.py |\n| ADDED | toolset/tool_layer/registry.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/.env.example |\n| DELETED | web/src/composables/useMockChat.ts |\n| MODIFIED | web/src/layouts/default.vue |\n| DELETED | web/src/mock/errorMap.ts |\n| DELETED | web/src/mock/mockAgent.ts |\n| DELETED | web/src/mock/types.ts |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| MODIFIED | web/src/pages/index.vue |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 1e4d97ed3 | YourGitHubUsername | 2026-07-20 | Maintenance / Chore | system update |\n| 42376c860 | fionaxi | 2026-07-24 | Feature | feat: add agent tool registry |\n| 32559e07a | fionaxi | 2026-07-25 | Feature | feat: add query rewriter |\n| e93c32fbf | fionaxi | 2026-07-25 | Feature | feat: add clarification decision |\n| d9fa78df1 | fionaxi | 2026-07-25 | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | fionaxi | 2026-07-25 | Feature | feat: define query plan contract |\n| 0249936ee | fionaxi | 2026-07-25 | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | fionaxi | 2026-07-25 | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | fionaxi | 2026-07-25 | Feature | feat: add intent classifier |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-a71771499b384affb247b033985c66b7/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 65
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-a71771499b384affb247b033985c66b7/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 62
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-a71771499b384affb247b033985c66b7/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 62
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-a71771499b384affb247b033985c66b7/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 74
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-a71771499b384affb247b033985c66b7/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 372
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

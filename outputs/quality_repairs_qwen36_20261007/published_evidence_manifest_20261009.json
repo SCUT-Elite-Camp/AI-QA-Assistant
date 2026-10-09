@@ -1,0 +1,1224 @@
+{
+  "schema_version": "published-evidence.v1",
+  "date": "2026-10-09",
+  "scope": "section 11 indexed artifacts and CP2 statistics; 108 selected runs and 108 judgments plus frozen config snapshots",
+  "file_count": 243,
+  "total_bytes": 16207885,
+  "files": [
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/agent_full_qwen35plus_final.log",
+      "bytes": 8582,
+      "sha256": "bfea87796100375dca14086fb984370ac2bec997c0a86405306c6e86c1af5e45"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_ledger_20261008.json",
+      "bytes": 100221,
+      "sha256": "ddcd5c685115098f638afa9a72e8fd69c4f4aa2515d1e0d24e96dbae9c6975e7"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/config/documents_manifest.json",
+      "bytes": 53777,
+      "sha256": "7ab9c9af47f1169e8b92a347e4d946462d7344700e62eb7984ffff276870c5f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/config/frozen_environment.json",
+      "bytes": 1721,
+      "sha256": "0f973bee4341bc854caa26ee50ce89ae7d423cbc7da9a4af11e4242ccc14c80f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-009-deep_research_current-r2-6e42c3e7.json",
+      "bytes": 11371,
+      "sha256": "3d84050199fa01b212b141fb667528e913c32871474cc4b6e0626dd9828f761b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-009-deep_research_current-r3-1fd57fed.json",
+      "bytes": 11336,
+      "sha256": "e350077823868a54378e3168f146238b7dae3bca66eed97169c8f91d7f1a09ce"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-010-deep_research_current-r2-c2e8fa15.json",
+      "bytes": 25581,
+      "sha256": "59576d181b24a595e4e4c1d06d57d5aa7d7e407f79bf797768de90ca0405b11f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-010-deep_research_current-r3-66071e00.json",
+      "bytes": 25858,
+      "sha256": "1140786534c082295d0aa4cf4e215f5dd0f94dc89a211a236ded9abb80f81178"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-011-deep_research_current-r2-e7cb25c4.json",
+      "bytes": 19014,
+      "sha256": "5276991f14cabc1e0687bd8d8a04a7530eaf9b4a7592c9cff1e1ebc0e42100e5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-011-deep_research_current-r3-dcfd6ca2.json",
+      "bytes": 24925,
+      "sha256": "a90d34239c41782f62b71fbdecc894805b5c41e253857d7b5592cef9c60709ec"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-012-deep_research_current-r2-3a8436e0.json",
+      "bytes": 30377,
+      "sha256": "7aa2090698789e3ee8672420bd8a31e2e834c4f5629ec963a66b613ca2d51ac4"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-012-deep_research_current-r3-6858b370.json",
+      "bytes": 30432,
+      "sha256": "5af4f3392b78cfa80e1789da626b746a257197c6709f3980281b65ebefb7cff1"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-013-deep_research_current-r2-0c5331d9.json",
+      "bytes": 25639,
+      "sha256": "03630ddbd4a12bbde46818520fa288bde9feb48db7a7282f1e5a74cafd4a8a7d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-013-deep_research_current-r3-df337a4d.json",
+      "bytes": 18655,
+      "sha256": "6b4610c7013057f3ad29c5102c54cdee50abb8b548c01bcd52d5ebd28e5d9238"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-014-deep_research_current-r2-8846f3c5.json",
+      "bytes": 13148,
+      "sha256": "9fd0ddcbd23f38be415a9cc5e654e0dc3447eac491f38bd7e0390b541330a127"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-014-deep_research_current-r3-f186b84f.json",
+      "bytes": 13053,
+      "sha256": "11c2aa58f39c730d8758d54767d0f579e54b34c2c5dc537eddb4823975aa9736"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-015-deep_research_current-r2-87eb84c5.json",
+      "bytes": 14867,
+      "sha256": "e1990a8c18c3c116b32fc3354436a717027018d7240fe9b912dd8e28dfa8d1b3"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-015-deep_research_current-r3-6734f671.json",
+      "bytes": 19088,
+      "sha256": "797d9ab52d2d199bfd94f22df01b91ee9583ce99edcd577987590cbfbd503f3c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-015-fast_chat-r2-939bd611.json",
+      "bytes": 14862,
+      "sha256": "8c2d6c3250111676951407cc0d5ec9d5380ea673fd9c7b6203b1ef8aacade143"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-015-fast_chat-r3-0071e85c.json",
+      "bytes": 14839,
+      "sha256": "857b141c20dae6e886f7a05213ec30cbb8e62e0448451c9bb28b1f646902cd78"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-016-deep_research_current-r2-989a6e5a.json",
+      "bytes": 23207,
+      "sha256": "3b0054d7a854cca73e7c544571cacae161707b0f9e2237e5acebf27d20282bff"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-016-deep_research_current-r3-ecad84f6.json",
+      "bytes": 21749,
+      "sha256": "75fdfd8aa088789ee1d49818cc3ec948fcc72795281b4e2babc14003478d776a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-017-deep_research_current-r2-a793b0e6.json",
+      "bytes": 12809,
+      "sha256": "e579a37d71840d01024b2cb371b9d1fd700fa0dd635ee5916f721cda50728e5b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-017-deep_research_current-r3-830e724d.json",
+      "bytes": 17790,
+      "sha256": "b31e8074b7d9f24e785fd94a37355462d3466b63db0652ff7ea5539049617e31"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-018-deep_research_current-r1-739c707b.json",
+      "bytes": 39216,
+      "sha256": "8cb28a2d918f03e6cb74da7c5130f3fc5b4fb67fd7c72ba94eed72decc50da0a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-018-deep_research_current-r2-25af8ae7.json",
+      "bytes": 34534,
+      "sha256": "f4d020f3000a79cabbfd8563bd7e1109b980fc4d3b4ea52993b036338a641ee5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-018-deep_research_current-r3-9128fc73.json",
+      "bytes": 34733,
+      "sha256": "06df68ab55518ad40fc8205fc662895f701503efabc3380ad1fd1585726003e1"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-018-fast_chat-r1-4fd3bdcc.json",
+      "bytes": 39625,
+      "sha256": "9def14e112fd7688418a9102b9440b3dc8684024fd799c7df06f5f5a7977e75b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-018-fast_chat-r2-6f11355a.json",
+      "bytes": 39628,
+      "sha256": "6ba5ee0c1bea11f034653ddf84335c8bd9667e6706915f47379cd687efd06d18"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/judgments/DR-A-018-fast_chat-r3-5f1377f1.json",
+      "bytes": 39517,
+      "sha256": "af5dce9df67d50d819628a13b20141d370f586ae92f6d9c5ac2dddd57f70240d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-009/DR-A-009-deep_research_current-r2-6e42c3e7.json",
+      "bytes": 105266,
+      "sha256": "210ad70c67e9f0ef24bf67494e9dc2cac856a2f214d6b96436928162530e9b43"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-009/DR-A-009-deep_research_current-r3-1fd57fed.json",
+      "bytes": 105267,
+      "sha256": "a300024f5f1f9f80bece8ea53123000031cc34580039a4abed8ced82508bb6b1"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-010/DR-A-010-deep_research_current-r2-c2e8fa15.json",
+      "bytes": 133142,
+      "sha256": "a395507747444accf721140ef85f36f5c5a823ce3dff2c3445433c664c93c4dc"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-010/DR-A-010-deep_research_current-r3-66071e00.json",
+      "bytes": 133329,
+      "sha256": "a90afa2fa04b06d5202605b77380aa3fbed4b92ea1c460fb4cd2e3014eccafda"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-011/DR-A-011-deep_research_current-r2-e7cb25c4.json",
+      "bytes": 139940,
+      "sha256": "1e29173007b60dccf0b04c316c84fef6639a0f0c3e7dd47359884e04ec69e13a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-011/DR-A-011-deep_research_current-r3-dcfd6ca2.json",
+      "bytes": 153865,
+      "sha256": "dc82ffd373f8f93f52115675b9ba2547bae8c6eb2fb4c97a561686dd34f859c0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-012/DR-A-012-deep_research_current-r2-3a8436e0.json",
+      "bytes": 277364,
+      "sha256": "06d880a4977100311ccf7f7966ec062b0afbbb72f300087fbb4bf4d69933299e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-012/DR-A-012-deep_research_current-r3-6858b370.json",
+      "bytes": 275977,
+      "sha256": "1925a715b89f9d0fb7885cc4ec3fa85f800ba960757f3b3a213d0b3c232d87aa"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-013/DR-A-013-deep_research_current-r2-0c5331d9.json",
+      "bytes": 151217,
+      "sha256": "a3624f4682abbd4864ebde44fab52dd664c38bf5439eabd16be4701aeee097af"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-013/DR-A-013-deep_research_current-r3-df337a4d.json",
+      "bytes": 104294,
+      "sha256": "453330a0dcd10ba0681d11ff8b7471c9c8c7a4c4fbc65ef8953a71b1b004119e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-014/DR-A-014-deep_research_current-r2-8846f3c5.json",
+      "bytes": 92991,
+      "sha256": "d0fc43e0ac24f25a98c8b4f99a45b32820622d38d8c8da7e94db5ab4a1ed8825"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-014/DR-A-014-deep_research_current-r3-f186b84f.json",
+      "bytes": 93003,
+      "sha256": "99f8092ab9ca54063d8a55df43fb7dc0fb5d8b7e9ba7efdefd38bbc6c1cb2ee4"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-015/DR-A-015-deep_research_current-r2-87eb84c5.json",
+      "bytes": 122014,
+      "sha256": "ce00502519ec409fbd8bc03788e560dca6ffdc4e788661b370b629342969fa20"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-015/DR-A-015-deep_research_current-r3-6734f671.json",
+      "bytes": 156103,
+      "sha256": "ab728e885d79f5b0919a1730fde4b0309ffe3c802e3c6da619b77433457a4b64"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-016/DR-A-016-deep_research_current-r2-989a6e5a.json",
+      "bytes": 173489,
+      "sha256": "b24e376d17db6a30ac346cb5183b84bc9f822a7dd7ff962a532b6992beddee2b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-016/DR-A-016-deep_research_current-r3-ecad84f6.json",
+      "bytes": 225155,
+      "sha256": "99a7082f71ecd1e798c540eabb495946b63a40c5bd12bd7ddfbae86a4de3ab34"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-017/DR-A-017-deep_research_current-r2-a793b0e6.json",
+      "bytes": 175289,
+      "sha256": "1a0f2b3c441d83cdd8ac91fafdab74e68432092ef559bd9b2403c5533d210c06"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-017/DR-A-017-deep_research_current-r3-830e724d.json",
+      "bytes": 189890,
+      "sha256": "c660f1efd8ccc995fa067a2bc26e89117235d64e2ee533ef5dd8d11734ce240a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-018/DR-A-018-deep_research_current-r1-739c707b.json",
+      "bytes": 207148,
+      "sha256": "004280f9e8280fcd0558274c116998750e44cf6ae2477a39e1da12dc6e77d25b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-018/DR-A-018-deep_research_current-r2-25af8ae7.json",
+      "bytes": 198738,
+      "sha256": "f1eb3738c0b678ed0ba4e215b709e2e9d1bc6e77c71c172fb7b90b851c52ac87"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/deep_research_current/DR-A-018/DR-A-018-deep_research_current-r3-9128fc73.json",
+      "bytes": 198866,
+      "sha256": "9de2d2d905e9fced27863bbac16191085ce6b4c720bafe88fc01e02ab18ece76"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-013/DR-A-013-fast_chat-r2-e6b4cd7a.json",
+      "bytes": 70484,
+      "sha256": "62247df65672b9ba3b50fc29add3796ab6d991738a486fc7b505b4adfed592ee"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-013/DR-A-013-fast_chat-r3-71509ce3.json",
+      "bytes": 70484,
+      "sha256": "2c2faec29b9f256eb67b839ea8f44383444209a3db61fe95473e6d19ea368594"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-015/DR-A-015-fast_chat-r2-939bd611.json",
+      "bytes": 41185,
+      "sha256": "433e1cdaa9c4e53b8d3227422534a0143d13194184d6cf2cd28d03fd5854aced"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-015/DR-A-015-fast_chat-r3-0071e85c.json",
+      "bytes": 41185,
+      "sha256": "4c1d5fd92974a263b8fd78abe00f044bdd230ebe1232ec8abecb859d39ea699f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-018/DR-A-018-fast_chat-r1-4fd3bdcc.json",
+      "bytes": 112374,
+      "sha256": "9dcb7942fb4faad6a1d381da2af78c1219d690a132ce927b4605ed5b343911af"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-018/DR-A-018-fast_chat-r2-6f11355a.json",
+      "bytes": 112374,
+      "sha256": "754de477ada25ba43f429b399f186b4aec7e04cc610e1d0c6e10957ab3b7275c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_qwen35plus_20261008/runs/fast_chat/DR-A-018/DR-A-018-fast_chat-r3-5f1377f1.json",
+      "bytes": 112374,
+      "sha256": "6828add37bee0179f6f40b50b7c73af79ba9f20037ac36abac0656038e0fd0a2"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/continuation_summary_20261008.json",
+      "bytes": 754,
+      "sha256": "ea4dda4aef4a4be8458cb5711253f496833d4c0155dcf16679a0e71caa03de60"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/cp2_version_statistics_20261009.json",
+      "bytes": 1097,
+      "sha256": "8e1ca97fe7187b0a07cf223a2f5ef2a07f337715c7a7262b83c510ddb71a73cf"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/dashboard_theme_20261009.png",
+      "bytes": 76942,
+      "sha256": "a7b02f176a51383c2fe76bc46d597ed5d7ea426d8db2d6174be4a40ee092dc4f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/downloaded_final_research_report.md",
+      "bytes": 1390,
+      "sha256": "6380260887fd76d906f1a8a0474ddca42dc89bc6f92bb336b98ad6430448de45"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/evidence_theme_20261009.png",
+      "bytes": 78295,
+      "sha256": "bd9dfbfcc73cc3aad2a1e761b9aebf9962d44a091c0095c40187a17954bab52e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/frontend.all-theme-build.log",
+      "bytes": 22764,
+      "sha256": "cbb4ba2f3494e3b1a2fd113350863ccab0e4a6887f4b0997b8b265f064e2aa97"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/frontend.host.log",
+      "bytes": 1676,
+      "sha256": "27a9a0e7a6c3247ddc57b950f4674cc7ccad4e74626d7e5492dd474ad417516c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/frontend_full_remaining.log",
+      "bytes": 7285,
+      "sha256": "60ca160a6261d973402019bb9f73d1237a797c42b3795ad401e160063a5ea3f0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/config/documents_manifest.json",
+      "bytes": 53777,
+      "sha256": "7ab9c9af47f1169e8b92a347e4d946462d7344700e62eb7984ffff276870c5f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/config/frozen_environment.json",
+      "bytes": 1729,
+      "sha256": "c59d4cea6a1a988d9cdbee5243f288e4ffec773c75c69dfa2ed233e0abdc6ca6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-004-deep_research_current-r1-7c9fbea2.json",
+      "bytes": 18444,
+      "sha256": "36938be72d6017ea1da2b60e911189b78a83bc8336099a0f86a87c8260101f66"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-004-deep_research_current-r2-92e7b306.json",
+      "bytes": 18246,
+      "sha256": "7376510aff1e87081a12d36a7afac9db1aa7b20bd02fe3898b743e3a5eb73626"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-004-deep_research_current-r3-11d622bc.json",
+      "bytes": 18593,
+      "sha256": "9629c912f2af54a208383fea210d2559634d4140c76ed4c57b66aaa3e4b204fd"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-004-fast_chat-r1-64f64686.json",
+      "bytes": 27868,
+      "sha256": "662103d5a5d11084b5a14d9302d88a871bb150650e71f16794655ed91c62dc60"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-004-fast_chat-r2-62c0fab6.json",
+      "bytes": 28275,
+      "sha256": "fbbb26ea260d659483d0b6f189c5787be7aaa16dde65deb327c951dea1c9831b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-004-fast_chat-r3-f7cff801.json",
+      "bytes": 27981,
+      "sha256": "da443d0dda0390d529febe91ff11e94994b7ce516e6a79aae9d2c698124b7a62"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-005-deep_research_current-r2-01fc79bd.json",
+      "bytes": 19743,
+      "sha256": "ed3b1ad8d89fdd74a1121e14edfd62740994a22a31648f84aaebf7bda851bedf"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-005-fast_chat-r1-883d57f5.json",
+      "bytes": 25219,
+      "sha256": "1682abbbd9a57b4c6408a86d1e01c298148898ee8aaef203b9cefdf1a66a5fe2"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-005-fast_chat-r2-455f825e.json",
+      "bytes": 25097,
+      "sha256": "b72852103bfc5e3457486ecb0da6dce962a38306891a34f54cf0aa5346056d65"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-006-deep_research_current-r1-35c5cd90.json",
+      "bytes": 35244,
+      "sha256": "44ec23ffb8bbc146b73eb5f7986b04457086af1ccf742b1ce01a652cc6e39039"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-006-deep_research_current-r2-4fcc7319.json",
+      "bytes": 35084,
+      "sha256": "5c40d309c954738e52b23239ae691fecf7d9e3177e108fae1807c5b1dd7e977c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-006-deep_research_current-r3-d22b581c.json",
+      "bytes": 31817,
+      "sha256": "8fff4c4238c161f1c90ebab61996ae06fc29f9b253884fe0f820ed65ed609faa"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-006-fast_chat-r1-4cc9ce17.json",
+      "bytes": 37571,
+      "sha256": "8dcbbcdf90c25d1468b9af603b9d2a757fc27f76e8b5b55b3e7776bcc621d64a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-006-fast_chat-r2-10d18f45.json",
+      "bytes": 37315,
+      "sha256": "293587bdb2776c1e13ebf05a9aa3b1d46ad9b434ce19b0817b949bdd6f33a0d3"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-006-fast_chat-r3-2cadaa5e.json",
+      "bytes": 37553,
+      "sha256": "36e76fb36acb0955a04d17dc3fe4f31fd0c081314e8cd885b52ea7b0b4a38932"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-007-deep_research_current-r1-e27ff23a.json",
+      "bytes": 18649,
+      "sha256": "bffc40a7fb77f90c2df0338f4cb7582e9b2b2564356c8d04bdfd5cb08b5f7acf"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-007-deep_research_current-r2-cf884ab2.json",
+      "bytes": 18804,
+      "sha256": "6aa8cee3522457bd2531d2bd6f5b27fd8c6eef205f3769e0467983482cd57385"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-007-deep_research_current-r3-923b01ae.json",
+      "bytes": 18654,
+      "sha256": "e3516cf91b00dac0b188bd36bfa6c6db30c1d25d096e5c1ffdebec257b7e0e87"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-007-fast_chat-r1-5e9e7ae7.json",
+      "bytes": 20687,
+      "sha256": "ce7f813035782d0a99e89d799884fce18469dca2498712d8f4b9c362a0191622"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-007-fast_chat-r2-e50c2c7c.json",
+      "bytes": 20469,
+      "sha256": "b778a723d0d16ba830bf3ac1bbd625ecba0ec949350f67b0b6e07f3e46d3dd8b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-007-fast_chat-r3-9ecdd71b.json",
+      "bytes": 24646,
+      "sha256": "7eab387c59a48bcdb69eba4f53adec1022884d317869fb7063acbbc631e48ebb"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-008-deep_research_current-r1-4a2032fe.json",
+      "bytes": 23248,
+      "sha256": "306fdf15b0dad8f092f21d750f6762f7d44c5cf352233f0e131ec354faab0662"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-008-deep_research_current-r2-9199c021.json",
+      "bytes": 27094,
+      "sha256": "8f8d7ed64bd6d8e266568f6da4d8df221d97a5a7563550c014e4443649e422ae"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-008-deep_research_current-r3-843b6974.json",
+      "bytes": 23026,
+      "sha256": "8c58eb0415e74ed403141ea04bc2e677b777baf94051cca5b0b252a919d18833"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-008-fast_chat-r1-3cdafcac.json",
+      "bytes": 2731,
+      "sha256": "1c6f05cb825b32409270cffdd6dc69eeaabb2f941265ac3548e029d8d724f91a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-008-fast_chat-r2-1e5a03ba.json",
+      "bytes": 2878,
+      "sha256": "5d9a53f690027dec96f8adf43dde9e660aeeeb4c241a89da575f9b03320bc411"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-008-fast_chat-r3-92e9bdba.json",
+      "bytes": 2487,
+      "sha256": "91b87d14bc7122e65fc76b76ebaf01f982d30e052522786ef329ef1dc760c2d7"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-009-fast_chat-r2-464ae06a.json",
+      "bytes": 25979,
+      "sha256": "3e87dcfcb79158624cf05e05c79f9d04719033059ee6591725e9ff937b16f6af"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-009-fast_chat-r3-234d9bc2.json",
+      "bytes": 26010,
+      "sha256": "443be36e116edf26b3375e2004281871985da75102de861a250684982ed8cf99"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-010-fast_chat-r1-ff296368.json",
+      "bytes": 22843,
+      "sha256": "10be0e151cc5be02f6e90cc4d9c84630cfb716c43ac3bb2f8e253638603c3523"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-010-fast_chat-r2-b4c8ef1b.json",
+      "bytes": 22550,
+      "sha256": "f8ded07a9aa6ad9e92494d8c97b20e2c01ce298764c438b4b31e68403b52dca6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-010-fast_chat-r3-76c83e2e.json",
+      "bytes": 22802,
+      "sha256": "64a5ecbb170a7635cbdbc4f6c1ca64e71527ce33f5a6cdb2820a4281e9e89d66"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-011-fast_chat-r1-605025ac.json",
+      "bytes": 26489,
+      "sha256": "f7291d24ec4beb3decbb62eeb05a65764ba8c334a023e79c2b5442e276cf760e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-011-fast_chat-r2-c29d998f.json",
+      "bytes": 25232,
+      "sha256": "0e8cacabb99f29928353e8a5b458e1f1cd28d5722e4a2cbe601a95aabcd51857"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-011-fast_chat-r3-e36bac0a.json",
+      "bytes": 25254,
+      "sha256": "562b97930e929969635ab2e9d0067a3603c91d7aa99f78313e750abe3742c09f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-012-fast_chat-r1-931c1675.json",
+      "bytes": 27241,
+      "sha256": "085a7ed0e39628483a9532df9ba8712b3585c0ab59a6d0f4abdf653f5ed46f96"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-014-fast_chat-r1-fe59b23f.json",
+      "bytes": 28338,
+      "sha256": "1df172f73b42d22b0c337265cc6cc3779cf224b23e68861ac74584cd394741be"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-014-fast_chat-r2-7b71c239.json",
+      "bytes": 28193,
+      "sha256": "0f56aa887327e13f9cbc7c43e474805ee51744c55590170958e02268cf4c1940"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-014-fast_chat-r3-6cd31647.json",
+      "bytes": 28356,
+      "sha256": "5be076c0c7caae8082c05b7f7f3782ed83ccdcd8a1a792ea94eded74c168172c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-016-fast_chat-r1-588174d9.json",
+      "bytes": 26586,
+      "sha256": "d993b41aa8cdea8a4e019008c3e27b54dcc2e579db4d04b51f178cf917a25420"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-016-fast_chat-r2-e70f2907.json",
+      "bytes": 26420,
+      "sha256": "b5e82bb3c7f14dd4969c159c7cf5c9c3822459e1f0be5746aee2506ca86bbf1c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/judgments/DR-A-016-fast_chat-r3-d67d55f4.json",
+      "bytes": 26828,
+      "sha256": "777ca906aac080cb5ce678e04d170a2283b5531cce705e97b45be8f3b7e5fde8"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-004/DR-A-004-deep_research_current-r1-7c9fbea2.json",
+      "bytes": 107544,
+      "sha256": "463a9764b7ebd55f4f2c10b5a9f8245aaa75914191a897ac5d9f364f2bc6ae28"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-004/DR-A-004-deep_research_current-r2-92e7b306.json",
+      "bytes": 108326,
+      "sha256": "4d2e5c67c7e45bd38829a666a80aa584d00babc679510066a7d7c7e3581ff0c0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-004/DR-A-004-deep_research_current-r3-11d622bc.json",
+      "bytes": 121695,
+      "sha256": "0dacb85cbf82242efe3115ba7b9c295a953b4145279cd05265d6dfbc03b9d2a5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-005/DR-A-005-deep_research_current-r1-e78c41c3.json",
+      "bytes": 184548,
+      "sha256": "631a33c9c0da321a560e36cdc32a0dbdc0d10fb592b13bf80da4f7658f13e768"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-005/DR-A-005-deep_research_current-r2-01fc79bd.json",
+      "bytes": 107978,
+      "sha256": "d513e5d8d89ae120bdac29f0c4fde941241aa310095882227e38c15d5f92a9ff"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-005/DR-A-005-deep_research_current-r3-b47da796.json",
+      "bytes": 188311,
+      "sha256": "ab83fd2800a03a00206bc90753f1cf7bced3dddf7e04b58c788aa76ad421eb8c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-006/DR-A-006-deep_research_current-r1-35c5cd90.json",
+      "bytes": 195456,
+      "sha256": "9826010db112e9577cee83b0f2a2d79049476d976cb4dd93011d2d940ca1e338"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-006/DR-A-006-deep_research_current-r2-4fcc7319.json",
+      "bytes": 215620,
+      "sha256": "9cf2678d983be1161e13197525196987325cf5c1a6874e9c862cc3daa451dfcb"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-006/DR-A-006-deep_research_current-r3-d22b581c.json",
+      "bytes": 214181,
+      "sha256": "d5131cf59272a19ee1a80a31df1471a93ed2719ad601d8e12c785572d1763438"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-007/DR-A-007-deep_research_current-r1-e27ff23a.json",
+      "bytes": 133444,
+      "sha256": "6f1c188c70af6b9728c4b4ec31a547086df58cbe53c39748a0199a748d8c26db"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-007/DR-A-007-deep_research_current-r2-cf884ab2.json",
+      "bytes": 133480,
+      "sha256": "cddb576f70f91dd3bf34e7d4a7832eeffbdfc576e04a714ab2d8dfb97b5e1834"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-007/DR-A-007-deep_research_current-r3-923b01ae.json",
+      "bytes": 143858,
+      "sha256": "e2fc531e6e35209ab5a19e79f90c0132afbfeebc0b9f0bfd16208d0e37706bae"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-008/DR-A-008-deep_research_current-r1-4a2032fe.json",
+      "bytes": 174142,
+      "sha256": "9711cc35870781646e0851aebdc817001d6284d405e877d12b1dc6e9226d0900"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-008/DR-A-008-deep_research_current-r2-9199c021.json",
+      "bytes": 185475,
+      "sha256": "f799fc6fd5383f8d0ae6fa684914fd2c3d42e6b2bcb3cfa6bd18d86602bc547f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/deep_research_current/DR-A-008/DR-A-008-deep_research_current-r3-843b6974.json",
+      "bytes": 174099,
+      "sha256": "74a0d7c3954d8648870ec3ec1be62c37c5716a76dce33595991db0b10425559b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-004/DR-A-004-fast_chat-r1-64f64686.json",
+      "bytes": 83066,
+      "sha256": "46115fea1fb008bf889b51f1f603b56b29bb23de83e6eed592041f7306f304dc"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-004/DR-A-004-fast_chat-r2-62c0fab6.json",
+      "bytes": 83063,
+      "sha256": "520a1973a8c472ac308e862ac3d163b67770853199dc84a1091fb6e5fb8e1b80"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-004/DR-A-004-fast_chat-r3-f7cff801.json",
+      "bytes": 83066,
+      "sha256": "b90c6006e3f8e4d1fc678140d4579cd5166f479de7384c3506f4958d88f0d5cd"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-005/DR-A-005-fast_chat-r1-883d57f5.json",
+      "bytes": 75626,
+      "sha256": "2eb0b917955251fb1b38a17435d8e7873128d926f98a5ea7ae6636c053913dd0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-005/DR-A-005-fast_chat-r2-455f825e.json",
+      "bytes": 75629,
+      "sha256": "f215d162fd4a9eebfa43a95b7075095f7c075844454750a04401821396c4681a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-005/DR-A-005-fast_chat-r3-c36ea27c.json",
+      "bytes": 75504,
+      "sha256": "5b0b7821d086656fbfc830763089787bcee371a2961826c89d3b8312f0611805"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-006/DR-A-006-fast_chat-r1-4cc9ce17.json",
+      "bytes": 115779,
+      "sha256": "e6c5e6c227120fa23bead662657e634ef9b25e08326ddb3bfc62d1db0f7cbd53"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-006/DR-A-006-fast_chat-r2-10d18f45.json",
+      "bytes": 115779,
+      "sha256": "3452883602ed287e51d0ed9367835687a4cca218408c37982a44aa07f83c1a08"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-006/DR-A-006-fast_chat-r3-2cadaa5e.json",
+      "bytes": 115779,
+      "sha256": "62e1d04009b57887116d4fcfc1014e337b67cbbdef87a857005a8a4892dbd6cc"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-007/DR-A-007-fast_chat-r1-5e9e7ae7.json",
+      "bytes": 61436,
+      "sha256": "0682fcf0e422c1103b5bac9f2f9c0ba8b070203256d78876a0c294e6b1b25702"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-007/DR-A-007-fast_chat-r2-e50c2c7c.json",
+      "bytes": 61436,
+      "sha256": "75b76a70a79b5363810462b1b0759f2fffc5bbfffafe6b29014d802d53267a18"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-007/DR-A-007-fast_chat-r3-9ecdd71b.json",
+      "bytes": 74577,
+      "sha256": "5220e9e77c4c8101872f052220030d78260bd6d95353f95e4528ab9cd02feba0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-008/DR-A-008-fast_chat-r1-3cdafcac.json",
+      "bytes": 1612,
+      "sha256": "55388d378087b0103e1d183476d8fd0d260599c68dc92bfd9c9808940cb6f90a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-008/DR-A-008-fast_chat-r2-1e5a03ba.json",
+      "bytes": 1612,
+      "sha256": "06f7ff6158fe0617f8bd1f00be1ae217eff05233ab7503e544927055c3a3d70e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-008/DR-A-008-fast_chat-r3-92e9bdba.json",
+      "bytes": 1612,
+      "sha256": "2f1e43780564fbd5c3d5c4a9cfcc5cf23fe2cb2a3fc4d603eb2686f2ffb2e667"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-009/DR-A-009-fast_chat-r2-464ae06a.json",
+      "bytes": 82296,
+      "sha256": "4e93c878994d30917f3772e30370ac1af217168bf9695804645a89afb8d15312"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-009/DR-A-009-fast_chat-r3-234d9bc2.json",
+      "bytes": 82295,
+      "sha256": "e7350393bcc91030425c9008e6d1652665306ac99a571f22461379442b58bef0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-010/DR-A-010-fast_chat-r1-ff296368.json",
+      "bytes": 71911,
+      "sha256": "8562acc09ef26c290b305cdc25020422ea5c8a55a4592f56b55181a251d84558"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-010/DR-A-010-fast_chat-r2-b4c8ef1b.json",
+      "bytes": 72367,
+      "sha256": "98922367cafe050d58b75f6c1efda48acc325a2e2b74368add28751b85d32f02"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-010/DR-A-010-fast_chat-r3-76c83e2e.json",
+      "bytes": 71759,
+      "sha256": "9ee280a47f8879106379d501f2c3f27af315412d3099be83b47ae2d00f606d78"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-011/DR-A-011-fast_chat-r1-605025ac.json",
+      "bytes": 77726,
+      "sha256": "c3904a2fad0432f51f4620f4cf64a92d11497a06a755c2b9acb832d0cb2131f3"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-011/DR-A-011-fast_chat-r2-c29d998f.json",
+      "bytes": 74156,
+      "sha256": "8e7b0a3ecd6729a50a504cd10fef86af8fccbc706cd4250601493d562876e917"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-011/DR-A-011-fast_chat-r3-e36bac0a.json",
+      "bytes": 74156,
+      "sha256": "090298cd0fc3017f38e39ce7746d4b9fb7b9d77d8e1ad35294fceb900045c1a0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-012/DR-A-012-fast_chat-r1-931c1675.json",
+      "bytes": 69498,
+      "sha256": "ad518b5ba92a788c4d7be85c8f020594568383aa3298f73d030224b5b9f60943"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-012/DR-A-012-fast_chat-r2-f95c7273.json",
+      "bytes": 69498,
+      "sha256": "0c4325c99d3e31829e443278ea97f19cf8091cb75bc2a469044b1f85373028ef"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-012/DR-A-012-fast_chat-r3-9142af6d.json",
+      "bytes": 69498,
+      "sha256": "56d282db5e64c7d03b4f15fdd4f7b8e5b8d41a8faf5e5a2a71ff24365c2a464d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-014/DR-A-014-fast_chat-r1-fe59b23f.json",
+      "bytes": 91326,
+      "sha256": "ff4e1e26901d769be2148e5be784951ad13e09dc03d19b62cc3b5207e85f8e41"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-014/DR-A-014-fast_chat-r2-7b71c239.json",
+      "bytes": 91326,
+      "sha256": "1a2fddeba681bea576b570da10745212eb29d43ba2bcfad0c780c3361946aade"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-014/DR-A-014-fast_chat-r3-6cd31647.json",
+      "bytes": 91326,
+      "sha256": "2a298d8b4aeb184fc8edddd9ef3a48f84fd1ba48ed3b7fe6791acbff508f6e2c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-016/DR-A-016-fast_chat-r1-588174d9.json",
+      "bytes": 81645,
+      "sha256": "dc5c1a4d7c3a2786ede2193f0910a5260d718d97fdbae718bbfa37123ccc2c21"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-016/DR-A-016-fast_chat-r2-e70f2907.json",
+      "bytes": 81644,
+      "sha256": "6962995863b48666a0c3a20f51ccca0ea5ada13c1d70539dfb42b0a00c040c00"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-016/DR-A-016-fast_chat-r3-d67d55f4.json",
+      "bytes": 81644,
+      "sha256": "7100e8088727129000f6f6faca92bb1ff30093b0a468926f6a0662c25cbe306a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-017/DR-A-017-fast_chat-r1-2676a4f2.json",
+      "bytes": 83943,
+      "sha256": "d704fdee43119acc3fc5b44a51d51a93c73c2b2e05fbf8689c00de20f4ce177b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-017/DR-A-017-fast_chat-r2-c537db0a.json",
+      "bytes": 83904,
+      "sha256": "7bf5ae9e3b04509b3ac5ebe82579029784d5a829d6541bbb0f7b381ae2a80405"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_plus_20251201_20261008/runs/fast_chat/DR-A-017/DR-A-017-fast_chat-r3-bd22871c.json",
+      "bytes": 83904,
+      "sha256": "919fed0fbf6fe13488ac6097b87db11062f8f57c5d0d08558f80a426e6901739"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/config/documents_manifest.json",
+      "bytes": 53777,
+      "sha256": "7ab9c9af47f1169e8b92a347e4d946462d7344700e62eb7984ffff276870c5f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/config/frozen_environment.json",
+      "bytes": 1721,
+      "sha256": "b1e935fd3f0850348bbb823e918afd08920b5b94956dcb6fe59a1fb6a2c401a8"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-001-deep_research_current-r1-012be290.json",
+      "bytes": 11042,
+      "sha256": "dc8bbcc01a8a8a572ebb2c91c4e3066284e6a0f4ad277b71ae496d07c00539c5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-001-deep_research_current-r2-506d7eef.json",
+      "bytes": 11124,
+      "sha256": "abe336363a21a1df9c662743962cd3c1e8b25bc0da82b15e85f08575c7960373"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-001-deep_research_current-r3-ec3345e4.json",
+      "bytes": 11023,
+      "sha256": "3baf2e2cb63fd384d88463d6528aa808b902152e736c40a54abfee9b3164085c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-001-fast_chat-r1-5f7b04bf.json",
+      "bytes": 30224,
+      "sha256": "9f11e7fc16e448a071f95b1ba823df17b6e1ba3f3bdd1cc7a8761c6bfb5be9f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-001-fast_chat-r2-769b49a2.json",
+      "bytes": 30239,
+      "sha256": "6ed7304e886f240ed5eccaaba25b7551272efb240289c45289e6044d65ffcb53"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-001-fast_chat-r3-9e7fd813.json",
+      "bytes": 30187,
+      "sha256": "fd892f850d511406ad9543aa19d50ceca463f67b4eed17283ca8081412c03280"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-002-deep_research_current-r1-334ec0eb.json",
+      "bytes": 15309,
+      "sha256": "70547d6723d8d08def107525d77678bd1efc532b4a9036ee2deaff042f4b499d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-002-deep_research_current-r2-f314084d.json",
+      "bytes": 14976,
+      "sha256": "1f78cbf19552718ddbf534cc29c5d4dd8af0b2bc5becace2ecdd0d44c7c36c10"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-002-deep_research_current-r3-6ed1c5dc.json",
+      "bytes": 15276,
+      "sha256": "3cda4f7b1bb01675d8adac70b032546408c0888bfc2a62c35e615dde8b9af0a1"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-002-fast_chat-r1-8aa1f5bf.json",
+      "bytes": 30400,
+      "sha256": "32312135c9b3946d69e85eb7f37d35b562e8aac558bf206bee5b8a792a5cac1e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-002-fast_chat-r2-ca83e9a6.json",
+      "bytes": 30496,
+      "sha256": "0bf9f87a37479c0adc803ebaac1c265e0ab04eed529dd3d390bfb76e9697d538"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-002-fast_chat-r3-f6fd57da.json",
+      "bytes": 30401,
+      "sha256": "f242a7d39f6f0f86cf602462d241f94a0494db234035feb9502c12617189187a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/judgments/DR-A-003-deep_research_current-r2-27a23f78.json",
+      "bytes": 32143,
+      "sha256": "0e2b76ddbbec8964c9d28caf5f2f2031ac6d6f02e827a17030dc6889cfbfe70b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-001/DR-A-001-deep_research_current-r1-012be290.json",
+      "bytes": 88429,
+      "sha256": "564b70339908dea95ac8927d871b795859143d10fac58d56190725398f785175"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-001/DR-A-001-deep_research_current-r2-506d7eef.json",
+      "bytes": 87283,
+      "sha256": "0baf7cb878600dd0ece4fede975d333853d34a142985d04c6dc4ad0bf4f81ba5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-001/DR-A-001-deep_research_current-r3-ec3345e4.json",
+      "bytes": 88416,
+      "sha256": "1ce7027421a64cdb5910d1719f5257334a694844091b24a59b034a4d706f8335"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-002/DR-A-002-deep_research_current-r1-334ec0eb.json",
+      "bytes": 138675,
+      "sha256": "3ce2d59795ee7702bc9a6653a59fe5eb9f2b45d20eca202cd2874e90505f1f85"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-002/DR-A-002-deep_research_current-r2-f314084d.json",
+      "bytes": 138410,
+      "sha256": "7668b659495e29ada48a365f65ec24e97f960073cf81e697afd03f5b70f5d4ec"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-002/DR-A-002-deep_research_current-r3-6ed1c5dc.json",
+      "bytes": 137452,
+      "sha256": "8c8dab516f60c5b171e5817a4263363c191a85fc8f0add728c3bce57878f557c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-003/DR-A-003-deep_research_current-r1-0291b60d.json",
+      "bytes": 190880,
+      "sha256": "68a956adc0c5ba668f4e12f11fb1257ddcc72272752445ffb89040e24b46723d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-003/DR-A-003-deep_research_current-r2-27a23f78.json",
+      "bytes": 194762,
+      "sha256": "205af69a8d9e893e3fac4f952508d7ad400d523ef21be7d2adeeed026473fcb4"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/deep_research_current/DR-A-003/DR-A-003-deep_research_current-r3-383c44e9.json",
+      "bytes": 194731,
+      "sha256": "0a861a3de893c6a9aff8726d760f200001c57727de123897a5a409640bca9336"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-001/DR-A-001-fast_chat-r1-5f7b04bf.json",
+      "bytes": 89657,
+      "sha256": "ec201aa22a4607ee71f1be5acf9d757bddcefc92cb2a869e9fae618074d91b78"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-001/DR-A-001-fast_chat-r2-769b49a2.json",
+      "bytes": 89658,
+      "sha256": "2425ed0200087fc09216522d204d5c5662a6064414165118974d55392cf220b3"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-001/DR-A-001-fast_chat-r3-9e7fd813.json",
+      "bytes": 89658,
+      "sha256": "a7fd32305880e2240af93592a0cfae36accd6144f070a7a4841b5c6b214b5982"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-002/DR-A-002-fast_chat-r1-8aa1f5bf.json",
+      "bytes": 88158,
+      "sha256": "3757e20697e4320cb4eef1c32a4e5f43b398658683b13d023ee04a8da9301a50"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-002/DR-A-002-fast_chat-r2-ca83e9a6.json",
+      "bytes": 88425,
+      "sha256": "80445c76be0fe7ac3305eb6668a2516a02c6e48a175f9472fd9eb8002d64dff1"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-002/DR-A-002-fast_chat-r3-f6fd57da.json",
+      "bytes": 88158,
+      "sha256": "b62ba19d598ee9741cf593b91371b5153fcb23bbf803f4c09f21bdcd26714a5e"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-003/DR-A-003-fast_chat-r1-5b853024.json",
+      "bytes": 70503,
+      "sha256": "ef037594fca4fcd7ee1302fbd3341165ef5bc4b431d32137027a4e5d81d52b30"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-003/DR-A-003-fast_chat-r2-8c0ebe34.json",
+      "bytes": 70503,
+      "sha256": "bff3020435cf3a86b23be193c75f54de90d29f2955a07d222f176936f65b9afb"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_qwen35plus_final_108_20261008/runs/fast_chat/DR-A-003/DR-A-003-fast_chat-r3-0d8ebee9.json",
+      "bytes": 73521,
+      "sha256": "2a5c29b91698bd4b21fb8756325d54f581f9b09d4ec6db236317d6f3e8536961"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/config/documents_manifest.json",
+      "bytes": 53777,
+      "sha256": "7ab9c9af47f1169e8b92a347e4d946462d7344700e62eb7984ffff276870c5f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/config/frozen_environment.json",
+      "bytes": 1720,
+      "sha256": "79232d130480920a83d4d028b123a522f5b6508d9297388628414c9922309120"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/judgments/DR-A-011-deep_research_current-r1-24dd3beb.json",
+      "bytes": 19383,
+      "sha256": "14fa194e5722d1beb5bea648f1419563423a188d85ce22ecd4f04ce290e16517"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/judgments/DR-A-012-deep_research_current-r1-58b9d6e8.json",
+      "bytes": 29440,
+      "sha256": "91926cf0d426464930b85b9288078801d2cb4bc7fd349ab1300fc9811e8fe8b5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/judgments/DR-A-014-deep_research_current-r1-de26b031.json",
+      "bytes": 20191,
+      "sha256": "8a1aa8c12f04e24fc4777088c53782273805adbb286016b5664083cc2388346c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/judgments/DR-A-016-deep_research_current-r1-361da03e.json",
+      "bytes": 20561,
+      "sha256": "159f1079f86a216f9dd8b46ee62fb0c1dd00033a268be273ea60d5ade11954a5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/judgments/DR-A-017-deep_research_current-r1-dfe0b4a7.json",
+      "bytes": 19560,
+      "sha256": "7bbb9fd33d92d24f8f8a11f5d6127f49c67bbb87ddc20cfcd718f5eb2867584c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/runs/deep_research_current/DR-A-011/DR-A-011-deep_research_current-r1-24dd3beb.json",
+      "bytes": 116065,
+      "sha256": "6c7bd6e062f7c38515dde5be944a6808b3013e2bc61af66919992a397472ab44"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/runs/deep_research_current/DR-A-012/DR-A-012-deep_research_current-r1-58b9d6e8.json",
+      "bytes": 276427,
+      "sha256": "54b34a2a03a9c4f8fc4ab57cc39a6b65b91c2bdeca83f20a0fd6214e3f8a1944"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/runs/deep_research_current/DR-A-014/DR-A-014-deep_research_current-r1-de26b031.json",
+      "bytes": 138268,
+      "sha256": "b1d9ed1ae443d8ca4f9ecc91b11aa3b33b3a612f9f2b09b0fa25026655884915"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/runs/deep_research_current/DR-A-016/DR-A-016-deep_research_current-r1-361da03e.json",
+      "bytes": 142456,
+      "sha256": "1441751c1ad2544b04610174810ce089570e9cf8717431b84551fad679191c6b"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/full_remaining_final_20261008/runs/deep_research_current/DR-A-017/DR-A-017-deep_research_current-r1-dfe0b4a7.json",
+      "bytes": 188649,
+      "sha256": "cd992f6a7c269a0bdc712373e1029681621774086965e146488f82bc499aa9ec"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/nav_system_theme_20261009.png",
+      "bytes": 100553,
+      "sha256": "48bf017342546ced061ec610fa6c8c81f6e50c6cf04c63db9cdd54e48b31eac1"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-003-deep_research_current-r1-0291b60d.json",
+      "bytes": 32105,
+      "sha256": "726597e062202f73d2be42144d0b86c6491386f9909b42ccf4855fe9fd4b82e6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-003-deep_research_current-r3-383c44e9.json",
+      "bytes": 32227,
+      "sha256": "2fc1b083c386de6e33a4d97d575916d91a9b879313867a14cf27574b6ec5f351"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-003-fast_chat-r1-5b853024.json",
+      "bytes": 25526,
+      "sha256": "68f5084019e3ad525af0b727458ef4738a25a27cc4c667b07a5926066b20560a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-003-fast_chat-r2-8c0ebe34.json",
+      "bytes": 25802,
+      "sha256": "2eb7ab93bf7386bfacb7a58b49569af652ab326a10228f5c66e059457012cd04"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-003-fast_chat-r3-0d8ebee9.json",
+      "bytes": 26491,
+      "sha256": "8d3230f7e1157712b61fe16b5642abf625906df29d686df85446f606db2ee4b2"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-005-deep_research_current-r1-e78c41c3.json",
+      "bytes": 25691,
+      "sha256": "ed09439def73bce606bb4c0dae7f7cbbd0ec8c0b4e3ae6e092907e59885880b9"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-005-deep_research_current-r3-b47da796.json",
+      "bytes": 27619,
+      "sha256": "64f303342f591005ffa923bd65d8ada3ff882a1f38d728824c93f76be3ab6dfb"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-005-fast_chat-r3-c36ea27c.json",
+      "bytes": 28633,
+      "sha256": "a793fb4611dbca34ab2d8e47d7f784ea8d9a9920cfc972d61cb37d89690086a5"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-012-fast_chat-r2-f95c7273.json",
+      "bytes": 25940,
+      "sha256": "4aed846473336df71259f50b1ffaae3cd9d9414d0d39385d4ad877b315bc78f4"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-012-fast_chat-r3-9142af6d.json",
+      "bytes": 25815,
+      "sha256": "442872bd03d59080b8fd518b74b6cc62111b47165c14358185766b6ed6feb1d2"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-017-fast_chat-r1-2676a4f2.json",
+      "bytes": 30669,
+      "sha256": "029df3a3941a267231207d08054ed9434e1eefb8651afb197cb942f9637d5623"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-017-fast_chat-r2-c537db0a.json",
+      "bytes": 30773,
+      "sha256": "8fc6af874c0a4df5dd5876a4acd2c19adfb9fff1b65781e7dbf3d7965d837772"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pending_quality_continuation_20261008/judgments/DR-A-017-fast_chat-r3-bd22871c.json",
+      "bytes": 30662,
+      "sha256": "4c412a5de885cd7200747b8133e78b35dae769d9fa234aaa8b219989331a2105"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/config/documents_manifest.json",
+      "bytes": 53777,
+      "sha256": "7ab9c9af47f1169e8b92a347e4d946462d7344700e62eb7984ffff276870c5f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/config/frozen_environment.json",
+      "bytes": 1721,
+      "sha256": "9a2d963fac146e991807434b7a3c979d9da3058f7ab23166f51a6d8fdf79e125"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/judgments_metadata_v2/DR-A-009-deep_research_current-r1-6bc03d74.json",
+      "bytes": 11346,
+      "sha256": "cb6a29a04ec950128a56d2a143108403001836c1b417c53468d9224a756c05d7"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/judgments_metadata_v2/DR-A-009-fast_chat-r1-1ee58cdf.json",
+      "bytes": 28082,
+      "sha256": "17aa6b7e75b41e1ff029a39c00130a60c6731e535dce658df030ef3112c35b15"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/judgments_metadata_v2/DR-A-013-deep_research_current-r1-404e3c5c.json",
+      "bytes": 32354,
+      "sha256": "c799c08991f4127b33758252b857bf12161b15af8ecba9cb5a07b545db98f325"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/judgments_metadata_v2/DR-A-013-fast_chat-r1-5dd983a9.json",
+      "bytes": 24723,
+      "sha256": "d40a3f77bf044aa247d0e54b596308932193a4d4f95909839a8b34db1cd3dd10"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/judgments_metadata_v2/DR-A-015-deep_research_current-r1-df135112.json",
+      "bytes": 19156,
+      "sha256": "a6d084b8f9b5eb651a8901c43e67820fb68605f8a755972acf8bd435445b30cc"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/judgments_metadata_v2/DR-A-015-fast_chat-r1-18a34e29.json",
+      "bytes": 14832,
+      "sha256": "ac675bfa3c62cd85a95041f1ca4d922696679489f46fbb981ab4aaaaf3f8a706"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/runs/deep_research_current/DR-A-009/DR-A-009-deep_research_current-r1-6bc03d74.json",
+      "bytes": 123520,
+      "sha256": "52be4eb624bb6b4c748fac7dd7ba2a35fc6ac8a4d75450913df412df760ab74d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/runs/deep_research_current/DR-A-013/DR-A-013-deep_research_current-r1-404e3c5c.json",
+      "bytes": 161708,
+      "sha256": "ba831ac01a01ed17f5f3cbce469d3332d08ecbf2323544c074e13362ed6f554a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/runs/deep_research_current/DR-A-015/DR-A-015-deep_research_current-r1-df135112.json",
+      "bytes": 156216,
+      "sha256": "34feedc247ff86e69921ba37ac7025b82536cf9c9bdec88b9f01bfb2aba246d8"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/runs/fast_chat/DR-A-009/DR-A-009-fast_chat-r1-1ee58cdf.json",
+      "bytes": 82296,
+      "sha256": "5f82b7657682ca5a2823db01ad1df6a58beb7588fa38e8bec14c864ff556388c"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/runs/fast_chat/DR-A-013/DR-A-013-fast_chat-r1-5dd983a9.json",
+      "bytes": 70483,
+      "sha256": "8d396486deb52daf701e82596a5f5004c93b954930a183c956430bdc91714941"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/pilot_qwen35plus_fixed_20261008/runs/fast_chat/DR-A-015/DR-A-015-fast_chat-r1-18a34e29.json",
+      "bytes": 41185,
+      "sha256": "406222552616929fe94fe4c2de19a23d8d18f36cfecd80fd677f29d8c5870739"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/reasoning_folded_dark_20261009.png",
+      "bytes": 80915,
+      "sha256": "90d2cadf29ff7cbb40cdf56cff4ef2d1a181c988cbe9da910080224a46e1b369"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/rejudge_locator_continuation_20261008/judgments/DR-A-013-fast_chat-r2-e6b4cd7a.json",
+      "bytes": 25534,
+      "sha256": "937c86dfd5eede60f87e3e2c566dd8a1da8b6468591990c0feb73f3e13b5138f"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/rejudge_locator_continuation_20261008/judgments/DR-A-013-fast_chat-r3-71509ce3.json",
+      "bytes": 25586,
+      "sha256": "eba602a2781f74cf25f420008a902c918a1f0ed27a55c9cd624cf133cb7fa633"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/retry_acceptance_qwen35plus_20261008/config/documents_manifest.json",
+      "bytes": 53777,
+      "sha256": "7ab9c9af47f1169e8b92a347e4d946462d7344700e62eb7984ffff276870c5f6"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/retry_acceptance_qwen35plus_20261008/config/frozen_environment.json",
+      "bytes": 1721,
+      "sha256": "86ae8798abf42ab30e46fafd76dda84f69d48715e276de43e4caf26cf016f644"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/retry_acceptance_qwen35plus_20261008/judgments/DR-A-010-deep_research_current-r1-48ce4fb1.json",
+      "bytes": 25079,
+      "sha256": "7a827865715ad157914d08b321bb130197086153dfaf0317dd34ddabf8269119"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/retry_acceptance_qwen35plus_20261008/runs/deep_research_current/DR-A-010/DR-A-010-deep_research_current-r1-48ce4fb1.json",
+      "bytes": 129203,
+      "sha256": "e563e93985acaa475707568797628dca6a5b64f1818608701f6c3c15c909d3c0"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/settings_theme_20261009.png",
+      "bytes": 39885,
+      "sha256": "163b2771935c8f223dd191eadb77ad2252caccd103d0897fdb4aa7f79fa6008d"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/topics_theme_20261009.png",
+      "bytes": 37339,
+      "sha256": "24cd7d1a41a6bfddd840f5341b3b884e6583a53a4b736d1009f4cc8adfbdb75a"
+    },
+    {
+      "path": "outputs/quality_repairs_qwen36_20261007/ui_final_research_report.png",
+      "bytes": 102058,
+      "sha256": "5662f9451e8218abeb5d7e4fa7399266099d48cd45f1d012c278055ea37d8e4f"
+    }
+  ]
+}

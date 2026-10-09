@@ -1,0 +1,1567 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-018-deep_research_current-r3-9128fc73",
+  "case_id": "DR-A-018",
+  "group": "deep_research_current",
+  "repetition": 3,
+  "started_at": "2026-10-08T11:50:22.927691+00:00",
+  "completed_at": "2026-10-08T11:50:40.609059+00:00",
+  "elapsed_ms": 17681,
+  "config_hash": "cdb102ca9ddebf1947a56bf16f771ea6fc003b4bb589288b82709db43c1cf205",
+  "success": true,
+  "result": {
+    "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Using CP2 Goals and the 2026-09-08 meeting minutes, summarize demonstrated Deep Research capabilities, unresolved issues and the team's next evaluation priorities.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "7a046574e728d8449133f24f98fbbbde",
+            "a0f35f4075be8b80576727e78756952d"
+          ],
+          "topic": "current_state_synthesis"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "4b68e6f5ad000cf2734d9c50d8ad65eff0ea912bdf646dbf27b5ae13a3c41a30",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 4,
+      "task_completed": 4,
+      "evidence_count": 12,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T11:50:22.937668Z",
+      "updated_at": "2026-10-08T11:50:38.654308Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+      "version": 1,
+      "objective": "Using CP2 Goals and the 2026-09-08 meeting minutes, summarize demonstrated Deep Research capabilities, unresolved issues and the team's next evaluation priorities.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "7a046574e728d8449133f24f98fbbbde",
+          "a0f35f4075be8b80576727e78756952d"
+        ],
+        "topic": "current_state_synthesis"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "4b68e6f5ad000cf2734d9c50d8ad65eff0ea912bdf646dbf27b5ae13a3c41a30",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What specific Deep Research capabilities are explicitly listed as demonstrated or achieved in the 'CP2+-+Goals' document?",
+          "purpose": "To extract the baseline list of demonstrated capabilities defined in the goals document prior to the meeting.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "7a046574e728d8449133f24f98fbbbde",
+            "a0f35f4075be8b80576727e78756952d"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "In the 'Meeting+Minutes+of+2026+09+08', which Deep Research capabilities are confirmed as demonstrated during the review, and do these match the items in 'CP2+-+Goals'?",
+          "purpose": "To verify which capabilities were actually demonstrated according to the meeting record and compare them against the planned goals.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "7a046574e728d8449133f24f98fbbbde",
+            "a0f35f4075be8b80576727e78756952d"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "What specific unresolved issues, blockers, or limitations regarding Deep Research are explicitly recorded in the 'Meeting+Minutes+of+2026+09+08'?",
+          "purpose": "To identify the exact unresolved problems cited in the meeting minutes without assuming their status based on previous documents.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "7a046574e728d8449133f24f98fbbbde",
+            "a0f35f4075be8b80576727e78756952d"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-4",
+          "question": "What are the specific next evaluation priorities for Deep Research listed in the 'Meeting+Minutes+of+2026+09+08', including any dates or criteria mentioned?",
+          "purpose": "To capture the team's stated future steps and evaluation focus areas as documented in the meeting.",
+          "dependencies": [
+            "task-3"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "7a046574e728d8449133f24f98fbbbde",
+            "a0f35f4075be8b80576727e78756952d"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-4",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 4,
+      "task_completed": 4,
+      "evidence_count": 12,
+      "claim_count": 4,
+      "started_at": "2026-10-08T11:50:22.937668Z",
+      "updated_at": "2026-10-08T11:50:38.654308Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:22.941611Z",
+          "completed_at": "2026-10-08T11:50:23.609695Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:23.610471Z",
+          "completed_at": "2026-10-08T11:50:31.081865Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:31.082948Z",
+          "completed_at": "2026-10-08T11:50:31.181594Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:31.182594Z",
+          "completed_at": "2026-10-08T11:50:33.106590Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:33.107879Z",
+          "completed_at": "2026-10-08T11:50:34.485537Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:34.486537Z",
+          "completed_at": "2026-10-08T11:50:34.494070Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:34.495067Z",
+          "completed_at": "2026-10-08T11:50:34.505255Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:34.506570Z",
+          "completed_at": "2026-10-08T11:50:34.519544Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:34.520552Z",
+          "completed_at": "2026-10-08T11:50:34.542670Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:34.544008Z",
+          "completed_at": "2026-10-08T11:50:38.647959Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:38.647959Z",
+          "completed_at": "2026-10-08T11:50:38.654913Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T11:50:38.656074Z",
+          "completed_at": "2026-10-08T11:50:38.657651Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What specific Deep Research capabilities are explicitly listed as demonstrated or achieved in the 'CP2+-+Goals' document?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "In the 'Meeting+Minutes+of+2026+09+08', which Deep Research capabilities are confirmed as demonstrated during the review, and do these match the items in 'CP2+-+Goals'?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "What specific unresolved issues, blockers, or limitations regarding Deep Research are explicitly recorded in the 'Meeting+Minutes+of+2026+09+08'?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-4",
+          "question": "What are the specific next evaluation priorities for Deep Research listed in the 'Meeting+Minutes+of+2026+09+08', including any dates or criteria mentioned?",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 7472,
+        "actions_used": 16,
+        "tool_calls": 16,
+        "documents_read": 2,
+        "evidence_accepted": 12,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-305e097ec9e6a0ef94ae773d",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "score": 0.15910607656732823,
+          "snippet": "d fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "query": "What specific Deep Research capabilities are explicitly listed as demonstrated or achieved in the 'CP2+-+Goals' document?",
+          "created_at": "2026-10-08T11:50:33.385911Z"
+        },
+        {
+          "observation_id": "observation-ecea232a3bf195f3ad739d7a",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "score": 0.12747786018479665,
+          "snippet": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |",
+          "query": "What specific Deep Research capabilities are explicitly listed as demonstrated or achieved in the 'CP2+-+Goals' document?",
+          "created_at": "2026-10-08T11:50:33.436060Z"
+        },
+        {
+          "observation_id": "observation-eb8b55a40b9b70fb3389172e",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_2",
+          "score": 0.11484299660673236,
+          "snippet": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.",
+          "query": "What specific Deep Research capabilities are explicitly listed as demonstrated or achieved in the 'CP2+-+Goals' document?",
+          "created_at": "2026-10-08T11:50:33.453836Z"
+        },
+        {
+          "observation_id": "observation-7fd6722fe3735c786fd51f55",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "score": 0.15887239251896546,
+          "snippet": "d fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "query": "In the 'Meeting+Minutes+of+2026+09+08', which Deep Research capabilities are confirmed as demonstrated during the review, and do these match the items in 'CP2+-+Goals'?",
+          "created_at": "2026-10-08T11:50:33.753859Z"
+        },
+        {
+          "observation_id": "observation-e96f1905cc0303c3583bc9a9",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "score": 0.0632137600162338,
+          "snippet": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |",
+          "query": "In the 'Meeting+Minutes+of+2026+09+08', which Deep Research capabilities are confirmed as demonstrated during the review, and do these match the items in 'CP2+-+Goals'?",
+          "created_at": "2026-10-08T11:50:33.770002Z"
+        },
+        {
+          "observation_id": "observation-aac21ea7c99ea6e12575624e",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "score": 0.15711345192120085,
+          "snippet": "bling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.",
+          "query": "In the 'Meeting+Minutes+of+2026+09+08', which Deep Research capabilities are confirmed as demonstrated during the review, and do these match the items in 'CP2+-+Goals'?",
+          "created_at": "2026-10-08T11:50:33.785321Z"
+        },
+        {
+          "observation_id": "observation-c27ef4b5ee41e83f87226fb2",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "score": 0.15413905216026194,
+          "snippet": "d fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "query": "What specific unresolved issues, blockers, or limitations regarding Deep Research are explicitly recorded in the 'Meeting+Minutes+of+2026+09+08'?",
+          "created_at": "2026-10-08T11:50:34.182007Z"
+        },
+        {
+          "observation_id": "observation-bbdb884121767c46982dda2b",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "score": 0.12017692790091722,
+          "snippet": "arted | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "query": "What specific unresolved issues, blockers, or limitations regarding Deep Research are explicitly recorded in the 'Meeting+Minutes+of+2026+09+08'?",
+          "created_at": "2026-10-08T11:50:34.215393Z"
+        },
+        {
+          "observation_id": "observation-6a23458cfc14aba7a43f55d7",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "score": 0.09714550505003018,
+          "snippet": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**",
+          "query": "What specific unresolved issues, blockers, or limitations regarding Deep Research are explicitly recorded in the 'Meeting+Minutes+of+2026+09+08'?",
+          "created_at": "2026-10-08T11:50:34.240346Z"
+        },
+        {
+          "observation_id": "observation-3c63203a9b281f53f5a4b8ea",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "score": 0.13448100164513865,
+          "snippet": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**",
+          "query": "What are the specific next evaluation priorities for Deep Research listed in the 'Meeting+Minutes+of+2026+09+08', including any dates or criteria mentioned?",
+          "created_at": "2026-10-08T11:50:34.457903Z"
+        },
+        {
+          "observation_id": "observation-f3e932822a9ecb25640669a7",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "score": 0.0979879864928071,
+          "snippet": "arted | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "query": "What are the specific next evaluation priorities for Deep Research listed in the 'Meeting+Minutes+of+2026+09+08', including any dates or criteria mentioned?",
+          "created_at": "2026-10-08T11:50:34.464879Z"
+        },
+        {
+          "observation_id": "observation-fcb7f377e9dbee6df01c6199",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "score": 0.13130137110654824,
+          "snippet": "d fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "query": "What are the specific next evaluation priorities for Deep Research listed in the 'Meeting+Minutes+of+2026+09+08', including any dates or criteria mentioned?",
+          "created_at": "2026-10-08T11:50:34.471506Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-d97c3107a2ee20f651bd5253",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "excerpt": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:33.392488Z"
+        },
+        {
+          "evidence_id": "evidence-829a9056c050202df2b077e1",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T11:50:33.447264Z"
+        },
+        {
+          "evidence_id": "evidence-d89db9e3a733309bc059e579",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_2",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:33.464083Z"
+        },
+        {
+          "evidence_id": "evidence-c0b6d8461bc8fa4d04cd2630",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "excerpt": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:33.764126Z"
+        },
+        {
+          "evidence_id": "evidence-b8070caf75538e129ee5a69a",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T11:50:33.778791Z"
+        },
+        {
+          "evidence_id": "evidence-7b3f92157f7a29a87a343c7f",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "excerpt": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:33.798266Z"
+        },
+        {
+          "evidence_id": "evidence-bb6ec773c50c4627cc410aec",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "excerpt": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:34.195981Z"
+        },
+        {
+          "evidence_id": "evidence-98edd496bc69b50b99e50033",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T11:50:34.229754Z"
+        },
+        {
+          "evidence_id": "evidence-a6e6b6c48a7899599fc9ccbc",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:34.245958Z"
+        },
+        {
+          "evidence_id": "evidence-78a9f71bba09444afea142a7",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:34.461592Z"
+        },
+        {
+          "evidence_id": "evidence-ab7c8281528b4d8371326aaf",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T11:50:34.468442Z"
+        },
+        {
+          "evidence_id": "evidence-8152d941f5bae6278089a559",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "excerpt": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T11:50:34.476519Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-3adf34e1d54fbaaefbae289b",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-1",
+          "statement": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "evidence_ids": [
+            "evidence-d97c3107a2ee20f651bd5253",
+            "evidence-829a9056c050202df2b077e1",
+            "evidence-d89db9e3a733309bc059e579"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-f68dc4be590a03c37e7a8db3",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-2",
+          "statement": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "evidence_ids": [
+            "evidence-c0b6d8461bc8fa4d04cd2630",
+            "evidence-b8070caf75538e129ee5a69a",
+            "evidence-7b3f92157f7a29a87a343c7f"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-6379a8ce42f1dbc5b80228e5",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-3",
+          "statement": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "evidence_ids": [
+            "evidence-bb6ec773c50c4627cc410aec",
+            "evidence-98edd496bc69b50b99e50033",
+            "evidence-a6e6b6c48a7899599fc9ccbc"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        },
+        {
+          "finding_id": "finding-12a8d08c0ff170822811280f",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "task_id": "task-4",
+          "statement": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "evidence_ids": [
+            "evidence-78a9f71bba09444afea142a7",
+            "evidence-ab7c8281528b4d8371326aaf",
+            "evidence-8152d941f5bae6278089a559"
+          ],
+          "covers": [
+            "criterion-4"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-3adf34e1d54fbaaefbae289b",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "claim_text": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "evidence_ids": [
+            "evidence-d97c3107a2ee20f651bd5253",
+            "evidence-829a9056c050202df2b077e1",
+            "evidence-d89db9e3a733309bc059e579"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-f68dc4be590a03c37e7a8db3",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "claim_text": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "evidence_ids": [
+            "evidence-c0b6d8461bc8fa4d04cd2630",
+            "evidence-b8070caf75538e129ee5a69a",
+            "evidence-7b3f92157f7a29a87a343c7f"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-6379a8ce42f1dbc5b80228e5",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "claim_text": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "evidence_ids": [
+            "evidence-bb6ec773c50c4627cc410aec",
+            "evidence-98edd496bc69b50b99e50033",
+            "evidence-a6e6b6c48a7899599fc9ccbc"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-12a8d08c0ff170822811280f",
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "claim_text": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "evidence_ids": [
+            "evidence-78a9f71bba09444afea142a7",
+            "evidence-ab7c8281528b4d8371326aaf",
+            "evidence-8152d941f5bae6278089a559"
+          ],
+          "criterion_ids": [
+            "criterion-4"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-3adf34e1d54fbaaefbae289b",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-d97c3107a2ee20f651bd5253",
+            "evidence-829a9056c050202df2b077e1",
+            "evidence-d89db9e3a733309bc059e579"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-f68dc4be590a03c37e7a8db3",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c0b6d8461bc8fa4d04cd2630",
+            "evidence-b8070caf75538e129ee5a69a",
+            "evidence-7b3f92157f7a29a87a343c7f"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-6379a8ce42f1dbc5b80228e5",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-bb6ec773c50c4627cc410aec",
+            "evidence-98edd496bc69b50b99e50033",
+            "evidence-a6e6b6c48a7899599fc9ccbc"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-12a8d08c0ff170822811280f",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-78a9f71bba09444afea142a7",
+            "evidence-ab7c8281528b4d8371326aaf",
+            "evidence-8152d941f5bae6278089a559"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-3adf34e1d54fbaaefbae289b",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-d97c3107a2ee20f651bd5253",
+            "evidence-829a9056c050202df2b077e1",
+            "evidence-d89db9e3a733309bc059e579"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-f68dc4be590a03c37e7a8db3",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c0b6d8461bc8fa4d04cd2630",
+            "evidence-b8070caf75538e129ee5a69a",
+            "evidence-7b3f92157f7a29a87a343c7f"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-6379a8ce42f1dbc5b80228e5",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-bb6ec773c50c4627cc410aec",
+            "evidence-98edd496bc69b50b99e50033",
+            "evidence-a6e6b6c48a7899599fc9ccbc"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-12a8d08c0ff170822811280f",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-78a9f71bba09444afea142a7",
+            "evidence-ab7c8281528b4d8371326aaf",
+            "evidence-8152d941f5bae6278089a559"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+      "events": [
+        {
+          "event_id": 14269,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:22.940097Z"
+        },
+        {
+          "event_id": 14270,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:22.941611Z"
+        },
+        {
+          "event_id": 14271,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:23.609695Z"
+        },
+        {
+          "event_id": 14272,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:23.610471Z"
+        },
+        {
+          "event_id": 14273,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:31.081865Z"
+        },
+        {
+          "event_id": 14274,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:31.082948Z"
+        },
+        {
+          "event_id": 14275,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T11:50:31.180593Z"
+        },
+        {
+          "event_id": 14276,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:31.181594Z"
+        },
+        {
+          "event_id": 14277,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:31.182594Z"
+        },
+        {
+          "event_id": 14278,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:33.106590Z"
+        },
+        {
+          "event_id": 14279,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:33.107879Z"
+        },
+        {
+          "event_id": 14281,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:33.131707Z"
+        },
+        {
+          "event_id": 14282,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:50:33.473477Z"
+        },
+        {
+          "event_id": 14283,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:33.475477Z"
+        },
+        {
+          "event_id": 14284,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:50:33.809356Z"
+        },
+        {
+          "event_id": 14285,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:33.811358Z"
+        },
+        {
+          "event_id": 14286,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:50:34.253993Z"
+        },
+        {
+          "event_id": 14287,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-4:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.255994Z"
+        },
+        {
+          "event_id": 14288,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:task:task-4:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:50:34.481538Z"
+        },
+        {
+          "event_id": 14289,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.485537Z"
+        },
+        {
+          "event_id": 14290,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.486537Z"
+        },
+        {
+          "event_id": 14291,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.494070Z"
+        },
+        {
+          "event_id": 14292,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.495067Z"
+        },
+        {
+          "event_id": 14293,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.505255Z"
+        },
+        {
+          "event_id": 14294,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.506570Z"
+        },
+        {
+          "event_id": 14295,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.519544Z"
+        },
+        {
+          "event_id": 14296,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.520552Z"
+        },
+        {
+          "event_id": 14297,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.542670Z"
+        },
+        {
+          "event_id": 14298,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:34.544008Z"
+        },
+        {
+          "event_id": 14299,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:report:report-research-3d209633d4fe489eb2befa4dee81212f:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-3d209633d4fe489eb2befa4dee81212f"
+          },
+          "created_at": "2026-10-08T11:50:38.644745Z"
+        },
+        {
+          "event_id": 14300,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:38.647959Z"
+        },
+        {
+          "event_id": 14301,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:38.647959Z"
+        },
+        {
+          "event_id": 14302,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:38.654913Z"
+        },
+        {
+          "event_id": 14303,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:38.656074Z"
+        },
+        {
+          "event_id": 14304,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:50:38.657651Z"
+        },
+        {
+          "event_id": 14305,
+          "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+          "event_key": "research-3d209633d4fe489eb2befa4dee81212f:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T11:50:38.658765Z"
+        }
+      ],
+      "next_after_event_id": 14305
+    },
+    "report": {
+      "report_id": "report-research-3d209633d4fe489eb2befa4dee81212f",
+      "research_id": "research-3d209633d4fe489eb2befa4dee81212f",
+      "markdown": "## Summary\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation. [1]\n\n## Evidence and analysis\n\n### Recorded goal states\n\n| Goal ID | Goal name | Recorded status |\n| --- | --- | --- |\n| AG-M10 | Evidence Store and Citation Checker | Not started [3] |\n| AG-M11 | Report Writer and Claim–Evidence Mapping | not recorded [3] |\n| AG-M5 | Research Contract, Brief, Planner and Plan Validator | Not started [3] |\n| AG-M6 | Local Research Tools and Trusted Evidence Chain | Finished [3] |\n| AG-M7 | Research Data Persistence and Quality Validation | Finished [3] |\n| AG-M8 | Research Graph Execution and Recovery | Finished [3] |\n| AG-M9 | Trusted Report Generation and Query | Finished [3] |\n\n### Unresolved issues\n\n- The workflow is still hard-coded. [1]\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode. [2]\n\n### Next evaluation priorities\n\n- Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data. [1]\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration. [2]\n\n## Limitations and uncertainty\n\nMeeting demonstrations and goal statuses are separate evidence. A finished goal is not proof that its implementation was demonstrated. Action items remain pending; blank goal statuses remain not recorded. These historical snapshots do not establish later delivery.\n\n## Sources\n\n1. [**Meeting+Minutes+of+2026+09+08**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08) · 2026-09-13T07:52:26.734Z · a0f35f4075be8b80576727e78756952d_chunk_1\n2. [**Meeting+Minutes+of+2026+09+08**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08) · 2026-09-13T07:52:26.734Z · a0f35f4075be8b80576727e78756952d_chunk_3\n3. [**CP2+-+Goals**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals) · 2026-09-03T12:02:06.459Z · 7a046574e728d8449133f24f98fbbbde_chunk_1\n4. [**CP2+-+Goals**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals) · 2026-09-03T12:02:06.459Z · 7a046574e728d8449133f24f98fbbbde_chunk_0\n5. [**Meeting+Minutes+of+2026+09+08**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08) · 2026-09-13T07:52:26.734Z · a0f35f4075be8b80576727e78756952d_chunk_2\n6. [**Meeting+Minutes+of+2026+09+08**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08) · 2026-09-13T07:52:26.734Z · a0f35f4075be8b80576727e78756952d_chunk_4\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-12a8d08c0ff170822811280f",
+        "claim-finding-3adf34e1d54fbaaefbae289b",
+        "claim-finding-6379a8ce42f1dbc5b80228e5",
+        "claim-finding-f68dc4be590a03c37e7a8db3"
+      ],
+      "evidence_ids": [
+        "evidence-78a9f71bba09444afea142a7",
+        "evidence-8152d941f5bae6278089a559",
+        "evidence-ab7c8281528b4d8371326aaf",
+        "evidence-829a9056c050202df2b077e1",
+        "evidence-d89db9e3a733309bc059e579",
+        "evidence-d97c3107a2ee20f651bd5253",
+        "evidence-98edd496bc69b50b99e50033",
+        "evidence-a6e6b6c48a7899599fc9ccbc",
+        "evidence-bb6ec773c50c4627cc410aec",
+        "evidence-7b3f92157f7a29a87a343c7f",
+        "evidence-b8070caf75538e129ee5a69a",
+        "evidence-c0b6d8461bc8fa4d04cd2630"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-78a9f71bba09444afea142a7",
+          "evidence_ids": [
+            "evidence-78a9f71bba09444afea142a7",
+            "evidence-a6e6b6c48a7899599fc9ccbc"
+          ],
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-8152d941f5bae6278089a559",
+          "evidence_ids": [
+            "evidence-8152d941f5bae6278089a559",
+            "evidence-d97c3107a2ee20f651bd5253",
+            "evidence-bb6ec773c50c4627cc410aec",
+            "evidence-c0b6d8461bc8fa4d04cd2630"
+          ],
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "excerpt": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-ab7c8281528b4d8371326aaf",
+          "evidence_ids": [
+            "evidence-ab7c8281528b4d8371326aaf",
+            "evidence-98edd496bc69b50b99e50033"
+          ],
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-829a9056c050202df2b077e1",
+          "evidence_ids": [
+            "evidence-829a9056c050202df2b077e1",
+            "evidence-b8070caf75538e129ee5a69a"
+          ],
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+        },
+        {
+          "number": 5,
+          "evidence_id": "evidence-d89db9e3a733309bc059e579",
+          "evidence_ids": [
+            "evidence-d89db9e3a733309bc059e579"
+          ],
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_2",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+        },
+        {
+          "number": 6,
+          "evidence_id": "evidence-7b3f92157f7a29a87a343c7f",
+          "evidence_ids": [
+            "evidence-7b3f92157f7a29a87a343c7f"
+          ],
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "excerpt": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T11:50:34.552381Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-78a9f71bba09444afea142a7",
+        "evidence_ids": [
+          "evidence-78a9f71bba09444afea142a7",
+          "evidence-a6e6b6c48a7899599fc9ccbc"
+        ],
+        "doc_id": "a0f35f4075be8b80576727e78756952d",
+        "title": "Meeting+Minutes+of+2026+09+08",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-13T07:52:26.734Z",
+        "effective_at": null,
+        "updated_at": "2026-09-13T07:52:26.734Z",
+        "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+        "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+        "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-8152d941f5bae6278089a559",
+        "evidence_ids": [
+          "evidence-8152d941f5bae6278089a559",
+          "evidence-d97c3107a2ee20f651bd5253",
+          "evidence-bb6ec773c50c4627cc410aec",
+          "evidence-c0b6d8461bc8fa4d04cd2630"
+        ],
+        "doc_id": "a0f35f4075be8b80576727e78756952d",
+        "title": "Meeting+Minutes+of+2026+09+08",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-13T07:52:26.734Z",
+        "effective_at": null,
+        "updated_at": "2026-09-13T07:52:26.734Z",
+        "locator": "a0f35f4075be8b80576727e78756952d_chunk_3",
+        "excerpt": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.",
+        "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-ab7c8281528b4d8371326aaf",
+        "evidence_ids": [
+          "evidence-ab7c8281528b4d8371326aaf",
+          "evidence-98edd496bc69b50b99e50033"
+        ],
+        "doc_id": "7a046574e728d8449133f24f98fbbbde",
+        "title": "CP2+-+Goals",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-03T12:02:06.459Z",
+        "effective_at": null,
+        "updated_at": "2026-09-03T12:02:06.459Z",
+        "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+        "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+        "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-829a9056c050202df2b077e1",
+        "evidence_ids": [
+          "evidence-829a9056c050202df2b077e1",
+          "evidence-b8070caf75538e129ee5a69a"
+        ],
+        "doc_id": "7a046574e728d8449133f24f98fbbbde",
+        "title": "CP2+-+Goals",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-03T12:02:06.459Z",
+        "effective_at": null,
+        "updated_at": "2026-09-03T12:02:06.459Z",
+        "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+        "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+        "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+      },
+      {
+        "number": 5,
+        "evidence_id": "evidence-d89db9e3a733309bc059e579",
+        "evidence_ids": [
+          "evidence-d89db9e3a733309bc059e579"
+        ],
+        "doc_id": "a0f35f4075be8b80576727e78756952d",
+        "title": "Meeting+Minutes+of+2026+09+08",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-13T07:52:26.734Z",
+        "effective_at": null,
+        "updated_at": "2026-09-13T07:52:26.734Z",
+        "locator": "a0f35f4075be8b80576727e78756952d_chunk_2",
+        "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.",
+        "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+      },
+      {
+        "number": 6,
+        "evidence_id": "evidence-7b3f92157f7a29a87a343c7f",
+        "evidence_ids": [
+          "evidence-7b3f92157f7a29a87a343c7f"
+        ],
+        "doc_id": "a0f35f4075be8b80576727e78756952d",
+        "title": "Meeting+Minutes+of+2026+09+08",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-13T07:52:26.734Z",
+        "effective_at": null,
+        "updated_at": "2026-09-13T07:52:26.734Z",
+        "locator": "a0f35f4075be8b80576727e78756952d_chunk_4",
+        "excerpt": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+        "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-3d209633d4fe489eb2befa4dee81212f/documents/a0f35f4075be8b80576727e78756952d/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 547
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-3d209633d4fe489eb2befa4dee81212f/documents/a0f35f4075be8b80576727e78756952d/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 140
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-3d209633d4fe489eb2befa4dee81212f/documents/7a046574e728d8449133f24f98fbbbde/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 138
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-3d209633d4fe489eb2befa4dee81212f/documents/7a046574e728d8449133f24f98fbbbde/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 123
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-3d209633d4fe489eb2befa4dee81212f/documents/a0f35f4075be8b80576727e78756952d/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 562
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-3d209633d4fe489eb2befa4dee81212f/documents/a0f35f4075be8b80576727e78756952d/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 155
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

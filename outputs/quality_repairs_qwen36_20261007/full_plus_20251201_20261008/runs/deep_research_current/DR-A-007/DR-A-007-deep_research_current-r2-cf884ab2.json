@@ -1,0 +1,1295 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-007-deep_research_current-r2-cf884ab2",
+  "case_id": "DR-A-007",
+  "group": "deep_research_current",
+  "repetition": 2,
+  "started_at": "2026-10-08T07:45:33.450692+00:00",
+  "completed_at": "2026-10-08T07:45:45.035345+00:00",
+  "elapsed_ms": 11584,
+  "config_hash": "42c462814462b691f4a1dfa56d1a18e605bcc0624881e9ac4ed682c1926bdd11",
+  "success": true,
+  "result": {
+    "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Using the W34 Master report, confirm whether the system achieved a 99.9% production availability SLA in September 2026. Give the measurement period and incident count.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "topic": "insufficient_information"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "degraded",
+      "plan_version": 1,
+      "manifest_hash": "7c000ed83f903a17e5aa696551005285305713feca4c30dfa48ead92fefcb22e",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T07:45:33.458752Z",
+      "updated_at": "2026-10-08T07:45:43.768978Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+      "version": 1,
+      "objective": "Using the W34 Master report, confirm whether the system achieved a 99.9% production availability SLA in September 2026. Give the measurement period and incident count.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "6beeab4852cb7fb253d44fa305ff510f"
+        ],
+        "topic": "insufficient_information"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "7c000ed83f903a17e5aa696551005285305713feca4c30dfa48ead92fefcb22e",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the production availability SLA percentage reported for September 2026 in the W34 Master report?",
+          "purpose": "Verify the stated SLA compliance value against the target of 99.9%",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "What date range is explicitly defined as the measurement period for the production availability SLA in the W34 Master report?",
+          "purpose": "Extract the exact start and end dates used to calculate the SLA, distinct from the report's version date (2026-09-04T08:41:44.062Z)",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "How many production incidents affecting availability are listed in the W34 Master report for the September 2026 measurement period?",
+          "purpose": "Confirm the incident count used in the SLA calculation, excluding non-availability or non-production incidents",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+      "status": "completed",
+      "result_status": "degraded",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "claim_count": 3,
+      "started_at": "2026-10-08T07:45:33.458752Z",
+      "updated_at": "2026-10-08T07:45:43.768978Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:33.464805Z",
+          "completed_at": "2026-10-08T07:45:34.283829Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:34.284960Z",
+          "completed_at": "2026-10-08T07:45:41.365531Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:41.366529Z",
+          "completed_at": "2026-10-08T07:45:41.682720Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:41.684424Z",
+          "completed_at": "2026-10-08T07:45:43.399356Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.400356Z",
+          "completed_at": "2026-10-08T07:45:43.733044Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.734049Z",
+          "completed_at": "2026-10-08T07:45:43.738049Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.738049Z",
+          "completed_at": "2026-10-08T07:45:43.743049Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.743049Z",
+          "completed_at": "2026-10-08T07:45:43.748108Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.749107Z",
+          "completed_at": "2026-10-08T07:45:43.759304Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.759933Z",
+          "completed_at": "2026-10-08T07:45:43.765477Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.766484Z",
+          "completed_at": "2026-10-08T07:45:43.769985Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T07:45:43.769985Z",
+          "completed_at": "2026-10-08T07:45:43.770983Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the production availability SLA percentage reported for September 2026 in the W34 Master report?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "What date range is explicitly defined as the measurement period for the production availability SLA in the W34 Master report?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "How many production incidents affecting availability are listed in the W34 Master report for the September 2026 measurement period?",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2085,
+        "actions_used": 12,
+        "tool_calls": 12,
+        "documents_read": 1,
+        "evidence_accepted": 9,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-5ce7d0bff0e5834766d1c698",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": 0.15268274857036826,
+          "snippet": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation",
+          "query": "What is the production availability SLA percentage reported for September 2026 in the W34 Master report?",
+          "created_at": "2026-10-08T07:45:43.491052Z"
+        },
+        {
+          "observation_id": "observation-8b972ef2be249f8010d17087",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "score": 0.13273004851290032,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |",
+          "query": "What is the production availability SLA percentage reported for September 2026 in the W34 Master report?",
+          "created_at": "2026-10-08T07:45:43.495432Z"
+        },
+        {
+          "observation_id": "observation-dbaeeb7cf4f610c3d571f651",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_2",
+          "score": 0.13174502093315776,
+          "snippet": "& Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "query": "What is the production availability SLA percentage reported for September 2026 in the W34 Master report?",
+          "created_at": "2026-10-08T07:45:43.499437Z"
+        },
+        {
+          "observation_id": "observation-10a1eddd096d9fb3fd74b587",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "score": 0.19914960469488266,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |",
+          "query": "What date range is explicitly defined as the measurement period for the production availability SLA in the W34 Master report?",
+          "created_at": "2026-10-08T07:45:43.600184Z"
+        },
+        {
+          "observation_id": "observation-237f60ab781f6fad7b67b26a",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": 0.1719122346428856,
+          "snippet": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation",
+          "query": "What date range is explicitly defined as the measurement period for the production availability SLA in the W34 Master report?",
+          "created_at": "2026-10-08T07:45:43.607303Z"
+        },
+        {
+          "observation_id": "observation-c2900b421c648889d1f03854",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_3",
+          "score": 0.13789747715515877,
+          "snippet": "NT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)",
+          "query": "What date range is explicitly defined as the measurement period for the production availability SLA in the W34 Master report?",
+          "created_at": "2026-10-08T07:45:43.614200Z"
+        },
+        {
+          "observation_id": "observation-5c7c85f52d312363b7a3a171",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": 0.11499797989743867,
+          "snippet": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation",
+          "query": "How many production incidents affecting availability are listed in the W34 Master report for the September 2026 measurement period?",
+          "created_at": "2026-10-08T07:45:43.713748Z"
+        },
+        {
+          "observation_id": "observation-ee7ed1a8aebc09d3056bc968",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "score": 0.09996995465167342,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |",
+          "query": "How many production incidents affecting availability are listed in the W34 Master report for the September 2026 measurement period?",
+          "created_at": "2026-10-08T07:45:43.720107Z"
+        },
+        {
+          "observation_id": "observation-ed72eaab91428c4fc7915207",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_2",
+          "score": 0.09922804908032166,
+          "snippet": "& Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "query": "How many production incidents affecting availability are listed in the W34 Master report for the September 2026 measurement period?",
+          "created_at": "2026-10-08T07:45:43.723901Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-256f95136b58b677c6209861",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.493851Z"
+        },
+        {
+          "evidence_id": "evidence-dbb148f15a2e9491edaa5e8f",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.497438Z"
+        },
+        {
+          "evidence_id": "evidence-c5888e9d0dd84a4d4ecdd54b",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_2",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.501536Z"
+        },
+        {
+          "evidence_id": "evidence-cd6fdafe0d8206f78a077a89",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.605305Z"
+        },
+        {
+          "evidence_id": "evidence-6d5d0c9f35a3d6928677bf54",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.611230Z"
+        },
+        {
+          "evidence_id": "evidence-2b444253ad200621ec9a7187",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_3",
+          "excerpt": "| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.617199Z"
+        },
+        {
+          "evidence_id": "evidence-882faad0d6b976c705146fea",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.717327Z"
+        },
+        {
+          "evidence_id": "evidence-0ce986ff63a6a44a78e2b0f9",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.722545Z"
+        },
+        {
+          "evidence_id": "evidence-3cc15db95f9c59904f98a779",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_2",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:45:43.725912Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-a48b432d3d2403411447ce27",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-1",
+          "statement": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-256f95136b58b677c6209861",
+            "evidence-dbb148f15a2e9491edaa5e8f",
+            "evidence-c5888e9d0dd84a4d4ecdd54b"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-f0851ba2a13d33df91817647",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-2",
+          "statement": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate mon...",
+          "evidence_ids": [
+            "evidence-cd6fdafe0d8206f78a077a89",
+            "evidence-6d5d0c9f35a3d6928677bf54",
+            "evidence-2b444253ad200621ec9a7187"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-0dc0ae82e5384fbfc622ae00",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "task_id": "task-3",
+          "statement": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-882faad0d6b976c705146fea",
+            "evidence-0ce986ff63a6a44a78e2b0f9",
+            "evidence-3cc15db95f9c59904f98a779"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-a48b432d3d2403411447ce27",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "claim_text": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-256f95136b58b677c6209861",
+            "evidence-dbb148f15a2e9491edaa5e8f",
+            "evidence-c5888e9d0dd84a4d4ecdd54b"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-f0851ba2a13d33df91817647",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "claim_text": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate mon...",
+          "evidence_ids": [
+            "evidence-cd6fdafe0d8206f78a077a89",
+            "evidence-6d5d0c9f35a3d6928677bf54",
+            "evidence-2b444253ad200621ec9a7187"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-0dc0ae82e5384fbfc622ae00",
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "claim_text": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-882faad0d6b976c705146fea",
+            "evidence-0ce986ff63a6a44a78e2b0f9",
+            "evidence-3cc15db95f9c59904f98a779"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-a48b432d3d2403411447ce27",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-256f95136b58b677c6209861",
+            "evidence-dbb148f15a2e9491edaa5e8f",
+            "evidence-c5888e9d0dd84a4d4ecdd54b"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-f0851ba2a13d33df91817647",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-cd6fdafe0d8206f78a077a89",
+            "evidence-6d5d0c9f35a3d6928677bf54",
+            "evidence-2b444253ad200621ec9a7187"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-0dc0ae82e5384fbfc622ae00",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-882faad0d6b976c705146fea",
+            "evidence-0ce986ff63a6a44a78e2b0f9",
+            "evidence-3cc15db95f9c59904f98a779"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-a48b432d3d2403411447ce27",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-256f95136b58b677c6209861",
+            "evidence-dbb148f15a2e9491edaa5e8f",
+            "evidence-c5888e9d0dd84a4d4ecdd54b"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-0dc0ae82e5384fbfc622ae00",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-882faad0d6b976c705146fea",
+            "evidence-0ce986ff63a6a44a78e2b0f9",
+            "evidence-3cc15db95f9c59904f98a779"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-f0851ba2a13d33df91817647",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-cd6fdafe0d8206f78a077a89",
+            "evidence-6d5d0c9f35a3d6928677bf54",
+            "evidence-2b444253ad200621ec9a7187"
+          ],
+          "reason": "claim_tokens_supported_by_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+      "events": [
+        {
+          "event_id": 12741,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:33.458752Z"
+        },
+        {
+          "event_id": 12742,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:33.464805Z"
+        },
+        {
+          "event_id": 12743,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:34.283829Z"
+        },
+        {
+          "event_id": 12744,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:34.284960Z"
+        },
+        {
+          "event_id": 12745,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:41.365531Z"
+        },
+        {
+          "event_id": 12746,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:41.366529Z"
+        },
+        {
+          "event_id": 12747,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T07:45:41.681610Z"
+        },
+        {
+          "event_id": 12748,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:41.682720Z"
+        },
+        {
+          "event_id": 12749,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:41.684424Z"
+        },
+        {
+          "event_id": 12750,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.399356Z"
+        },
+        {
+          "event_id": 12751,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.400356Z"
+        },
+        {
+          "event_id": 12753,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.418289Z"
+        },
+        {
+          "event_id": 12754,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:45:43.504435Z"
+        },
+        {
+          "event_id": 12755,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.504940Z"
+        },
+        {
+          "event_id": 12756,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:45:43.621714Z"
+        },
+        {
+          "event_id": 12757,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.623223Z"
+        },
+        {
+          "event_id": 12758,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:45:43.728939Z"
+        },
+        {
+          "event_id": 12759,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.733044Z"
+        },
+        {
+          "event_id": 12760,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.734049Z"
+        },
+        {
+          "event_id": 12761,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.738049Z"
+        },
+        {
+          "event_id": 12762,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.738049Z"
+        },
+        {
+          "event_id": 12763,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.743049Z"
+        },
+        {
+          "event_id": 12764,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.743049Z"
+        },
+        {
+          "event_id": 12765,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.748108Z"
+        },
+        {
+          "event_id": 12766,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.749107Z"
+        },
+        {
+          "event_id": 12767,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.759304Z"
+        },
+        {
+          "event_id": 12768,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.759933Z"
+        },
+        {
+          "event_id": 12769,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:report:report-research-c23e258bca494be798c1cd1b8fcfe396:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-c23e258bca494be798c1cd1b8fcfe396"
+          },
+          "created_at": "2026-10-08T07:45:43.763473Z"
+        },
+        {
+          "event_id": 12770,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.765477Z"
+        },
+        {
+          "event_id": 12771,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.766484Z"
+        },
+        {
+          "event_id": 12772,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.769985Z"
+        },
+        {
+          "event_id": 12773,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.769985Z"
+        },
+        {
+          "event_id": 12774,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:45:43.770983Z"
+        },
+        {
+          "event_id": 12775,
+          "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+          "event_key": "research-c23e258bca494be798c1cd1b8fcfe396:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "degraded"
+          },
+          "created_at": "2026-10-08T07:45:43.771984Z"
+        }
+      ],
+      "next_after_event_id": 12775
+    },
+    "report": {
+      "report_id": "report-research-c23e258bca494be798c1cd1b8fcfe396",
+      "research_id": "research-c23e258bca494be798c1cd1b8fcfe396",
+      "markdown": "## Summary\n\nThe selected excerpts do not establish whether the requested production availability SLA was achieved. This is unknown, rather than proof that the SLA failed. [1][2][3]\n\n## Evidence and analysis\n\nThe requested availability measurement period and incident count are not established by these excerpts. Sprint delivery status and commit counts are not availability measurements. [1][2][3]\n\n## Limitations and uncertainty\n\nAn operational monitoring record covering the requested period, with availability and incident data, is needed to assess this SLA. No availability figure or incident count is inferred.\n\n## Sources\n\n1. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_7\n2. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_2\n3. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_0\n4. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_3\n",
+      "result_status": "degraded",
+      "claim_ids": [
+        "claim-finding-0dc0ae82e5384fbfc622ae00",
+        "claim-finding-a48b432d3d2403411447ce27",
+        "claim-finding-f0851ba2a13d33df91817647"
+      ],
+      "evidence_ids": [
+        "evidence-0ce986ff63a6a44a78e2b0f9",
+        "evidence-3cc15db95f9c59904f98a779",
+        "evidence-882faad0d6b976c705146fea",
+        "evidence-256f95136b58b677c6209861",
+        "evidence-c5888e9d0dd84a4d4ecdd54b",
+        "evidence-dbb148f15a2e9491edaa5e8f",
+        "evidence-2b444253ad200621ec9a7187",
+        "evidence-6d5d0c9f35a3d6928677bf54",
+        "evidence-cd6fdafe0d8206f78a077a89"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-0ce986ff63a6a44a78e2b0f9",
+          "evidence_ids": [
+            "evidence-0ce986ff63a6a44a78e2b0f9",
+            "evidence-dbb148f15a2e9491edaa5e8f",
+            "evidence-cd6fdafe0d8206f78a077a89"
+          ],
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-3cc15db95f9c59904f98a779",
+          "evidence_ids": [
+            "evidence-3cc15db95f9c59904f98a779",
+            "evidence-c5888e9d0dd84a4d4ecdd54b"
+          ],
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_2",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-882faad0d6b976c705146fea",
+          "evidence_ids": [
+            "evidence-882faad0d6b976c705146fea",
+            "evidence-256f95136b58b677c6209861",
+            "evidence-6d5d0c9f35a3d6928677bf54"
+          ],
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-2b444253ad200621ec9a7187",
+          "evidence_ids": [
+            "evidence-2b444253ad200621ec9a7187"
+          ],
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_3",
+          "excerpt": "| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [
+        {
+          "code": "availability_not_established",
+          "message": "Operational availability measurements and incident data are not established by the selected excerpts.",
+          "evidence_ids": []
+        }
+      ],
+      "generated_at": "2026-10-08T07:45:43.761969Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-0ce986ff63a6a44a78e2b0f9",
+        "evidence_ids": [
+          "evidence-0ce986ff63a6a44a78e2b0f9",
+          "evidence-dbb148f15a2e9491edaa5e8f",
+          "evidence-cd6fdafe0d8206f78a077a89"
+        ],
+        "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+        "title": "Sprint+2026-W34+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:44.062Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:44.062Z",
+        "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+        "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+        "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-3cc15db95f9c59904f98a779",
+        "evidence_ids": [
+          "evidence-3cc15db95f9c59904f98a779",
+          "evidence-c5888e9d0dd84a4d4ecdd54b"
+        ],
+        "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+        "title": "Sprint+2026-W34+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:44.062Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:44.062Z",
+        "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_2",
+        "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)",
+        "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-882faad0d6b976c705146fea",
+        "evidence_ids": [
+          "evidence-882faad0d6b976c705146fea",
+          "evidence-256f95136b58b677c6209861",
+          "evidence-6d5d0c9f35a3d6928677bf54"
+        ],
+        "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+        "title": "Sprint+2026-W34+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:44.062Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:44.062Z",
+        "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+        "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+        "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-2b444253ad200621ec9a7187",
+        "evidence_ids": [
+          "evidence-2b444253ad200621ec9a7187"
+        ],
+        "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+        "title": "Sprint+2026-W34+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:44.062Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:44.062Z",
+        "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_3",
+        "excerpt": "| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)",
+        "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-c23e258bca494be798c1cd1b8fcfe396/documents/6beeab4852cb7fb253d44fa305ff510f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 391
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-c23e258bca494be798c1cd1b8fcfe396/documents/6beeab4852cb7fb253d44fa305ff510f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 107
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-c23e258bca494be798c1cd1b8fcfe396/documents/6beeab4852cb7fb253d44fa305ff510f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 110
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-c23e258bca494be798c1cd1b8fcfe396/documents/6beeab4852cb7fb253d44fa305ff510f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 99
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

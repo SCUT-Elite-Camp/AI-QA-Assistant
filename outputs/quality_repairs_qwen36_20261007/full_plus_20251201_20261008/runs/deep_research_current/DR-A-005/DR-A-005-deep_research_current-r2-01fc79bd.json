@@ -1,0 +1,1170 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-005-deep_research_current-r2-01fc79bd",
+  "case_id": "DR-A-005",
+  "group": "deep_research_current",
+  "repetition": 2,
+  "started_at": "2026-10-08T07:43:37.847554+00:00",
+  "completed_at": "2026-10-08T07:43:57.643916+00:00",
+  "elapsed_ms": 19797,
+  "config_hash": "42c462814462b691f4a1dfa56d1a18e605bcc0624881e9ac4ed682c1926bdd11",
+  "success": true,
+  "result": {
+    "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "ce3e78a4ea9fe78044ad69ae4559f26f",
+            "a0f35f4075be8b80576727e78756952d"
+          ],
+          "topic": "version_conflict"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "cbb39bacec97124b4ae3b9099556a524b1db3764bd74522115ebe914e813415e",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 5,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T07:43:37.849858Z",
+      "updated_at": "2026-10-08T07:43:56.702354Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+      "version": 1,
+      "objective": "A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "a0f35f4075be8b80576727e78756952d"
+        ],
+        "topic": "version_conflict"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "cbb39bacec97124b4ae3b9099556a524b1db3764bd74522115ebe914e813415e",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "Individually verify facts, implementation status and original locators in Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan that answer \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "purpose": "Establish a traceable evidence summary for each source in Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "a0f35f4075be8b80576727e78756952d",
+            "ce3e78a4ea9fe78044ad69ae4559f26f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Specific facts and original excerpts from Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Specific facts and original excerpts from Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 2,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "Compare Meeting+Minutes+of+2026+09+08 (2026-09-13T07:52:26.734Z), CP1+Delivery+Summary+and+CP2+Implementation+Plan (2026-07-26T15:52:12.520Z) for agreement, version differences and genuine semantic conflicts when answering \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "purpose": "Distinguish development over time and scope differences from factual conflicts requiring a decision.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "a0f35f4075be8b80576727e78756952d",
+            "ce3e78a4ea9fe78044ad69ae4559f26f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "locator: Document versions, agreements, differences and complete original excerpts",
+              "requires_evidence": true,
+              "dimension": "locator",
+              "target": "Document versions, agreements, differences and complete original excerpts",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "Using Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan, identify unanswered parts of the question, evidence boundaries and additional evidence required.",
+          "purpose": "Keep speculation beyond the selected source scope out of the final report.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "a0f35f4075be8b80576727e78756952d",
+            "ce3e78a4ea9fe78044ad69ae4559f26f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "limitation: Items not covered or not established by Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+              "requires_evidence": true,
+              "dimension": "limitation",
+              "target": "Items not covered or not established by Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+              "required": false
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 2,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 16,
+        "max_tool_calls": 16,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 5,
+      "claim_count": 3,
+      "started_at": "2026-10-08T07:43:37.849858Z",
+      "updated_at": "2026-10-08T07:43:56.702354Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:37.853233Z",
+          "completed_at": "2026-10-08T07:43:38.730703Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:38.732175Z",
+          "completed_at": "2026-10-08T07:43:54.178169Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:54.179509Z",
+          "completed_at": "2026-10-08T07:43:54.385833Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:54.386365Z",
+          "completed_at": "2026-10-08T07:43:56.194201Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.195349Z",
+          "completed_at": "2026-10-08T07:43:56.620200Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.621885Z",
+          "completed_at": "2026-10-08T07:43:56.627622Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.630886Z",
+          "completed_at": "2026-10-08T07:43:56.655926Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.657891Z",
+          "completed_at": "2026-10-08T07:43:56.667544Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.669151Z",
+          "completed_at": "2026-10-08T07:43:56.684207Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.685269Z",
+          "completed_at": "2026-10-08T07:43:56.696580Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.697660Z",
+          "completed_at": "2026-10-08T07:43:56.703407Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T07:43:56.703407Z",
+          "completed_at": "2026-10-08T07:43:56.705244Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "Individually verify facts, implementation status and original locators in Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan that answer \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "status": "succeeded",
+          "evidence_count": 1
+        },
+        {
+          "task_id": "task-2",
+          "question": "Compare Meeting+Minutes+of+2026+09+08 (2026-09-13T07:52:26.734Z), CP1+Delivery+Summary+and+CP2+Implementation+Plan (2026-07-26T15:52:12.520Z) for agreement, version differences and genuine semantic conflicts when answering \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "Using Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan, identify unanswered parts of the question, evidence boundaries and additional evidence required.",
+          "status": "succeeded",
+          "evidence_count": 1
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2316,
+        "actions_used": 8,
+        "tool_calls": 8,
+        "documents_read": 2,
+        "evidence_accepted": 5,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-7674a7120b2b2afbbe626ec5",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "locator_hint": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+          "score": 0.14639903695335754,
+          "snippet": "defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.",
+          "query": "Individually verify facts, implementation status and original locators in Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan that answer \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "created_at": "2026-10-08T07:43:56.283267Z"
+        },
+        {
+          "observation_id": "observation-64873754c374a18c324adccb",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "locator_hint": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+          "score": 0.1297455450411158,
+          "snippet": "defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.",
+          "query": "Compare Meeting+Minutes+of+2026+09+08 (2026-09-13T07:52:26.734Z), CP1+Delivery+Summary+and+CP2+Implementation+Plan (2026-07-26T15:52:12.520Z) for agreement, version differences and genuine semantic conflicts when answering \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "created_at": "2026-10-08T07:43:56.436435Z"
+        },
+        {
+          "observation_id": "observation-55091dd52f113bf978ebd974",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "score": 0.08475932055964973,
+          "snippet": "iang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**",
+          "query": "Compare Meeting+Minutes+of+2026+09+08 (2026-09-13T07:52:26.734Z), CP1+Delivery+Summary+and+CP2+Implementation+Plan (2026-07-26T15:52:12.520Z) for agreement, version differences and genuine semantic conflicts when answering \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "created_at": "2026-10-08T07:43:56.441035Z"
+        },
+        {
+          "observation_id": "observation-2c5bbb7af6045a85e83a17f6",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "locator_hint": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_11",
+          "score": 0.10663195192312691,
+          "snippet": "| CP2 capability | Planned implementation | Acceptance criteria | Dependency / decision |\n| --- | --- | --- | --- |\n| 1. Canonical chat and streaming path | Define one production request path and connect the UI to the authoritative streaming endpoint. The latest API specification identifiesPOST /api/chats/:idas the Web API SSE endpoint. | A user can create a chat, send a message, receive streamed output, stop/retry safely, see final tool/source data, and reload the chat without losing the completed assistant message. | Confirm whether the Nitro route is the final Web boundary or whether it must be replaced/adapted by the Spring Boot BFF. |\n| 2. Message lifecycle persistence | Persist both user and assistant messages through the selected production path; make edit and regenerate operations remove and recreate the correct message branch. | Edit and regenerate work after page reload; no duplicate messages; historical chat content matches the visible conversation. | Finalize canonical transport and ownership model. |\n| 3. API contract alignment | Reconcile implemented routes, route parameters, request bodies, response bodies, authentication rules, and status codes with the 26 July API specification. Add schema/contract tests. | Documentation and live API agree for chat deletion, message edit/regenerate, title/visibility updates, vote responses, and session response shape. | Agreement with API consumers and BFF/Agent owners. |\n| 4. Observability endpoints | ImplementGET /api/metricsandPOST /api/telemetryas specified, including request latency, database timing, AI-call timing, token usage where available, and Web Vitals validation. | Metrics can be scraped or read in JSON; valid LCP/FCP/INP telemetry is accepted; malformed payloads are rejected without affecting chat availability. | Monitoring format and retention decision. |\n| 5. Authentication and security verification | Validate the GitHub OAuth flow with configured credentials, session lifecycle, CSRF rejection, private/public chat access, and production cookie settings. | Authenticated ownership rules work; public chats can be read according to policy; unsafe requests without CSRF protection return 403. | GitHub OAuth client credentials and production host configuration. |\n| 6. Failure handling and user-facing consistency | Normalize loading, timeout, cancellation, network, model, and stream failure behavior in the selected chat path. Move visible strings to one language/i18n policy. | The UI recovers after every supported failure; user-facing messages are consistent; trace/correlation information is available for support. | Final Agent/BFF error schema. |\n| 7. Test and delivery coverage | Add API tests, frontend component tests, and a small end-to-end acceptance matrix for the principal chat flow. | Automated coverage includes normal chat, empty input, authorization, CSRF, stream interruption, retry/regenerate, source rendering, persistence after reload, and metrics/telemetry validation. | Stable API contract and test environment. |",
+          "query": "Compare Meeting+Minutes+of+2026+09+08 (2026-09-13T07:52:26.734Z), CP1+Delivery+Summary+and+CP2+Implementation+Plan (2026-07-26T15:52:12.520Z) for agreement, version differences and genuine semantic conflicts when answering \"A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\".",
+          "created_at": "2026-10-08T07:43:56.445156Z"
+        },
+        {
+          "observation_id": "observation-569a14adf4fe8bb0867bd54a",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "locator_hint": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "score": 0.16757812798252975,
+          "snippet": "bling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.",
+          "query": "Using Meeting+Minutes+of+2026+09+08, CP1+Delivery+Summary+and+CP2+Implementation+Plan, identify unanswered parts of the question, evidence boundaries and additional evidence required.",
+          "created_at": "2026-10-08T07:43:56.607378Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-faf6d9abf1fd9f7c58b180a4",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-1",
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "document_version": "2026-07-26T15:52:12.520Z",
+          "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+          "excerpt": "attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation",
+          "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754",
+          "created_at": "2026-10-08T07:43:56.286274Z"
+        },
+        {
+          "evidence_id": "evidence-560a28e53a6e87e648ca3296",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "document_version": "2026-07-26T15:52:12.520Z",
+          "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+          "excerpt": "attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation",
+          "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754",
+          "created_at": "2026-10-08T07:43:56.439027Z"
+        },
+        {
+          "evidence_id": "evidence-10e64a530d29d825cd47238f",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T07:43:56.443540Z"
+        },
+        {
+          "evidence_id": "evidence-0c3b0f4198a158dab91ee7ac",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "document_version": "2026-07-26T15:52:12.520Z",
+          "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_11",
+          "excerpt": "d rejects unsafe requests without a matchingx-csrf-tokenheader.\n\n### 2.6 Validation completed in CP1\n\n| Validation | Result |\n| --- | --- |\n| pnpm run typecheck | Passed without TypeScript or Vue type errors. |\n| pnpm run lint | Passed without ESLint findings. |\n| mvn test -qinbff/ | Passed: health, CORS, mock chat success, and blank-query validation. |\n| Repository hygiene check | No tracked working-tree changes or whitespace errors before this written update. |\n\n## 3. CP2 Planned Functionality\n\n### CP2 objective\n\nDeliver one coherent, persistent, observable, and contract-compliant chat flow. CP2 will align the production implementation with the latest Web Layer API specification and remove ambiguity between the Mock, Nitro, and BFF paths.\n\n| CP2 capability | Planned implementation | Acceptance criteria | Dependency / decision |\n| --- | --- | --- | --- |\n| 1. Canonical chat and streaming path | Define one production request path and connect the UI to the authoritative streaming endpoint. The latest API specification identifiesPOST /api/chats/:idas the Web API SSE endpoint. | A user can create a chat, send a message, receive streamed output, stop/retry safely, see final tool/source data, and reload the chat without losing the completed assistant message. | Confirm whether the Nitro route is the final Web boundary or whether it must be replaced/adapted by the Spring Boot BFF. |\n| 2. Message lifecycle persistence | Persist both user and assistant messages through the selected production path; make edit and regenerate operations remove and recreate the correct message branch. | Edit and regenerate work after page reload; no duplicate messages; historical chat content matches the visible conversation. | Finalize canonical transport and ownership model. |\n| 3. API contract alignment | Reconcile implemented routes, route parameters, request bodies, response bodies, authentication rules, and status codes with the 26 July API specification. Add schema/contract tests. | Documentation and live API agree for chat deletion, message edit/regenerate, title/visibility updates, vote responses, and session response shape. | Agreement with API consumers and BFF/Agent owners. |\n| 4. Observability endpoints | ImplementGET /api/metricsandPOST /api/telemetryas specified, including request latency, database timing, AI-call timing, token usage where available, and Web Vitals validation. | Metrics can be scraped or read in JSON; valid LCP/FCP/INP telemetry is accepted; malformed payloads are rejected without affecting chat availability. | Monitoring format and retention decision. |\n| 5. Authentication and security verification | Validate the GitHub OAuth flow with configured credentials, session lifecycle, CSRF rejection, private/public chat access, and production cookie settings. | Authenticated ownership rules work; public chats can be read according to policy; unsafe requests without CSRF protection return 403. | GitHub OAuth client credentials and production host configuration. |\n| 6. Failure handling and user-facing consistency | Normalize loading, timeout, cancellation, network, model, and stream failure behavior in the selected chat path. Move visible strings to one language/i18n policy. | The UI recovers after every supported failure; user-facing messages are consistent; trace/correlation information is available for support. | Final Agent/BFF error schema. |\n| 7. Test and delivery coverage | Add API tests, frontend component tests, and a small end-to-end acceptance matrix for the principal chat flow. | Automated coverage includes normal chat, empty input, authorization, CSRF, stream interruption, retry/regenerate, source rendering, persistence after reload, and metrics/telemetry validation. | Stable API contract and test environment. |\n\n## 4. Issues, Risks, and Dependencies\n\n### 4.1 Multiple runtime paths are not yet unified\n\nThe current repository has three relevant paths: local Mock chat in the browser, a Nitro AI streaming route, and a Spring Boot BFF JSON mock endpoint. The page currently selects Mock or BFF behavior through an environment flag, while the implemented Nitro AI streaming route is not the same path used by the current Mock/BFF chat composables. This is the highest CP2 integration risk.\n\n**CP2 action:agree on one production boundary, retire or explicitly isolate the other demo paths, and ensure the UI, persistence, streaming, and citations use the same transport.**\n\n### 4.2 The latest API document and the current implementation are not fully aligned\n\nThe attached API specification is a useful CP2 target, but several details differ from the current code:",
+          "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754",
+          "created_at": "2026-10-08T07:43:56.447267Z"
+        },
+        {
+          "evidence_id": "evidence-c365b3727c5a2e2b5862e69b",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-3",
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "excerpt": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666",
+          "created_at": "2026-10-08T07:43:56.610613Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-8e84d469638efe29a2a2f2ff",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-1",
+          "statement": "attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation",
+          "evidence_ids": [
+            "evidence-faf6d9abf1fd9f7c58b180a4"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-9d476d2b63a508dcd0b86219",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-2",
+          "statement": "Key numeric values differ between candidate sources: ce3e78a4ea9fe78044ad69ae4559f26f：attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation；a0f35f4075be8b80576727e78756952d：Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.；ce3e78a4ea9fe78044ad69ae4559f26f：d rejects unsafe requests without a matchingx-csrf-tokenheader.\n\n### 2.6 Validation completed in CP1\n\n| Validation | Result |\n| --- | --- |\n| pnpm run typecheck | Passed without TypeScript or Vue type errors. |\n| pnpm r...",
+          "evidence_ids": [
+            "evidence-560a28e53a6e87e648ca3296",
+            "evidence-10e64a530d29d825cd47238f",
+            "evidence-0c3b0f4198a158dab91ee7ac"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-2f825ca748d506819999bee2",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "task_id": "task-3",
+          "statement": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+          "evidence_ids": [
+            "evidence-c365b3727c5a2e2b5862e69b"
+          ],
+          "covers": []
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-8e84d469638efe29a2a2f2ff",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "claim_text": "attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation",
+          "evidence_ids": [
+            "evidence-faf6d9abf1fd9f7c58b180a4"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-9d476d2b63a508dcd0b86219",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "claim_text": "Key numeric values differ between candidate sources: ce3e78a4ea9fe78044ad69ae4559f26f：attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation；a0f35f4075be8b80576727e78756952d：Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.；ce3e78a4ea9fe78044ad69ae4559f26f：d rejects unsafe requests without a matchingx-csrf-tokenheader.\n\n### 2.6 Validation completed in CP1\n\n| Validation | Result |\n| --- | --- |\n| pnpm run typecheck | Passed without TypeScript or Vue type errors. |\n| pnpm r...",
+          "evidence_ids": [
+            "evidence-560a28e53a6e87e648ca3296",
+            "evidence-10e64a530d29d825cd47238f",
+            "evidence-0c3b0f4198a158dab91ee7ac"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-2f825ca748d506819999bee2",
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "claim_text": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+          "evidence_ids": [
+            "evidence-c365b3727c5a2e2b5862e69b"
+          ],
+          "criterion_ids": []
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-8e84d469638efe29a2a2f2ff",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-faf6d9abf1fd9f7c58b180a4"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-9d476d2b63a508dcd0b86219",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-560a28e53a6e87e648ca3296",
+            "evidence-10e64a530d29d825cd47238f",
+            "evidence-0c3b0f4198a158dab91ee7ac"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-2f825ca748d506819999bee2",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c365b3727c5a2e2b5862e69b"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-8e84d469638efe29a2a2f2ff",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-faf6d9abf1fd9f7c58b180a4"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-9d476d2b63a508dcd0b86219",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-560a28e53a6e87e648ca3296",
+            "evidence-10e64a530d29d825cd47238f",
+            "evidence-0c3b0f4198a158dab91ee7ac"
+          ],
+          "reason": "claim_tokens_supported_by_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-2f825ca748d506819999bee2",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c365b3727c5a2e2b5862e69b"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+      "events": [
+        {
+          "event_id": 12523,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:37.852227Z"
+        },
+        {
+          "event_id": 12524,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:37.853233Z"
+        },
+        {
+          "event_id": 12525,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:38.730703Z"
+        },
+        {
+          "event_id": 12526,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:38.732175Z"
+        },
+        {
+          "event_id": 12527,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:54.178169Z"
+        },
+        {
+          "event_id": 12528,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:54.179509Z"
+        },
+        {
+          "event_id": 12529,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T07:43:54.385316Z"
+        },
+        {
+          "event_id": 12530,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:54.385833Z"
+        },
+        {
+          "event_id": 12531,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:54.386365Z"
+        },
+        {
+          "event_id": 12532,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.194201Z"
+        },
+        {
+          "event_id": 12533,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.195349Z"
+        },
+        {
+          "event_id": 12535,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.210538Z"
+        },
+        {
+          "event_id": 12536,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 2,
+            "evidence_count": 1,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:56.290272Z"
+        },
+        {
+          "event_id": 12537,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.291273Z"
+        },
+        {
+          "event_id": 12538,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:56.451623Z"
+        },
+        {
+          "event_id": 12539,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.453145Z"
+        },
+        {
+          "event_id": 12540,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 2,
+            "evidence_count": 1,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:43:56.616456Z"
+        },
+        {
+          "event_id": 12541,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.620200Z"
+        },
+        {
+          "event_id": 12542,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.621885Z"
+        },
+        {
+          "event_id": 12543,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.627622Z"
+        },
+        {
+          "event_id": 12544,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.630886Z"
+        },
+        {
+          "event_id": 12545,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.655926Z"
+        },
+        {
+          "event_id": 12546,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.657891Z"
+        },
+        {
+          "event_id": 12547,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.667544Z"
+        },
+        {
+          "event_id": 12548,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.669151Z"
+        },
+        {
+          "event_id": 12549,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.684207Z"
+        },
+        {
+          "event_id": 12550,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.685269Z"
+        },
+        {
+          "event_id": 12551,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:report:report-research-6a1cbe1168c04b70b8ebabdd52cccd12:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-6a1cbe1168c04b70b8ebabdd52cccd12"
+          },
+          "created_at": "2026-10-08T07:43:56.693946Z"
+        },
+        {
+          "event_id": 12552,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.696580Z"
+        },
+        {
+          "event_id": 12553,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.697660Z"
+        },
+        {
+          "event_id": 12554,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.703407Z"
+        },
+        {
+          "event_id": 12555,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.703407Z"
+        },
+        {
+          "event_id": 12556,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:43:56.705244Z"
+        },
+        {
+          "event_id": 12557,
+          "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+          "event_key": "research-6a1cbe1168c04b70b8ebabdd52cccd12:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T07:43:56.706333Z"
+        }
+      ],
+      "next_after_event_id": 12557
+    },
+    "report": {
+      "report_id": "report-research-6a1cbe1168c04b70b8ebabdd52cccd12",
+      "research_id": "research-6a1cbe1168c04b70b8ebabdd52cccd12",
+      "markdown": "# A CP1/CP2 plan lists real Agent/RAG integration as an external dependency, while the September 8 meeting says Deep Research works from frontend to backend. Compare dates to distinguish contradiction from development over time, and state remaining limitations.\n\n## Summary\n\nThe dated statements show development over time rather than an established direct contradiction. A later working flow does not by itself confirm resolution of every earlier integration requirement. [3][2]\n\n## Evidence and analysis\n\n**2026-07-26**\n\n4.3 Real Agent/RAG integration remains an external dependency [3]\n\n**2026-09-08**\n\nHuifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded. [2]\n\n## Limitations and uncertainty\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode. [4]\n\nThese repair actions are planned work. The later resolution of earlier dependencies remains unconfirmed by these quoted statements. [3][2]\n\n## Sources\n\n1. [**CP1+Delivery+Summary+and+CP2+Implementation+Plan**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan) · 2026-07-26T15:52:12.520Z · ce3e78a4ea9fe78044ad69ae4559f26f_chunk_11\n2. [**Meeting+Minutes+of+2026+09+08**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08) · 2026-09-13T07:52:26.734Z · a0f35f4075be8b80576727e78756952d_chunk_1\n3. [**CP1+Delivery+Summary+and+CP2+Implementation+Plan**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan) · 2026-07-26T15:52:12.520Z · ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16\n4. [**Meeting+Minutes+of+2026+09+08**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08) · 2026-09-13T07:52:26.734Z · a0f35f4075be8b80576727e78756952d_chunk_4\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-9d476d2b63a508dcd0b86219",
+        "claim-finding-8e84d469638efe29a2a2f2ff",
+        "claim-finding-2f825ca748d506819999bee2"
+      ],
+      "evidence_ids": [
+        "evidence-0c3b0f4198a158dab91ee7ac",
+        "evidence-10e64a530d29d825cd47238f",
+        "evidence-560a28e53a6e87e648ca3296",
+        "evidence-faf6d9abf1fd9f7c58b180a4",
+        "evidence-c365b3727c5a2e2b5862e69b"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-0c3b0f4198a158dab91ee7ac",
+          "evidence_ids": [
+            "evidence-0c3b0f4198a158dab91ee7ac"
+          ],
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-07-26T15:52:12.520Z",
+          "effective_at": null,
+          "updated_at": "2026-07-26T15:52:12.520Z",
+          "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_11",
+          "excerpt": "d rejects unsafe requests without a matchingx-csrf-tokenheader.\n\n### 2.6 Validation completed in CP1\n\n| Validation | Result |\n| --- | --- |\n| pnpm run typecheck | Passed without TypeScript or Vue type errors. |\n| pnpm run lint | Passed without ESLint findings. |\n| mvn test -qinbff/ | Passed: health, CORS, mock chat success, and blank-query validation. |\n| Repository hygiene check | No tracked working-tree changes or whitespace errors before this written update. |\n\n## 3. CP2 Planned Functionality\n\n### CP2 objective\n\nDeliver one coherent, persistent, observable, and contract-compliant chat flow. CP2 will align the production implementation with the latest Web Layer API specification and remove ambiguity between the Mock, Nitro, and BFF paths.\n\n| CP2 capability | Planned implementation | Acceptance criteria | Dependency / decision |\n| --- | --- | --- | --- |\n| 1. Canonical chat and streaming path | Define one production request path and connect the UI to the authoritative streaming endpoint. The latest API specification identifiesPOST /api/chats/:idas the Web API SSE endpoint. | A user can create a chat, send a message, receive streamed output, stop/retry safely, see final tool/source data, and reload the chat without losing the completed assistant message. | Confirm whether the Nitro route is the final Web boundary or whether it must be replaced/adapted by the Spring Boot BFF. |\n| 2. Message lifecycle persistence | Persist both user and assistant messages through the selected production path; make edit and regenerate operations remove and recreate the correct message branch. | Edit and regenerate work after page reload; no duplicate messages; historical chat content matches the visible conversation. | Finalize canonical transport and ownership model. |\n| 3. API contract alignment | Reconcile implemented routes, route parameters, request bodies, response bodies, authentication rules, and status codes with the 26 July API specification. Add schema/contract tests. | Documentation and live API agree for chat deletion, message edit/regenerate, title/visibility updates, vote responses, and session response shape. | Agreement with API consumers and BFF/Agent owners. |\n| 4. Observability endpoints | ImplementGET /api/metricsandPOST /api/telemetryas specified, including request latency, database timing, AI-call timing, token usage where available, and Web Vitals validation. | Metrics can be scraped or read in JSON; valid LCP/FCP/INP telemetry is accepted; malformed payloads are rejected without affecting chat availability. | Monitoring format and retention decision. |\n| 5. Authentication and security verification | Validate the GitHub OAuth flow with configured credentials, session lifecycle, CSRF rejection, private/public chat access, and production cookie settings. | Authenticated ownership rules work; public chats can be read according to policy; unsafe requests without CSRF protection return 403. | GitHub OAuth client credentials and production host configuration. |\n| 6. Failure handling and user-facing consistency | Normalize loading, timeout, cancellation, network, model, and stream failure behavior in the selected chat path. Move visible strings to one language/i18n policy. | The UI recovers after every supported failure; user-facing messages are consistent; trace/correlation information is available for support. | Final Agent/BFF error schema. |\n| 7. Test and delivery coverage | Add API tests, frontend component tests, and a small end-to-end acceptance matrix for the principal chat flow. | Automated coverage includes normal chat, empty input, authorization, CSRF, stream interruption, retry/regenerate, source rendering, persistence after reload, and metrics/telemetry validation. | Stable API contract and test environment. |\n\n## 4. Issues, Risks, and Dependencies\n\n### 4.1 Multiple runtime paths are not yet unified\n\nThe current repository has three relevant paths: local Mock chat in the browser, a Nitro AI streaming route, and a Spring Boot BFF JSON mock endpoint. The page currently selects Mock or BFF behavior through an environment flag, while the implemented Nitro AI streaming route is not the same path used by the current Mock/BFF chat composables. This is the highest CP2 integration risk.\n\n**CP2 action:agree on one production boundary, retire or explicitly isolate the other demo paths, and ensure the UI, persistence, streaming, and citations use the same transport.**\n\n### 4.2 The latest API document and the current implementation are not fully aligned\n\nThe attached API specification is a useful CP2 target, but several details differ from the current code:",
+          "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-10e64a530d29d825cd47238f",
+          "evidence_ids": [
+            "evidence-10e64a530d29d825cd47238f"
+          ],
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+          "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-560a28e53a6e87e648ca3296",
+          "evidence_ids": [
+            "evidence-560a28e53a6e87e648ca3296",
+            "evidence-faf6d9abf1fd9f7c58b180a4"
+          ],
+          "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+          "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-07-26T15:52:12.520Z",
+          "effective_at": null,
+          "updated_at": "2026-07-26T15:52:12.520Z",
+          "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+          "excerpt": "attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation",
+          "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-c365b3727c5a2e2b5862e69b",
+          "evidence_ids": [
+            "evidence-c365b3727c5a2e2b5862e69b"
+          ],
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "title": "Meeting+Minutes+of+2026+09+08",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-13T07:52:26.734Z",
+          "effective_at": null,
+          "updated_at": "2026-09-13T07:52:26.734Z",
+          "locator": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "excerpt": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+          "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T07:43:56.689634Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-0c3b0f4198a158dab91ee7ac",
+        "evidence_ids": [
+          "evidence-0c3b0f4198a158dab91ee7ac"
+        ],
+        "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+        "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-07-26T15:52:12.520Z",
+        "effective_at": null,
+        "updated_at": "2026-07-26T15:52:12.520Z",
+        "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_11",
+        "excerpt": "d rejects unsafe requests without a matchingx-csrf-tokenheader.\n\n### 2.6 Validation completed in CP1\n\n| Validation | Result |\n| --- | --- |\n| pnpm run typecheck | Passed without TypeScript or Vue type errors. |\n| pnpm run lint | Passed without ESLint findings. |\n| mvn test -qinbff/ | Passed: health, CORS, mock chat success, and blank-query validation. |\n| Repository hygiene check | No tracked working-tree changes or whitespace errors before this written update. |\n\n## 3. CP2 Planned Functionality\n\n### CP2 objective\n\nDeliver one coherent, persistent, observable, and contract-compliant chat flow. CP2 will align the production implementation with the latest Web Layer API specification and remove ambiguity between the Mock, Nitro, and BFF paths.\n\n| CP2 capability | Planned implementation | Acceptance criteria | Dependency / decision |\n| --- | --- | --- | --- |\n| 1. Canonical chat and streaming path | Define one production request path and connect the UI to the authoritative streaming endpoint. The latest API specification identifiesPOST /api/chats/:idas the Web API SSE endpoint. | A user can create a chat, send a message, receive streamed output, stop/retry safely, see final tool/source data, and reload the chat without losing the completed assistant message. | Confirm whether the Nitro route is the final Web boundary or whether it must be replaced/adapted by the Spring Boot BFF. |\n| 2. Message lifecycle persistence | Persist both user and assistant messages through the selected production path; make edit and regenerate operations remove and recreate the correct message branch. | Edit and regenerate work after page reload; no duplicate messages; historical chat content matches the visible conversation. | Finalize canonical transport and ownership model. |\n| 3. API contract alignment | Reconcile implemented routes, route parameters, request bodies, response bodies, authentication rules, and status codes with the 26 July API specification. Add schema/contract tests. | Documentation and live API agree for chat deletion, message edit/regenerate, title/visibility updates, vote responses, and session response shape. | Agreement with API consumers and BFF/Agent owners. |\n| 4. Observability endpoints | ImplementGET /api/metricsandPOST /api/telemetryas specified, including request latency, database timing, AI-call timing, token usage where available, and Web Vitals validation. | Metrics can be scraped or read in JSON; valid LCP/FCP/INP telemetry is accepted; malformed payloads are rejected without affecting chat availability. | Monitoring format and retention decision. |\n| 5. Authentication and security verification | Validate the GitHub OAuth flow with configured credentials, session lifecycle, CSRF rejection, private/public chat access, and production cookie settings. | Authenticated ownership rules work; public chats can be read according to policy; unsafe requests without CSRF protection return 403. | GitHub OAuth client credentials and production host configuration. |\n| 6. Failure handling and user-facing consistency | Normalize loading, timeout, cancellation, network, model, and stream failure behavior in the selected chat path. Move visible strings to one language/i18n policy. | The UI recovers after every supported failure; user-facing messages are consistent; trace/correlation information is available for support. | Final Agent/BFF error schema. |\n| 7. Test and delivery coverage | Add API tests, frontend component tests, and a small end-to-end acceptance matrix for the principal chat flow. | Automated coverage includes normal chat, empty input, authorization, CSRF, stream interruption, retry/regenerate, source rendering, persistence after reload, and metrics/telemetry validation. | Stable API contract and test environment. |\n\n## 4. Issues, Risks, and Dependencies\n\n### 4.1 Multiple runtime paths are not yet unified\n\nThe current repository has three relevant paths: local Mock chat in the browser, a Nitro AI streaming route, and a Spring Boot BFF JSON mock endpoint. The page currently selects Mock or BFF behavior through an environment flag, while the implemented Nitro AI streaming route is not the same path used by the current Mock/BFF chat composables. This is the highest CP2 integration risk.\n\n**CP2 action:agree on one production boundary, retire or explicitly isolate the other demo paths, and ensure the UI, persistence, streaming, and citations use the same transport.**\n\n### 4.2 The latest API document and the current implementation are not fully aligned\n\nThe attached API specification is a useful CP2 target, but several details differ from the current code:",
+        "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-10e64a530d29d825cd47238f",
+        "evidence_ids": [
+          "evidence-10e64a530d29d825cd47238f"
+        ],
+        "doc_id": "a0f35f4075be8b80576727e78756952d",
+        "title": "Meeting+Minutes+of+2026+09+08",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-13T07:52:26.734Z",
+        "effective_at": null,
+        "updated_at": "2026-09-13T07:52:26.734Z",
+        "locator": "a0f35f4075be8b80576727e78756952d_chunk_1",
+        "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.",
+        "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-560a28e53a6e87e648ca3296",
+        "evidence_ids": [
+          "evidence-560a28e53a6e87e648ca3296",
+          "evidence-faf6d9abf1fd9f7c58b180a4"
+        ],
+        "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+        "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-07-26T15:52:12.520Z",
+        "effective_at": null,
+        "updated_at": "2026-07-26T15:52:12.520Z",
+        "locator": "ce3e78a4ea9fe78044ad69ae4559f26f_chunk_16",
+        "excerpt": "attached API specification is a useful CP2 target, but several details differ from the current code:\n\n- The message edit/regenerate route currently receives the chat ID in the route and the message ID plus operation type in the body; the specification describes the route parameter as a message ID.\n\n- The title, visibility, vote, and chat deletion implementations return data structures that differ from the documented{ \"success\": true }examples.\n\n- The documented session response includes anid, while the current endpoint returns session data directly.\n\n- The specification listsGET /api/metricsandPOST /api/telemetry, but these endpoints are not present in the current server routes.\n\n- The earlier BFF contract describes a separate/api/v1/chatpath and business-status model, while the latest Web API document defines the Nitro/api/chats/:idSSE path. This boundary must be resolved before external integration.\n\n**CP2 action:run a joint API review, select the canonical behavior for each item, update code or documentation accordingly, and protect the agreement with contract tests.**\n\n### 4.3 Real Agent/RAG integration remains an external dependency\n\nThe Spring Boot BFF currently returns mock answers. There is no implemented BFF Agent client, retrieval call, document-ingestion pipeline, vector-store access, or real citation provenance in this repository's BFF path.\n\n**CP2 action:obtain the Agent request/response, streaming, error, and citation contract; then implement the adapter and integration tests. Real RAG should be reported as pending until this dependency is verified.**\n\n### 4.4 Observability and production readiness are incomplete\n\nThe code has basic validation, CORS, session, and CSRF primitives, but it does not yet expose the metrics and telemetry APIs specified for the Web layer. Structured trace logging, downstream timeout policy, and production monitoring are also not complete.\n\n**CP2 action:add the documented observability endpoints and standardize correlation IDs, logs, timing, and operational error reporting.**\n\n### 4.5 Environment configuration is required for live validation",
+        "content_hash": "0aaedfd7692e6bfc2e844c683afc6f385a8958b80d49075f7dfee9e8ef999754"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-c365b3727c5a2e2b5862e69b",
+        "evidence_ids": [
+          "evidence-c365b3727c5a2e2b5862e69b"
+        ],
+        "doc_id": "a0f35f4075be8b80576727e78756952d",
+        "title": "Meeting+Minutes+of+2026+09+08",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-13T07:52:26.734Z",
+        "effective_at": null,
+        "updated_at": "2026-09-13T07:52:26.734Z",
+        "locator": "a0f35f4075be8b80576727e78756952d_chunk_4",
+        "excerpt": "osed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode.\n\n- Jiajin Zhong evaluate better visual models for PDF images (e.g., bar charts, line charts) via API; compare pure-text embedding against CLIP-based image-text mapping.\n\n- Jiaxing Dai complete P1 of the retrieval system (summary and concept/LMWiki layers).\n\n- All team members：Consider buiding a mutil-dimension test case library (5–10 diverse questions) for continuous testing and iteration.\n\n- All team members：Putting more focus on Q&A performance rather than building complex features.\n\nHi Daijiang and Suijie,\n\nKindly remind you that Daijiang will be the host and Suijie will be the MoM Noter of next weekly meeting. Please read above Notes and get prepard.\n\nKind regards,\n\nJiajin Zhong",
+        "content_hash": "dc7f77e2ac8e7ebc1bf5829f0824e7b63898e3af4a854f445892d02d4ff4f666"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-6a1cbe1168c04b70b8ebabdd52cccd12/documents/ce3e78a4ea9fe78044ad69ae4559f26f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 421
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-6a1cbe1168c04b70b8ebabdd52cccd12/documents/a0f35f4075be8b80576727e78756952d/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 113
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-6a1cbe1168c04b70b8ebabdd52cccd12/documents/ce3e78a4ea9fe78044ad69ae4559f26f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 56
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-6a1cbe1168c04b70b8ebabdd52cccd12/documents/a0f35f4075be8b80576727e78756952d/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 58
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

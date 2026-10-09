@@ -1,0 +1,35 @@
+{
+  "run_id": "DR-A-008-fast_chat-r2-1e5a03ba",
+  "case_id": "DR-A-008",
+  "group": "fast_chat",
+  "api_success": true,
+  "judge_model": "qwen-plus-2025-12-01",
+  "rubric_sha256": "43ae67965a83fe48f4a8ebfbad8e5c45ec7d834db53118a00f4ad50444e1089d",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation."
+  },
+  "verified_evidence": [],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation.",
+      "evidence_ids": []
+    }
+  ],
+  "citations": [],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 5,
+    "completeness": 5,
+    "faithfulness": 5,
+    "answer_relevance": 5,
+    "limitation_disclosure": 5,
+    "conflict_handling": 5,
+    "required_fact_ids_supported": [
+      "clarification"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: The report correctly requests clarification as required by the expected behavior 'request_more_information'; no factual claim is made that contradicts or misrepresents evidence — and there is no conflicting or numeric reasoning to evaluate. Completeness: It fully addresses the sole required fact ('clarification') by explicitly naming the three possible interpretations (current code, target architecture, demonstrated architecture) and asking for specification of branch/release/date — matching the description precisely. Faithfulness: The single claim (claim-id 'answer-block-1') has no evidence_ids, but it makes no factual assertion requiring evidentiary support; it is a neutral, evidence-agnostic request for disambiguation, which is permissible and fully supported by its own logical role in fulfilling the expected behavior. Answer relevance: The response is focused, concise, and directly resolves the question by identifying the ambiguity — no digression, copied source, or irrelevant content. Limitation disclosure: No uncertainty, permission boundary, missing evidence, or degraded behavior needs disclosure beyond the appropriate request for clarification; the absence of frozen excerpts is handled correctly by requesting specificity rather than guessing. Conflict handling: No source excerpts exist, so no conflict is present or invented; the report avoids asserting any architectural detail and thus correctly refrains from fabricating or mischaracterizing version differences."
+  }
+}

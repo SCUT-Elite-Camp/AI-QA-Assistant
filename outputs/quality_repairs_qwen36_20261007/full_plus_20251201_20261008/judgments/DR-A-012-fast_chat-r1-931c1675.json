@@ -1,0 +1,186 @@
+{
+  "run_id": "DR-A-012-fast_chat-r1-931c1675",
+  "case_id": "DR-A-012",
+  "group": "fast_chat",
+  "api_success": true,
+  "judge_model": "qwen-plus-2025-12-01",
+  "rubric_sha256": "43ae67965a83fe48f4a8ebfbad8e5c45ec7d834db53118a00f4ad50444e1089d",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "## Summary\n\nThe requested goal rows have the recorded statuses below. Repeated identifiers refer to separate named goals and are not collapsed. [1]\n\n## Evidence and analysis\n\n| Goal ID | Goal name | Recorded status |\n| --- | --- | --- |\n| AG-M6 | Local Research Tools and Trusted Evidence Chain | Finished [1] |\n| AG-M7 | Research Data Persistence and Quality Verification | Finished [1] |\n| AG-M8 | Research Graph Execution and Recovery | Finished [1] |\n| AG-M9 | Scheduler Business Rules, Coverage Gate, and Targeted Replan | Not started [1] |\n| AG-M9 | Trusted Report Generation and Query | Finished [1] |\n| AG-M10 | Evidence Store and Citation Checker | Not started [1] |\n| AG-M11 | Report Writer and Claim–Evidence Mapping | not recorded [1] |\n\n## Limitations and uncertainty\n\nBlank status cells are reported as \"not recorded\", without inference. These are the selected document's recorded states; they do not establish subsequent delivery. [1]"
+  },
+  "verified_evidence": [
+    {
+      "evidence_id": "citation-1",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-2",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "arted | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-3",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-4",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "--- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-5",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-6",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-7",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "--- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |"
+    },
+    {
+      "evidence_id": "citation-8",
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "excerpt": "arted | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "The requested goal rows have the recorded statuses below. Repeated identifiers refer to separate named goals and are not collapsed. [1]",
+      "evidence_ids": [
+        "citation-1"
+      ]
+    },
+    {
+      "claim_id": "answer-block-2",
+      "text": "| Goal ID | Goal name | Recorded status |\n| --- | --- | --- |\n| AG-M6 | Local Research Tools and Trusted Evidence Chain | Finished [1] |\n| AG-M7 | Research Data Persistence and Quality Verification | Finished [1] |\n| AG-M8 | Research Graph Execution and Recovery | Finished [1] |\n| AG-M9 | Scheduler Business Rules, Coverage Gate, and Targeted Replan | Not started [1] |\n| AG-M9 | Trusted Report Generation and Query | Finished [1] |\n| AG-M10 | Evidence Store and Citation Checker | Not started [1] |\n| AG-M11 | Report Writer and Claim–Evidence Mapping | not recorded [1] |",
+      "evidence_ids": [
+        "citation-1"
+      ]
+    },
+    {
+      "claim_id": "answer-block-3",
+      "text": "Blank status cells are reported as \"not recorded\", without inference. These are the selected document's recorded states; they do not establish subsequent delivery. [1]",
+      "evidence_ids": [
+        "citation-1"
+      ]
+    }
+  ],
+  "citations": [
+    {
+      "citation_id": "1",
+      "evidence_ids": [
+        "citation-1"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": [
+        "answer-block-1",
+        "answer-block-2",
+        "answer-block-3"
+      ]
+    },
+    {
+      "citation_id": "2",
+      "evidence_ids": [
+        "citation-2"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "3",
+      "evidence_ids": [
+        "citation-3"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "4",
+      "evidence_ids": [
+        "citation-4"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "5",
+      "evidence_ids": [
+        "citation-5"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "6",
+      "evidence_ids": [
+        "citation-6"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "7",
+      "evidence_ids": [
+        "citation-7"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "8",
+      "evidence_ids": [
+        "citation-8"
+      ],
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "claim_ids": []
+    }
+  ],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 3,
+    "completeness": 3,
+    "faithfulness": 5,
+    "answer_relevance": 4,
+    "limitation_disclosure": 5,
+    "conflict_handling": 2,
+    "required_fact_ids_supported": [
+      "m10",
+      "m11_blank"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: The report incorrectly states AG-M9 has two statuses (Not started and Finished), but the required fact 'finished_set' explicitly includes 'M9: Finished'. However, the frozen excerpts show *two distinct AG-M9 entries*: one by Liu Huifang (Finished) under 'Research Graph', and one by Xie Daijiang (Not started) for 'Scheduler...'. The question asks to check only 'AG-M6, AG-M7, AG-M8 (Research Graph), AG-M9, AG-M10 and AG-M11' — and crucially, the phrase '(Research Graph)' applies *only to AG-M8*, not to AG-M9. So both AG-M9 entries are in scope, and the required fact description 'M6, M7, Research Graph M8 and M9: Finished' is *misleading* — it conflates two separate goals with same ID but different names and statuses. The report correctly surfaces both, but the expected behavior assumes only the Research Graph AG-M9 is relevant, which contradicts the literal reading of the question. This ambiguity causes a material correctness defect: the report treats both AG-M9s as equally valid, but the required fact 'finished_set' implies only one AG-M9 (the Research Graph one) should count as finished — yet the excerpts don't label either as 'Research Graph'; that modifier appears only in the question's parenthetical, not in source data. So the report’s inclusion of both AG-M9 rows is faithful but misaligned with the required fact’s implied scope; however, since the question says 'Check only AG-M6, AG-M7, AG-M8 (Research Graph), AG-M9, AG-M10 and AG-M11', and does *not* restrict AG-M9 to Research Graph, the report is correct to include both — but then the required fact 'finished_set' is itself inconsistent with evidence, making correctness partially flawed. A score of 3 reflects this material ambiguity and misalignment between required fact description and actual evidence structure. Completeness: The report answers all three required facts *in form*: it lists AG-M6/M7/M8 as Finished (supporting 'finished_set'), AG-M10 as Not started (supporting 'm10'), and AG-M11 as 'not recorded' (supporting 'm11_blank'). However, 'finished_set' requires *all four* — M6, M7, Research Graph M8, *and M9* — to be Finished. The report shows two AG-M9 statuses, only one of which is Finished, so it fails to unambiguously confirm the required 'M9: Finished' — thus 'finished_set' is not fully supported. Hence, only 'm10' and 'm11_blank' are fully addressed, missing full support for 'finished_set'. Faithfulness: Every factual claim in the report is directly supported by citation-1: AG-M6/7/8 Finished, AG-M10 Not started, AG-M11 blank, and both AG-M9 rows appear verbatim in the excerpt. No unsupported claims. Answer relevance: The report directly answers the question with a clean table and minimal framing. Minor verbosity in 'Summary' and 'Limitations' sections doesn’t detract; the core answer is focused and scoped correctly. Limitation disclosure: Correctly states blank status is reported as 'not recorded' without inference, and clarifies these are recorded states, not delivery guarantees — fully satisfying the requirement. Conflict handling: The report surfaces the AG-M9 duplication but does *not identify or resolve the conflict*. The frozen excerpts contain two AG-M9 rows with contradictory statuses (Finished vs Not started), same Goal ID but different owners and descriptions — a clear source conflict. The question asks to 'Check only AG-M6, AG-M7, AG-M8 (Research Graph), AG-M9, AG-M10 and AG-M11', implying AG-M9 is singular, yet evidence shows two. The report presents both without labeling the conflict, distinguishing authority (e.g., Liu vs Xie), or using dates (all from same doc, no timestamps in excerpts). It treats them as coexisting facts rather than conflicting records — a major failure in conflict handling, hence score 2."
+  }
+}

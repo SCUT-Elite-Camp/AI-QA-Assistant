@@ -1,0 +1,35 @@
+{
+  "run_id": "DR-A-008-fast_chat-r1-3cdafcac",
+  "case_id": "DR-A-008",
+  "group": "fast_chat",
+  "api_success": true,
+  "judge_model": "qwen-plus-2025-12-01",
+  "rubric_sha256": "43ae67965a83fe48f4a8ebfbad8e5c45ec7d834db53118a00f4ad50444e1089d",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation."
+  },
+  "verified_evidence": [],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation.",
+      "evidence_ids": []
+    }
+  ],
+  "citations": [],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 5,
+    "completeness": 5,
+    "faithfulness": 5,
+    "answer_relevance": 5,
+    "limitation_disclosure": 5,
+    "conflict_handling": 5,
+    "required_fact_ids_supported": [
+      "clarification"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: The report correctly requests clarification as expected behavior mandates; no factual claim is made that contradicts or misrepresents evidence (and no excerpts exist to contradict); the phrasing directly fulfills the required-fact description. Completeness: The report explicitly addresses the single required fact ('clarification') by naming the three distinct architecture scopes (current code, CP2 target, September Deep Research demonstration) and asking for specification — matching the description precisely. Faithfulness: The sole claim (claim-id 'answer-block-1') has no evidence_ids, but it is a request for information—not a factual assertion—so no evidentiary support is required; absence of evidence_ids for a non-factual, procedural request does not violate Faithfulness. Answer relevance: The response is focused, concise, and directly resolves the question by identifying the ambiguity and specifying exactly what disambiguation is needed—no digression or irrelevant content. Limitation disclosure: No uncertainty, missing data, or boundary issue requires disclosure beyond the explicit request for clarification, which *is* the appropriate handling; thus full compliance. Conflict handling: No source excerpts are provided, so no conflict exists to handle; the report correctly avoids inventing or mischaracterizing any conflict."
+  }
+}

@@ -1,0 +1,409 @@
+{
+  "run_id": "DR-A-009-fast_chat-r2-464ae06a",
+  "case_id": "DR-A-009",
+  "group": "fast_chat",
+  "api_success": true,
+  "judge_model": "qwen-plus-2025-12-01",
+  "rubric_sha256": "43ae67965a83fe48f4a8ebfbad8e5c45ec7d834db53118a00f4ad50444e1089d",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "## Summary\n\nThe selected Master reports record the project totals below.\n\n## Evidence and analysis\n\n| Sprint | Total commits |\n| --- | --- |\n| W28 | 9 [3] |\n| W30 | 14 [2] |\n| W34 | 23 [1] |\n\nW30 minus W28: 14 - 9 = +5. [3][2]\n\nW34 minus W30: 23 - 14 = +9. [2][1]\n\nChange from W28 to W34: 23 - 9 = +14 commits. [3][1]\n\n## Limitations and uncertainty\n\nThese are recorded project totals, without summing module counts or inferring quality, contributor activity or reasons for changes."
+  },
+  "verified_evidence": [
+    {
+      "evidence_id": "citation-1",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation"
+    },
+    {
+      "evidence_id": "citation-2",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation"
+    },
+    {
+      "evidence_id": "citation-3",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation"
+    },
+    {
+      "evidence_id": "citation-4",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |"
+    },
+    {
+      "evidence_id": "citation-5",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "excerpt": "| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |"
+    },
+    {
+      "evidence_id": "citation-6",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": "| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |"
+    },
+    {
+      "evidence_id": "citation-7",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "& Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-8",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "excerpt": "ack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)"
+    },
+    {
+      "evidence_id": "citation-9",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": " & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-10",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "NT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)\n\n- [WEB]feat: place Thought duration collapsible on the left of 已检索知识库 on the same row (dec8ade0aby @YourGitHubUsername)\n\n- [WEB]feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display (1e1535ac4by @YourGitHubUsername)\n\n- [WEB]feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-11",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "excerpt": "ry plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology"
+    },
+    {
+      "evidence_id": "citation-12",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": "stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)\n\n- [AGENT]fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT (1739c6004by @YourGitHubUsername)\n\n- [WEB]fix(web): fix cite-mark MDC parse failure + clean circle design (5517f5376by @YourGitHubUsername)\n\n- [WEB]fix(web/CiteMark): match neutral/outline style, fixed-position scrollable tooltip (70621a418by @YourGitHubUsername)\n\n- [WEB]fix(web): fix MDC parser rendering issue by prepending space to inline components (63c7e7679by @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-13",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "ector to Auto, Fast, and Thinking with Thinking as current default (d12c92e79by @YourGitHubUsername)\n\n- [WEB]feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback (c251af965by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [WEB]fix: real-time streaming state tracking for ProgressIndicator (006a0e6ccby @YourGitHubUsername)\n\n- [WEB]fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-14",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "excerpt": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |"
+    },
+    {
+      "evidence_id": "citation-15",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": "DC parser rendering issue by prepending space to inline components (63c7e7679by @YourGitHubUsername)\n\n- [WEB]fix: display tooltip below badge and send full citation snippet from backend (32a1bfc45by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology"
+    },
+    {
+      "evidence_id": "citation-16",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-17",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "excerpt": "re | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces."
+    },
+    {
+      "evidence_id": "citation-18",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| a61bfa4c9 | 2026-07-06 | YKASN | infra | Maintenance / Chore | Merge pull request #14 from SCUT-Elite-Camp/optimization |\n| b56957250 | 2026-07-09 | YourGitHubUsername | agent | Feature | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API |\n| 22953c05f | 2026-07-09 | YourGitHubUsername | infra | Bug Fix | fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch |\n| 1739c6004 | 2026-07-09 | YourGitHubUsername | agent | Bug Fix | fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 6be2c3d45 | 2026-07-09 | YourGitHubUsername | web | Feature | feat(web): inline cite-mark tooltips + deduplicated sources panel |\n| 5517f5376 | 2026-07-09 | YourGitHubUsername | web | Bug Fix | fix(web): fix cite-mark MDC parse failure + clean circle design |\n| 70621a418 | 2026-07-09 | YourGitHubUsername | web | Bug Fix | fix(web/CiteMark): match neutral/outline style, fixed-position scrollable tooltip |\n| 63c7e7679 | 2026-07-10 | YourGitHubUsername | web | Bug Fix | fix(web): fix MDC parser rendering issue by prepending space to inline components |\n| 32a1bfc45 | 2026-07-10 | YourGitHubUsername | web, agent | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |"
+    },
+    {
+      "evidence_id": "citation-19",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "excerpt": "keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology"
+    },
+    {
+      "evidence_id": "citation-20",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "excerpt": "eb, agent | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "The selected Master reports record the project totals below.",
+      "evidence_ids": []
+    },
+    {
+      "claim_id": "answer-block-2",
+      "text": "| Sprint | Total commits |\n| --- | --- |\n| W28 | 9 [3] |\n| W30 | 14 [2] |\n| W34 | 23 [1] |",
+      "evidence_ids": [
+        "citation-3",
+        "citation-2",
+        "citation-1"
+      ]
+    },
+    {
+      "claim_id": "answer-block-3",
+      "text": "W30 minus W28: 14 - 9 = +5. [3][2]",
+      "evidence_ids": [
+        "citation-3",
+        "citation-2"
+      ]
+    },
+    {
+      "claim_id": "answer-block-4",
+      "text": "W34 minus W30: 23 - 14 = +9. [2][1]",
+      "evidence_ids": [
+        "citation-2",
+        "citation-1"
+      ]
+    },
+    {
+      "claim_id": "answer-block-5",
+      "text": "Change from W28 to W34: 23 - 9 = +14 commits. [3][1]",
+      "evidence_ids": [
+        "citation-3",
+        "citation-1"
+      ]
+    },
+    {
+      "claim_id": "answer-block-6",
+      "text": "These are recorded project totals, without summing module counts or inferring quality, contributor activity or reasons for changes.",
+      "evidence_ids": []
+    }
+  ],
+  "citations": [
+    {
+      "citation_id": "1",
+      "evidence_ids": [
+        "citation-1"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": [
+        "answer-block-2",
+        "answer-block-4",
+        "answer-block-5"
+      ]
+    },
+    {
+      "citation_id": "2",
+      "evidence_ids": [
+        "citation-2"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": [
+        "answer-block-2",
+        "answer-block-3",
+        "answer-block-4"
+      ]
+    },
+    {
+      "citation_id": "3",
+      "evidence_ids": [
+        "citation-3"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": [
+        "answer-block-2",
+        "answer-block-3",
+        "answer-block-5"
+      ]
+    },
+    {
+      "citation_id": "4",
+      "evidence_ids": [
+        "citation-4"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "5",
+      "evidence_ids": [
+        "citation-5"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "6",
+      "evidence_ids": [
+        "citation-6"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "7",
+      "evidence_ids": [
+        "citation-7"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "8",
+      "evidence_ids": [
+        "citation-8"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "9",
+      "evidence_ids": [
+        "citation-9"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "10",
+      "evidence_ids": [
+        "citation-10"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "11",
+      "evidence_ids": [
+        "citation-11"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "12",
+      "evidence_ids": [
+        "citation-12"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "13",
+      "evidence_ids": [
+        "citation-13"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "14",
+      "evidence_ids": [
+        "citation-14"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "15",
+      "evidence_ids": [
+        "citation-15"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "16",
+      "evidence_ids": [
+        "citation-16"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "17",
+      "evidence_ids": [
+        "citation-17"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "18",
+      "evidence_ids": [
+        "citation-18"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "19",
+      "evidence_ids": [
+        "citation-19"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "20",
+      "evidence_ids": [
+        "citation-20"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": null,
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": []
+    }
+  ],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 5,
+    "completeness": 5,
+    "faithfulness": 5,
+    "answer_relevance": 5,
+    "limitation_disclosure": 5,
+    "conflict_handling": 5,
+    "required_fact_ids_supported": [
+      "totals",
+      "adjacent_deltas",
+      "overall_delta"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: All numeric values (W28=9, W30=14, W34=23) and arithmetic (14−9=+5, 23−14=+9, 23−9=+14) match the frozen excerpts exactly and are correctly computed; no unsupported inference or external knowledge is used. Completeness: All three required facts — totals (fact-id 'totals'), adjacent deltas ('adjacent_deltas'), and overall delta ('overall_delta') — are explicitly stated and numerically correct in the report. Faithfulness: Every factual claim (the three totals and three differences) is supported by cited evidence IDs mapping directly to the frozen excerpts containing those exact numbers (e.g., 'W28=9' maps to citation-3, 'W34=23' to citation-1). Answer relevance: The report directly answers the comparison and calculation request with no digression, irrelevant narrative, or copied source dumps; all content serves the question. Limitation disclosure: No uncertainty, missing data, permission boundary, or degraded behavior exists or needs disclosure — the required facts are fully present and unambiguous in the evidence. Conflict handling: No conflicts exist across the excerpts (each sprint’s total is unambiguously stated in its own report), and the report correctly avoids inventing any contradiction or mislabeling version evolution as conflict."
+  }
+}

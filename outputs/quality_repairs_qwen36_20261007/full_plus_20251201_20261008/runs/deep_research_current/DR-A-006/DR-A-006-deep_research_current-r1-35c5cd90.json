@@ -1,0 +1,1390 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-006-deep_research_current-r1-35c5cd90",
+  "case_id": "DR-A-006",
+  "group": "deep_research_current",
+  "repetition": 1,
+  "started_at": "2026-10-08T07:44:33.514116+00:00",
+  "completed_at": "2026-10-08T07:44:47.124832+00:00",
+  "elapsed_ms": 13610,
+  "config_hash": "42c462814462b691f4a1dfa56d1a18e605bcc0624881e9ac4ed682c1926bdd11",
+  "success": true,
+  "result": {
+    "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "The Agent CP2 Optimization Plan excludes a complete Skills System, whereas CP2 Goals lists Skill Registry/document_summarySkill. Compare scope and recorded status without presenting planned work as delivered.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "2130586138d434591e7edf6d7580ee16",
+            "7a046574e728d8449133f24f98fbbbde"
+          ],
+          "topic": "version_conflict"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "c36924c1c9a71a0887d92ae653667d5a2a7acf6b3e6147836c326a8d70429771",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T07:44:33.517121Z",
+      "updated_at": "2026-10-08T07:44:45.529386Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+      "version": 1,
+      "objective": "The Agent CP2 Optimization Plan excludes a complete Skills System, whereas CP2 Goals lists Skill Registry/document_summarySkill. Compare scope and recorded status without presenting planned work as delivered.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "2130586138d434591e7edf6d7580ee16",
+          "7a046574e728d8449133f24f98fbbbde"
+        ],
+        "topic": "version_conflict"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "c36924c1c9a71a0887d92ae653667d5a2a7acf6b3e6147836c326a8d70429771",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "In 'Agent+Layer+CP2+Optimization+Plan' (doc_id: 2130586138d434591e7edf6d7580ee16), verify the exact text stating that a complete Skills System is excluded, including any qualifying clauses or scope boundaries cited.",
+          "purpose": "Confirm the documented exclusion of a complete Skills System in the Optimization Plan, preserving original wording and contextual limitations.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "2130586138d434591e7edf6d7580ee16",
+            "7a046574e728d8449133f24f98fbbbde"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "In 'CP2+-+Goals' (doc_id: 7a046574e728d8449133f24f98fbbbde), locate the specific section referencing 'Skill Registry' and 'document_summarySkill', and extract the recorded status (e.g., 'planned', 'in progress', 'blocked', 'not started') and any explicit dependency or completion condition stated.",
+          "purpose": "Capture the factual status and scope definition of Skill Registry/document_summarySkill as recorded—not assumed or implied—in the CP2 Goals document.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "2130586138d434591e7edf6d7580ee16",
+            "7a046574e728d8449133f24f98fbbbde"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "Compare the version timestamps (2026-08-01T09:16:32.464Z vs. 2026-09-03T12:02:06.459Z) and determine whether the later-dated CP2 Goals document explicitly resolves, revises, or acknowledges the exclusion stated in the earlier Optimization Plan.",
+          "purpose": "Verify temporal relationship and explicit reconciliation (or lack thereof) between the two documents’ positions on Skills System scope.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "2130586138d434591e7edf6d7580ee16",
+            "7a046574e728d8449133f24f98fbbbde"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "claim_count": 3,
+      "started_at": "2026-10-08T07:44:33.517121Z",
+      "updated_at": "2026-10-08T07:44:45.529386Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:33.519241Z",
+          "completed_at": "2026-10-08T07:44:33.883868Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:33.885876Z",
+          "completed_at": "2026-10-08T07:44:43.181695Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:43.183210Z",
+          "completed_at": "2026-10-08T07:44:43.214409Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:43.215713Z",
+          "completed_at": "2026-10-08T07:44:45.206586Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.206586Z",
+          "completed_at": "2026-10-08T07:44:45.477063Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.478062Z",
+          "completed_at": "2026-10-08T07:44:45.482613Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.484123Z",
+          "completed_at": "2026-10-08T07:44:45.489134Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.490128Z",
+          "completed_at": "2026-10-08T07:44:45.498179Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.499651Z",
+          "completed_at": "2026-10-08T07:44:45.514151Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.514662Z",
+          "completed_at": "2026-10-08T07:44:45.523697Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.524702Z",
+          "completed_at": "2026-10-08T07:44:45.529978Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T07:44:45.530983Z",
+          "completed_at": "2026-10-08T07:44:45.530983Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "In 'Agent+Layer+CP2+Optimization+Plan' (doc_id: 2130586138d434591e7edf6d7580ee16), verify the exact text stating that a complete Skills System is excluded, including any qualifying clauses or scope boundaries cited.",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "In 'CP2+-+Goals' (doc_id: 7a046574e728d8449133f24f98fbbbde), locate the specific section referencing 'Skill Registry' and 'document_summarySkill', and extract the recorded status (e.g., 'planned', 'in progress', 'blocked', 'not started') and any explicit dependency or completion condition stated.",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "Compare the version timestamps (2026-08-01T09:16:32.464Z vs. 2026-09-03T12:02:06.459Z) and determine whether the later-dated CP2 Goals document explicitly resolves, revises, or acknowledges the exclusion stated in the earlier Optimization Plan.",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2314,
+        "actions_used": 12,
+        "tool_calls": 12,
+        "documents_read": 2,
+        "evidence_accepted": 9,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-e8acd49fef2578c1ced3d91b",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "locator_hint": "2130586138d434591e7edf6d7580ee16_chunk_7",
+          "score": 0.15648134812814776,
+          "snippet": "on.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.",
+          "query": "In 'Agent+Layer+CP2+Optimization+Plan' (doc_id: 2130586138d434591e7edf6d7580ee16), verify the exact text stating that a complete Skills System is excluded, including any qualifying clauses or scope boundaries cited.",
+          "created_at": "2026-10-08T07:44:45.297655Z"
+        },
+        {
+          "observation_id": "observation-29190f42cd21ea7a7acf424a",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "score": 0.09205076642901082,
+          "snippet": "arted | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "query": "In 'Agent+Layer+CP2+Optimization+Plan' (doc_id: 2130586138d434591e7edf6d7580ee16), verify the exact text stating that a complete Skills System is excluded, including any qualifying clauses or scope boundaries cited.",
+          "created_at": "2026-10-08T07:44:45.301656Z"
+        },
+        {
+          "observation_id": "observation-115c4c0cc3fe00e17c285610",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "locator_hint": "2130586138d434591e7edf6d7580ee16_chunk_4",
+          "score": 0.12864304833958984,
+          "snippet": "alled.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.",
+          "query": "In 'Agent+Layer+CP2+Optimization+Plan' (doc_id: 2130586138d434591e7edf6d7580ee16), verify the exact text stating that a complete Skills System is excluded, including any qualifying clauses or scope boundaries cited.",
+          "created_at": "2026-10-08T07:44:45.314840Z"
+        },
+        {
+          "observation_id": "observation-da17b952d450e157bda8f5f0",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "score": 0.2660927678958148,
+          "snippet": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |",
+          "query": "In 'CP2+-+Goals' (doc_id: 7a046574e728d8449133f24f98fbbbde), locate the specific section referencing 'Skill Registry' and 'document_summarySkill', and extract the recorded status (e.g., 'planned', 'in progress', 'blocked', 'not started') and any explicit dependency or completion condition stated.",
+          "created_at": "2026-10-08T07:44:45.384337Z"
+        },
+        {
+          "observation_id": "observation-5f48ba5bce4169cc0e313988",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "locator_hint": "2130586138d434591e7edf6d7580ee16_chunk_11",
+          "score": 0.09533822830482015,
+          "snippet": "ask only one specific clarification question.\n\n- Fall back to the original query if rewriting fails.\n\n- Do not add facts or conditions that the user did not provide.\n\n- Answer the original query, but usestandalone_queryfor retrieval.\n\n- If Query Understanding fails, safely fall back toknowledge_qa + hybrid.\n\n## 7. Policy Routing\n\n### 7.1 IntentPolicy\n\n### 7.2 Routing Examples\n\nPolicies are configured through allowlists. The LLM must not generate arbitrary tool names, budgets, or strategies.\n\n## 8. Conversation Memory and the Clarification Loop\n\n### 8.1 ConversationMemory",
+          "query": "In 'CP2+-+Goals' (doc_id: 7a046574e728d8449133f24f98fbbbde), locate the specific section referencing 'Skill Registry' and 'document_summarySkill', and extract the recorded status (e.g., 'planned', 'in progress', 'blocked', 'not started') and any explicit dependency or completion condition stated.",
+          "created_at": "2026-10-08T07:44:45.388342Z"
+        },
+        {
+          "observation_id": "observation-d9e7f6a7acbe0eb6f0061d6a",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "score": 0.12974292667425413,
+          "snippet": "arted | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "query": "In 'CP2+-+Goals' (doc_id: 7a046574e728d8449133f24f98fbbbde), locate the specific section referencing 'Skill Registry' and 'document_summarySkill', and extract the recorded status (e.g., 'planned', 'in progress', 'blocked', 'not started') and any explicit dependency or completion condition stated.",
+          "created_at": "2026-10-08T07:44:45.393183Z"
+        },
+        {
+          "observation_id": "observation-dee9d00864ace9719e193f41",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "locator_hint": "2130586138d434591e7edf6d7580ee16_chunk_3",
+          "score": 0.07312139564010954,
+          "snippet": "ive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.",
+          "query": "Compare the version timestamps (2026-08-01T09:16:32.464Z vs. 2026-09-03T12:02:06.459Z) and determine whether the later-dated CP2 Goals document explicitly resolves, revises, or acknowledges the exclusion stated in the earlier Optimization Plan.",
+          "created_at": "2026-10-08T07:44:45.458619Z"
+        },
+        {
+          "observation_id": "observation-bcccab91c5d15b2717b6efab",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "locator_hint": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "score": 0.03831907646726577,
+          "snippet": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |",
+          "query": "Compare the version timestamps (2026-08-01T09:16:32.464Z vs. 2026-09-03T12:02:06.459Z) and determine whether the later-dated CP2 Goals document explicitly resolves, revises, or acknowledges the exclusion stated in the earlier Optimization Plan.",
+          "created_at": "2026-10-08T07:44:45.464591Z"
+        },
+        {
+          "observation_id": "observation-a3fe7ee1f0fd457cba7a8b67",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "locator_hint": "2130586138d434591e7edf6d7580ee16_chunk_7",
+          "score": 0.07042316844529634,
+          "snippet": "on.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.",
+          "query": "Compare the version timestamps (2026-08-01T09:16:32.464Z vs. 2026-09-03T12:02:06.459Z) and determine whether the later-dated CP2 Goals document explicitly resolves, revises, or acknowledges the exclusion stated in the earlier Optimization Plan.",
+          "created_at": "2026-10-08T07:44:45.469091Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-c8d7bb9558e3172d803401f6",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_7",
+          "excerpt": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "created_at": "2026-10-08T07:44:45.300658Z"
+        },
+        {
+          "evidence_id": "evidence-217f4166253b5e8840363a41",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T07:44:45.312995Z"
+        },
+        {
+          "evidence_id": "evidence-92b9d9d7a88e2a3ca4b4165e",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_4",
+          "excerpt": "- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "created_at": "2026-10-08T07:44:45.317593Z"
+        },
+        {
+          "evidence_id": "evidence-4fd816800bd8678a0c96d3a1",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T07:44:45.386339Z"
+        },
+        {
+          "evidence_id": "evidence-d8f63e8ca36f08b371bf110d",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_11",
+          "excerpt": "| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |\n\n## 6. Query Understanding and QueryPlan\n\nQuery Understanding performs:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Clarification decisions.\n\n- Query rewriting.\n\n- Sub-query generation.\n\n- Filter extraction.\n\nRecommended output:\n\nConstraints:\n\n- Do not trigger clarification when the reference can be resolved from history.\n\n- When the user's intent cannot be determined safely, ask only one specific clarification question.\n\n- Fall back to the original query if rewriting fails.\n\n- Do not add facts or conditions that the user did not provide.\n\n- Answer the original query, but usestandalone_queryfor retrieval.\n\n- If Query Understanding fails, safely fall back toknowledge_qa + hybrid.\n\n## 7. Policy Routing\n\n### 7.1 IntentPolicy\n\n### 7.2 Routing Examples\n\nPolicies are configured through allowlists. The LLM must not generate arbitrary tool names, budgets, or strategies.\n\n## 8. Conversation Memory and the Clarification Loop\n\n### 8.1 ConversationMemory\n\n### 8.2 Memory Requirements\n\n- Use the Web chat ID assession_id.\n\n- Strictly isolate different sessions.\n\n- Preserve single-turn compatibility whensession_idis absent.\n\n- CP2 should use SQLite or a persistent implementation provided by Data Persistence.\n\n- Truncate by both message count and token budget.\n\n- Do not store the model's private reasoning.\n\n- Do not store raw tool results as ordinary chat messages.\n\n- Store execution summaries such as intent, rewritten query, and stop reason.\n\n### 8.3 Clarification State\n\nThe following information must be stored:\n\nExample:\n\nThe system should recover the task as:\n\nIt must not retrieve only\"Q1 and CP2\"as an independent query.\n\n## 9. Controlled Agent Runner\n\nThe Agent Runner is responsible for:\n\n- Consuming QueryPlan and IntentPolicy.\n\n- Calling the LLM.\n\n- Handlingtool_calls.\n\n- Executing tools through ToolExecutor.\n\n- Adding tool observations to messages.\n\n- Stopping when notool_callsare returned.",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "created_at": "2026-10-08T07:44:45.391679Z"
+        },
+        {
+          "evidence_id": "evidence-dba83a50837e56fafcbf4747",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T07:44:45.395190Z"
+        },
+        {
+          "evidence_id": "evidence-13aaa358c0e18701d4b7af54",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_3",
+          "excerpt": "nd\n\nCP1 completed the single-turn RAG question-answering loop, but the following limitations remain:\n\n- No conversation memory across requests.\n\n- No formal intent recognition or task routing.\n\n- Ambiguous questions cannot trigger proactive clarification.\n\n- Original user queries enter retrieval directly, without reference resolution or query rewriting.\n\n- Agent loops have limited controls and lack reliable stopping mechanisms.\n\n- Different query types use the same retrieval and answer flow.\n\n- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "created_at": "2026-10-08T07:44:45.461989Z"
+        },
+        {
+          "evidence_id": "evidence-c9a96b2c17047e80c312871f",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294",
+          "created_at": "2026-10-08T07:44:45.468075Z"
+        },
+        {
+          "evidence_id": "evidence-839b394a1982339560b061f8",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_7",
+          "excerpt": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe",
+          "created_at": "2026-10-08T07:44:45.472545Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-b7e506d19e73786538d23894",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-1",
+          "statement": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |",
+          "evidence_ids": [
+            "evidence-c8d7bb9558e3172d803401f6",
+            "evidence-217f4166253b5e8840363a41",
+            "evidence-92b9d9d7a88e2a3ca4b4165e"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-9027ff1fcf041ad7a3b8a957",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-2",
+          "statement": "| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |\n\n## 6. Query Understanding and QueryPlan\n\nQuery Understanding performs:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Clarification decisions.\n\n- Query rewriting.\n\n- Sub-query generation.\n\n- Filter extraction.\n\nRecommended output:\n\nConstraints:\n\n- Do not trigger clarification when the reference can be resolved from history.\n\n- When the user's intent cannot be determined safely, ask only one specific clarification question.\n\n- Fall back to the original query if rewriting fails.\n\n- Do not add facts or conditions that the user did not provide.\n\n- Answer the original query, but usestandalone_queryfor retrieval.\n\n- If Query Understanding fails, safely fall back toknowledge_qa + hybrid.\n\n## 7. Policy Routing\n\n### 7.1 IntentPolicy\n\n### 7.2 Routing Examples\n\nPolicies are configured through allowlists. The LLM must not generate arbitrary tool names, budgets, or strategies.\n\n## 8. Conversation Memory and the Clarification Loop\n\n### 8.1 ConversationMemory\n\n### 8.2 Memory Requirements\n\n- Use the Web chat ID assession_id.\n\n- Strictly isolate different sessions.\n\n- Preserve single-turn compatibility whensession_idis absent.\n\n- CP2 should use SQLite or a persistent implementation provided by Data Persistence.\n\n- Truncate by both message count and token budget.\n\n- Do not store the model's private reasoning.\n\n- Do not store raw tool results as ordinary chat messages.\n\n- Store execution summaries such as intent, rewritten query, and stop reason.\n\n### 8.3 Clarification State\n\nThe following information must be stored:\n\nExample:\n\nThe system should recover the task as:\n\nIt must not retrieve only\"Q1 and CP2\"as an independent query.\n\n## 9. Controlled Agent Runner\n\nThe Agent Runner is responsible for:\n\n- Consuming QueryPlan and IntentPolicy.\n\n- Calling the LLM.\n\n- Handlingtool_calls.\n\n- Executing tools through ToolExecutor.\n\n- Adding tool observations to messages.\n\n- Stopping when notool_callsare returned.",
+          "evidence_ids": [
+            "evidence-4fd816800bd8678a0c96d3a1",
+            "evidence-d8f63e8ca36f08b371bf110d",
+            "evidence-dba83a50837e56fafcbf4747"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-3bd59ecdec4b9d58c192f025",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "task_id": "task-3",
+          "statement": "nd\n\nCP1 completed the single-turn RAG question-answering loop, but the following limitations remain:\n\n- No conversation memory across requests.\n\n- No formal intent recognition or task routing.\n\n- Ambiguous questions cannot trigger proactive clarification.\n\n- Original user queries enter retrieval directly, without reference resolution or query rewriting.\n\n- Agent loops have limited controls and lack reliable stopping mechanisms.\n\n- Different query types use the same retrieval and answer flow.\n\n- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.",
+          "evidence_ids": [
+            "evidence-13aaa358c0e18701d4b7af54",
+            "evidence-c9a96b2c17047e80c312871f",
+            "evidence-839b394a1982339560b061f8"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-b7e506d19e73786538d23894",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "claim_text": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |",
+          "evidence_ids": [
+            "evidence-c8d7bb9558e3172d803401f6",
+            "evidence-217f4166253b5e8840363a41",
+            "evidence-92b9d9d7a88e2a3ca4b4165e"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-9027ff1fcf041ad7a3b8a957",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "claim_text": "| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |\n\n## 6. Query Understanding and QueryPlan\n\nQuery Understanding performs:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Clarification decisions.\n\n- Query rewriting.\n\n- Sub-query generation.\n\n- Filter extraction.\n\nRecommended output:\n\nConstraints:\n\n- Do not trigger clarification when the reference can be resolved from history.\n\n- When the user's intent cannot be determined safely, ask only one specific clarification question.\n\n- Fall back to the original query if rewriting fails.\n\n- Do not add facts or conditions that the user did not provide.\n\n- Answer the original query, but usestandalone_queryfor retrieval.\n\n- If Query Understanding fails, safely fall back toknowledge_qa + hybrid.\n\n## 7. Policy Routing\n\n### 7.1 IntentPolicy\n\n### 7.2 Routing Examples\n\nPolicies are configured through allowlists. The LLM must not generate arbitrary tool names, budgets, or strategies.\n\n## 8. Conversation Memory and the Clarification Loop\n\n### 8.1 ConversationMemory\n\n### 8.2 Memory Requirements\n\n- Use the Web chat ID assession_id.\n\n- Strictly isolate different sessions.\n\n- Preserve single-turn compatibility whensession_idis absent.\n\n- CP2 should use SQLite or a persistent implementation provided by Data Persistence.\n\n- Truncate by both message count and token budget.\n\n- Do not store the model's private reasoning.\n\n- Do not store raw tool results as ordinary chat messages.\n\n- Store execution summaries such as intent, rewritten query, and stop reason.\n\n### 8.3 Clarification State\n\nThe following information must be stored:\n\nExample:\n\nThe system should recover the task as:\n\nIt must not retrieve only\"Q1 and CP2\"as an independent query.\n\n## 9. Controlled Agent Runner\n\nThe Agent Runner is responsible for:\n\n- Consuming QueryPlan and IntentPolicy.\n\n- Calling the LLM.\n\n- Handlingtool_calls.\n\n- Executing tools through ToolExecutor.\n\n- Adding tool observations to messages.\n\n- Stopping when notool_callsare returned.",
+          "evidence_ids": [
+            "evidence-4fd816800bd8678a0c96d3a1",
+            "evidence-d8f63e8ca36f08b371bf110d",
+            "evidence-dba83a50837e56fafcbf4747"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-3bd59ecdec4b9d58c192f025",
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "claim_text": "nd\n\nCP1 completed the single-turn RAG question-answering loop, but the following limitations remain:\n\n- No conversation memory across requests.\n\n- No formal intent recognition or task routing.\n\n- Ambiguous questions cannot trigger proactive clarification.\n\n- Original user queries enter retrieval directly, without reference resolution or query rewriting.\n\n- Agent loops have limited controls and lack reliable stopping mechanisms.\n\n- Different query types use the same retrieval and answer flow.\n\n- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.",
+          "evidence_ids": [
+            "evidence-13aaa358c0e18701d4b7af54",
+            "evidence-c9a96b2c17047e80c312871f",
+            "evidence-839b394a1982339560b061f8"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-b7e506d19e73786538d23894",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c8d7bb9558e3172d803401f6",
+            "evidence-217f4166253b5e8840363a41",
+            "evidence-92b9d9d7a88e2a3ca4b4165e"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-9027ff1fcf041ad7a3b8a957",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-4fd816800bd8678a0c96d3a1",
+            "evidence-d8f63e8ca36f08b371bf110d",
+            "evidence-dba83a50837e56fafcbf4747"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-3bd59ecdec4b9d58c192f025",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-13aaa358c0e18701d4b7af54",
+            "evidence-c9a96b2c17047e80c312871f",
+            "evidence-839b394a1982339560b061f8"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-b7e506d19e73786538d23894",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c8d7bb9558e3172d803401f6",
+            "evidence-217f4166253b5e8840363a41",
+            "evidence-92b9d9d7a88e2a3ca4b4165e"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-3bd59ecdec4b9d58c192f025",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-13aaa358c0e18701d4b7af54",
+            "evidence-c9a96b2c17047e80c312871f",
+            "evidence-839b394a1982339560b061f8"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-9027ff1fcf041ad7a3b8a957",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-4fd816800bd8678a0c96d3a1",
+            "evidence-d8f63e8ca36f08b371bf110d",
+            "evidence-dba83a50837e56fafcbf4747"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+      "events": [
+        {
+          "event_id": 12597,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:33.518370Z"
+        },
+        {
+          "event_id": 12598,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:33.519241Z"
+        },
+        {
+          "event_id": 12599,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:33.883868Z"
+        },
+        {
+          "event_id": 12600,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:33.885876Z"
+        },
+        {
+          "event_id": 12601,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:43.181695Z"
+        },
+        {
+          "event_id": 12602,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:43.183210Z"
+        },
+        {
+          "event_id": 12603,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T07:44:43.211891Z"
+        },
+        {
+          "event_id": 12604,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:43.214409Z"
+        },
+        {
+          "event_id": 12605,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:43.215713Z"
+        },
+        {
+          "event_id": 12606,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.206586Z"
+        },
+        {
+          "event_id": 12607,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.206586Z"
+        },
+        {
+          "event_id": 12609,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.225353Z"
+        },
+        {
+          "event_id": 12610,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:44:45.320102Z"
+        },
+        {
+          "event_id": 12611,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.320102Z"
+        },
+        {
+          "event_id": 12612,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:44:45.399343Z"
+        },
+        {
+          "event_id": 12613,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.399343Z"
+        },
+        {
+          "event_id": 12614,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:44:45.475057Z"
+        },
+        {
+          "event_id": 12615,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.477063Z"
+        },
+        {
+          "event_id": 12616,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.478062Z"
+        },
+        {
+          "event_id": 12617,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.482613Z"
+        },
+        {
+          "event_id": 12618,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.484123Z"
+        },
+        {
+          "event_id": 12619,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.489134Z"
+        },
+        {
+          "event_id": 12620,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.490128Z"
+        },
+        {
+          "event_id": 12621,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.498179Z"
+        },
+        {
+          "event_id": 12622,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.499651Z"
+        },
+        {
+          "event_id": 12623,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.514151Z"
+        },
+        {
+          "event_id": 12624,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.514662Z"
+        },
+        {
+          "event_id": 12625,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:report:report-research-d168933b7b22413181ddabd7e6b9461d:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-d168933b7b22413181ddabd7e6b9461d"
+          },
+          "created_at": "2026-10-08T07:44:45.521191Z"
+        },
+        {
+          "event_id": 12626,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.523697Z"
+        },
+        {
+          "event_id": 12627,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.524702Z"
+        },
+        {
+          "event_id": 12628,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.529978Z"
+        },
+        {
+          "event_id": 12629,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.530983Z"
+        },
+        {
+          "event_id": 12630,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:44:45.530983Z"
+        },
+        {
+          "event_id": 12631,
+          "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+          "event_key": "research-d168933b7b22413181ddabd7e6b9461d:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T07:44:45.532025Z"
+        }
+      ],
+      "next_after_event_id": 12631
+    },
+    "report": {
+      "report_id": "report-research-d168933b7b22413181ddabd7e6b9461d",
+      "research_id": "research-d168933b7b22413181ddabd7e6b9461d",
+      "markdown": "## Summary\n\nThe plan excludes a complete Skills System. [3] A registry or individual skill is a narrower component; excluding the complete system alone does not establish that its component is excluded or that the documents contradict each other.\n\n## Evidence and analysis\n\n| Goal ID | Component | Recorded status |\n| --- | --- | --- |\n| AG-M8 | Skill Registry / document_summarySkill | Not started [1] |\n\n## Limitations and uncertainty\n\nThese are historical scope and goal records. A listed goal or acceptance criterion does not establish delivery, and the excerpts do not establish subsequent implementation. [3][1]\n\n## Sources\n\n1. [**CP2+-+Goals**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals) · 2026-09-03T12:02:06.459Z · 7a046574e728d8449133f24f98fbbbde_chunk_1\n2. [**Agent+Layer+CP2+Optimization+Plan**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan) · 2026-08-01T09:16:32.464Z · 2130586138d434591e7edf6d7580ee16_chunk_4\n3. [**Agent+Layer+CP2+Optimization+Plan**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan) · 2026-08-01T09:16:32.464Z · 2130586138d434591e7edf6d7580ee16_chunk_7\n4. [**CP2+-+Goals**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals) · 2026-09-03T12:02:06.459Z · 7a046574e728d8449133f24f98fbbbde_chunk_0\n5. [**Agent+Layer+CP2+Optimization+Plan**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan) · 2026-08-01T09:16:32.464Z · 2130586138d434591e7edf6d7580ee16_chunk_11\n6. [**Agent+Layer+CP2+Optimization+Plan**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan) · 2026-08-01T09:16:32.464Z · 2130586138d434591e7edf6d7580ee16_chunk_3\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-b7e506d19e73786538d23894",
+        "claim-finding-9027ff1fcf041ad7a3b8a957",
+        "claim-finding-3bd59ecdec4b9d58c192f025"
+      ],
+      "evidence_ids": [
+        "evidence-217f4166253b5e8840363a41",
+        "evidence-92b9d9d7a88e2a3ca4b4165e",
+        "evidence-c8d7bb9558e3172d803401f6",
+        "evidence-4fd816800bd8678a0c96d3a1",
+        "evidence-d8f63e8ca36f08b371bf110d",
+        "evidence-dba83a50837e56fafcbf4747",
+        "evidence-13aaa358c0e18701d4b7af54",
+        "evidence-839b394a1982339560b061f8",
+        "evidence-c9a96b2c17047e80c312871f"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-217f4166253b5e8840363a41",
+          "evidence_ids": [
+            "evidence-217f4166253b5e8840363a41",
+            "evidence-dba83a50837e56fafcbf4747"
+          ],
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-92b9d9d7a88e2a3ca4b4165e",
+          "evidence_ids": [
+            "evidence-92b9d9d7a88e2a3ca4b4165e"
+          ],
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "title": "Agent+Layer+CP2+Optimization+Plan",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "effective_at": null,
+          "updated_at": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_4",
+          "excerpt": "- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-c8d7bb9558e3172d803401f6",
+          "evidence_ids": [
+            "evidence-c8d7bb9558e3172d803401f6",
+            "evidence-839b394a1982339560b061f8"
+          ],
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "title": "Agent+Layer+CP2+Optimization+Plan",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "effective_at": null,
+          "updated_at": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_7",
+          "excerpt": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-4fd816800bd8678a0c96d3a1",
+          "evidence_ids": [
+            "evidence-4fd816800bd8678a0c96d3a1",
+            "evidence-c9a96b2c17047e80c312871f"
+          ],
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "title": "CP2+-+Goals",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-03T12:02:06.459Z",
+          "effective_at": null,
+          "updated_at": "2026-09-03T12:02:06.459Z",
+          "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+          "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+        },
+        {
+          "number": 5,
+          "evidence_id": "evidence-d8f63e8ca36f08b371bf110d",
+          "evidence_ids": [
+            "evidence-d8f63e8ca36f08b371bf110d"
+          ],
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "title": "Agent+Layer+CP2+Optimization+Plan",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "effective_at": null,
+          "updated_at": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_11",
+          "excerpt": "| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |\n\n## 6. Query Understanding and QueryPlan\n\nQuery Understanding performs:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Clarification decisions.\n\n- Query rewriting.\n\n- Sub-query generation.\n\n- Filter extraction.\n\nRecommended output:\n\nConstraints:\n\n- Do not trigger clarification when the reference can be resolved from history.\n\n- When the user's intent cannot be determined safely, ask only one specific clarification question.\n\n- Fall back to the original query if rewriting fails.\n\n- Do not add facts or conditions that the user did not provide.\n\n- Answer the original query, but usestandalone_queryfor retrieval.\n\n- If Query Understanding fails, safely fall back toknowledge_qa + hybrid.\n\n## 7. Policy Routing\n\n### 7.1 IntentPolicy\n\n### 7.2 Routing Examples\n\nPolicies are configured through allowlists. The LLM must not generate arbitrary tool names, budgets, or strategies.\n\n## 8. Conversation Memory and the Clarification Loop\n\n### 8.1 ConversationMemory\n\n### 8.2 Memory Requirements\n\n- Use the Web chat ID assession_id.\n\n- Strictly isolate different sessions.\n\n- Preserve single-turn compatibility whensession_idis absent.\n\n- CP2 should use SQLite or a persistent implementation provided by Data Persistence.\n\n- Truncate by both message count and token budget.\n\n- Do not store the model's private reasoning.\n\n- Do not store raw tool results as ordinary chat messages.\n\n- Store execution summaries such as intent, rewritten query, and stop reason.\n\n### 8.3 Clarification State\n\nThe following information must be stored:\n\nExample:\n\nThe system should recover the task as:\n\nIt must not retrieve only\"Q1 and CP2\"as an independent query.\n\n## 9. Controlled Agent Runner\n\nThe Agent Runner is responsible for:\n\n- Consuming QueryPlan and IntentPolicy.\n\n- Calling the LLM.\n\n- Handlingtool_calls.\n\n- Executing tools through ToolExecutor.\n\n- Adding tool observations to messages.\n\n- Stopping when notool_callsare returned.",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+        },
+        {
+          "number": 6,
+          "evidence_id": "evidence-13aaa358c0e18701d4b7af54",
+          "evidence_ids": [
+            "evidence-13aaa358c0e18701d4b7af54"
+          ],
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "title": "Agent+Layer+CP2+Optimization+Plan",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-08-01T09:16:32.464Z",
+          "effective_at": null,
+          "updated_at": "2026-08-01T09:16:32.464Z",
+          "locator": "2130586138d434591e7edf6d7580ee16_chunk_3",
+          "excerpt": "nd\n\nCP1 completed the single-turn RAG question-answering loop, but the following limitations remain:\n\n- No conversation memory across requests.\n\n- No formal intent recognition or task routing.\n\n- Ambiguous questions cannot trigger proactive clarification.\n\n- Original user queries enter retrieval directly, without reference resolution or query rewriting.\n\n- Agent loops have limited controls and lack reliable stopping mechanisms.\n\n- Different query types use the same retrieval and answer flow.\n\n- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.",
+          "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [
+        {
+          "code": "source_boundary",
+          "message": "nd；CP1 completed the single-turn RAG question-answering loop, but the following limitations remain:；- No conversation memory across requests.；- No formal intent recognition or task routing.；- Ambiguous questions cannot trigger proactive clarification.；- Original user queries enter retrieval directly, without reference resolution or query rewriting.；- Agent loops have limited controls and lack reliable stopping mechanisms.；- Different query types use the same retrieval and answer flow.；- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.；- Parameters such asfiltersandtrace_idare not propagated end to end.；- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.；- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.；The CP2 goal is to upgrade the system into:；A RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.；2. Core CP2 Design Principles；2.1 Semantic Understanding Is Handled by the LLM；The LLM is primarily responsible for:；- Intent recognition.；- Reference resolution.；- Ambiguity detection.；- Query rewriting.；- Complex-query decomposition.；- Clarification-question generation.；2.2 Execution Control Is Handled by Rules；Rule-based policies determine:；- Whether tools should be called.；- Which tools are allowed.；- Which retrieval strategy should be used.；- The value oftop_k.；- The maximum number of iterations.；- The maximum number of tool calls.；- Evidence acceptance conditions.；- Answer format.；- Timeout and repeated-call limits.；The model must not be able to bypass these limits.；2.3 CP2 Will Not Build a Complete Skills System；CP2 uses:；After different task flows have been tested and stabilized, CP3 can package them as:；3. CP2 Goals and Non-Goals；3.1 P0: Required；- Persistent short-term conversation memory bas…",
+          "evidence_ids": [
+            "evidence-13aaa358c0e18701d4b7af54",
+            "evidence-c9a96b2c17047e80c312871f",
+            "evidence-839b394a1982339560b061f8"
+          ]
+        }
+      ],
+      "generated_at": "2026-10-08T07:44:45.518674Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-217f4166253b5e8840363a41",
+        "evidence_ids": [
+          "evidence-217f4166253b5e8840363a41",
+          "evidence-dba83a50837e56fafcbf4747"
+        ],
+        "doc_id": "7a046574e728d8449133f24f98fbbbde",
+        "title": "CP2+-+Goals",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-03T12:02:06.459Z",
+        "effective_at": null,
+        "updated_at": "2026-09-03T12:02:06.459Z",
+        "locator": "7a046574e728d8449133f24f98fbbbde_chunk_1",
+        "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Toolset | TS-M1 | In progress | 50% |  |  |  |  |  |  |",
+        "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-92b9d9d7a88e2a3ca4b4165e",
+        "evidence_ids": [
+          "evidence-92b9d9d7a88e2a3ca4b4165e"
+        ],
+        "doc_id": "2130586138d434591e7edf6d7580ee16",
+        "title": "Agent+Layer+CP2+Optimization+Plan",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-08-01T09:16:32.464Z",
+        "effective_at": null,
+        "updated_at": "2026-08-01T09:16:32.464Z",
+        "locator": "2130586138d434591e7edf6d7580ee16_chunk_4",
+        "excerpt": "- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.",
+        "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-c8d7bb9558e3172d803401f6",
+        "evidence_ids": [
+          "evidence-c8d7bb9558e3172d803401f6",
+          "evidence-839b394a1982339560b061f8"
+        ],
+        "doc_id": "2130586138d434591e7edf6d7580ee16",
+        "title": "Agent+Layer+CP2+Optimization+Plan",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-08-01T09:16:32.464Z",
+        "effective_at": null,
+        "updated_at": "2026-08-01T09:16:32.464Z",
+        "locator": "2130586138d434591e7edf6d7580ee16_chunk_7",
+        "excerpt": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |",
+        "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-4fd816800bd8678a0c96d3a1",
+        "evidence_ids": [
+          "evidence-4fd816800bd8678a0c96d3a1",
+          "evidence-c9a96b2c17047e80c312871f"
+        ],
+        "doc_id": "7a046574e728d8449133f24f98fbbbde",
+        "title": "CP2+-+Goals",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-03T12:02:06.459Z",
+        "effective_at": null,
+        "updated_at": "2026-09-03T12:02:06.459Z",
+        "locator": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+        "excerpt": "| Module | Owners | Goal ID | Type (Must/Extra) | Goal（目标/功能点） | DoD / Acceptance（完成定义） | Current Status | Target Week | Links (PR/Demo/Doc) | Reference |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Web |  | WEB-M1 | Must | 假sse |  | Not started | Wk01 |  | Refer to github: …. |  |\n| Web | 成澍、宋穗杰 | WEB-M2 | Must | 用户身份透传 + 权限管理后台 | 1)[id].post.ts将session.user.id传入 Agent 请求体；2) 新增/admin后台：用户 CRUD、部门管理、文件权限配置；3) 文件上传时可设置可见范围（指定用户/部门/全员） | Not started | Wk02 |  |  |  |\n| Web |  | Web-M3 | Must | 回答实时hit rate展示 | 侧边栏展示回答hit rate 和相似度 | Finished | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M1 | Must | 多模态rag | 对于内嵌的表格进行结构化处理；对于图片采用更加优化的处理方式 | Not started | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-M2 | Must | 添加知识库内部的权限管理 |  | Not started | Wk02 |  |  |  |\n| Data Processing |  | DP-M3 | Must | confluence拉取文档的实时增量更新 | 对于confluence上的增删改定时更新入库 | In progress | Wk02 |  |  |  |\n| Data Processing | 穆光远，钟家进 | DP-E1 | Extra | 对于聚类区分的图数据库的探索 |  | In progress | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M1 | Must | 任务路由与简单问题快速路径 | 建立 L0/L1/L2/L3 路由；L0 不检索，L1 最多一次检索，L2 进入 Standard Chat，L3 进入 Research Job；普通问题不会未经确认自动升级为高成本 Research。路由测试集准确率不低于 90%，高成本误升级率不高于 5%。 | Not started | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M2 | Must | Unified Query Analyzer | 通过一次结构化分析完成意图识别、澄清判断、query rewrite、复杂度判断和路由建议；输出符合固定 Schema；解析失败时有确定性 fallback；不重复调用多个等价分析链路。 | Not started | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M3 | Must | Agent 运行环境与生命周期优化 | 复用 Agent、LLM 和工具资源，提供就绪检查、请求隔离及可重复的性能测试基线。 | Finished | Wk01 |  |  |  |\n| Agent | 刘慧芳 | AG-M4 | Must | LangGraph 与 Checkpoint 技术验证 | 验证节点执行、人工中断、失败处理以及 SQLite 持久化和重启恢复能力。 | Finshed | Wk01 |  |  |  |\n| Agent | 谢岱江 | AG-M5 | Must | Research Contract、Brief、Planner 与 Plan Validator | 定义版本化ResearchRequest、ResearchBrief、ResearchPlan、ResearchTask、ReportSpec和AcceptanceCriteria；Planner 输出包含任务目的、依赖、来源范围、预算和验收条件；Validator 能拒绝空任务、重复任务、循环依赖、不可达任务和超预算计划；支持用户批准或修改计划。 | Not started | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M6 | Must | 本地研究工具与可信证据链路 | 完成本地搜索和原文读取适配，将结果按Observation → Verified Evidence转换并保证幂等和可追溯。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M7 | Must | Research 数据持久化与质量校验 | 持久化研究过程中的 Evidence、Finding、Claim、Report 和 Checkpoint，并拦截无效引用。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M8 | Must | Research Graph 执行与恢复 | 实现完整研究节点流程、任务状态流转、失败记录和服务中断后的安全恢复。 | Finished | Wk02 |  |  |  |\n| Agent | 刘慧芳 | AG-M9 | Must | 可信报告生成与查询 | 输出带 Evidence 引用的研究报告，并通过独立 API 提供持久化报告查询。 | Finished | Wk02 |  |  |  |\n| Agent | 谢岱江 | AG-M8 | Must | Skill Registry 与document_summarySkill | Skill 支持版本化注册、加载和配置校验；document_summary能对指定文档生成结构化总结并附 Evidence 引用；提供不依赖真实 LLM、Milvus 和 Web Search 的 Mock E2E。 | Not started | Wk03 |  |  |  |\n| Agent | 谢岱江 | AG-M9 | Must | Scheduler 业务规则、Coverage Gate 与定向 Replan | 根据任务依赖选择 Ready Tasks；Coverage 检查子问题覆盖、来源多样性、时效性、对象对称性和关键证据缺口；证据不足时只补充缺失任务，最多 Replan 一次。 | Not started | Wk04 |  |  |  |\n| Agent | 刘慧芳 | AG-M10 | Must | Evidence Store 与 Citation Checker | 工具结果统一转 Evidence；最终回答引用可校验、可追踪。 | Not started | Wk04 |  |  |  |\n| Agent | 谢岱江 | AG-M11 | Must | Report Writer 与 Claim–Evidence 映射 | 支持总结型、比较型和技术选型型报告模板；提取事实型 Claim 并建立 Claim–Evidence Map；证据不足时明确披露局限；Writer 不得自行创建新来源。 |  |  |  |  |  |\n| Agent | 谢岱江 | AG-E1 | Extra | multi_entity_comparison Skill | 支持多个对象的对比分析，并输出表格化结果和引用。 | Not started | Wk05 |  |  |  |\n| Agent | 谢岱江 | AG-E2 | Extra | technology_selection Skill | 支持技术选型类研究，输出方案对比、风险和推荐结论。 | Not started | Wk05-Wk06 |  |  |  |\n| Agent | 谢岱江、刘慧芳 | AG-E3 | Extra | Research 评测集与质量指标 | 建立版本化研究任务集，覆盖文档总结、现状调研、多对象比较、技术选型和项目分析；可评估路由误升级率、Plan 合法率、子问题覆盖率、Evidence 覆盖率、Citation Correctness 和 Unsupported Claim Rate。 | Not started | Wk06 |  |  |  |\n| Agent |  | AG-M12 | Must | memory上下文记忆 |  | Not started | Wk03 |  |  |  |\n| Agent | 成澍、宋穗杰 | AG-M13 | Must | 基于用户身份的检索权限过滤 | 用户提问时，Agent 根据 userId 查询 SQLite 权限表，生成可访问 doc_ids 白名单；SearchTool 调用 Milvus 时注入doc_ids_filter，未授权文件的 chunks 不出现在检索结果和回答引用中 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M1 | Must | 多模态内容分析工具 | 支持图片、语音和文件内容的分析。 | In progress | Wk01 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M2 | Must | 附件与知识库联合检索 | 支持结合上传附件和企业知识库内容进行检索。 | Not started | Wk02 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M3 | Must | 报告生成与文件导出 | 支持生成报告、会议纪要和文件对比说明，并导出常用格式。 | Not started | Wk03 |  |  |  |\n| Toolset | 戴嘉兴 | TS-M4 | Must | 稀疏语义检索 | 支持稀疏检索，并可与现有检索结果融合。 | Not started | Wk04 |  |  |  |\n| Toolset | 戴嘉兴 | TS-E1 | Extra | 表格提取工具 | 支持从图片、PDF 和 Excel 中提取结构化表格。 | Not started | Wk05 |  |  |  |\n| Data Persistence |  | PERS-M1 | Must |  |  | Not started | Wk01 |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Web | WEB-M1 | In progress | 50% |  |  |  |  |  |  |\n\n| Week | Module | Goal ID | Status | % Complete | What changed this week（本周变化） | Blockers / Risks | Next actions（下一步） | Evidence links（PR/Demo/Doc） | Updated by | Updated date |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2026/8/17 | Data Processing | DP-M1 | Not started | 0% |  |  |  |  |  |  |",
+        "content_hash": "b5fad90c87fc1ea04f71823467383dade4e6ee74460980095871015645860294"
+      },
+      {
+        "number": 5,
+        "evidence_id": "evidence-d8f63e8ca36f08b371bf110d",
+        "evidence_ids": [
+          "evidence-d8f63e8ca36f08b371bf110d"
+        ],
+        "doc_id": "2130586138d434591e7edf6d7580ee16",
+        "title": "Agent+Layer+CP2+Optimization+Plan",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-08-01T09:16:32.464Z",
+        "effective_at": null,
+        "updated_at": "2026-08-01T09:16:32.464Z",
+        "locator": "2130586138d434591e7edf6d7580ee16_chunk_11",
+        "excerpt": "| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |\n\n## 6. Query Understanding and QueryPlan\n\nQuery Understanding performs:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Clarification decisions.\n\n- Query rewriting.\n\n- Sub-query generation.\n\n- Filter extraction.\n\nRecommended output:\n\nConstraints:\n\n- Do not trigger clarification when the reference can be resolved from history.\n\n- When the user's intent cannot be determined safely, ask only one specific clarification question.\n\n- Fall back to the original query if rewriting fails.\n\n- Do not add facts or conditions that the user did not provide.\n\n- Answer the original query, but usestandalone_queryfor retrieval.\n\n- If Query Understanding fails, safely fall back toknowledge_qa + hybrid.\n\n## 7. Policy Routing\n\n### 7.1 IntentPolicy\n\n### 7.2 Routing Examples\n\nPolicies are configured through allowlists. The LLM must not generate arbitrary tool names, budgets, or strategies.\n\n## 8. Conversation Memory and the Clarification Loop\n\n### 8.1 ConversationMemory\n\n### 8.2 Memory Requirements\n\n- Use the Web chat ID assession_id.\n\n- Strictly isolate different sessions.\n\n- Preserve single-turn compatibility whensession_idis absent.\n\n- CP2 should use SQLite or a persistent implementation provided by Data Persistence.\n\n- Truncate by both message count and token budget.\n\n- Do not store the model's private reasoning.\n\n- Do not store raw tool results as ordinary chat messages.\n\n- Store execution summaries such as intent, rewritten query, and stop reason.\n\n### 8.3 Clarification State\n\nThe following information must be stored:\n\nExample:\n\nThe system should recover the task as:\n\nIt must not retrieve only\"Q1 and CP2\"as an independent query.\n\n## 9. Controlled Agent Runner\n\nThe Agent Runner is responsible for:\n\n- Consuming QueryPlan and IntentPolicy.\n\n- Calling the LLM.\n\n- Handlingtool_calls.\n\n- Executing tools through ToolExecutor.\n\n- Adding tool observations to messages.\n\n- Stopping when notool_callsare returned.",
+        "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+      },
+      {
+        "number": 6,
+        "evidence_id": "evidence-13aaa358c0e18701d4b7af54",
+        "evidence_ids": [
+          "evidence-13aaa358c0e18701d4b7af54"
+        ],
+        "doc_id": "2130586138d434591e7edf6d7580ee16",
+        "title": "Agent+Layer+CP2+Optimization+Plan",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-08-01T09:16:32.464Z",
+        "effective_at": null,
+        "updated_at": "2026-08-01T09:16:32.464Z",
+        "locator": "2130586138d434591e7edf6d7580ee16_chunk_3",
+        "excerpt": "nd\n\nCP1 completed the single-turn RAG question-answering loop, but the following limitations remain:\n\n- No conversation memory across requests.\n\n- No formal intent recognition or task routing.\n\n- Ambiguous questions cannot trigger proactive clarification.\n\n- Original user queries enter retrieval directly, without reference resolution or query rewriting.\n\n- Agent loops have limited controls and lack reliable stopping mechanisms.\n\n- Different query types use the same retrieval and answer flow.\n\n- Tool results depend onSearchTool.latest_results, creating a risk of cross-request contamination.\n\n- Parameters such asfiltersandtrace_idare not propagated end to end.\n\n- Evidence quality is evaluated too late, so the generation model may be called with insufficient evidence.\n\n- Toolset already owns aToolRegistry; the Agent must not implement a duplicate registry.\n\nThe CP2 goal is to upgrade the system into:\n\nA RAG Agent with conversation memory, intent recognition, rule-based routing, proactive clarification, query rewriting, controlled multi-step execution, and evidence quality assurance.\n\n## 2. Core CP2 Design Principles\n\n### 2.1 Semantic Understanding Is Handled by the LLM\n\nThe LLM is primarily responsible for:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Ambiguity detection.\n\n- Query rewriting.\n\n- Complex-query decomposition.\n\n- Clarification-question generation.\n\n### 2.2 Execution Control Is Handled by Rules\n\nRule-based policies determine:\n\n- Whether tools should be called.\n\n- Which tools are allowed.\n\n- Which retrieval strategy should be used.\n\n- The value oftop_k.\n\n- The maximum number of iterations.\n\n- The maximum number of tool calls.\n\n- Evidence acceptance conditions.\n\n- Answer format.\n\n- Timeout and repeated-call limits.\n\nThe model must not be able to bypass these limits.\n\n### 2.3 CP2 Will Not Build a Complete Skills System\n\nCP2 uses:\n\nAfter different task flows have been tested and stabilized, CP3 can package them as:\n\n## 3. CP2 Goals and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.",
+        "content_hash": "b4a13f9852be5a4b850c4e3b3f43e8353253509d6067288350dfa49bb83fe7fe"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d168933b7b22413181ddabd7e6b9461d/documents/7a046574e728d8449133f24f98fbbbde/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 488
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d168933b7b22413181ddabd7e6b9461d/documents/2130586138d434591e7edf6d7580ee16/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 129
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d168933b7b22413181ddabd7e6b9461d/documents/2130586138d434591e7edf6d7580ee16/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 73
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d168933b7b22413181ddabd7e6b9461d/documents/7a046574e728d8449133f24f98fbbbde/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 96
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d168933b7b22413181ddabd7e6b9461d/documents/2130586138d434591e7edf6d7580ee16/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 93
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d168933b7b22413181ddabd7e6b9461d/documents/2130586138d434591e7edf6d7580ee16/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 385
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

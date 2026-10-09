@@ -1,0 +1,110 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0
+cachedir: ..\pytest-work\cache
+rootdir: D:\htc_qa\agent
+configfile: pytest.ini
+plugins: anyio-4.14.1, langsmith-0.11.1
+collected 771 items
+
+agent\tests\integration\test_chat_research_boundary.py .                 [  0%]
+agent\tests\integration\test_cp2_memory_flow.py .......                  [  1%]
+agent\tests\integration\test_cp2_orchestration.py ..........             [  2%]
+agent\tests\integration\test_error_cases.py .                            [  2%]
+agent\tests\integration\test_internal_memory_api.py ....                 [  2%]
+agent\tests\integration\test_internal_memory_routes.py ..............    [  4%]
+agent\tests\integration\test_memory_api.py .                             [  4%]
+agent\tests\integration\test_mock_agent_chain.py .                       [  5%]
+agent\tests\integration\test_persistent_memory.py .                      [  5%]
+agent\tests\integration\test_research_control_plane_api.py .........     [  6%]
+agent\tests\integration\test_research_demo_scenario.py .                 [  6%]
+agent\tests\integration\test_research_progress_api.py ..                 [  6%]
+agent\tests\integration\test_research_quality_baseline.py .              [  6%]
+agent\tests\integration\test_research_vertical_slice_e2e.py ...........  [  8%]
+agent\tests\integration\test_tool_layer_smoke.py .                       [  8%]
+agent\tests\integration\test_tools_api.py .                              [  8%]
+agent\tests\integration\test_week4_web_contract.py ......                [  9%]
+agent\tests\unit\test_agent.py ............                              [ 10%]
+agent\tests\unit\test_agent_runner.py ...............................    [ 14%]
+agent\tests\unit\test_answer_completeness.py ...........                 [ 16%]
+agent\tests\unit\test_answer_complexity_gate.py ..................       [ 18%]
+agent\tests\unit\test_answer_formatter.py ....                           [ 19%]
+agent\tests\unit\test_answer_repair_quality_guard.py ...                 [ 19%]
+agent\tests\unit\test_application_lifecycle.py ..                        [ 19%]
+agent\tests\unit\test_attachment_routing.py .....                        [ 20%]
+agent\tests\unit\test_auth.py ....                                       [ 21%]
+agent\tests\unit\test_chat_route_policy.py ..                            [ 21%]
+agent\tests\unit\test_citation_checker.py .......                        [ 22%]
+agent\tests\unit\test_clarification.py ................                  [ 24%]
+agent\tests\unit\test_clarification_gate.py ...                          [ 24%]
+agent\tests\unit\test_compaction_planner.py ..............               [ 26%]
+agent\tests\unit\test_context_resolver.py ................               [ 28%]
+agent\tests\unit\test_conversation_memory.py ......                      [ 29%]
+agent\tests\unit\test_corrective_retrieval.py ..........                 [ 30%]
+agent\tests\unit\test_coverage_assessor.py .....                         [ 31%]
+agent\tests\unit\test_deep_research_benchmark.py .....                   [ 31%]
+agent\tests\unit\test_document_tool_policy.py ....                       [ 32%]
+agent\tests\unit\test_english_benchmark.py ...                           [ 32%]
+agent\tests\unit\test_evidence_gate.py .................                 [ 35%]
+agent\tests\unit\test_exploration_policy.py ...                          [ 35%]
+agent\tests\unit\test_fact_proposal_policy.py .....................      [ 38%]
+agent\tests\unit\test_fast_stream_integration.py ..................      [ 40%]
+agent\tests\unit\test_hybrid_intent_router.py ..........                 [ 41%]
+agent\tests\unit\test_intent_classifier.py .......................       [ 44%]
+agent\tests\unit\test_intent_policy.py ..........                        [ 46%]
+agent\tests\unit\test_internal_memory_contract.py ..............         [ 47%]
+agent\tests\unit\test_llm_client_transport.py ........                   [ 48%]
+agent\tests\unit\test_llm_observability.py ...                           [ 49%]
+agent\tests\unit\test_logger.py .....                                    [ 49%]
+agent\tests\unit\test_memory_contract.py ...                             [ 50%]
+agent\tests\unit\test_memory_observability.py ..........                 [ 51%]
+agent\tests\unit\test_memory_response_policy.py ...............          [ 53%]
+agent\tests\unit\test_online_pilot_regressions.py ...................... [ 56%]
+......                                                                   [ 57%]
+agent\tests\unit\test_permission_service.py ....                         [ 57%]
+agent\tests\unit\test_personal_library_evidence.py .                     [ 57%]
+agent\tests\unit\test_personal_library_routing.py ........               [ 58%]
+agent\tests\unit\test_personal_library_tool.py .                         [ 59%]
+agent\tests\unit\test_product_acceptance.py ....................         [ 61%]
+agent\tests\unit\test_prompt_builder.py ..                               [ 61%]
+agent\tests\unit\test_query_plan.py .................                    [ 64%]
+agent\tests\unit\test_query_plan_contract.py ...                         [ 64%]
+agent\tests\unit\test_query_planner.py ................                  [ 66%]
+agent\tests\unit\test_query_preparation.py .......                       [ 67%]
+agent\tests\unit\test_query_preparation_gate.py ..........               [ 68%]
+agent\tests\unit\test_query_rewriter.py .............                    [ 70%]
+agent\tests\unit\test_query_understanding.py ..............              [ 72%]
+agent\tests\unit\test_required_fact_matcher_surface.py ..........        [ 73%]
+agent\tests\unit\test_research_contract.py ............                  [ 75%]
+agent\tests\unit\test_research_control_plane.py ......                   [ 75%]
+agent\tests\unit\test_research_day3_day4.py ....                         [ 76%]
+agent\tests\unit\test_research_model_report.py ......................... [ 79%]
+........................................................................ [ 88%]
+...............                                                          [ 90%]
+agent\tests\unit\test_research_progress.py ......                        [ 91%]
+agent\tests\unit\test_research_runtime_budget.py ..                      [ 91%]
+agent\tests\unit\test_research_worker_reporting.py ................      [ 94%]
+agent\tests\unit\test_sensitive_value.py ..                              [ 94%]
+agent\tests\unit\test_status_mapping.py .                                [ 94%]
+agent\tests\unit\test_subquery_router.py ....                            [ 94%]
+agent\tests\unit\test_tool_executor.py ..............                    [ 96%]
+agent\tests\unit\test_tool_registry.py .......                           [ 97%]
+agent\tests\unit\test_trace_id.py ...                                    [ 98%]
+agent\tests\unit\test_unified_query_analyzer.py .....                    [ 98%]
+agent\tests\unit\test_week1_langgraph_spike.py ...                       [ 99%]
+agent\tests\unit\test_wiki_evidence_supplement.py .......                [100%]
+
+============================== warnings summary ===============================
+..\miniconda3\envs\htc_qa\Lib\site-packages\pymilvus\client\__init__.py:6
+  D:\miniconda3\envs\htc_qa\Lib\site-packages\pymilvus\client\__init__.py:6: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    from pkg_resources import DistributionNotFound, get_distribution
+
+..\miniconda3\envs\htc_qa\Lib\site-packages\environs\__init__.py:58
+  D:\miniconda3\envs\htc_qa\Lib\site-packages\environs\__init__.py:58: DeprecationWarning: The '__version_info__' attribute is deprecated and will be removed in in a future version. Use feature detection or 'packaging.Version(importlib.metadata.version("marshmallow")).release' instead.
+    _SUPPORTS_LOAD_DEFAULT = ma.__version_info__ >= (3, 13)
+
+..\miniconda3\envs\htc_qa\Lib\site-packages\fastapi\testclient.py:1
+  D:\miniconda3\envs\htc_qa\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+====================== 771 passed, 3 warnings in 11.74s =======================

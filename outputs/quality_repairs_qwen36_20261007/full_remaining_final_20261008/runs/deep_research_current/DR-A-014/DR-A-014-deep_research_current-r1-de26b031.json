@@ -1,0 +1,1347 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-014-deep_research_current-r1-de26b031",
+  "case_id": "DR-A-014",
+  "group": "deep_research_current",
+  "repetition": 1,
+  "started_at": "2026-10-08T07:12:56.460092+00:00",
+  "completed_at": "2026-10-08T07:13:07.626640+00:00",
+  "elapsed_ms": 11167,
+  "config_hash": "3d1de720a35d09a934647e04c81f80088f7f8bd72bf51230145b5ad729d103bd",
+  "success": true,
+  "result": {
+    "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Who committed the W30 Agent query rewriter, and on what date? Also give that sprint's Agent total commits. Ignore similar descriptions from other sprints and Web.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "833ac861944160a33080f47f6a0d0302",
+            "4789bcf073830a8985e95e33cde47767",
+            "049bdab7d5def55be3494f69a32e4432",
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "topic": "distractor_resistance"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "80927f9ae8fd016138d3fed52bcadba607aa5ff76c07860dce4e17d27033f8e9",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T07:12:56.474274Z",
+      "updated_at": "2026-10-08T07:13:06.566703Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+      "version": 1,
+      "objective": "Who committed the W30 Agent query rewriter, and on what date? Also give that sprint's Agent total commits. Ignore similar descriptions from other sprints and Web.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "833ac861944160a33080f47f6a0d0302",
+          "4789bcf073830a8985e95e33cde47767",
+          "049bdab7d5def55be3494f69a32e4432",
+          "6beeab4852cb7fb253d44fa305ff510f"
+        ],
+        "topic": "distractor_resistance"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "80927f9ae8fd016138d3fed52bcadba607aa5ff76c07860dce4e17d27033f8e9",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "In the document titled 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables', who is listed as the committer for the item described as 'W30 Agent query rewriter' and what is the specific commit date associated with it?",
+          "purpose": "Identify the specific author and date for the W30 Agent query rewriter commit within the M1 Agent Module deliverables to ensure accuracy before cross-referencing sprint totals.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f",
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "In the document titled 'Sprint+2026-W30+Master+Delivery+Report', what is the total count of commits explicitly attributed to the 'Agent' module or category for Sprint 2026-W30?",
+          "purpose": "Retrieve the canonical total number of Agent commits for Sprint 2026-W30 from the master report, avoiding manual recounting of individual entries.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f",
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "Verify that the 'W30 Agent query rewriter' entry found in the M1 Agent Module document does not appear in the 'Sprint+2026-W28+Master+Delivery+Report' or 'Sprint+2026-W34+Master+Delivery+Report' to confirm it belongs strictly to Sprint 2026-W30.",
+          "purpose": "Exclude similar descriptions from other sprints (W28, W34) as requested to ensure the identified commit and sprint total are isolated to the correct timeframe.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f",
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "claim_count": 3,
+      "started_at": "2026-10-08T07:12:56.474274Z",
+      "updated_at": "2026-10-08T07:13:06.566703Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:12:56.475268Z",
+          "completed_at": "2026-10-08T07:12:57.708365Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:12:57.709569Z",
+          "completed_at": "2026-10-08T07:13:04.189819Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:04.189819Z",
+          "completed_at": "2026-10-08T07:13:04.255682Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:04.256745Z",
+          "completed_at": "2026-10-08T07:13:06.203091Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.204100Z",
+          "completed_at": "2026-10-08T07:13:06.517970Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.517970Z",
+          "completed_at": "2026-10-08T07:13:06.524985Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.524985Z",
+          "completed_at": "2026-10-08T07:13:06.533454Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.534213Z",
+          "completed_at": "2026-10-08T07:13:06.540148Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.540148Z",
+          "completed_at": "2026-10-08T07:13:06.552252Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.552764Z",
+          "completed_at": "2026-10-08T07:13:06.561643Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.562648Z",
+          "completed_at": "2026-10-08T07:13:06.566703Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T07:13:06.567918Z",
+          "completed_at": "2026-10-08T07:13:06.568424Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "In the document titled 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables', who is listed as the committer for the item described as 'W30 Agent query rewriter' and what is the specific commit date associated with it?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "In the document titled 'Sprint+2026-W30+Master+Delivery+Report', what is the total count of commits explicitly attributed to the 'Agent' module or category for Sprint 2026-W30?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "Verify that the 'W30 Agent query rewriter' entry found in the M1 Agent Module document does not appear in the 'Sprint+2026-W28+Master+Delivery+Report' or 'Sprint+2026-W34+Master+Delivery+Report' to confirm it belongs strictly to Sprint 2026-W30.",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2310,
+        "actions_used": 12,
+        "tool_calls": 12,
+        "documents_read": 3,
+        "evidence_accepted": 9,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-b5c8943f109e80e8f69b375e",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": null,
+          "snippet": "Requested module sprint summary",
+          "query": "In the document titled 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables', who is listed as the committer for the item described as 'W30 Agent query rewriter' and what is the specific commit date associated with it?",
+          "created_at": "2026-10-08T07:13:06.298279Z"
+        },
+        {
+          "observation_id": "observation-ff3ecd43f34a6b7b504e09dc",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "score": 0.24805704944405849,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |",
+          "query": "In the document titled 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables', who is listed as the committer for the item described as 'W30 Agent query rewriter' and what is the specific commit date associated with it?",
+          "created_at": "2026-10-08T07:13:06.303789Z"
+        },
+        {
+          "observation_id": "observation-db804bf511945965d1b9163d",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_4",
+          "score": 0.11552707479203442,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |",
+          "query": "In the document titled 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables', who is listed as the committer for the item described as 'W30 Agent query rewriter' and what is the specific commit date associated with it?",
+          "created_at": "2026-10-08T07:13:06.308302Z"
+        },
+        {
+          "observation_id": "observation-58f4837e3a47fb3227045aff",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": null,
+          "snippet": "Requested module sprint summary",
+          "query": "In the document titled 'Sprint+2026-W30+Master+Delivery+Report', what is the total count of commits explicitly attributed to the 'Agent' module or category for Sprint 2026-W30?",
+          "created_at": "2026-10-08T07:13:06.396897Z"
+        },
+        {
+          "observation_id": "observation-e3b0e6fde67c28ec9c9e8e8c",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "score": 0.3154518565072414,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |",
+          "query": "In the document titled 'Sprint+2026-W30+Master+Delivery+Report', what is the total count of commits explicitly attributed to the 'Agent' module or category for Sprint 2026-W30?",
+          "created_at": "2026-10-08T07:13:06.401879Z"
+        },
+        {
+          "observation_id": "observation-7bbee37632cc7a7efe1ca0ef",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "score": 0.26640213219645575,
+          "snippet": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation",
+          "query": "In the document titled 'Sprint+2026-W30+Master+Delivery+Report', what is the total count of commits explicitly attributed to the 'Agent' module or category for Sprint 2026-W30?",
+          "created_at": "2026-10-08T07:13:06.406446Z"
+        },
+        {
+          "observation_id": "observation-007a1420e5299c6b241b0327",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": null,
+          "snippet": "Requested module sprint summary",
+          "query": "Verify that the 'W30 Agent query rewriter' entry found in the M1 Agent Module document does not appear in the 'Sprint+2026-W28+Master+Delivery+Report' or 'Sprint+2026-W34+Master+Delivery+Report' to confirm it belongs strictly to Sprint 2026-W30.",
+          "created_at": "2026-10-08T07:13:06.494252Z"
+        },
+        {
+          "observation_id": "observation-c00663ca84bcd160aa1363ee",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "score": 0.22765362396186659,
+          "snippet": "| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |",
+          "query": "Verify that the 'W30 Agent query rewriter' entry found in the M1 Agent Module document does not appear in the 'Sprint+2026-W28+Master+Delivery+Report' or 'Sprint+2026-W34+Master+Delivery+Report' to confirm it belongs strictly to Sprint 2026-W30.",
+          "created_at": "2026-10-08T07:13:06.499434Z"
+        },
+        {
+          "observation_id": "observation-ffffbd31cb71f6587d51ffde",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_2",
+          "score": 0.09418345399448219,
+          "snippet": "ack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "query": "Verify that the 'W30 Agent query rewriter' entry found in the M1 Agent Module document does not appear in the 'Sprint+2026-W28+Master+Delivery+Report' or 'Sprint+2026-W34+Master+Delivery+Report' to confirm it belongs strictly to Sprint 2026-W30.",
+          "created_at": "2026-10-08T07:13:06.506968Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-240e6d6db8eec070405aea6d",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T07:13:06.301277Z"
+        },
+        {
+          "evidence_id": "evidence-ee4a8f05e45dbaeabb43996d",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:13:06.306307Z"
+        },
+        {
+          "evidence_id": "evidence-a3c2d172a984f0f62c52c36c",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_4",
+          "excerpt": "ack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T07:13:06.310810Z"
+        },
+        {
+          "evidence_id": "evidence-776d7ad390a3f85dd390d8fb",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T07:13:06.400015Z"
+        },
+        {
+          "evidence_id": "evidence-6a24d4c1088549225fafa34e",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:13:06.404821Z"
+        },
+        {
+          "evidence_id": "evidence-55b9839c36d05123c395fe9c",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T07:13:06.408591Z"
+        },
+        {
+          "evidence_id": "evidence-737eacf688569be8d4f2ff76",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T07:13:06.496909Z"
+        },
+        {
+          "evidence_id": "evidence-165ca52a4c5b086ec2e30be6",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T07:13:06.501444Z"
+        },
+        {
+          "evidence_id": "evidence-5c7d102d6e00fc6bf5d8e259",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_2",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T07:13:06.510424Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-bb83c801692b12532804ec39",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-1",
+          "statement": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "evidence_ids": [
+            "evidence-240e6d6db8eec070405aea6d",
+            "evidence-ee4a8f05e45dbaeabb43996d",
+            "evidence-a3c2d172a984f0f62c52c36c"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-d4c801cb3184d71776ee30be",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-2",
+          "statement": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "evidence_ids": [
+            "evidence-776d7ad390a3f85dd390d8fb",
+            "evidence-6a24d4c1088549225fafa34e",
+            "evidence-55b9839c36d05123c395fe9c"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-635e2418a8fff8160f61b5de",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "task_id": "task-3",
+          "statement": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "evidence_ids": [
+            "evidence-737eacf688569be8d4f2ff76",
+            "evidence-165ca52a4c5b086ec2e30be6",
+            "evidence-5c7d102d6e00fc6bf5d8e259"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-bb83c801692b12532804ec39",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "claim_text": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "evidence_ids": [
+            "evidence-240e6d6db8eec070405aea6d",
+            "evidence-ee4a8f05e45dbaeabb43996d",
+            "evidence-a3c2d172a984f0f62c52c36c"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-d4c801cb3184d71776ee30be",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "claim_text": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "evidence_ids": [
+            "evidence-776d7ad390a3f85dd390d8fb",
+            "evidence-6a24d4c1088549225fafa34e",
+            "evidence-55b9839c36d05123c395fe9c"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-635e2418a8fff8160f61b5de",
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "claim_text": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "evidence_ids": [
+            "evidence-737eacf688569be8d4f2ff76",
+            "evidence-165ca52a4c5b086ec2e30be6",
+            "evidence-5c7d102d6e00fc6bf5d8e259"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-bb83c801692b12532804ec39",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-240e6d6db8eec070405aea6d",
+            "evidence-ee4a8f05e45dbaeabb43996d",
+            "evidence-a3c2d172a984f0f62c52c36c"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-635e2418a8fff8160f61b5de",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-737eacf688569be8d4f2ff76",
+            "evidence-165ca52a4c5b086ec2e30be6",
+            "evidence-5c7d102d6e00fc6bf5d8e259"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-d4c801cb3184d71776ee30be",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-776d7ad390a3f85dd390d8fb",
+            "evidence-6a24d4c1088549225fafa34e",
+            "evidence-55b9839c36d05123c395fe9c"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-bb83c801692b12532804ec39",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-240e6d6db8eec070405aea6d",
+            "evidence-ee4a8f05e45dbaeabb43996d",
+            "evidence-a3c2d172a984f0f62c52c36c"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-d4c801cb3184d71776ee30be",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-776d7ad390a3f85dd390d8fb",
+            "evidence-6a24d4c1088549225fafa34e",
+            "evidence-55b9839c36d05123c395fe9c"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-635e2418a8fff8160f61b5de",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-737eacf688569be8d4f2ff76",
+            "evidence-165ca52a4c5b086ec2e30be6",
+            "evidence-5c7d102d6e00fc6bf5d8e259"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+      "events": [
+        {
+          "event_id": 11158,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:12:56.475268Z"
+        },
+        {
+          "event_id": 11159,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:12:56.475268Z"
+        },
+        {
+          "event_id": 11160,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:12:57.708365Z"
+        },
+        {
+          "event_id": 11161,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:12:57.709569Z"
+        },
+        {
+          "event_id": 11162,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:04.189819Z"
+        },
+        {
+          "event_id": 11163,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:04.189819Z"
+        },
+        {
+          "event_id": 11164,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T07:13:04.252891Z"
+        },
+        {
+          "event_id": 11165,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:04.255682Z"
+        },
+        {
+          "event_id": 11166,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:04.256745Z"
+        },
+        {
+          "event_id": 11167,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.203091Z"
+        },
+        {
+          "event_id": 11168,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.204100Z"
+        },
+        {
+          "event_id": 11170,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.216661Z"
+        },
+        {
+          "event_id": 11171,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:13:06.313894Z"
+        },
+        {
+          "event_id": 11172,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.313894Z"
+        },
+        {
+          "event_id": 11173,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:13:06.411025Z"
+        },
+        {
+          "event_id": 11174,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.411025Z"
+        },
+        {
+          "event_id": 11175,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T07:13:06.514964Z"
+        },
+        {
+          "event_id": 11176,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.517970Z"
+        },
+        {
+          "event_id": 11177,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.517970Z"
+        },
+        {
+          "event_id": 11178,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.524985Z"
+        },
+        {
+          "event_id": 11179,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.524985Z"
+        },
+        {
+          "event_id": 11180,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.533454Z"
+        },
+        {
+          "event_id": 11181,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.534213Z"
+        },
+        {
+          "event_id": 11182,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.540148Z"
+        },
+        {
+          "event_id": 11183,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.540148Z"
+        },
+        {
+          "event_id": 11184,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.552252Z"
+        },
+        {
+          "event_id": 11185,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.552764Z"
+        },
+        {
+          "event_id": 11186,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:report:report-research-fff0b9370b674f0cb8738ba7583dd447:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-fff0b9370b674f0cb8738ba7583dd447"
+          },
+          "created_at": "2026-10-08T07:13:06.559180Z"
+        },
+        {
+          "event_id": 11187,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.561643Z"
+        },
+        {
+          "event_id": 11188,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.562648Z"
+        },
+        {
+          "event_id": 11189,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.566703Z"
+        },
+        {
+          "event_id": 11190,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.567918Z"
+        },
+        {
+          "event_id": 11191,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T07:13:06.568424Z"
+        },
+        {
+          "event_id": 11192,
+          "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+          "event_key": "research-fff0b9370b674f0cb8738ba7583dd447:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T07:13:06.569432Z"
+        }
+      ],
+      "next_after_event_id": 11192
+    },
+    "report": {
+      "report_id": "report-research-fff0b9370b674f0cb8738ba7583dd447",
+      "research_id": "research-fff0b9370b674f0cb8738ba7583dd447",
+      "markdown": "## Summary\n\nThe W30 Agent query rewriter commit is `32559e07a`, recorded by **fionaxi** on **2026-07-25**. [3]\n\n## Evidence and analysis\n\nThe Agent sprint report records **9 total commits**. [3] This is the module total, without substituting the Master project total or another module's count.\n\n## Limitations and uncertainty\n\nThese are the selected historical commit and sprint records; they do not establish later changes or deployment.\n\n## Sources\n\n1. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_7\n2. [**Sprint+2026-W30+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report) · 2026-09-04T08:40:50.703Z · 4789bcf073830a8985e95e33cde47767_chunk_2\n3. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_0\n4. [**Sprint+2026-W30+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report) · 2026-09-04T08:40:50.703Z · 4789bcf073830a8985e95e33cde47767_chunk_4\n5. [**Sprint+2026-W30+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report) · 2026-09-04T08:40:50.703Z · 4789bcf073830a8985e95e33cde47767_chunk_0\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-635e2418a8fff8160f61b5de",
+        "claim-finding-bb83c801692b12532804ec39",
+        "claim-finding-d4c801cb3184d71776ee30be"
+      ],
+      "evidence_ids": [
+        "evidence-165ca52a4c5b086ec2e30be6",
+        "evidence-5c7d102d6e00fc6bf5d8e259",
+        "evidence-737eacf688569be8d4f2ff76",
+        "evidence-240e6d6db8eec070405aea6d",
+        "evidence-a3c2d172a984f0f62c52c36c",
+        "evidence-ee4a8f05e45dbaeabb43996d",
+        "evidence-55b9839c36d05123c395fe9c",
+        "evidence-6a24d4c1088549225fafa34e",
+        "evidence-776d7ad390a3f85dd390d8fb"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-165ca52a4c5b086ec2e30be6",
+          "evidence_ids": [
+            "evidence-165ca52a4c5b086ec2e30be6",
+            "evidence-ee4a8f05e45dbaeabb43996d",
+            "evidence-6a24d4c1088549225fafa34e"
+          ],
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+          "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-5c7d102d6e00fc6bf5d8e259",
+          "evidence_ids": [
+            "evidence-5c7d102d6e00fc6bf5d8e259"
+          ],
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "title": "Sprint+2026-W30+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_2",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-737eacf688569be8d4f2ff76",
+          "evidence_ids": [
+            "evidence-737eacf688569be8d4f2ff76",
+            "evidence-240e6d6db8eec070405aea6d",
+            "evidence-776d7ad390a3f85dd390d8fb"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        },
+        {
+          "number": 4,
+          "evidence_id": "evidence-a3c2d172a984f0f62c52c36c",
+          "evidence_ids": [
+            "evidence-a3c2d172a984f0f62c52c36c"
+          ],
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "title": "Sprint+2026-W30+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_4",
+          "excerpt": "ack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+        },
+        {
+          "number": 5,
+          "evidence_id": "evidence-55b9839c36d05123c395fe9c",
+          "evidence_ids": [
+            "evidence-55b9839c36d05123c395fe9c"
+          ],
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "title": "Sprint+2026-W30+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T07:13:06.558183Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-165ca52a4c5b086ec2e30be6",
+        "evidence_ids": [
+          "evidence-165ca52a4c5b086ec2e30be6",
+          "evidence-ee4a8f05e45dbaeabb43996d",
+          "evidence-6a24d4c1088549225fafa34e"
+        ],
+        "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+        "title": "Sprint+2026-W34+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:44.062Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:44.062Z",
+        "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_7",
+        "excerpt": "and fake estimations from ProgressIndicator, 100% SSE event driven (e4fa052a3by @YourGitHubUsername)\n\n- [WEB]fix: scope ProgressIndicator assistant message strictly to current turn (78e0e9687by @YourGitHubUsername)\n\n- [AGENT]fix: construct Citation instances directly from evidence in streaming endpoint (61d1ceec8by @YourGitHubUsername)\n\n- [AGENT]fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch (747effd5eby @YourGitHubUsername)\n\n- [AGENT]fix: pass keyword arguments to _save_conversation_turn in streaming endpoint (f295ed9eeby @YourGitHubUsername)\n\n- [WEB]fix: import Citation in chat_routes and improve SSE stream error handling in post.ts (7db171493by @YourGitHubUsername)\n\n- [AGENT]fix: safely extract evidence fields from dict or object in Citations building (562658c32by @YourGitHubUsername)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 2abd58cd9 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: simplify HitRateDrawer turn cards and sort latest turns at top |\n| 5503b341a | 2026-08-18 | YourGitHubUsername | web | Refactoring | style: simplify progress indicator to real SSE event status text and minimal clean document bar |\n| 65d030352 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | revert: restore original Sources.vue chunk display layout |\n| 006a0e6cc | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: real-time streaming state tracking for ProgressIndicator |\n| e4fa052a3 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: remove all timers and fake estimations from ProgressIndicator, 100% SSE event driven |\n| 78e0e9687 | 2026-08-18 | YourGitHubUsername | web | Bug Fix | fix: scope ProgressIndicator assistant message strictly to current turn |\n| 854ff4b82 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | agent | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | web, agent | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | agent | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| e221e00a3 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove question suffix from tool trigger and enlarge font size for tool and reasoning trigger text |\n| dec8ade0a | 2026-08-18 | YourGitHubUsername | web | Feature | feat: place Thought duration collapsible on the left of 已检索知识库 on the same row |\n| 1e1535ac4 | 2026-08-18 | YourGitHubUsername | web | Feature | feat: layout Thought for Xs on the right of 已检索知识库 on same line with collapsible toggle and duration display |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | web, agent | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |\n| 776766108 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove icons from mode selector menu and keep pure text labels |\n| 9c5d0e54f | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hit rate monitoring button and banner from quick navigation dial |\n| 41119e949 | 2026-08-18 | YourGitHubUsername | web | UI / Style Enhancement | style: remove hash prefix from quick nav buttons and keep pure numbers |\n| c251af965 | 2026-08-21 | YourGitHubUsername | web | Feature | feat: implement Grok-style progressive step-by-step reasoning tree and timeline feedback |\n| eee89ab42 | 2026-08-21 | YourGitHubUsername | web | Bug Fix | fix: template string expressions in ThinkingProcess.vue |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+        "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-5c7d102d6e00fc6bf5d8e259",
+        "evidence_ids": [
+          "evidence-5c7d102d6e00fc6bf5d8e259"
+        ],
+        "doc_id": "4789bcf073830a8985e95e33cde47767",
+        "title": "Sprint+2026-W30+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:50.703Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:50.703Z",
+        "locator": "4789bcf073830a8985e95e33cde47767_chunk_2",
+        "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |",
+        "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-737eacf688569be8d4f2ff76",
+        "evidence_ids": [
+          "evidence-737eacf688569be8d4f2ff76",
+          "evidence-240e6d6db8eec070405aea6d",
+          "evidence-776d7ad390a3f85dd390d8fb"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+        "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      },
+      {
+        "number": 4,
+        "evidence_id": "evidence-a3c2d172a984f0f62c52c36c",
+        "evidence_ids": [
+          "evidence-a3c2d172a984f0f62c52c36c"
+        ],
+        "doc_id": "4789bcf073830a8985e95e33cde47767",
+        "title": "Sprint+2026-W30+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:50.703Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:50.703Z",
+        "locator": "4789bcf073830a8985e95e33cde47767_chunk_4",
+        "excerpt": "ack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (a9c20c7f9by @cheng-sh)\n\n- [WEB]feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring (40637f220by @cheng-sh)\n\n### Critical Bug Fixes\n\n- [AGENT]fix: use toolset registry adapter (d9fa78df1by @fionaxi)\n\n## 4. Full Sprint Commit Chronology\n\n| Short Hash | Date | Author | Target Module | Type | Message |\n| --- | --- | --- | --- | --- | --- |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | toolset, infra, data-persistence, eval, data-pipeline, web, agent | Maintenance / Chore | system update |\n| 0db3046ec | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | chore: update .gitignore to exclude node_modules, venv and volumes |\n| a8f0cbff8 | 2026-07-20 | YourGitHubUsername | infra | Maintenance / Chore | merge: bring all completed project features from dev into data-persistence-dev |\n| 61e9dbc08 | 2026-07-20 | YKASN | infra | Maintenance / Chore | Merge pull request #15 from SCUT-Elite-Camp/data-persistence-dev |\n| 42376c860 | 2026-07-24 | fionaxi | agent | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | agent | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | agent | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | agent | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | agent | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | agent | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | agent | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | agent | Feature | feat: add intent classifier |\n| a9c20c7f9 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n| 40637f220 | 2026-07-26 | cheng-sh | web | Feature | feat(web): add observability dashboard, metrics endpoint, trace ID, and Web Vitals monitoring |\n\n## 5. Integration Status & Cross-Module Dependencies\n\n- All modules synced against the main development branch.\n\n- API contract compatibility validated across Web and Agent streaming interfaces.",
+        "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+      },
+      {
+        "number": 5,
+        "evidence_id": "evidence-55b9839c36d05123c395fe9c",
+        "evidence_ids": [
+          "evidence-55b9839c36d05123c395fe9c"
+        ],
+        "doc_id": "4789bcf073830a8985e95e33cde47767",
+        "title": "Sprint+2026-W30+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:50.703Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:50.703Z",
+        "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+        "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+        "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-fff0b9370b674f0cb8738ba7583dd447/documents/6beeab4852cb7fb253d44fa305ff510f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 73
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-fff0b9370b674f0cb8738ba7583dd447/documents/4789bcf073830a8985e95e33cde47767/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 115
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-fff0b9370b674f0cb8738ba7583dd447/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 419
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-fff0b9370b674f0cb8738ba7583dd447/documents/4789bcf073830a8985e95e33cde47767/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 74
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-fff0b9370b674f0cb8738ba7583dd447/documents/4789bcf073830a8985e95e33cde47767/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 84
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

@@ -1,0 +1,1444 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-009-deep_research_current-r3-1fd57fed",
+  "case_id": "DR-A-009",
+  "group": "deep_research_current",
+  "repetition": 3,
+  "started_at": "2026-10-08T11:44:59.938416+00:00",
+  "completed_at": "2026-10-08T11:45:13.823051+00:00",
+  "elapsed_ms": 13884,
+  "config_hash": "cdb102ca9ddebf1947a56bf16f771ea6fc003b4bb589288b82709db43c1cf205",
+  "success": true,
+  "result": {
+    "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Compare Total Commits for W28, W30 and W34 Master Sprints. Calculate adjacent-sprint differences and the absolute increase from W28 to W34.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "topic": "numeric_comparison"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "6fa003031358c7adbcff07788c4f40599b51b785a2b473c7cf72c9192d2e19be",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 4,
+      "task_completed": 4,
+      "evidence_count": 12,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T11:44:59.942149Z",
+      "updated_at": "2026-10-08T11:45:12.252273Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+      "version": 1,
+      "objective": "Compare Total Commits for W28, W30 and W34 Master Sprints. Calculate adjacent-sprint differences and the absolute increase from W28 to W34.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "049bdab7d5def55be3494f69a32e4432",
+          "4789bcf073830a8985e95e33cde47767",
+          "6beeab4852cb7fb253d44fa305ff510f"
+        ],
+        "topic": "numeric_comparison"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "6fa003031358c7adbcff07788c4f40599b51b785a2b473c7cf72c9192d2e19be",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W28+Master+Delivery+Report'?",
+          "purpose": "Extract the baseline commit count for Sprint W28 to serve as the starting point for difference calculations.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W30+Master+Delivery+Report'?",
+          "purpose": "Extract the commit count for Sprint W30 to calculate the adjacent difference between W28 and W30.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W34+Master+Delivery+Report'?",
+          "purpose": "Extract the commit count for Sprint W34 to calculate the adjacent difference between W30 and W34, and the total increase from W28.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-4",
+          "question": "Calculate the numerical difference between the W30 Total Commits and W28 Total Commits, the difference between W34 Total Commits and W30 Total Commits, and the absolute increase from W28 Total Commits to W34 Total Commits.",
+          "purpose": "Perform the required arithmetic operations to determine adjacent-sprint differences and the total growth across the specified period.",
+          "dependencies": [
+            "task-3"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "049bdab7d5def55be3494f69a32e4432",
+            "4789bcf073830a8985e95e33cde47767",
+            "6beeab4852cb7fb253d44fa305ff510f"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-4",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 4,
+      "task_completed": 4,
+      "evidence_count": 12,
+      "claim_count": 4,
+      "started_at": "2026-10-08T11:44:59.942149Z",
+      "updated_at": "2026-10-08T11:45:12.252273Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:44:59.944143Z",
+          "completed_at": "2026-10-08T11:45:01.202985Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:01.204382Z",
+          "completed_at": "2026-10-08T11:45:09.184338Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:09.186587Z",
+          "completed_at": "2026-10-08T11:45:09.694196Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:09.695383Z",
+          "completed_at": "2026-10-08T11:45:11.197998Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:11.200002Z",
+          "completed_at": "2026-10-08T11:45:12.069205Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.111809Z",
+          "completed_at": "2026-10-08T11:45:12.124366Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.126107Z",
+          "completed_at": "2026-10-08T11:45:12.142226Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.144224Z",
+          "completed_at": "2026-10-08T11:45:12.162923Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.163920Z",
+          "completed_at": "2026-10-08T11:45:12.210572Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.213040Z",
+          "completed_at": "2026-10-08T11:45:12.238084Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.239101Z",
+          "completed_at": "2026-10-08T11:45:12.253384Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T11:45:12.254957Z",
+          "completed_at": "2026-10-08T11:45:12.257494Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W28+Master+Delivery+Report'?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W30+Master+Delivery+Report'?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W34+Master+Delivery+Report'?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-4",
+          "question": "Calculate the numerical difference between the W30 Total Commits and W28 Total Commits, the difference between W34 Total Commits and W30 Total Commits, and the absolute increase from W28 Total Commits to W34 Total Commits.",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2557,
+        "actions_used": 16,
+        "tool_calls": 16,
+        "documents_read": 3,
+        "evidence_accepted": 12,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-98f68f115849ee76ce85e981",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "locator_hint": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W28+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.348839Z"
+        },
+        {
+          "observation_id": "observation-49496120ec00fa7a1f4bef7c",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W28+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.355897Z"
+        },
+        {
+          "observation_id": "observation-d75cd6aac3b33db1ae7a10ae",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W28+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.363415Z"
+        },
+        {
+          "observation_id": "observation-7ea6f7ce82e6d802dee24d5e",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W30+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.497227Z"
+        },
+        {
+          "observation_id": "observation-9eaada3e77ad6b2e13f44a28",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "locator_hint": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W30+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.503566Z"
+        },
+        {
+          "observation_id": "observation-154c7c1d9a8820c75aa274b9",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W30+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.510087Z"
+        },
+        {
+          "observation_id": "observation-20b0b6763d84ddf30655d356",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W34+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.775933Z"
+        },
+        {
+          "observation_id": "observation-3171a3a9d02e30fca4e42c83",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "locator_hint": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W34+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.791567Z"
+        },
+        {
+          "observation_id": "observation-4f0a558724df4f70b96c23f3",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'Total Commits' integer value reported in the document titled 'Sprint+2026-W34+Master+Delivery+Report'?",
+          "created_at": "2026-10-08T11:45:11.806040Z"
+        },
+        {
+          "observation_id": "observation-ac48abd3b8a051dc36a3145d",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "locator_hint": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Calculate the numerical difference between the W30 Total Commits and W28 Total Commits, the difference between W34 Total Commits and W30 Total Commits, and the absolute increase from W28 Total Commits to W34 Total Commits.",
+          "created_at": "2026-10-08T11:45:12.026076Z"
+        },
+        {
+          "observation_id": "observation-3bf3218ef196d4156d66dd61",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "locator_hint": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Calculate the numerical difference between the W30 Total Commits and W28 Total Commits, the difference between W34 Total Commits and W30 Total Commits, and the absolute increase from W28 Total Commits to W34 Total Commits.",
+          "created_at": "2026-10-08T11:45:12.037787Z"
+        },
+        {
+          "observation_id": "observation-45b7b40105e36a0248b88321",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "locator_hint": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Calculate the numerical difference between the W30 Total Commits and W28 Total Commits, the difference between W34 Total Commits and W30 Total Commits, and the absolute increase from W28 Total Commits to W34 Total Commits.",
+          "created_at": "2026-10-08T11:45:12.047287Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-365c32f30d824f8f19739fc7",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "document_version": "2026-09-04T08:40:37.439Z",
+          "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+          "created_at": "2026-10-08T11:45:11.353901Z"
+        },
+        {
+          "evidence_id": "evidence-63db7f05c2f4aab3e6988896",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T11:45:11.360415Z"
+        },
+        {
+          "evidence_id": "evidence-c7a7ee98d12a7beec4952291",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T11:45:11.367448Z"
+        },
+        {
+          "evidence_id": "evidence-baf1ff0da29377f9116d0d5d",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T11:45:11.501738Z"
+        },
+        {
+          "evidence_id": "evidence-319ad7fc56d488d291aee39b",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "document_version": "2026-09-04T08:40:37.439Z",
+          "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+          "created_at": "2026-10-08T11:45:11.506568Z"
+        },
+        {
+          "evidence_id": "evidence-c5c820b3dbd11613c30224a8",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T11:45:11.514086Z"
+        },
+        {
+          "evidence_id": "evidence-d807c01a671c65ef6773665d",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T11:45:11.786580Z"
+        },
+        {
+          "evidence_id": "evidence-e0dbf508ef602d658932cbd7",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "document_version": "2026-09-04T08:40:37.439Z",
+          "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+          "created_at": "2026-10-08T11:45:11.798120Z"
+        },
+        {
+          "evidence_id": "evidence-8dbf63957335691114f136cd",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T11:45:11.816569Z"
+        },
+        {
+          "evidence_id": "evidence-e56fb0e4d4cb294128fb4697",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "document_version": "2026-09-04T08:40:37.439Z",
+          "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06",
+          "created_at": "2026-10-08T11:45:12.032009Z"
+        },
+        {
+          "evidence_id": "evidence-638c70b2ac61f451120c2f3c",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320",
+          "created_at": "2026-10-08T11:45:12.042806Z"
+        },
+        {
+          "evidence_id": "evidence-f2813785091955b80ded9ae3",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787",
+          "created_at": "2026-10-08T11:45:12.052487Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-9d70aa8ea04c46ae1f5053b0",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-1",
+          "statement": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-365c32f30d824f8f19739fc7",
+            "evidence-63db7f05c2f4aab3e6988896",
+            "evidence-c7a7ee98d12a7beec4952291"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-e68440abe700f4c6f6b3037e",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-2",
+          "statement": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "evidence_ids": [
+            "evidence-baf1ff0da29377f9116d0d5d",
+            "evidence-319ad7fc56d488d291aee39b",
+            "evidence-c5c820b3dbd11613c30224a8"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-930cc0157da4a7947629b1ee",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-3",
+          "statement": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-d807c01a671c65ef6773665d",
+            "evidence-e0dbf508ef602d658932cbd7",
+            "evidence-8dbf63957335691114f136cd"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        },
+        {
+          "finding_id": "finding-cca87cdc9edd8f05e27c4094",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "task_id": "task-4",
+          "statement": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-e56fb0e4d4cb294128fb4697",
+            "evidence-638c70b2ac61f451120c2f3c",
+            "evidence-f2813785091955b80ded9ae3"
+          ],
+          "covers": [
+            "criterion-4"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-9d70aa8ea04c46ae1f5053b0",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "claim_text": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-365c32f30d824f8f19739fc7",
+            "evidence-63db7f05c2f4aab3e6988896",
+            "evidence-c7a7ee98d12a7beec4952291"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-e68440abe700f4c6f6b3037e",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "claim_text": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "evidence_ids": [
+            "evidence-baf1ff0da29377f9116d0d5d",
+            "evidence-319ad7fc56d488d291aee39b",
+            "evidence-c5c820b3dbd11613c30224a8"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-930cc0157da4a7947629b1ee",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "claim_text": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-d807c01a671c65ef6773665d",
+            "evidence-e0dbf508ef602d658932cbd7",
+            "evidence-8dbf63957335691114f136cd"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-cca87cdc9edd8f05e27c4094",
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "claim_text": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "evidence_ids": [
+            "evidence-e56fb0e4d4cb294128fb4697",
+            "evidence-638c70b2ac61f451120c2f3c",
+            "evidence-f2813785091955b80ded9ae3"
+          ],
+          "criterion_ids": [
+            "criterion-4"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-9d70aa8ea04c46ae1f5053b0",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-365c32f30d824f8f19739fc7",
+            "evidence-63db7f05c2f4aab3e6988896",
+            "evidence-c7a7ee98d12a7beec4952291"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-e68440abe700f4c6f6b3037e",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-baf1ff0da29377f9116d0d5d",
+            "evidence-319ad7fc56d488d291aee39b",
+            "evidence-c5c820b3dbd11613c30224a8"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-930cc0157da4a7947629b1ee",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-d807c01a671c65ef6773665d",
+            "evidence-e0dbf508ef602d658932cbd7",
+            "evidence-8dbf63957335691114f136cd"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-cca87cdc9edd8f05e27c4094",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-e56fb0e4d4cb294128fb4697",
+            "evidence-638c70b2ac61f451120c2f3c",
+            "evidence-f2813785091955b80ded9ae3"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-9d70aa8ea04c46ae1f5053b0",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-365c32f30d824f8f19739fc7",
+            "evidence-63db7f05c2f4aab3e6988896",
+            "evidence-c7a7ee98d12a7beec4952291"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-e68440abe700f4c6f6b3037e",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-baf1ff0da29377f9116d0d5d",
+            "evidence-319ad7fc56d488d291aee39b",
+            "evidence-c5c820b3dbd11613c30224a8"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-930cc0157da4a7947629b1ee",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-d807c01a671c65ef6773665d",
+            "evidence-e0dbf508ef602d658932cbd7",
+            "evidence-8dbf63957335691114f136cd"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-cca87cdc9edd8f05e27c4094",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-e56fb0e4d4cb294128fb4697",
+            "evidence-638c70b2ac61f451120c2f3c",
+            "evidence-f2813785091955b80ded9ae3"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+      "events": [
+        {
+          "event_id": 13580,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:44:59.943148Z"
+        },
+        {
+          "event_id": 13581,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:44:59.944143Z"
+        },
+        {
+          "event_id": 13582,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:01.202985Z"
+        },
+        {
+          "event_id": 13583,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:01.204382Z"
+        },
+        {
+          "event_id": 13584,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:09.184338Z"
+        },
+        {
+          "event_id": 13585,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:09.186587Z"
+        },
+        {
+          "event_id": 13586,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T11:45:09.690062Z"
+        },
+        {
+          "event_id": 13587,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:09.694196Z"
+        },
+        {
+          "event_id": 13588,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:09.695383Z"
+        },
+        {
+          "event_id": 13589,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:11.197998Z"
+        },
+        {
+          "event_id": 13590,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:11.200002Z"
+        },
+        {
+          "event_id": 13592,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:11.213479Z"
+        },
+        {
+          "event_id": 13593,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:45:11.372003Z"
+        },
+        {
+          "event_id": 13594,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:11.373011Z"
+        },
+        {
+          "event_id": 13595,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:45:11.524513Z"
+        },
+        {
+          "event_id": 13596,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:11.526512Z"
+        },
+        {
+          "event_id": 13597,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:45:11.833352Z"
+        },
+        {
+          "event_id": 13598,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-4:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:11.834353Z"
+        },
+        {
+          "event_id": 13599,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:task:task-4:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:45:12.059566Z"
+        },
+        {
+          "event_id": 13600,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.069205Z"
+        },
+        {
+          "event_id": 13601,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.111809Z"
+        },
+        {
+          "event_id": 13602,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.124366Z"
+        },
+        {
+          "event_id": 13603,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.126107Z"
+        },
+        {
+          "event_id": 13604,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.142226Z"
+        },
+        {
+          "event_id": 13605,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.144224Z"
+        },
+        {
+          "event_id": 13606,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.162923Z"
+        },
+        {
+          "event_id": 13607,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.163920Z"
+        },
+        {
+          "event_id": 13608,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.210572Z"
+        },
+        {
+          "event_id": 13609,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.213040Z"
+        },
+        {
+          "event_id": 13610,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:report:report-research-f398ed49606448fb815b01e0cf6fcc96:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-f398ed49606448fb815b01e0cf6fcc96"
+          },
+          "created_at": "2026-10-08T11:45:12.231464Z"
+        },
+        {
+          "event_id": 13611,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.238084Z"
+        },
+        {
+          "event_id": 13612,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.239101Z"
+        },
+        {
+          "event_id": 13613,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.253384Z"
+        },
+        {
+          "event_id": 13614,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.254957Z"
+        },
+        {
+          "event_id": 13615,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:45:12.257494Z"
+        },
+        {
+          "event_id": 13616,
+          "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+          "event_key": "research-f398ed49606448fb815b01e0cf6fcc96:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T11:45:12.259660Z"
+        }
+      ],
+      "next_after_event_id": 13616
+    },
+    "report": {
+      "report_id": "report-research-f398ed49606448fb815b01e0cf6fcc96",
+      "research_id": "research-f398ed49606448fb815b01e0cf6fcc96",
+      "markdown": "## Summary\n\nThe selected Master reports record the project totals below.\n\n## Evidence and analysis\n\n| Sprint | Total commits |\n| --- | --- |\n| W28 | 9 [1] |\n| W30 | 14 [2] |\n| W34 | 23 [3] |\n\nW30 minus W28: 14 - 9 = +5. [1][2]\n\nW34 minus W30: 23 - 14 = +9. [2][3]\n\nChange from W28 to W34: 23 - 9 = +14 commits. [1][3]\n\n## Limitations and uncertainty\n\nThese are recorded project totals, without summing module counts or inferring quality, contributor activity or reasons for changes.\n\n## Sources\n\n1. [**Sprint+2026-W28+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report) · 2026-09-04T08:40:37.439Z · 049bdab7d5def55be3494f69a32e4432_chunk_0\n2. [**Sprint+2026-W30+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report) · 2026-09-04T08:40:50.703Z · 4789bcf073830a8985e95e33cde47767_chunk_0\n3. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_0\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-9d70aa8ea04c46ae1f5053b0",
+        "claim-finding-cca87cdc9edd8f05e27c4094",
+        "claim-finding-e68440abe700f4c6f6b3037e",
+        "claim-finding-930cc0157da4a7947629b1ee"
+      ],
+      "evidence_ids": [
+        "evidence-365c32f30d824f8f19739fc7",
+        "evidence-63db7f05c2f4aab3e6988896",
+        "evidence-c7a7ee98d12a7beec4952291",
+        "evidence-638c70b2ac61f451120c2f3c",
+        "evidence-e56fb0e4d4cb294128fb4697",
+        "evidence-f2813785091955b80ded9ae3",
+        "evidence-319ad7fc56d488d291aee39b",
+        "evidence-baf1ff0da29377f9116d0d5d",
+        "evidence-c5c820b3dbd11613c30224a8",
+        "evidence-8dbf63957335691114f136cd",
+        "evidence-d807c01a671c65ef6773665d",
+        "evidence-e0dbf508ef602d658932cbd7"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-365c32f30d824f8f19739fc7",
+          "evidence_ids": [
+            "evidence-365c32f30d824f8f19739fc7",
+            "evidence-e56fb0e4d4cb294128fb4697",
+            "evidence-319ad7fc56d488d291aee39b",
+            "evidence-e0dbf508ef602d658932cbd7"
+          ],
+          "doc_id": "049bdab7d5def55be3494f69a32e4432",
+          "title": "Sprint+2026-W28+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:37.439Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:37.439Z",
+          "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+          "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+          "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-63db7f05c2f4aab3e6988896",
+          "evidence_ids": [
+            "evidence-63db7f05c2f4aab3e6988896",
+            "evidence-638c70b2ac61f451120c2f3c",
+            "evidence-baf1ff0da29377f9116d0d5d",
+            "evidence-8dbf63957335691114f136cd"
+          ],
+          "doc_id": "4789bcf073830a8985e95e33cde47767",
+          "title": "Sprint+2026-W30+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:50.703Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:50.703Z",
+          "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+          "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+          "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-c7a7ee98d12a7beec4952291",
+          "evidence_ids": [
+            "evidence-c7a7ee98d12a7beec4952291",
+            "evidence-f2813785091955b80ded9ae3",
+            "evidence-c5c820b3dbd11613c30224a8",
+            "evidence-d807c01a671c65ef6773665d"
+          ],
+          "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+          "title": "Sprint+2026-W34+Master+Delivery+Report",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:44.062Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:44.062Z",
+          "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+          "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+          "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T11:45:12.225440Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-365c32f30d824f8f19739fc7",
+        "evidence_ids": [
+          "evidence-365c32f30d824f8f19739fc7",
+          "evidence-e56fb0e4d4cb294128fb4697",
+          "evidence-319ad7fc56d488d291aee39b",
+          "evidence-e0dbf508ef602d658932cbd7"
+        ],
+        "doc_id": "049bdab7d5def55be3494f69a32e4432",
+        "title": "Sprint+2026-W28+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:37.439Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:37.439Z",
+        "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+        "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)",
+        "content_hash": "b79759a4125c99009a491e05cda36718cd19035bb40197a029a83b3c73a7ce06"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-63db7f05c2f4aab3e6988896",
+        "evidence_ids": [
+          "evidence-63db7f05c2f4aab3e6988896",
+          "evidence-638c70b2ac61f451120c2f3c",
+          "evidence-baf1ff0da29377f9116d0d5d",
+          "evidence-8dbf63957335691114f136cd"
+        ],
+        "doc_id": "4789bcf073830a8985e95e33cde47767",
+        "title": "Sprint+2026-W30+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:50.703Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:50.703Z",
+        "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+        "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)",
+        "content_hash": "6df50d8d0b4da24d6d95106efb06eb8c29ffb0923c3710851d61241d24e1e320"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-c7a7ee98d12a7beec4952291",
+        "evidence_ids": [
+          "evidence-c7a7ee98d12a7beec4952291",
+          "evidence-f2813785091955b80ded9ae3",
+          "evidence-c5c820b3dbd11613c30224a8",
+          "evidence-d807c01a671c65ef6773665d"
+        ],
+        "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+        "title": "Sprint+2026-W34+Master+Delivery+Report",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:44.062Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:44.062Z",
+        "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+        "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)",
+        "content_hash": "6b94321164a3e897f8758f4fb2db0eca73b0b81e7421d32770af5689a0efd787"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-f398ed49606448fb815b01e0cf6fcc96/documents/049bdab7d5def55be3494f69a32e4432/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 287
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-f398ed49606448fb815b01e0cf6fcc96/documents/4789bcf073830a8985e95e33cde47767/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 943
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-f398ed49606448fb815b01e0cf6fcc96/documents/6beeab4852cb7fb253d44fa305ff510f/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 220
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}
