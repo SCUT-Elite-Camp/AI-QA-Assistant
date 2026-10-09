@@ -64,6 +64,10 @@ class TargetExtractor:
         evidence_text = "\n".join(
             f"{item.title}\n{item.content}" for item in evidence[: self._MAX_EVIDENCE_ITEMS]
         )
+        # Imported prose can join the article to a capitalized module name.
+        # Preserve identifiers explicitly requested by the user, but do not
+        # turn a source's "theAgent" typography into a required code symbol.
+        evidence_text = re.sub(r"\bthe[A-Z][a-zA-Z]*", lambda m: m.group() if m.group() in query else 'the ' + m.group()[3:], evidence_text)
         query_norm = normalized_fact_text(query)
         query_tokens = identifier_tokens(query)
         candidates: list[str] = []

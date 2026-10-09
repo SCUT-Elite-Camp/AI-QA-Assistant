@@ -1069,3 +1069,17 @@ def test_fresh_report_local_correction_must_pass_evidence_review(monkeypatch):
     result = client.render(objective='State delivery status.',language='en-US')
     assert result.result_status==ResearchResultStatus.COMPLETE
     assert 'P1 retrieval is planned.' in result.markdown
+
+
+def test_sprint_counts_are_independent_of_citation_chunk_order():
+    from types import SimpleNamespace
+    def citation(number, doc, period, text):
+        return SimpleNamespace(number=number, doc_id=doc, title=f'Sprint+{period}+-+Agent+Deliverables', excerpt=text)
+    sources = [citation(1,'a','2031-W03','Commit verification log without heading or counts.'),
+        citation(2,'a','2031-W03','# [2031-W03] Agent report\nModule:agentContributors: Test\nTotal Commits: 9\nNew Features Delivered: 5\nBug Fixes Resolved: 1\nOther Improvements: 3'),
+        citation(3,'b','2031-W04','# [2031-W04] Agent report\nModule:agentContributors: Test\nTotal Commits: 8\nNew Features Delivered: 3\nBug Fixes Resolved: 5\nOther Improvements: 0')]
+    question='Compare Agent deliveries in 2031-W03 and 2031-W04. Give commits, features, bug fixes and other improvements.'
+    answer=EvidenceReportSynthesizer._sprint_counts_answer(question,sources)
+    assert '| Total Commits | 9 [2] | 8 [3] | -1 [2][3] |' in answer
+    assert 'Limitations and uncertainty' not in answer
+    assert 'not specified' not in answer

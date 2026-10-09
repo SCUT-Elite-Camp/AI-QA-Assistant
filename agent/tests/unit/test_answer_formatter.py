@@ -78,3 +78,12 @@ def test_answer_formatter_preserves_attachment_citation_identity() -> None:
     assert citation.evidence_id == "aev_1"
     assert citation.locator == {"page": 2}
     assert citation.version == 3
+
+
+def test_placeholder_citation_drops_unsupported_claim_without_changing_code():
+    from agent.formatter.answer_formatter import AnswerFormatter
+    result = AnswerFormatter()._normalize_answer_references(
+        "Counts are 9 [1]. The module is critical [n].\nUse array[n] in code.", 1)
+    assert "Counts are 9 [1]." in result
+    assert "critical" not in result
+    assert "array[n]" in result

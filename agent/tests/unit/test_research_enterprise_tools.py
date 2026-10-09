@@ -70,3 +70,12 @@ def test_revocation_during_search_does_not_release_results(environment):
 def test_retrieval_mode_is_validated():
     with pytest.raises(ValueError):
         ResearchRequest(query="q", source_scope=SourceScope(document_ids=["d"]), retrieval_mode="auto")
+
+
+def test_live_checks_only_cover_frozen_scope_without_caching_grants(environment):
+    adapter, context, policy, _, _, _ = environment
+    adapter.read_document_range('shared', context, locator='shared:0')
+    assert policy.accessible_doc_ids.call_args.args == ('alice', ['shared'])
+    policy.accessible_doc_ids.return_value = set()
+    with pytest.raises(ManifestAccessError):
+        adapter.read_document_range('shared', context, locator='shared:0')

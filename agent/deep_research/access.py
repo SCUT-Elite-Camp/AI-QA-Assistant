@@ -64,8 +64,8 @@ class ResearchAccessPolicy:
         Explicit unauthorized IDs reject the whole request. Broad KB/topic
         selectors expose only their authorized intersection, never a global list.
         """
-        allowed = self.accessible_doc_ids(user_id)
         explicit = set(request.source_scope.document_ids)
+        allowed = self.accessible_doc_ids(user_id, sorted(explicit) if explicit else None)
         if allowed is not None and not explicit.issubset(allowed):
             raise ResearchAccessError("research_source_forbidden")
         manifest = resolver.resolve("authorization-preview", request.source_scope, allowed_doc_ids=allowed)

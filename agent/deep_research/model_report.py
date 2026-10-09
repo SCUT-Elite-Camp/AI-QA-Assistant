@@ -1166,7 +1166,12 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 key = re.search(r'Module:\s*([a-z0-9_-]+?)(?=Contributors|\||\s|\*|$)',header_source,re.I)
                 if not key or normalize(key.group(1))!=normalize(comparison.group(1)):
                     continue
-                document_period = re.search(r'\b\d{4}-W\d{2}\b',header_source[:250])
+                # Chunk ordering must not hide a document's heading behind its commit log.
+                period_headers = [re.search(r'\b\d{4}-W\d{2}\b', c.excerpt[:250]) for c in related]
+                document_periods = {match.group() for match in period_headers if match}
+                document_period = re.search(r'\b\d{4}-W\d{2}\b', getattr(citation, 'title', '') or '')
+                if not document_period and len(document_periods) == 1:
+                    document_period = re.search(r'\b\d{4}-W\d{2}\b', next(iter(document_periods)))
                 if not document_period or document_period.group()!=period:
                     continue
                 values = [re.search(re.escape(metric)+r':\s*(\d+)',citation.excerpt,re.I) for metric in metrics]
@@ -1186,7 +1191,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             f'| Metric | {periods[0]} | {periods[1]} | Change |\n| --- | --- | --- | --- |\n')
         body += '\n'.join(f'| {metric} | {left} [{first_ref}] | {right} [{second_ref}] | {right-left:+d} {refs} |'
             for metric,left,right in zip(metrics,first,second))
-        return body + '\n\n## Limitations and uncertainty\n\nThese counts describe the selected sprint reports; they do not establish production quality or subsequent delivery. '+refs
+        return body + '\n'
 
     def _capability_snapshot_answer(self, objective: str, citations) -> str | None:
         """Use literal meeting observations and a separately translated goal table."""

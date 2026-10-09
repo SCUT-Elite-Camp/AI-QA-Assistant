@@ -74,3 +74,8 @@ Memory 的 Snapshot/Fact/Tail、Topic 摘要须传递相同 lineage；不能用 
 | 503 | 权限来源/内部凭据/安全导航依赖不可核验；修复依赖，不允许无过滤兜底 |
 
 Chat 中途失败只能产生安全状态提示，不能保存成成功回答。接口状态、来源合法性、引用事实支持和回答覆盖是四个不同验收项目。
+
+
+### Research inline source Reader (2026-10-09)
+
+Report citation buttons open the existing themed Reader in-page. Research reads use the session-owned BFF `/api/research/jobs/{research_id}/documents/{doc_id}/source` endpoint; frozen job membership, current ACL/native permissions and source version/hash are checked server-side on each read. The UI displays the selected report excerpt/version/hash and the authorized full text; it does not substitute an unrestricted document endpoint or browser authorization context.

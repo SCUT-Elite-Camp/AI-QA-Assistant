@@ -395,7 +395,7 @@ class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
 
     def _allowed(self, context: ToolCallContext) -> dict[str, object]:
         frozen = super()._allowed(context)
-        current = self.access_policy.accessible_doc_ids(context.user_id)
+        current = self.access_policy.accessible_doc_ids(context.user_id, sorted(frozen))
         if current is not None and not set(frozen).issubset(current):
             raise ManifestAccessError("research_source_access_revoked")
         return frozen

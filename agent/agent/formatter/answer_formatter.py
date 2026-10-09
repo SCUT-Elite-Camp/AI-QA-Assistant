@@ -85,6 +85,9 @@ class AnswerFormatter:
     def _normalize_answer_references(self, answer: str, citations_count: int) -> str:
         if not answer:
             return answer
+        # A literal prompt placeholder is not evidence. Drop the claim carrying it,
+        # rather than removing its marker and publishing the unsupported claim.
+        answer = re.sub(r"(?:(?<=\n)|(?<=[.!?])|^)[ \t]*[^\n.!?]*\s\[n\](?:[.!?]|$)", "", answer)
         if citations_count == 0:
             return REFERENCE_PATTERN.sub("", answer).strip()
 
