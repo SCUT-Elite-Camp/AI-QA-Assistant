@@ -7,6 +7,10 @@
 复制 `data-pipeline/.confluence.env.example` 为 `.confluence.env`，配置 Cloud
 站点地址、账号邮箱和 API Token。系统环境变量优先于文件中的同名配置。
 
+站点根、`/wiki` 和页面地址均正规化到同一 Cloud `/wiki` 根。携凭据请求只允许
+同源 URL 且禁止跳转；分页 next 链接不能引导到外站。导出账号不会自动授权所有
+问答用户，在线授权见[跨层契约](../../docs/access-evidence-architecture.md)。
+
 ## 导出空间
 
 ```powershell
@@ -33,3 +37,6 @@ python data-pipeline/confluence_pull.py `
 
 页面附件只保留链接，本阶段不下载或解析附件正文。无法可靠转换的宏会保留
 可见占位符并写入 warnings，避免静默丢失内容。
+
+导出不改变问答权威目录/索引。本轮使用历史冻结正文并检查源站当前权限，
+没有宣称源站最新正文已同步。新版本必须重新建立正文与索引投影。

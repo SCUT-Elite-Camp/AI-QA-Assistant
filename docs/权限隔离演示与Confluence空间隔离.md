@@ -1,4 +1,9 @@
-# 权限隔离演示与 Confluence 空间级权限隔离
+# 权限隔离：本地 ACL 与 Confluence 原生权限
+
+> 更新：2026-10-09。本地空间映射只能登记应用 ACL，不能替代源站有效权限。
+> 旧演示中的 group-a/group-b 需要各自明确的 Confluence account/site 绑定才能
+> 读取企业页。当前架构与实际验收见[访问边界](access-evidence-architecture.md)
+> 和[整合报告](pr63-integration-acceptance.md)。以下场景是本地 ACL 演示，不是全角色原生权限验收记录。
 
 > 面向：金融 RAG 项目组 · AI 知识分享
 > 本文档包含两部分：
@@ -31,7 +36,7 @@
 
 - 顶栏右上角点开**用户头像菜单**
 - 在「开发者 · 切换身份」下点选：
-  - **管理员 (admin)** → role=admin，看全部
+  - **管理员 (admin)** → 本地管理角色；不绕过 Confluence 原生权限
   - **项目组A用户** (group-a) → 普通用户
   - **项目组B用户** (group-b) → 普通用户
 - 点选后立即以该身份登录（自动建号 + 刷新会话），再次点开菜单即切换
@@ -88,7 +93,7 @@ Agent 每次检索前会执行一次白名单计算（`permission_service.get_ac
          public 全员  |  user 当前用户  |  department 当前用户所属部门
 ```
 
-- **管理员**直接返回"不过滤"（看全部）
+- 本地管理员角色不绕过启用状态、显式账号绑定或 Confluence 原生权限；strict 接口最终仍是有限 doc ID 集合
 - 查询失败默认 **fail-closed**（返回空，拒绝全部），避免权限误开
 - 拿到的 doc_id 白名单注入检索，Milvus/BM25 只在这批 doc 里找 → **天然隔离**
 
@@ -96,13 +101,18 @@ Agent 每次检索前会执行一次白名单计算（`permission_service.get_ac
 
 ## 二、Confluence 接入后的空间级权限隔离
 
-### 2.1 为什么是"空间级"
+### 2.1 不以空间映射替代有效权限
 
-**Confluence 里页面本身没有独立权限**，页面的访问权限完全继承它所属**空间（Space）**的权限方案。所以做到"空间级隔离"就等于实现了页面隔离，无需额外处理页面级权限。
+空间映射是本地授权登记策略，不足以证明每个页面对当前源站账号可读。
+在线流程用明确的站点/account ID，对具体 page 调用原生 `permission/check`
+验证 `read` 权限；本地 allowed 集合与源站检查结果取交集。仅拥有导出 token、
+本地 owner/admin 或 shared 标记，不会自动获得 Confluence 访问权。
 
 ### 2.2 当前的问题
 
-原来的 `confluence_pull.py` 用管理员 token 把空间页面全量抓下来入 Milvus，但**这些文档没有登记到系统的 `files`/`file_permissions` 表** → 它们不在任何普通用户的 doc_id 白名单里 → **对普通用户完全不可见（只有 admin 能看到）**。权限隔离无从谈起。
+早期导出/入库与本地 `files/file_permissions` 登记不一致，普通用户无法检索。
+目前 `confluence_pull.py` 的 Cloud exporter 是只读正文导出，不负责自动入 Milvus
+或授予问答权限；登记器仍可作为显式本地 ACL 操作，但不等于在线源站授权。
 
 ### 2.3 解决方案（已实现的代码改动）
 
@@ -143,17 +153,17 @@ Agent 每次检索前会执行一次白名单计算（`permission_service.get_ac
 - owner 用户在 `users` 表不存在时自动补建
 - 登记失败只记 warning，**不阻断** Confluence 入库主流程
 
-**修改文件 3：`data-pipeline/confluence_pull.py`**
-在 `_run_pipeline(d)` 入库后，调用 `register_doc_permissions(...)`，把该文档登记到权限表。
+`data-pipeline/confluence_pull.py` 当前导出入口见[Confluence 导出说明](../data-pipeline/docs/Confluence导出.md)。
+历史自动导入片段不是当前 exporter 的行为；管理员需显式选择导入/登记策略并核对索引与权威正文一致。
 
 ### 2.4 原理闭环
 
 ```
-Confluence 页面(继承空间权限)
-   → confluence_pull.py 抓取入库
-   → register_doc_permissions 按 space_key 登记到 files/file_permissions
-   → Agent 检索时 get_accessible_doc_ids 计算 doc_id 白名单
-   → Milvus/BM25 只在该用户可见的 doc_id 内检索
+只读 Confluence 正文导出 → 显式建立权威投影/索引与本地 ACL
+   → 当前启用身份 + 显式源站账号/站点绑定
+   → 本地 ACL ∩ 原生页面 read 权限
+   → 只在该集合内检索/读取，核对版本/hash
+   → 每次模型调用、回答释放、历史/Memory/Reader 再检查
 ```
 
 ### 2.5 使用方法
@@ -163,7 +173,7 @@ Confluence 页面(继承空间权限)
 #    space_key 需与 confluence_pull.py 拉取的 space 一致（默认 test）
 
 # 2. 拉取并入库（自动登记权限）
-python data-pipeline/confluence_pull.py test
+python data-pipeline/confluence_pull.py --space-key TEST --output-dir data-persistence/data/raws/confluence
 
 # 3. 验证（可选）：用 agent 层权限服务确认不同用户的可访问集合
 cd agent && python -c "from agent.service.permission_service import PermissionService; ps=PermissionService(); print(ps.get_accessible_doc_ids('group-a'))"
@@ -184,8 +194,8 @@ cd agent && python -c "from agent.service.permission_service import PermissionSe
 
 1. **`space_key` 必须在映射配置里**，否则落到 `defaults`（默认 private，仅 owner 可见 → 对普通用户不可见）。
 2. **`grant_id`（部门/用户 ID）要用系统里真实的 ID**（部门 ID 在管理后台查，用户 ID 用 `dev-login` 的 `userId`）。Confluence 的 user/group 无法自动对到系统用户，需要人工映射。
-3. **owner 用户**建议用 `demo-admin`（admin），避免 owner 恰好是普通用户造成归属混乱。
-4. **权限变更即时生效**：`permission_service` 不做缓存，改配置后重新跑一次 `confluence_pull.py`（或用脚本重登记）即可。
+3. 本地 owner 只负责登记归属，不替代当前调用者的源站授权；不应靠 admin 绑定给普通用户兜底。
+4. 当前 strict 权限与 Reader 不缓存正向授权；更改映射仅改变本地 ACL，还必须核对源站的当前 `read`。导出不会自动重登记授权。
 5. 生产环境请务必关闭 `ALLOW_DEV_LOGIN`；空间权限映射要结合 Confluence 侧的空间权限一起维护。
 
 ---

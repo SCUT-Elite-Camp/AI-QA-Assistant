@@ -1,5 +1,11 @@
 # CP2 Research Core 评测基线
 
+## 真实产品验收入口（2026-10-09）
+
+后续 Core 场景是隔离契约测试，不是实际模型质量结果。真实验收使用 `prepare_integration_runtime.py`、`integration_boundary_acceptance.py` 和 `research_product_acceptance.py`，从 `agent/` 目录以 `python -m eval.<module>` 启动，参数和配置见[运行手册](../../docs/access-evidence-runbook.md)。
+
+三类来源/混合问答验证实际 BFF 会话、CSRF、解析/扫描、索引和 Reader；G1/G2 使用相同冻结 Confluence 来源与 hybrid 检索，7 题为 repair-informed 回归，3 题生成前冻结。权限负例必须显式提供 ACL 拒绝的 `--forbidden-doc-id`，不是题目 out-of-scope 文档。所有失败保留；机器评分不代替人审和重复稳定性。结果见[整合报告](../../docs/pr63-integration-acceptance.md)。
+
 该基线用于比较确定性 Planner、后续可选 LLM Planner 以及 Worker 改动。任何 Planner 都必须通过同一组控制面、证据和恢复门禁。
 
 ## 一键执行

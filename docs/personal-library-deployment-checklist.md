@@ -14,7 +14,7 @@
 
 - [ ] Stop or drain writes during migration.
 - [ ] Run Web `pnpm run db:migrate` once and retain its output.
-- [ ] Confirm migrations `0004`, `0005`, `0006`, and `0007` are applied.
+- [ ] Confirm the full migration journal through `0015_evidence_lineage.sql` is applied, including the original `0004`-`0007` library migrations.
 - [ ] Start Attachment Service and confirm fail-fast validation passes.
 - [ ] Start Web, Agent, and cleanup worker.
 - [ ] Confirm health checks and `/api/metrics` are reachable through normal auth/network boundaries.
@@ -25,6 +25,7 @@
 - [ ] Verify desired-to-active switch and citation provenance.
 - [ ] Verify implicit Personal, Enterprise, mixed, and conversation-attachment routing.
 - [ ] Verify cross-user, cross-KB, deleted, and inactive-Version access returns no data.
+- [ ] Verify current source dependencies on history/Memory/Reader; revocation or active-Version changes must not be bypassed through copies or old answers (see [current architecture](access-evidence-architecture.md)).
 - [ ] Verify delete hides the document before physical cleanup completes.
 - [ ] Complete all cases in `docs/personal-library-manual-acceptance.md`.
 

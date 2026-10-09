@@ -25,6 +25,8 @@ agent/.env
 agent/.env.*
 frontend/.env
 frontend/.env.*
+!agent/.source-access.env.example
+!agent/.integration-runtime.env.example
 data-persistence/volumes/
 # Confluence 凭据与拉取的源数据（含内部内容，勿提交）
 data-pipeline/.confluence.env
@@ -38,6 +40,7 @@ data-pipeline/confluence_metadata_*.json
 agent/.env
 agent/.env.*
 agent/data-persistence/
+frontend/data-persistence/
 data-persistence/data/
 data-persistence/data-persistence/
 *.log

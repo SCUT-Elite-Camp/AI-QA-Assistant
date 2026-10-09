@@ -1,5 +1,7 @@
 # Web-Agent Interface Contract
 
+Current access/lineage contract (2026-10-09): [integration guide](../../docs/access-evidence-integration.md). Browsers use session-authenticated same-origin BFF routes, not a public Agent URL/token. Source permissions are rechecked for retrieval, model calls, release and stored history/Memory/Reader. `evidence.provenance.v1` is part of the response; unknown/stale lineage is not trusted.
+
 ## Local Deep Research
 
 Local Deep Research is separate from Chat and must be manually started.
@@ -24,6 +26,8 @@ returns HTTP 409. The final execution status is `completed`, `failed`, or
 
 This API does not accept Web URLs. The Worker can only search and read document
 IDs frozen into the approved `SourceManifest`.
+
+Current Research scope is enterprise Confluence only. A manifest freezes content, not permission: native mapping and local/native ACL must still allow it. Creation requires trusted `X-User-ID`; resources belong to that creator. Other users get 404; revoked sources, unavailable permission checks or version drift block report/progress/events/trace/source access. Worker search/read uses the shared enterprise Toolset and requested retrieval mode.
 
 The Research detail page polls three independent views at low frequency:
 

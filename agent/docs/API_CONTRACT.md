@@ -1,5 +1,7 @@
 # API Contract
 
+Current cross-layer contract (2026-10-09): [integration](../../docs/access-evidence-integration.md), [architecture](../../docs/access-evidence-architecture.md). Responses add verifiable `evidence_provenance` without removing existing fields. Knowledge use requires current enabled identity, local/native ACL and original version/hash checks. July Q1 anonymous/Mock specifications do not govern this build.
+
 ## Authentication (shared secret)
 
 All `/api/*` business endpoints require an `Authorization: Bearer <AGENT_API_KEY>`
@@ -36,7 +38,7 @@ only bounded `chat_l0_direct`, `chat_l1_retrieval`, and
 Local Deep Research uses the separate manual `/api/research/jobs` entry and an
 explicit Plan + SourceManifest approval flow. See `docs/cp2/chat_route_policy.md`.
 
-`stream` is reserved for future SSE or fetch streaming support. In the current implementation, requests with `stream: true` still return normal JSON.
+`POST /api/chat` remains JSON even with `stream: true`. Dedicated `/api/chat/stream` and trusted `/api/internal/chat/retrieval/stream` return SSE with `done.evidence_provenance`. The BFF buffers, verifies and saves successful answers before release. Insufficient context is a non-durable status, not a saved successful answer.
 
 ## Frozen internal persistent-Memory contract (Unit 04)
 

@@ -1,5 +1,7 @@
 # Evidence-grounded Wiki
 
+> Runtime status (2026-10-09): offline Wiki implementations and #63 routing are retained; online Wiki metadata tools are additionally quarantined by the access guard until their own titles/summaries/relations have complete source dependencies. Existing feature flags and offline AI audits do not waive this boundary. See [current architecture](access-evidence-architecture.md).
+
 ## Purpose
 
 The Wiki is an offline-compiled navigation layer. It helps the Agent discover related concepts, entities, pages, document versions, Sections, and Evidence. It is never a citation authority; final answers must cite original Evidence.

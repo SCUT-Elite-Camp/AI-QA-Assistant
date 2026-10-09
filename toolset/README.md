@@ -18,6 +18,8 @@ AgentRunner -> ToolExecutor -> ToolRegistry -> SearchTool
 
 Registry 直接构造 `SearchTool`。Hybrid 模式在 `SearchTool` 内融合向量和 BM25 结果。
 
+2026-10-09 整合中 Chat 与 Research 共用企业搜索/原文读取。工具保留 `source_version`、正文 `content_hash`、locator 和 `evidence_ref`，Agent 核对文本属于同一权威原文，不能将旧索引片段绑定新版本。private 工具 HMAC/owner/KB/作用域约束见[跨层契约](../docs/access-evidence-integration.md)，携内部凭据的 HTTP 请求拒绝重定向。Wiki 导航元数据因自身访问证明不足暂被隔离。
+
 ## SearchTool 接口
 
 ```python

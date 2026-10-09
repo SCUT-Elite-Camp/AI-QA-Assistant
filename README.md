@@ -2,6 +2,8 @@
 
 AI-QA-Assistant is a multi-service question-answering application. The web UI, Agent API, retrieval/tooling code, and data services run as separate components.
 
+Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access/evidence hardening on `integration/agent-demo-access-evidence`. Start with the [acceptance and handoff](docs/pr63-integration-acceptance.md), [security architecture](docs/access-evidence-architecture.md), [API integration contract](docs/access-evidence-integration.md), and [isolated runtime runbook](docs/access-evidence-runbook.md). These distinguish inherited features, new changes and unresolved quality gates; this is not a production-readiness claim.
+
 ## Architecture
 
 | Component | Location | Responsibility | Local address |
@@ -10,6 +12,7 @@ AI-QA-Assistant is a multi-service question-answering application. The web UI, A
 | Agent API | `agent/` (loaded by root `app.py`) | FastAPI chat and retrieval orchestration | `http://localhost:8000` |
 | Tools and retrieval | `toolset/`, `data-pipeline/`, `shared_runtime/` | Tool implementations, ingestion, retrieval, and shared runtime code | Called by Agent |
 | Data persistence | `data-persistence/` | Topic and generated artifact storage | Used by Agent and tools |
+| Private ingestion | `attachment-service/` | Scanning, parsing, encrypted attachments, Personal Library versions and separate private vectors | `http://localhost:8200` |
 | Vector and cache services | `docker-compose.yml` | Milvus and its etcd/MinIO dependencies, plus Redis | `localhost:19530`, `localhost:6379` |
 
 The root `app.py` is a local development entry point that loads `agent/app.py` and adds the sibling code directories to Python's import path. Run it from the repository root so environment loading and path resolution use the expected project root.
@@ -38,7 +41,7 @@ docker compose up -d etcd minio milvus-standalone redis
 - `GET http://localhost:8000/ready` reports whether retrieval and intent resources finished loading. A `degraded` response includes startup details; check the Agent terminal and required infrastructure/model configuration.
 - The launcher probes `http://localhost:3000/` and the Agent `/ready` endpoint. A timeout or an exited child process is reported instead of being presented as a successful startup.
 - If the web app cannot reach the Agent, check `AGENT_BASE_URL` and confirm it points to the same Agent instance used by the internal API client.
-- If document retrieval returns no accessible results, check `WEB_SQLITE_PATH` and confirm the SQLite database contains the file permission records. The local default is `frontend/.data/sqlite.db`.
+- If document retrieval returns no accessible results, check `WEB_SQLITE_PATH`, file ACLs, enabled user state, explicit native account/site binding, and Confluence read permissions. Local ACL or application admin status alone is insufficient. The local database default is `frontend/.data/sqlite.db`.
 
 ## Environment contract
 
@@ -52,6 +55,10 @@ Keep secrets in local, untracked environment files. Use `agent/.env.example` and
 | `WEB_SQLITE_PATH` | Agent environment | SQLite path used by Agent permission lookups. Defaults to `<repository>/frontend/.data/sqlite.db`. |
 
 Other settings, including model credentials and database/session configuration, are documented in the component-level READMEs and environment examples. Never commit populated `.env` files.
+
+Source access uses `SOURCE_ACCESS_MODE=native`, `CONFLUENCE_AUTH_ENV_FILE` and `CONFLUENCE_BASE/EMAIL/TOKEN/ACCOUNT_BINDINGS`. Web's `TURSO_DATABASE_URL` must point to the same database as Agent's `WEB_SQLITE_PATH`. Isolate acceptance with `RESEARCH_DOCUMENTS_DIR`, `AI_QA_DATA_DIR`, `BM25_INDEX_PATH`, `TOPICS_DATA_DIR`, `RESEARCH_DATABASE_PATH`, `RESEARCH_CHECKPOINT_PATH` and `ATTACHMENT_DATA_DIR`. Private transports require `ATTACHMENT_SERVICE_URL`, `ATTACHMENT_INTERNAL_SECRET`, `ATTACHMENT_ENCRYPTION_KEY`; actual embedding dimensions and separate enterprise/private collections use `LOCAL_EMBEDDING_MODEL_DIM`, `MILVUS_COLLECTION`, `ATTACHMENT_MILVUS_COLLECTION`. `AI_QA_BUILD_DIR` and `AI_QA_ACCEPTANCE_VOLUME_ROOT` can move build/Compose output to a disk with space. See the runbook for values and safe startup.
+
+Apply the full Web migration journal through `0015_evidence_lineage.sql` (chat/topic/Memory provenance). Evidence reads are message-bound; stored answers/Memory are rechecked after revocation or version drift. Ordinary Chat supports enterprise, personal and attachment sources; Research remains enterprise-only. Wiki navigation is quarantined until its own derived metadata has verifiable source lineage.
 
 ## CI and dependency compatibility
 

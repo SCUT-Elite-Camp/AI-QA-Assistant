@@ -1,5 +1,7 @@
 # Knowledge navigation integration boundary
 
+> Runtime status (2026-10-09): #63 navigation code is retained, but Wiki tools are quarantined until derived titles/summaries/relations carry verified access lineage. Feature flags alone cannot reopen them. See [current architecture](access-evidence-architecture.md).
+
 Retrieval Evidence is authoritative. Section trees, Wiki pages, and any optional graph are navigation metadata and cannot be cited as answer sources.
 
 ## Ownership

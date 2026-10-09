@@ -27,11 +27,16 @@
 - Chat 与 Local Deep Research 统一输出 `{doc_id}_chunk_{index}` 稳定定位符；
   结构化文档按命中 chunk 精确读取原文，无 chunks 时才回退到行号定位。
 - 支持资料充分的 `complete` 与资料不足或冲突的 `degraded` 结果。
+- 普通 Chat 的企业、个人库、附件及混合来源门禁，当前授权/版本/hash 校验与完整来源依赖。
+- Research 创建者身份、原生 Confluence 权限、共享企业 hybrid 检索及逐模型调用授权复核。
+- 请求级 ContextVar 状态与并行检索授权传播，避免诊断/Memory 决策跨用户串用。
+
+跨层契约见[架构](../docs/access-evidence-architecture.md)与[接入说明](../docs/access-evidence-integration.md)，真实结果见[整合报告](../docs/pr63-integration-acceptance.md)。Research 当前只支持企业来源；Wiki 导航因自身 lineage 不完备暂被隔离。
 
 共享契约：
 
-- [`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)
-- [`docs/cp2/conversation_memory_contract.md`](docs/cp2/conversation_memory_contract.md)
+- [`QueryPlan / SourceIntent`](agent/schemas/query_plan.py)
+- [`ConversationMemory interface`](agent/memory/base.py)
 
 ## 开发准则
 
@@ -64,11 +69,11 @@ Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为�
 ## 当前不做内容
 
 - 不连接真实 HSBC 系统
-- 不读取真实密钥
-- 不接真实客户、员工、权限数据
+- 不硬编码或提交真实密钥；服务从私有配置读取授权凭据
+- 不接未经授权的客户/员工业务数据；授权的真实项目 Confluence 与本地 ACL 可用于验收
 - 不在 Agent 层直接连接 Milvus、BM25 或 embedding API；真实检索通过 Tool Layer 接口接入
-- SSE / fetch stream 仅预留，不强制实现真实流式输出
-- 进程重启、多 worker 之间的记忆持久化与共享
+- 不自动把普通 Chat 升级为 Research，不使用匿名检索兜底
+- 进程内短期会话记忆仍不跨 worker 共享；BFF 的持久历史、Snapshot、Fact 是独立机制
 
 ## 目录结构
 
@@ -122,19 +127,21 @@ Deep Research Core Vertical Slice 的链路、恢复策略和场景验收见
 ```bash
 curl -X POST "http://localhost:8000/api/chat" \
   -H "Authorization: Bearer <AGENT_API_KEY>" \
+  -H "X-User-ID: <enabled-and-native-bound-user>" \
   -H "Content-Type: application/json" \
-  -d "{\"query\":\"项目 Q1 阶段需要完成哪些功能？\",\"stream\":false,\"retrieval_mode\":\"hybrid\"}"
+  -d "{\"query\":\"项目 Q1 阶段需要完成哪些功能？\",\"user_id\":\"<enabled-and-native-bound-user>\",\"stream\":false,\"retrieval_mode\":\"hybrid\"}"
 ```
 
-成功响应示例：
+响应包含既有答案/Citation 字段和来源依赖证明；以下仅展示结构，不是可用于验收的固定答案：
 
 ```json
 {
   "trace_id": "trace-xxxxxxxx",
   "status": "success",
-  "answer": "Q1 阶段需要完成简化版单轮 RAG Agent，包括 /api/chat、Mock Retrieval、Prompt Builder、Mock LLM 和 Answer Formatter 等最小闭环能力。[1]",
+  "answer": "<根据当前已核验原文生成的回答> [1]",
   "message": "",
-  "citations": []
+  "citations": [{"citation_id": 1, "doc_id": "example-doc", "chunk_id": "example-doc_chunk_0", "evidence_ref": "example-ref", "content_hash": "<body-sha256>"}],
+  "evidence_provenance": {"schema_version": "evidence.provenance.v1", "complete": true, "dependencies": [{"source_type": "knowledge", "doc_id": "example-doc", "version": "1", "content_hash": "<body-sha256>"}]}
 }
 ```
 
@@ -217,17 +224,13 @@ curl -X POST "http://localhost:8000/api/chat" \
 `/v1/chat/completions` 接口接入 `llama3.1`，通常不需要配置
 `LLM_API_KEY`。检索始终从 Tool Layer 的注册表加载，Agent 层不直连检索存储。
 
-CP2 工具注册表接口及 `/api/tools` 返回结构见
-[`docs/cp2/tool_registry.md`](docs/cp2/tool_registry.md)。
+CP2 工具注册表实现见 [`registry.py`](agent/tools/registry.py)，当前接口见 `docs/API_CONTRACT.md`。
 
-CP2 查询重写接口、失败回退和推荐接入顺序见
-[`docs/cp2/query_rewriter.md`](docs/cp2/query_rewriter.md)。
+CP2 查询重写和失败回退见 [`rewriter.py`](agent/query/rewriter.py)。
 
-CP2 澄清判断场景、失败降级和推荐接入顺序见
-[`docs/cp2/clarification.md`](docs/cp2/clarification.md)。
+CP2 澄清判断和失败降级见 [`clarifier.py`](agent/query/clarifier.py)。
 
-CP2 `QueryIntent`、`QueryPlan` 字段语义和双方消费约定见
-[`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)。
+CP2 `QueryIntent`、`QueryPlan` 字段契约见 [`query_plan.py`](agent/schemas/query_plan.py)。
 
 CP2 Chat-only L0/L1/L2 路由边界见
 [`docs/cp2/chat_route_policy.md`](docs/cp2/chat_route_policy.md)。
@@ -238,8 +241,7 @@ CP2 Chat-only L0/L1/L2 路由边界见
 CP2 Research Progress/Event 后端与前后端正式接入交付见
 [`docs/cp2/week_research_progress_member_a_delivery.md`](docs/cp2/week_research_progress_member_a_delivery.md)。
 
-CP2 意图分类组件、失败回退和 QueryPlan 映射约定见
-[`docs/cp2/intent_classifier.md`](docs/cp2/intent_classifier.md)。
+CP2 意图分类与 QueryPlan 映射见 [`intent_classifier.py`](agent/query/intent_classifier.py)。
 
 ## 分工建议
 

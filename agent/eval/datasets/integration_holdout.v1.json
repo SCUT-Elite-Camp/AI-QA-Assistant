@@ -1,0 +1,30 @@
+{
+  "schema_version": "integration-holdout.v1",
+  "purpose": "Unseen quality probes frozen before generation, not used for targeted answer repairs.",
+  "cases": [
+    {
+      "case_id": "HO-001",
+      "question": "W28 Web 周报中，哪个提交修复了引用悬浮提示的位置并让后端发送完整引用片段？请给出提交短哈希、日期，说明它与新增引用提示/去重来源面板的提交是否是同一个。",
+      "allowed_document_ids": ["7404d87eea14e890308b97ccc2b9cea8"],
+      "checks": ["完整片段与下方提示对应 32a1bfc45，日期 2026-07-10", "新增 inline cite-mark tooltips 和 deduplicated sources panel 对应 6be2c3d45，日期 2026-07-09", "明确区分两个不同提交，不混淆 feat 与 fix"],
+      "key_source_locations": [{"doc_id": "7404d87eea14e890308b97ccc2b9cea8", "chunk_id": "7404d87eea14e890308b97ccc2b9cea8_chunk_4"}],
+      "language": "zh-CN"
+    },
+    {
+      "case_id": "HO-002",
+      "question": "M6 Evaluation & Benchmarking 生命周期档案列出了哪些评估指标、数据集或框架？总共记录了多少次提交？档案有没有证明当前系统已经达到某个具体的 MRR 或命中率数值？",
+      "allowed_document_ids": ["e061986b933fcd9cdc24e6800b16760f"],
+      "checks": ["指出 test datasets、MS MARCO、RAGAS synthetic benchmarks 和 performance testing", "覆盖 retrieval accuracy、MRR、hit rates 与 answer correctness", "总提交数为 3", "明确档案不含具体 MRR/命中率达标数值，不编造评测结果"],
+      "key_source_locations": [{"doc_id": "e061986b933fcd9cdc24e6800b16760f", "chunk_id": "e061986b933fcd9cdc24e6800b16760f_chunk_0"}],
+      "language": "zh-CN"
+    },
+    {
+      "case_id": "HO-003",
+      "question": "根据 W33 Data Pipeline 周报，Hit Rate & Similarity 监控抽屉和流式稳定性优化由哪个提交、在哪一天交付？请从 Impacted Code Files 中分别举出 Agent、检索工具和 Web 的一个受影响路径，并说明周报能否证明这些路径当时全部通过了端到端验收。",
+      "allowed_document_ids": ["40519d3b87b47f4aa9287552c193171c"],
+      "checks": ["提交为 5cdccce39，日期 2026-08-11", "举出至少一个实际列出的 agent/agent 路径", "检索工具举出 toolset/retrieval/reranker.py 或 toolset/tool_layer/search_tool.py", "Web 举出实际列出的 web/ 路径，不将历史路径改写成当前 frontend/", "不把改动文件清单等同于已完成端到端验收，明确资料不足"],
+      "key_source_locations": [{"doc_id": "40519d3b87b47f4aa9287552c193171c", "chunk_id": "40519d3b87b47f4aa9287552c193171c_chunk_1"}, {"doc_id": "40519d3b87b47f4aa9287552c193171c", "chunk_id": "40519d3b87b47f4aa9287552c193171c_chunk_2"}],
+      "language": "zh-CN"
+    }
+  ]
+}
