@@ -5,7 +5,7 @@
 - 108 个唯一验收坐标，包含对应的 108 份原始运行记录和 108 份质量评分。
 - 12 份配置/资料清单快照，用于解释模型配置、检索后端、资料 hash 和运行版本。
 - 汇总、逐坐标账本、重算性能统计、回归/构建日志、实际下载报告及 7 张界面截图。
-- 文件列表、大小和 SHA-256 见 [交付清单](published_evidence_manifest_20261009.json)。清单统计不包含清单自身及本 README。
+- 文件列表、大小和 SHA-256 见 [交付清单](published_evidence_manifest_20261009.json)。清单统计不包含清单自身及本 README。大小及 SHA-256 以 Git 仓库 blob 字节为准；Windows checkout 自动转换换行后，本地字节可能不同。可用 git show HEAD:<path> 的原始字节核验。
 
 从仓库根目录读取 continuation_ledger_20261008.json；origin 和 judgment_origin 为仓库相对路径，Windows 分隔符在其他平台需转换为 /。每个引用的运行和评分文件均随本包提交。
 
