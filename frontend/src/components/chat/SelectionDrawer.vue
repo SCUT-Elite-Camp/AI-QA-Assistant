@@ -29,18 +29,21 @@ const { csrf, headerName } = useCsrf()
 const { fetchChats } = useChats()
 
 const input = ref('')
+const temporaryChatId = ref<string>()
 
 function createChat() {
   return new Chat({
     transport: new DefaultChatTransport({
       api: '/api/chats/temp-ask',
       headers: { [headerName]: csrf() },
-      body: {
-        selectedText: props.selectedText,
-        contextText: props.contextText,
-        topicId: props.topicId
-      }
+      prepareSendMessagesRequest: ({ messages }) => ({ body: {
+        messages, tempChatId: temporaryChatId.value,
+        selectedText: props.selectedText, topicId: props.topicId,
+      } }),
     }),
+    onData(part) {
+      if (part.type === 'data-temp-chat') temporaryChatId.value = String((part.data as { chatId: string }).chatId)
+    },
     onError(error) {
       let message = error.message
       if (typeof message === 'string' && message[0] === '{') {
@@ -62,6 +65,7 @@ const visibleMessages = computed(() =>
 // Recreate chat instance when drawer opens (reset + refresh context)
 watch(() => props.open, (val) => {
   if (val) {
+    temporaryChatId.value = undefined
     chatInstance.value = createChat()
   }
   if (!val) {
@@ -81,7 +85,7 @@ function getFormattedMessages() {
     .filter(m => m.role === 'user' || m.role === 'assistant')
     .map(m => {
       const text = m.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text)?.join('') || ''
-      return { role: m.role, text, parts: JSON.parse(JSON.stringify(m.parts || [])) }
+      return { id: m.id, role: m.role, text, parts: JSON.parse(JSON.stringify(m.parts || [])) }
     })
     .filter(m => m.text.trim())
 }
@@ -104,6 +108,7 @@ async function handleSaveStandalone() {
         initialQuery: initQuery,
         selectedText: props.selectedText,
         contextText: props.contextText,
+        sourceChatId: temporaryChatId.value,
         messages: formattedMsgs
       }
     })

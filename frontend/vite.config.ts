@@ -31,6 +31,7 @@ export default defineConfig(({ command }) => ({
     }),
     nitro({
       serverDir: './server',
+      ...(process.env.AI_QA_BUILD_DIR ? { output: { dir: process.env.AI_QA_BUILD_DIR } } : {}),
       // Route segments such as [id] must not become Rollup placeholders.
       rollupConfig: {
         output: {
@@ -40,6 +41,7 @@ export default defineConfig(({ command }) => ({
     })
   ],
   server: {
+    fs: { allow: [fileURLToPath(new URL('.', import.meta.url)), fileURLToPath(new URL('./node_modules', import.meta.url))] },
     host: '0.0.0.0',
     port: 3000
   }

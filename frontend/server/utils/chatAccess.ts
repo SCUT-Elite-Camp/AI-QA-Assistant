@@ -2,6 +2,7 @@ import { HTTPError } from 'nitro'
 import type { HTTPEvent } from 'nitro/h3'
 import { useDrizzle } from './drizzle'
 import { useUserSession } from './session'
+import { requireEnabledActor } from './sourceAccess'
 
 export interface ChatActor {
   userId: string
@@ -66,22 +67,50 @@ export async function requireActor (event: HTTPEvent): Promise<string> {
  * Looks up the chat and its owner in a single query. Missing chats and chats
  * owned by a different session both return 404 to avoid existence disclosure.
  */
-export async function requireOwnedChat (event: HTTPEvent, chatId: string) {
-  const actor = await getOptionalChatActor(event)
-  if (!actor) {
-    throw new HTTPError({ statusCode: 401, statusMessage: 'Authentication required' })
-  }
+export async function requireOwnedChat (event: HTTPEvent, chatId: string, minimumTopicRole: 'viewer' | 'editor' = 'viewer') {
+  const actor: ChatActor = { userId: await requireEnabledActor(event), isAuthenticated: true }
 
   const chat = await useDrizzle().query.chats.findFirst({
-    where: (chats, { and, eq }) => and(
-      eq(chats.id, chatId),
-      eq(chats.userId, actor.userId)
-    )
+    where: (chats, { eq }) => eq(chats.id, chatId)
   })
 
   if (!chat) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
+  if (chat.topicId) {
+    const { requireTopicRole } = await import('./attachmentAuth')
+    // Even the original creator must still be a current workspace member.
+    await requireTopicRole(event, chat.topicId, minimumTopicRole)
+  }
+  if (chat.userId !== actor.userId) {
+    if (!chat.topicId || chat.id.startsWith('research-')) {
+      throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
+    }
+  }
+
+  await assertResearchChatAccess(event, chatId)
+
   return { actor, chat }
+}
+
+/** A cached Research transcript remains subject to its current document ACL. */
+export async function assertResearchChatAccess(event: HTTPEvent, chatId: string): Promise<void> {
+  const seen = new Set<string>()
+  let current: string | undefined = chatId
+  while (current) {
+    if (seen.has(current) || seen.size >= 64) throw new HTTPError({ statusCode: 409, statusMessage: 'Invalid chat ancestry' })
+    seen.add(current)
+    if (/^research-[a-zA-Z0-9]+$/.test(current)) {
+      const { requireResearchActor, fetchResearchBackend } = await import('./researchBackend')
+      const userId = await requireResearchActor(event)
+      const response = await fetchResearchBackend(userId, `jobs/${current}`)
+      if (!response.ok) throw new HTTPError({ statusCode: response.status, statusMessage: 'Research access unavailable' })
+      return
+    }
+    const parent = await useDrizzle().query.chats.findFirst({
+      where: (chats, { eq }) => eq(chats.id, current!), columns: { parentChatId: true },
+    })
+    current = parent?.parentChatId ?? undefined
+  }
 }

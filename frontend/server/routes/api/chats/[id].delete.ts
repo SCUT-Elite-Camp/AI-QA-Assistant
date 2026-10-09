@@ -15,7 +15,7 @@ export default defineHandler(async (event) => {
     id: z.string()
   }).parse)
 
-  const { actor } = await requireOwnedChat(event, id)
+  const { actor } = await requireOwnedChat(event, id, 'editor')
   const db = useDrizzle()
   const chatMessages = await db.query.messages.findMany({ where: eq(tables.messages.chatId, id as string) })
   const links = chatMessages.length
@@ -30,7 +30,7 @@ export default defineHandler(async (event) => {
     // Reset only after deletion succeeds; configuration errors are best effort too.
     void Promise.resolve().then(() => agentFetch(`/api/chat/memory/${id}`, { method: 'DELETE' })).catch(() => {})
     if (links.length) await cleanupOrphanedAttachments(links.map(link => link.attachmentId))
-    void resetShortWindow(id).catch(() => {})
+    void resetShortWindow(id, { actorUserId: actor.userId }).catch(() => {})
   }
 
   return deleted

@@ -4,7 +4,12 @@ const mocks = vi.hoisted(() => ({ principal: vi.fn(), findChat: vi.fn(), query: 
 vi.mock('nitro', () => ({ defineHandler: (handler: unknown) => handler,
   HTTPError: class extends Error { constructor(value: { statusMessage: string }) { super(value.statusMessage) } } }))
 vi.mock('nitro/h3', () => ({ getQuery: mocks.query }))
-vi.mock('../server/utils/attachmentAuth', () => ({ requirePrincipal: mocks.principal }))
+vi.mock('../server/utils/researchBackend', () => ({
+  requireResearchActor: mocks.principal,
+  fetchResearchBackend: (userId: string, path: string) => fetch(`http://agent.test/api/research/${path}`, {
+    headers: { Authorization: `Bearer ${process.env.AGENT_API_KEY}`, 'X-User-ID': userId },
+  }),
+}))
 vi.mock('../server/utils/drizzle', () => ({
   resetDrizzleForTests: () => {},
   tables: { chats: { id: 'id', userId: 'userId' } },

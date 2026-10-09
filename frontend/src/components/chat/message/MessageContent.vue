@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref } from 'vue'
+import { computed, provide, ref, nextTick } from 'vue'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
 import { isPartStreaming } from '@nuxt/ui/utils/ai'
@@ -61,14 +61,22 @@ const citationMap = computed(() => {
 
 // Make citations available to all CiteMark children via inject
 provide('ragCitationMap', citationMap)
-const citationOpen = ref(false)
 const selectedCitation = ref<ChunkCitation | null>(null)
+const citationOpen = ref(false)
+let citationTrigger: HTMLElement | null = null
 provide('openCitation', (index: number) => {
-  const citation = citationMap.value.get(index)
-  if (!citation) return
-  selectedCitation.value = citation
+  selectedCitation.value = citationMap.value.get(index) ?? null
+  if (!selectedCitation.value) return
+  citationTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
   citationOpen.value = true
 })
+async function setCitationOpen(open: boolean) {
+  citationOpen.value = open
+  if (!open) {
+    await nextTick()
+    citationTrigger?.focus()
+  }
+}
 </script>
 
 <template>
@@ -113,9 +121,5 @@ provide('openCitation', (index: number) => {
       />
     </template>
   </template>
-  <ChatModalDocumentViewer
-    v-model:open="citationOpen"
-    :doc="selectedCitation"
-    :all-citations="Array.from(citationMap.values())"
-  />
+  <ChatModalDocumentViewer :open="citationOpen" :doc="selectedCitation" :message-id="message.id" @update:open="setCitationOpen" />
 </template>

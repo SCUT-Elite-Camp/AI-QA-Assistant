@@ -12,6 +12,7 @@ import {
 import { manualFactProposalRequestSchema } from '../../../../../../utils/memoryContract'
 import { isSensitiveMemoryValue } from '../../../../../../utils/sensitiveMemoryValue'
 import { isSessionFactEnabled } from '../../../../../../utils/sessionFactGate'
+import { assertMessageSources } from '../../../../../../utils/sourceAccess'
 
 function factError (status: number, code: string, message: string): Response {
   return Response.json({ code, message }, { status })
@@ -92,6 +93,7 @@ export default defineHandler(async (event) => {
   if (isSensitiveMemoryValue(value)) {
     return factError(422, 'fact_sensitive', 'Fact source contains sensitive content')
   }
+  await assertMessageSources(owned.actor.userId, source)
 
   try {
     const result = await createFactProposal(db, {

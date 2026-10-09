@@ -2,6 +2,7 @@ import { $fetch } from 'ofetch'
 import { logger } from './logger'
 import { agentHeaders } from './agent-client'
 import { getAgentBaseUrl } from './agentConfig'
+import { assertDerivedSources, type EvidenceProvenance } from './sourceAccess'
 
 /**
  * Invokes Data Persistence Layer Infrastructure Summarizer Service.
@@ -12,7 +13,8 @@ export async function requestTopicSummarizerFromPersistence(
   topicId: string,
   discussionText: string,
   customTitle?: string,
-  existingInfo?: Record<string, any>
+  existingInfo?: Record<string, any>,
+  access?: { userId: string, proof: EvidenceProvenance }
 ): Promise<{
   title: string
   description?: string
@@ -20,18 +22,24 @@ export async function requestTopicSummarizerFromPersistence(
   tags?: string[]
 } | null> {
   try {
+    if (!access) return null
+    await assertDerivedSources(access.userId, access.proof)
     const res: any = await $fetch(`${getAgentBaseUrl()}/api/topics/summarize`, {
       method: 'POST',
       timeout: 70000,
-      headers: agentHeaders(),
+      redirect: 'error',
+      headers: agentHeaders({ 'X-User-ID': access.userId, 'X-Agent-Internal-Token': process.env.AGENT_INTERNAL_TOKEN || '' }),
       body: {
         topic_id: topicId,
         discussion_text: discussionText,
         custom_title: customTitle,
-        existing_info: existingInfo
+        existing_info: existingInfo || {},
+        source_dependencies: access.proof.dependencies,
+        provenance_complete: access.proof.complete,
       }
     })
     if (res && res.title) {
+      await assertDerivedSources(access.userId, access.proof)
       return {
         title: res.title,
         description: res.description,

@@ -9,6 +9,7 @@ export async function attachmentServiceFetch(path: string, init: RequestInit = {
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       ...init,
+      redirect: 'error',
       headers: { ...Object.fromEntries(new Headers(init.headers).entries()), Authorization: `Bearer ${secret}` },
       signal: init.signal || AbortSignal.timeout(120_000)
     })

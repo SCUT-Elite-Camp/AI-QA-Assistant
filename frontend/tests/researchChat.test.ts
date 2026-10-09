@@ -22,7 +22,8 @@ describe('research conversation registration', () => {
     await expect(registerResearchChat(db, id, 'Replaced question', 'other')).rejects.toThrow('unavailable')
     const messages = await db.select().from(tables.messages).where(eq(tables.messages.chatId, id))
     expect(messages).toHaveLength(1)
-    expect(messages[0]?.parts).toEqual([{ type: 'text', text: 'Original question' }])
+    expect(messages[0]?.parts).toEqual(expect.arrayContaining([{ type: 'text', text: 'Original question' },
+      expect.objectContaining({ type: 'data-evidence-provenance' })]))
   })
 
   it('repairs a partially registered conversation before saving its report', async () => {

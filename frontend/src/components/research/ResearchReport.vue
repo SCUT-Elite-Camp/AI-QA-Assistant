@@ -6,6 +6,7 @@ import ResearchMessageActions from './ResearchMessageActions.vue'
 import ResearchSources from './ResearchSources.vue'
 import type { ChunkCitation } from '../chat/tool/Sources.vue'
 import { formatResearchCitations } from '../../utils/researchMarkdown'
+import { researchSourceHref } from '../../utils/research'
 
 const props = defineProps<{ job: ResearchJob, report: ResearchReport, plan?: ResearchPlan | null, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ restart: [], askSelectedText: [text: string], regenerate: [] }>()
@@ -20,12 +21,16 @@ const sourceCitations = computed<ChunkCitation[]>(() => props.report.citations.m
     doc_id: citation.doc_id,
     chunk_id: citation.evidence_id,
     title: citation.title,
-    source_url: citation.source_url ?? undefined,
+    source_url: researchSourceHref(props.job.research_id, citation.doc_id),
     chunk_text: citation.excerpt,
 })))
 const citationMap = computed(() => new Map(sourceCitations.value.map(citation => [citation.index, citation])))
 
 provide('ragCitationMap', citationMap)
+provide('openCitation', (index: number) => {
+  const citation = citationMap.value.get(index)
+  if (citation) window.open(researchSourceHref(props.job.research_id, citation.doc_id), '_blank', 'noopener,noreferrer')
+})
 
 function downloadMarkdown() {
   if (import.meta.env.VITE_RESEARCH_USE_MOCK !== 'true') {

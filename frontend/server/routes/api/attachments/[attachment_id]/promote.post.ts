@@ -24,7 +24,7 @@ export default defineHandler(async (event) => {
   }
   const remote = await attachmentServiceJson<any>(`/v1/attachments/${id}/scope`, {
     method: 'PATCH', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ scope: 'topic', expires_at: null, dedupe_domain: `topic:${body.topic_id}` })
+    body: JSON.stringify({ scope: 'topic', topic_id: body.topic_id, expires_at: null, dedupe_domain: `topic:${body.topic_id}` })
   })
   await useDrizzle().update(tables.attachments).set({ scope: 'topic', topicId: body.topic_id, expiresAt: null }).where(eq(tables.attachments.id, id))
   return remote

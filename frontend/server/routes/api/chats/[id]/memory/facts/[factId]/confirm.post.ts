@@ -6,10 +6,12 @@ import { requireOwnedChat } from '../../../../../../../utils/chatAccess'
 import {
   MemoryFactRevokedError,
   MemoryRepositoryError,
+  getCurrentRevisionFacts,
   confirmFact,
   toFactView
 } from '../../../../../../../utils/memoryRepository'
 import { isSessionFactEnabled } from '../../../../../../../utils/sessionFactGate'
+import { assertDerivedSources } from '../../../../../../../utils/sourceAccess'
 
 function factError (status: number, code: string, message: string): Response {
   return Response.json({ code, message }, { status })
@@ -45,12 +47,15 @@ export default defineHandler(async (event) => {
   }
 
   try {
+    const candidate = (await getCurrentRevisionFacts(useDrizzle(), { actorUserId: owned.actor.userId, chatId: id, historyRevision: owned.chat.historyRevision })).find(fact => fact.id === factId)
+    if (candidate) await assertDerivedSources(owned.actor.userId, candidate.evidenceProvenance)
     const fact = await confirmFact(useDrizzle(), {
       actorUserId: owned.actor.userId,
       chatId: id,
       factId,
       historyRevision: owned.chat.historyRevision
     })
+    await assertDerivedSources(owned.actor.userId, fact.evidenceProvenance)
     return { fact: toFactView(fact) }
   } catch (error) {
     if (error instanceof MemoryFactRevokedError) {

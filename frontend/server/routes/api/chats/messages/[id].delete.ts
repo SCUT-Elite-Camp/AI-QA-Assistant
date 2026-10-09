@@ -16,14 +16,14 @@ export default defineHandler(async (event) => {
 
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
-  }).parse)
+  }).parse, { decode: true })
 
   const { chatId, type } = await readValidatedBody(event, z.object({
     chatId: z.string(),
     type: z.enum(['edit', 'regenerate'])
   }).parse)
 
-  const { actor } = await requireOwnedChat(event, chatId)
+  const { actor } = await requireOwnedChat(event, chatId, 'editor')
   const db = useDrizzle()
 
   // Use the memory repository's optimistic locking to truncate DB messages
@@ -46,7 +46,7 @@ export default defineHandler(async (event) => {
     throw err
   }
 
-  void resetShortWindow(chatId).catch(() => {})
+  void resetShortWindow(chatId, { actorUserId: actor.userId }).catch(() => {})
 
   // Find all message IDs to delete to clean up attachments
   const allMessages = await db.query.messages.findMany({

@@ -1,411 +1,112 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { $fetch } from 'ofetch'
 import type { ChunkCitation } from './tool/Sources.vue'
 import ChatComark from './Comark'
+import { evidenceUrl, evidenceError } from '../../utils/evidence'
 
-const props = defineProps<{
-  open: boolean
-  doc: ChunkCitation | null
-  allCitations?: ChunkCitation[]
-}>()
-
-const emit = defineEmits<{
-  'update:open': [value: boolean]
-}>()
-
+const props = defineProps<{ open: boolean, doc: ChunkCitation | null, allCitations?: ChunkCitation[], messageId?: string }>()
+const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 const loading = ref(false)
 const error = ref<string | null>(null)
-const fullDoc = ref<{
-  doc_id: string
-  title: string
-  content: string
-  chunks?: any[]
-  address?: string
-  last_updated?: string
-} | null>(null)
-
-// Find all retrieved chunks that belong to this document, deduplicated by chunk identifier
-const relevantChunks = computed(() => {
-  if (!props.doc) return []
-  const list = props.allCitations || [props.doc]
-  const seen = new Set<string>()
-  const result: ChunkCitation[] = []
-
-  for (const c of list) {
-    const isSameDoc = (c.doc_id && c.doc_id === props.doc?.doc_id) ||
-                      (c.title && c.title === props.doc?.title)
-    const text = (c.chunk_text || (c as any).snippet || '').trim()
-    if (isSameDoc && text) {
-      const key = c.chunk_id || text.slice(0, 50)
-      if (!seen.has(key)) {
-        seen.add(key)
-        result.push(c)
-      }
-    }
-  }
-  return result
+const evidence = ref<ChunkCitation | null>(null)
+const source = ref<{ doc_id?: string, title?: string, content?: string, source_url?: string } | null>(null)
+const locatedExcerpt = ref<HTMLElement | null>(null)
+let requestRevision = 0
+const excerpt = computed(() => evidence.value?.excerpt || evidence.value?.chunk_text || evidence.value?.snippet || '')
+const version = computed(() => evidence.value?.source_version ?? evidence.value?.version)
+const sourceUrl = computed(() => {
+  const url = source.value?.source_url || evidence.value?.source_url || ''
+  return /^https:\/\//.test(url) ? url : ''
 })
-
-interface ContentSegment {
-  id: string
-  text: string
-  isHighlighted: boolean
-  chunkIndex?: number
-}
-
-const contentSegments = computed<ContentSegment[]>(() => {
-  const fullContent = fullDoc.value?.content || ''
-  if (!fullContent) return []
-
-  const chunks = relevantChunks.value
-  if (!chunks || chunks.length === 0) {
-    return [{ id: 'seg-norm-0', text: fullContent, isHighlighted: false }]
-  }
-
-  interface MatchItem {
-    chunkIndex: number
-    start: number
-    end: number
-    chunkText: string
-  }
-
-  const matches: MatchItem[] = []
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i]
-    if (!chunk) continue
-    const rawChunk: string = (chunk.chunk_text || (chunk as { snippet?: string }).snippet || '').trim()
-    if (!rawChunk || rawChunk.length < 5) continue
-
-    let startIdx = fullContent.indexOf(rawChunk)
-    if (startIdx === -1) {
-      const normChunk = rawChunk.replace(/\r\n/g, '\n')
-      const normContent = fullContent.replace(/\r\n/g, '\n')
-      startIdx = normContent.indexOf(normChunk)
-      if (startIdx !== -1) {
-        matches.push({
-          chunkIndex: i + 1,
-          start: startIdx,
-          end: startIdx + normChunk.length,
-          chunkText: normChunk
-        })
-        continue
-      }
-
-      // Paragraph fallback
-      const paras = rawChunk.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 25)
-      for (const p of paras) {
-        const s = fullContent.indexOf(p)
-        if (s !== -1) {
-          matches.push({
-            chunkIndex: i + 1,
-            start: s,
-            end: s + p.length,
-            chunkText: p
-          })
-          break
-        }
-      }
-    } else {
-      matches.push({
-        chunkIndex: i + 1,
-        start: startIdx,
-        end: startIdx + rawChunk.length,
-        chunkText: rawChunk
-      })
-    }
-  }
-
-  if (matches.length === 0) {
-    return [{ id: 'seg-norm-0', text: fullContent, isHighlighted: false }]
-  }
-
-  // Sort matches by start index ascending
-  matches.sort((a, b) => a.start - b.start)
-
-  const segments: ContentSegment[] = []
-  let cursor = 0
-
-  for (let i = 0; i < matches.length; i++) {
-    const m = matches[i]
-    if (!m) continue
-    const start = Math.max(cursor, m.start)
-
-    // If the next match starts before this one ends (overlap), truncate this chunk at next match start so both get their own header
-    let end = m.end
-    const nextMatch = matches[i + 1]
-    if (nextMatch && nextMatch.start < end) {
-      end = nextMatch.start
-    }
-
-    // Normal content before this chunk
-    if (start > cursor) {
-      const beforeText = fullContent.slice(cursor, start).trim()
-      if (beforeText) {
-        segments.push({
-          id: `seg-norm-${cursor}`,
-          text: beforeText,
-          isHighlighted: false
-        })
-      }
-    }
-
-    // This highlighted chunk segment
-    const chunkText = fullContent.slice(start, end).trim()
-    if (chunkText) {
-      segments.push({
-        id: `chunk-block-${m.chunkIndex}`,
-        text: chunkText,
-        isHighlighted: true,
-        chunkIndex: m.chunkIndex
-      })
-    }
-
-    cursor = end
-  }
-
-  // Remaining normal content
-  if (cursor < fullContent.length) {
-    const afterText = fullContent.slice(cursor).trim()
-    if (afterText) {
-      segments.push({
-        id: `seg-norm-${cursor}`,
-        text: afterText,
-        isHighlighted: false
-      })
-    }
-  }
-
-  return segments
+const locator = computed(() => evidence.value?.locator ? JSON.stringify(evidence.value.locator) : '')
+const exactLocation = computed(() => !!excerpt.value && !!source.value?.content && source.value.content.includes(excerpt.value))
+const sourceSegments = computed(() => {
+  const text = source.value?.content || ''
+  const index = exactLocation.value ? text.indexOf(excerpt.value) : -1
+  return index < 0 ? null : { before: text.slice(0, index), excerpt: excerpt.value, after: text.slice(index + excerpt.value.length) }
 })
-
-function scrollToChunk(chunkIndex: number) {
-  const el = document.getElementById(`chunk-block-${chunkIndex}`)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
+async function jumpToExcerpt() {
+  await nextTick()
+  locatedExcerpt.value?.scrollIntoView?.({ block: 'center', behavior: 'instant' })
+  locatedExcerpt.value?.focus({ preventScroll: true })
 }
 
 async function loadFullDocument() {
-  if (!props.doc) return
+  const revision = ++requestRevision
   loading.value = true
   error.value = null
-  fullDoc.value = null
-
+  evidence.value = null
+  source.value = null
   try {
-    const targetId = props.doc.doc_id || props.doc.title
-    const data = await $fetch<any>(`/api/documents/${encodeURIComponent(targetId)}`)
-    fullDoc.value = data
-  } catch (err: any) {
-    console.error('[ModalDocumentViewer] fetch error:', err)
-    error.value = err.data?.message || err.message || 'Failed to load document content'
+    if (!props.doc) throw new Error('未选择引用。')
+    if (props.messageId) {
+      const result = await $fetch<{ evidence: ChunkCitation, source?: typeof source.value }>(evidenceUrl(props.messageId, props.doc.evidence_ref || ''))
+      if (revision !== requestRevision) return
+      evidence.value = result.evidence
+      source.value = result.source ?? null
+    } else {
+      if (!props.doc.doc_id) throw new Error('缺少真实文档 ID，不能按标题读取原文。')
+      const result = await $fetch<NonNullable<typeof source.value>>(`/api/documents/${encodeURIComponent(props.doc.doc_id)}`)
+      if (revision !== requestRevision) return
+      source.value = result
+    }
+  } catch (failure) {
+    if (revision === requestRevision) error.value = evidenceError(failure)
   } finally {
-    loading.value = false
+    if (revision === requestRevision) loading.value = false
   }
 }
-
-watch(
-  () => [props.open, props.doc],
-  ([isOpen, currentDoc]) => {
-    if (isOpen && currentDoc) {
-      loadFullDocument()
-    }
-  },
-  { immediate: true }
-)
-
-function getDocIcon(title?: string): string {
-  const name = (title || '').toLowerCase()
-  if (name.endsWith('.md') || name.endsWith('.markdown')) return 'i-lucide-file-text'
-  if (name.endsWith('.pdf')) return 'i-lucide-file-type'
-  if (name.endsWith('.py') || name.endsWith('.ts') || name.endsWith('.js') || name.endsWith('.vue') || name.endsWith('.json') || name.endsWith('.sql')) return 'i-lucide-file-code'
-  if (name.startsWith('http://') || name.startsWith('https://')) return 'i-lucide-globe'
-  return 'i-lucide-file-text'
-}
+watch(() => [props.open, props.doc, props.messageId], () => {
+  if (props.open && props.doc) void loadFullDocument()
+  else { requestRevision++; evidence.value = null; source.value = null; error.value = null; loading.value = false }
+}, { immediate: true })
 </script>
 
 <template>
-  <UModal
-    :open="open"
-    :ui="{
-      content: 'sm:max-w-5xl md:max-w-6xl w-[92vw] rounded-3xl p-0 overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950'
-    }"
-    @update:open="emit('update:open', $event)"
-  >
+  <UModal :open="open" title="核对回答依据" description="查看本条回答绑定的授权原文与版本" :ui="{ content: 'sm:max-w-5xl w-[92vw]' }" @update:open="emit('update:open', $event)">
     <template #content>
-      <div class="flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl min-h-[560px] max-h-[85vh] w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden font-sans">
-        <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-50/70 dark:bg-zinc-900/70 backdrop-blur-md">
-          <div class="flex items-center gap-3 min-w-0 pr-4">
-            <div class="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
-              <UIcon :name="getDocIcon(fullDoc?.title || doc?.title)" class="w-6 h-6" />
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-2.5 flex-wrap">
-                <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">
-                  {{ fullDoc?.title || doc?.title || 'Document' }}
-                </h2>
-                <span
-                  v-if="relevantChunks.length > 0"
-                  class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600/90 dark:text-emerald-400/90 font-medium shrink-0 flex items-center gap-1"
-                >
-                  <UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80" />
-                  {{ relevantChunks.length }} {{ relevantChunks.length === 1 ? 'chunk' : 'chunks' }} matched
-                </span>
+      <div class="flex max-h-[85vh] flex-col rounded-xl border border-default bg-default text-default">
+        <header class="flex items-center justify-between gap-4 border-b border-default px-5 py-4">
+          <h2 class="min-w-0 break-words font-semibold">{{ evidence?.title || source?.title || '核对回答依据' }}</h2>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" aria-label="关闭原文窗口" @click="emit('update:open', false)" />
+        </header>
+        <div class="min-h-48 overflow-y-auto px-5 py-4" :aria-busy="loading">
+          <p v-if="loading" role="status" aria-live="polite">正在校验当前权限并读取原文…</p>
+          <div v-else-if="error" role="alert" class="space-y-3">
+            <p>{{ error }}</p>
+            <UButton color="neutral" variant="outline" @click="loadFullDocument">重新校验</UButton>
+          </div>
+          <div v-else class="space-y-4">
+            <dl v-if="evidence" class="grid gap-2 text-sm">
+              <div><dt class="inline text-muted">回答采用版本：</dt><dd class="inline">{{ version ?? '未知（未提供源版本）' }}</dd></div>
+              <div><dt class="inline text-muted">定位：</dt><dd class="inline break-all">{{ locator || '未知；仅展示实际摘录，不声称精确定位' }}</dd></div>
+              <div><dt class="inline text-muted">正文 hash：</dt><dd class="inline break-all font-mono">{{ evidence.normalized_content_hash || evidence.content_hash || '未知' }}</dd></div>
+            </dl>
+            <section v-if="excerpt" class="rounded-lg border border-default bg-elevated/40 p-4">
+              <h3 class="mb-2 text-sm font-semibold">本次回答采用的原文片段</h3>
+              <ChatComark :markdown="excerpt" />
+            </section>
+            <p v-if="evidence && !excerpt" role="status">授权证据未提供摘录，请重新提问获取可核对的依据。</p>
+            <section v-if="source?.content" class="space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold">授权原文</h3>
+                <UButton v-if="exactLocation" color="neutral" variant="outline" size="sm" @click="jumpToExcerpt">跳转到原文片段</UButton>
               </div>
-              <p class="text-xs text-zinc-600 dark:text-zinc-400 truncate mt-0.5 font-mono">
-                Doc ID: {{ fullDoc?.doc_id || doc?.doc_id || 'N/A' }}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2.5 shrink-0">
-            <UButton
-              v-if="fullDoc?.address && !fullDoc.address.startsWith('https://local-document')"
-              :to="fullDoc.address"
-              target="_blank"
-              size="xs"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-external-link"
-              class="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white rounded-xl px-3 py-1.5"
-            >
-              Open Source
-            </UButton>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-x"
-              size="sm"
-              class="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
-              @click="emit('update:open', false)"
-            />
-          </div>
-        </div>
-
-        <!-- Minimalist Quick Jump Bar -->
-        <div
-          v-if="relevantChunks.length > 0"
-          class="px-6 py-2 bg-zinc-50/40 dark:bg-zinc-900/40 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between gap-3 flex-wrap text-xs shrink-0"
-        >
-          <div class="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 font-mono text-[11px]">
-            <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80 shrink-0" />
-            <span>{{ relevantChunks.length }} {{ relevantChunks.length === 1 ? 'chunk' : 'chunks' }} highlighted</span>
-          </div>
-
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-zinc-500 text-[11px]">Jump to:</span>
-            <button
-              v-for="(_c, idx) in relevantChunks"
-              :key="`jump-${idx}`"
-              type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-emerald-700 dark:hover:text-emerald-300 border border-zinc-300/50 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-300 font-mono text-[11px] font-medium transition-all cursor-pointer select-none active:scale-95"
-              @click="scrollToChunk(idx + 1)"
-            >
-              <UIcon name="i-lucide-locate" class="w-3 h-3 text-emerald-600/70 dark:text-emerald-400/70" />
-              <span>Chunk #{{ idx + 1 }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Body / Content Viewer -->
-        <div class="flex-1 p-6 md:p-8 overflow-y-auto min-h-[360px]">
-          <!-- Loading State -->
-          <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3 text-zinc-600 dark:text-zinc-400">
-            <UIcon name="i-lucide-loader-2" class="w-9 h-9 animate-spin text-emerald-600 dark:text-emerald-400" />
-            <span class="text-sm">Loading document content...</span>
-          </div>
-
-          <!-- Error State -->
-          <div v-else-if="error" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
-            <UIcon name="i-lucide-alert-circle" class="w-10 h-10 text-rose-600 dark:text-rose-400" />
-            <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ error }}</span>
-            <UButton size="xs" color="neutral" variant="outline" class="rounded-xl" @click="loadFullDocument">
-              Retry
-            </UButton>
-          </div>
-
-          <!-- Document Content Rendered in Segments -->
-          <div v-else class="space-y-4 max-w-none text-zinc-800 dark:text-zinc-200">
-            <template v-for="seg in contentSegments" :key="seg.id">
-              <!-- Highlighted Chunk Segment -->
-              <div
-                v-if="seg.isHighlighted"
-                :id="seg.id"
-                class="chunk-highlighted-box relative my-5 p-5 rounded-2xl bg-emerald-500/[0.035] border border-emerald-500/20 border-l-[3.5px] border-l-emerald-500/70 shadow-md shadow-emerald-950/10 scroll-mt-6"
-              >
-                <!-- Segment Badge Header -->
-                <div class="flex items-center gap-1.5 mb-3 text-xs font-medium text-emerald-600/90 dark:text-emerald-400/90 font-mono tracking-wide">
-                  <UIcon name="i-lucide-bookmark" class="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80" />
-                  <span>Chunk #{{ seg.chunkIndex }}</span>
-                </div>
-
-                <!-- Inner Markdown Render with Clean White Text -->
-                <div class="chunk-highlighted-body text-zinc-800 dark:text-zinc-200">
-                  <ChatComark :markdown="seg.text" />
-                </div>
+              <p v-if="evidence && !exactLocation" role="status" class="text-sm text-muted">无法在返回全文中精确定位该摘录；下面是授权正文，不标记为已定位。</p>
+              <div v-if="sourceSegments" class="whitespace-pre-wrap break-words font-mono text-sm">
+                <span>{{ sourceSegments.before }}</span><mark ref="locatedExcerpt" tabindex="-1" class="rounded bg-primary/20 text-default outline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">{{ sourceSegments.excerpt }}</mark><span>{{ sourceSegments.after }}</span>
               </div>
-
-              <!-- Normal Document Markdown Segment -->
-              <div v-else class="document-normal-body text-zinc-800 dark:text-zinc-200">
-                <ChatComark :markdown="seg.text" />
-              </div>
-            </template>
+              <ChatComark v-else :markdown="source.content" />
+            </section>
+            <p v-else-if="excerpt" class="text-sm text-muted">当前只展示本条回答绑定的片段，不代表已读取完整文档。未核对源站最新版。</p>
+            <a v-if="sourceUrl" :href="sourceUrl" target="_blank" rel="noopener noreferrer" class="inline-block rounded text-primary underline focus-visible:outline-2 focus-visible:outline-primary">打开源站当前页面（可能不同于回答版本）</a>
           </div>
         </div>
-
-        <!-- Footer -->
-        <div class="px-6 py-3.5 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
-          <span v-if="fullDoc?.last_updated">
-            Updated: {{ new Date(fullDoc.last_updated).toLocaleString() }}
-          </span>
-          <span v-else>Knowledge Base Document</span>
-
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="solid"
-            class="rounded-xl px-5 font-medium"
-            @click="emit('update:open', false)"
-          >
-            Close
-          </UButton>
-        </div>
+        <footer class="flex justify-end border-t border-default px-5 py-3">
+          <UButton color="neutral" @click="emit('update:open', false)">关闭</UButton>
+        </footer>
       </div>
     </template>
   </UModal>
 </template>
-
-<style scoped>
-/* Highlighted evidence follows the active theme, including Markdown and code. */
-.chunk-highlighted-body :deep(p),
-.chunk-highlighted-body :deep(li),
-.chunk-highlighted-body :deep(span),
-.chunk-highlighted-body :deep(td),
-.chunk-highlighted-body :deep(th),
-.chunk-highlighted-body :deep(blockquote) {
-  color: var(--ui-text) !important;
-}
-
-.chunk-highlighted-body :deep(h1),
-.chunk-highlighted-body :deep(h2),
-.chunk-highlighted-body :deep(h3),
-.chunk-highlighted-body :deep(h4),
-.chunk-highlighted-body :deep(h5),
-.chunk-highlighted-body :deep(h6),
-.chunk-highlighted-body :deep(strong) {
-  color: var(--ui-text-highlighted) !important;
-}
-
-.chunk-highlighted-body :deep(code) {
-  background-color: var(--ui-bg-elevated) !important;
-  color: var(--ui-text) !important;
-  border: 1px solid var(--ui-border) !important;
-}
-
-.chunk-highlighted-body :deep(pre) {
-  background-color: var(--ui-bg-muted) !important;
-  border: 1px solid var(--ui-border) !important;
-}
-</style>

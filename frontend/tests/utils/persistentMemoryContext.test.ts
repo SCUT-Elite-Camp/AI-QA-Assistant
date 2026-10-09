@@ -60,7 +60,8 @@ describe('persistent Memory BFF context', () => {
     expect(context.actor).toEqual({ user_id: 'user-a', authenticated: true })
     expect(context.snapshot?.covered_to_sequence).toBe(1)
     expect(context.tail).toEqual([{
-      id: 'message-2', sequence: 2, revision: 2, role: 'assistant', content: 'Previous response.'
+      id: 'message-2', sequence: 2, revision: 2, role: 'assistant', content: 'Previous response.',
+      source_dependencies: [], provenance_complete: false,
     }])
   })
 })

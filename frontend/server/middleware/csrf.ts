@@ -1,6 +1,7 @@
 import { defineHandler, HTTPError } from 'nitro'
 import { getCookie, setCookie } from 'nitro/h3'
 import { randomUUID } from 'node:crypto'
+import { getSessionCookieSecure } from '../utils/session'
 
 const CSRF_COOKIE = 'csrf-token'
 const CSRF_HEADER = 'x-csrf-token'
@@ -14,7 +15,7 @@ export default defineHandler((event) => {
     setCookie(event, CSRF_COOKIE, token, {
       httpOnly: false,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: getSessionCookieSecure(),
       path: '/'
     })
   }

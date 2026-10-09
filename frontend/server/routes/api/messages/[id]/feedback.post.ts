@@ -4,11 +4,14 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { requestTopicSummarizerFromPersistence } from '../../../../utils/soul'
 import { saveFavoriteToDisk, removeFavoriteFromDisk } from '../../../../utils/favoriteStorage'
+import { assertResearchChatAccess } from '../../../../utils/chatAccess'
+import { requireCsrf } from '../../../../utils/attachmentAuth'
+import { requireOwnedChat } from '../../../../utils/chatAccess'
+import { assertMessageSources } from '../../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
-  const { id } = await getValidatedRouterParams(event, z.object({
-    id: z.string()
-  }).parse)
+  requireCsrf(event)
+  const { id } = await getValidatedRouterParams(event, z.object({ id: z.string().min(1) }).parse, { decode: true })
 
   const { isFavorite, suggestionText } = await readValidatedBody(event, z.object({
     isFavorite: z.boolean().optional(),
@@ -25,6 +28,8 @@ export default defineHandler(async (event) => {
   if (!message) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Message not found' })
   }
+  const { actor } = await requireOwnedChat(event, message.chatId, 'editor')
+  await assertMessageSources(actor.userId, message)
 
   const updateFields: Record<string, any> = {}
   if (isFavorite !== undefined) updateFields.isFavorite = isFavorite
@@ -63,7 +68,9 @@ export default defineHandler(async (event) => {
   // ────────────────────────────────────────────────────────────────────────
 
   // If chat belongs to a topic, trigger incremental Soul update in background
-  if (message.chat?.topicId) {
+  // Feedback is not a new authorization for old Topic summaries. A dedicated
+  // source-aware summarize request may rebuild them from current messages.
+  if (false && message.chat?.topicId) {
     const topic = await db.query.topics.findFirst({
       where: eq(tables.topics.id, message.chat.topicId)
     })

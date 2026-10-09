@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ResearchCitation } from '../../types/research'
+import { researchSourceHref } from '../../utils/research'
 
 const props = defineProps<{
   citations: ResearchCitation[]
   researchId: string
   selectedCitation?: number | null
 }>()
-
-const researchApiBase = (import.meta.env.VITE_RESEARCH_API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '')
 
 const emit = defineEmits<{
   select: [citationNumber: number]
@@ -46,9 +45,7 @@ function formatDate(value: string | null) {
 }
 
 function sourceHref(citation: ResearchCitation) {
-  const sourceUrl = citation.source_url?.trim() ?? ''
-  if (/^https?:\/\//i.test(sourceUrl) && !sourceUrl.startsWith('https://local-document')) return sourceUrl
-  return `${researchApiBase}/api/research/jobs/${encodeURIComponent(props.researchId)}/documents/${encodeURIComponent(citation.doc_id)}/source`
+  return researchSourceHref(props.researchId, citation.doc_id)
 }
 </script>
 

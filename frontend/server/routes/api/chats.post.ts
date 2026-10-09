@@ -8,6 +8,7 @@ import { mergeSafeAttachmentParts } from '../../../shared/utils/attachmentParts'
 import { requireCsrf, requirePrincipal } from '../../utils/attachmentAuth'
 import { canBindDraftToNewChat } from '../../../shared/utils/attachmentScope'
 import { appendMessage } from '../../utils/messageLifecycle'
+import { authoredProvenance } from '../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
   requireCsrf(event)
@@ -47,17 +48,20 @@ export default defineHandler(async (event) => {
   // committing the chat. If this preflight fails, no visible chat/message is
   // created. A later DB failure is recoverable because the BFF still owns the
   // draft rows and the service keeps the same 24-hour expiry.
+  const chatId = crypto.randomUUID()
   if (selected.length) {
     await Promise.all(selected.map(item => attachmentServiceJson(`/v1/attachments/${item.id}/scope`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ scope: 'chat', expires_at: Math.floor((item.expiresAt?.getTime() || Date.now() + 86_400_000) / 1000) })
+      body: JSON.stringify({ scope: 'chat', chat_id: chatId, expires_at: Math.floor((item.expiresAt?.getTime() || Date.now() + 86_400_000) / 1000) })
     })))
   }
 
   const messageId = crypto.randomUUID()
   const chat = await db.transaction(async (tx) => {
     const [created] = await tx.insert(tables.chats).values({
+      id: chatId,
       title: initialTitle,
+      evidenceProvenance: authoredProvenance(),
       userId,
       historyRevision: 1,
       nextMessageSequence: 2,
@@ -71,6 +75,7 @@ export default defineHandler(async (event) => {
       role: 'user',
       parts: mergeSafeAttachmentParts([
         { type: 'text', text: input },
+        { type: 'data-evidence-provenance', data: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] } },
         {
           type: 'data-chat-preferences',
           data: {

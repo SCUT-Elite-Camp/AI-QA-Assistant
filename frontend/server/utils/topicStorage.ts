@@ -4,8 +4,9 @@ import { logger } from './logger'
 import { tables, eq, and, inArray } from './drizzle'
 
 function getTopicsDir(): string {
+  if (process.env.TOPICS_DATA_DIR) return path.resolve(process.env.TOPICS_DATA_DIR)
   let cwd = process.cwd()
-  if (cwd.endsWith('web') || cwd.endsWith('web/')) {
+  if (['web', 'frontend'].includes(path.basename(cwd))) {
     cwd = path.resolve(cwd, '..')
   }
   const topicsDir = path.join(cwd, 'data-persistence', 'data', 'topics')

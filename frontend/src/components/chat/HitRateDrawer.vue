@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import type { UIMessage } from 'ai'
 import { $fetch } from 'ofetch'
+import { formatRetrievalScore } from '../../utils/evidence'
 
 interface ChunkCitation {
   doc_id: string
@@ -19,41 +20,29 @@ const props = withDefaults(defineProps<{
   messages: UIMessage[]
   totalDocs?: number
 }>(), {
-  totalDocs: 49
+  totalDocs: undefined
 })
 
 const emit = defineEmits<{
   (e: 'update:open', val: boolean): void
 }>()
 
-const systemDocTotal = ref<number>(props.totalDocs)
+const systemDocTotal = ref<number | undefined>(props.totalDocs)
 
 onMounted(async () => {
   try {
     const res: any = await $fetch('/api/metrics')
-    if (res?.indexedDocs?.length) {
+    if (Array.isArray(res?.indexedDocs)) {
       systemDocTotal.value = res.indexedDocs.length
     }
   } catch (e) {
-    // keep default fallback
+    // Unknown values must remain unknown.
   }
 })
 
-// Compute smooth, realistic Cosine Similarity Percentage
-function computeRealisticSimilarity(item: any, idx: number, total: number): number {
-  const rawVector = item.similarity ?? item.vector_score ?? item.vectorScore
-  if (typeof rawVector === 'number' && rawVector > 0.35) {
-    return rawVector > 1 ? Math.min(99, Math.round(rawVector)) : Math.min(99, Math.round(rawVector * 100))
-  }
-
-  const rawScore = typeof item.score === 'number' ? item.score : 1.0
-  let norm = rawScore > 1 ? rawScore / 100 : rawScore
-
-  if (norm < 0.2 && total > 0) {
-    norm = Math.max(0.1, 1.0 - (idx - 1) * 0.15)
-  }
-
-  return Math.min(98, Math.max(70, Math.round(72 + norm * 24)))
+// Preserve actual retrieval scores; never turn rank into a quality percentage.
+function rawRetrievalScore(item: any): number | undefined {
+  return typeof item.score === 'number' && Number.isFinite(item.score) ? item.score : undefined
 }
 
 // Helper to extract tool output citations returned from assistant message parts
@@ -64,7 +53,7 @@ function getCitationsFromMessage(m: UIMessage): ChunkCitation[] {
   const seenIds = new Set<string>()
 
   for (const part of m.parts) {
-    if (!part) continue
+    if (!part || part.type !== 'tool-rag_search') continue
     const output = (part as any).output || (part as any).result || (part as any).data
     if (output) {
       const arr = Array.isArray(output) ? output : [output]
@@ -76,14 +65,14 @@ function getCitationsFromMessage(m: UIMessage): ChunkCitation[] {
             seenIds.add(chunkId)
             idx++
             const itemIdx = item.index ?? idx
-            const sim = computeRealisticSimilarity(item, idx, arr.length)
+            const sim = rawRetrievalScore(item)
 
             citations.push({
               index: itemIdx,
               doc_id: item.doc_id || item.docId || chunkId,
               chunk_id: chunkId,
               title: item.title || item.doc_id || `Chunk #${itemIdx}`,
-              score: typeof item.score === 'number' ? Math.round(item.score * 100) : undefined,
+              score: rawRetrievalScore(item),
               similarity: sim,
               snippet: item.snippet || item.chunk_text || item.text || '',
               space: item.space || null
@@ -106,8 +95,8 @@ const questionTurns = computed(() => {
     retrievedCount: number
     isHit: boolean
     hitRatePercent: number
-    topSimilarity: number
-    avgSimilarity: number
+    topSimilarity?: number
+    avgSimilarity?: number
     isPending?: boolean
   }[] = []
 
@@ -139,20 +128,20 @@ const questionTurns = computed(() => {
       const isHit = retrievedCount > 0
       const hitRatePercent = isHit ? 100 : 0
 
-      let topSimilarity = 0
+      let topSimilarity: number | undefined
       let totalSimSum = 0
       let simCount = 0
 
       for (const c of citations) {
         const val = c.similarity
-        if (typeof val === 'number' && val > 0) {
-          if (val > topSimilarity) topSimilarity = val
+        if (typeof val === 'number') {
+          if (topSimilarity === undefined || val > topSimilarity) topSimilarity = val
           totalSimSum += val
           simCount++
         }
       }
 
-      const avgSimilarity = simCount > 0 ? Math.round(totalSimSum / simCount) : 0
+      const avgSimilarity = simCount > 0 ? totalSimSum / simCount : undefined
 
       turns.push({
         turnIndex: turnCount,
@@ -191,8 +180,8 @@ const questionTurns = computed(() => {
       retrievedCount: 0,
       isHit: false,
       hitRatePercent: 0,
-      topSimilarity: 0,
-      avgSimilarity: 0,
+      topSimilarity: undefined,
+      avgSimilarity: undefined,
       isPending: true
     })
   }
@@ -212,7 +201,7 @@ const overallMetrics = computed(() => {
   const totalTurns = completedTurns.length
 
   let totalRetrievedChunks = 0
-  let overallTopSim = 0
+  let overallTopSim: number | undefined
   let totalSimSum = 0
   let simCount = 0
   const uniqueDocIds = new Set<string>()
@@ -222,8 +211,8 @@ const overallMetrics = computed(() => {
     for (const c of turn.citations) {
       if (c.doc_id) uniqueDocIds.add(c.doc_id)
       const val = c.similarity
-      if (typeof val === 'number' && val > 0) {
-        if (val > overallTopSim) overallTopSim = val
+      if (typeof val === 'number') {
+        if (overallTopSim === undefined || val > overallTopSim) overallTopSim = val
         totalSimSum += val
         simCount++
       }
@@ -234,10 +223,10 @@ const overallMetrics = computed(() => {
     ? Number(((hitTurnsCount / totalTurns) * 100).toFixed(1))
     : 0
 
-  const avgSimilarity = simCount > 0 ? Math.round(totalSimSum / simCount) : 0
+  const avgSimilarity = simCount > 0 ? totalSimSum / simCount : undefined
 
   return {
-    totalSystemDocs: systemDocTotal.value || 49,
+    totalSystemDocs: systemDocTotal.value,
     recalledUniqueDocsCount: uniqueDocIds.size,
     totalRetrievedChunks,
     hitTurnsCount,
@@ -266,11 +255,12 @@ function closeDrawer() {
             <UIcon name="i-lucide-bar-chart-3" class="w-4 h-4" />
           </div>
           <div>
-            <h3 class="text-xs font-semibold text-zinc-100">检索命中率与语义相似度监控</h3>
+            <h3 class="text-xs font-semibold text-zinc-100">回答引用与检索记录</h3>
           </div>
         </div>
         <button
           type="button"
+          aria-label="关闭检索记录"
           class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
           @click="closeDrawer"
         >
@@ -284,9 +274,9 @@ function closeDrawer() {
         <!-- Card 1: Overall Hit Rate Card -->
         <div class="p-3.5 bg-gradient-to-br from-zinc-900/90 to-zinc-950 border border-zinc-800 rounded-2xl space-y-3 shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">🎯 检索命中率 (Hit Rate)</span>
+            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">有引用的回答比例</span>
             <UBadge :color="overallMetrics.hitRatePercent >= 60 ? 'success' : 'info'" variant="subtle" size="xs">
-              {{ overallMetrics.hitRatePercent }}% 命中
+              {{ overallMetrics.hitRatePercent }}% 有引用
             </UBadge>
           </div>
 
@@ -295,9 +285,9 @@ function closeDrawer() {
             <div class="space-y-0.5">
               <div class="text-2xl font-bold font-mono text-emerald-400 flex items-baseline gap-1">
                 <span>{{ overallMetrics.hitTurnsCount }}</span>
-                <span class="text-xs font-normal text-zinc-500">/ {{ overallMetrics.totalTurns }} 轮命中</span>
+                <span class="text-xs font-normal text-zinc-500">/ {{ overallMetrics.totalTurns }} 轮有引用</span>
               </div>
-              <p class="text-[11px] text-zinc-400">成功召回相关文档块的提问占比</p>
+              <p class="text-[11px] text-zinc-400">仅统计返回引用，不代表召回率、相关性或回答正确率。</p>
             </div>
             <div class="text-right font-mono">
               <div class="text-xs text-zinc-400">核心切块</div>
@@ -310,7 +300,7 @@ function closeDrawer() {
             <div class="h-2 w-full bg-zinc-800 rounded-full overflow-hidden flex">
               <div
                 class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-                :style="{ width: `${Math.min(100, Math.max(2, overallMetrics.hitRatePercent))}%` }"
+                :style="{ width: `${overallMetrics.hitRatePercent}%` }"
               ></div>
             </div>
           </div>
@@ -321,31 +311,32 @@ function closeDrawer() {
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-sky-400 uppercase tracking-wider flex items-center gap-1">
               <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-sky-400" />
-              语义相似度指标 (Similarity)
+              返回的检索分（非置信度）
             </span>
           </div>
 
           <!-- Similarity Numbers Grid -->
           <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-center">
             <div class="p-2 bg-zinc-950/80 rounded-xl border border-sky-500/20">
-              <div class="text-[10px] text-zinc-500">平均相似度</div>
-              <div class="text-lg font-bold text-sky-400">{{ overallMetrics.avgSimilarity || 85 }}%</div>
+              <div class="text-[10px] text-zinc-500">平均返回分</div>
+              <div class="text-lg font-bold text-sky-400">{{ formatRetrievalScore(overallMetrics.avgSimilarity) }}</div>
             </div>
             <div class="p-2 bg-zinc-950/80 rounded-xl border border-emerald-500/20">
-              <div class="text-[10px] text-zinc-500">最高相似度</div>
-              <div class="text-lg font-bold text-emerald-400">{{ overallMetrics.topSimilarity || 92 }}%</div>
+              <div class="text-[10px] text-zinc-500">最高返回分</div>
+              <div class="text-lg font-bold text-emerald-400">{{ formatRetrievalScore(overallMetrics.topSimilarity) }}</div>
             </div>
           </div>
+          <p class="text-[11px] text-zinc-500">不同检索算法和查询的分值不可直接比较；不做语义质量判定。</p>
         </div>
 
         <!-- System Capacity Mini Grid -->
         <div class="grid grid-cols-2 gap-2 text-xs font-mono">
           <div class="p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
             <div class="text-[10px] text-zinc-500">知识库总文档数</div>
-            <div class="font-bold text-zinc-200 mt-0.5">{{ overallMetrics.totalSystemDocs }} 篇文档</div>
+            <div class="font-bold text-zinc-200 mt-0.5">{{ overallMetrics.totalSystemDocs ?? '未知' }} 篇文档</div>
           </div>
           <div class="p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
-            <div class="text-[10px] text-zinc-500">已覆盖相关文档</div>
+            <div class="text-[10px] text-zinc-500">返回引用涉及文档</div>
             <div class="font-bold text-emerald-400 mt-0.5">{{ overallMetrics.recalledUniqueDocsCount }} 篇</div>
           </div>
         </div>
@@ -389,7 +380,7 @@ function closeDrawer() {
                   <span>分析中</span>
                 </div>
                 <div v-else :class="['px-2 py-0.5 rounded border text-[10px] font-bold', turn.isHit ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-400']">
-                  {{ turn.hitRatePercent }}% Hit
+                  {{ turn.isHit ? '有引用' : '无引用' }}
                 </div>
               </div>
             </div>
@@ -397,16 +388,16 @@ function closeDrawer() {
             <!-- Ultra-Concise Summary Line: Avg Similarity & Retrieved Count -->
             <div v-if="!turn.isPending" class="flex items-center justify-between text-[11px] pt-1.5 border-t border-zinc-800/60 font-mono">
               <span class="text-zinc-400 flex items-center gap-1">
-                <span>平均相似度:</span>
-                <strong class="text-sky-400 font-bold">{{ turn.avgSimilarity ? `${turn.avgSimilarity}%` : 'N/A' }}</strong>
+                <span>平均检索分:</span>
+                <strong class="text-sky-400 font-bold">{{ formatRetrievalScore(turn.avgSimilarity) }}</strong>
               </span>
               <span class="text-zinc-500 text-[10px]">
-                {{ turn.retrievedCount > 0 ? `召回 ${turn.retrievedCount} 个切块` : '通用回答 (未召回切块)' }}
+                {{ turn.retrievedCount > 0 ? `返回 ${turn.retrievedCount} 个引用片段` : '未返回引用片段' }}
               </span>
             </div>
             <div v-else class="text-[10px] text-amber-400/80 italic pt-1.5 border-t border-zinc-800/60 flex items-center gap-1.5">
               <UIcon name="i-lucide-refresh-cw" class="w-3 h-3 animate-spin" />
-              <span>正在实时检索评估中...</span>
+              <span>正在等待回答引用...</span>
             </div>
           </div>
         </div>

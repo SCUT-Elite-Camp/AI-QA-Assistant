@@ -1,15 +1,17 @@
 import { $fetch } from 'ofetch'
 import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchInteractionResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
 import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetEvents, mockGetPlan, mockGetProgress, mockGetReport, mockGetResearch, mockReviseResearchPlan } from '../mocks/research'
+import { useCsrf } from './useCsrf'
 
 const useMock = import.meta.env.VITE_RESEARCH_USE_MOCK === 'true'
-const configuredBase = (import.meta.env.VITE_RESEARCH_API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '')
-const apiBase = `${configuredBase}/api/research`
+const apiBase = '/api/research'
 
 export function useResearchApi() {
+  const { csrf, headerName } = useCsrf()
+  const mutationHeaders = () => ({ [headerName]: csrf() })
   async function createJob(request: ResearchRequest): Promise<ResearchJob> {
     if (useMock) return mockCreateResearch(request)
-    return $fetch<ResearchJob>(`${apiBase}/jobs`, { method: 'POST', headers: { 'X-User-ID': 'web-user' }, body: request })
+    return $fetch<ResearchJob>(`${apiBase}/jobs`, { method: 'POST', headers: mutationHeaders(), body: request })
   }
 
   async function getJob(researchId: string): Promise<ResearchJob> {
@@ -24,27 +26,27 @@ export function useResearchApi() {
 
   async function approveJob(researchId: string, approval: ResearchApprovalRequest): Promise<ResearchJob> {
     if (useMock) return mockApproveResearch(researchId)
-    return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/approve`, { method: 'POST', headers: { 'X-User-ID': 'web-user' }, body: approval })
+    return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/approve`, { method: 'POST', headers: mutationHeaders(), body: approval })
   }
 
   async function revisePlan(researchId: string, revision: ResearchPlanRevisionRequest): Promise<ResearchPlan> {
     if (useMock) return mockReviseResearchPlan(researchId, revision)
     return $fetch<ResearchPlan>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/plan/revisions`, {
       method: 'POST',
-      headers: { 'X-User-ID': 'web-user' },
+      headers: mutationHeaders(),
       body: revision,
     })
   }
 
   async function cancelJob(researchId: string): Promise<ResearchJob> {
     if (useMock) return mockCancelResearch(researchId)
-    return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/cancel`, { method: 'POST' })
+    return $fetch<ResearchJob>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/cancel`, { method: 'POST', headers: mutationHeaders() })
   }
 
   async function sendMessage(researchId: string, message: string): Promise<ResearchInteractionResponse> {
     return $fetch<ResearchInteractionResponse>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/messages`, {
       method: 'POST',
-      headers: { 'X-User-ID': 'web-user' },
+      headers: mutationHeaders(),
       body: { message },
     })
   }

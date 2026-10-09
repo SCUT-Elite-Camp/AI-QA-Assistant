@@ -132,7 +132,7 @@ describe('history mutation short-window reset boundary', () => {
       type: 'edit'
     })
     expect(mocks.resetShortWindow).toHaveBeenCalledOnce()
-    expect(mocks.resetShortWindow).toHaveBeenCalledWith('chat-1')
+    expect(mocks.resetShortWindow).toHaveBeenCalledWith('chat-1', { actorUserId: 'user-1' })
   })
 
   it('does not reset the short window when the edit transaction fails', async () => {
@@ -172,7 +172,7 @@ describe('history mutation short-window reset boundary', () => {
     await expect(response).resolves.toEqual([{ id: 'chat-1' }])
     expect(mocks.delete).toHaveBeenCalledOnce()
     expect(mocks.resetShortWindow).toHaveBeenCalledOnce()
-    expect(mocks.resetShortWindow).toHaveBeenCalledWith('chat-1')
+    expect(mocks.resetShortWindow).toHaveBeenCalledWith('chat-1', { actorUserId: 'user-1' })
   })
 
   it('does not reset the short window when chat deletion fails', async () => {

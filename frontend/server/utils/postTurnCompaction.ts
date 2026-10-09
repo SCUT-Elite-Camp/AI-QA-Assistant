@@ -16,6 +16,7 @@ import {
 import { getMemoryFeatureFlags } from './memoryFeatureFlags'
 import type { useDrizzle } from './drizzle'
 import type { CurrentMessageHandoff } from './messageLifecycle'
+import { assertSourceDependencies, messageProvenance } from './sourceAccess'
 
 type Database = NonNullable<ReturnType<typeof useDrizzle>>
 
@@ -41,7 +42,9 @@ function toActiveSnapshotInput (snapshot: MemorySnapshotDto | undefined) {
         version: snapshot.version,
         revision: snapshot.historyRevision,
         covered_to_sequence: snapshot.coveredToSequence,
-        summary: snapshot.summary
+        summary: snapshot.summary,
+        source_dependencies: snapshot.evidenceProvenance?.dependencies ?? [],
+        provenance_complete: snapshot.evidenceProvenance?.complete ?? false,
       }
     : null
 }
@@ -52,7 +55,9 @@ function toCompactionMessages (messages: TailMessageDto[]) {
     sequence: message.sequence,
     revision: message.historyRevision,
     role: message.role,
-    content: partsToText(message.parts)
+    content: partsToText(message.parts),
+    source_dependencies: messageProvenance(message.parts)?.dependencies ?? [],
+    provenance_complete: messageProvenance(message.parts)?.complete ?? false,
   }))
 }
 
@@ -98,6 +103,8 @@ export async function compactAfterSuccessfulAssistantPersistence (
     const request = await buildCompactionPlanRequest(db, handoff)
     const plan = await requestCompactionPlan(request, options)
     if (!plan.should_compact) return 'not_needed'
+    if (!plan.new_snapshot.provenance_complete) return 'not_needed'
+    await assertSourceDependencies(handoff.actorUserId, plan.new_snapshot.source_dependencies ?? [])
 
     const result = await applyCompactionPlan(db, {
       actorUserId: handoff.actorUserId,
@@ -111,7 +118,9 @@ export async function compactAfterSuccessfulAssistantPersistence (
         coveredFromSequence: plan.new_snapshot.covered_from_sequence,
         coveredToMessageId: plan.new_snapshot.covered_to_message_id,
         coveredToSequence: plan.new_snapshot.covered_to_sequence,
-        summary: plan.new_snapshot.summary
+        summary: plan.new_snapshot.summary,
+        evidenceProvenance: { schema_version: 'evidence.provenance.v1', complete: true,
+          dependencies: plan.new_snapshot.source_dependencies ?? [] },
       }
     })
     if (result.outcome === 'applied') return 'applied'

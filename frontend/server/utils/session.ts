@@ -30,9 +30,15 @@ export function useUserSession (event: HTTPEvent) {
     password: getSessionSecret(),
     cookie: {
       sameSite: 'lax',
-      secure: false,
-      httpOnly: false,
+      secure: getSessionCookieSecure(),
+      httpOnly: true,
       path: '/'
     }
   })
+}
+
+export function getSessionCookieSecure(environment: Record<string, string | undefined> = process.env): boolean {
+  const explicit = environment.SESSION_COOKIE_SECURE
+  if (explicit !== undefined && !['true', 'false'].includes(explicit)) throw new Error('Invalid SESSION_COOKIE_SECURE')
+  return explicit === undefined ? environment.NODE_ENV === 'production' : explicit === 'true'
 }

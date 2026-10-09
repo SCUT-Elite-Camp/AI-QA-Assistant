@@ -50,6 +50,8 @@ export default defineHandler(async (event) => {
         'X-Owner-ID': userId,
         'X-Dedupe-Domain': dedupeDomain,
         'X-Scope': batch.scope,
+        ...(batch.chatId ? { 'X-Chat-ID': batch.chatId } : {}),
+        ...(batch.topicId ? { 'X-Topic-ID': batch.topicId } : {}),
         ...(expiresAt ? { 'X-Expires-At': String(expiresAt) } : {})
       },
       body: event.req.body,
