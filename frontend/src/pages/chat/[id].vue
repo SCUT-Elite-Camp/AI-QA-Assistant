@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, provide } from 'vue'
+import { useTextareaAutosize } from '@vueuse/core'
 import { $fetch } from 'ofetch'
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
@@ -23,7 +24,7 @@ import TopicDocumentPool from '../../components/chat/TopicDocumentPool.vue'
 import DocumentModal from '../../components/chat/DocumentModal.vue'
 import SoulModal from '../../components/chat/SoulModal.vue'
 import SuggestionModal from '../../components/chat/SuggestionModal.vue'
-import WeightModeSelect from '../../components/chat/WeightModeSelect.vue'
+import CascadingModeSelector from '../../components/chat/CascadingModeSelector.vue'
 import AttachmentTray from '../../components/chat/AttachmentTray.vue'
 import FactProposalCard from '../../components/chat/memory/FactProposalCard.vue'
 import SessionFactPanel from '../../components/chat/memory/SessionFactPanel.vue'
@@ -37,37 +38,22 @@ import type { Vote } from '../../../server/utils/drizzle'
 import type { FactCategory } from '../../types/memory'
 import { extractAttachmentSelection } from '../../../shared/utils/attachmentParts'
 import { knowledgeBaseRetrievalEnabled } from '../../../shared/utils/chatRetrieval'
-import { canRetryMissingResponse } from '../../utils/regeneration'
+import { chatExplorationMode } from '../../../shared/utils/chatExploration'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
 const toast = useToast()
 const showHitRateDrawer = ref(false)
+const isWeightModeSaving = ref(false)
+const selectedResearchDocumentIds = ref<string[]>([])
+const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
 
-function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const saved = localStorage.getItem('preferred_weight_mode')
-    if (saved === 'fast' || saved === 'auto' || saved === 'thinking') return saved
-  }
-  return 'thinking'
-}
-
-const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>(
-  (route.query.mode as any) || getStoredWeightMode()
-)
-
-watch(currentWeightMode, (newMode) => {
-  if (typeof window !== 'undefined' && window.localStorage && newMode) {
-    localStorage.setItem('preferred_weight_mode', newMode)
-  }
-})
+const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('fast')
 
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
-const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
-const selectedResearchDocumentIds = ref<string[]>([])
-const { loggedIn, fetchSession } = useUserSession()
+const { loggedIn } = useUserSession()
 const sessionFacts = useSessionFacts()
 const memoryRecallMessageIds = ref<string[]>([])
 const hasPendingTrustedMemoryRecall = ref(false)
@@ -79,13 +65,13 @@ const {
 } = sessionFacts
 
 
-// A private conversation must wait for session recovery, including dev login.
-// Loading it first can cache a 404 until the next manual page refresh.
-await fetchSession()
 const data = await $fetch(`/api/chats/${route.params.id}`).catch((e) => {
   console.error('[chat/[id]] fetch failed:', e)
   return null
 })
+if (data?.weightMode === 'fast' || data?.weightMode === 'auto' || data?.weightMode === 'thinking') {
+  currentWeightMode.value = data.weightMode
+}
 
 const isOwner = computed(() => data?.isOwner ?? false)
 const visibility = ref<'public' | 'private'>(data?.visibility ?? 'private')
@@ -110,7 +96,7 @@ async function refreshSessionFacts(showFailure = false) {
   }
   const result = await sessionFacts.load(chatId)
   if (showFailure && result === 'failed') {
-    toast.add({ description: '记忆操作失败', icon: 'i-lucide-alert-circle', color: 'error' })
+    toast.add({ description: 'Failed to update memory', icon: 'i-lucide-alert-circle', color: 'error' })
   }
 }
 
@@ -127,7 +113,7 @@ function showSessionFactsResult(result: { ok: boolean, code?: 'fact_sensitive' |
   if ('discarded' in result && result.discarded) return
   if (result.ok) return
   toast.add({
-    description: result.code === 'fact_sensitive' ? '该内容不能保存为记忆' : '记忆操作失败',
+    description: result.code === 'fact_sensitive' ? 'This content is sensitive and cannot be saved as memory' : 'Memory operation failed',
     icon: 'i-lucide-alert-circle',
     color: 'error'
   })
@@ -154,9 +140,6 @@ const topic = ref<any>(null)
 if (data?.topicId) {
   $fetch(`/api/topics/${data.topicId}`).then((t: any) => {
     topic.value = t
-    if (t?.weightMode && !route.query.mode) {
-      currentWeightMode.value = t.weightMode
-    }
   }).catch(() => {})
 }
 
@@ -173,7 +156,26 @@ if (isOwner.value) {
   }).catch(() => {})
 }
 
-const input = ref('')
+const { textarea: textareaRef, input } = useTextareaAutosize({ input: '' })
+const isComposing = ref(false)
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' && !e.shiftKey && !isComposing.value) {
+    e.preventDefault()
+    if (!input.value?.trim() && !attachmentIds.value.length) {
+      input.value = ''
+      return
+    }
+    handleSubmit(e)
+  }
+}
+
+function onBlur() {
+  if (!input.value?.trim()) {
+    input.value = ''
+  }
+}
+
 const attachmentIds = ref<string[]>([])
 const acceptedNeedsReviewIds = ref<string[]>([])
 const attachmentTray = ref<InstanceType<typeof AttachmentTray> | null>(null)
@@ -195,24 +197,27 @@ const visibleMessages = computed(() => {
   return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant') || []
 })
 
-const deepResearchMode = ref(false)
-const plusMenuItems = computed(() => [[
-  {
-    label: '上传附件 / 图片',
-    icon: 'i-lucide-paperclip',
-    onSelect: () => attachmentTray.value?.open()
-  },
-  {
-    label: '企业知识库检索',
-    icon: useKnowledgeBase.value ? 'i-lucide-database-zap' : 'i-lucide-database',
-    onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
-  },
-  {
-    label: 'Deep Research',
-    icon: 'i-lucide-telescope',
-    onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
-  }
-]])
+const deepResearchMode = ref(chatExplorationMode(
+  (latestUserMessage as any)?.metadata,
+  (latestUserMessage as any)?.parts,
+) === 'force')
+const plusMenuItems = computed(() => [
+  [
+    {
+      label: 'Attach Files',
+      icon: 'i-lucide-paperclip',
+      onSelect: () => attachmentTray.value?.open()
+    },
+    {
+      label: 'Deep Research',
+      icon: 'i-lucide-telescope',
+      type: 'checkbox' as const,
+      checked: deepResearchMode.value,
+      onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
+    }
+  ]
+])
+
 
 
 const chat = new Chat({
@@ -223,7 +228,6 @@ const chat = new Chat({
     headers: { [headerName]: csrf() },
     body: {
       get model() { return model.value },
-      get weightMode() { return currentWeightMode.value }
     },
   }),
   onData: (dataPart) => {
@@ -260,7 +264,7 @@ const chat = new Chat({
     toast.add({
       description: message,
       icon: 'i-lucide-alert-circle',
-      color: 'error' as const,
+      color: 'error',
       duration: 0,
     })
   },
@@ -268,31 +272,33 @@ const chat = new Chat({
 
 provide('is-chat-streaming', computed(() => chat.status === 'streaming'))
 
-const activeReasoningMessage = computed(() => {
+void textareaRef
+
+const activeReasoningMessage = computed<UIMessage | null>(() => {
   const assistantMessages = chat.messages.filter(m => m.role === 'assistant')
-  return assistantMessages.length > 0 ? assistantMessages[assistantMessages.length - 1] ?? null : null
+  return assistantMessages.length > 0 ? (assistantMessages[assistantMessages.length - 1] ?? null) : null
 })
 
 async function handleSubmit(e: Event) {
+  e.preventDefault()
   if (deepResearchMode.value) {
-    e.preventDefault()
     if (input.value.trim()) {
-      const launched = await launchResearch(input.value, selectedResearchDocumentIds.value)
-      if (launched) input.value = ""
+      const launched = await launchResearch(input.value.trim(), selectedResearchDocumentIds.value)
+      if (launched) input.value = ''
     }
     return
   }
-  e.preventDefault()
+  if (isWeightModeSaving.value || chat.status === 'streaming') return
   if (attachmentTray.value?.hasBlockingAttachments()) {
     toast.add({
-      description: '请等待附件解析完成；低置信度附件需要确认后才能发送。',
+      description: 'Please wait for attachments to finish processing; low confidence items require confirmation before sending.',
       icon: 'i-lucide-alert-circle',
-      color: 'warning' as const,
+      color: 'warning',
     })
     return
   }
   if (input.value.trim() || attachmentIds.value.length) {
-    const text = input.value.trim() || '请分析这些附件'
+    const text = input.value.trim() || 'Please analyze these attachments'
     chat.sendMessage({
       text,
       metadata: {
@@ -321,17 +327,18 @@ function cancelEdit() {
 }
 
 async function saveEdit(message: UIMessage, text: string) {
+  if (isWeightModeSaving.value || chat.status === 'streaming') return
   try {
-    await $fetch(`/api/chats/messages/${message.id}`, {
+    await $fetch(`/api/chats/messages/${data!.id}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
-      body: { chatId: data!.id, type: 'edit' },
+      body: { messageId: message.id, type: 'edit' },
     })
   } catch {
     toast.add({
       description: 'Failed to update message',
       icon: 'i-lucide-alert-circle',
-      color: 'error' as const,
+      color: 'error',
     })
     return
   }
@@ -353,26 +360,20 @@ async function saveEdit(message: UIMessage, text: string) {
 }
 
 async function regenerateMessage(message: UIMessage) {
+  if (isWeightModeSaving.value || chat.status === 'streaming') return
   try {
-    await $fetch(`/api/chats/messages/${message.id}`, {
+    await $fetch(`/api/chats/messages/${data!.id}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
-      body: { chatId: data!.id, type: 'regenerate' },
+      body: { messageId: message.id, type: 'regenerate' },
     })
-  } catch (error: any) {
-    // A failed stream can leave a client-only assistant response. Only its
-    // missing history row may be skipped; other mutation failures still stop.
-    const missingFailedResponse = canRetryMissingResponse(
-      error, chat.status, message, chat.messages[chat.messages.length - 1]?.id,
-    )
-    if (!missingFailedResponse) {
-      toast.add({
-        description: 'Failed to regenerate message',
-        icon: 'i-lucide-alert-circle',
-        color: 'error' as const,
-      })
-      return
-    }
+  } catch {
+    toast.add({
+      description: 'Failed to regenerate message',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+    return
   }
 
   chat.regenerate({ messageId: message.id })
@@ -414,7 +415,7 @@ async function vote(message: UIMessage, isUpvoted: boolean) {
     toast.add({
       description: 'Failed to save vote',
       icon: 'i-lucide-alert-circle',
-      color: 'error' as const,
+      color: 'error',
     })
   }
 }
@@ -491,7 +492,7 @@ function copySelectedText() {
     navigator.clipboard.writeText(selectedText.value)
     floatAskPos.value = null
     window.getSelection()?.removeAllRanges()
-    toast.add({ title: '已复制划选文本', color: 'success' })
+    toast.add({ title: 'Selected text copied to clipboard', color: 'success' })
   }
 }
 
@@ -504,20 +505,22 @@ function openSelectionDrawer() {
 
 
 async function handleUpdateWeightMode(mode: 'thinking' | 'auto' | 'fast') {
+  if (isWeightModeSaving.value || mode === currentWeightMode.value) return
+  const previousMode = currentWeightMode.value
   currentWeightMode.value = mode
-  if (topic.value) {
-    topic.value.weightMode = mode
-  }
-  if (!topic.value?.id) return
+  isWeightModeSaving.value = true
   try {
-    const updated: any = await $fetch(`/api/topics/${topic.value.id}`, {
+    await $fetch(`/api/chats/${activeChatId.value}/mode`, {
       method: 'PATCH',
       headers: { [headerName]: csrf() },
       body: { weightMode: mode }
     })
-    topic.value = updated
   } catch (err: any) {
-    console.warn('Failed to patch topic weight mode:', err)
+    currentWeightMode.value = previousMode
+    toast.add({ description: 'Failed to save chat mode', icon: 'i-lucide-alert-circle', color: 'error' })
+    console.warn('Failed to save chat weight mode:', err)
+  } finally {
+    isWeightModeSaving.value = false
   }
 }
 
@@ -530,7 +533,7 @@ async function handleSaveSoul(newSoul: string) {
       body: { soulContent: newSoul }
     })
     topic.value = updated
-    toast.add({ title: 'Soul.md 认知记忆修正成功', color: 'success' })
+    toast.add({ title: 'Soul.md memory updated successfully', color: 'success' })
   } catch (err: any) {
     toast.add({ description: err.message, color: 'error' })
   }
@@ -632,7 +635,7 @@ onBeforeUnmount(() => {
               variant="ghost"
               icon="i-lucide-bar-chart-3"
               size="sm"
-              title="检索命中率监控 (Hit Rate)"
+              title="Hit Rate Monitoring"
               :class="[
                 'cursor-pointer transition-colors text-zinc-100 dark:text-white',
                 showHitRateDrawer ? 'bg-zinc-800 text-emerald-400 font-bold' : 'hover:text-white hover:bg-zinc-800/80'
@@ -647,110 +650,129 @@ onBeforeUnmount(() => {
     <template #body>
       <div class="flex-1 flex flex-row min-h-0 relative overflow-hidden w-full h-full">
         <!-- Main Chat Area (Left Panel) -->
-        <div class="flex-1 flex flex-col min-w-0 h-full relative">
+        <div class="flex-1 flex flex-col min-w-0 h-full overflow-y-auto relative">
           <!-- Top-Right Floating Reasoning Window -->
           <ReasoningFloatingWindow
             :message="activeReasoningMessage"
             :status="launchingResearch ? 'streaming' : chat.status"
           />
 
-          <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
           <!-- Empty Chat / Branch New Chat Landing View -->
-          <UContainer v-if="!visibleMessages.length" class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8 min-h-[75vh]">
-            <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-              {{ greeting }}
-            </h1>
+          <div v-if="!visibleMessages.length" class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 w-full h-full min-h-0">
+            <div class="w-full max-w-3xl sm:max-w-4xl flex flex-col items-center gap-8">
+              <!-- Hero Title in Literata -->
+              <h1 class="text-3xl sm:text-4xl text-highlighted font-medium font-display tracking-tight select-none">
+                {{ greeting }}
+              </h1>
 
-            <UChatPrompt
-              v-if="isOwner"
-              v-model="input"
-              :error="chat.error"
-              :status="launchingResearch ? 'streaming' : chat.status"
-              placeholder="Ask me anything..."
-              variant="subtle"
-              class="rounded-2xl shadow-lg"
-              :ui="{ base: 'px-1.5' }"
-              @submit="handleSubmit"
-            >
-              <template #header>
-                <AttachmentTray
-                  ref="attachmentTray"
-                  scope="chat"
-                  :chat-id="data?.id"
-                  :topic-id="topic?.id"
-                  hide-trigger
-                  :disabled="chat.status === 'streaming'"
-                  @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
-                />
-              </template>
-
-              <template #footer>
-                <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
-                <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-lucide-plus"
-                    aria-label="添加附件与更多功能"
-                    title="添加附件与更多功能"
-                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
-                  />
-                </UDropdownMenu>
-
-                <span
-                  v-if="useKnowledgeBase"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
+              <!-- Prompt Box Capsule (Single Inline Pill style matching ChatGPT) -->
+              <div class="w-full">
+                <div
+                  v-if="isOwner"
+                  class="w-full rounded-[30px] sm:rounded-[34px] border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_6px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_6px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.5)] transition-all duration-200 px-4 py-2.5 sm:px-5 sm:py-3.5 flex flex-col gap-2.5 min-h-[58px] sm:min-h-[64px]"
                 >
-                  <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
-                  <span>企业知识库检索</span>
-                  <button
-                    type="button"
-                    class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭企业知识库检索"
-                    @click.stop="useKnowledgeBase = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
-                <!-- Deep Research Indicator Badge -->
-                <span
-                  v-if="deepResearchMode"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
-                  <span>Deep Research</span>
-                  <button
-                    type="button"
-                    class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭 Deep Research"
-                    @click.stop="deepResearchMode = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
+                  <!-- Attachment Tray (if attachments selected) -->
+                  <AttachmentTray
+                    ref="attachmentTray"
+                    scope="chat"
+                    :chat-id="data?.id"
+                    :topic-id="topic?.id"
+                    hide-trigger
+                    :disabled="chat.status === 'streaming'"
+                    @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
+                  />
 
-                <!-- Right: WeightMode + Submit -->
-                <div class="ms-auto flex items-center gap-1">
-                  <WeightModeSelect
-                    v-model="currentWeightMode"
-                    @change="handleUpdateWeightMode"
-                  />
-                  <UChatPromptSubmit
-                    :status="launchingResearch ? 'streaming' : chat.status"
-                    color="neutral"
-                    size="sm"
-                    class="cursor-pointer"
-                    @stop="chat.stop()"
-                    @reload="chat.regenerate()"
-                  />
+                  <!-- Input Row: [+]  [Input Area]  [🧠 Mode] [^] -->
+                  <div class="flex items-center gap-2.5 sm:gap-3 w-full">
+                    <!-- Left: + Menu Button (Inline with text) -->
+                    <div class="flex items-center shrink-0">
+                      <UDropdownMenu
+                        :items="plusMenuItems"
+                        :content="{ align: 'start', sideOffset: 8 }"
+                        :ui="{
+                          content: 'min-w-44 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-[0_12px_36px_-6px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.6)] ring-0',
+                          group: 'p-0 flex flex-col gap-1',
+                          item: 'rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-[0.98] select-none flex items-center gap-2.5 data-highlighted:bg-zinc-100 dark:data-highlighted:bg-zinc-800',
+                          itemLeadingIcon: 'w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors',
+                          itemTrailing: 'ml-auto flex items-center',
+                          itemTrailingIcon: 'w-4 h-4 text-emerald-500 dark:text-emerald-400'
+                        }"
+                      >
+                        <button
+                          type="button"
+                          aria-label="Add attachments & options"
+                          title="Add attachments & options"
+                          class="rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all cursor-pointer w-9 h-9 sm:w-9.5 sm:h-9.5 flex items-center justify-center p-0 shrink-0 active:scale-95"
+                        >
+                          <UIcon name="i-lucide-plus" class="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                        </button>
+                      </UDropdownMenu>
+                    </div>
+
+                    <!-- Deep Research badge (only visible when active) -->
+                    <span
+                      v-if="deepResearchMode"
+                      class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
+                    >
+                      <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
+                      <span>Deep Research</span>
+                      <button
+                        type="button"
+                        class="hover:bg-emerald-500/20 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center transition-colors"
+                        title="Disable Deep Research"
+                        @click.stop="deepResearchMode = false"
+                      >
+                        <UIcon name="i-lucide-x" class="w-3 h-3" />
+                      </button>
+                    </span>
+
+                    <!-- Textarea -->
+                    <textarea
+                      ref="textareaRef"
+                      v-model="input"
+                      rows="1"
+                      placeholder="Ask anything..."
+                      class="flex-1 bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1.5 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
+                      @keydown="onKeydown"
+                      @blur="onBlur"
+                      @compositionstart="isComposing = true"
+                      @compositionend="isComposing = false"
+                    />
+
+                    <!-- Right: Cascading Mode Selector -->
+                    <CascadingModeSelector :model-value="currentWeightMode" :disabled="isWeightModeSaving || chat.status === 'streaming'" class="shrink-0 self-center" @change="handleUpdateWeightMode" />
+
+                    <!-- Send / Stop Button -->
+                    <button
+                      type="button"
+                      :disabled="!input.trim() && !attachmentIds.length && chat.status !== 'streaming'"
+                      :aria-label="chat.status === 'streaming' ? 'Stop response' : 'Send message'"
+                      class="rounded-full w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center transition-all shrink-0 active:scale-95 self-center"
+                      :class="[
+                        chat.status === 'streaming' || chat.status === 'submitted'
+                          ? 'bg-zinc-800 text-zinc-200 cursor-pointer hover:bg-zinc-700'
+                          : (input.trim() || attachmentIds.length)
+                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer hover:opacity-90 shadow-sm'
+                            : 'bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
+                      ]"
+                      @click="chat.status === 'streaming' ? chat.stop() : handleSubmit($event)"
+                    >
+                      <UIcon
+                        v-if="chat.status === 'streaming' || chat.status === 'submitted'"
+                        name="i-lucide-square"
+                        class="w-3.5 h-3.5 fill-current"
+                      />
+                      <UIcon
+                        v-else
+                        name="i-lucide-arrow-up"
+                        class="w-4 h-4"
+                      />
+                    </button>
+                  </div>
                 </div>
-              </template>
-            </UChatPrompt>
-            <ResearchModeNotice v-if="deepResearchMode" v-model="selectedResearchDocumentIds" />
-            <p v-if="researchLaunchError" class="text-sm text-error" role="alert">{{ researchLaunchError }}</p>
-
-          </UContainer>
+              </div>
+            </div>
+          </div>
 
           <!-- Active Chat Messages View -->
           <UContainer v-else class="flex-1 flex flex-col gap-4 sm:gap-6 relative" @mouseup="handleTextSelection">
@@ -758,17 +780,42 @@ onBeforeUnmount(() => {
             <UChatMessages
               should-auto-scroll
               :messages="chat.messages"
-              :status="launchingResearch ? 'streaming' : chat.status"
+              :status="chat.status"
               :spacing-offset="isOwner ? 160 : 0"
-              :ui="{ root: 'w-full flex items-center' }"
+              :user="{
+                side: 'right',
+                variant: 'soft',
+                ui: {
+                  root: 'justify-end items-end w-full',
+                  container: 'justify-end max-w-full',
+                  body: 'items-end max-w-full',
+                  content: 'w-fit max-w-[85%] sm:max-w-[75%] rounded-3xl px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800/90 text-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/60 shadow-sm ml-auto text-left leading-relaxed',
+                  actions: 'w-full flex items-center justify-end'
+                }
+              }"
+              :assistant="{
+                side: 'left',
+                variant: 'naked',
+                ui: {
+                  root: 'justify-start items-start w-full',
+                  container: 'w-full max-w-full',
+                  body: 'w-full max-w-full',
+                  content: 'w-full max-w-full text-zinc-900 dark:text-zinc-100',
+                  actions: 'w-full flex items-center justify-between'
+                }
+              }"
               class="pt-(--ui-header-height) pb-4 sm:pb-6 w-full"
             >
               <template #indicator>
-                <ProgressIndicator :status="launchingResearch ? 'streaming' : chat.status" :messages="chat.messages" />
+                <ProgressIndicator :status="chat.status" :messages="chat.messages" />
               </template>
 
               <template #content="{ message }">
-                <div :id="`msg-${message.id}`" :data-message-id="message.id" class="w-full">
+                <div
+                  :id="`msg-${message.id}`"
+                  :data-message-id="message.id"
+                  :class="message.role === 'user' ? 'w-fit max-w-full text-left' : 'w-full text-left'"
+                >
                   <ChatMessageContent
                     :message="message"
                     :editing="isOwner && editingMessageId === message.id"
@@ -778,9 +825,9 @@ onBeforeUnmount(() => {
                   <p
                     v-if="message.role === 'assistant' && isMemoryRecallMessage(message.id)"
                     class="mt-2 text-xs text-muted"
-                    aria-label="来自已确认会话记忆"
+                    aria-label="From confirmed session memory"
                   >
-                    来自已确认会话记忆
+                    From confirmed session memory
                   </p>
                 </div>
               </template>
@@ -839,7 +886,7 @@ onBeforeUnmount(() => {
                 @pointerdown.stop="copySelectedText"
               >
                 <UIcon name="i-lucide-copy" class="w-3.5 h-3.5 text-zinc-400" />
-                <span>复制</span>
+                <span>Copy</span>
               </button>
               <div class="w-px h-3.5 bg-zinc-700/60" />
               <button
@@ -848,22 +895,20 @@ onBeforeUnmount(() => {
                 @pointerdown.stop="openSelectionDrawer"
               >
                 <UIcon name="i-heroicons-sparkles" class="w-3.5 h-3.5 text-amber-400" />
-                <span>划词提问</span>
+                <span>Ask Selection</span>
               </button>
             </div>
 
-            <UChatPrompt
-              v-if="isOwner"
-              v-model="input"
-              :error="chat.error"
-              :status="launchingResearch ? 'streaming' : chat.status"
-              placeholder="Ask me anything..."
-              variant="subtle"
-              class="sticky bottom-6 mb-6 [view-transition-name:chat-prompt] rounded-2xl shadow-lg z-10"
-              :ui="{ base: 'px-1.5' }"
-              @submit="handleSubmit"
-            >
-              <template #header>
+            <div v-if="isOwner && deepResearchMode" class="sticky bottom-20 z-10 w-full max-w-3xl sm:max-w-4xl mx-auto px-4 sm:px-0 mb-2">
+              <ResearchModeNotice v-model="selectedResearchDocumentIds" />
+              <p v-if="researchLaunchError" role="alert" class="px-3 py-2 text-sm text-error">{{ researchLaunchError }}</p>
+            </div>
+
+            <div v-if="isOwner" class="sticky bottom-4 z-10 w-full max-w-3xl sm:max-w-4xl mx-auto px-4 sm:px-0">
+              <div
+                class="w-full rounded-[28px] sm:rounded-[32px] border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-[0_6px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_6px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.5)] transition-all duration-200 px-4 py-2 sm:px-5 sm:py-2.5 flex flex-col gap-2 min-h-[56px] sm:min-h-[60px]"
+              >
+                <!-- Attachment Tray (if attachments selected) -->
                 <AttachmentTray
                   ref="attachmentTray"
                   scope="chat"
@@ -873,76 +918,98 @@ onBeforeUnmount(() => {
                   :disabled="chat.status === 'streaming'"
                   @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
                 />
-              </template>
 
-              <template #footer>
-                <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
-                <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    icon="i-lucide-plus"
-                    aria-label="添加附件与更多功能"
-                    title="添加附件与更多功能"
-                    :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
+                <!-- Input Row: [+]  [Input Area]  [🧠 Mode] [^] -->
+                <div class="flex items-center gap-2.5 sm:gap-3 w-full">
+                  <!-- Left: + Menu Button (Inline with text) -->
+                  <div class="flex items-center shrink-0">
+                    <UDropdownMenu
+                      :items="plusMenuItems"
+                      :content="{ align: 'start', sideOffset: 8 }"
+                      :ui="{
+                        content: 'min-w-44 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-[0_12px_36px_-6px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.6)] ring-0',
+                        group: 'p-0 flex flex-col gap-1',
+                        item: 'rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-[0.98] select-none flex items-center gap-2.5 data-highlighted:bg-zinc-100 dark:data-highlighted:bg-zinc-800',
+                        itemLeadingIcon: 'w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors',
+                        itemTrailing: 'ml-auto flex items-center',
+                        itemTrailingIcon: 'w-4 h-4 text-emerald-500 dark:text-emerald-400'
+                      }"
+                    >
+                      <button
+                        type="button"
+                        aria-label="Add attachments & options"
+                        title="Add attachments & options"
+                        class="rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all cursor-pointer w-9 h-9 sm:w-9.5 sm:h-9.5 flex items-center justify-center p-0 shrink-0 active:scale-95"
+                      >
+                        <UIcon name="i-lucide-plus" class="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                      </button>
+                    </UDropdownMenu>
+                  </div>
+
+                  <!-- Deep Research badge (only visible when active) -->
+                  <span
+                    v-if="deepResearchMode"
+                    class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
+                  >
+                    <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
+                    <span>Deep Research</span>
+                    <button
+                      type="button"
+                      class="hover:bg-emerald-500/20 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center transition-colors"
+                      title="Disable Deep Research"
+                      @click.stop="deepResearchMode = false"
+                    >
+                      <UIcon name="i-lucide-x" class="w-3 h-3" />
+                    </button>
+                  </span>
+
+                  <!-- Textarea -->
+                  <textarea
+                    ref="textareaRef"
+                    v-model="input"
+                    rows="1"
+                    placeholder="Send a message or follow up..."
+                    class="flex-1 bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1.5 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
+                    @keydown="onKeydown"
+                    @blur="onBlur"
+                    @compositionstart="isComposing = true"
+                    @compositionend="isComposing = false"
                   />
-                </UDropdownMenu>
 
-                <span
-                  v-if="useKnowledgeBase"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-database" class="w-3.5 h-3.5" />
-                  <span>企业知识库检索</span>
+                  <!-- Right: Cascading Mode Selector -->
+                  <CascadingModeSelector :model-value="currentWeightMode" :disabled="isWeightModeSaving || chat.status === 'streaming'" class="shrink-0 self-center" @change="handleUpdateWeightMode" />
+
+                  <!-- Send / Stop Button -->
                   <button
                     type="button"
-                    class="hover:text-primary-foreground hover:bg-primary/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭企业知识库检索"
-                    @click.stop="useKnowledgeBase = false"
+                    :disabled="!input.trim() && !attachmentIds.length && chat.status !== 'streaming'"
+                    :aria-label="chat.status === 'streaming' ? 'Stop response' : 'Send message'"
+                    class="rounded-full w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center transition-all shrink-0 active:scale-95 self-center"
+                    :class="[
+                      chat.status === 'streaming' || chat.status === 'submitted'
+                        ? 'bg-zinc-800 text-zinc-200 cursor-pointer hover:bg-zinc-700'
+                        : (input.trim() || attachmentIds.length)
+                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer hover:opacity-90 shadow-sm'
+                          : 'bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
+                    ]"
+                    @click="chat.status === 'streaming' ? chat.stop() : handleSubmit($event)"
                   >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
+                    <UIcon
+                      v-if="chat.status === 'streaming' || chat.status === 'submitted'"
+                      name="i-lucide-square"
+                      class="w-3.5 h-3.5 fill-current"
+                    />
+                    <UIcon
+                      v-else
+                      name="i-lucide-arrow-up"
+                      class="w-4 h-4"
+                    />
                   </button>
-                </span>
-                <!-- Deep Research Indicator Badge -->
-                <span
-                  v-if="deepResearchMode"
-                  class="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors px-2.5 py-0.5 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
-                  <span>Deep Research</span>
-                  <button
-                    type="button"
-                    class="hover:bg-emerald-400/40 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center"
-                    title="关闭 Deep Research"
-                    @click.stop="deepResearchMode = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
-
-                <!-- Right: WeightMode + Submit -->
-                <div class="ms-auto flex items-center gap-1">
-                  <WeightModeSelect
-                    v-model="currentWeightMode"
-                    @change="handleUpdateWeightMode"
-                  />
-                  <UChatPromptSubmit
-                    :status="launchingResearch ? 'streaming' : chat.status"
-                    color="neutral"
-                    size="sm"
-                    class="cursor-pointer"
-                    @stop="chat.stop()"
-                    @reload="chat.regenerate()"
-                  />
                 </div>
-              </template>
-            </UChatPrompt>
-            <ResearchModeNotice v-if="deepResearchMode" v-model="selectedResearchDocumentIds" />
-            <p v-if="researchLaunchError" class="text-sm text-error" role="alert">{{ researchLaunchError }}</p>
+              </div>
+            </div>
 
           </UContainer>
-          </div>
         </div>
 
         <!-- In-Flow Right Side Panel Window for Hit Rate Monitoring (Same plane layout, non-overlay) -->
@@ -1019,7 +1086,7 @@ onBeforeUnmount(() => {
     :open="showSuggestionModal"
     :message-id="suggestMessageId"
     @update:open="showSuggestionModal = $event"
-    @submit="toast.add({ title: '改进建议已成功提交并存入 Soul', color: 'success' })"
+    @submit="toast.add({ title: 'Feedback submitted and saved to Soul', color: 'success' })"
   />
 
 </template>

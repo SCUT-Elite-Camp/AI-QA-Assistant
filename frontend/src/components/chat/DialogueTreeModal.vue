@@ -39,8 +39,7 @@ watch(() => props.open, (val) => {
 </script>
 
 <template>
-  <UModal :open="open" @update:open="emit('update:open', $event)">
-    <template #content>
+  <UModal :model-value="open" @update:model-value="emit('update:open', $event)">
     <UCard :ui="{ root: 'ring-0 divide-y divide-zinc-200 dark:divide-zinc-800' }">
       <template #header>
         <div class="flex items-center justify-between">
@@ -117,6 +116,5 @@ watch(() => props.open, (val) => {
         </div>
       </div>
     </UCard>
-    </template>
   </UModal>
 </template>

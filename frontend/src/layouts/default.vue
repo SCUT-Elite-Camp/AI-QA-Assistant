@@ -433,7 +433,7 @@ defineShortcuts({
           <UButton
             icon="i-lucide-settings"
             color="neutral"
-            variant="none"
+            variant="ghost"
             class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
             aria-label="Settings"
             :ui="{ leadingIcon: 'w-5.5 h-5.5' }"

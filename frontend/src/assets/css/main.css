@@ -3,6 +3,11 @@
 
 @theme static {
   --font-sans: 'Public Sans', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-display: 'Literata', 'Noto Serif SC', 'Songti SC', serif;
+}
+
+.font-display {
+  font-family: var(--font-display, 'Literata', 'Noto Serif SC', 'Songti SC', serif);
 }
 
 @layer base {

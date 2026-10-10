@@ -91,30 +91,30 @@ watch(() => props.open, (val) => {
 </script>
 
 <template>
-  <UModal :open="open" :dismissible="false" :ui="{ content: 'sm:max-w-4xl' }" @update:open="emit('update:open', $event)">
+  <UModal :open="open" prevent-close :ui="{ content: 'sm:max-w-4xl' }" @update:open="emit('update:open', $event)">
     <template #content>
-      <div class="p-6 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl space-y-4 max-h-[80vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800">
+      <div class="p-6 bg-zinc-950 text-zinc-100 rounded-3xl space-y-4 max-h-[80vh] overflow-y-auto border border-zinc-800">
         <!-- Header -->
-        <div class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
-          <div class="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100 truncate pr-4">
-            <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2 font-semibold text-zinc-100 truncate pr-4">
+            <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-emerald-400 shrink-0" />
             <span class="truncate">{{ doc?.title || docTitle || 'Document Content' }}</span>
           </div>
-          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="sm" class="rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" @click="emit('update:open', false)" />
+          <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" size="sm" class="rounded-full text-zinc-400 hover:text-white" @click="emit('update:open', false)" />
         </div>
 
         <div class="py-2 relative" @mouseup="handleTextSelection">
-          <div v-if="loading" class="text-center py-12 text-zinc-600 dark:text-zinc-400 text-xs flex items-center justify-center gap-2">
+          <div v-if="loading" class="text-center py-12 text-zinc-400 text-xs flex items-center justify-center gap-2">
             <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-emerald-500" />
             <span>Loading document content...</span>
           </div>
 
-          <div v-else-if="!doc" class="text-center py-12 text-xs text-zinc-600 dark:text-zinc-400">
+          <div v-else-if="!doc" class="text-center py-12 text-xs text-zinc-400">
             No content available.
           </div>
 
-          <div v-else class="space-y-4 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed select-text">
-            <div class="whitespace-pre-wrap font-mono text-xs leading-6 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300">
+          <div v-else class="space-y-4 text-sm text-zinc-200 leading-relaxed select-text">
+            <div class="whitespace-pre-wrap font-mono text-xs leading-6 bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-zinc-300">
               {{ doc.content || doc.snippet }}
             </div>
           </div>

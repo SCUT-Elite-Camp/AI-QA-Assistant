@@ -12,10 +12,9 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const activeTab = ref<'general' | 'model' | 'personalization' | 'documents' | 'account'>('general')
+const activeTab = ref<'general' | 'model' | 'personalization' | 'account'>('general')
 
 const colorMode = useColorMode()
-const appConfig = useAppConfig()
 const { user, clearSession, loggedIn } = useUserSession()
 const toast = useToast()
 
@@ -131,15 +130,15 @@ async function testLLMConnection() {
 
     if (res.success) {
       toast.add({
-        title: 'Connection Test Successful',
-        description: `Model response verified (${res.latency_ms}ms)`,
-        color: 'success' as const,
+        title: 'Connection Successful',
+        description: `Response verified in ${res.latency_ms}ms`,
+        color: 'success',
       })
     } else {
       toast.add({
-        title: 'Connection Test Failed',
+        title: 'Connection Failed',
         description: res.error || 'Unable to connect to model endpoint',
-        color: 'error' as const,
+        color: 'error',
       })
     }
   } catch (err: any) {
@@ -150,7 +149,7 @@ async function testLLMConnection() {
       latency_ms: 0,
       error: msg,
     }
-    toast.add({ title: 'Connection Test Failed', description: msg, color: 'error' })
+    toast.add({ title: 'Connection Failed', description: msg, color: 'error' })
   } finally {
     testingLLM.value = false
   }
@@ -183,30 +182,15 @@ const styleToneMenuItems = computed(() => [
   })),
 ])
 
-const appearanceLabel = computed(() => {
-  if (colorMode.store.value === 'auto') return 'System'
-  return colorMode.value === 'dark' ? 'Dark' : 'Light'
-})
+const themeModes = [
+  { label: 'System', value: 'system', icon: 'i-lucide-monitor' },
+  { label: 'Light', value: 'light', icon: 'i-lucide-sun' },
+  { label: 'Dark', value: 'dark', icon: 'i-lucide-moon' },
+]
 
-const appearanceItems = computed(() => [
-  [
-    {
-      label: 'System',
-      icon: 'i-lucide-monitor',
-      onSelect: () => { colorMode.value = 'auto' },
-    },
-    {
-      label: 'Dark',
-      icon: 'i-lucide-moon',
-      onSelect: () => { colorMode.value = 'dark' },
-    },
-    {
-      label: 'Light',
-      icon: 'i-lucide-sun',
-      onSelect: () => { colorMode.value = 'light' },
-    },
-  ],
-])
+function setThemeMode(val: 'system' | 'light' | 'dark') {
+  colorMode.value = val === 'system' ? 'auto' : val
+}
 
 async function saveSettings() {
   savingLLM.value = true
@@ -233,15 +217,15 @@ async function saveSettings() {
 
     toast.add({
       title: 'Settings Saved',
-      description: 'System preferences and API configuration saved successfully.',
-      color: 'success' as const,
+      description: 'System preferences and configurations have been saved.',
+      color: 'success',
     })
     emit('update:open', false)
   } catch (err: any) {
     toast.add({
       title: 'Save Failed',
       description: err?.data?.statusMessage || err?.message || 'An error occurred while saving settings.',
-      color: 'error' as const,
+      color: 'error',
     })
   } finally {
     savingLLM.value = false
@@ -249,9 +233,7 @@ async function saveSettings() {
 }
 
 function resetDefaults() {
-  colorMode.value = 'dark'
-  appConfig.ui.colors.primary = 'emerald'
-  appConfig.ui.colors.neutral = 'slate'
+  colorMode.value = 'auto'
   styleTone.value = 'Default'
   customInstructions.value = ''
   userNickname.value = ''
@@ -273,8 +255,7 @@ onMounted(() => {
 const tabs = [
   { id: 'general', label: 'General', icon: 'i-lucide-sliders-horizontal' },
   { id: 'model', label: 'Model & API', icon: 'i-lucide-cpu' },
-  { id: 'personalization', label: 'Personalization', icon: 'i-lucide-palette' },
-  { id: 'documents', label: 'Documents', icon: 'i-lucide-file-text' },
+  { id: 'personalization', label: 'Personalization', icon: 'i-lucide-sparkles' },
   { id: 'account', label: 'Account', icon: 'i-lucide-user' },
 ]
 </script>
@@ -284,432 +265,374 @@ const tabs = [
     :open="open"
     prevent-close
     :ui="{
-      content: 'sm:max-w-4xl w-full rounded-3xl p-0 overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950'
+      content: 'sm:max-w-4xl w-full rounded-3xl p-0 overflow-hidden shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100'
     }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl overflow-hidden flex flex-col md:flex-row min-h-[540px] max-h-[85vh] w-full">
-
+      <div class="flex flex-col md:flex-row min-h-[560px] max-h-[85vh] w-full select-none font-sans">
+        
         <!-- Left Sidebar Navigation -->
-        <div class="w-full md:w-56 bg-zinc-50/60 dark:bg-zinc-900/60 border-b md:border-b-0 md:border-r border-zinc-200/80 dark:border-zinc-800/80 p-4 flex flex-col justify-between shrink-0">
-          <div class="space-y-4">
-            <div class="flex items-center gap-2.5 px-2 py-1">
-              <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+        <div class="w-full md:w-60 bg-zinc-50 dark:bg-zinc-950/60 border-b md:border-b-0 md:border-r border-zinc-200/70 dark:border-zinc-800/70 p-5 flex flex-col justify-between shrink-0">
+          <div class="space-y-5">
+            <!-- Brand Header -->
+            <div class="flex items-center gap-3 px-1.5 py-1">
+              <div class="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center font-medium shadow-xs">
                 <UIcon name="i-lucide-settings" class="w-5 h-5" />
               </div>
-              <div>
-                <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-none">Settings</h2>
-                <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1">System Preferences</p>
+              <div class="min-w-0">
+                <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">Settings</h2>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Preferences</p>
               </div>
             </div>
 
-            <nav class="space-y-1 pt-2">
+            <!-- Navigation Tabs -->
+            <nav class="space-y-1.5 pt-1">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
                 type="button"
                 :class="[
-                  'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer text-left',
+                  'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer text-left',
                   activeTab === tab.id
-                    ? 'bg-emerald-500/15 border-l-2 border-emerald-400 text-emerald-700 dark:text-emerald-300 font-semibold shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
+                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs font-semibold'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
                 ]"
                 @click="activeTab = tab.id as any"
               >
-                <UIcon :name="tab.icon" class="w-4 h-4 shrink-0" :class="activeTab === tab.id ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'" />
-                <span class="flex-1 text-xs font-medium">{{ tab.label }}</span>
+                <UIcon :name="tab.icon" class="w-4.5 h-4.5 shrink-0" />
+                <span class="truncate">{{ tab.label }}</span>
               </button>
             </nav>
           </div>
 
           <!-- App Version Footer -->
-          <div class="pt-4 px-2 border-t border-zinc-200/60 dark:border-zinc-800/60 hidden md:block">
-            <div class="text-[11px] text-zinc-500 flex items-center justify-between">
+          <div class="pt-3.5 px-2 border-t border-zinc-200/60 dark:border-zinc-800/60 hidden md:block">
+            <div class="text-xs text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
               <span>AI QA Assistant</span>
-              <span class="font-mono text-emerald-500/80 font-bold">v2.0</span>
+              <span class="font-mono font-medium text-zinc-600 dark:text-zinc-300">v2.0</span>
             </div>
           </div>
         </div>
 
         <!-- Right Main Content Panel -->
-        <div class="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950">
-
+        <div class="flex-1 flex flex-col min-w-0 bg-transparent">
+          
           <!-- Header Bar -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0">
+          <div class="flex items-center justify-between px-7 py-4.5 border-b border-zinc-200/70 dark:border-zinc-800/70 shrink-0">
             <div>
-              <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                {{ tabs.find(t => t.id === activeTab)?.label }} Settings
+              <h3 class="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                {{ tabs.find(t => t.id === activeTab)?.label }}
               </h3>
-              <p class="text-xs text-zinc-600 dark:text-zinc-400">
-                Configure your {{ tabs.find(t => t.id === activeTab)?.label.toLowerCase() }} options
+              <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Manage your {{ tabs.find(t => t.id === activeTab)?.label.toLowerCase() }} preferences
               </p>
             </div>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-x"
-              size="sm"
-              class="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+            <button
+              type="button"
+              class="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               @click="emit('update:open', false)"
-            />
+            >
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
           </div>
 
           <!-- Scrollable Tab Content Area -->
-          <div class="flex-1 p-6 overflow-y-auto space-y-6">
+          <div class="flex-1 p-7 overflow-y-auto space-y-6 text-zinc-800 dark:text-zinc-200">
+            
+            <!-- Tab 1: General -->
+            <div v-if="activeTab === 'general'" class="space-y-5">
+              <!-- Appearance -->
+              <div class="p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div class="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100">Appearance</div>
+                  <div class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                    Customize the interface visual theme mode
+                  </div>
+                </div>
 
-            <!-- Tab 1: General (Appearance) -->
-            <div v-if="activeTab === 'general'" class="space-y-4 animate-in fade-in duration-200">
-              <div class="flex items-center justify-between py-3.5 px-4 bg-zinc-50/60 dark:bg-zinc-900/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
-                <span class="text-sm font-medium text-zinc-800 dark:text-zinc-200">Appearance</span>
-
-                <UDropdownMenu :items="appearanceItems" :content="{ align: 'end' }">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    trailing-icon="i-lucide-chevron-down"
-                    class="text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-3 py-1.5 rounded-xl bg-zinc-100/60 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-300/50 dark:border-zinc-700/50 cursor-pointer"
+                <!-- Segmented Control -->
+                <div class="inline-flex p-1.5 bg-zinc-200/70 dark:bg-zinc-800 rounded-xl gap-1.5 self-start sm:self-auto border border-zinc-300/40 dark:border-zinc-700/40">
+                  <button
+                    v-for="mode in themeModes"
+                    :key="mode.value"
+                    type="button"
+                    :class="[
+                      'flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer',
+                      (colorMode === mode.value || (mode.value === 'system' && colorMode === 'auto'))
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-xs font-semibold'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100'
+                    ]"
+                    @click="setThemeMode(mode.value as any)"
                   >
-                    {{ appearanceLabel }}
-                  </UButton>
-                </UDropdownMenu>
+                    <UIcon :name="mode.icon" class="w-4 h-4" />
+                    <span>{{ mode.label }}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- Tab 2: Model & API (Concise & Clean) -->
-            <div v-else-if="activeTab === 'model'" class="space-y-4 animate-in fade-in duration-200">
+            <!-- Tab 2: Model & API -->
+            <div v-else-if="activeTab === 'model'" class="space-y-5">
               <!-- Quick Presets -->
-              <div class="flex items-center justify-between p-3 px-4 bg-zinc-50/60 dark:bg-zinc-900/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
-                <div class="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Quick Presets</div>
-                <div class="flex flex-wrap gap-1.5">
+              <div class="p-4 px-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <span class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">Quick Presets</span>
+                <div class="flex flex-wrap gap-2">
                   <button
                     v-for="p in presets"
                     :key="p.name"
                     type="button"
-                    class="px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-100/80 dark:bg-zinc-800/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-300/40 dark:border-zinc-700/40 transition-colors cursor-pointer flex items-center gap-1"
+                    class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white border border-zinc-200 dark:border-zinc-700 shadow-2xs hover:shadow-xs transition-all cursor-pointer flex items-center gap-2"
                     @click="applyPreset(p)"
                   >
-                    <UIcon :name="p.icon" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    {{ p.name }}
+                    <UIcon :name="p.icon" class="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                    <span>{{ p.name }}</span>
                   </button>
                 </div>
               </div>
 
               <!-- Base URL -->
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">API Base URL</label>
+              <div class="space-y-2">
+                <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">API Base URL</label>
                 <input
                   v-model="llmConfig.llm_api_base"
                   type="text"
                   placeholder="https://generativelanguage.googleapis.com/v1beta/openai/"
-                  class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
                 />
               </div>
 
               <!-- API Key with inline Test Button -->
-              <div class="space-y-1.5">
+              <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">API Key</label>
-                  <span v-if="llmConfig.has_api_key" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
+                  <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">API Key</label>
+                  <span v-if="llmConfig.has_api_key" class="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
                     Configured: {{ llmConfig.llm_api_key_masked }}
                   </span>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2.5">
                   <div class="relative flex-1">
                     <input
                       v-model="llmConfig.llm_api_key"
                       :type="showApiKey ? 'text' : 'password'"
                       :placeholder="llmConfig.has_api_key ? 'Leave empty to keep existing key' : 'Enter API Key...'"
-                      class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-9"
+                      class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 pr-10"
                     />
                     <button
                       type="button"
-                      class="absolute inset-y-0 right-0 px-2.5 flex items-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer"
+                      class="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
                       @click="showApiKey = !showApiKey"
                     >
-                      <UIcon :name="showApiKey ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-4 h-4" />
+                      <UIcon :name="showApiKey ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-4.5 h-4.5" />
                     </button>
                   </div>
                   <button
                     type="button"
                     :disabled="testingLLM"
-                    class="px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white border border-zinc-300/60 dark:border-zinc-700/60 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                    class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-zinc-900 dark:bg-zinc-800 text-white dark:text-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors cursor-pointer flex items-center gap-2 shrink-0 disabled:opacity-50"
                     @click="testLLMConnection"
                   >
-                    <UIcon :name="testingLLM ? 'i-lucide-loader-2' : 'i-lucide-zap'" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" :class="{ 'animate-spin': testingLLM }" />
-                    {{ testingLLM ? 'Testing...' : 'Test Connection' }}
+                    <UIcon :name="testingLLM ? 'i-lucide-loader-2' : 'i-lucide-zap'" class="w-4 h-4 text-zinc-400" :class="{ 'animate-spin': testingLLM }" />
+                    <span>{{ testingLLM ? 'Testing...' : 'Test Connection' }}</span>
                   </button>
                 </div>
               </div>
 
               <!-- Model Name -->
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Model Name</label>
+              <div class="space-y-2">
+                <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">Model Name</label>
                 <input
                   v-model="llmConfig.llm_model"
                   type="text"
-                  placeholder="gemini-3.5-flash"
-                  class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="gemini-3.6-flash"
+                  class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
                 />
               </div>
 
               <!-- Proxy -->
-              <div class="space-y-1.5">
-                <label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">HTTP Proxy (Optional)</label>
+              <div class="space-y-2">
+                <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">HTTP Proxy (Optional)</label>
                 <input
                   v-model="llmConfig.llm_http_proxy"
                   type="text"
                   placeholder="http://127.0.0.1:7897"
-                  class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
                 />
               </div>
 
-              <!-- Test Result Box -->
+              <!-- Test Result Status -->
               <div
                 v-if="testResult.tested"
-                class="p-3 rounded-xl border text-xs transition-all flex items-center justify-between"
-                :class="testResult.success ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-700 dark:text-emerald-300' : 'bg-rose-950/30 border-rose-800/60 text-rose-300'"
+                class="p-3.5 rounded-xl border text-xs sm:text-sm transition-all flex items-center justify-between"
+                :class="testResult.success
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'"
               >
-                <div class="flex items-center gap-2">
-                  <UIcon :name="testResult.success ? 'i-lucide-check-circle' : 'i-lucide-x-circle'" class="w-4 h-4 shrink-0" />
-                  <span v-if="testResult.success">Connection successful! (Latency: {{ testResult.latency_ms }}ms)</span>
+                <div class="flex items-center gap-2.5">
+                  <UIcon :name="testResult.success ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'" class="w-4.5 h-4.5 shrink-0" />
+                  <span v-if="testResult.success">Connection verified (Latency: {{ testResult.latency_ms }}ms)</span>
                   <span v-else class="truncate max-w-md">{{ testResult.error }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Tab 3: Personalization -->
-            <div v-else-if="activeTab === 'personalization'" class="space-y-6 animate-in fade-in duration-200">
-
-              <!-- 1. Base Style & Tone -->
-              <div class="space-y-3">
-                <div class="flex items-center justify-between p-4 bg-zinc-50/60 dark:bg-zinc-900/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
-                  <div>
-                    <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Base Style & Tone</div>
-                    <div class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                      Set the tone and style of AI responses. This won't affect core capabilities.
-                    </div>
+            <div v-else-if="activeTab === 'personalization'" class="space-y-6">
+              <!-- Base Style & Tone -->
+              <div class="flex items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
+                <div>
+                  <div class="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100">Response Style & Tone</div>
+                  <div class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                    Adjust the conversational demeanor of responses
                   </div>
-
-                  <UDropdownMenu :items="styleToneMenuItems" :content="{ align: 'end' }">
-                    <UButton
-                      color="neutral"
-                      variant="ghost"
-                      size="sm"
-                      trailing-icon="i-lucide-chevron-down"
-                      class="text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white px-3 py-1.5 rounded-xl bg-zinc-100/60 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-300/50 dark:border-zinc-700/50 cursor-pointer shrink-0 ml-4"
-                    >
-                      {{ styleTone }}
-                    </UButton>
-                  </UDropdownMenu>
                 </div>
+                
+                <UDropdownMenu
+                  :items="styleToneMenuItems"
+                  :content="{ align: 'end', sideOffset: 8 }"
+                  :ui="{
+                    content: 'min-w-44 p-1.5 rounded-2xl bg-white dark:bg-zinc-900 shadow-xl border border-zinc-200 dark:border-zinc-800 ring-0',
+                    group: 'p-0 flex flex-col gap-1',
+                    item: 'rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium cursor-pointer text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }"
+                >
+                  <button
+                    type="button"
+                    class="text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200 px-4 py-2 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700 shadow-2xs transition-colors cursor-pointer flex items-center gap-2 shrink-0"
+                  >
+                    <span>{{ styleTone }}</span>
+                    <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-zinc-400" />
+                  </button>
+                </UDropdownMenu>
               </div>
 
-              <!-- 2. Custom Instructions -->
+              <!-- Custom Instructions -->
               <div class="space-y-2">
-                <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Custom Instructions</div>
-                <div class="text-xs text-zinc-600 dark:text-zinc-400">
-                  What would you like the AI to know or follow when responding?
-                </div>
+                <label class="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">Custom System Instructions</label>
                 <textarea
                   v-model="customInstructions"
                   rows="3"
-                  placeholder="Before answering all questions, please first search the web to gather sufficient information, and then provide your response."
-                  class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none font-mono"
+                  placeholder="Provide guidance on preferred formats, perspectives, or behavior constraints..."
+                  class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 resize-none font-mono"
                 />
               </div>
 
-              <!-- 3. About You -->
-              <div class="space-y-4 pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80">
-                <div>
-                  <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">About You</div>
-                  <div class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                    Share details about yourself so AI can personalize answers.
+              <!-- About You -->
+              <div class="space-y-4 pt-4 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                <div class="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100">About You</div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-400">Preferred Name</label>
+                    <input
+                      v-model="userNickname"
+                      type="text"
+                      placeholder="How should AI address you?"
+                      class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                    />
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-400">Role / Profession</label>
+                    <input
+                      v-model="userOccupation"
+                      type="text"
+                      placeholder="e.g. Researcher, Engineer, Student"
+                      class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                    />
                   </div>
                 </div>
 
-                <div class="space-y-1.5">
-                  <label class="text-xs font-medium text-zinc-700 dark:text-zinc-300">Nickname</label>
-                  <input
-                    v-model="userNickname"
-                    type="text"
-                    placeholder="What should AI call you?"
-                    class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-medium text-zinc-700 dark:text-zinc-300">Occupation</label>
-                  <input
-                    v-model="userOccupation"
-                    type="text"
-                    placeholder="e.g. Software Engineer, Excel Guide, Student"
-                    class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div class="space-y-1.5">
-                  <label class="text-xs font-medium text-zinc-700 dark:text-zinc-300">Your Details</label>
+                <div class="space-y-2">
+                  <label class="text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-400">Preferences & Background</label>
                   <textarea
                     v-model="userDetails"
                     rows="2"
-                    placeholder="Interests, values, or preferences for AI to remember..."
-                    class="w-full bg-zinc-50/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
+                    placeholder="Specific background or preferences helpful for contextualizing answers..."
+                    class="w-full bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3.5 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 resize-none"
                   />
                 </div>
               </div>
-
             </div>
 
-            <!-- Tab 4: Documents -->
-            <div v-else-if="activeTab === 'documents'" class="space-y-6 animate-in fade-in duration-200">
-
-              <div class="space-y-4">
-                <h4 class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <UIcon name="i-lucide-database" class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  Document & Vector Store Overview
-                </h4>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div class="bg-zinc-50/60 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-1">
-                    <div class="text-xs text-zinc-600 dark:text-zinc-400">Total Documents</div>
-                    <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                      49 Documents
-                    </div>
+            <!-- Tab 4: Account -->
+            <div v-else-if="activeTab === 'account'" class="space-y-5">
+              <div class="p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
+                <div class="flex items-center gap-3.5">
+                  <img
+                    v-if="loggedIn && user?.avatar"
+                    :src="user.avatar"
+                    :alt="user.name"
+                    class="w-12 h-12 rounded-full border border-zinc-200 dark:border-zinc-700"
+                  />
+                  <div
+                    v-else
+                    class="w-12 h-12 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold flex items-center justify-center text-base"
+                  >
+                    {{ user?.name?.[0] || 'U' }}
                   </div>
-
-                  <div class="bg-zinc-50/60 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-1">
-                    <div class="text-xs text-zinc-600 dark:text-zinc-400">Total Chunks</div>
-                    <div class="text-lg font-bold text-sky-600 dark:text-sky-400 font-mono">
-                      88,520 Chunks
+                  <div>
+                    <div class="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                      {{ user?.name || user?.username || 'Current Session' }}
                     </div>
-                  </div>
-
-                  <div class="bg-zinc-50/60 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-1">
-                    <div class="text-xs text-zinc-600 dark:text-zinc-400">Embedding Model</div>
-                    <div class="text-xs font-bold text-zinc-800 dark:text-zinc-200 font-mono truncate pt-1">
-                      BAAI/bge-small-en-v1.5
+                    <div class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      {{ loggedIn ? ((user as any)?.email || user?.username || 'Authenticated User') : 'Local Mode' }}
                     </div>
                   </div>
                 </div>
+
+                <span
+                  class="px-3 py-1 text-xs font-semibold rounded-full"
+                  :class="loggedIn
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'"
+                >
+                  {{ loggedIn ? 'Active' : 'Local' }}
+                </span>
               </div>
 
-              <div class="p-4 rounded-2xl bg-zinc-50/40 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Manage Ingested Documents</div>
-                  <div class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">View and manage all document knowledge pools and reference files</div>
-                </div>
-                <UButton
-                  to="/documents"
-                  color="primary"
-                  variant="solid"
-                  size="sm"
-                  label="Manage Documents"
-                  icon="i-lucide-folder-open"
-                  class="rounded-xl cursor-pointer font-medium px-4 py-2 shrink-0 ml-4"
-                  @click="emit('update:open', false)"
-                />
-              </div>
-
-            </div>
-
-            <!-- Tab 5: Account -->
-            <div v-else-if="activeTab === 'account'" class="space-y-6 animate-in fade-in duration-200">
-
-              <div class="space-y-3">
-                <h4 class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <UIcon name="i-lucide-user-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  Account Profile
-                </h4>
-
-                <div v-if="loggedIn && user" class="bg-zinc-50/60 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <img
-                      v-if="user.avatar"
-                      :src="user.avatar"
-                      :alt="user.name"
-                      class="w-12 h-12 rounded-full border border-zinc-300 dark:border-zinc-700"
-                    />
-                    <div v-else class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-lg">
-                      {{ user.name?.[0] || 'U' }}
-                    </div>
-                    <div>
-                      <div class="text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ user.name || user.username }}</div>
-                      <div class="text-xs text-zinc-600 dark:text-zinc-400">{{ user.username || 'Authenticated User' }}</div>
-                    </div>
-                  </div>
-                  <span class="px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-400/10 rounded-full border border-emerald-400/20">
-                    Logged In
-                  </span>
-                </div>
-
-                <div v-else class="bg-zinc-50/60 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
-                  Currently running in Local Mode.
-                </div>
-              </div>
-
-              <!-- AI API Config Info -->
-              <div class="space-y-3">
-                <h4 class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <UIcon name="i-lucide-cpu" class="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                  Active LLM Status
-                </h4>
-
-                <div class="bg-zinc-50/60 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-2.5 text-xs text-zinc-700 dark:text-zinc-300">
-                  <div class="flex items-center justify-between">
-                    <span class="text-zinc-600 dark:text-zinc-400">Base URL</span>
-                    <span class="font-mono text-emerald-600 dark:text-emerald-400 truncate max-w-xs">{{ llmConfig.llm_api_base || 'Not configured' }}</span>
-                  </div>
-                  <div class="flex items-center justify-between pt-2 border-t border-zinc-200/60 dark:border-zinc-800/60">
-                    <span class="text-zinc-600 dark:text-zinc-400">Active Model</span>
-                    <span class="font-mono font-bold text-sky-600 dark:text-sky-400">{{ llmConfig.llm_model }}</span>
-                  </div>
-                </div>
-              </div>
-
+              <!-- Logout Button if logged in -->
               <div v-if="loggedIn" class="pt-2">
-                <UButton
-                  color="error"
-                  variant="subtle"
-                  icon="i-lucide-log-out"
-                  label="Log out"
-                  class="w-full justify-center rounded-xl cursor-pointer"
+                <button
+                  type="button"
+                  class="w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer flex items-center justify-center gap-2"
                   @click="clearSession(); emit('update:open', false);"
-                />
+                >
+                  <UIcon name="i-lucide-log-out" class="w-4.5 h-4.5" />
+                  <span>Log out</span>
+                </button>
               </div>
-
             </div>
 
           </div>
 
           <!-- Bottom Actions Bar -->
-          <div class="p-4 px-6 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between bg-zinc-50/40 dark:bg-zinc-900/40 shrink-0">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-rotate-ccw"
-              label="Reset to Defaults"
-              class="rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer"
+          <div class="p-4 px-7 border-t border-zinc-200/70 dark:border-zinc-800/70 flex items-center justify-between bg-zinc-50/70 dark:bg-zinc-900/70 shrink-0">
+            <button
+              type="button"
+              class="text-xs sm:text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer flex items-center gap-2"
               @click="resetDefaults"
-            />
-            <div class="flex items-center gap-2">
-              <UButton
-                color="neutral"
-                variant="ghost"
-                label="Cancel"
-                class="rounded-xl cursor-pointer"
+            >
+              <UIcon name="i-lucide-rotate-ccw" class="w-4 h-4" />
+              <span>Reset Defaults</span>
+            </button>
+            <div class="flex items-center gap-2.5">
+              <button
+                type="button"
+                class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                 @click="emit('update:open', false)"
-              />
-              <UButton
-                color="primary"
-                label="Save Settings"
-                icon="i-lucide-check"
-                :loading="savingLLM"
-                class="rounded-xl font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                :disabled="savingLLM"
+                class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors cursor-pointer flex items-center gap-2 shadow-xs disabled:opacity-50"
                 @click="saveSettings"
-              />
+              >
+                <UIcon :name="savingLLM ? 'i-lucide-loader-2' : 'i-lucide-check'" class="w-4 h-4" :class="{ 'animate-spin': savingLLM }" />
+                <span>Save Settings</span>
+              </button>
             </div>
           </div>
 
