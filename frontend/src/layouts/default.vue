@@ -243,16 +243,18 @@ defineShortcuts({
       class="border-r-0 py-4"
     >
       <template #header="{ collapsed }">
-        <ULink
-          v-if="!collapsed"
-          to="/"
-          class="flex items-center gap-1 px-1"
-        >
-          <span class="text-2xl font-bold tracking-tight text-highlighted">Chat</span>
-        </ULink>
+        <div class="flex items-center justify-between w-full h-8 min-h-[32px]">
+          <ULink
+            v-if="!collapsed"
+            to="/"
+            class="flex items-center gap-1 min-w-0"
+          >
+            <span class="text-xl font-bold tracking-tight text-highlighted leading-none select-none">Chat</span>
+          </ULink>
 
-        <div :class="[collapsed ? 'w-full flex justify-center' : 'ms-auto']">
-          <UDashboardSidebarCollapse />
+          <div :class="[collapsed ? 'w-full flex items-center justify-center' : 'ms-auto flex items-center shrink-0']">
+            <UDashboardSidebarCollapse class="shrink-0" />
+          </div>
         </div>
       </template>
 

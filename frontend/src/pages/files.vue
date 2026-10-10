@@ -259,7 +259,7 @@ onMounted(async () => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
             <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Space:</span>
-            <UBadge color="indigo" variant="soft" size="xs">{{ space }}</UBadge>
+            <UBadge color="primary" variant="soft" size="xs">{{ space }}</UBadge>
           </div>
           <UIcon name="i-lucide-key-round" class="w-4 h-4 text-indigo-500" />
         </div>
@@ -354,7 +354,7 @@ onMounted(async () => {
               <span class="inline-flex items-center gap-1 font-mono">
                 <UIcon name="i-lucide-key-round" class="w-3.5 h-3.5 text-indigo-500" />
                 <span class="text-zinc-400">Scope:</span>
-                <UBadge color="indigo" variant="soft" size="xs" class="font-semibold px-1.5">
+                <UBadge color="primary" variant="soft" size="xs" class="font-semibold px-1.5">
                   {{ item.spaceKey || 'RAG' }}
                 </UBadge>
               </span>
@@ -431,7 +431,7 @@ onMounted(async () => {
           <div class="flex items-start justify-between gap-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
             <div>
               <div class="flex items-center gap-2">
-                <UBadge color="indigo" variant="soft" size="xs">
+                <UBadge color="primary" variant="soft" size="xs">
                   Space: {{ previewDoc?.spaceKey || 'RAG' }}
                 </UBadge>
                 <h3 class="font-bold text-lg text-zinc-900 dark:text-white truncate max-w-xl">
