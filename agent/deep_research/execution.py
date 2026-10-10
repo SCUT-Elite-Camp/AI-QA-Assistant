@@ -1,0 +1,169 @@
+"""Composition root for the Deep Research Core Vertical Slice."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from pathlib import Path
+import sqlite3
+
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+from agent.schemas.research import ClaimVerificationStatus
+
+from .dispatcher import DurableDispatcher
+from .manifest import LocalDocumentResolver
+from .model_report import EvidenceReportSynthesizer
+from .pipeline import ResearchIntelligencePipeline
+from .planner import ModelResearchPlanner, ResearchPlanner
+from .repository import SQLiteResearchRepository
+from .runtime import ResearchGraphRuntime
+from .service import ApprovedResearchContext, ResearchControlPlane
+from .tools import EnterpriseResearchToolAdapter, LocalJsonSearchBackend, LocalResearchToolAdapter
+from .access import ResearchAccessPolicy
+from .verifier import MockSemanticVerifier, SemanticVerifier
+from .worker import ResearchLedger
+
+
+class ResearchRuntimeService:
+    """Own the dispatcher, Graph and adapters for one Repository."""
+
+    def __init__(
+        self,
+        control_plane: ResearchControlPlane,
+        tool_adapter: LocalResearchToolAdapter,
+        checkpointer: BaseCheckpointSaver,
+        *,
+        semantic_verifier: SemanticVerifier | None = None,
+        ledger: ResearchLedger | None = None,
+        stage_hook: Callable[[str, str], None] | None = None,
+        renderer=None,
+        checkpoint_connection: sqlite3.Connection | None = None,
+        owns_repository: bool = False,
+    ) -> None:
+        self.control_plane = control_plane
+        self.tool_adapter = tool_adapter
+        self.checkpoint_connection = checkpoint_connection
+        self.owns_repository = owns_repository
+        self.pipeline = ResearchIntelligencePipeline(
+            control_plane,
+            tool_adapter,
+            semantic_verifier=semantic_verifier,
+            renderer=renderer,
+            ledger=ledger,
+            max_candidates_per_task=3 if isinstance(renderer, EvidenceReportSynthesizer) else 2,
+        )
+        self.runtime = ResearchGraphRuntime(
+            control_plane,
+            self.pipeline,
+            checkpointer,
+            stage_hook=stage_hook,
+        )
+        self.dispatcher = DurableDispatcher(
+            control_plane,
+            executor=self._execute,
+            recovery_executor=self.runtime.resume,
+        )
+
+    @classmethod
+    def from_enterprise_catalog(cls, *, search_tool, read_tool,
+                                access_policy: ResearchAccessPolicy, **kwargs) -> "ResearchRuntimeService":
+        """Production composition reuses the application-scoped Chat tools."""
+        if search_tool is None or read_tool is None or access_policy is None:
+            raise ValueError("research_shared_tools_required")
+        return cls.from_local_catalog(documents_dir=search_tool.documents_dir,
+                                      search_tool=search_tool, read_tool=read_tool,
+                                      access_policy=access_policy, **kwargs)
+
+    @classmethod
+    def from_local_catalog(
+        cls,
+        *,
+        database_path: str | Path,
+        documents_dir: str | Path,
+        checkpoint_path: str | Path | None = None,
+        id_factory=None,
+        planner: ResearchPlanner | None = None,
+        semantic_statuses: dict[str, ClaimVerificationStatus | str] | None = None,
+        ledger: ResearchLedger | None = None,
+        stage_hook: Callable[[str, str], None] | None = None,
+        report_api_base: str = "",
+        report_api_key: str = "",
+        report_model: str = "",
+        search_tool=None,
+        read_tool=None,
+        access_policy: ResearchAccessPolicy | None = None,
+    ) -> "ResearchRuntimeService":
+        """Build a durable catalog runtime with fixture or shared production tools."""
+
+        database_path = Path(database_path)
+        documents_dir = Path(documents_dir)
+        checkpoint_path = Path(checkpoint_path or database_path.with_suffix(".graph.db"))
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        repository = SQLiteResearchRepository(database_path)
+        active_planner = planner or (
+            ModelResearchPlanner(
+                api_base=report_api_base,
+                api_key=report_api_key,
+                model=report_model,
+            )
+            if report_api_base and report_model
+            else None
+        )
+        control_plane = ResearchControlPlane(
+            repository,
+            source_resolver=LocalDocumentResolver(documents_dir),
+            planner=active_planner,
+            id_factory=id_factory,
+            access_policy=access_policy,
+        )
+        adapter = (
+            EnterpriseResearchToolAdapter(search_tool, read_tool, access_policy)
+            if search_tool is not None and access_policy is not None
+            else LocalResearchToolAdapter(LocalJsonSearchBackend(documents_dir), documents_dir)
+        )
+        checkpoint_connection = sqlite3.connect(
+            str(checkpoint_path),
+            check_same_thread=False,
+        )
+        checkpointer = SqliteSaver(checkpoint_connection)
+        verifier = (
+            MockSemanticVerifier(semantic_statuses)
+            if semantic_statuses is not None
+            else None
+        )
+        return cls(
+            control_plane,
+            adapter,
+            checkpointer,
+            semantic_verifier=verifier,
+            ledger=ledger,
+            stage_hook=stage_hook,
+            renderer=(
+                EvidenceReportSynthesizer(
+                    api_base=report_api_base,
+                    api_key=report_api_key,
+                    model=report_model,
+                )
+                if report_api_base and report_model
+                else None
+            ),
+            checkpoint_connection=checkpoint_connection,
+            owns_repository=True,
+        )
+
+    def _execute(self, context: ApprovedResearchContext) -> None:
+        self.runtime.run(context.job.research_id)
+
+    def scan_once(self) -> list[str]:
+        return self.dispatcher.scan_once()
+
+    def close(self) -> None:
+        self.tool_adapter.close()
+        if self.checkpoint_connection is not None:
+            self.checkpoint_connection.close()
+        if self.owns_repository:
+            self.control_plane.repository.close()
+
+
+__all__ = ["ResearchRuntimeService"]

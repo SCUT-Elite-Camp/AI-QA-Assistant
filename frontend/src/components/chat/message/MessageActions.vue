@@ -125,6 +125,7 @@ const earliestDataDate = computed<string | null>(() => {
 
   dates.sort((a, b) => a.getTime() - b.getTime())
   const earliest = dates[0]
+  if (!earliest) return null
 
   const y = earliest.getFullYear()
   const m = String(earliest.getMonth() + 1).padStart(2, '0')

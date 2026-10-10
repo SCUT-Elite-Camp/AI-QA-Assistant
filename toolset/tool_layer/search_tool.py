@@ -1,11 +1,13 @@
 import json
 import logging
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from data_persistence.vector import matches_filters, normalize_filters
-from .base_tool import BaseTool
+from tool_layer.base_tool import BaseTool
+from tool_layer.evidence_metadata import chunk_metadata, source_metadata
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -134,7 +136,7 @@ class SearchTool(BaseTool):
             Path(documents_dir) if documents_dir else
             default_documents_dir
         )
-        self.bm25_path = default_documents_dir.parent / "bm25_index.pkl"
+        self.bm25_path = Path(os.getenv("BM25_INDEX_PATH", str(default_documents_dir.parent / "bm25_index.pkl")))
 
         self.backend = backend
         self.logger = logger or logging.getLogger(__name__)
@@ -266,6 +268,7 @@ class SearchTool(BaseTool):
         started = time.perf_counter()
         trace = trace_id or "-"
         filters = _normalize_public_filters(filters)
+        filters = self._narrow_week_scope(query, filters)
 
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
@@ -498,6 +501,40 @@ class SearchTool(BaseTool):
             output.append(item)
         return output
 
+    def _narrow_week_scope(self, query: str, filters: Dict) -> Dict:
+        """Resolve a single named sprint inside an explicit document allowlist."""
+        weeks = set(re.findall(r"(?<!\w)W\d{2}(?!\w)", query, re.IGNORECASE))
+        allowed = filters.get("doc_ids") or []
+        if len(weeks) != 1 or len(allowed) < 2:
+            return filters
+        week = next(iter(weeks)).casefold()
+        matching = [doc_id for doc_id in allowed if week in str(self._load_document_meta(doc_id).get("title", "")).casefold()]
+        return {**filters, "doc_ids": matching} if matching else filters
+
+    def _narrow_dated_scope(self, query: str, filters: Dict) -> Dict:
+        """Resolve a dated comparison target within its authorized documents."""
+        dates = {(int(y), int(m), int(d)) for y, m, d in re.findall(
+            r"(?<!\d)(\d{4})[-_/ +](\d{1,2})[-_/ +](\d{1,2})(?!\d)", query
+        )}
+        months = {name: i for i, name in enumerate(
+            ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"), 1
+        )}
+        for name, day, year in re.findall(
+            r"\b(" + "|".join(months) + r")\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b", query, re.IGNORECASE
+        ):
+            dates.add((int(year or 0), months[name.casefold()], int(day)))
+        allowed = filters.get("doc_ids") or []
+        if len(dates) != 1 or len(allowed) < 2:
+            return filters
+        year, month, day = next(iter(dates))
+        matching = []
+        for doc_id in allowed:
+            title = str(self._load_document_meta(doc_id).get("title", ""))
+            title_dates = re.findall(r"(?<!\d)(\d{4})[-_/ +](\d{1,2})[-_/ +](\d{1,2})(?!\d)", title)
+            if any(int(m) == month and int(d) == day and (not year or int(y) == year) for y, m, d in title_dates):
+                matching.append(doc_id)
+        return {**filters, "doc_ids": matching} if matching else filters
+
     def _search_internal(self, query: str, top_k: int, mode: str, filters: Dict) -> List[Dict]:
         # 空白名单短路：doc_ids 显式为空列表表示用户无可访问文件，直接返回空结果。
         if self._has_empty_doc_id_allowlist(filters):
@@ -653,6 +690,8 @@ class SearchTool(BaseTool):
             chunk_index = int(chunk_index)
 
             doc_meta = self._load_document_meta(doc_id)
+            if doc_meta.get("active_version", True) is not True:
+                continue
             if not _matches_filters(item, filters, doc_meta):
                 continue
 
@@ -661,11 +700,14 @@ class SearchTool(BaseTool):
 
             title = item.get("title") or doc_meta.get("title") or doc_id
             source_url = item.get("source_url") or doc_meta.get("source_url") or ""
+            provenance = self._read_provenance(doc_meta, chunk_index, str(chunk_text))
 
             normalized.append(
                 {
+                    **source_metadata(doc_meta),
+                    **provenance,
                     "doc_id": doc_id,
-                    "chunk_id": item.get("chunk_id") or f"{doc_id}::chunk_{chunk_index}",
+                    "chunk_id": provenance.get("locator", {}).get("chunk_id") if provenance.get("locator") else item.get("chunk_id") or f"{doc_id}::chunk_{chunk_index}",
                     "chunk_index": chunk_index,
                     "chunk_text": str(chunk_text),
                     "title": str(title),
@@ -679,7 +721,22 @@ class SearchTool(BaseTool):
         normalized.sort(key=lambda row: row["score"], reverse=True)
         return normalized
 
+    @staticmethod
+    def _read_provenance(document: Dict, chunk_index: int, text: str) -> Dict:
+        for chunk in document.get("chunks") or []:
+            if not isinstance(chunk, dict):
+                continue
+            try:
+                matches_index = int(chunk.get("index", -1)) == chunk_index
+            except (TypeError, ValueError):
+                continue
+            if matches_index and str(chunk.get("text") or chunk.get("chunk_text") or "") == text:
+                return chunk_metadata(document, chunk)
+        return {"read_status": "retrieval_hit", "evidence_ref": None, "locator": None}
+
     def _load_document_meta(self, doc_id: str) -> Dict:
+        if not doc_id or doc_id in {".", ".."} or any(char in doc_id for char in ("/", "\\", ":")):
+            return {}
         path = self.documents_dir / f"{doc_id}.json"
         if not path.exists():
             return {}

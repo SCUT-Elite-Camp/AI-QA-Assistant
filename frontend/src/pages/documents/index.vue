@@ -211,6 +211,7 @@ async function handleFileChange(event: Event) {
   const pendingDocs: DocItem[] = []
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
+    if (!file) continue
     formData.append('files', file)
 
     const pendingItem: DocItem = {
@@ -281,7 +282,7 @@ function getFileIcon(type: string) {
 
 <template>
   <div class="flex-1 flex flex-col h-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
-    
+
     <!-- Hidden File Input for Upload -->
     <input
       ref="fileInputRef"
@@ -333,7 +334,7 @@ function getFileIcon(type: string) {
 
     <!-- Overview Bar & Search Filter -->
     <div class="p-6 py-4 border-b border-zinc-800/80 bg-zinc-900/20 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-      
+
       <!-- Metrics overview chips -->
       <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
         <div class="px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-2 text-xs">
@@ -394,7 +395,7 @@ function getFileIcon(type: string) {
 
     <!-- Document Table List -->
     <div class="flex-1 overflow-y-auto p-6">
-      
+
       <!-- Loading State -->
       <div v-if="loading && documents.length === 0" class="flex flex-col items-center justify-center py-24 text-zinc-500 space-y-3">
         <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-emerald-400" />
@@ -421,7 +422,7 @@ function getFileIcon(type: string) {
       <!-- Data Table -->
       <div v-else class="bg-zinc-900/40 rounded-2xl border border-zinc-800/80 overflow-hidden shadow-xs">
         <table class="w-full text-left text-xs text-zinc-300 border-collapse">
-          
+
           <!-- Table Header -->
           <thead class="bg-zinc-900/80 text-zinc-400 font-semibold border-b border-zinc-800">
             <tr>
@@ -468,7 +469,7 @@ function getFileIcon(type: string) {
               <td class="py-3.5 px-4 font-medium">
                 <div class="flex items-center gap-2.5">
                   <UIcon :name="getFileIcon(doc.fileType)" class="w-4 h-4 shrink-0" />
-                  
+
                   <!-- Title text: Gray & Italic when processing, White & Bold when ready -->
                   <span
                     :class="[
@@ -570,7 +571,7 @@ function getFileIcon(type: string) {
     <ModalDocumentViewer
       v-if="showViewerModal"
       v-model:open="showViewerModal"
-      :doc-id="viewerDocId"
+      :doc="viewerDocId ? { index: 0, doc_id: viewerDocId, chunk_id: '', title: '' } : null"
     />
 
   </div>

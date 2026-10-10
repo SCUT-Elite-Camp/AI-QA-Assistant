@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from agent.answer.complexity import requires_complex_answer
-from agent.answer.fact_coverage import identifier_tokens, normalized_fact_text
+from agent.answer.fact_coverage import english_inflection_variants, identifier_tokens, normalized_fact_text
 from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.schemas.query_plan import QueryPlan
@@ -37,7 +37,7 @@ class TargetExtractor:
 
     _MAX_TARGETS = 12
     _MAX_EVIDENCE_ITEMS = 8
-    _MAX_CONTENT_CHARS = 1200
+    _MAX_CONTENT_CHARS = 12000
 
     def __init__(self, llm: BaseLLM | None = None) -> None:
         self.llm = llm
@@ -64,6 +64,10 @@ class TargetExtractor:
         evidence_text = "\n".join(
             f"{item.title}\n{item.content}" for item in evidence[: self._MAX_EVIDENCE_ITEMS]
         )
+        # Imported prose can join the article to a capitalized module name.
+        # Preserve identifiers explicitly requested by the user, but do not
+        # turn a source's "theAgent" typography into a required code symbol.
+        evidence_text = re.sub(r"\bthe[A-Z][a-zA-Z]*", lambda m: m.group() if m.group() in query else 'the ' + m.group()[3:], evidence_text)
         query_norm = normalized_fact_text(query)
         query_tokens = identifier_tokens(query)
         candidates: list[str] = []
@@ -132,7 +136,7 @@ def _grounded_in_query(term: str, query_norm: str, query_tokens: set[str]) -> bo
     if term_norm and term_norm in query_norm:
         return True
     term_tokens = identifier_tokens(term)
-    return bool(term_tokens and term_tokens & query_tokens)
+    return bool(term_tokens) and all(english_inflection_variants(token) & query_tokens for token in term_tokens)
 
 
 def _dedupe(terms: list[str]) -> list[str]:

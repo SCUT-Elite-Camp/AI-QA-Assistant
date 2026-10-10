@@ -55,7 +55,7 @@ class InspectingLLM:
                     }
                 ),
             }
-        if "查询重写器" in system_prompt:
+        if "Rewrite the current question" in system_prompt:
             return {
                 "role": "assistant",
                 "content": json.dumps(
@@ -151,6 +151,7 @@ def persistent_memory_context(*, facts: list[dict] | None = None) -> dict:
 
 def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = InspectingLLM(["Persistent answer [1]"])
     agent = Agent(llm=llm, tools=[])
     request = InternalChatRequest(
@@ -198,6 +199,7 @@ def test_persistent_context_reaches_fast_loop_once(monkeypatch) -> None:
     from unittest.mock import Mock
 
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     coordinator = MemoryCoordinator()
     coordinator.prepare = Mock(wraps=coordinator.prepare)  # type: ignore[method-assign]
     llm = InspectingLLM(["Fast persistent answer [1]"])
@@ -232,11 +234,12 @@ def test_explicit_persistent_fact_recall_bypasses_models_and_tools(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = NoModelCallLLM()
     coordinator = MemoryCoordinator(now_ms=lambda: 1000)
     agent = Agent(llm=llm, tools=[], memory_coordinator=coordinator)
     request = InternalChatRequest(
-        query="我之前确认的目标是什么？",
+        query="我之前确认的记忆是什么？",
         session_id="persistent-chat",
         is_first_message=False,
         memory_context=persistent_memory_context(
@@ -254,7 +257,7 @@ def test_explicit_persistent_fact_recall_bypasses_models_and_tools(
     response = agent.chat(request)
 
     assert response.status == StatusCode.SUCCESS
-    assert response.answer == "你此前确认的目标：\n- 完成答辩准备。"
+    assert response.answer == "已确认的记忆：\n- GOAL: 完成答辩准备。"
     assert response.citations == []
     assert llm.calls == 0
     assert agent.last_run_result is None

@@ -1,0 +1,27 @@
+{
+  "policy": "cross-model continuation explicitly requested by user; not a same-model benchmark",
+  "covered_coordinates": 108,
+  "unique_coordinates": 108,
+  "api_success": 108,
+  "valid_quality_judgments": 108,
+  "raw_strict_quality_pass": 98,
+  "manual_review_pass": 10,
+  "scope_violations": 0,
+  "invalid_citations": 0,
+  "non_english_narrative": 0,
+  "source_checks": 228,
+  "source_checks_passed": 228,
+  "research_statuses": {
+    "complete": 39,
+    "degraded": 15
+  },
+  "actual_models": {
+    "qwen3.5-plus": 53,
+    "qwen-plus-2025-12-01": 50,
+    "qwen3.5-27b": 5
+  },
+  "new_continuation_runs": 28,
+  "single_quality_retry_runs": 1,
+  "product_full_regression_passed": 771,
+  "resume_harness_targeted_passed": 6
+}

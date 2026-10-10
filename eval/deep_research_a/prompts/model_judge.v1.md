@@ -14,15 +14,102 @@ Score each dimension from 1 to 5:
 - Limitation disclosure: uncertainty, permission boundaries, missing data, and degraded/refusal behavior are explicit when needed.
 - Conflict handling: source conflicts and ordinary version evolution are distinguished and dates/authority are used correctly.
 
+Calibration anchors:
+
+- Score 5: fully satisfies the dimension with no material defect.
+- Score 4: correct and usable, with only a minor omission that does not change the answer.
+- Score 3: partially correct but has a material omission, ambiguity, or weak support.
+- Score 2: major errors or unsupported reasoning dominate.
+- Score 1: empty, contradictory, unsafe, or unrelated.
+- Do not lower Faithfulness merely because a report is concise or uses grouped citations;
+  use the supplied citation-to-evidence mapping to verify support.
+- Add an ID to `unsupported_claim_ids` only for a concrete factual claim that is
+  absent from or contradicted by its mapped frozen evidence.
+- Score dimensions independently. Missing requested information lowers
+  Completeness and usually Answer relevance, but does not lower Faithfulness
+  when every factual claim that is actually present is supported.
+- Verbosity, copied context, weak organization, and facts being buried affect
+  Answer relevance. They must not lower Correctness when the stated facts are
+  accurate, or Completeness when every requested fact is explicitly present.
+- A requested source URL or locator displayed in the report's source/citation
+  section counts as present and complete even when it is not repeated in prose.
+- Citation metadata (`source_url`, `locator`, `doc_id`) is frozen provenance
+  evidence for source-identification claims. A matching URL or locator is
+  supported by that metadata even when it is absent from the document's prose
+  excerpt. Metadata does not support unrelated factual claims about content.
+- Required facts describe required coverage, not an exclusive list of allowed
+  answers. Additional requested, sourced Python test files remain Python files.
+  Distinct named goals sharing an identifier must retain their own statuses;
+  exposing both rows is not a contradiction or misassignment.
+- `unsupported_claim_ids` must use the supplied candidate claim IDs. Missing
+  required facts belong in completeness scoring, not this list.
+- Faithfulness evaluates support for factual claims that are present, not whether
+  the report performed enough synthesis. A report containing only supported
+  copied excerpts can be incomplete and irrelevant while still scoring 5 for
+  Faithfulness.
+- For Limitation disclosure, score 5 when no uncertainty, permission boundary,
+  missing evidence, degraded mode, or refusal needs disclosure. Lower the score
+  only when such a limitation exists and the report mishandles or hides it.
+  Link availability is scored deterministically by the Citation layer and is
+  not a limitation the report must disclose. Link-check status is intentionally
+  excluded from this judge's input.
+- For Conflict handling, score 5 when no conflict exists and the report correctly
+  avoids inventing one. Lower it when the report mistakes ordinary comparison or
+  version evolution for a contradiction, or mishandles a real conflict.
+- A supported factual statement with a wrong semantic label (for example, calling
+  ordinary week-to-week differences a source conflict) should lower Correctness
+  and Conflict handling. Do not also list its claim ID as unsupported when the
+  underlying values are present in its mapped evidence.
+
 Rules:
 
 1. A workflow status of `completed` provides no quality credit.
 2. A correct refusal/degraded answer can score 5 when that is the expected behavior.
 3. A plausible statement not present in the supplied excerpts is unsupported.
+   Treat causal explanations and claims about mock implementations, production
+   readiness, permissions, or scalability as unsupported unless the excerpts
+   establish them. Source silence establishes uncertainty, not absence.
+   Before assigning scores, independently check each requested number, its
+   module and period, and any arithmetic against the frozen excerpts. Nearby
+   team totals or different periods cannot substitute for the requested facts.
+   For English cases, mixed-language narrative and pasted source history lower
+   Answer relevance. A correct clarification must stay focused on the missing
+   scope; adding unrelated source dumps does not earn completeness credit.
 4. Do not repair the report or infer a missing citation.
 5. Deterministic checks for manifest scope, hashes, locators, citation presence,
    and link status are outside your authority and cannot be overridden.
-6. Return JSON only, conforming exactly to `judge_output.schema.json`.
+6. Return JSON only. Do not omit any field from the output contract below.
+7. `required_fact_ids_supported` must contain every required fact that the
+   candidate report explicitly answers or correctly derives and that is supported
+   by the frozen evidence. Do not include a fact merely because it appears in a
+   long copied excerpt when the report does not use it to answer the question.
+8. `rationale` must briefly justify every dimension score and identify the most
+   important omission or unsupported claim. A generic sentence is invalid.
+9. Before returning JSON, check consistency: a fact described in `rationale` as
+   omitted must not appear in `required_fact_ids_supported`; an omission alone
+   must not reduce Faithfulness; dimensions that are not applicable must follow
+   the conditional rules above rather than receive an arbitrary middle score.
+10. If `rationale` says there are no unsupported factual claims,
+    `unsupported_claim_ids` must be empty. Never list copied claims whose mapped
+    excerpts directly contain their text as unsupported merely because the report
+    failed to synthesize them.
+
+Output contract:
+
+```json
+{
+  "judge_version": "judge.v1",
+  "correctness": 1,
+  "completeness": 1,
+  "faithfulness": 1,
+  "answer_relevance": 1,
+  "limitation_disclosure": 1,
+  "conflict_handling": 1,
+  "required_fact_ids_supported": ["fact-id"],
+  "unsupported_claim_ids": ["claim-id"],
+  "rationale": "Correctness ...; Completeness ...; Faithfulness ...; Answer relevance ...; Limitation disclosure ...; Conflict handling ..."
+}
+```
 
 Input envelope:
 
@@ -33,6 +120,7 @@ Input envelope:
   "required_facts": [{"fact_id": "...", "description": "..."}],
   "frozen_excerpts": [{"evidence_id": "...", "doc_id": "...", "locator": "...", "excerpt": "..."}],
   "claims": [{"claim_id": "...", "text": "...", "evidence_ids": ["..."]}],
+  "citations": [{"citation_id": "1", "claim_ids": ["..."], "evidence_ids": ["..."]}],
   "candidate_report": "..."
 }
 ```

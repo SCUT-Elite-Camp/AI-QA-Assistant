@@ -1,188 +1,92 @@
 import type { UIMessage } from 'ai'
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { z } from 'zod'
-import { defineHandler } from 'nitro'
+import { defineHandler, HTTPError } from 'nitro'
 import { readValidatedBody } from 'nitro/h3'
-import { useUserSession } from '../../../utils/session'
-import { useDrizzle, tables, eq, and } from '../../../utils/drizzle'
+import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
 import { agentFetch } from '../../../utils/agent-client'
-import { logger } from '../../../utils/logger'
-import { recordAiCall } from '../../../utils/metrics'
+import { authoredProvenance, assertDerivedSources, assertMessageSources, evidenceProvenanceSchema, citationsCovered, provenancePart } from '../../../utils/sourceAccess'
+import { requireOwnedChat } from '../../../utils/chatAccess'
+import { tables, useDrizzle, eq, and } from '../../../utils/drizzle'
+import { appendMessage, createCurrentMessageHandoff, persistCurrentUserMessage } from '../../../utils/messageLifecycle'
+import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 
+/** Selection exploration is an isolated server-owned conversation, not client-supplied memory. */
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
-  const db = useDrizzle()
-
-  // Accept standard AI SDK body format: messages array + extra context fields
+  requireCsrf(event)
+  const userId = await requirePrincipal(event)
   const body = await readValidatedBody(event, z.object({
-    messages: z.array(z.custom<UIMessage>()),
-    selectedText: z.string().optional(),
-    contextText: z.string().optional(),
-    topicId: z.string().optional(),
+    messages: z.array(z.custom<UIMessage>()).max(100),
+    tempChatId: z.string().optional(),
+    selectedText: z.string().max(4000).optional(),
+    contextText: z.string().max(16000).optional(), topicId: z.string().optional(),
   }).parse)
-
-  const { messages, selectedText, contextText, topicId } = body
-
-  // Get last user message as the query
-  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-  const cleanQuery = lastUserMsg
-    ? lastUserMsg.parts
-        ?.filter((p: any) => p.type === 'text')
-        ?.map((p: any) => p.text)
-        ?.join('') || ''
-    : ''
-
-  const cleanSelected = (selectedText || '').trim()
-  const cleanContext = (contextText || '').trim()
-
-  // Build query: clearly emphasize the selected text is the TOPIC OF FOCUS.
-  // The context is background only — Agent must answer about cleanSelected, not other topics in the passage.
-  let queryText = ''
-  if (cleanSelected && cleanQuery) {
-    queryText = `用户在阅读一段文字时，划选了其中的关键词「${cleanSelected}」，并就此提问：${cleanQuery}
-
-【重要】请重点围绕划选内容「${cleanSelected}」来回答，不要回答上下文中其他不相关的内容。`
-    if (cleanContext) {
-      queryText += `\n\n划选词所在的原文段落（仅供参考，回答核心仍是「${cleanSelected}」）：\n${cleanContext.slice(0, 800)}`
+  if (body.topicId) await requireTopicRole(event, body.topicId, 'viewer')
+  const last = body.messages.at(-1)
+  if (last?.role !== 'user' || !last.id || !Array.isArray(last.parts)) {
+    throw new HTTPError({ statusCode: 422, statusMessage: 'user_question_required' })
+  }
+  const text = last.parts.filter((part: any) => part.type === 'text').map((part: any) => String(part.text || '')).join('')
+  const query = [text, body.selectedText ? 'User-selected phrase (not source evidence): ' + body.selectedText : ''].filter(Boolean).join('\n')
+  if (!query.trim() || query.length > 16000) throw new HTTPError({ statusCode: 422, statusMessage: 'invalid_query' })
+  const db = useDrizzle()
+  let chat
+  if (body.tempChatId) {
+    const owned = await requireOwnedChat(event, body.tempChatId)
+    if (!owned.chat.isBranch || owned.chat.parentChatId || owned.chat.topicId) {
+      throw new HTTPError({ statusCode: 409, statusMessage: 'isolated_chat_required' })
     }
-  } else if (cleanSelected) {
-    queryText = `用户划选了「${cleanSelected}」，请围绕此内容进行介绍和说明。`
-    if (cleanContext) {
-      queryText += `\n\n所在原文：\n${cleanContext.slice(0, 800)}`
-    }
+    chat = owned.chat
   } else {
-    queryText = cleanQuery
+    ;[chat] = await db.insert(tables.chats).values({ title: '划词探索', userId,
+      visibility: 'private', isBranch: true, evidenceProvenance: authoredProvenance() }).returning()
   }
-
-  // Include prior conversation history for multi-turn context
-  const historyMessages: any[] = []
-  for (const msg of messages.slice(0, -1)) {
-    // skip non-user/assistant
-    if (msg.role !== 'user' && msg.role !== 'assistant') continue
-    const text = msg.parts
-      ?.filter((p: any) => p.type === 'text')
-      ?.map((p: any) => p.text)
-      ?.join('') || ''
-    if (text) {
-      historyMessages.push({ role: msg.role, content: text })
-    }
-  }
-
-  // Fetch Topic RAG info if topicId is provided
-  let topicDocIds: string[] = []
-  let topicInfo: any = null
-  if (topicId) {
-    topicInfo = await db.query.topics.findFirst({
-      where: eq(tables.topics.id, topicId)
+  if (!chat) throw new HTTPError({ statusCode: 500, statusMessage: 'chat_create_failed' })
+  const current = await persistCurrentUserMessage(db, { chatId: chat.id, id: last.id, parts: [{ type: 'text', text: query }] })
+  let saved = await db.query.messages.findFirst({ where: and(eq(tables.messages.chatId, chat.id),
+    eq(tables.messages.requestId, current.id), eq(tables.messages.role, 'assistant')) })
+  if (!saved) {
+    const memory = await buildPersistentMemoryContext(db, createCurrentMessageHandoff(userId, current))
+    const response = await agentFetch('/api/internal/chat', { method: 'POST', redirect: 'error',
+      headers: { 'X-User-ID': userId, 'X-Agent-Internal-Token': process.env.AGENT_INTERNAL_TOKEN || '' },
+      body: JSON.stringify({ query, user_id: userId, session_id: chat.id, weight_mode: 'fast',
+        retrieval_mode: 'hybrid', memory_context: memory }),
     })
-    if (topicInfo) {
-      const topicDocs = await db.query.topicDocuments.findMany({
-        where: and(
-          eq(tables.topicDocuments.topicId, topicInfo.id),
-          eq(tables.topicDocuments.isRemoved, false)
-        )
-      })
-      topicDocIds = topicDocs.map(d => d.docId)
+    if (!response.ok) throw new HTTPError({ statusCode: response.status, statusMessage: 'agent_unavailable' })
+    const answer = (await response.json() as any).response
+    const proof = evidenceProvenanceSchema.parse(answer.evidence_provenance)
+    if (!['success', 'clarification_required'].includes(answer.status) || !citationsCovered(proof, answer.citations || [])) {
+      throw new HTTPError({ statusCode: 409, statusMessage: 'unverified_answer' })
     }
+    await requireOwnedChat(event, chat.id)
+    await assertDerivedSources(userId, proof)
+    saved = await appendMessage(db, { chatId: chat.id, requestId: current.id, role: 'assistant', parts: [
+      { type: 'text', text: answer.answer || answer.message || '' },
+      { type: 'tool-rag_search', toolCallId: current.id, state: 'output-available', input: { query },
+        output: (answer.citations || []).map((citation: any, index: number) => ({ ...citation, index: index + 1, chunk_text: citation.snippet || '' })) },
+      provenancePart(proof),
+    ] })
   }
-
-  const abortController = new AbortController()
-  event.runtime?.node?.req?.on('close', () => abortController.abort())
-
-  const stream = createUIMessageStream({
-    onError: (err: any) => {
-      logger.error('[temp-ask] Error during stream:', err)
-      return err.message || '服务异常，请稍后重试。'
-    },
-    execute: async ({ writer }) => {
-      const aiCallStart = Date.now()
-      let agentRes: Response
-      try {
-        agentRes = await agentFetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: queryText,
-            history: historyMessages,
-            session_id: `temp_${Date.now()}`,
-            top_k: 5,
-            retrieval_mode: "hybrid",
-            exploration_mode: "auto",
-            topic_id: topicId || undefined,
-            weight_mode: "fast",
-            soul_content: topicInfo?.soulContent || undefined,
-            topic_doc_ids: topicDocIds,
-            consecutive_no_new_docs_count: topicInfo?.consecutiveNoNewDocsCount || 0
-          }),
-          signal: abortController.signal
-        })
-      } catch (err: any) {
-        logger.error("[temp-ask] Failed to reach Agent layer on port 8000:", err)
-        throw new Error("Agent 后台服务连接异常，请稍后重试。")
+  await assertMessageSources(userId, saved)
+  const message = saved
+  const chatId = chat.id
+  const stream = createUIMessageStream({ execute: async ({ writer }) => {
+    await requireOwnedChat(event, chatId)
+    await assertMessageSources(userId, message)
+    writer.write({ type: 'start', messageId: message.id })
+    writer.write({ type: 'data-temp-chat', data: { chatId } } as any)
+    for (const part of message.parts as any[]) {
+      if (part.type === 'tool-rag_search' && part.output.length) {
+        writer.write({ type: 'tool-input-available', toolCallId: message.id, toolName: 'rag_search', input: part.input })
+        writer.write({ type: 'tool-output-available', toolCallId: message.id, output: part.output })
+      } else if (part.type === 'data-evidence-provenance') {
+        writer.write(part)
+      } else if (part.type === 'text') {
+        writer.write({ type: 'text-start', id: message.id })
+        writer.write({ type: 'text-delta', id: message.id, delta: part.text })
+        writer.write({ type: 'text-end', id: message.id })
       }
-
-      if (!agentRes.ok) {
-        throw new Error(`Agent层通信失败 (${agentRes.status})`)
-      }
-
-      const agentData = await agentRes.json()
-      const aiDuration = Date.now() - aiCallStart
-      const rawAnswer = agentData.answer || agentData.message || agentData.response || ""
-      const tokensCount = Math.max(20, Math.round((rawAnswer.length || 0) * 0.75 + (queryText.length || 0) * 0.5))
-      const ttftMs = Math.max(50, Math.round(aiDuration * 0.25))
-      recordAiCall(aiDuration, ttftMs, tokensCount)
-      const citationsList: any[] = agentData.citations || []
-
-      // 2. Write rag_search tool result if citations returned from Agent
-      if (citationsList.length > 0) {
-        const toolCallId = `call_${Date.now()}`
-        writer.write({
-          type: 'tool-input-available',
-          toolCallId,
-          toolName: 'rag_search',
-          input: { query: cleanQuery }
-        } as any)
-
-        writer.write({
-          type: 'tool-output-available',
-          toolCallId,
-          output: citationsList.map((cit: any, i: number) => ({
-            index: i + 1,
-            doc_id: cit.doc_id || `doc_${i}`,
-            chunk_id: cit.chunk_id || `chunk_${i}`,
-            title: cit.title || cit.doc_id || `Document ${i + 1}`,
-            source_url: cit.source_url || `https://local-document/${cit.doc_id}`,
-            chunk_text: cit.snippet || '',
-            score: cit.score ?? null,
-          }))
-        } as any)
-      }
-
-      // 3. Replace [N] markers with :cite-mark{index="N"} for citation badges
-      let processedAnswer = rawAnswer
-      for (let i = 0; i < citationsList.length; i++) {
-        const idx = i + 1
-        processedAnswer = processedAnswer.split(`[${idx}]`).join(` :cite-mark{index="${idx}"}`)
-      }
-
-      // 4. Stream response text deltas to UI
-      const responseId = `temp_resp_${Date.now()}`
-      writer.write({ type: 'text-start', id: responseId })
-
-      const chunkSize = 4
-      for (let i = 0; i < processedAnswer.length; i += chunkSize) {
-        const chunk = processedAnswer.slice(i, i + chunkSize)
-        writer.write({
-          type: 'text-delta',
-          id: responseId,
-          delta: chunk
-        })
-        await new Promise(resolve => setTimeout(resolve, 15))
-      }
-
-      writer.write({ type: 'text-end', id: responseId })
     }
-  })
-
+  } })
   return createUIMessageStreamResponse({ stream })
 })

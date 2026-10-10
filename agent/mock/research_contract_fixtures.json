@@ -1,0 +1,361 @@
+{
+  "request": {
+    "schema_version": "research.v1",
+    "query": "比较 CP2 计划中 Agent 层的性能目标和可靠性目标",
+    "source_scope": {
+      "document_ids": ["cp2-goals", "cp2-plan"],
+      "topic": "CP2 Agent"
+    },
+    "report_spec": {
+      "format": "markdown",
+      "language": "zh-CN",
+      "title": "CP2 Agent 目标对比",
+      "sections": ["结论", "证据", "限制"],
+      "include_citations": true,
+      "include_limitations": true
+    },
+    "profile": "standard",
+    "user_notes": "只使用本地项目文档。"
+  },
+  "valid_plans": {
+    "single_fact": {
+      "schema_version": "research.v1",
+      "research_id": "research-fixture-single",
+      "version": 1,
+      "objective": "确认 CP2 Agent 层的性能基线要求",
+      "out_of_scope": ["未在项目文档中出现的外部系统指标"],
+      "source_scope": {
+        "document_ids": ["cp2-goals", "cp2-plan"],
+        "topic": "CP2 Agent"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "zh-CN",
+        "title": "性能基线",
+        "sections": ["结论", "证据", "限制"],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "tasks": [
+        {
+          "task_id": "find-performance-goal",
+          "question": "CP2 Agent 层的性能基线要求是什么？",
+          "purpose": "定位性能验收条款",
+          "dependencies": [],
+          "allowed_tools": ["keyword_search", "read_document_range"],
+          "source_ids": ["cp2-goals", "cp2-plan"],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "performance-evidence",
+              "description": "至少找到一处包含性能目标的原文证据",
+              "requires_evidence": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 4,
+        "max_actions": 8,
+        "max_tool_calls": 8,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 180
+      },
+      "status": "draft"
+    },
+    "comparison": {
+      "schema_version": "research.v1",
+      "research_id": "research-fixture-comparison",
+      "version": 1,
+      "objective": "比较 CP2 计划中的性能和可靠性目标",
+      "out_of_scope": ["外部网页资料"],
+      "source_scope": {
+        "document_ids": ["cp2-goals", "cp2-plan"],
+        "topic": "CP2 Agent"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "zh-CN",
+        "title": "性能与可靠性目标对比",
+        "sections": ["比较表", "证据", "限制"],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "tasks": [
+        {
+          "task_id": "performance-target",
+          "question": "CP2 计划的性能目标是什么？",
+          "purpose": "提取性能侧目标",
+          "dependencies": [],
+          "allowed_tools": ["semantic_search", "read_document_range"],
+          "source_ids": ["cp2-goals", "cp2-plan"],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "performance-found",
+              "description": "性能目标均关联到本地文档定位",
+              "requires_evidence": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "reliability-target",
+          "question": "CP2 计划的可靠性目标是什么？",
+          "purpose": "提取可靠性侧目标",
+          "dependencies": [],
+          "allowed_tools": ["semantic_search", "read_document_range"],
+          "source_ids": ["cp2-goals", "cp2-plan"],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "reliability-found",
+              "description": "可靠性目标均关联到本地文档定位",
+              "requires_evidence": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "compare-targets",
+          "question": "性能目标和可靠性目标之间有哪些共同点和差异？",
+          "purpose": "汇总两个前置任务的结果",
+          "dependencies": ["performance-target", "reliability-target"],
+          "allowed_tools": ["read_document_range"],
+          "source_ids": [],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "comparison-complete",
+              "description": "报告同时覆盖性能和可靠性两侧证据",
+              "requires_evidence": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 2,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 5,
+        "max_actions": 16,
+        "max_tool_calls": 16,
+        "max_tokens": 20000,
+        "max_runtime_seconds": 300
+      },
+      "status": "draft"
+    },
+    "topic_summary": {
+      "schema_version": "research.v1",
+      "research_id": "research-fixture-topic",
+      "version": 1,
+      "objective": "总结 CP2 Agent 层的交付边界",
+      "out_of_scope": ["没有进入项目知识库的资料"],
+      "source_scope": {
+        "knowledge_base_ids": ["project-docs"],
+        "topic": "Agent 层"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "zh-CN",
+        "title": "Agent 层交付边界",
+        "sections": ["范围", "验收", "限制"],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "tasks": [
+        {
+          "task_id": "summarize-scope",
+          "question": "Agent 层在 CP2 中负责哪些内容？",
+          "purpose": "形成范围摘要",
+          "dependencies": [],
+          "allowed_tools": ["list_documents", "get_document_outline", "read_document_range"],
+          "source_ids": ["project-docs"],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "scope-covered",
+              "description": "范围摘要包含实现内容和明确限制",
+              "requires_evidence": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 5,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 4,
+        "max_actions": 8,
+        "max_tool_calls": 8,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 180
+      },
+      "status": "draft"
+    }
+  },
+  "invalid_plans": {
+    "empty_tasks": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-empty",
+      "version": 1,
+      "objective": "空任务计划",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "report_spec": {"include_citations": true},
+      "tasks": [],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    },
+    "duplicate_task_id": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-duplicate-id",
+      "version": 1,
+      "objective": "重复任务 ID",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "same-id",
+          "question": "第一个问题",
+          "purpose": "测试重复 ID",
+          "acceptance_criteria": [{"criterion_id": "c1", "description": "找到证据"}]
+        },
+        {
+          "task_id": "same-id",
+          "question": "第二个问题",
+          "purpose": "测试重复 ID",
+          "acceptance_criteria": [{"criterion_id": "c2", "description": "找到证据"}]
+        }
+      ],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    },
+    "duplicate_task_question": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-duplicate-question",
+      "version": 1,
+      "objective": "重复问题",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "question-a",
+          "question": "CP2 的性能目标是什么？",
+          "purpose": "测试重复问题",
+          "acceptance_criteria": [{"criterion_id": "c1", "description": "找到证据"}]
+        },
+        {
+          "task_id": "question-b",
+          "question": "CP2 的性能目标是什么",
+          "purpose": "测试重复问题",
+          "acceptance_criteria": [{"criterion_id": "c2", "description": "找到证据"}]
+        }
+      ],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    },
+    "dependency_cycle": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-cycle",
+      "version": 1,
+      "objective": "依赖环",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "cycle-a",
+          "question": "问题 A",
+          "purpose": "测试依赖环",
+          "dependencies": ["cycle-b"],
+          "acceptance_criteria": [{"criterion_id": "c1", "description": "找到证据"}]
+        },
+        {
+          "task_id": "cycle-b",
+          "question": "问题 B",
+          "purpose": "测试依赖环",
+          "dependencies": ["cycle-a"],
+          "acceptance_criteria": [{"criterion_id": "c2", "description": "找到证据"}]
+        }
+      ],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    },
+    "unauthorized_tool": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-tool",
+      "version": 1,
+      "objective": "非法工具",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "bad-tool",
+          "question": "本地文档中有什么目标？",
+          "purpose": "测试工具白名单",
+          "allowed_tools": ["keyword_search", "web_search"],
+          "acceptance_criteria": [{"criterion_id": "c1", "description": "找到证据"}]
+        }
+      ],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    },
+    "out_of_scope_source": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-source",
+      "version": 1,
+      "objective": "越权来源",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "bad-source",
+          "question": "未授权文档中有什么？",
+          "purpose": "测试来源范围",
+          "source_ids": ["private-doc"],
+          "acceptance_criteria": [{"criterion_id": "c1", "description": "找到证据"}]
+        }
+      ],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    },
+    "over_budget": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-budget",
+      "version": 1,
+      "objective": "超预算",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "budget-a",
+          "question": "预算问题 A",
+          "purpose": "测试任务数量预算",
+          "max_actions": 5,
+          "acceptance_criteria": [{"criterion_id": "c1", "description": "找到证据"}]
+        },
+        {
+          "task_id": "budget-b",
+          "question": "预算问题 B",
+          "purpose": "测试任务数量预算",
+          "max_actions": 5,
+          "acceptance_criteria": [{"criterion_id": "c2", "description": "找到证据"}]
+        }
+      ],
+      "budget": {"max_tasks": 1, "max_actions": 6},
+      "status": "draft"
+    },
+    "missing_acceptance_criteria": {
+      "schema_version": "research.v1",
+      "research_id": "invalid-criteria",
+      "version": 1,
+      "objective": "缺少验收条件",
+      "source_scope": {"document_ids": ["cp2-goals"]},
+      "tasks": [
+        {
+          "task_id": "missing-criteria",
+          "question": "没有验收条件的问题",
+          "purpose": "测试验收条件",
+          "acceptance_criteria": []
+        }
+      ],
+      "budget": {"max_tasks": 4, "max_actions": 8},
+      "status": "draft"
+    }
+  }
+}

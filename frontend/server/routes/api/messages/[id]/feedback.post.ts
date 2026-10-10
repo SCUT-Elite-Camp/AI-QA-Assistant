@@ -4,11 +4,14 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { requestTopicSummarizerFromPersistence } from '../../../../utils/soul'
 import { saveFavoriteToDisk, removeFavoriteFromDisk } from '../../../../utils/favoriteStorage'
+import { assertResearchChatAccess } from '../../../../utils/chatAccess'
+import { requireCsrf } from '../../../../utils/attachmentAuth'
+import { requireOwnedChat } from '../../../../utils/chatAccess'
+import { assertMessageSources } from '../../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
-  const { id } = await getValidatedRouterParams(event, z.object({
-    id: z.string()
-  }).parse)
+  requireCsrf(event)
+  const { id } = await getValidatedRouterParams(event, z.object({ id: z.string().min(1) }).parse, { decode: true })
 
   const { isFavorite, suggestionText } = await readValidatedBody(event, z.object({
     isFavorite: z.boolean().optional(),
@@ -25,6 +28,8 @@ export default defineHandler(async (event) => {
   if (!message) {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Message not found' })
   }
+  const { actor } = await requireOwnedChat(event, message.chatId, 'editor')
+  await assertMessageSources(actor.userId, message)
 
   const updateFields: Record<string, any> = {}
   if (isFavorite !== undefined) updateFields.isFavorite = isFavorite
@@ -63,7 +68,9 @@ export default defineHandler(async (event) => {
   // ────────────────────────────────────────────────────────────────────────
 
   // If chat belongs to a topic, trigger incremental Soul update in background
-  if (message.chat?.topicId) {
+  // Feedback is not a new authorization for old Topic summaries. A dedicated
+  // source-aware summarize request may rebuild them from current messages.
+  if (false && message.chat?.topicId) {
     const topic = await db.query.topics.findFirst({
       where: eq(tables.topics.id, message.chat.topicId)
     })
@@ -71,20 +78,19 @@ export default defineHandler(async (event) => {
       const qText = message.role === 'assistant' ? '解答反馈' : '提问反馈'
       const aText = (message.parts as any)?.[0]?.text || ''
       
-      const discussion = [qText, aText, suggestionText || ''].filter(Boolean).join('\n')
-      requestTopicSummarizerFromPersistence(topic.id, discussion, topic.title, {
+      const feedbackText = [
+        qText, aText,
+        `收藏：${isFavorite ?? message.isFavorite ?? false}`,
+        suggestionText ? `改进建议：${suggestionText}` : '',
+      ].filter(Boolean).join('\n')
+      requestTopicSummarizerFromPersistence(topic.id, feedbackText, topic.title, {
         title: topic.title,
         description: topic.description,
         soulContent: topic.soulContent,
         tags: topic.tags,
       }).then(async (summary) => {
-        if (summary) {
-          await db.update(tables.topics).set({
-            title: summary.title,
-            description: summary.description,
-            soulContent: summary.soulContent,
-            tags: summary.tags,
-          }).where(eq(tables.topics.id, topic.id))
+        if (summary?.soulContent && summary.soulContent !== topic.soulContent) {
+          await db.update(tables.topics).set({ soulContent: summary.soulContent }).where(eq(tables.topics.id, topic.id))
         }
       }).catch(err => console.warn('[SoulUpdateError]', err))
     }

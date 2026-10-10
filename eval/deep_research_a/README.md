@@ -30,11 +30,19 @@ python eval/deep_research_a/suite.py score path/to/run-record.json
 python eval/deep_research_a/suite.py batch-score path/to/records --output-dir eval/reports/cp2-dr-v1
 ```
 
-`preflight --require-all-groups` is deliberately strict. On the current `dev`
-snapshot it reports G2/G3 unavailable because `agent/deep_research` is not in
-that branch. The frozen implementation reference is recorded in
-`config/frozen_baseline.json`; side B must merge or check out that capability
-before executing G2/G3.
+`preflight --require-all-groups` is deliberately strict. On `agent-dev`, G1 and
+G2 are available; G3 remains unavailable until side B adds the Page Index
+adapter. The exact implementation reference is frozen in
+`config/frozen_baseline.json`.
+
+The internal Confluence snapshot is intentionally untracked. In another
+worktree, point the suite at the prepared local corpus when validating:
+
+```powershell
+$env:DR_EVAL_DOCUMENTS_DIR = 'D:/path/to/data-persistence/data/documents'
+$env:DR_EVAL_METADATA_PATH = 'D:/path/to/data-pipeline/confluence_metadata_RAG.json'
+python eval/deep_research_a/suite.py validate
+```
 
 To refresh the source snapshot after an intentional Confluence update:
 
@@ -46,10 +54,40 @@ python eval/deep_research_a/suite.py validate
 Review the diff. A freeze is a dataset version change and must not be mixed into
 an existing experiment batch.
 
+To repair only broken source links or restore missing local snapshot files while
+keeping the frozen implementation baseline unchanged:
+
+```powershell
+python data-pipeline/confluence_pull.py RAG --pages=PAGE_ID --versions=PAGE_ID:VERSION --skip-vector-store
+python eval/deep_research_a/suite.py freeze --write --manifests-only
+python eval/deep_research_a/suite.py validate
+```
+
+Targeted Confluence pulls merge the selected pages into the existing metadata;
+they do not replace unrelated catalog entries. `--skip-vector-store` restores
+the reviewable JSON snapshot without requiring Milvus. Always review the
+manifest diff after correcting URLs or source files.
+
 `batch-score` enforces all 162 coordinates (18 cases x 3 groups x 3 repeats),
 checks cross-group invariants, scores every retained failure, and emits
 `results.csv`, `scores.jsonl`, and `summary.json`. Use `--allow-incomplete` only
 for an explicitly labelled dry run.
+
+The current B-side acceptance scope is G1/G2. G3 is unavailable until the
+tool/data layer supplies a registered Page Index provider; do not silently
+substitute lexical search and label it G3. New G2 runs collect persisted Search
+Observations, verified Evidence, Claims, and Verifications through the read-only
+`evaluation-trace` endpoint instead of reconstructing retrieval from citations.
+
+Generate a deterministic failure report after batch scoring:
+
+```powershell
+python eval/deep_research_a/analyze_failures.py path/to/scores.jsonl --output-dir path/to/report
+```
+
+For scores produced before the persisted Trace endpoint existed, add
+`--retrieval-observability legacy`; Retrieval/Evidence root causes in those
+reports are provisional and require targeted reruns.
 
 ## Run-record contract
 

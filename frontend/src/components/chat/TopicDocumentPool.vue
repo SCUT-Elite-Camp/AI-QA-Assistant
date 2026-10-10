@@ -128,11 +128,11 @@ onMounted(() => {
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="p-6 bg-zinc-950 text-zinc-100 rounded-3xl space-y-4 max-h-[80vh] overflow-y-auto border border-zinc-800">
+      <div class="p-6 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl space-y-4 max-h-[80vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800">
         <!-- Header -->
-        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
-          <div class="flex items-center gap-2 font-semibold text-zinc-100">
-            <UIcon name="i-heroicons-folder-open" class="w-5 h-5 text-emerald-400" />
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+          <div class="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+            <UIcon name="i-heroicons-folder-open" class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <span>Document Pool ({{ documents.length }})</span>
           </div>
           <UButton
@@ -140,20 +140,20 @@ onMounted(() => {
             variant="ghost"
             icon="i-heroicons-x-mark"
             size="sm"
-            class="rounded-full text-zinc-400 hover:text-white"
+            class="rounded-full text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
             @click="emit('update:open', false)"
           />
         </div>
 
         <!-- Body Content -->
         <div class="py-2">
-          <section class="mb-5 rounded-xl border border-zinc-800 p-3">
+          <section class="mb-5 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3">
             <div class="mb-2 flex items-center justify-between">
               <h4 class="text-sm font-medium">Topic Attachment Pool ({{ attachments.length }})</h4>
               <span class="text-xs text-zinc-500">Separated from Knowledge Base docs</span>
             </div>
             <AttachmentTray v-if="topicRole !== 'viewer'" scope="topic" :topic-id="topicId" @change="fetchAttachments" />
-            <div v-for="attachment in attachments" :key="attachment.id" class="mt-2 flex items-center gap-2 rounded border border-zinc-800 p-2 text-xs">
+            <div v-for="attachment in attachments" :key="attachment.id" class="mt-2 flex items-center gap-2 rounded border border-zinc-200 dark:border-zinc-800 p-2 text-xs">
               <button class="min-w-0 flex-1 text-left" @click="openEvidence(attachment)">
                 <div class="truncate">{{ attachment.filename }}</div>
                 <div class="text-zinc-500">{{ attachment.status }} · Evidence v{{ attachment.evidenceVersion }} · {{ attachment.ownerId }}</div>
@@ -161,29 +161,29 @@ onMounted(() => {
               <UButton v-if="topicRole === 'owner' || attachment.ownerId === currentUserId" icon="i-lucide-trash-2" size="xs" color="error" variant="ghost" @click="removeAttachment(attachment)" />
             </div>
           </section>
-          <section v-if="topicRole === 'owner'" class="mb-5 rounded-xl border border-zinc-800 p-3">
+          <section v-if="topicRole === 'owner'" class="mb-5 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3">
             <h4 class="mb-2 text-sm font-medium">Topic Members ({{ members.length }})</h4>
             <div class="mb-3 flex gap-2">
               <UInput v-model="memberIdentifier" class="min-w-0 flex-1" placeholder="User ID, email or username" />
-              <select v-model="memberRole" class="rounded border border-zinc-700 bg-zinc-900 px-2 text-xs">
+              <select v-model="memberRole" class="rounded border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-2 text-xs">
                 <option value="viewer">viewer</option><option value="editor">editor</option><option value="owner">owner</option>
               </select>
               <UButton label="Add" size="xs" @click="saveMember(memberIdentifier, memberRole)" />
             </div>
-            <div v-for="member in members" :key="member.userId" class="flex items-center gap-2 border-t border-zinc-800 py-2 text-xs">
+            <div v-for="member in members" :key="member.userId" class="flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 py-2 text-xs">
               <div class="min-w-0 flex-1"><div class="truncate">{{ member.name || member.username || member.userId }}</div><div class="truncate text-zinc-500">{{ member.email || member.userId }}</div></div>
-              <select :value="member.role" class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1" @change="saveMember(member.userId, ($event.target as HTMLSelectElement).value as any)">
+              <select :value="member.role" class="rounded border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-2 py-1" @change="saveMember(member.userId, ($event.target as HTMLSelectElement).value as any)">
                 <option value="viewer">viewer</option><option value="editor">editor</option><option value="owner">owner</option>
               </select>
               <UButton icon="i-lucide-user-minus" size="xs" color="error" variant="ghost" @click="removeMember(member.userId)" />
             </div>
           </section>
-          <div v-if="loading" class="text-center py-10 text-zinc-400 text-xs flex items-center justify-center gap-2">
+          <div v-if="loading" class="text-center py-10 text-zinc-600 dark:text-zinc-400 text-xs flex items-center justify-center gap-2">
             <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-emerald-500" />
             <span>Loading topic document pool...</span>
           </div>
 
-          <div v-else-if="!documents.length" class="text-center py-12 text-xs text-zinc-400 bg-zinc-900/40 rounded-2xl border border-zinc-800/80">
+          <div v-else-if="!documents.length" class="text-center py-12 text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50/40 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
             <UIcon name="i-heroicons-document-text" class="w-10 h-10 text-zinc-700 mx-auto mb-2" />
             <p>No reference documents uploaded for this topic. Uploaded files will be deduplicated and saved here.</p>
           </div>
@@ -193,18 +193,18 @@ onMounted(() => {
             <div
               v-for="doc in documents"
               :key="doc.docId || doc.id"
-              class="group flex items-center justify-between p-3.5 bg-zinc-900/90 hover:bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all shadow-xs"
+              class="group flex items-center justify-between p-3.5 bg-zinc-50/90 dark:bg-zinc-900/90 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all shadow-xs"
               @click="openDocModal(doc)"
             >
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <UIcon name="i-heroicons-document-text" class="w-4 h-4" />
                 </div>
                 <div class="min-w-0 flex-1">
-                  <h4 class="font-medium text-xs text-zinc-200 group-hover:text-emerald-400 transition-colors truncate" :title="cleanTitle(doc)">
+                  <h4 class="font-medium text-xs text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate" :title="cleanTitle(doc)">
                     {{ cleanTitle(doc) }}
                   </h4>
-                  <p v-if="doc.snippet || doc.content" class="text-[11px] text-zinc-400 truncate mt-0.5 font-mono">
+                  <p v-if="doc.snippet || doc.content" class="text-[11px] text-zinc-600 dark:text-zinc-400 truncate mt-0.5 font-mono">
                     {{ doc.snippet || doc.content }}
                   </p>
                 </div>
@@ -217,7 +217,7 @@ onMounted(() => {
                 variant="ghost"
                 size="xs"
                 icon="i-heroicons-trash"
-                class="text-zinc-500 hover:text-rose-400 opacity-60 group-hover:opacity-100 transition-opacity ml-3 shrink-0"
+                class="text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 opacity-60 group-hover:opacity-100 transition-opacity ml-3 shrink-0"
                 @click="removeDoc(doc.docId, $event)"
               />
             </div>

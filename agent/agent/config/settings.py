@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -52,6 +52,8 @@ class Settings(BaseModel):
     DEBUG: bool = _env_bool("DEBUG", True)
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = _env_int("PORT", 8000)
+
+    DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
 
     MIN_RETRIEVAL_SCORE: float = Field(
         default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.0),
@@ -125,10 +127,49 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("WIKI_CONTEXT_TOP_K", 3), ge=0, le=10,
     )
 
-
+    RESEARCH_DATABASE_PATH: str = os.getenv(
+        "RESEARCH_DATABASE_PATH",
+        str(
+            Path(__file__).resolve().parents[3]
+            / "data-persistence"
+            / "data"
+            / "research_jobs.db"
+        ),
+    )
+    RESEARCH_CHECKPOINT_PATH: str = os.getenv(
+        "RESEARCH_CHECKPOINT_PATH",
+        str(
+            Path(__file__).resolve().parents[3]
+            / "data-persistence"
+            / "data"
+            / "research_jobs.db.checkpoints"
+        ),
+    )
+    RESEARCH_DOCUMENTS_DIR: str = os.getenv(
+        "RESEARCH_DOCUMENTS_DIR",
+        str(
+            Path(__file__).resolve().parents[3]
+            / "data-persistence"
+            / "data"
+            / "documents"
+        ),
+    )
+    RESEARCH_DISPATCH_INTERVAL_SECONDS: float = Field(
+        default_factory=lambda: _env_float(
+            "RESEARCH_DISPATCH_INTERVAL_SECONDS",
+            2.0,
+        ),
+        ge=0.25,
+        le=60.0,
+    )
+    MEMORY_ENABLED: bool = _env_bool("MEMORY_ENABLED", True)
+    MAX_MEMORY_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
+        ge=1,
+    )
     PERSISTENT_MEMORY_ENABLED: bool = _env_bool("PERSISTENT_MEMORY_ENABLED", False)
     SESSION_FACT_ENABLED: bool = _env_bool("SESSION_FACT_ENABLED", False)
-    AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
+    MEMORY_CACHE_ENABLED: bool = _env_bool("MEMORY_CACHE_ENABLED", False)
     MEMORY_TAIL_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
         ge=1,
@@ -139,11 +180,24 @@ class Settings(BaseModel):
         ge=128,
         le=12000,
     )
+    MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS", 1200),
+        ge=1,
+    )
+    MEMORY_COMPACTION_MIN_MESSAGES: int = Field(
+        default_factory=lambda: _env_int("MEMORY_COMPACTION_MIN_MESSAGES", 12),
+        ge=1,
+    )
+    MEMORY_COMPACTION_SOFT_TOKENS: int = Field(
+        default_factory=lambda: _env_int("MEMORY_COMPACTION_SOFT_TOKENS", 1000),
+        ge=1,
+    )
     MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
         default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
         ge=256,
         le=60000,
     )
+    AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
     MAX_AGENT_ITERATIONS: int = Field(
         default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
         ge=1,
@@ -175,10 +229,17 @@ class Settings(BaseModel):
     LLM_TEMPERATURE: float = _env_float("LLM_TEMPERATURE", 0.1)
     LLM_MAX_TOKENS: int = _env_int("LLM_MAX_TOKENS", 2000)
     LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)
+    LLM_THINKING_MODE: str = os.getenv("LLM_THINKING_MODE", "").strip().lower()
+    LLM_REASONING_EFFORT: str = os.getenv("LLM_REASONING_EFFORT", "").strip().lower()
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
 
+    @model_validator(mode="after")
+    def reject_unsupported_memory_cache(self) -> "Settings":
+        if self.MEMORY_CACHE_ENABLED:
+            raise ValueError("memory_cache_not_supported")
+        return self
     # Agent 服务共享密钥：Web 可信端调用 /api/* 业务接口时携带
     # `Authorization: Bearer <AGENT_API_KEY>`。未配置时 agent 业务接口
     # 返回 503，杜绝外部直连端口伪造 user_id 绕过权限隔离。

@@ -65,6 +65,12 @@ class AnswerFormatter:
                 knowledge_base_id=result.knowledge_base_id,
                 document_id=result.document_id,
                 version_id=result.version_id,
+                evidence_ref=result.evidence_ref,
+                content_hash=result.content_hash,
+                normalized_content_hash=result.normalized_content_hash,
+                source_content_hash=result.source_content_hash,
+                source_version=result.source_version,
+                read_status=result.read_status,
             )
             for index, result in enumerate(selected_results, start=1)
         ]
@@ -79,6 +85,9 @@ class AnswerFormatter:
     def _normalize_answer_references(self, answer: str, citations_count: int) -> str:
         if not answer:
             return answer
+        # A literal prompt placeholder is not evidence. Drop the claim carrying it,
+        # rather than removing its marker and publishing the unsupported claim.
+        answer = re.sub(r"(?:(?<=\n)|(?<=[.!?])|^)[ \t]*[^\n.!?]*\s\[n\](?:[.!?]|$)", "", answer)
         if citations_count == 0:
             return REFERENCE_PATTERN.sub("", answer).strip()
 

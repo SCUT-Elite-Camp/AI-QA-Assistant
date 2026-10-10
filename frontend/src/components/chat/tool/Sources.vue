@@ -12,8 +12,16 @@ export interface ChunkCitation {
   source_type?: 'knowledge' | 'attachment' | 'personal'
   attachment_id?: string
   evidence_id?: string
-  locator?: { page?: number, slide?: number, sheet?: string, cell_range?: string, bbox?: number[] }
-  version?: number
+  locator?: { page?: number, slide?: number, sheet?: string, cell_range?: string, bbox?: number[], section_path?: string[], chunk_id?: string, [key: string]: unknown }
+  version?: number | string
+  source_version?: number | string
+  evidence_ref?: string
+  content_hash?: string
+  source_content_hash?: string
+  normalized_content_hash?: string
+  excerpt?: string
+  snippet?: string
+  read_status?: string
 }
 
 const props = defineProps<{
@@ -46,9 +54,11 @@ const dedupedDocs = computed(() => {
     v-if="dedupedDocs.length"
     class="p-1 border border-default rounded-md max-h-40 overflow-y-auto"
   >
-    <div
+    <button
       v-for="{ citation, indices } in dedupedDocs"
       :key="citation.doc_id"
+      type="button"
+      :aria-label="`核对来源：${citation.title}`"
       class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-elevated/50 transition-colors min-w-0 cursor-pointer group"
       @click="emit('select-doc', citation)"
     >
@@ -64,14 +74,7 @@ const dedupedDocs = computed(() => {
       </span>
 
       <!-- Title (link if url available) -->
-      <a
-        v-if="citation.source_url && !citation.source_url.startsWith('https://local-document')"
-        :href="citation.source_url"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="truncate text-muted hover:text-default flex-1 min-w-0"
-      >{{ citation.title }}</a>
-      <span v-else class="truncate text-muted flex-1 min-w-0">{{ citation.title }}</span>
+      <span class="truncate text-muted flex-1 min-w-0">{{ citation.title }}</span>
 
       <!-- Chunk index badges -->
       <span class="flex gap-1 shrink-0 ms-auto">
@@ -86,6 +89,6 @@ const dedupedDocs = computed(() => {
       <span class="text-xs text-dimmed shrink-0 hidden sm:block">
         {{ citation.source_type === 'attachment' ? 'attachment' : citation.source_type === 'personal' ? 'personal' : 'local-document' }}
       </span>
-    </div>
+    </button>
   </div>
 </template>

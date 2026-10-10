@@ -1,5 +1,7 @@
 # AI 智能问答系统需求文档 (Q1)
 
+> 历史需求（2026-07-12），不是当前完成清单或无鉴权开发许可。2026-10-09 多来源、原生权限、回答/Memory lineage 与 Reader 见[当前架构](access-evidence-architecture.md)，实际结果见[整合报告](pr63-integration-acceptance.md)。UI 时间分组词是产品文案，不是项目进度日期。
+
 ## 文档基本信息
 - **项目名称**：AI 智能问答助手 (AI-QA-Assistant)
 - **版本**：v1.0

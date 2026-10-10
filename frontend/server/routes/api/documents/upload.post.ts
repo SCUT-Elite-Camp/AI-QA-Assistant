@@ -35,9 +35,9 @@ export default defineHandler(async (event) => {
   try {
     const pythonExe = path.join(projectRoot, '.venv', 'Scripts', 'python.exe')
     const targetedScript = path.join(projectRoot, 'data-pipeline', 'pipeline', 'process_specific_files.py')
-    
+
     const fileArgs = uploadedFiles.map(fn => `"${path.join(rawsDir, fn)}"`).join(' ')
-    
+
     execSync(`"${pythonExe}" "${targetedScript}" ${fileArgs}`, {
       cwd: projectRoot,
       env: {

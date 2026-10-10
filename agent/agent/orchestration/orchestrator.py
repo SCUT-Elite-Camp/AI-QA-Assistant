@@ -1,13 +1,13 @@
 """Cross-component Agent orchestration for the CP2 request lifecycle."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from typing import Any
 
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
 from agent.memory.coordinator import MemoryCoordinator
-from agent.policy import IntentPolicyRouter
+from agent.policy import IntentPolicyRouter, ChatRoutePolicy, ChatRoute, ChatRouteDecision
 from agent.query import QueryUnderstanding, heuristic_source_intent
 from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import (
@@ -51,6 +51,7 @@ class OrchestrationResult:
     history: list[dict[str, Any]]
     retrieval_mode: str
     top_k: int
+    chat_route: ChatRouteDecision | None = None
     context_artifact: ContextArtifact | None = None
     memory_recall: MemoryRecall | None = None
     execution_profile: ExecutionProfile | None = None
@@ -75,9 +76,11 @@ class AgentOrchestrator:
         evidence_gate: EvidenceGate,
         corrective_retrieval: CorrectiveRetrievalPlanner,
         citation_checker: CitationChecker,
+        chat_route_policy: ChatRoutePolicy | None = None,
         fast_loop: FastLoop | None = None,
         profile_resolver: ExecutionProfileResolver | None = None,
     ) -> None:
+        self.chat_route_policy = chat_route_policy or ChatRoutePolicy()
         self.query_understanding = query_understanding
         self.policy_router = policy_router
         self.runner = runner
@@ -120,6 +123,7 @@ class AgentOrchestrator:
                 history=history,
                 retrieval_mode=retrieval_mode,
                 top_k=top_k,
+                chat_route=ChatRouteDecision(route=ChatRoute.L0_DIRECT, reason="persistent_memory_exact_recall"),
                 context_artifact=context_artifact,
                 memory_recall=memory_recall,
             )
@@ -219,6 +223,7 @@ class AgentOrchestrator:
             history=history,
             retrieval_mode=retrieval_mode,
             top_k=top_k,
+            chat_route=self.chat_route_policy.route(plan),
             context_artifact=context_artifact,
             execution_profile=profile,
         )
@@ -362,19 +367,12 @@ class AgentOrchestrator:
                 "score_order" if policy.assembly_strategy == "none" else policy.assembly_strategy
             ),
             "top_k": max(5, policy.top_k),
-            "max_iterations": max(2, policy.max_iterations),
+            "max_iterations": max(len(sources) + 1, policy.max_iterations),
             "max_tool_calls": max(
-                2 if SourceKind.CONVERSATION_ATTACHMENT in sources else 1,
+                len(sources) + (1 if SourceKind.CONVERSATION_ATTACHMENT in sources else 0),
                 policy.max_tool_calls,
             ),
-            "max_retrieval_attempts": (
-                2
-                if sources.intersection({
-                    SourceKind.ENTERPRISE_KB,
-                    SourceKind.CONVERSATION_ATTACHMENT,
-                })
-                else 1
-            ),
+            "max_retrieval_attempts": max(len(sources), policy.max_retrieval_attempts),
             "requires_citations": True,
         })
 
@@ -432,6 +430,7 @@ class AgentOrchestrator:
         ):
             scopes.append("personal")
         return tuple(scopes)
+
 
     @staticmethod
     def _resolve_recall_query_plan(
@@ -502,6 +501,18 @@ class AgentOrchestrator:
             )
 
         merged_filters = dict(query_plan.filters)
+        hard_doc_ids = (request.filters or {}).get("doc_ids")
+        if hard_doc_ids is not None:
+            # Explicit document selections already define the source scope.
+            # Guessed metadata can exclude those sources or require absent index fields.
+            for key in ("space", "doc_type"):
+                if key not in (request.filters or {}):
+                    merged_filters.pop(key, None)
+            for key in ("doc_id", "document_id"):
+                if key not in (request.filters or {}) and merged_filters.get(key) not in hard_doc_ids:
+                    # A model may mistake a document title for its ID. Explicit
+                    # caller-selected IDs remain the authoritative source scope.
+                    merged_filters.pop(key, None)
         for key, value in (request.filters or {}).items():
             if key in merged_filters and merged_filters[key] != value:
                 raise ValueError(f"conflicting hard filter: {key}")
@@ -520,6 +531,9 @@ class AgentOrchestrator:
         top_k = min(request.top_k, policy.top_k) if policy.top_k else 0
         if top_k < 1:
             top_k = 1
+
+        if (request.filters or {}).get("doc_ids") and policy.top_k:
+            top_k = min(policy.top_k, max(top_k, 10))
 
         # Hybrid is the general default; specialized policies (e.g. document
         # search) are allowed to select their own retrieval strategy.

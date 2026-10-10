@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 杞婚噺绾у唴瀛?Metrics 閲囬泦鍣ㄣ€? * 鏃犲閮ㄤ緷璧栵紝绾唴瀛樿鏁板櫒 + 寤惰繜鐩存柟鍥俱€? */
 
 interface LatencyBucket {
@@ -302,7 +302,7 @@ export function getPrometheusMetrics(): string {
 
   // 鎸夌鐐?+ 鐘舵€佺爜杈撳嚭鎸囨爣
   for (const [key, ep] of Object.entries(store.requests.byEndpoint)) {
-    const [method, path] = key.split(' ')
+    const [method = '', path = ''] = key.split(' ')
     const labels = `method="${escapeLabelValue(method)}",path="${escapeLabelValue(path)}"`
     lines.push(`http_requests_total{${labels}} ${ep.count}`)
 

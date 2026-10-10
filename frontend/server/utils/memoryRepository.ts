@@ -7,6 +7,7 @@ import type {
 } from '../database/schema'
 import { tables, useDrizzle } from './drizzle'
 import type { FactView } from './memoryContract'
+import { messageProvenance, type EvidenceProvenance } from './sourceAccess'
 
 type Database = NonNullable<ReturnType<typeof useDrizzle>>
 type MemorySnapshotRecord = typeof tables.memorySnapshots.$inferSelect
@@ -14,6 +15,7 @@ type MemoryFactRecord = typeof tables.memoryFacts.$inferSelect
 type MessageRecord = typeof tables.messages.$inferSelect
 
 export interface MemorySnapshotDto {
+  evidenceProvenance?: EvidenceProvenance | null
   archivedAt: Date | null
   chatId: string
   coveredFromMessageId: string
@@ -29,6 +31,7 @@ export interface MemorySnapshotDto {
 }
 
 export interface MemoryFactDto {
+  evidenceProvenance?: EvidenceProvenance | null
   category: MemoryFactCategory
   chatId: string
   confirmedAt: Date | null
@@ -91,6 +94,7 @@ export interface ReadTailInput extends ReadMemoryInput {
 }
 
 export interface CreateFactProposalInput extends ReadMemoryInput {
+  evidenceProvenance?: EvidenceProvenance
   category: MemoryFactCategory
   sourceMessageId: string
   value: string
@@ -112,6 +116,7 @@ export interface RevokeFactInput extends ReadMemoryInput {
 }
 
 export interface WriteSnapshotInput extends ReadMemoryInput {
+  evidenceProvenance?: EvidenceProvenance | null
   coveredFromMessageId: string
   coveredFromSequence: number
   coveredToMessageId: string
@@ -170,6 +175,7 @@ export class HistoryMutationError extends Error {
 
 function toMemorySnapshotDto(snapshot: MemorySnapshotRecord): MemorySnapshotDto {
   return {
+    evidenceProvenance: snapshot.evidenceProvenance,
     archivedAt: snapshot.archivedAt,
     chatId: snapshot.chatId,
     coveredFromMessageId: snapshot.coveredFromMessageId,
@@ -187,6 +193,7 @@ function toMemorySnapshotDto(snapshot: MemorySnapshotRecord): MemorySnapshotDto 
 
 function toMemoryFactDto(fact: MemoryFactRecord): MemoryFactDto {
   return {
+    evidenceProvenance: fact.evidenceProvenance,
     category: fact.category,
     chatId: fact.chatId,
     confirmedAt: fact.confirmedAt,
@@ -491,6 +498,7 @@ export async function createFactProposal(
         return await db.transaction(async (tx) => {
         await requireOwnedChat(tx, input.actorUserId, input.chatId)
         await requireSourceMessage(tx, input)
+        const source = await readCurrentRevisionFactSource(tx as Database, input)
 
         const inserted = await tx.insert(tables.memoryFacts)
           .values({
@@ -502,7 +510,8 @@ export async function createFactProposal(
             sourceMessageId: input.sourceMessageId,
             status: 'PROPOSED',
             userId: input.actorUserId,
-            value: input.value
+            value: input.value,
+            evidenceProvenance: input.evidenceProvenance ?? messageProvenance(source?.parts) ?? null
           })
           .onConflictDoNothing()
           .returning()
@@ -660,6 +669,7 @@ export async function writeSnapshot(
         historyRevision: input.historyRevision,
         status: 'ACTIVE',
         summary: input.summary,
+        evidenceProvenance: input.evidenceProvenance ?? null,
         userId: input.actorUserId,
         version: input.version
       })
@@ -739,6 +749,7 @@ export async function applyCompactionPlan(
           historyRevision: input.historyRevision,
           status: 'ACTIVE',
           summary: input.newSnapshot.summary,
+          evidenceProvenance: input.newSnapshot.evidenceProvenance ?? null,
           userId: input.actorUserId,
           version: nextVersion
         })

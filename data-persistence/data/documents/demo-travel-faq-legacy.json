@@ -1,0 +1,11 @@
+{
+  "doc_id": "demo-travel-faq-legacy",
+  "title": "财务报销 FAQ（待同步页面）",
+  "version": "2026-07-15",
+  "last_updated": "2026-07-15",
+  "source_type": "faq",
+  "authority": "informational_page",
+  "authority_rank": 40,
+  "space": "cp2-research-demo",
+  "content": "FAQ页面答复：上海住宿费报销限额为500元/晚。\n页面状态：本页最后更新于2026年7月15日，未标注是否已经同步2026年8月1日生效的差旅管理办法v2.0。\n冲突处理：如FAQ与正式管理办法不一致，应以当前有效的正式管理办法为准，并向财务负责人确认页面是否需要更新。"
+}

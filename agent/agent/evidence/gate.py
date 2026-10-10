@@ -26,7 +26,12 @@ class EvidenceGate:
         if not 1 <= retrieval_attempt <= 5:
             raise ValueError("retrieval_attempt must be between one and five")
 
-        eligible = self.select_eligible(evidence)
+        # Document discovery summaries establish identity, not factual support.
+        # Require a chunk read/search before answering questions about contents.
+        supporting = evidence if policy.evidence_policy == "document_identity" else [
+            item for item in evidence if item.chunk_id != f"{item.doc_id}::document"
+        ]
+        eligible = self.select_eligible(supporting)
         covered = self._covered_targets(eligible)
         counts = {
             "candidate_evidence_count": len(evidence),
@@ -85,7 +90,11 @@ class EvidenceGate:
             missing = [
                 target
                 for target in targets
-                if not self._has_retrieval_for(target, eligible)
+                # A section may be retrieved for both comparison targets.
+                # Deduplicating first loses its second query provenance.
+                if not self._has_retrieval_for(
+                    target, [item for item in supporting if item.score >= self.min_score]
+                )
             ]
             accepted = bool(targets) and not missing
             reason = (
@@ -165,10 +174,32 @@ class EvidenceGate:
     @staticmethod
     def _has_retrieval_for(target: str, evidence: list[Evidence]) -> bool:
         normalized_target = target.casefold()
-        return any(
+        if any(
             item.retrieval_query.strip().casefold() == normalized_target
             for item in evidence
-        )
+        ):
+            return True
+        # A guarded original read uses its doc_id as retrieval_query. Match a
+        # named dated meeting by its recorded title identity, not by pretending
+        # it was a hit for a query that returned no passages. This proves source
+        # coverage only; answer generation still verifies the requested facts.
+        import re
+        if not re.search(r'\b(?:meeting|minutes)\b', target, re.I):
+            return False
+        months = 'January February March April May June July August September October November December'.split()
+        named = re.search(r'\b(' + '|'.join(months) + r')\s+(\d{1,2})\b', target, re.I)
+        if not named:
+            return False
+        month = next(i + 1 for i, name in enumerate(months) if name.casefold() == named.group(1).casefold())
+        day = int(named.group(2))
+        year = re.search(r'\b(\d{4})\b', target)
+        for item in evidence:
+            if item.read_status != 'original_excerpt_loaded' or not re.search(r'\b(?:meeting|minutes)\b', item.title.replace('+', ' '), re.I):
+                continue
+            date = re.search(r'\b(\d{4})\D+(\d{2})\D+(\d{2})\b', item.title.replace('+', ' '))
+            if date and int(date.group(2)) == month and int(date.group(3)) == day and (not year or date.group(1) == year.group(1)):
+                return True
+        return False
 
     @staticmethod
     def _result(

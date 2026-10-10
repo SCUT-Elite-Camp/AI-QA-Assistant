@@ -131,12 +131,12 @@ def ensure_dir(path):
 
 def generate_weekly_module_report(week_str, week_commits, mod_key, mod_info, out_path):
     mod_commits = [c for c in week_commits if mod_key in determine_modules_for_commit(c)]
-    
+
     dates = [c["date_str"] for c in week_commits]
     date_range = f"{min(dates)} to {max(dates)}" if dates else "N/A"
-    
+
     authors = sorted(list(set(c["author"] for c in mod_commits))) if mod_commits else ["None"]
-    
+
     content = [
         f"# [{week_str}] {mod_info['name']} Weekly Deliverable Report",
         "",
@@ -196,12 +196,12 @@ def generate_weekly_module_report(week_str, week_commits, mod_key, mod_info, out
             "| Action | File Path |",
             "| :--- | :--- |"
         ])
-        
+
         file_map = {}
         for c in mod_commits:
             for f in c["files"]:
                 file_map[f["path"]] = f["status"]
-        
+
         for path, status in sorted(file_map.items()):
             action_badge = "ADDED" if status == "A" else ("DELETED" if status == "D" else "MODIFIED")
             content.append(f"| `{action_badge}` | `{path}` |")
@@ -464,7 +464,7 @@ def generate_module_lifecycles(commits, weeks):
         file_path = os.path.join(life_dir, f"m{idx}_{mod_key.replace('-', '_')}_lifecycle_archive.md")
 
         authors = sorted(list(set(c["author"] for c in mod_commits))) if mod_commits else ["None"]
-        
+
         lines = [
             f"# {mod_info['name']} - Complete Lifecycle Archive",
             "",
@@ -558,7 +558,7 @@ def main():
 
         w_commits = weeks[w_key]
         w_num = w_key.split('-W')[-1]
-        
+
         # Master report for the week
         master_path = os.path.join(w_folder, f"00_w{w_num}_master_sprint_report.md")
         generate_weekly_master_report(w_key, w_commits, master_path)

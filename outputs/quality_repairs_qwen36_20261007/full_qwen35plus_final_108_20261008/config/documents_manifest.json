@@ -1,0 +1,1077 @@
+{
+  "schema_version": "deep-research-documents.v1",
+  "document_count": 107,
+  "documents": [
+    {
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "page_id": "33980662",
+      "title": "Sprint+2026-W28+Master+Delivery+Report",
+      "version": "2026-09-04T08:40:37.439Z",
+      "last_updated": "2026-09-04T08:40:37.439Z",
+      "content_hash": "348c5f7d43591b20e94d67ddad9a41ce23ef43c34d651980407120744c6743b4",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "05766d46fa5605e1b114027c1e99d182",
+      "page_id": "33947655",
+      "title": "01",
+      "version": "2026-09-04T08:39:07.407Z",
+      "last_updated": "2026-09-04T08:39:07.407Z",
+      "content_hash": "2d8d9a12c6115173ee1848521cdda18373d104af952237e4a9cc450d94e90307",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947655/01.+Project+Milestones+Delivery+Roadmap",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "06bacad029d671a155c270f1bfed7c9c",
+      "page_id": "33980678",
+      "title": "Sprint+2026-W28+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:40:41.962Z",
+      "last_updated": "2026-09-04T08:40:41.962Z",
+      "content_hash": "5d1544e692cd3fe48bafb37c9690c9bc6671eee9623a0e89e6f81f03081af66a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980678/Sprint+2026-W28+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "0cc7ca39a2b3c1128abe6c8659fd1eb0",
+      "page_id": "33980486",
+      "title": "Sprint+2026-W23+Master+Delivery+Report",
+      "version": "2026-09-04T08:39:21.745Z",
+      "last_updated": "2026-09-04T08:39:21.745Z",
+      "content_hash": "e51acc862077cd3f51c42d1686413b6d5c6135f53486fac28cf8827bd307347c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980486/Sprint+2026-W23+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "0da8e9ebf05a689bcf5b6bf08b68b07f",
+      "page_id": "33947761",
+      "title": "Sprint+2026-W31+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:41:11.300Z",
+      "last_updated": "2026-09-04T08:41:11.300Z",
+      "content_hash": "8aca3120e36ef44d97b89bed7ab44da27fc9fe8406b3445878ef55162933cc0d",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947761/Sprint+2026-W31+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "0f62781a7dbef3a210e8b21ddd625033",
+      "page_id": "34013203",
+      "title": "Sprint+2026-W23+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:39:27.293Z",
+      "last_updated": "2026-09-04T08:39:27.293Z",
+      "content_hash": "9417dd3d7efba0d49bce82b0d8d4fecab5e801950c03dc01246807c182b136a1",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013203/Sprint+2026-W23+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "15c7cd8612e694815b87e8680598f9b5",
+      "page_id": "1867953",
+      "title": "overview",
+      "version": "2026-05-21T09:44:13.321Z",
+      "last_updated": "2026-05-21T09:44:13.321Z",
+      "content_hash": "819f377040421744fef61b1f7d22f743621021947a5031d7ca49a5a87e71e549",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/overview",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "176656b3dd54143b1658862bd188a208",
+      "page_id": "13729804",
+      "title": "Q1-week3+Agent+Layer+34+passed",
+      "version": "2026-06-29T10:39:02.637Z",
+      "last_updated": "2026-06-29T10:39:02.637Z",
+      "content_hash": "06a5547c3cbc57acdd6b4a60efa88b389c6fb876c8e7bfe2c1d860dd13733b61",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/13729804/Q1-week3+Agent+Layer+34+passed",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "1cd4994792bdafb4ada05c4d35793a3d",
+      "page_id": "33947703",
+      "title": "Sprint+2026-W26+Master+Delivery+Report",
+      "version": "2026-09-04T08:40:10.309Z",
+      "last_updated": "2026-09-04T08:40:10.309Z",
+      "content_hash": "743a92ff0fa427aec1d09fd8303da951d31779e8a8d38d099cbe87aaaae9db41",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947703/Sprint+2026-W26+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+      "page_id": "34046257",
+      "title": "M4+-+Toolset+Module+Lifecycle+Archive",
+      "version": "2026-09-04T08:42:04.696Z",
+      "last_updated": "2026-09-04T08:42:04.696Z",
+      "content_hash": "8ecf3d705fbb91362d0836eab64e144db69678ce447ff66f1d3e00076e1bb1a5",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "202d89f4efebffbfe5271985880f289b",
+      "page_id": "21430274",
+      "title": "Web+API+2026-07-26",
+      "version": "2026-07-26T13:46:13.363Z",
+      "last_updated": "2026-07-26T13:46:13.363Z",
+      "content_hash": "e7f6d87064b943f55ad1ce9bcc5cd2ad22eff185d5dc85870c79b23ebc32eeae",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21430274/Web+API+2026-07-26",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "page_id": "21135422",
+      "title": "Agent+Layer+CP2+Optimization+Plan",
+      "version": "2026-08-01T09:16:32.464Z",
+      "last_updated": "2026-08-01T09:16:32.464Z",
+      "content_hash": "35590860504bd2d11b1b5a53442ce50c28bceb04f61ebb39e62cce094b3ba914",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "2a562f9efa2e4f5af59d1fab4209eba8",
+      "page_id": "34013427",
+      "title": "Sprint+2026-W34+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:41:53.857Z",
+      "last_updated": "2026-09-04T08:41:53.857Z",
+      "content_hash": "a7926649f8378f304af7a2fdbcc9937d60707ce9cd056cf4660e0b20a2d3d90d",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013427/Sprint+2026-W34+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "340610a0d4f5b1be0ca8b76159f93f12",
+      "page_id": "33980614",
+      "title": "Sprint+2026-W25+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:40:08.307Z",
+      "last_updated": "2026-09-04T08:40:08.307Z",
+      "content_hash": "6c7d45e1cad41ddf70e538ff30d81a41e207f75da2d40b39037e6460858d2de8",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980614/Sprint+2026-W25+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "35c8b1364d2090a4514f3b958620e315",
+      "page_id": "34013379",
+      "title": "Sprint+2026-W33+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:41:39.741Z",
+      "last_updated": "2026-09-04T08:41:39.741Z",
+      "content_hash": "fa4cad2472651205c390a61aa17cff16ecd99226cd17f3b327a13eba45c42554",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013379/Sprint+2026-W33+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "37aed06d457273701dc852587c36eeaa",
+      "page_id": "33980470",
+      "title": "01",
+      "version": "2026-09-04T08:39:19.186Z",
+      "last_updated": "2026-09-04T08:39:19.186Z",
+      "content_hash": "fac6733d3591d63d63ce10be7beded3f80d838389c6ffbe41441d8b4721e2daf",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980470/01.+Weekly+Agile+Sprints+W23+-+W34",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "3d531c5bcd7c26bfcd34730138921e81",
+      "page_id": "34013347",
+      "title": "Sprint+2026-W32+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:41:26.987Z",
+      "last_updated": "2026-09-04T08:41:26.987Z",
+      "content_hash": "1a6a270200ad42967689eeab37c52c55ce31ad2f3bbffe10f4890c36a532019b",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013347/Sprint+2026-W32+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "40519d3b87b47f4aa9287552c193171c",
+      "page_id": "33947841",
+      "title": "Sprint+2026-W33+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:41:37.529Z",
+      "last_updated": "2026-09-04T08:41:37.529Z",
+      "content_hash": "03da05cae269aed844355a8a61969afb13972285d181f5a16f529cc5aff276b1",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947841/Sprint+2026-W33+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4166e167b06bfea1f3ed3005a0b7f300",
+      "page_id": "2031661",
+      "title": "2026-6-3_Q1",
+      "version": "2026-08-01T05:13:04.897Z",
+      "last_updated": "2026-08-01T05:13:04.897Z",
+      "content_hash": "bc70d6599ba53a91a7529b508c8de8740a3697eb39adf569748cd16edf211908",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/2031661/2026-6-3_Q1",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "44476cca42947dbe406958c71291e5ae",
+      "page_id": "33947687",
+      "title": "Sprint+2026-W24+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:39:50.668Z",
+      "last_updated": "2026-09-04T08:39:50.668Z",
+      "content_hash": "dd5ec34481a060b91c769566e9c168c60eddb8de91cfd8cf9bfb2d4db724f4cb",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947687/Sprint+2026-W24+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "45e5b14d81f4fd0273247aae8c18af58",
+      "page_id": "1867967",
+      "title": "1867967",
+      "version": "2026-07-07T03:59:30.931Z",
+      "last_updated": "2026-07-07T03:59:30.931Z",
+      "content_hash": "26597dfc34dd9fd996fc7267a1bb43c670b12fea217be8a13e4dc5b942461b31",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/1867967",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "page_id": "33980711",
+      "title": "Sprint+2026-W30+Master+Delivery+Report",
+      "version": "2026-09-04T08:40:50.703Z",
+      "last_updated": "2026-09-04T08:40:50.703Z",
+      "content_hash": "b105827ccaa4bdeaca667a6ac65382f345f9baf6dcccfc32a2c3cb88b9ca83ac",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "47be52a928a10f2aa3f643c5661a252a",
+      "page_id": "9961474",
+      "title": "Meeting+Minutes+of+2026+6+8",
+      "version": "2026-06-15T14:18:42.393Z",
+      "last_updated": "2026-06-15T14:18:42.393Z",
+      "content_hash": "78de6b2be6f63a511a5f6c2474c9e3f226eba3876146cc972339f886e9b39b07",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/9961474/Meeting+Minutes+of+2026+6+8",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4cc7fcc80d3af1f4847001d3b76f48bc",
+      "page_id": "33980566",
+      "title": "Sprint+2026-W24+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:39:52.865Z",
+      "last_updated": "2026-09-04T08:39:52.865Z",
+      "content_hash": "7ccc3dfe330a9938d4276697e3732b3717dcdd2e86e549196a7bcfe8bbe3d863",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980566/Sprint+2026-W24+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4d232c275a8d98f255b8cde6edcd804a",
+      "page_id": "34045985",
+      "title": "Sprint+2026-W24+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:39:44.993Z",
+      "last_updated": "2026-09-04T08:39:44.993Z",
+      "content_hash": "4c35740b61f645629372759414fc9fc9d83327f11ac57abe3ea8e4dce1fd0699",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045985/Sprint+2026-W24+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4eb1edeae5497e4d3c2acb409bd50c89",
+      "page_id": "33980598",
+      "title": "Sprint+2026-W25+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:40:03.319Z",
+      "last_updated": "2026-09-04T08:40:03.319Z",
+      "content_hash": "78da4f88c3a7f579786c3d7af7fe74c061adb4a47dfd3a10f0055d281fe8a2fe",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980598/Sprint+2026-W25+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4f3c1b464958aff682c595857e2666dc",
+      "page_id": "33947873",
+      "title": "Sprint+2026-W34+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:41:52.262Z",
+      "last_updated": "2026-09-04T08:41:52.262Z",
+      "content_hash": "3e9a9c3722b211510ea2d9cb3da3be32670502a44c05617b85746053a12ed978",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947873/Sprint+2026-W34+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "4f5541eb9a67969d2209c1a51e235aae",
+      "page_id": "7995593",
+      "title": "Web",
+      "version": "2026-06-09T10:36:09.099Z",
+      "last_updated": "2026-06-09T10:36:09.099Z",
+      "content_hash": "6ba47511220b3a851d91c1db0cf9a1eec24d7d9d5901d4e6b5447bc9229ad1dc",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/7995593/Web",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "508c7adf3f8b03ba3a3b660e8a0a6437",
+      "page_id": "33980438",
+      "title": "02",
+      "version": "2026-09-04T08:39:10.217Z",
+      "last_updated": "2026-09-04T08:39:10.217Z",
+      "content_hash": "9418f9771eeee96db0e4a981d286f9abd78ceb9778742a4d8e4645f212e48816",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980438/02.+System+Architecture+Evolution",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "51ad77d47b1ec8cf4b6ee329d3502a38",
+      "page_id": "33980454",
+      "title": "03",
+      "version": "2026-09-04T08:39:13.060Z",
+      "last_updated": "2026-09-04T08:39:13.060Z",
+      "content_hash": "71ad12bb2564135423efa2ef7b8967d3f4000b5fda7736f599e6cafe6868e85c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980454/03.+Cross-Module+Delivery+Matrix",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+      "page_id": "33947889",
+      "title": "M1+-+Agent+Module+Lifecycle+Archive",
+      "version": "2026-09-04T08:41:57.826Z",
+      "last_updated": "2026-09-04T08:41:57.826Z",
+      "content_hash": "ec87adc68c08b74b6db77ffbcc645c71eb733b0201956121a35c841de59c813f",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "54892d2bcaa53239e12a0013a309806a",
+      "page_id": "34046225",
+      "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:41:46.172Z",
+      "last_updated": "2026-09-04T08:41:46.172Z",
+      "content_hash": "e38d8a83bbd7ad1ca0014b410a88c61c842afc374b21ef010d4ad3825e5d3c96",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "56d0f7edefe7699cf68a40f473581e41",
+      "page_id": "33980534",
+      "title": "Sprint+2026-W24+Master+Delivery+Report",
+      "version": "2026-09-04T08:39:40.279Z",
+      "last_updated": "2026-09-04T08:39:40.279Z",
+      "content_hash": "ab794af13ce66df95d10e6e1a809468fe1570eb734acd0a11a80721f7d74589c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980534/Sprint+2026-W24+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "582981d23dad907547bf05b3065fe858",
+      "page_id": "33980791",
+      "title": "Sprint+2026-W33+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:41:35.388Z",
+      "last_updated": "2026-09-04T08:41:35.388Z",
+      "content_hash": "fe3e0d721d9f0c6b1022e1c899328dfd1c9974405c903c1187666e2ba17e9c4b",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980791/Sprint+2026-W33+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "59cfc86e8ab6b4660a6d2a4ef3306040",
+      "page_id": "34046177",
+      "title": "Sprint+2026-W31+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:41:14.076Z",
+      "last_updated": "2026-09-04T08:41:14.076Z",
+      "content_hash": "d4764da557c0d276b11ed8a117985bc421fd8a34add598c47b1cf1399d9435ee",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046177/Sprint+2026-W31+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "5a3a3abf1e00427161d582f16cedcc44",
+      "page_id": "34013411",
+      "title": "Sprint+2026-W34+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:41:50.197Z",
+      "last_updated": "2026-09-04T08:41:50.197Z",
+      "content_hash": "c57b2f6073d7a05a4523fd324c045e2d1062173b84247d832b4b1dc176128f13",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013411/Sprint+2026-W34+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "5ca8d50da47811cc172e2f4a6380c0b4",
+      "page_id": "34046113",
+      "title": "Sprint+2026-W28+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:40:43.921Z",
+      "last_updated": "2026-09-04T08:40:43.921Z",
+      "content_hash": "ac4fec527be5900653e80a6b53817e99a88372275df5e81c8a0a12ce46ec2aa5",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046113/Sprint+2026-W28+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "5e1d9ea4844ff16d0f36e6c4c12a4ed4",
+      "page_id": "34013363",
+      "title": "Sprint+2026-W32+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:41:29.128Z",
+      "last_updated": "2026-09-04T08:41:29.128Z",
+      "content_hash": "020191ca5a883e04d5317465819eecfa5e9e3d68abd2f45e7c09e4577a4f2457",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013363/Sprint+2026-W32+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "5f3f1d7917ce4e10976e195ad2c1f7c4",
+      "page_id": "34013235",
+      "title": "Sprint+2026-W24+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:39:47.783Z",
+      "last_updated": "2026-09-04T08:39:47.783Z",
+      "content_hash": "c7aca02e569682f87c39805e4161440fc6eaf885586f94e142727b541fb5ba2a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013235/Sprint+2026-W24+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "5f58d55287f36841c6375219cd6b75ec",
+      "page_id": "34046193",
+      "title": "Sprint+2026-W32+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:41:20.612Z",
+      "last_updated": "2026-09-04T08:41:20.612Z",
+      "content_hash": "772ba8512d5ad4f295bdb0d41a5718a0413100ba6b6574265e9b6b4310fcc72d",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046193/Sprint+2026-W32+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "613859ae526dc435b246b50b897f8ca3",
+      "page_id": "16121858",
+      "title": "Meeting+Minutes+of+2026+07+06+-+Demo+Sharing",
+      "version": "2026-07-07T03:56:34.671Z",
+      "last_updated": "2026-07-07T03:56:34.671Z",
+      "content_hash": "bcaa6a2638485c3c6fb13dc3303589fa3adb2d23136189a3c314228eba9d01d5",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/16121858/Meeting+Minutes+of+2026+07+06+-+Demo+Sharing",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "659817fefd6880ea69ddd550c23999ae",
+      "page_id": "33980775",
+      "title": "Sprint+2026-W32+Master+Delivery+Report",
+      "version": "2026-09-04T08:41:18.446Z",
+      "last_updated": "2026-09-04T08:41:18.446Z",
+      "content_hash": "616b06c84fb2e1bd8c11c409dbb9e0b796635c47b3cf30c08970cfb363ef75d6",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980775/Sprint+2026-W32+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "664eb46b0285e6d4e56b4f909e880a06",
+      "page_id": "34046033",
+      "title": "Sprint+2026-W26+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:40:12.511Z",
+      "last_updated": "2026-09-04T08:40:12.511Z",
+      "content_hash": "ab1f13524d4a21010eeff10bcd65960a214f6d13010eaff90bcd76fff803ca90",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046033/Sprint+2026-W26+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "677de9e6c089e1b8049586af528c4fce",
+      "page_id": "33980646",
+      "title": "Sprint+2026-W27+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:40:30.739Z",
+      "last_updated": "2026-09-04T08:40:30.739Z",
+      "content_hash": "67faf00f96e589d1ced4953140f0cd895e10911d5575f77bb781fda4adfebbae",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980646/Sprint+2026-W27+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "69c0529b1e03d44c9f1d1a1af55fd8b9",
+      "page_id": "33947719",
+      "title": "Sprint+2026-W27+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:40:29.081Z",
+      "last_updated": "2026-09-04T08:40:29.081Z",
+      "content_hash": "3782d68c4b4ca27a7931ddb26443a5b5c585853b2e5cbbb5e892e13afeb59518",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947719/Sprint+2026-W27+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "page_id": "33947857",
+      "title": "Sprint+2026-W34+Master+Delivery+Report",
+      "version": "2026-09-04T08:41:44.062Z",
+      "last_updated": "2026-09-04T08:41:44.062Z",
+      "content_hash": "5ca598bf7fea875b967b5487203dbe3efe18fd7cae9b4b09560904bee6dfc246",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "6fae4a2c503a5494c1dfc3e57c0c7969",
+      "page_id": "10190849",
+      "title": "Tool_Layer_CP1_Interface_Spec",
+      "version": "2026-06-15T03:26:26.717Z",
+      "last_updated": "2026-06-15T03:26:26.717Z",
+      "content_hash": "c4f43acfafee965be0fd2ec49541a3880a889e8ca2019087ae987b2166493e46",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/10190849/Tool_Layer_CP1_Interface_Spec",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "73065098260f79a08245b101f9847dca",
+      "page_id": "34046081",
+      "title": "Sprint+2026-W27+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:40:33.032Z",
+      "last_updated": "2026-09-04T08:40:33.032Z",
+      "content_hash": "f05520fa20397b14456f20f6e3bd3a833c6fbf25a4d0840042dce82337b9500a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046081/Sprint+2026-W27+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "7404d87eea14e890308b97ccc2b9cea8",
+      "page_id": "34013331",
+      "title": "Sprint+2026-W28+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:40:48.513Z",
+      "last_updated": "2026-09-04T08:40:48.513Z",
+      "content_hash": "29f255b28ead28ec90e949cb08808f2d8852742f60631345afb91e951917ce1e",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013331/Sprint+2026-W28+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "7747ba5cdd4fd8ea03813ab442438286",
+      "page_id": "34046001",
+      "title": "Sprint+2026-W25+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:40:00.745Z",
+      "last_updated": "2026-09-04T08:40:00.745Z",
+      "content_hash": "c0040e69bb0453292e07aec3b4c71313389eb82f801c69407c1d5a20b62779ae",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046001/Sprint+2026-W25+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "777c465635affbfbcbda959afbf6e77d",
+      "page_id": "5440024",
+      "title": "Meeting+Minutes+of+2026+06+01+-+July+MVP+Feature+Refinement+Module+Division+of+Labor+and+Subsequent+Action+Items",
+      "version": "2026-08-17T09:54:06.309Z",
+      "last_updated": "2026-08-17T09:54:06.309Z",
+      "content_hash": "d1a0b8db03d6d07d09dea6c60efb9cd5e8962412639339fd5ecd7306fede83af",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/5440024/Meeting+Minutes+of+2026+06+01+-+July+MVP+Feature+Refinement+Module+Division+of+Labor+and+Subsequent+Action+Items",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "7a046574e728d8449133f24f98fbbbde",
+      "page_id": "26607617",
+      "title": "CP2+-+Goals",
+      "version": "2026-09-03T12:02:06.459Z",
+      "last_updated": "2026-09-03T12:02:06.459Z",
+      "content_hash": "e3efac14ac35c5c0822e7ba9af632b432a8c92d9015e40a907ba680a569b69aa",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+      "page_id": "34013443",
+      "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+      "version": "2026-09-04T08:42:02.690Z",
+      "last_updated": "2026-09-04T08:42:02.690Z",
+      "content_hash": "bf74b0ac9bb434294595b66207b72dd28793dc7ee700b7f6f5a88f6b17f5485a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "7f60c4fd2c8716b1325c0a0fc38b28cc",
+      "page_id": "7897090",
+      "title": "Data+Processing+Pipeline+Layer_2026-06-08",
+      "version": "2026-06-09T05:11:34.083Z",
+      "last_updated": "2026-06-09T05:11:34.083Z",
+      "content_hash": "af0e5aaad17d264a3e79b9b05faa59e54b1cd2dd59c728d7ecd94da45d16fd62",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/7897090/Data+Processing+Pipeline+Layer_2026-06-08",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "833ac861944160a33080f47f6a0d0302",
+      "page_id": "33947729",
+      "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:40:52.925Z",
+      "last_updated": "2026-09-04T08:40:52.925Z",
+      "content_hash": "7efa3429f2fa0725cc596e92edc48160d6a65c84d037c0ae4a0fd6b75f29978c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "86ffa030f165246e4859669ff2900e6f",
+      "page_id": "34013395",
+      "title": "Sprint+2026-W33+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:41:41.864Z",
+      "last_updated": "2026-09-04T08:41:41.864Z",
+      "content_hash": "c5e1f417b8cc432830e47f17b48b3652eb72cb8afb52d0ab5b4a4aa36396be9c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013395/Sprint+2026-W33+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "87e87b69c24f3e8deabd861d86c39dfe",
+      "page_id": "34046241",
+      "title": "02",
+      "version": "2026-09-04T08:41:55.981Z",
+      "last_updated": "2026-09-04T08:41:55.981Z",
+      "content_hash": "082133b2ccc865b67d7acf9a7b9e3998aed7a180b10ee0cd245b9d63334bab95",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046241/02.+Module+Lifecycle+Archives",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "88b95ba71d6e42a6e3132f17fd6d9a3e",
+      "page_id": "33980807",
+      "title": "Sprint+2026-W34+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:41:48.165Z",
+      "last_updated": "2026-09-04T08:41:48.165Z",
+      "content_hash": "0e76169f745823d8878415599c95c114484853b4e83869317d063f5f32a54216",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980807/Sprint+2026-W34+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "88f9b5b577801f41823460bdbb7144be",
+      "page_id": "34046017",
+      "title": "Sprint+2026-W25+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:40:05.975Z",
+      "last_updated": "2026-09-04T08:40:05.975Z",
+      "content_hash": "300ec7f9a00d742370a8c675fc4c2d56c650e588f3a53e1d7023b104d3eae4d6",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046017/Sprint+2026-W25+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "8cb112f81b2c009fe11a4a3d7daf6ba1",
+      "page_id": "33947809",
+      "title": "Sprint+2026-W32+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:41:24.922Z",
+      "last_updated": "2026-09-04T08:41:24.922Z",
+      "content_hash": "ff9b469e5eda9dc31771d25567a52ea2aeffabd441546cf7574005bb7b727aa8",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947809/Sprint+2026-W32+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "8d6506465b175c6558671ae881d85815",
+      "page_id": "33980823",
+      "title": "M2+-+Data+Persistence+Module+Lifecycle+Archive",
+      "version": "2026-09-04T08:42:00.350Z",
+      "last_updated": "2026-09-04T08:42:00.350Z",
+      "content_hash": "591e2f198315f860daa76f87143be7d62ee42ae9eaf0bc0c26d10975ee2bbdbd",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980823/M2+-+Data+Persistence+Module+Lifecycle+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "8d8b62b38face69bccc656534cad5588",
+      "page_id": "23855138",
+      "title": "Meeting+Minutes+of+2026+08+03+-+Q2+reporting",
+      "version": "2026-08-10T13:59:45.883Z",
+      "last_updated": "2026-08-10T13:59:45.883Z",
+      "content_hash": "2f408354e3c2e2c48ff692c781b7ad859ffa6f4a797e43e9f774473910dd1a90",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/23855138/Meeting+Minutes+of+2026+08+03+-+Q2+reporting",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "8e5d6591e66214949ff370f8bc8a62fe",
+      "page_id": "33980759",
+      "title": "Sprint+2026-W30+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:41:02.329Z",
+      "last_updated": "2026-09-04T08:41:02.329Z",
+      "content_hash": "a1e95945effc609d3518576ef70ba087897c134f8bde56c0b5779c2bf756a1c4",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980759/Sprint+2026-W30+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "91f305fca1d5fe36283828a1a95f2329",
+      "page_id": "34013251",
+      "title": "Sprint+2026-W25+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:39:58.172Z",
+      "last_updated": "2026-09-04T08:39:58.172Z",
+      "content_hash": "c041df05f4ceb4b1bcfd6c06329c9f66a8286357e58351a4261e33fcb5cdd940",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013251/Sprint+2026-W25+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "94e6578806a6d87b9cf93fc0cb9d7581",
+      "page_id": "21135440",
+      "title": "Meeting+Minutes+of+2026+07+27+-+Q2+reporting",
+      "version": "2026-07-28T02:00:30.487Z",
+      "last_updated": "2026-07-28T02:00:30.487Z",
+      "content_hash": "83bec3c9ba5bbe2fa1eb0c15c7dfd75928329dc292a76317fb2c5eb73d4c9b7a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135440/Meeting+Minutes+of+2026+07+27+-+Q2+reporting",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "99ebd4e675e69cd4b6775220f39ae566",
+      "page_id": "19005457",
+      "title": "Meeting+Minutes+of+2026+07+20+-+Q2+discussion",
+      "version": "2026-07-20T11:01:13.756Z",
+      "last_updated": "2026-07-20T11:01:13.756Z",
+      "content_hash": "20274e448e759d9ec5dbb903153c07c14fd02306b2cfebab74398421086697b0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/19005457/Meeting+Minutes+of+2026+07+20+-+Q2+discussion",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "9a3b3848d20b7bf79e4266e24df7c9f3",
+      "page_id": "34046145",
+      "title": "Sprint+2026-W31+Master+Delivery+Report",
+      "version": "2026-09-04T08:41:04.381Z",
+      "last_updated": "2026-09-04T08:41:04.381Z",
+      "content_hash": "9841f6bb9d3c22d7f1fdaef4a6616f39d5f342fc860ece9cbbb0158a738d7f5a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046145/Sprint+2026-W31+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "9a8de8d13476b7d443c771c38348c1b8",
+      "page_id": "2031715",
+      "title": "Meeting+Minutes+of+2026+05+18+-+Plan+Sharing",
+      "version": "2026-06-22T11:22:16.487Z",
+      "last_updated": "2026-06-22T11:22:16.487Z",
+      "content_hash": "2da2751ba3c96ab3e659abe4e9ca73a4780a2a93fa38c7c5f1c6234936140ad3",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/2031715/Meeting+Minutes+of+2026+05+18+-+Plan+Sharing",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "9b9c7ba12622d8220b26137aec18cf59",
+      "page_id": "33980694",
+      "title": "Sprint+2026-W28+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:40:46.451Z",
+      "last_updated": "2026-09-04T08:40:46.451Z",
+      "content_hash": "d6e7af53c1255f6b881bfa390855db6f8c7a80da83c1d5f2397d718f0739f4ea",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980694/Sprint+2026-W28+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "9c00cdc1e8e8c29f49f8cacb78c5934a",
+      "page_id": "33980630",
+      "title": "Sprint+2026-W26+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:40:21.938Z",
+      "last_updated": "2026-09-04T08:40:21.938Z",
+      "content_hash": "45a3feff1f328bb17229ba03bb36cc396442efcc909172afa808135b4e02f443",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980630/Sprint+2026-W26+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+      "page_id": "33947825",
+      "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:41:33.344Z",
+      "last_updated": "2026-09-04T08:41:33.344Z",
+      "content_hash": "8078aaab6a20775e6c4d12062947c4fcc542a1b2aaed3d3d5d92b003b681de31",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "9f75859738ed658c81ef27f2c244be17",
+      "page_id": "34045969",
+      "title": "Sprint+2026-W23+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:39:30.424Z",
+      "last_updated": "2026-09-04T08:39:30.424Z",
+      "content_hash": "8dc7e3791bd2ea139f848d78cc670f4b8447f201ce184d1d37b810d7685b5c6c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045969/Sprint+2026-W23+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "a0f35f4075be8b80576727e78756952d",
+      "page_id": "36339729",
+      "title": "Meeting+Minutes+of+2026+09+08",
+      "version": "2026-09-13T07:52:26.734Z",
+      "last_updated": "2026-09-13T07:52:26.734Z",
+      "content_hash": "2b8a77374eab87e9e09e528b1f80c5307fa65634bcb5c59368bc2b716badfeee",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "a33e2bbba934b35b6167d9e7da1ce054",
+      "page_id": "33980502",
+      "title": "Sprint+2026-W23+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:39:24.409Z",
+      "last_updated": "2026-09-04T08:39:24.409Z",
+      "content_hash": "368835a11a01514a69eca19187de95f59daf5f04accff75664b3376dbcc23620",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980502/Sprint+2026-W23+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "ae2a7209e497ce6d5705128e82dd41cf",
+      "page_id": "8028166",
+      "title": "Agent+Layer",
+      "version": "2026-06-09T08:41:12.960Z",
+      "last_updated": "2026-06-09T08:41:12.960Z",
+      "content_hash": "ee50ec34f9bf2d86271d43ada14080cc0ec8fc65d59c25a93f1d8b395881d510",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/8028166/Agent+Layer",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "ae4c774158cc2b4153fd01c6438f07a9",
+      "page_id": "33947671",
+      "title": "04",
+      "version": "2026-09-04T08:39:16.321Z",
+      "last_updated": "2026-09-04T08:39:16.321Z",
+      "content_hash": "6ff307c6de9f4dbd454435365056027816fb62555b515408b6e20368373f6315",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947671/04.+Release+Changelog+Artifacts+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "b1f708316d3982e55e368d3c30a99dd4",
+      "page_id": "34013283",
+      "title": "Sprint+2026-W27+Master+Delivery+Report",
+      "version": "2026-09-04T08:40:24.672Z",
+      "last_updated": "2026-09-04T08:40:24.672Z",
+      "content_hash": "ecba2185f768e5e90b1b1520c066bcd2b94d9f9b85e6325d9d8cab6890ebe9a9",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013283/Sprint+2026-W27+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "b8a314e957ab00a88d300e23b8f4b930",
+      "page_id": "34046049",
+      "title": "Sprint+2026-W26+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:40:15.020Z",
+      "last_updated": "2026-09-04T08:40:15.020Z",
+      "content_hash": "203317dd170f81101808c2b6481932127a203249b372e284713cb7f47502b18a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046049/Sprint+2026-W26+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "bb6c71542e8f8a326d437b3d296ea84a",
+      "page_id": "34046065",
+      "title": "Sprint+2026-W26+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:40:19.834Z",
+      "last_updated": "2026-09-04T08:40:19.834Z",
+      "content_hash": "8c598f382bb82271a33e2d69b29b510bdeb527e0ecad53d9e5fc65d8c1ce3739",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046065/Sprint+2026-W26+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "bd0cd4c9a22441c4b22d47d7e58d3512",
+      "page_id": "34013267",
+      "title": "Sprint+2026-W26+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:40:17.130Z",
+      "last_updated": "2026-09-04T08:40:17.130Z",
+      "content_hash": "9b846ec0da1223a13a29d851609f4fee52667f3f7244e86c91ec7385f6bffa4c",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013267/Sprint+2026-W26+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "c05c19a395cbd220f4120b4db6ce86a4",
+      "page_id": "33980743",
+      "title": "Sprint+2026-W30+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:40:59.855Z",
+      "last_updated": "2026-09-04T08:40:59.855Z",
+      "content_hash": "f737e74d9cf78a74faffe26b7d010553cbc9b48f339c9c11944621188d14feb4",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980743/Sprint+2026-W30+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "c0b6413d6a5947a37351e36907ba493c",
+      "page_id": "33980727",
+      "title": "Sprint+2026-W30+-+M3+Data+Pipeline+Module+Deliverables",
+      "version": "2026-09-04T08:40:57.398Z",
+      "last_updated": "2026-09-04T08:40:57.398Z",
+      "content_hash": "86573beee5a147490374f288a9cc58f2591999a6cdbd0ffcbb4b7940a0b45f99",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980727/Sprint+2026-W30+-+M3+Data+Pipeline+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "c88bcacad58ba2ac0bdcfb8a852f05c4",
+      "page_id": "34046273",
+      "title": "M5+-+Web+Module+Lifecycle+Archive",
+      "version": "2026-09-04T08:42:07.416Z",
+      "last_updated": "2026-09-04T08:42:07.416Z",
+      "content_hash": "7fd96318a6b093a203aecbd11665e6dfc17ec96e7ca838347daf2746abd3e31d",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046273/M5+-+Web+Module+Lifecycle+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "c906cc4d0043f8c46c010c63e86e956a",
+      "page_id": "33947745",
+      "title": "Sprint+2026-W31+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:41:09.071Z",
+      "last_updated": "2026-09-04T08:41:09.071Z",
+      "content_hash": "d48e6c6bf4f0225309be498c86953216464d0bc6b491b8f04ecc5be1f9f8502d",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947745/Sprint+2026-W31+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "c9cadc505b6faf002287902c01524911",
+      "page_id": "10256391",
+      "title": "Meeting+Minutes+of+2026+6+15",
+      "version": "2026-06-15T14:20:48.593Z",
+      "last_updated": "2026-06-15T14:20:48.593Z",
+      "content_hash": "52301f34b3797a952fbc01094e18c9ea65d44bf97e4129eab70c0bb2836edf3a",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/10256391/Meeting+Minutes+of+2026+6+15",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "cbf03244196cca0757311f6d0b8eb3c2",
+      "page_id": "7897136",
+      "title": "Tools+Layer",
+      "version": "2026-06-15T03:23:09.530Z",
+      "last_updated": "2026-06-15T03:23:09.530Z",
+      "content_hash": "f24ab7e90d623da42d4e47e17d476a5dd92f8c449fff47cb396cd67bcf51c5a4",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/7897136/Tools+Layer",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "cc14445952862fd99561833feae49979",
+      "page_id": "11960322",
+      "title": "Meeting+Minutes+of+2026+06+22+-+Plan+Sharing",
+      "version": "2026-06-22T11:32:02.419Z",
+      "last_updated": "2026-06-22T11:32:02.419Z",
+      "content_hash": "a89d77de0f08fa16a1da91cdf76e9a4942a7c15ec18e59a3b27745c581ded703",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/11960322/Meeting+Minutes+of+2026+06+22+-+Plan+Sharing",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "cc954620eac8b1ed9645c646a0d55955",
+      "page_id": "34046209",
+      "title": "Sprint+2026-W33+Master+Delivery+Report",
+      "version": "2026-09-04T08:41:31.217Z",
+      "last_updated": "2026-09-04T08:41:31.217Z",
+      "content_hash": "782248624bb6b0e1eeb853fb8be9a792ded6178ef660d0bc00352ea43fdf42a7",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046209/Sprint+2026-W33+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "cdb860a90a8f0412b7a65251dedc2e5c",
+      "page_id": "34046129",
+      "title": "Sprint+2026-W30+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:40:55.270Z",
+      "last_updated": "2026-09-04T08:40:55.270Z",
+      "content_hash": "624e387f111f63a5f22e5af44c2bd6ad6ef87e273e8ed320ac051371cac476b8",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046129/Sprint+2026-W30+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "ce3e78a4ea9fe78044ad69ae4559f26f",
+      "page_id": "21495830",
+      "title": "CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+      "version": "2026-07-26T15:52:12.520Z",
+      "last_updated": "2026-07-26T15:52:12.520Z",
+      "content_hash": "d418661d4458433c4a016972f9b0323bc068e4227816e97df9bd241e5687e50f",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21495830/CP1+Delivery+Summary+and+CP2+Implementation+Plan",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "d1c7c95e494889b9eafd03948537ca04",
+      "page_id": "34046161",
+      "title": "Sprint+2026-W31+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:41:06.882Z",
+      "last_updated": "2026-09-04T08:41:06.882Z",
+      "content_hash": "c8830df40d225408a9e174703aee00ec69720257d31b8e645149e42841288dae",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046161/Sprint+2026-W31+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "d4ca30fa6adc35bd9d18313034b77a87",
+      "page_id": "18972677",
+      "title": "Meeting+Minutes+of+2026+07+13+-+Rehearsal",
+      "version": "2026-07-20T05:26:10.696Z",
+      "last_updated": "2026-07-20T05:26:10.696Z",
+      "content_hash": "cd7ac3fa4f89310437832b1fa8d67718b67f051d0f86f5a9f7c2fe465e31c2ed",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/18972677/Meeting+Minutes+of+2026+07+13+-+Rehearsal",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "d861eb93428ecd237a3de94f8e17322f",
+      "page_id": "33947777",
+      "title": "Sprint+2026-W31+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:41:16.235Z",
+      "last_updated": "2026-09-04T08:41:16.235Z",
+      "content_hash": "ffeaf49e2858d51195806b7bc75f22714b6a9b83fd9178562b32d4294223f034",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947777/Sprint+2026-W31+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "dae132c1165f4077b9f5d03f58a3720b",
+      "page_id": "34013219",
+      "title": "Sprint+2026-W23+-+M4+Toolset+Module+Deliverables",
+      "version": "2026-09-04T08:39:33.688Z",
+      "last_updated": "2026-09-04T08:39:33.688Z",
+      "content_hash": "b3273a0f1cf49365e1beb5defe8d943fa59dcecd9ac96a15a93ea8a2d070b236",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013219/Sprint+2026-W23+-+M4+Toolset+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "dfaf230d81de5cd25b385448725d51cf",
+      "page_id": "34046097",
+      "title": "Sprint+2026-W27+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:40:35.350Z",
+      "last_updated": "2026-09-04T08:40:35.350Z",
+      "content_hash": "dc5b3242d445509fcd4d39febd4fcd10d7719efbf68377be34b264043fb980b4",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046097/Sprint+2026-W27+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "e061986b933fcd9cdc24e6800b16760f",
+      "page_id": "33947905",
+      "title": "M6+-+Eval+Benchmarking+Lifecycle+Archive",
+      "version": "2026-09-04T08:42:09.453Z",
+      "last_updated": "2026-09-04T08:42:09.453Z",
+      "content_hash": "493f3063e0b6849e81897daf4ba2ed5ce2ba30531cb90a1341cf8824c228023f",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947905/M6+-+Eval+Benchmarking+Lifecycle+Archive",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "e2891512ba48122cf68435540054bb46",
+      "page_id": "33980518",
+      "title": "Sprint+2026-W23+-+M5+Web+Module+Deliverables",
+      "version": "2026-09-04T08:39:36.960Z",
+      "last_updated": "2026-09-04T08:39:36.960Z",
+      "content_hash": "bd21bd0dcbc078d2a1df938eb69713ebb7969cd04737a1fee92580f1657c5a30",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980518/Sprint+2026-W23+-+M5+Web+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "e506ac31b8dbc6b1d3ca86b08de987d1",
+      "page_id": "3145735",
+      "title": "Meeting+Minutes+of+2026+5+25",
+      "version": "2026-06-15T04:44:59.678Z",
+      "last_updated": "2026-06-15T04:44:59.678Z",
+      "content_hash": "13bbb12cbaba73a8b40d5268887ff36198c52a04cac5b71152fb31cf465540ff",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/3145735/Meeting+Minutes+of+2026+5+25",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "e8d877fe6699b433f7a6c101268211f1",
+      "page_id": "33947793",
+      "title": "Sprint+2026-W32+-+M2+Data+Persistence+Module+Deliverables",
+      "version": "2026-09-04T08:41:22.852Z",
+      "last_updated": "2026-09-04T08:41:22.852Z",
+      "content_hash": "4efa11f3f77eee92807b2e9431b2e3294549c14c640a4775cf7868e09f83ab1e",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947793/Sprint+2026-W32+-+M2+Data+Persistence+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "e8ee6517e889bbec9297f729d01a7be6",
+      "page_id": "33980550",
+      "title": "Sprint+2026-W24+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:39:43.036Z",
+      "last_updated": "2026-09-04T08:39:43.036Z",
+      "content_hash": "72d3b8a18cb78a3eb38d087a34cb39df3e330499cdd82d074f3d4f88e993d03e",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980550/Sprint+2026-W24+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "eaabaa6fa47b6e6e9132c624c1a307b0",
+      "page_id": "34013187",
+      "title": "00",
+      "version": "2026-09-04T08:39:04.277Z",
+      "last_updated": "2026-09-04T08:39:04.277Z",
+      "content_hash": "348fffe7b2f01054c45b1f5e11ebb1c3beecfc2e6731e351fc0871ed6fe11f33",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013187/00.+Project+Overall+Records+Milestones",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "ecc72b86ea9e11262e766bdbf1d26d0e",
+      "page_id": "20283393",
+      "title": "20283393",
+      "version": "2026-08-03T07:37:43.676Z",
+      "last_updated": "2026-08-03T07:37:43.676Z",
+      "content_hash": "685496bee727e65e678f8b09fa8b73a6b2133e1fa28fcdc27d7a6d53bb6d5c1f",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/20283393",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "ef36bfc2a8d8c4475d25d14395309a86",
+      "page_id": "33980582",
+      "title": "Sprint+2026-W25+Master+Delivery+Report",
+      "version": "2026-09-04T08:39:56.180Z",
+      "last_updated": "2026-09-04T08:39:56.180Z",
+      "content_hash": "9d544947379bfaff5e44a36bd1f535b8be6ebf7c458bf9bac711267333e76582",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980582/Sprint+2026-W25+Master+Delivery+Report",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "f57aac328fc665b5981146d1cd2dd69c",
+      "page_id": "7667715",
+      "title": "2026-06-08_Data+Persistence+Layer",
+      "version": "2026-06-09T04:57:14.821Z",
+      "last_updated": "2026-06-09T04:57:14.821Z",
+      "content_hash": "8b27acaf38d47c2c7bd83a51f4fded0d82405b639e99d96be2e5d45b4df28d19",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/7667715/2026-06-08_Data+Persistence+Layer",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "f592494c2ca41c77bfa2daafb223f679",
+      "page_id": "34045953",
+      "title": "AI-QA-Assistant+Project+Engineering+Records+Sprints",
+      "version": "2026-09-04T08:39:01.582Z",
+      "last_updated": "2026-09-04T08:39:01.582Z",
+      "content_hash": "3acb83881c576d732ce94df30b1f2aa5bf4c641d145231ba321b87b4916f948b",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34045953/AI-QA-Assistant+Project+Engineering+Records+Sprints",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "f7bc57cbe447739b045a63359f385a30",
+      "page_id": "34013299",
+      "title": "Sprint+2026-W27+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:40:26.384Z",
+      "last_updated": "2026-09-04T08:40:26.384Z",
+      "content_hash": "8610eaf1a413bb65b2861f3bfb266bee0a2f41b7e187cda2e8b0056593490c41",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013299/Sprint+2026-W27+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    },
+    {
+      "doc_id": "fa12e604697d76c0debb38a236d2c576",
+      "page_id": "34013315",
+      "title": "Sprint+2026-W28+-+M1+Agent+Module+Deliverables",
+      "version": "2026-09-04T08:40:39.517Z",
+      "last_updated": "2026-09-04T08:40:39.517Z",
+      "content_hash": "72d78b16762b0f7c152a08e29a761e0e8acb9b21ada0abda8892994f5d3da63f",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013315/Sprint+2026-W28+-+M1+Agent+Module+Deliverables",
+      "space": "RAG"
+    }
+  ],
+  "manifest_hash": "ee5c98bd286db81fbb76f5d120524e33e44f7a805f3fd110dcfc1b89d74d5339"
+}

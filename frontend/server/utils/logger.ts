@@ -89,4 +89,3 @@ export function logMemoryEvent (event: MemoryLogEvent) {
   const payload = createSafeMemoryLogPayload(event)
   if (payload) logger.info(payload, 'memory event')
 }
-

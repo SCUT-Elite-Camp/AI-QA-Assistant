@@ -6,6 +6,25 @@ from agent.query import IntentClassifier, QueryIntent
 from tests.helpers import FakeLLM
 
 
+@pytest.mark.parametrize('query,expected', [
+    ('Report the recorded statuses of AG-M6 and AG-M11 in Goals.', QueryIntent.KNOWLEDGE_QA),
+    ('Find the recorded status of AG-M7 in CP2 Goals.', QueryIntent.KNOWLEDGE_QA),
+    ('Find documents about goal statuses.', QueryIntent.DOCUMENT_SEARCH),
+])
+def test_status_facts_require_content_but_document_listing_does_not(query, expected):
+    from agent.query.schemas import IntentResult
+    result = IntentResult(intent=QueryIntent.DOCUMENT_SEARCH, confidence=0.9)
+    assert IntentClassifier._enforce_explicit_intent(query, [], result).intent == expected
+
+
+def test_limited_evidence_question_is_supported_but_mutation_is_not():
+    from agent.query.schemas import IntentResult
+    result = IntentResult(intent=QueryIntent.UNSUPPORTED, confidence=0.9)
+    corrected = IntentClassifier._enforce_explicit_intent('Give the Web counts from the selected reports; state if evidence is missing.', [], result)
+    assert corrected.intent == QueryIntent.KNOWLEDGE_QA
+    assert IntentClassifier._enforce_explicit_intent('Delete the reports and give their counts.', [], result).intent == QueryIntent.UNSUPPORTED
+
+
 def llm_intent(
     intent: str,
     *,

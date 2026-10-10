@@ -23,8 +23,8 @@ const turns = computed(() => {
       turnCount++
       let qText = ''
       if (currentTurnUser) {
-        if (currentTurnUser.content) {
-          qText = currentTurnUser.content
+        if ((currentTurnUser as any).content) {
+          qText = (currentTurnUser as any).content
         } else if (currentTurnUser.parts) {
           for (const p of currentTurnUser.parts) {
             if ((p.type === 'text' || p.type === 'reasoning') && (p as any).text) {

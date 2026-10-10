@@ -71,6 +71,23 @@ def test_upload_parse_download_and_async_physical_delete(service) -> None:
     assert not blob_path.exists()
 
 
+def test_authoritative_chat_and_topic_binding_round_trip(service) -> None:
+    module, client = service
+    headers = {**_headers(), 'X-Chat-ID': 'chat-bound'}
+    assert client.post('/v1/attachments/att_bound', headers=headers, content=b'boundary probe').status_code == 201
+    assert _wait_status(client, 'att_bound', {'ready'})['chat_id'] == 'chat-bound'
+    internal = {'Authorization': 'Bearer test-internal-secret'}
+    bad = client.patch('/v1/attachments/att_bound/scope', headers=internal,
+        json={'scope': 'topic', 'topic_id': 'wrong-topic', 'dedupe_domain': 'topic:topic-bound'})
+    assert bad.status_code == 422
+    assert module.STORE.get_attachment('att_bound')['dedupe_domain'] == 'user:user-1'
+    response = client.patch('/v1/attachments/att_bound/scope', headers=internal,
+        json={'scope': 'topic', 'topic_id': 'topic-bound', 'dedupe_domain': 'topic:topic-bound'})
+    assert response.status_code == 200
+    assert response.json()['chat_id'] == 'chat-bound'
+    assert response.json()['topic_id'] == 'topic-bound'
+
+
 def test_empty_search_browses_only_explicitly_allowed_attachment(service) -> None:
     _, client = service
     for attachment_id, content in (

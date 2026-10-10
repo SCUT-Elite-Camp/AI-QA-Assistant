@@ -6,6 +6,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import platform
 import subprocess
 import sys
@@ -15,12 +16,18 @@ from typing import Any, Iterable
 
 SUITE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = SUITE_ROOT.parents[1]
-DATASET_PATH = SUITE_ROOT / "datasets" / "cases.v1.json"
-MANIFEST_PATH = SUITE_ROOT / "manifests" / "source_manifests.v1.json"
-BASELINE_PATH = SUITE_ROOT / "config" / "frozen_baseline.json"
+DATASET_PATH = Path(os.getenv("DR_EVAL_DATASET_PATH", SUITE_ROOT / "datasets" / "cases.v1.json")).resolve()
+MANIFEST_PATH = Path(os.getenv("DR_EVAL_MANIFEST_PATH", SUITE_ROOT / "manifests" / "source_manifests.v1.json")).resolve()
+BASELINE_PATH = Path(os.getenv("DR_EVAL_BASELINE_PATH", SUITE_ROOT / "config" / "frozen_baseline.json")).resolve()
 TAXONOMY_PATH = SUITE_ROOT / "failure_taxonomy.json"
-DOCUMENTS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "documents"
-METADATA_PATH = PROJECT_ROOT / "data-pipeline" / "confluence_metadata_RAG.json"
+DOCUMENTS_DIR = Path(os.getenv(
+    "DR_EVAL_DOCUMENTS_DIR",
+    PROJECT_ROOT / "data-persistence" / "data" / "documents",
+)).resolve()
+METADATA_PATH = Path(os.getenv(
+    "DR_EVAL_METADATA_PATH",
+    PROJECT_ROOT / "data-pipeline" / "confluence_metadata_RAG.json",
+)).resolve()
 EXPECTED_BEHAVIORS = {
     "answer", "degraded", "refuse", "request_more_information", "conflict_review"
 }
@@ -169,16 +176,19 @@ def build_manifest_set() -> dict[str, Any]:
         "schema_version": "1.0",
         "manifest_set_id": "cp2-deep-research-manifests.v1",
         "hash_contract": "research.v2 LocalDocumentResolver searchable_text + SourceManifest.calculate_hash",
-        "source_metadata": str(METADATA_PATH.relative_to(PROJECT_ROOT)).replace("\\", "/"),
+        "source_metadata": "data-pipeline/confluence_metadata_RAG.json",
         "document_catalog": snapshots,
         "manifests": manifests,
     }
 
 
-def command_freeze(write: bool) -> int:
+def command_freeze(write: bool, manifests_only: bool = False) -> int:
     manifest_set = build_manifest_set()
     if write:
         write_json(MANIFEST_PATH, manifest_set)
+        if manifests_only:
+            print(f"wrote {MANIFEST_PATH.relative_to(PROJECT_ROOT)}")
+            return 0
         baseline = load_json(BASELINE_PATH)
         code, commit = run_command("git", "rev-parse", "HEAD")
         if code == 0:
@@ -252,6 +262,14 @@ def validate_assets(verbose: bool = True) -> list[str]:
         errors.append("frozen generation config hash mismatch")
     g1_prompt = baseline.get("prompts", {}).get("g1_answer", {})
     for path_key, hash_key in (("path", "sha256"), ("assembly_path", "assembly_sha256")):
+        if path_key == "assembly_path" and g1_prompt.get("assembly_git_ref"):
+            if git_blob_sha256(g1_prompt["assembly_git_ref"], g1_prompt[path_key]) != g1_prompt.get("assembly_git_sha256"):
+                errors.append("frozen G1 assembly source hash mismatch")
+            continue
+        if path_key == "path" and g1_prompt.get("git_ref"):
+            if git_blob_sha256(g1_prompt["git_ref"], g1_prompt[path_key]) != g1_prompt.get("git_sha256", g1_prompt.get(hash_key)):
+                errors.append("frozen G1 prompt source hash mismatch")
+            continue
         prompt_path = PROJECT_ROOT / str(g1_prompt.get(path_key, ""))
         if not prompt_path.is_file():
             errors.append(f"G1 prompt source missing: {g1_prompt.get(path_key)}")
@@ -358,8 +376,16 @@ def command_preflight(require_all_groups: bool) -> int:
         "G3": (PROJECT_ROOT / "agent" / "deep_research").is_dir()
             and any((PROJECT_ROOT / "toolset").rglob("*page*index*.py")),
     }
-    ref_code, _ = run_command("git", "rev-parse", "--verify", "origin/feature/cp2-research-progress-backend")
-    checks["research_reference_available"] = ref_code == 0
+    baseline = load_json(BASELINE_PATH)
+    frozen_ref = str(
+        baseline.get("implementation", {}).get("research_reference", {}).get("git_ref", "")
+    )
+    ref_code, resolved_ref = run_command("git", "rev-parse", "--verify", frozen_ref)
+    checks["research_reference_available"] = (
+        ref_code == 0
+        and resolved_ref
+        == baseline.get("implementation", {}).get("research_reference", {}).get("commit")
+    )
     print(json.dumps(checks, ensure_ascii=False, indent=2))
     required_ok = checks["assets_valid"] and checks["docker"]["ready"] and checks["milvus"]["ready"]
     if require_all_groups:
@@ -514,7 +540,8 @@ def score_run(record: dict[str, Any]) -> dict[str, Any]:
     supported_citations = sum(bool(item.get("supports_claim")) for item in citations)
     required_links = [item for item in citations if item.get("source_url")]
     open_links = sum(item.get("link_status") == "open" for item in required_links)
-    broken_links = sum(item.get("link_status") in {"broken", "unchecked"} for item in required_links)
+    broken_links = sum(item.get("link_status") == "broken" for item in required_links)
+    unchecked_links = sum(item.get("link_status") in {None, "unchecked"} for item in required_links)
     locator_matches = 0
     permission_citation_count = 0
     for item in citations:
@@ -532,6 +559,7 @@ def score_run(record: dict[str, Any]) -> dict[str, Any]:
         "missing_citation_count": missing_citation_count,
         "broken_citation_count": sum(not item.get("supports_claim") for item in citations),
         "unopenable_source_link_count": broken_links,
+        "unchecked_source_link_count": unchecked_links,
         "permission_leak_count": permission_citation_count,
         "unsupported_factual_claim_count": len(unsupported_claim_ids),
     }
@@ -560,7 +588,10 @@ def score_run(record: dict[str, Any]) -> dict[str, Any]:
         "permission_leak_count": permission_leaks,
         "broken_citation_count": citation_layer["broken_citation_count"],
         "unsupported_factual_claim_count": citation_layer["unsupported_factual_claim_count"],
-        "unopenable_source_link_count": citation_layer["unopenable_source_link_count"],
+        "unopenable_source_link_count": (
+            None if citation_layer["unchecked_source_link_count"] else
+            citation_layer["unopenable_source_link_count"]
+        ),
         "factual_claim_citation_coverage": citation_layer["factual_claim_citation_coverage"],
         "faithfulness": report_layer["faithfulness"],
         "answer_relevance": report_layer["answer_relevance"],
@@ -694,7 +725,12 @@ def _csv_row(record: dict[str, Any], score: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: bool) -> int:
+def command_batch_score(
+    records_dir: Path,
+    output_dir: Path,
+    allow_incomplete: bool,
+    groups: list[str] | None = None,
+) -> int:
     records: list[dict[str, Any]] = []
     for path in sorted(records_dir.rglob("*.json")):
         try:
@@ -710,10 +746,12 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
     dataset = load_json(DATASET_PATH)
     baseline = load_json(BASELINE_PATH)
     repeats = int(baseline["experiment"]["repeats_per_case"])
+    selected_groups = groups or [group["id"] for group in baseline["experiment"]["groups"]]
     expected = {
         (case["case_id"], group["id"], repeat)
         for case in dataset["cases"]
         for group in baseline["experiment"]["groups"]
+        if group["id"] in selected_groups
         for repeat in range(1, repeats + 1)
     }
     seen: dict[tuple[str, str, int], dict[str, Any]] = {}
@@ -724,7 +762,7 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
             batch_errors.append(f"duplicate run coordinate: {key}")
         seen[key] = record
     missing = sorted(expected - set(seen))
-    unexpected = sorted(set(seen) - expected)
+    unexpected = sorted(key for key in set(seen) - expected if key[1] in selected_groups)
     if missing and not allow_incomplete:
         batch_errors.append(f"missing {len(missing)} required run coordinates")
     if unexpected:
@@ -779,8 +817,20 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
         "total_latency_ms": ("runtime", "total_latency_ms"),
         "tool_calls": ("runtime", "tool_calls"),
     }
-    for group in ("G1", "G2", "G3"):
+    for group in selected_groups:
         selected = [result for result in scored if result.get("group") == group]
+        pending = [
+            result for result in selected
+            if any(
+                gate.get("passed") is None
+                for gate in result.get("hard_gates", {}).values()
+            )
+        ]
+        passed = [result for result in selected if result.get("hard_gate_pass")]
+        failed = [
+            result for result in selected
+            if not result.get("hard_gate_pass") and result not in pending
+        ]
         averages: dict[str, float | None] = {}
         for name, path in metric_paths.items():
             values = [_nested(item["layers"], *path) for item in selected]
@@ -788,13 +838,26 @@ def command_batch_score(records_dir: Path, output_dir: Path, allow_incomplete: b
             averages[name] = round(sum(numeric) / len(numeric), 6) if numeric else None
         group_summary[group] = {
             "run_count": len(selected),
-            "hard_gate_pass_count": sum(item["hard_gate_pass"] for item in selected),
+            "hard_gate_pass_count": len(passed),
+            "hard_gate_pending_count": len(pending),
+            "hard_gate_fail_count": len(failed),
             "averages": averages,
         }
+    all_pending = [
+        result for result in scored
+        if any(
+            gate.get("passed") is None
+            for gate in result.get("hard_gates", {}).values()
+        )
+    ]
+    all_passed = [result for result in scored if result.get("hard_gate_pass")]
     summary = {
         "schema_version": "1.0", "record_count": len(records),
         "expected_record_count": len(expected), "missing_coordinates": missing,
         "batch_errors": batch_errors, "groups": group_summary,
+        "hard_gate_pass_count": len(all_passed),
+        "hard_gate_pending_count": len(all_pending),
+        "hard_gate_fail_count": len(scored) - len(all_passed) - len(all_pending),
         "all_hard_gates_pass": all(item["hard_gate_pass"] for item in scored),
     }
     write_json(output_dir / "summary.json", summary)
@@ -807,6 +870,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     freeze_parser = subparsers.add_parser("freeze", help="check or refresh frozen manifests")
     freeze_parser.add_argument("--write", action="store_true", help="write the intentional new snapshot")
+    freeze_parser.add_argument(
+        "--manifests-only", action="store_true",
+        help="refresh SourceManifests without changing the frozen repository baseline",
+    )
     subparsers.add_parser("validate", help="validate all A-side assets and local source hashes")
     preflight_parser = subparsers.add_parser("preflight", help="check runtime prerequisites")
     preflight_parser.add_argument("--require-all-groups", action="store_true")
@@ -817,13 +884,14 @@ def build_parser() -> argparse.ArgumentParser:
     batch_parser.add_argument("records_dir", type=Path)
     batch_parser.add_argument("--output-dir", type=Path, required=True)
     batch_parser.add_argument("--allow-incomplete", action="store_true")
+    batch_parser.add_argument("--groups", nargs="+", choices=("G1", "G2", "G3"))
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
     if args.command == "freeze":
-        return command_freeze(args.write)
+        return command_freeze(args.write, args.manifests_only)
     if args.command == "validate":
         return command_validate()
     if args.command == "preflight":
@@ -831,7 +899,9 @@ def main() -> int:
     if args.command == "score":
         return command_score(args.record, args.output)
     if args.command == "batch-score":
-        return command_batch_score(args.records_dir, args.output_dir, args.allow_incomplete)
+        return command_batch_score(
+            args.records_dir, args.output_dir, args.allow_incomplete, args.groups
+        )
     raise AssertionError(args.command)
 
 

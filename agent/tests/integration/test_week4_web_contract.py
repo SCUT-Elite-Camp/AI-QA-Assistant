@@ -20,7 +20,8 @@ def test_readiness_reports_retrieval_preload() -> None:
         response = client.get("/ready")
 
     assert response.status_code == 200
-    assert response.json() == {
+    body = response.json()
+    assert {key: body[key] for key in ("status", "retrieval_ready", "intent_ready", "detail")} == {
         "status": "ready",
         "retrieval_ready": True,
         "intent_ready": True,
@@ -43,7 +44,7 @@ def test_chat_response_has_web_required_fields() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert set(body.keys()) == {
+    assert set(body.keys()) >= {
         "trace_id",
         "status",
         "answer",
@@ -66,7 +67,7 @@ def test_chat_error_response_keeps_web_contract() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert body == {
+    assert {key: body[key] for key in ("trace_id", "status", "answer", "message", "citations", "chat_title")} == {
         "trace_id": body["trace_id"],
         "status": "invalid_query",
         "answer": "",

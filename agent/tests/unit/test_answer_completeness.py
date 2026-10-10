@@ -30,6 +30,13 @@ class ScriptedLLM:
         return self.responses.pop(0)
 
 
+def test_repair_rejects_internal_review_prompt_echo():
+    llm = ScriptedLLM([{'content': 'Answer.\nMissing aspects: [UI]\nMissing critical facts: []\nEvidence: raw source dump'}])
+    checker = AnswerCompletenessChecker(llm)
+    result = AnswerCompletenessResult(complete=False, missing_aspects=['UI'])
+    assert checker.repair(_plan(), 'Original answer.', _evidence(), result) == ''
+
+
 def _plan() -> QueryPlan:
     return QueryPlan(
         original_query="Who were Boeing's customers and what was the government share?",
@@ -286,3 +293,13 @@ def test_runner_skips_completeness_when_no_accepted_evidence() -> None:
     assert checker.check_calls == 0
     assert checker.repair_calls == 0
     assert state.answer_completeness_checked is False
+
+
+def test_joined_prose_article_is_not_a_required_module_identifier():
+    from types import SimpleNamespace
+    from agent.answer.target_extractor import TargetExtractor
+    plan=SimpleNamespace(original_query='Compare Agent deliveries in 2032-W01 and 2032-W02.', standalone_query='Compare Agent deliveries.', sub_queries=[])
+    evidence=[SimpleNamespace(title='Agent report',content='The work delivered for theAgent module.')]
+    assert 'theAgent' not in TargetExtractor().lexical_targets(plan,evidence)
+    plan.original_query='Explain theAgent identifier.'
+    assert 'theAgent' in TargetExtractor().lexical_targets(plan,evidence)

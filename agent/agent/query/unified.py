@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any
 
 from pydantic import ValidationError
@@ -44,6 +45,9 @@ class UnifiedQueryAnalyzer:
         ]
         response = self.llm.chat(messages)
         result = self._parse_response(response)
+        if not re.search(r'[\u4e00-\u9fff]', query) and re.search(r'[\u4e00-\u9fff]', result.standalone_query):
+            raise ValueError('unified_query_language_changed')
+        result = IntentClassifier._enforce_explicit_intent(query, history, result)
         result.filters = {
             key: value
             for key, value in result.filters.items()
@@ -84,6 +88,7 @@ class UnifiedQueryAnalyzer:
     def _system_prompt() -> str:
         return (
             "Analyze one request for an enterprise knowledge Agent in a single pass. "
+            "Preserve the original language in standalone_query and sub_queries; English queries must stay English. "
             "Return JSON only with exactly these keys: intent, confidence, is_follow_up, "
             "is_clarification_reply, needs_clarification, clarification_question, "
             "ambiguity_reason, standalone_query, sub_queries, filters. "
@@ -97,7 +102,7 @@ class UnifiedQueryAnalyzer:
             "compares two or more objects. casual_chat needs no retrieval. "
             "system_help is only for current runtime usage or capability "
             "instructions, not questions about documented project components. "
-            "unsupported requests an unavailable action. Clarify only when information that "
+            "unsupported requests an unavailable action. Missing evidence or a restricted source scope never makes a factual question unsupported: retrieve and explain the evidence boundary. Clarify only when information that "
             "is required to execute the request is genuinely missing. Resolve "
             "references with history and make standalone_query self-contained. "
             "Create at most four sub_queries only when decomposition improves "

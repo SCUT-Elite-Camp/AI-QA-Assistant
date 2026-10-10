@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ── 解析项目根目录并将所有子项目目录加入 sys.path ──
@@ -227,6 +228,7 @@ def auto_process_raws(
         print(f" [Warning] 无法连接到 Milvus 服务（{e}）。将跳过向量库写入，仅生成 JSON 元数据和 BM25 索引。")
         
     processed_count = 0
+    processed_ids: list[str] = []
     for retraction in retractions:
         mark_retraction_pending(retraction)
     retracted = []
@@ -257,6 +259,7 @@ def auto_process_raws(
                     has_milvus=has_milvus,
                 ):
                     processed_count += 1
+                    processed_ids.append(doc.doc_id)
             
         except Exception as e:
             print(f"  [Error] 处理文件时发生错误: {file_path}，错误详情: {e}")
@@ -268,6 +271,14 @@ def auto_process_raws(
         bm25.build_from_documents()
         bm25_index_path = BM25Index.default_index_path()
         bm25.save(bm25_index_path)
+        indexed_at = datetime.now(timezone.utc).isoformat()
+        for doc_id in processed_ids:
+            projection = json.loads((DOCS_DIR / f"{doc_id}.json").read_text(encoding="utf-8"))
+            projection.setdefault("metadata", {}).update({"indexed_at": indexed_at,
+                "sync_status": "ready" if has_milvus else "partial",
+                "index_backends": ["bm25", "vector"] if has_milvus else ["bm25"],
+                "index_generation": indexed_at})
+            save_document(doc_id, projection)
         print(f"  → BM25 索引已更新并保存至: {bm25_index_path}")
         if has_milvus:
             for retraction in retracted:

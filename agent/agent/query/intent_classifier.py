@@ -105,7 +105,8 @@ class IntentClassifier:
             payload = json.loads(content.strip())
             if not isinstance(payload, list) or len(payload) != len(normalized):
                 raise ValueError("batch intent response size mismatch")
-            return [IntentResult.model_validate(item) for item in payload]
+            return [self._enforce_explicit_intent(query, [], IntentResult.model_validate(item))
+                    for query, item in zip(normalized, payload)]
         except Exception as exc:
             self.logger.warning(
                 "[SUBQUERY_INTENT_BATCH] action=fallback error=%s count=%d",
@@ -131,6 +132,9 @@ class IntentClassifier:
             "casual_chat is ordinary conversation that does not need retrieval. "
             "system_help asks about this system's real capabilities or usage. "
             "unsupported requests an action outside current system capabilities. "
+            "A factual knowledge question remains knowledge_qa even if the user "
+            "mentions limited permissions or the answer may be unavailable. "
+            "Missing evidence is decided after scoped retrieval, not by intent classification. "
             "Use conversation history to decide whether this is a follow-up. "
             "Set is_clarification_reply only when the user is clearly answering "
             "a clarification question in history; runtime state will verify it. "
@@ -148,6 +152,11 @@ class IntentClassifier:
         result: IntentResult,
     ) -> IntentResult:
         """Correct narrow, explicit intent cues when the model under-classifies."""
+        if result.intent == QueryIntent.UNSUPPORTED and re.search(
+            r"\b(?:give|what|which|compare|locate|find|state|report)\b.*\b(?:counts?|commits?|evidence|documents?|reports?|sources?|citations?)\b",
+            query, re.I | re.S,
+        ) and not re.search(r"\b(?:delete|modify|upload|deploy|send|purchase|execute|run code)\b", query, re.I):
+            return result.model_copy(update={"intent": QueryIntent.KNOWLEDGE_QA, "reason": "evidence_question_is_supported"})
         if (
             cls._SUMMARY_REQUEST.search(query)
             and result.intent
@@ -161,6 +170,27 @@ class IntentClassifier:
                     "reason": "explicit_summary_request",
                 }
             )
+        if result.intent == QueryIntent.DOCUMENT_SEARCH:
+            # Asking what changed or implements a feature requires contents;
+            # locating documents about those changes remains document search.
+            locates_documents = re.search(
+                r"\b(?:find|locate|list|show|which)\b.{0,40}\b(?:documents?|docs|pages?|reports?)\b",
+                query, re.IGNORECASE,
+            )
+            asks_change_facts = re.search(
+                r"\b(?:commits?|files?)\b.*\b(?:implement\w*|add(?:ed)?|chang(?:e|ed)|modif(?:y|ied)|remov(?:e|ed)|fix(?:ed)?)\b",
+                query, re.IGNORECASE | re.DOTALL,
+            )
+            asks_identity_facts = re.search(r'\bgive\b.*\b(?:commit|author|date|chunk locator)\b', query, re.I | re.S)
+            asks_status_facts = re.search(
+                r'\b(?:report|state|give|find|what|which)\b.*\bstatus(?:es)?\b',
+                query, re.I | re.S,
+            )
+            if (asks_change_facts or asks_identity_facts or asks_status_facts) and not locates_documents:
+                return result.model_copy(update={
+                    "intent": QueryIntent.KNOWLEDGE_QA,
+                    "reason": "explicit_change_fact_request",
+                })
         return result
 
     @staticmethod

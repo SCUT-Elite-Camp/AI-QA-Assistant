@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   agentFetch: vi.fn(),
+  assertSourceDependencies: vi.fn(),
   appendMessage: vi.fn(),
   buildPersistentMemoryContext: vi.fn(),
   callChatWithPersistentFallback: vi.fn(),
@@ -91,6 +92,11 @@ vi.mock('../../server/utils/sensitiveMemoryValue', () => ({
 vi.mock('../../server/utils/sessionFactGate', () => ({
   isSessionFactEnabled: mocks.isSessionFactEnabled
 }))
+vi.mock('../../server/utils/attachmentAuth', () => ({ requireCsrf: vi.fn() }))
+vi.mock('../../server/utils/sourceAccess', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../server/utils/sourceAccess')>(),
+  assertSourceDependencies: mocks.assertSourceDependencies,
+}))
 vi.mock('../../server/utils/messageLifecycle', () => ({
   appendMessage: mocks.appendMessage,
   createAssistantMessageId: mocks.createAssistantMessageId,
@@ -162,9 +168,10 @@ beforeEach(() => {
   mocks.readValidatedBody.mockResolvedValue({
     messages: [{ id: 'message-1', parts: [{ text: 'Remember this.', type: 'text' }], role: 'user' }]
   })
-  mocks.requireOwnedChat.mockResolvedValue({ actor: { isAuthenticated: true, userId: 'user-1' } })
+  mocks.requireOwnedChat.mockResolvedValue({ actor: { isAuthenticated: true, userId: 'user-1' }, chat: { id: 'chat-1', topicId: null, historyRevision: 3 } })
   mocks.useDrizzle.mockReturnValue({
     query: {
+      messages: { findFirst: vi.fn().mockResolvedValue(undefined) },
       chats: {
         findFirst: vi.fn().mockResolvedValue({
           id: 'chat-1',
@@ -203,6 +210,7 @@ beforeEach(() => {
       event: 'done',
       data: {
         status: 'success',
+        evidence_provenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] },
         memory_decision: {
           fact_proposals: [{
             category: 'PREFERENCE',
@@ -217,6 +225,23 @@ beforeEach(() => {
 })
 
 describe('chat to Fact proposal lifecycle', () => {
+  it.each([true, false])('persists after normal response closure only (writableEnded=%s)', async (writableEnded) => {
+    let responseClose!: () => void
+    const requestOn = vi.fn()
+    const handler = await loadChatHandler()
+    const stream = await handler({ runtime: { node: {
+      req: { on: requestOn },
+      res: { writableEnded, on: (_name: string, callback: () => void) => { responseClose = callback } }
+    } } })
+    expect(requestOn).not.toHaveBeenCalled()
+    await stream.execute({ writer: { write: vi.fn() } })
+    responseClose()
+    await stream.onFinish({ isAborted: false })
+    // The answer is durable before release; abort suppresses post-turn effects.
+    expect(mocks.appendMessage).toHaveBeenCalledTimes(1)
+    expect(mocks.createFactProposal).toHaveBeenCalledTimes(writableEnded ? 1 : 0)
+  })
+
   it('uses the persisted Chat mode for Agent requests instead of a client-supplied override', async () => {
     mocks.requireOwnedChat.mockResolvedValueOnce({
       actor: { isAuthenticated: true, userId: 'user-1' },
@@ -233,7 +258,6 @@ describe('chat to Fact proposal lifecycle', () => {
     expect(requestBody.weight_mode).toBe('thinking')
     expect(mocks.useDrizzle.mock.results[0]?.value.update).toBeUndefined()
   })
-
   it('creates an Agent Fact only after assistant persistence and ignores Agent expires_at', async () => {
     await executeChatTurn(false)
 
@@ -244,6 +268,7 @@ describe('chat to Fact proposal lifecycle', () => {
       chatId: 'chat-1',
       historyRevision: 3,
       sourceMessageId: 'message-1',
+      evidenceProvenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] },
       value: 'Use concise Chinese responses.'
     })
     expect(mocks.createFactProposal.mock.invocationCallOrder[0]).toBeGreaterThan(
@@ -253,15 +278,15 @@ describe('chat to Fact proposal lifecycle', () => {
     expect(mocks.createFactProposal.mock.calls[0]![1]).not.toHaveProperty('expires_at')
   })
 
-  it('does not persist an assistant row or a Fact after an aborted SSE stream', async () => {
+  it('keeps the already durable answer but suppresses post-turn writes after client abort', async () => {
     await executeChatTurn(true)
 
-    expect(mocks.appendMessage).not.toHaveBeenCalled()
+    expect(mocks.appendMessage).toHaveBeenCalledOnce()
     expect(mocks.createFactProposal).not.toHaveBeenCalled()
     expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
   })
 
-  it('keeps a public-Agent fallback free of Fact writes even when its body imitates the internal envelope', async () => {
+  it('rejects an unprovenanced stream rather than trusting a public fallback', async () => {
     mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
       { event: 'token', data: { content: 'public fallback answer' } },
       { event: 'done', data: { status: 'success' } }
@@ -269,7 +294,7 @@ describe('chat to Fact proposal lifecycle', () => {
 
     await executeChatTurn(false)
 
-    expect(mocks.appendMessage).toHaveBeenCalledOnce()
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
     expect(mocks.createFactProposal).not.toHaveBeenCalled()
     expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
   })
@@ -281,6 +306,7 @@ describe('chat to Fact proposal lifecycle', () => {
         event: 'done',
         data: {
           status: 'success',
+          evidence_provenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] },
           memory_decision: {
             fact_proposals: [],
             recall: { answer: 'Confirmed memory.', handled: true }
@@ -302,27 +328,37 @@ describe('chat to Fact proposal lifecycle', () => {
     mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
       {
         event: 'citations',
-        data: [{ doc_id: 'doc-1', chunk_id: 'chunk-1', title: 'Source', source_url: 'https://example.test', snippet: 'Evidence.' }]
+        data: [{ doc_id: 'doc-1', chunk_id: 'chunk-1', title: 'Source', source_url: 'https://example.test', snippet: 'Evidence.', evidence_ref: 'ev:doc-1:chunk-1:v1', content_hash: 'source-hash' }]
       },
       { event: 'token', data: { content: 'Answer with a source.' } },
-      { event: 'done', data: { status: 'success' } }
+      { event: 'done', data: { status: 'success', evidence_provenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [{ source_type: 'knowledge', doc_id: 'doc-1', content_hash: 'source-hash' }] } } }
     ]))
 
     const write = vi.fn()
     await executeChatTurn(false, write)
 
+    expect(write).toHaveBeenCalledWith({ type: 'start', messageId: 'assistant-1' })
+    expect(mocks.appendMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ id: 'message-1:assistant' }))
+
     expect(write).toHaveBeenCalledWith(expect.objectContaining({
       type: 'tool-output-available'
+    }))
+    const emitted = write.mock.calls.map(([value]) => value).find(value => value.type === 'tool-output-available')
+    expect(mocks.appendMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      parts: expect.arrayContaining([expect.objectContaining({
+        type: 'tool-rag_search', state: 'output-available', output: emitted.output,
+      })]),
     }))
   })
 
   it('streams a private no_relevant_context message without Memory or RAG side effects', async () => {
     mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
-      { event: 'token', data: { content: '当前知识库没有足够信息回答该问题。' } },
+      { event: 'token', data: { content: 'An unverified model assertion must not be released.' } },
       {
         event: 'done',
         data: {
-          status: 'no_relevant_context'
+          status: 'no_relevant_context',
+          evidence_provenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] }
         }
       }
     ]))
@@ -330,11 +366,14 @@ describe('chat to Fact proposal lifecycle', () => {
     const write = vi.fn()
     await executeChatTurn(false, write)
 
-    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'assistant-1', delta: '当前知识库没有足够信息回答该问题。' })
+    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'no-context:message-1:assistant', delta: '当前可访问的知识库没有足够证据回答该问题。请补充资料或调整问题。' })
+    expect(write).toHaveBeenCalledWith({ type: 'data-answer-status', data: { status: 'no_relevant_context', persisted: false } })
+    expect(JSON.stringify(write.mock.calls)).not.toContain('An unverified model assertion')
     expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
     expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'data-memory-recall' }))
     expect(mocks.createFactProposal).not.toHaveBeenCalled()
     expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
   })
 
   it('handles agent errors gracefully without throwing', async () => {
@@ -350,7 +389,7 @@ describe('chat to Fact proposal lifecycle', () => {
 
     expect(write).toHaveBeenCalledWith(expect.objectContaining({
       type: 'text-delta',
-      delta: expect.stringContaining('响应生成受阻')
+      delta: expect.stringContaining('No answer is being released')
     }))
     expect(mocks.appendMessage).not.toHaveBeenCalled()
   })

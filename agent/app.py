@@ -1,26 +1,33 @@
 # app.py
 import sys
+import asyncio
 from pathlib import Path
 
 agent_dir = Path(__file__).resolve().parent
 project_root = agent_dir.parent
-for folder in [agent_dir, project_root, project_root / "data-pipeline", project_root / "data-persistence", project_root / "toolset", project_root / "shared_runtime"]:
+for folder in [project_root, project_root / "data-pipeline", project_root / "data-persistence", project_root / "toolset"]:
     if str(folder) not in sys.path:
         sys.path.insert(0, str(folder))
 
-import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.api.chat_routes import router as chat_router
 from agent.api.config_routes import router as config_router
 from agent.api.internal_memory_routes import router as internal_memory_router
+from agent.api.research_routes import router as research_router
+from agent.api.access_routes import router as access_router
+from agent.service.permission_service import PermissionResolutionError
 from agent.config.settings import settings
 from agent.logger.logger import get_logger, setup_logger
-from agent.query import HybridIntentRouter
-from toolset.tool_layer.registry import ToolRegistry
+from agent.runtime.lifecycle import get_application_container
+from deep_research.execution import ResearchRuntimeService
+from deep_research.access import ResearchAccessPolicy
 
 
 # 初始化日志
@@ -28,54 +35,65 @@ setup_logger(level=settings.LOG_LEVEL, log_file=settings.LOG_FILE)
 logger = get_logger(__name__)
 
 
+async def _run_research_dispatcher(
+    runtime: ResearchRuntimeService,
+    stop_event: asyncio.Event,
+) -> None:
+    """Run bounded durable scans away from the latency-sensitive Chat path."""
+
+    while not stop_event.is_set():
+        try:
+            await asyncio.to_thread(runtime.scan_once)
+        except Exception:
+            logger.exception("Deep Research dispatcher scan failed")
+        try:
+            await asyncio.wait_for(
+                stop_event.wait(),
+                timeout=settings.RESEARCH_DISPATCH_INTERVAL_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            continue
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     logger.info(f"Starting {settings.APP_NAME}")
 
-    app.state.retrieval_ready = False
-    app.state.retrieval_preload_error = ""
-    app.state.intent_ready = not settings.HYBRID_INTENT_ROUTER_ENABLED
-    app.state.intent_preload_error = ""
-    logger.info("Preloading retrieval model weights and dictionary (cold-start prevention)...")
-    try:
-        registry = ToolRegistry()
-        search_tool = registry.get_tool("search_documents")
-        if search_tool is None:
-            raise RuntimeError("search_documents is not registered")
+    container = get_application_container()
+    app.state.application_container = container
+    app.state.agent = container.startup()
+    logger.info("Application-scoped Agent, LLM client, registry and tools initialized")
+    warmup_task = asyncio.create_task(asyncio.to_thread(container.warmup_retrieval))
+    app.state.retrieval_warmup_task = warmup_task
 
-        # Warm retrieval through the Tool Layer directly. A startup task is not
-        # a user query and must not pass through intent classification,
-        # clarification, query planning, or answer generation.
-        await asyncio.to_thread(
-            search_tool.search,
-            query="企业智能问答助手",
-            top_k=1,
-            mode="hybrid",
-            filters=None,
-            min_score=0.0,
-            trace_id="startup-preload",
-        )
-        app.state.retrieval_ready = True
-        logger.info("Retrieval model preloaded successfully!")
-    except Exception as e:
-        app.state.retrieval_preload_error = str(e) or e.__class__.__name__
-        logger.exception("Failed to preload retrieval model")
+    app.state.research_access_policy = ResearchAccessPolicy(app.state.agent.permission_service)
+    research_runtime = ResearchRuntimeService.from_enterprise_catalog(
+        database_path=settings.RESEARCH_DATABASE_PATH,
+        checkpoint_path=settings.RESEARCH_CHECKPOINT_PATH,
+        search_tool=app.state.agent.registry.get_tool("search_documents"),
+        read_tool=app.state.agent.registry.get_tool("get_document"),
+        access_policy=app.state.research_access_policy,
+        report_api_base=settings.LLM_API_BASE,
+        report_api_key=settings.LLM_API_KEY,
+        report_model=settings.LLM_MODEL,
+    )
+    app.state.research_runtime_service = research_runtime
+    research_stop_event = asyncio.Event()
+    research_dispatcher_task = asyncio.create_task(
+        _run_research_dispatcher(research_runtime, research_stop_event)
+    )
+    app.state.research_dispatcher_task = research_dispatcher_task
+    logger.info("Durable Deep Research dispatcher initialized")
 
-    if settings.HYBRID_INTENT_ROUTER_ENABLED:
-        logger.info("Preloading local intent embedding model (cold-start prevention)...")
-        try:
-            intent_router = HybridIntentRouter(enabled=True)
-            await asyncio.to_thread(intent_router.warmup)
-            app.state.intent_ready = True
-            logger.info("Intent embedding model preloaded successfully!")
-        except Exception as e:
-            app.state.intent_preload_error = str(e) or e.__class__.__name__
-            logger.exception(
-                "Failed to preload intent embedding model; LLM fallback remains available"
-            )
     yield
 
+    research_stop_event.set()
+    await research_dispatcher_task
+    research_runtime.close()
+    if not warmup_task.done():
+        warmup_task.cancel()
+    container.shutdown()
     logger.info("Shutting down")
 
 
@@ -84,6 +102,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def private_validation_error(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/internal/"):
+        return JSONResponse(status_code=422, content={"detail": "invalid_memory_context"})
+    return await request_validation_exception_handler(request, exc)
 
 app.add_middleware(
     CORSMiddleware,
@@ -100,30 +125,29 @@ def health() -> dict[str, str]:
 
 
 @app.get("/ready")
-def readiness() -> dict[str, str | bool]:
-    """Report whether local retrieval resources completed cold-start loading."""
-    retrieval_ready = bool(getattr(app.state, "retrieval_ready", False))
-    intent_ready = bool(getattr(app.state, "intent_ready", False))
-    ready = retrieval_ready and intent_ready
-    details = [
-        value
-        for value in (
-            getattr(app.state, "retrieval_preload_error", ""),
-            getattr(app.state, "intent_preload_error", ""),
-        )
-        if value
-    ]
+def readiness() -> dict[str, str | bool | int]:
+    snapshot = get_application_container().snapshot()
     return {
-        "status": "ready" if ready else "degraded",
-        "retrieval_ready": retrieval_ready,
-        "intent_ready": intent_ready,
-        "detail": "; ".join(details),
+        "status": "ready" if snapshot.retrieval_ready and snapshot.intent_ready else "degraded",
+        "initialized": snapshot.initialized,
+        "initialization_count": snapshot.initialization_count,
+        "initialization_ms": snapshot.initialization_ms,
+        "retrieval_ready": snapshot.retrieval_ready,
+        "intent_ready": snapshot.intent_ready,
+        "detail": "; ".join(value for value in (snapshot.retrieval_error, snapshot.intent_error) if value),
     }
 
 
 app.include_router(chat_router, prefix="/api")
 app.include_router(config_router)
 app.include_router(internal_memory_router, prefix="/api/internal")
+app.include_router(research_router, prefix="/api")
+app.include_router(access_router, prefix="/api")
+
+
+@app.exception_handler(PermissionResolutionError)
+async def access_error(request: Request, exc: PermissionResolutionError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.code}, headers={"Cache-Control": "no-store"})
 
 
 # 添加直接运行的入口

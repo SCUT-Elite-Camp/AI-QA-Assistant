@@ -6,7 +6,8 @@ import os
 from contextvars import ContextVar
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
+from .http_security import urlopen_no_redirect as urlopen
 
 from .base_tool import BaseTool
 

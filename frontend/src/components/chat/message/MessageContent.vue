@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide } from 'vue'
+import { computed, provide, ref, nextTick } from 'vue'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import type { UIMessage } from 'ai'
 import { isPartStreaming } from '@nuxt/ui/utils/ai'
@@ -7,7 +7,9 @@ import ChatComark from '../Comark'
 import ChatToolChart from '../tool/Chart.vue'
 import ChatToolWeather from '../tool/Weather.vue'
 import ChatMessageEdit from './MessageEdit.vue'
+import ChatModalDocumentViewer from '../ModalDocumentViewer.vue'
 import { getMergedParts } from '../../../utils/ai'
+import { formatResearchCitations } from '../../../utils/researchMarkdown'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
 import type { ChunkCitation } from '../tool/Sources.vue'
@@ -74,6 +76,22 @@ function formatMarkdownWithCitations(markdown: string): string {
 
 // Make citations available to all CiteMark children via inject
 provide('ragCitationMap', citationMap)
+const selectedCitation = ref<ChunkCitation | null>(null)
+const citationOpen = ref(false)
+let citationTrigger: HTMLElement | null = null
+provide('openCitation', (index: number) => {
+  selectedCitation.value = citationMap.value.get(index) ?? null
+  if (!selectedCitation.value) return
+  citationTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  citationOpen.value = true
+})
+async function setCitationOpen(open: boolean) {
+  citationOpen.value = open
+  if (!open) {
+    await nextTick()
+    citationTrigger?.focus()
+  }
+}
 </script>
 
 <template>
@@ -130,9 +148,10 @@ provide('ragCitationMap', citationMap)
       />
       <ChatComark
         v-else-if="isTextUIPart(part)"
-        :markdown="formatMarkdownWithCitations(part.text)"
+        :markdown="citationMap.size ? formatResearchCitations(part.text) : formatMarkdownWithCitations(part.text)"
         :streaming="isPartStreaming(part)"
       />
     </template>
   </template>
+  <ChatModalDocumentViewer :open="citationOpen" :doc="selectedCitation" :message-id="message.id" @update:open="setCitationOpen" />
 </template>

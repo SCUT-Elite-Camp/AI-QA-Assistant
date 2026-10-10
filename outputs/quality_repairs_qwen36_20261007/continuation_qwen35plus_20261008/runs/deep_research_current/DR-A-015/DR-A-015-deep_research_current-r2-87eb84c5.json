@@ -1,0 +1,1246 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-015-deep_research_current-r2-87eb84c5",
+  "case_id": "DR-A-015",
+  "group": "deep_research_current",
+  "repetition": 2,
+  "started_at": "2026-10-08T11:48:18.921647+00:00",
+  "completed_at": "2026-10-08T11:48:34.003785+00:00",
+  "elapsed_ms": 15082,
+  "config_hash": "cdb102ca9ddebf1947a56bf16f771ea6fc003b4bb589288b82709db43c1cf205",
+  "success": true,
+  "result": {
+    "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "You are authorized to access only the W33 Agent weekly report. Summarize the latest Agent delivery counts you can establish and explicitly state the access boundary.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "9d88faa9d3ccdde23ba29206a5487857"
+          ],
+          "topic": "permission_scope"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "b133fb588ddf9d9ec7360d40f1bfc54f882f07157d13f06e9d54154d73c947e8",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T11:48:18.924652Z",
+      "updated_at": "2026-10-08T11:48:32.965465Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+      "version": 1,
+      "objective": "You are authorized to access only the W33 Agent weekly report. Summarize the latest Agent delivery counts you can establish and explicitly state the access boundary.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "9d88faa9d3ccdde23ba29206a5487857"
+        ],
+        "topic": "permission_scope"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "b133fb588ddf9d9ec7360d40f1bfc54f882f07157d13f06e9d54154d73c947e8",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the exact document version date and title for 'Sprint+2026-W33+-+M1+Agent+Module+Deliverables' to establish the access boundary and snapshot time?",
+          "purpose": "Verify the specific source version available and explicitly define the temporal limit of the authorized data.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "9d88faa9d3ccdde23ba29206a5487857"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "What are the specific numerical totals for Agent features delivered and bug fixes delivered listed in the W33 report, and do these figures represent a combined minimum or separate counts?",
+          "purpose": "Extract the concrete delivery counts for features and bug fixes while preserving the arithmetic condition that they form a combined minimum.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "9d88faa9d3ccdde23ba29206a5487857"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "Does the W33 report text explicitly state any limitations on the completeness of the delivery counts or dependencies on external services not yet resolved?",
+          "purpose": "Identify explicit uncertainties or unresolved dependencies mentioned in the source text rather than assuming historical gaps are current facts.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "9d88faa9d3ccdde23ba29206a5487857"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "claim_count": 3,
+      "started_at": "2026-10-08T11:48:18.924652Z",
+      "updated_at": "2026-10-08T11:48:32.965465Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:18.926652Z",
+          "completed_at": "2026-10-08T11:48:19.473514Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:19.475515Z",
+          "completed_at": "2026-10-08T11:48:30.508139Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:30.509144Z",
+          "completed_at": "2026-10-08T11:48:30.885995Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:30.888334Z",
+          "completed_at": "2026-10-08T11:48:32.535864Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.535864Z",
+          "completed_at": "2026-10-08T11:48:32.910070Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.911069Z",
+          "completed_at": "2026-10-08T11:48:32.917580Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.918589Z",
+          "completed_at": "2026-10-08T11:48:32.924114Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.925114Z",
+          "completed_at": "2026-10-08T11:48:32.933251Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.934252Z",
+          "completed_at": "2026-10-08T11:48:32.950143Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.951143Z",
+          "completed_at": "2026-10-08T11:48:32.960955Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.961524Z",
+          "completed_at": "2026-10-08T11:48:32.966006Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T11:48:32.966468Z",
+          "completed_at": "2026-10-08T11:48:32.967495Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the exact document version date and title for 'Sprint+2026-W33+-+M1+Agent+Module+Deliverables' to establish the access boundary and snapshot time?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "What are the specific numerical totals for Agent features delivered and bug fixes delivered listed in the W33 report, and do these figures represent a combined minimum or separate counts?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "Does the W33 report text explicitly state any limitations on the completeness of the delivery counts or dependencies on external services not yet resolved?",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2077,
+        "actions_used": 12,
+        "tool_calls": 12,
+        "documents_read": 1,
+        "evidence_accepted": 9,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-852e7deed8efd93deec161f0",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "score": 0.1823731099714414,
+          "snippet": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1",
+          "query": "What is the exact document version date and title for 'Sprint+2026-W33+-+M1+Agent+Module+Deliverables' to establish the access boundary and snapshot time?",
+          "created_at": "2026-10-08T11:48:32.665887Z"
+        },
+        {
+          "observation_id": "observation-ebf2b463f21a91013e08ea61",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "score": 0.12661521348491586,
+          "snippet": "/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "query": "What is the exact document version date and title for 'Sprint+2026-W33+-+M1+Agent+Module+Deliverables' to establish the access boundary and snapshot time?",
+          "created_at": "2026-10-08T11:48:32.671406Z"
+        },
+        {
+          "observation_id": "observation-2eef68a5d070503ef5aec93f",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "score": 0.03906191773513391,
+          "snippet": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files",
+          "query": "What is the exact document version date and title for 'Sprint+2026-W33+-+M1+Agent+Module+Deliverables' to establish the access boundary and snapshot time?",
+          "created_at": "2026-10-08T11:48:32.675924Z"
+        },
+        {
+          "observation_id": "observation-d5dcee55e256f9cc14d7cd5d",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "score": 0.1382399308793803,
+          "snippet": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files",
+          "query": "What are the specific numerical totals for Agent features delivered and bug fixes delivered listed in the W33 report, and do these figures represent a combined minimum or separate counts?",
+          "created_at": "2026-10-08T11:48:32.775707Z"
+        },
+        {
+          "observation_id": "observation-bd8b15b4ab1d7badd0dbc558",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "score": 0.13424519369149643,
+          "snippet": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1",
+          "query": "What are the specific numerical totals for Agent features delivered and bug fixes delivered listed in the W33 report, and do these figures represent a combined minimum or separate counts?",
+          "created_at": "2026-10-08T11:48:32.782221Z"
+        },
+        {
+          "observation_id": "observation-5c266c8ed868df2cc58bba06",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "score": 0.04516319491045018,
+          "snippet": "/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "query": "What are the specific numerical totals for Agent features delivered and bug fixes delivered listed in the W33 report, and do these figures represent a combined minimum or separate counts?",
+          "created_at": "2026-10-08T11:48:32.787729Z"
+        },
+        {
+          "observation_id": "observation-1d398b8c7c26f5d3cd491607",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "score": 0.07689260131327973,
+          "snippet": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1",
+          "query": "Does the W33 report text explicitly state any limitations on the completeness of the delivery counts or dependencies on external services not yet resolved?",
+          "created_at": "2026-10-08T11:48:32.887424Z"
+        },
+        {
+          "observation_id": "observation-88c7bcd2d9bab8f721010cd6",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "score": 0.06485501877757527,
+          "snippet": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files",
+          "query": "Does the W33 report text explicitly state any limitations on the completeness of the delivery counts or dependencies on external services not yet resolved?",
+          "created_at": "2026-10-08T11:48:32.893945Z"
+        },
+        {
+          "observation_id": "observation-494392777ac1a8208649f1e6",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "locator_hint": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "score": 0.028239494342680166,
+          "snippet": "/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "query": "Does the W33 report text explicitly state any limitations on the completeness of the delivery counts or dependencies on external services not yet resolved?",
+          "created_at": "2026-10-08T11:48:32.899560Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-b8bf34c27b01ce47526a18f8",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.669406Z"
+        },
+        {
+          "evidence_id": "evidence-7d1ba7360689780a2b3f00bc",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "excerpt": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.673913Z"
+        },
+        {
+          "evidence_id": "evidence-25f86bc2c7f216197b2a0ead",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.679979Z"
+        },
+        {
+          "evidence_id": "evidence-57686c95c8335f44b4209a20",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.780221Z"
+        },
+        {
+          "evidence_id": "evidence-0c7480eaf8dceda126523f1f",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.785222Z"
+        },
+        {
+          "evidence_id": "evidence-ba8701858d5f0c11d8461b91",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "excerpt": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.791805Z"
+        },
+        {
+          "evidence_id": "evidence-733f32bf00c3c8218f700257",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.891945Z"
+        },
+        {
+          "evidence_id": "evidence-9836a849af9c17d5cde4ad56",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.897551Z"
+        },
+        {
+          "evidence_id": "evidence-8bbdbb8cfaf848252a9ebb85",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "excerpt": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe",
+          "created_at": "2026-10-08T11:48:32.902558Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-0170907a4514e1beeb2a6249",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-1",
+          "statement": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "evidence_ids": [
+            "evidence-b8bf34c27b01ce47526a18f8",
+            "evidence-7d1ba7360689780a2b3f00bc",
+            "evidence-25f86bc2c7f216197b2a0ead"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-7a89e54e0a30642fe15ee1fa",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-2",
+          "statement": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "evidence_ids": [
+            "evidence-57686c95c8335f44b4209a20",
+            "evidence-0c7480eaf8dceda126523f1f",
+            "evidence-ba8701858d5f0c11d8461b91"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-752ed266937b4a8db226f988",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "task_id": "task-3",
+          "statement": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "evidence_ids": [
+            "evidence-733f32bf00c3c8218f700257",
+            "evidence-9836a849af9c17d5cde4ad56",
+            "evidence-8bbdbb8cfaf848252a9ebb85"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-0170907a4514e1beeb2a6249",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "claim_text": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "evidence_ids": [
+            "evidence-b8bf34c27b01ce47526a18f8",
+            "evidence-7d1ba7360689780a2b3f00bc",
+            "evidence-25f86bc2c7f216197b2a0ead"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-7a89e54e0a30642fe15ee1fa",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "claim_text": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "evidence_ids": [
+            "evidence-57686c95c8335f44b4209a20",
+            "evidence-0c7480eaf8dceda126523f1f",
+            "evidence-ba8701858d5f0c11d8461b91"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-752ed266937b4a8db226f988",
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "claim_text": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "evidence_ids": [
+            "evidence-733f32bf00c3c8218f700257",
+            "evidence-9836a849af9c17d5cde4ad56",
+            "evidence-8bbdbb8cfaf848252a9ebb85"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-0170907a4514e1beeb2a6249",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-b8bf34c27b01ce47526a18f8",
+            "evidence-7d1ba7360689780a2b3f00bc",
+            "evidence-25f86bc2c7f216197b2a0ead"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-7a89e54e0a30642fe15ee1fa",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-57686c95c8335f44b4209a20",
+            "evidence-0c7480eaf8dceda126523f1f",
+            "evidence-ba8701858d5f0c11d8461b91"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-752ed266937b4a8db226f988",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-733f32bf00c3c8218f700257",
+            "evidence-9836a849af9c17d5cde4ad56",
+            "evidence-8bbdbb8cfaf848252a9ebb85"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-0170907a4514e1beeb2a6249",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-b8bf34c27b01ce47526a18f8",
+            "evidence-7d1ba7360689780a2b3f00bc",
+            "evidence-25f86bc2c7f216197b2a0ead"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-7a89e54e0a30642fe15ee1fa",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-57686c95c8335f44b4209a20",
+            "evidence-0c7480eaf8dceda126523f1f",
+            "evidence-ba8701858d5f0c11d8461b91"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-752ed266937b4a8db226f988",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-733f32bf00c3c8218f700257",
+            "evidence-9836a849af9c17d5cde4ad56",
+            "evidence-8bbdbb8cfaf848252a9ebb85"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+      "events": [
+        {
+          "event_id": 13973,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:18.925651Z"
+        },
+        {
+          "event_id": 13974,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:18.926652Z"
+        },
+        {
+          "event_id": 13975,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:19.473514Z"
+        },
+        {
+          "event_id": 13976,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:19.475515Z"
+        },
+        {
+          "event_id": 13977,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:30.508139Z"
+        },
+        {
+          "event_id": 13978,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:30.509144Z"
+        },
+        {
+          "event_id": 13979,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T11:48:30.885995Z"
+        },
+        {
+          "event_id": 13980,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:30.885995Z"
+        },
+        {
+          "event_id": 13981,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:30.888334Z"
+        },
+        {
+          "event_id": 13982,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.535864Z"
+        },
+        {
+          "event_id": 13983,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.535864Z"
+        },
+        {
+          "event_id": 13985,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.547383Z"
+        },
+        {
+          "event_id": 13986,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:48:32.683814Z"
+        },
+        {
+          "event_id": 13987,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.684811Z"
+        },
+        {
+          "event_id": 13988,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:48:32.794736Z"
+        },
+        {
+          "event_id": 13989,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.796736Z"
+        },
+        {
+          "event_id": 13990,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:48:32.906559Z"
+        },
+        {
+          "event_id": 13991,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.910070Z"
+        },
+        {
+          "event_id": 13992,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.911069Z"
+        },
+        {
+          "event_id": 13993,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.917580Z"
+        },
+        {
+          "event_id": 13994,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.918589Z"
+        },
+        {
+          "event_id": 13995,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.924114Z"
+        },
+        {
+          "event_id": 13996,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.925114Z"
+        },
+        {
+          "event_id": 13997,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.933251Z"
+        },
+        {
+          "event_id": 13998,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.934252Z"
+        },
+        {
+          "event_id": 13999,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.950143Z"
+        },
+        {
+          "event_id": 14000,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.951143Z"
+        },
+        {
+          "event_id": 14001,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:report:report-research-d34f9283facc422fa077d2bc882d385e:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-d34f9283facc422fa077d2bc882d385e"
+          },
+          "created_at": "2026-10-08T11:48:32.957659Z"
+        },
+        {
+          "event_id": 14002,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.960955Z"
+        },
+        {
+          "event_id": 14003,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.961524Z"
+        },
+        {
+          "event_id": 14004,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.966006Z"
+        },
+        {
+          "event_id": 14005,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.966468Z"
+        },
+        {
+          "event_id": 14006,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:48:32.967495Z"
+        },
+        {
+          "event_id": 14007,
+          "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+          "event_key": "research-d34f9283facc422fa077d2bc882d385e:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T11:48:32.968056Z"
+        }
+      ],
+      "next_after_event_id": 14007
+    },
+    "report": {
+      "report_id": "report-research-d34f9283facc422fa077d2bc882d385e",
+      "research_id": "research-d34f9283facc422fa077d2bc882d385e",
+      "markdown": "## Summary\n\nThe latest delivery counts established within the requested scope are those of the W33 Agent report.\n\n## Evidence and analysis\n\n- Total Commits: 1 [1]\n- New Features Delivered: 1 [1]\n- Bug Fixes Resolved: 0 [1]\n- Other Improvements: 0 [1]\n\n## Limitations and uncertainty\n\nThe request limits access to the W33 Agent weekly report. Later sprints cannot be confirmed from this scope; these counts do not establish the latest delivery across all sprints.\n\n## Sources\n\n1. [**Sprint+2026-W33+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:41:33.344Z · 9d88faa9d3ccdde23ba29206a5487857_chunk_1\n2. [**Sprint+2026-W33+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:41:33.344Z · 9d88faa9d3ccdde23ba29206a5487857_chunk_3\n3. [**Sprint+2026-W33+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:41:33.344Z · 9d88faa9d3ccdde23ba29206a5487857_chunk_0\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-0170907a4514e1beeb2a6249",
+        "claim-finding-752ed266937b4a8db226f988",
+        "claim-finding-7a89e54e0a30642fe15ee1fa"
+      ],
+      "evidence_ids": [
+        "evidence-25f86bc2c7f216197b2a0ead",
+        "evidence-7d1ba7360689780a2b3f00bc",
+        "evidence-b8bf34c27b01ce47526a18f8",
+        "evidence-733f32bf00c3c8218f700257",
+        "evidence-8bbdbb8cfaf848252a9ebb85",
+        "evidence-9836a849af9c17d5cde4ad56",
+        "evidence-0c7480eaf8dceda126523f1f",
+        "evidence-57686c95c8335f44b4209a20",
+        "evidence-ba8701858d5f0c11d8461b91"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-25f86bc2c7f216197b2a0ead",
+          "evidence_ids": [
+            "evidence-25f86bc2c7f216197b2a0ead",
+            "evidence-9836a849af9c17d5cde4ad56",
+            "evidence-57686c95c8335f44b4209a20"
+          ],
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-7d1ba7360689780a2b3f00bc",
+          "evidence_ids": [
+            "evidence-7d1ba7360689780a2b3f00bc",
+            "evidence-8bbdbb8cfaf848252a9ebb85",
+            "evidence-ba8701858d5f0c11d8461b91"
+          ],
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+          "excerpt": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-b8bf34c27b01ce47526a18f8",
+          "evidence_ids": [
+            "evidence-b8bf34c27b01ce47526a18f8",
+            "evidence-733f32bf00c3c8218f700257",
+            "evidence-0c7480eaf8dceda126523f1f"
+          ],
+          "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+          "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:33.344Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:33.344Z",
+          "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+          "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+          "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T11:48:32.955147Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-25f86bc2c7f216197b2a0ead",
+        "evidence_ids": [
+          "evidence-25f86bc2c7f216197b2a0ead",
+          "evidence-9836a849af9c17d5cde4ad56",
+          "evidence-57686c95c8335f44b4209a20"
+        ],
+        "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+        "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:33.344Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:33.344Z",
+        "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_1",
+        "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+        "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-7d1ba7360689780a2b3f00bc",
+        "evidence_ids": [
+          "evidence-7d1ba7360689780a2b3f00bc",
+          "evidence-8bbdbb8cfaf848252a9ebb85",
+          "evidence-ba8701858d5f0c11d8461b91"
+        ],
+        "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+        "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:33.344Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:33.344Z",
+        "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_3",
+        "excerpt": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |\n\n## 4. Git Commit Verification Log\n\n| Short Hash | Author | Date | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 5cdccce39 | YourGitHubUsername | 2026-08-11 | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n\n## 5. Next Sprint Outlook\n\n- Continue integration and refinement based on cross-module milestones.\n\n- Address feedback and optimize test coverage for modified files.",
+        "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-b8bf34c27b01ce47526a18f8",
+        "evidence_ids": [
+          "evidence-b8bf34c27b01ce47526a18f8",
+          "evidence-733f32bf00c3c8218f700257",
+          "evidence-0c7480eaf8dceda126523f1f"
+        ],
+        "doc_id": "9d88faa9d3ccdde23ba29206a5487857",
+        "title": "Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:33.344Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:33.344Z",
+        "locator": "9d88faa9d3ccdde23ba29206a5487857_chunk_0",
+        "excerpt": "# [2026-W33] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-11 to 2026-08-11 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W33.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 1\n\n- New Features Delivered: 1\n\n- Bug Fixes Resolved: 0\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 5cdccce39- feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout(by @YourGitHubUsername on 2026-08-11)\n\n## 3. Impacted Code Files\n\n| Action | File Path |\n| --- | --- |\n| MODIFIED | .gitignore |\n| MODIFIED | agent/agent/llm/base.py |\n| MODIFIED | agent/agent/llm/llm_client.py |\n| MODIFIED | agent/agent/orchestration/orchestrator.py |\n| MODIFIED | agent/agent/runtime/runner.py |\n| MODIFIED | agent/agent/schemas/chat.py |\n| MODIFIED | data-persistence/data/bm25_index.pkl |\n| MODIFIED | data-persistence/data/chat_history.db |\n| MODIFIED | data-pipeline/pipeline/embedder.py |\n| ADDED | eval/test_single_session_context.py |\n| ADDED | start_project.bat |\n| ADDED | start_project.ps1 |\n| MODIFIED | start_project.py |\n| MODIFIED | toolset/retrieval/reranker.py |\n| MODIFIED | toolset/tool_layer/search_tool.py |\n| MODIFIED | web/server/database/schema.ts |\n| MODIFIED | web/server/plugins/observability.ts |\n| MODIFIED | web/server/routes/api/chats/[id].post.ts |\n| MODIFIED | web/server/routes/api/chats/temp-ask.post.ts |\n| MODIFIED | web/server/routes/api/metrics.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id].get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents.get.ts |\n| MODIFIED | web/server/routes/api/topics/[id]/documents/index.post.ts |\n| MODIFIED | web/server/routes/api/topics/index.post.ts |\n| DELETED | web/server/routes/auth/github.get.ts |\n| MODIFIED | web/server/utils/drizzle.ts |\n| MODIFIED | web/server/utils/metrics.ts |\n| MODIFIED | web/server/utils/topicStorage.ts |\n| MODIFIED | web/src/assets/css/main.css |\n| ADDED | web/src/components/ModalDashboard.vue |\n| ADDED | web/src/components/ModalSettings.vue |\n| MODIFIED | web/src/components/Navbar.vue |\n| MODIFIED | web/src/components/chat/DocumentModal.vue |\n| ADDED | web/src/components/chat/HitRateDrawer.vue |\n| ADDED | web/src/components/chat/QuickNavDial.vue |\n| MODIFIED | web/src/layouts/default.vue |\n| MODIFIED | web/src/pages/chat/[id].vue |\n| ADDED | web/src/pages/dashboard.vue |\n| MODIFIED | web/src/pages/topics/index.vue |\n| MODIFIED | web/src/route-map.d.ts |",
+        "content_hash": "f5ddf1f1921fdfd31e10d547f834782cead41c56bd1f6794cc39aaf95161aebe"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d34f9283facc422fa077d2bc882d385e/documents/9d88faa9d3ccdde23ba29206a5487857/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 341
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d34f9283facc422fa077d2bc882d385e/documents/9d88faa9d3ccdde23ba29206a5487857/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 103
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947825/Sprint+2026-W33+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d34f9283facc422fa077d2bc882d385e/documents/9d88faa9d3ccdde23ba29206a5487857/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 86
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

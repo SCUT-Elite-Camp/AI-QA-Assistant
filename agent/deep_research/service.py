@@ -1,0 +1,523 @@
+"""Research Job control-plane service used by the API and future Worker."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+import uuid
+
+from agent.schemas.research import (
+    ResearchApproval,
+    ResearchJob,
+    ResearchJobStatus,
+    ResearchPlan,
+    ResearchPlanRevisionRequest,
+    ResearchPlanStatus,
+    ResearchPlanValidator,
+    ResearchRequest,
+    ResearchTask,
+    ResearchTaskStatus,
+    SourceManifest,
+)
+
+from .manifest import LocalDocumentResolver, ManifestResolutionError, SourceResolver
+from .access import ResearchAccessPolicy
+from .events import ResearchEventRecorder
+from .planner import MockResearchPlanner, ResearchPlanner
+from .repository import (
+    ResearchConflictError,
+    ResearchNotFoundError,
+    SQLiteResearchRepository,
+)
+
+
+class ResearchControlPlaneError(RuntimeError):
+    """Stable error exposed by the API control plane."""
+
+    def __init__(self, code: str, message: str) -> None:
+        self.code = code
+        super().__init__(message)
+
+
+@dataclass(frozen=True)
+class ApprovedResearchContext:
+    """The only context a future Worker may use to start execution."""
+
+    job: ResearchJob
+    plan: ResearchPlan
+    tasks: tuple[ResearchTask, ...]
+    manifest: SourceManifest
+    approval: ResearchApproval
+
+
+class ResearchControlPlane:
+    """Create and approve durable Local Research Jobs.
+
+    The API inserts a Job before source resolution or planning and returns it
+    immediately.  A durable dispatcher calls :meth:`resume_planning_job`, so
+    interrupted ``created`` or ``planning`` Jobs are discoverable after a
+    process restart.  ``create_job`` remains as a synchronous composition
+    helper for unit tests and non-HTTP callers.
+    """
+
+    def __init__(
+        self,
+        repository: SQLiteResearchRepository | None = None,
+        *,
+        source_resolver: SourceResolver | None = None,
+        planner: ResearchPlanner | None = None,
+        id_factory=None,
+        event_recorder: ResearchEventRecorder | None = None,
+        access_policy: ResearchAccessPolicy | None = None,
+    ) -> None:
+        if repository is None:
+            project_root = Path(__file__).resolve().parents[2]
+            repository = SQLiteResearchRepository(
+                project_root / "data-persistence" / "data" / "research_jobs.db"
+            )
+        self.repository = repository
+        self.source_resolver = source_resolver or LocalDocumentResolver()
+        self.planner = planner or MockResearchPlanner()
+        self.id_factory = id_factory or self._new_research_id
+        self.events = event_recorder or ResearchEventRecorder(repository)
+        self.access_policy = access_policy
+
+    def authorize_job(self, job: ResearchJob, manifest: SourceManifest | None = None) -> None:
+        if self.access_policy is not None:
+            self.access_policy.authorize_job(job, manifest)
+
+    def create_job(
+        self,
+        request: ResearchRequest,
+        *,
+        user_id: str = "local-user",
+    ) -> ResearchJob:
+        job = self.enqueue_job(request, user_id=user_id)
+        return self.resume_planning_job(job.research_id)
+
+    def enqueue_job(
+        self,
+        request: ResearchRequest,
+        *,
+        user_id: str = "local-user",
+    ) -> ResearchJob:
+        """Persist a durable created Job before any planning work starts."""
+
+        if self.access_policy is not None:
+            request = self.access_policy.authorize_request(request, user_id, self.source_resolver)
+        research_id = self.id_factory()
+        job = ResearchJob(
+            research_id=research_id,
+            user_id=user_id,
+            request=request,
+        )
+        saved = self.repository.create_job(job)
+        self.events.job_created(research_id)
+        return saved
+
+    def resume_planning_job(self, research_id: str) -> ResearchJob:
+        """Idempotently finish planning for a created/planning Job.
+
+        This is the restart boundary used by the Durable Dispatcher.  A
+        persisted Manifest or Plan is reused as-is, so source versions never
+        drift during recovery.
+        """
+
+        try:
+            job = self.repository.get_job(research_id)
+            self.authorize_job(job)
+            if job.status == ResearchJobStatus.CREATED:
+                planning_job = self.repository.transition_job(
+                    research_id,
+                    expected_statuses=[ResearchJobStatus.CREATED],
+                    status=ResearchJobStatus.PLANNING,
+                )
+                if planning_job is not None:
+                    self.events.stage_completed(research_id, "created")
+                    self.events.stage_started(research_id, "planning")
+            elif job.status == ResearchJobStatus.PLANNING:
+                planning_job = job
+                self.events.stage_started(research_id, "planning")
+            else:
+                planning_job = None
+            if planning_job is None:
+                raise ResearchControlPlaneError(
+                    "research_job_state_conflict",
+                    "Research Job is not in a resumable planning state",
+                )
+
+            try:
+                manifest = self.repository.get_manifest(research_id)
+            except ResearchNotFoundError:
+                manifest = self.source_resolver.resolve(
+                    research_id,
+                    planning_job.request.source_scope,
+                )
+            if manifest.research_id != research_id:
+                raise ResearchControlPlaneError(
+                    "research_manifest_identity_mismatch",
+                    "SourceManifest must belong to the newly created Research Job",
+                )
+            self.authorize_job(planning_job, manifest)
+            self.repository.save_manifest(manifest)
+            planning_job = self.repository.transition_job(
+                research_id,
+                expected_statuses=[ResearchJobStatus.PLANNING],
+                status=ResearchJobStatus.PLANNING,
+                current_stage="planning",
+                manifest_hash=manifest.manifest_hash,
+            )
+            if planning_job is None:
+                raise ResearchControlPlaneError(
+                    "research_job_state_conflict",
+                    "Research Job changed while its SourceManifest was being saved",
+                )
+
+            try:
+                plan = self.repository.get_plan(research_id, version=1)
+            except ResearchNotFoundError:
+                from .access import model_access_scope
+                with model_access_scope(lambda: self.authorize_job(planning_job, manifest)):
+                    plan = self.planner.create_plan(
+                        planning_job.request,
+                        manifest,
+                        version=1,
+                    )
+            if plan.research_id != research_id:
+                raise ResearchControlPlaneError(
+                    "research_plan_identity_mismatch",
+                    "ResearchPlan must belong to the newly created Research Job",
+                )
+            if plan.manifest_hash != manifest.manifest_hash:
+                raise ResearchControlPlaneError(
+                    "research_plan_manifest_mismatch",
+                    "ResearchPlan must be bound to the frozen SourceManifest",
+                )
+            self.authorize_job(planning_job, manifest)
+            self.repository.save_plan(plan)
+            awaiting_job = self.repository.transition_job(
+                research_id,
+                expected_statuses=[ResearchJobStatus.PLANNING],
+                status=ResearchJobStatus.AWAITING_APPROVAL,
+                current_stage="awaiting_approval",
+                plan_version=plan.version,
+                manifest_hash=manifest.manifest_hash,
+                task_total=len(plan.tasks),
+            )
+            if awaiting_job is None:
+                raise ResearchControlPlaneError(
+                    "research_job_state_conflict",
+                    "Research Job changed while its Plan was being saved",
+                )
+            self.events.stage_completed(research_id, "planning")
+            self.events.stage_started(research_id, "awaiting_approval")
+            return awaiting_job
+        except (ManifestResolutionError, ResearchControlPlaneError):
+            self._mark_failed_if_possible(research_id, "planning", "planning_failed")
+            raise
+        except Exception as exc:
+            self._mark_failed_if_possible(research_id, "planning", "planning_failed")
+            raise ResearchControlPlaneError(
+                "planning_failed",
+                str(exc) or exc.__class__.__name__,
+            ) from exc
+
+    def get_job(self, research_id: str) -> ResearchJob:
+        return self.repository.get_job(research_id)
+
+    def get_manifest(self, research_id: str) -> SourceManifest:
+        return self.repository.get_manifest(research_id)
+
+    def get_plan(self, research_id: str, version: int | None = None) -> ResearchPlan:
+        return self.repository.get_plan(research_id, version)
+
+    def revise_plan(
+        self,
+        research_id: str,
+        revision: ResearchPlanRevisionRequest,
+        *,
+        revised_by: str,
+    ) -> ResearchPlan:
+        """Create a new immutable Plan version and require a fresh Approval."""
+
+        job = self.get_job(research_id)
+        if job.status not in {
+            ResearchJobStatus.AWAITING_APPROVAL,
+            ResearchJobStatus.READY,
+        }:
+            raise ResearchControlPlaneError(
+                "research_plan_revision_not_allowed",
+                f"Job is '{job.status.value}' and its Plan can no longer be revised",
+            )
+        if job.plan_version != revision.base_version:
+            raise ResearchControlPlaneError(
+                "research_plan_version_conflict",
+                "revision must reference the current plan_version",
+            )
+        current = self.get_plan(research_id, revision.base_version)
+        reset_tasks = [
+            ResearchTask.model_validate(
+                {**task.model_dump(), "status": ResearchTaskStatus.PENDING}
+            )
+            for task in revision.tasks
+        ]
+        revised = ResearchPlan.model_validate(
+            {
+                **current.model_dump(),
+                "version": current.version + 1,
+                "objective": revision.objective,
+                "tasks": reset_tasks,
+                "report_spec": revision.report_spec,
+                "status": ResearchPlanStatus.AWAITING_APPROVAL,
+            }
+        )
+        try:
+            revised = ResearchPlanValidator.validate_or_raise(revised)
+        except ValueError as exc:
+            issue = getattr(exc, "issue", None)
+            code = getattr(issue, "code", "research_plan_invalid")
+            raise ResearchControlPlaneError(code, str(exc)) from exc
+
+        superseded = ResearchPlan.model_validate(
+            {**current.model_dump(), "status": ResearchPlanStatus.SUPERSEDED}
+        )
+        revised_job = ResearchJob.model_validate(
+            {
+                **job.model_dump(),
+                "status": ResearchJobStatus.AWAITING_APPROVAL,
+                "result_status": None,
+                "plan_version": revised.version,
+                "current_stage": "awaiting_approval",
+                "current_task_id": None,
+                "task_total": len(revised.tasks),
+                "task_completed": 0,
+                "evidence_count": 0,
+                "failure_stage": None,
+                "error_code": None,
+            }
+        )
+        self.repository.commit_plan_revision(superseded, revised, revised_job)
+        self.events.plan_revised(
+            research_id,
+            from_version=current.version,
+            to_version=revised.version,
+            revised_by=revised_by,
+            revision_note=revision.revision_note,
+        )
+        return revised
+
+    def approve_job(
+        self,
+        research_id: str,
+        *,
+        plan_version: int,
+        manifest_hash: str,
+        approved_by: str,
+    ) -> ResearchJob:
+        job = self.get_job(research_id)
+        if job.status != ResearchJobStatus.AWAITING_APPROVAL:
+            raise ResearchControlPlaneError(
+                "research_approval_not_allowed",
+                f"Job is '{job.status.value}', not awaiting approval",
+            )
+        if job.plan_version != plan_version:
+            raise ResearchControlPlaneError(
+                "research_plan_version_conflict",
+                "approval must reference the current plan_version",
+            )
+        if job.manifest_hash != manifest_hash:
+            raise ResearchControlPlaneError(
+                "research_manifest_hash_conflict",
+                "approval must reference the current manifest_hash",
+            )
+
+        manifest = self.get_manifest(research_id)
+        if manifest.manifest_hash != manifest_hash:
+            raise ResearchControlPlaneError(
+                "research_manifest_hash_conflict",
+                "SourceManifest has changed since the Job was created",
+            )
+        plan = self.get_plan(research_id, plan_version)
+        if plan.manifest_hash != manifest_hash:
+            raise ResearchControlPlaneError(
+                "research_plan_manifest_mismatch",
+                "Plan is not bound to the current SourceManifest",
+            )
+        if plan.status == ResearchPlanStatus.APPROVED:
+            raise ResearchControlPlaneError(
+                "research_already_approved",
+                "this Plan has already been approved",
+            )
+
+        approval = ResearchApproval(
+            research_id=research_id,
+            plan_version=plan_version,
+            manifest_hash=manifest_hash,
+            approved_by=approved_by,
+            approved_at=datetime.now(timezone.utc),
+        )
+        approved_plan = ResearchPlan.model_validate(
+            {**plan.model_dump(), "status": ResearchPlanStatus.APPROVED}
+        )
+        ready_job = ResearchJob.model_validate(
+            {
+                **job.model_dump(),
+                "status": ResearchJobStatus.READY,
+                "current_stage": "ready",
+                "plan_version": plan_version,
+                "manifest_hash": manifest_hash,
+            }
+        )
+        try:
+            committed = self.repository.commit_approval(
+                approval,
+                approved_plan,
+                ready_job,
+            )
+            self.events.plan_approved(research_id, plan_version)
+            self.events.stage_completed(research_id, "awaiting_approval")
+            self.events.stage_started(research_id, "ready")
+            return committed
+        except ResearchConflictError as exc:
+            raise ResearchControlPlaneError(
+                "research_approval_state_conflict",
+                str(exc),
+            ) from exc
+
+    def cancel_job(self, research_id: str) -> ResearchJob:
+        job = self.get_job(research_id)
+        cancelled = self.repository.transition_job(
+            research_id,
+            expected_statuses=[
+                ResearchJobStatus.CREATED,
+                ResearchJobStatus.PLANNING,
+                ResearchJobStatus.AWAITING_APPROVAL,
+                ResearchJobStatus.READY,
+            ],
+            status=ResearchJobStatus.CANCELLED,
+            current_stage="cancelled",
+        )
+        if cancelled is None:
+            raise ResearchControlPlaneError(
+                "research_cancel_not_allowed",
+                f"Job is '{job.status.value}' and cannot be cancelled now",
+            )
+        self.events.job_cancelled(research_id, job.current_stage)
+        return cancelled
+
+    def approved_context(self, research_id: str) -> ApprovedResearchContext:
+        """Load and re-check every real entity required by a future Worker."""
+
+        job = self.get_job(research_id)
+        if job.plan_version is None or job.manifest_hash is None:
+            raise ResearchControlPlaneError(
+                "research_not_ready",
+                "Job does not have a persisted Plan and SourceManifest",
+            )
+        plan = self.get_plan(research_id, job.plan_version)
+        manifest = self.get_manifest(research_id)
+        approval = self.repository.get_approval(research_id, job.plan_version)
+        self.authorize_job(job, manifest)
+        if plan.status != ResearchPlanStatus.APPROVED:
+            raise ResearchControlPlaneError(
+                "research_plan_not_approved",
+                "ResearchPlan is not in approved state",
+            )
+        if approval.plan_version != plan.version:
+            raise ResearchControlPlaneError(
+                "research_approval_version_conflict",
+                "Approval does not match the current Plan",
+            )
+        if approval.manifest_hash != manifest.manifest_hash:
+            raise ResearchControlPlaneError(
+                "research_approval_manifest_conflict",
+                "Approval does not match the frozen SourceManifest",
+            )
+        if plan.manifest_hash != manifest.manifest_hash:
+            raise ResearchControlPlaneError(
+                "research_plan_manifest_mismatch",
+                "Plan and SourceManifest are not bound to the same hash",
+            )
+        if job.manifest_hash != manifest.manifest_hash:
+            raise ResearchControlPlaneError(
+                "research_job_manifest_mismatch",
+                "Job and SourceManifest are not bound to the same hash",
+            )
+        if job.status not in {
+            ResearchJobStatus.READY,
+            ResearchJobStatus.RESEARCHING,
+            ResearchJobStatus.SYNTHESIZING,
+        }:
+            raise ResearchControlPlaneError(
+                "research_execution_not_allowed",
+                f"Job is '{job.status.value}' and has not been approved for execution",
+            )
+        tasks = tuple(self.repository.get_tasks(research_id, plan.version))
+        return ApprovedResearchContext(
+            job=job,
+            plan=plan,
+            tasks=tasks,
+            manifest=manifest,
+            approval=approval,
+        )
+
+    def claim_for_execution(self, research_id: str) -> ApprovedResearchContext:
+        """Atomically move an approved Job to researching for a future Worker."""
+
+        context = self.approved_context(research_id)
+        claimed = self.repository.transition_job(
+            research_id,
+            expected_statuses=[ResearchJobStatus.READY],
+            status=ResearchJobStatus.RESEARCHING,
+            current_stage="researching",
+        )
+        if claimed is None:
+            raise ResearchControlPlaneError(
+                "research_execution_claim_conflict",
+                "another dispatcher already claimed this Job",
+            )
+        self.events.stage_completed(research_id, "ready")
+        self.events.stage_started(research_id, "execute_tasks")
+        return ApprovedResearchContext(
+            job=claimed,
+            plan=context.plan,
+            tasks=context.tasks,
+            manifest=context.manifest,
+            approval=context.approval,
+        )
+
+    @staticmethod
+    def _new_research_id() -> str:
+        return f"research-{uuid.uuid4().hex}"
+
+    def _mark_failed_if_possible(
+        self,
+        research_id: str,
+        failure_stage: str,
+        error_code: str,
+    ) -> None:
+        try:
+            job = self.repository.get_job(research_id)
+            failed = ResearchJob.model_validate(
+                {
+                    **job.model_dump(),
+                    "status": ResearchJobStatus.FAILED,
+                    "current_stage": failure_stage,
+                    "failure_stage": failure_stage,
+                    "error_code": error_code,
+                }
+            )
+            self.repository.update_job(failed)
+            self.events.job_failed(research_id, failure_stage, error_code)
+        except Exception:
+            # The original error is more useful to the API caller.  A later
+            # dispatcher/reconciliation pass can inspect the durable record.
+            return
+
+
+__all__ = [
+    "ApprovedResearchContext",
+    "ResearchControlPlane",
+    "ResearchControlPlaneError",
+]

@@ -3,8 +3,10 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { requireTopicRole } from '../../../../utils/attachmentAuth'
+import { filterReadableMessages, requireEnabledActor } from '../../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
+  const userId = await requireEnabledActor(event)
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
@@ -29,6 +31,7 @@ export default defineHandler(async (event) => {
 
   // Format main chat first, then branch chats sorted by creation time
   const mainChat = allChats.find(c => c.id === topic.mainChatId || !c.isBranch) || allChats[0]
+  for (const chat of allChats) chat.messages = await filterReadableMessages(userId, chat.messages)
   const branchChats = allChats.filter(c => c.id !== mainChat?.id).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 
   return {

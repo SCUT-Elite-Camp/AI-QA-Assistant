@@ -1,0 +1,11 @@
+{
+  "doc_id": "demo-travel-policy-v1",
+  "title": "星云科技差旅管理办法（旧版）",
+  "version": "v1.0",
+  "source_type": "official_policy",
+  "authority": "company_policy",
+  "authority_rank": 100,
+  "last_updated": "2026-01-01",
+  "space": "cp2-research-demo",
+  "content": "旧版适用范围：本办法适用于2026年7月31日及以前开始的差旅。\n旧版住宿标准：上海地区住宿费报销限额为500元/晚，超出部分原则上由员工自行承担。\n版本状态：v1.0已被2026年8月1日生效的v2.0替代，不应继续用于判断新发生的差旅。"
+}

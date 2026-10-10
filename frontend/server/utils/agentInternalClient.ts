@@ -30,6 +30,7 @@ export class AgentInternalClientError extends Error {
 }
 
 export interface AgentInternalClientOptions {
+  actorUserId?: string
   environment?: Record<string, string | undefined>
   fetchFn?: typeof fetch
   signal?: AbortSignal
@@ -65,11 +66,16 @@ async function postInternal<TRequest, TResponse> (
   options.signal?.addEventListener('abort', abortFromCaller, { once: true })
 
   try {
+    const envelope = request as { actor?: { user_id: string }, memory_context?: { actor: { user_id: string } } }
+    const actorUserId = envelope.actor?.user_id || envelope.memory_context?.actor.user_id
+    if (!actorUserId && path !== '/memory/reset-short-window') throw new AgentInternalClientError('agent_internal_configuration', 'Trusted actor is required')
     const response = await (options.fetchFn ?? fetch)(`${resolveAgentBaseUrl(environment)}/api/internal${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Agent-Internal-Token': token
+        Authorization: `Bearer ${environment.AGENT_API_KEY || ''}`,
+        'X-Agent-Internal-Token': token,
+        'X-User-ID': actorUserId || options.actorUserId || ''
       },
       body: JSON.stringify(requestSchema.parse(request)),
       signal: controller.signal

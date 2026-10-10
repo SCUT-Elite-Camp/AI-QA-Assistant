@@ -1,9 +1,40 @@
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+MemoryFactCategory: TypeAlias = Literal["GOAL", "PREFERENCE", "PLAN_CONSTRAINT"]
+
+
+class _InternalMemoryContractModel(BaseModel):
+    """Strict DTO base for trusted Web-to-Agent Memory requests only."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+
+class SourceDependency(_InternalMemoryContractModel):
+    """Every source introduced into model context, not only cited sources."""
+
+    source_type: Literal["knowledge", "attachment", "personal"] = "knowledge"
+    doc_id: str = Field(min_length=1, max_length=200)
+    knowledge_base_id: Optional[str] = None
+    document_id: Optional[str] = None
+    version_id: Optional[str] = None
+    version: Optional[int | str] = None
+    content_hash: Optional[str] = None
+
+
+class EvidenceProvenance(_InternalMemoryContractModel):
+    schema_version: Literal["evidence.provenance.v1"] = "evidence.provenance.v1"
+    complete: bool
+    dependencies: list[SourceDependency] = Field(default_factory=list)
+    trace_id: str
+
+
 class ChatRequest(BaseModel):
+    # Public routes must reject, rather than silently ignore, internal-only fields.
+    model_config = ConfigDict(extra="forbid")
+
     query: str
     user_id: Optional[str] = None
     session_id: Optional[str] = None
@@ -35,7 +66,7 @@ class ChatRequest(BaseModel):
             and isinstance(value, dict)
             and trusted_fields.intersection(value)
         ):
-            raise ValueError("trusted context is only accepted by the internal endpoint")
+            raise ValueError("trusted context memory_context/personal_library_context/attachment_context is only accepted by the internal endpoint")
         return value
 
 
@@ -51,11 +82,17 @@ class Citation(BaseModel):
     attachment_id: Optional[str] = None
     evidence_id: Optional[str] = None
     locator: Optional[dict[str, Any]] = None
-    version: Optional[int] = None
+    version: Optional[int | str] = None
     source_scope: Optional[str] = None
     knowledge_base_id: Optional[str] = None
     document_id: Optional[str] = None
     version_id: Optional[str] = None
+    evidence_ref: Optional[str] = None
+    content_hash: Optional[str] = None
+    normalized_content_hash: Optional[str] = None
+    source_content_hash: Optional[str] = None
+    source_version: Optional[int | str] = None
+    read_status: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -65,56 +102,57 @@ class ChatResponse(BaseModel):
     message: str
     citations: list[Citation]
     chat_title: Optional[str] = None
+    evidence_provenance: Optional[EvidenceProvenance] = None
+    diagnostics: Optional[dict[str, Any]] = None
 
 
-class InternalActor(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class InternalActor(_InternalMemoryContractModel):
     user_id: str = Field(min_length=1)
     authenticated: Literal[True]
 
 
-class MemoryMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class MemoryMessage(_InternalMemoryContractModel):
     id: str = Field(min_length=1)
-    sequence: int = Field(ge=1)
-    revision: int = Field(ge=1)
+    sequence: int = Field(gt=0)
+    revision: int = Field(gt=0)
     role: Literal["user", "assistant", "system"]
     content: str
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
-class MemorySnapshotInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class MemorySnapshotInput(_InternalMemoryContractModel):
     id: str = Field(min_length=1)
-    version: int = Field(ge=1)
-    revision: int = Field(ge=1)
-    covered_to_sequence: int = Field(ge=1)
+    version: int = Field(gt=0)
+    revision: int = Field(gt=0)
+    covered_to_sequence: int = Field(gt=0)
     summary: str
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
-class MemoryFactInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class MemoryFactInput(_InternalMemoryContractModel):
     id: str = Field(min_length=1)
-    category: Literal["GOAL", "PREFERENCE", "PLAN_CONSTRAINT"]
+    category: MemoryFactCategory
     value: str
-    # Unix epoch milliseconds in UTC; null means that the Fact does not expire.
-    expires_at: int | None = Field(default=None, ge=0)
+    # Unix epoch milliseconds in UTC, or null when the Fact does not expire.
+    expires_at: Optional[int] = Field(ge=0)
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
-class MemoryContextInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class MemoryContextInput(_InternalMemoryContractModel):
     actor: InternalActor
     chat_id: str = Field(min_length=1)
-    revision: int = Field(ge=1)
+    revision: int = Field(gt=0)
     current_message_id: str = Field(min_length=1)
-    current_sequence: int = Field(ge=1)
-    snapshot: MemorySnapshotInput | None = None
-    facts: list[MemoryFactInput] = Field(default_factory=list)
-    tail: list[MemoryMessage] = Field(default_factory=list)
+    current_sequence: int = Field(gt=0)
+    snapshot: Optional[MemorySnapshotInput] = None
+    facts: list[MemoryFactInput]
+    tail: list[MemoryMessage]
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
+
 
     @model_validator(mode="after")
     def validate_sequence_alignment(self) -> "MemoryContextInput":
@@ -143,6 +181,7 @@ class MemoryContextInput(BaseModel):
             message_ids.add(message.id)
 
         return self
+
 
 class PersonalLibraryContext(BaseModel):
     """Server-authenticated library scope; never accepted by the public route."""
@@ -175,123 +214,103 @@ class AttachmentContext(BaseModel):
 
 
 class InternalChatRequest(ChatRequest):
-    """Contract-only request for the future token-protected internal endpoint."""
+    """Token-protected request envelope; never accepted by public /api/chat."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", strict=True)
 
     memory_context: MemoryContextInput
     personal_library_context: PersonalLibraryContext | None = None
     attachment_context: AttachmentContext | None = None
 
 
-class ContextArtifact(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class ContextArtifact(_InternalMemoryContractModel):
     memory_brief: str
     model_history: list[MemoryMessage]
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class FactProposal(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    category: Literal["GOAL", "PREFERENCE", "PLAN_CONSTRAINT"]
+class FactProposal(_InternalMemoryContractModel):
+    category: MemoryFactCategory
     value: str
     source_message_id: str = Field(min_length=1)
-    expires_at: int | None = Field(default=None, ge=0)
+    expires_at: Optional[int] = Field(ge=0)
 
 
-class MemoryRecall(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class MemoryRecall(_InternalMemoryContractModel):
     handled: bool
-    answer: str | None = None
+    answer: Optional[str] = None
 
 
-class MemoryDecision(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    context_artifact: ContextArtifact | None = None
+class MemoryDecision(_InternalMemoryContractModel):
+    context_artifact: Optional[ContextArtifact] = None
     fact_proposals: list[FactProposal] = Field(default_factory=list)
-    recall: MemoryRecall | None = None
+    recall: Optional[MemoryRecall] = None
 
 
-class InternalChatResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class InternalChatResponse(_InternalMemoryContractModel):
     response: ChatResponse
-    memory_decision: MemoryDecision = Field(default_factory=MemoryDecision)
+    memory_decision: MemoryDecision
 
 
-class CompactionPlanRequest(BaseModel):
-    """Trusted, already-persisted messages for deterministic Snapshot planning."""
-
-    model_config = ConfigDict(extra="forbid")
-
+class CompactionPlanRequest(_InternalMemoryContractModel):
     actor: InternalActor
     chat_id: str = Field(min_length=1)
-    revision: int = Field(ge=1)
-    active_snapshot: MemorySnapshotInput | None = None
-    messages: list[MemoryMessage] = Field(default_factory=list)
-    tail_size: int = Field(ge=1)
-    min_coverable_messages: int = Field(ge=1)
-    soft_token_budget: int = Field(ge=1)
+    revision: int = Field(gt=0)
+    active_snapshot: Optional[MemorySnapshotInput]
+    messages: list[MemoryMessage]
+    # Deprecated internal BFF compatibility fields.  Agent settings are the
+    # sole authority for compaction thresholds; callers may omit these fields.
+    tail_size: Optional[int] = Field(default=None, gt=0)
+    min_coverable_messages: Optional[int] = Field(default=None, gt=0)
+    soft_token_budget: Optional[int] = Field(default=None, gt=0)
 
     @model_validator(mode="after")
-    def validate_active_snapshot_revision(self) -> "CompactionPlanRequest":
-        if self.active_snapshot and self.active_snapshot.revision != self.revision:
-            raise ValueError("active_snapshot.revision must equal revision")
-        previous_sequence = 0
-        for message in self.messages:
-            if message.revision != self.revision:
-                raise ValueError("compaction message revision must equal revision")
-            if message.sequence <= previous_sequence:
-                raise ValueError("compaction messages must be strictly ordered by sequence")
-            previous_sequence = message.sequence
+    def _reject_explicit_null_legacy_thresholds(self) -> "CompactionPlanRequest":
+        """Allow omitted legacy fields, but never accept an explicit null value."""
+
+        for field_name in (
+            "tail_size",
+            "min_coverable_messages",
+            "soft_token_budget",
+        ):
+            if field_name in self.model_fields_set and getattr(self, field_name) is None:
+                raise ValueError(f"{field_name} must be a positive integer when provided")
         return self
 
 
-class ExpectedActiveSnapshot(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class ExpectedActiveSnapshot(_InternalMemoryContractModel):
     id: str = Field(min_length=1)
-    version: int = Field(ge=1)
-    revision: int = Field(ge=1)
+    version: int = Field(gt=0)
+    revision: int = Field(gt=0)
 
 
-class NewMemorySnapshot(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    covered_from_sequence: int = Field(ge=1)
-    covered_to_sequence: int = Field(ge=1)
+class NewMemorySnapshot(_InternalMemoryContractModel):
+    covered_from_sequence: int = Field(gt=0)
+    covered_to_sequence: int = Field(gt=0)
     covered_from_message_id: str = Field(min_length=1)
     covered_to_message_id: str = Field(min_length=1)
     summary: str
-
-    @model_validator(mode="after")
-    def validate_coverage(self) -> "NewMemorySnapshot":
-        if self.covered_from_sequence > self.covered_to_sequence:
-            raise ValueError("covered_from_sequence must not exceed covered_to_sequence")
-        return self
+    source_dependencies: list[SourceDependency] = Field(default_factory=list)
+    provenance_complete: bool = False
 
 
-class CompactionPlanResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class NoCompactionPlan(_InternalMemoryContractModel):
+    should_compact: Literal[False]
 
-    should_compact: bool
-    expected_active_snapshot: ExpectedActiveSnapshot | None = None
-    new_snapshot: NewMemorySnapshot | None = None
 
-    @model_validator(mode="after")
-    def validate_plan_shape(self) -> "CompactionPlanResponse":
-        if self.should_compact != (self.new_snapshot is not None):
-            raise ValueError("new_snapshot must exist exactly when should_compact is true")
-        if not self.should_compact and self.expected_active_snapshot is not None:
-            raise ValueError("expected_active_snapshot is only valid for a compaction plan")
-        if (
-            self.expected_active_snapshot is not None
-            and self.new_snapshot is not None
-            and self.expected_active_snapshot.revision < 1
-        ):
-            raise ValueError("expected_active_snapshot revision must be positive")
-        return self
+class CompactionPlan(_InternalMemoryContractModel):
+    should_compact: Literal[True]
+    expected_active_snapshot: Optional[ExpectedActiveSnapshot]
+    new_snapshot: NewMemorySnapshot
+
+
+CompactionPlanResponse: TypeAlias = NoCompactionPlan | CompactionPlan
+
+
+class ResetShortWindowRequest(_InternalMemoryContractModel):
+    chat_id: str = Field(min_length=1)
+
+
+class ResetShortWindowResponse(_InternalMemoryContractModel):
+    status: Literal["ok"]
+

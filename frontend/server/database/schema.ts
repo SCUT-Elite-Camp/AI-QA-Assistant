@@ -1,5 +1,6 @@
 ﻿import { sqliteTable, text, integer, index, uniqueIndex, primaryKey, check } from 'drizzle-orm/sqlite-core'
 import { relations, sql } from 'drizzle-orm'
+import type { EvidenceProvenance } from '../utils/evidenceContract'
 
 const timestamps = {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
@@ -137,6 +138,7 @@ export const topics = sqliteTable('topics', {
   title: text('title').notNull(),
   mainChatId: text('main_chat_id').notNull(),
   soulContent: text('soul_content').notNull().default(''),
+  evidenceProvenance: text('evidence_provenance', { mode: 'json' }).$type<EvidenceProvenance>(),
   description: text('description'),
   tags: text('tags', { mode: 'json' }),
   status: text('status', { enum: ['generating', 'ready'] }).notNull().default('ready'),
@@ -169,6 +171,7 @@ export const chats = sqliteTable('chats', {
   visibility: text('visibility', { enum: ['public', 'private'] }).notNull().default('private'),
   historyRevision: integer('history_revision').notNull().default(1),
   nextMessageSequence: integer('next_message_sequence').notNull().default(1),
+  evidenceProvenance: text('evidence_provenance', { mode: 'json' }).$type<EvidenceProvenance>(),
   topicId: text('topic_id').references(() => topics.id, { onDelete: 'set null' }),
   weightMode: text('weight_mode', { enum: ['auto', 'fast', 'thinking'] }).notNull().default('fast'),
   isBranch: integer('is_branch', { mode: 'boolean' }).notNull().default(false),
@@ -307,6 +310,7 @@ export const memorySnapshots = sqliteTable('memory_snapshots', {
   coveredFromMessageId: text('covered_from_message_id').notNull(),
   coveredToMessageId: text('covered_to_message_id').notNull(),
   summary: text('summary').notNull(),
+  evidenceProvenance: text('evidence_provenance', { mode: 'json' }).$type<EvidenceProvenance>(),
   status: text('status', { enum: memorySnapshotStatuses }).notNull(),
   archivedAt: integer('archived_at', { mode: 'timestamp' }),
   ...timestamps
@@ -344,6 +348,7 @@ export const memoryFacts = sqliteTable('memory_facts', {
   scope: text('scope', { enum: memoryFactScopes }).notNull(),
   status: text('status', { enum: memoryFactStatuses }).notNull(),
   value: text('value').notNull(),
+  evidenceProvenance: text('evidence_provenance', { mode: 'json' }).$type<EvidenceProvenance>(),
   proposalKey: text('proposal_key').notNull(),
   expiresAt: integer('expires_at', { mode: 'timestamp' }),
   confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),

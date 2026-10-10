@@ -21,7 +21,7 @@ real values.
 
 1. Back up the Web SQLite database and Attachment Service data directory.
 2. Deploy Web and run `pnpm run db:migrate` before accepting traffic.
-3. Confirm migrations `0004` through `0007` are recorded in Drizzle's journal.
+3. Confirm the full journal through `0015_evidence_lineage.sql` is applied (not just the original library migrations `0004`-`0007`). Back up existing data first.
 4. Start Attachment Service with the final environment and confirm its startup
    configuration validation succeeds.
 5. Start Web, Agent, and the cleanup worker; then check `/api/metrics`.
@@ -61,6 +61,12 @@ AND deletedAt IS NULL
 Agent `SourceIntent` only selects candidate sources. The HMAC-signed
 `personal_library_context`, Personal/Enterprise Milvus collection separation,
 and server-side candidate filters remain the authorization boundary.
+
+The 2026-10-09 integration also checks enabled identity, active READY Version,
+file hash and matching remote owner/KB/Document/Version. Answers and derived
+Memory retain those dependencies; history, copies and Reader recheck them.
+Optional `null` wire normalization does not waive required private-source proof.
+See [current architecture](access-evidence-architecture.md).
 
 ## Delete and cleanup outbox
 

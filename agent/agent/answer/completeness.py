@@ -17,7 +17,7 @@ class AnswerCompletenessChecker:
     _MAX_EVIDENCE_ITEMS = 10
     _MAX_CONTENT_CHARS = 2400
     _REPAIR_EVIDENCE_ITEMS = 5
-    _REPAIR_CONTENT_CHARS = 1200
+    _REPAIR_CONTENT_CHARS = 12000
 
     def __init__(
         self,
@@ -132,12 +132,18 @@ class AnswerCompletenessChecker:
         response = self.llm.chat(
             [{
                 "role": "system",
-                "content": self._repair_prompt(query_plan, answer, repair_evidence, result),
+                "content": self._repair_prompt(query_plan, answer, repair_evidence, result, evidence),
             }],
             tools=None,
         )
         content = response.get("content", "") if isinstance(response, dict) else ""
-        return content.strip() if isinstance(content, str) else ""
+        if not isinstance(content, str):
+            return ""
+        # Reject a copied review prompt; stripping labels could still publish
+        # the source dump or unsupported original claim as a repaired answer.
+        if re.search(r"(?im)^\s*(?:Missing aspects|Missing critical facts|Original answer|Question|Evidence)\s*:", content):
+            return ""
+        return content.strip()
 
     def _repair_prompt(
         self,
@@ -145,6 +151,7 @@ class AnswerCompletenessChecker:
         answer: str,
         evidence: list[Evidence],
         result: AnswerCompletenessResult,
+        original_evidence: list[Evidence] | None = None,
     ) -> str:
         style = (
             "Add the listed omissions onto the original answer. Preserve every correct "
@@ -153,15 +160,16 @@ class AnswerCompletenessChecker:
             if settings.ANSWER_REPAIR_APPEND_ONLY
             else "Repair the answer exactly once using only the supplied evidence."
         )
+        language = "Write the entire repaired answer in English. " if not re.search(r"[\u4e00-\u9fff]", query_plan.original_query) else ""
         return (
-            f"{style} Do not mention this review and do not invent facts. "
+            f"{language}{style} Do not mention this review and do not invent facts. "
             "Return only the repaired answer.\n\n"
             f"Question: {query_plan.standalone_query}\n"
             f"Original answer: {answer}\n"
             f"Missing aspects: {json.dumps(result.missing_aspects, ensure_ascii=False)}\n"
             "Missing critical facts: "
             f"{json.dumps(result.missing_critical_facts, ensure_ascii=False)}\n\n"
-            f"Evidence:\n{self._format_evidence(evidence)}"
+            f"Evidence:\n{self._format_evidence(evidence, original_evidence)}"
         )
 
     def _evidence_for_repair(
@@ -181,11 +189,12 @@ class AnswerCompletenessChecker:
                 break
         return selected or evidence[: self._REPAIR_EVIDENCE_ITEMS]
 
-    def _format_evidence(self, evidence: list[Evidence]) -> str:
+    def _format_evidence(self, evidence: list[Evidence], original_evidence: list[Evidence] | None = None) -> str:
         rows: list[str] = []
         limit = self._REPAIR_CONTENT_CHARS
         for index, item in enumerate(evidence[: self._MAX_EVIDENCE_ITEMS], start=1):
-            rows.append(f"[{index}] {item.title}: {item.content[:limit]}")
+            citation_index = next((i for i, source in enumerate(original_evidence, start=1) if source is item), index) if original_evidence is not None else index
+            rows.append(f"[{citation_index}] {item.title}: {item.content[:limit]}")
         return "\n".join(rows)
 
 

@@ -1,0 +1,13 @@
+{
+  "doc_id": "demo-travel-policy-v2",
+  "title": "星云科技差旅管理办法（现行版）",
+  "version": "v2.0",
+  "last_updated": "2026-08-01",
+  "effective_at": "2026-08-01",
+  "source_type": "official_policy",
+  "authority": "company_policy",
+  "authority_rank": 100,
+  "supersedes": ["demo-travel-policy-v1"],
+  "space": "cp2-research-demo",
+  "content": "现行版本：v2.0自2026年8月1日起生效，并替代v1.0；差旅开始日期在生效日之后的，适用v2.0。\n上海住宿标准：住宿费报销限额为700元/晚；单晚金额超过600元时，报销单必须附直属经理审批记录。\n案例结论：依据2026年8月1日生效的v2.0，员工于2026年9月10日前往上海出差，酒店650元/晚，在700元限额内；如已取得直属经理审批，可按住宿标准申请报销。\n资料边界：本办法摘录未包含发票合规性、指定预订渠道和差旅申请单等其他报销条件。"
+}

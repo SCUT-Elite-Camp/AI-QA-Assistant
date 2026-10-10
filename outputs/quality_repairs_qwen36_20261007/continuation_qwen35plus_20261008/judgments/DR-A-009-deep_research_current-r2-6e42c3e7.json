@@ -1,0 +1,140 @@
+{
+  "run_id": "DR-A-009-deep_research_current-r2-6e42c3e7",
+  "case_id": "DR-A-009",
+  "group": "deep_research_current",
+  "api_success": true,
+  "judge_model": "qwen3.5-plus",
+  "rubric_sha256": "0724e2de70512ddb2265fe375356fa7aa34aba7a7cfa866b1d60f61c839a4bad",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "## Summary\n\nThe selected Master reports record the project totals below.\n\n## Evidence and analysis\n\n| Sprint | Total commits |\n| --- | --- |\n| W28 | 9 [1] |\n| W30 | 14 [3] |\n| W34 | 23 [2] |\n\nW30 minus W28: 14 - 9 = +5. [1][3]\n\nW34 minus W30: 23 - 14 = +9. [3][2]\n\nChange from W28 to W34: 23 - 9 = +14 commits. [1][2]\n\n## Limitations and uncertainty\n\nThese are recorded project totals, without summing module counts or inferring quality, contributor activity or reasons for changes.\n\n## Sources\n\n1. [**Sprint+2026-W28+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report) · 2026-09-04T08:40:37.439Z · 049bdab7d5def55be3494f69a32e4432_chunk_0\n2. [**Sprint+2026-W34+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report) · 2026-09-04T08:41:44.062Z · 6beeab4852cb7fb253d44fa305ff510f_chunk_0\n3. [**Sprint+2026-W30+Master+Delivery+Report**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report) · 2026-09-04T08:40:50.703Z · 4789bcf073830a8985e95e33cde47767_chunk_0\n"
+  },
+  "verified_evidence": [
+    {
+      "evidence_id": "citation-1",
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "excerpt": "# 📅 [2026-W28] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-06 to 2026-07-10 |Sprint ID:2026-W28Active Contributors: YKASN, YourGitHubUsername |Total Commits:9**\n\n## 1. Executive Summary\n\n**During2026-W28, the engineering team recorded9 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 3 | 1 Feat / 2 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 5 | 1 Feat / 4 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API (b56957250by @YourGitHubUsername)\n\n- [WEB]feat(web): inline cite-mark tooltips + deduplicated sources panel (6be2c3d45by @YourGitHubUsername)\n\n### Critical Bug Fixes\n\n- [INFRA]fix(start): stop overwriting agent/.env with USE_MOCK_LLM=true on every launch (22953c05fby @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-2",
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "excerpt": "# 📅 [2026-W34] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Sprint ID:2026-W34Active Contributors: YourGitHubUsername |Total Commits:23**\n\n## 1. Executive Summary\n\n**During2026-W34, the engineering team recorded23 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername | 8 | 3 Feat / 5 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | N/A | 0 | 0 Feat / 0 Fix | ⚪ Standby | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername | 18 | 6 Feat / 5 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [WEB]feat: stream tool-input-available immediately before agent retrieval for real-time SSE progress (854ff4b82by @YourGitHubUsername)\n\n- [WEB]feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain (094ee4b00by @YourGitHubUsername)\n\n- [AGENT]fix: add message argument to ChatResponse in streaming endpoint (121df91ffby @YourGitHubUsername)"
+    },
+    {
+      "evidence_id": "citation-3",
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "excerpt": "# 📅 [2026-W30] Project Master Sprint Delivery Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Sprint ID:2026-W30Active Contributors: YKASN, YourGitHubUsername, cheng-sh, fionaxi |Total Commits:14**\n\n## 1. Executive Summary\n\n**During2026-W30, the engineering team recorded14 commitsacross parallel development streams.Below is the cross-team overview of deliverables, status, and module links.**\n\n## 2. Module Delivery Overview & Navigation\n\n| Module Name | Contributors | Commits | Deliverables (Feat / Fix) | Status | Detailed Report Link |\n| --- | --- | --- | --- | --- | --- |\n| Agent Module (Orchestration & Reasoning) | YourGitHubUsername, fionaxi | 9 | 5 Feat / 1 Fix | 🟢 Delivered | Agent Weekly Report |\n| Data Persistence Module (Storage & Sessions) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Persistence Weekly Report |\n| Data Pipeline Module (Crawling & Processing) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Data-Pipeline Weekly Report |\n| Toolset Module (Retrieval & Plugins) | YourGitHubUsername | 1 | 0 Feat / 0 Fix | 🟢 Delivered | Toolset Weekly Report |\n| Web Module (UI & Full-stack Gateway) | YourGitHubUsername, cheng-sh | 3 | 2 Feat / 0 Fix | 🟢 Delivered | Web Weekly Report |\n\n## 3. High-Impact Highlights of the Week\n\n### Major Features Landed\n\n- [AGENT]feat: add agent tool registry (42376c860by @fionaxi)\n\n- [AGENT]feat: add query rewriter (32559e07aby @fionaxi)\n\n- [AGENT]feat: add clarification decision (e93c32fbfby @fionaxi)\n\n- [AGENT]feat: define query plan contract (9a974d720by @fionaxi)\n\n- [AGENT]feat: add intent classifier (3d3f27ddaby @fionaxi)"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "The selected Master reports record the project totals below.",
+      "evidence_ids": []
+    },
+    {
+      "claim_id": "answer-block-2",
+      "text": "| Sprint | Total commits |\n| --- | --- |\n| W28 | 9 [1] |\n| W30 | 14 [3] |\n| W34 | 23 [2] |",
+      "evidence_ids": [
+        "citation-1",
+        "citation-3",
+        "citation-2"
+      ]
+    },
+    {
+      "claim_id": "answer-block-3",
+      "text": "W30 minus W28: 14 - 9 = +5. [1][3]",
+      "evidence_ids": [
+        "citation-1",
+        "citation-3"
+      ]
+    },
+    {
+      "claim_id": "answer-block-4",
+      "text": "W34 minus W30: 23 - 14 = +9. [3][2]",
+      "evidence_ids": [
+        "citation-3",
+        "citation-2"
+      ]
+    },
+    {
+      "claim_id": "answer-block-5",
+      "text": "Change from W28 to W34: 23 - 9 = +14 commits. [1][2]",
+      "evidence_ids": [
+        "citation-1",
+        "citation-2"
+      ]
+    },
+    {
+      "claim_id": "answer-block-6",
+      "text": "These are recorded project totals, without summing module counts or inferring quality, contributor activity or reasons for changes.",
+      "evidence_ids": []
+    }
+  ],
+  "citations": [
+    {
+      "citation_id": "1",
+      "evidence_ids": [
+        "citation-1"
+      ],
+      "doc_id": "049bdab7d5def55be3494f69a32e4432",
+      "locator": "049bdab7d5def55be3494f69a32e4432_chunk_0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980662/Sprint+2026-W28+Master+Delivery+Report",
+      "claim_ids": [
+        "answer-block-2",
+        "answer-block-3",
+        "answer-block-5"
+      ]
+    },
+    {
+      "citation_id": "2",
+      "evidence_ids": [
+        "citation-2"
+      ],
+      "doc_id": "6beeab4852cb7fb253d44fa305ff510f",
+      "locator": "6beeab4852cb7fb253d44fa305ff510f_chunk_0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947857/Sprint+2026-W34+Master+Delivery+Report",
+      "claim_ids": [
+        "answer-block-2",
+        "answer-block-4",
+        "answer-block-5"
+      ]
+    },
+    {
+      "citation_id": "3",
+      "evidence_ids": [
+        "citation-3"
+      ],
+      "doc_id": "4789bcf073830a8985e95e33cde47767",
+      "locator": "4789bcf073830a8985e95e33cde47767_chunk_0",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33980711/Sprint+2026-W30+Master+Delivery+Report",
+      "claim_ids": [
+        "answer-block-2",
+        "answer-block-3",
+        "answer-block-4"
+      ]
+    }
+  ],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 5,
+    "completeness": 5,
+    "faithfulness": 5,
+    "answer_relevance": 5,
+    "limitation_disclosure": 5,
+    "conflict_handling": 5,
+    "required_fact_ids_supported": [
+      "totals",
+      "adjacent_deltas",
+      "overall_delta"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: All numeric values (9, 14, 23) and calculated deltas (+5, +9, +14) match the frozen excerpts exactly. Completeness: The report explicitly addresses all three required facts: totals, adjacent differences, and overall increase. Faithfulness: Every factual claim is directly supported by the mapped citations (e.g., W28=9 from citation-1, W30=14 from citation-3, W34=23 from citation-2). Answer relevance: The response is concise, focused entirely on the requested comparison and calculation without digression. Limitation disclosure: The report correctly notes that it uses recorded totals without inferring quality or reasons, which is appropriate given the data; no uncertainty or missing evidence requires further disclosure. Conflict handling: No conflicts exist between sources; the report correctly treats them as distinct period reports."
+  }
+}

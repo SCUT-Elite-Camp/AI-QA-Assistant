@@ -9,6 +9,16 @@ from agent.schemas.tool_execution import Evidence
 pytestmark = pytest.mark.no_storage
 
 
+def test_dated_meeting_original_read_covers_source_without_fabricating_search_hit():
+    item = Evidence(doc_id='meeting', chunk_id='meeting_chunk_0', title='Meeting+Minutes+of+2030+09+08',
+        content='A recorded meeting observation.', score=1, retrieval_query='meeting', retrieval_mode='document',
+        read_status='original_excerpt_loaded')
+    assert EvidenceGate._has_retrieval_for('September 8 meeting observed a workflow', [item])
+    assert not EvidenceGate._has_retrieval_for('September 9 meeting observed a workflow', [item])
+    assert not EvidenceGate._has_retrieval_for('September 8 2031 meeting observed a workflow', [item])
+    assert not EvidenceGate._has_retrieval_for('September 8 meeting observed a workflow', [item.model_copy(update={'read_status': 'retrieval_hit'})])
+
+
 def _plan(
     intent: QueryIntent,
     *,
@@ -64,6 +74,21 @@ def test_knowledge_qa_accepts_one_valid_evidence() -> None:
     assert result.accepted is True
     assert len(result.evidence) == 1
     assert result.should_retry is False
+
+
+def test_comparison_preserves_query_provenance_across_chunk_deduplication():
+    result = _evaluate(QueryIntent.COMPARISON,
+        [_evidence(retrieval_query="period A"), _evidence(retrieval_query="period B")],
+        sub_queries=["period A", "period B"], attempt=2)
+    assert result.accepted
+    assert len(result.evidence) == 1
+
+
+def test_comparison_does_not_count_low_score_query_provenance():
+    result = _evaluate(QueryIntent.COMPARISON,
+        [_evidence(retrieval_query="period A"), _evidence(retrieval_query="period B", score=0.1)],
+        sub_queries=["period A", "period B"], attempt=2)
+    assert not result.accepted
 
 
 def test_low_score_evidence_is_rejected() -> None:

@@ -2,10 +2,12 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle } from '../../../utils/drizzle'
 import { z } from 'zod'
-import { getOptionalChatActor, isChatOwnedByActor } from '../../../utils/chatAccess'
+import { assertResearchChatAccess, getOptionalChatActor, isChatOwnedByActor } from '../../../utils/chatAccess'
 import { requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
+import { filterReadableMessages, readableChatMetadata, requireEnabledActor } from '../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
+  const userId = await requireEnabledActor(event)
   const { id } = await getValidatedRouterParams(event, z.object({
     id: z.string()
   }).parse)
@@ -24,6 +26,7 @@ export default defineHandler(async (event) => {
   }
 
   const actor = await getOptionalChatActor(event)
+  await assertResearchChatAccess(event, id)
   const isOwner = actor ? isChatOwnedByActor(chat.userId, actor) : false
   let topicRole: 'owner' | 'editor' | 'viewer' | null = null
   if (chat.topicId) {
@@ -34,5 +37,5 @@ export default defineHandler(async (event) => {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { userId: _, ...rest } = chat
-  return { ...rest, isOwner, topicRole }
+  return { ...await readableChatMetadata(userId, rest), messages: await filterReadableMessages(userId, chat.messages), isOwner, topicRole }
 })

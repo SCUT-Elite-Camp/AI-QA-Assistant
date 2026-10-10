@@ -71,4 +71,3 @@ def test_valid_key_returns_200(client, monkeypatch):
     resp = client.get("/secured", headers={"Authorization": "Bearer test-secret-123"})
     assert resp.status_code == 200
     assert resp.json() == {"ok": True}
-

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { $fetch } from 'ofetch'
 import { ref, computed, watch } from 'vue'
 import { useCsrf } from '../../composables/useCsrf'
 import { useAdmin, type GrantInput } from '../../composables/useAdmin'

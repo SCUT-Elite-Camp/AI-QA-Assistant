@@ -1,0 +1,101 @@
+
+ RUN  v4.1.10 D:/htc_qa/frontend
+
+[14:58:01.869] [31mERROR[39m (web): [36m[] web - db query error[39m
+    [35mduration[39m: 3
+    err: {
+      "type": "LibsqlError",
+      "message": "SQLITE_CONSTRAINT: UNIQUE constraint failed: memory_snapshots.chat_id, memory_snapshots.history_revision: UNIQUE constraint failed: memory_snapshots.chat_id, memory_snapshots.history_revision",
+      "stack":
+          LibsqlError: SQLITE_CONSTRAINT: UNIQUE constraint failed: memory_snapshots.chat_id, memory_snapshots.history_revision
+              at mapSqliteError (file:///D:/htc_qa/frontend/node_modules/.pnpm/@libsql+client@0.17.3/node_modules/@libsql/client/lib-esm/sqlite3.js:434:16)
+              at executeStmt (file:///D:/htc_qa/frontend/node_modules/.pnpm/@libsql+client@0.17.3/node_modules/@libsql/client/lib-esm/sqlite3.js:337:15)
+              at Sqlite3Client.execute (file:///D:/htc_qa/frontend/node_modules/.pnpm/@libsql+client@0.17.3/node_modules/@libsql/client/lib-esm/sqlite3.js:82:16)
+              at Sqlite3Client.client.execute (D:/htc_qa/frontend/server/utils/drizzle.ts:52:30)
+              at file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/libsql/session.js:123:60
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.run (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/libsql/session.js:121:23)
+              at QueryPromise.run (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:162:28)
+              at QueryPromise.execute (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:174:54)
+              at QueryPromise.then (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/query-promise.js:21:17)
+          caused by: SqliteError: UNIQUE constraint failed: memory_snapshots.chat_id, memory_snapshots.history_revision
+              at convertError (D:\htc_qa\frontend\node_modules\.pnpm\libsql@0.5.29\node_modules\libsql\index.js:59:12)
+              at Statement.run (D:\htc_qa\frontend\node_modules\.pnpm\libsql@0.5.29\node_modules\libsql\index.js:335:13)
+              at executeStmt (file:///D:/htc_qa/frontend/node_modules/.pnpm/@libsql+client@0.17.3/node_modules/@libsql/client/lib-esm/sqlite3.js:330:34)
+              at Sqlite3Client.execute (file:///D:/htc_qa/frontend/node_modules/.pnpm/@libsql+client@0.17.3/node_modules/@libsql/client/lib-esm/sqlite3.js:82:16)
+              at Sqlite3Client.client.execute (D:/htc_qa/frontend/server/utils/drizzle.ts:52:30)
+              at file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/libsql/session.js:123:60
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.run (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/libsql/session.js:121:23)
+              at QueryPromise.run (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:162:28)
+              at QueryPromise.execute (file:///D:/htc_qa/frontend/node_modules/.pnpm/drizzle-orm@0.45.2_@libsql+_f297f558320e51767946c3e3ea865eb4/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:174:54)
+      "code": "SQLITE_CONSTRAINT",
+      "extendedCode": "SQLITE_CONSTRAINT_UNIQUE",
+      "rawCode": 2067,
+      "name": "LibsqlError"
+    }
+[14:58:48.085] [32mINFO[39m (web): [36m[] web - library cleanup completed[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_COMPLETE"
+    [35mjobId[39m: "cleanup_babc3b170d1c4eab898efa008b05a335"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+[14:58:48.093] [33mWARN[39m (web): [36m[] web - library cleanup retry[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_RETRY"
+    [35mjobId[39m: "cleanup_8987e29895b24db2b307ea5ee08a8f53"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+    [35merrorCode[39m: "network_error"
+[14:58:48.101] [33mWARN[39m (web): [36m[] web - library cleanup retry[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_RETRY"
+    [35mjobId[39m: "cleanup_6225e19965c34980b37b50bcda71b251"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+    [35merrorCode[39m: "http_500"
+[14:58:48.113] [33mWARN[39m (web): [36m[] web - library cleanup retry[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_RETRY"
+    [35mjobId[39m: "cleanup_ce7897a721a44f8f89b8b519bed49826"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+    [35merrorCode[39m: "http_429"
+[14:58:48.120] [31mERROR[39m (web): [36m[] web - library cleanup dead[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_DEAD"
+    [35mjobId[39m: "cleanup_173423054fc0431db3d72ce91e6a9f7d"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+    [35merrorCode[39m: "http_400"
+[14:58:48.127] [32mINFO[39m (web): [36m[] web - library cleanup completed[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_COMPLETE"
+    [35mjobId[39m: "cleanup_0a9c1230f3d74ff4ac573b212073545c"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+[14:58:48.135] [32mINFO[39m (web): [36m[] web - library cleanup completed[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_COMPLETE"
+    [35mjobId[39m: "cleanup_ea71812ba1c44afcbdf7b370cd832198"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+[14:58:48.143] [32mINFO[39m (web): [36m[] web - library cleanup completed[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_COMPLETE"
+    [35mjobId[39m: "cleanup_66ec0a33fb6543feafb3de5da8e60702"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+[14:58:48.151] [31mERROR[39m (web): [36m[] web - library cleanup dead[39m
+    [35mevent[39m: "LIBRARY_CLEANUP_DEAD"
+    [35mjobId[39m: "cleanup_0d7a7e2a6942422ca945093c790272b6"
+    [35mdocumentId[39m: "doc-a"
+    [35mversionId[39m: "ver-a"
+    [35mattemptCount[39m: 1
+    [35merrorCode[39m: "http_500"
+
+ Test Files  40 passed (40)
+      Tests  212 passed (212)
+   Start at  14:58:00
+   Duration  57.71s (transform 1.86s, setup 874ms, import 11.64s, tests 28.77s, environment 2.56s)
+

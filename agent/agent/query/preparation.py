@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from copy import deepcopy
 from typing import Any
 
@@ -65,6 +66,8 @@ class QueryPreparationAnalyzer:
             result = self._parse_response(self.fallback_llm.chat(messages))
         if not result.standalone_query:
             raise ValueError("standalone_query is required")
+        if not re.search(r'[\u4e00-\u9fff]', query) and re.search(r'[\u4e00-\u9fff]', result.standalone_query):
+            raise ValueError('query_preparation_language_changed')
         result.filters = deepcopy(
             {
                 key: value
@@ -109,6 +112,7 @@ class QueryPreparationAnalyzer:
         }.get(intent, "Do not create unnecessary sub-queries.")
         return (
             "Prepare a retrieval query for an enterprise knowledge Agent. "
+            "Preserve the original question's language; English questions and retrieval targets must remain English. "
             "The intent has already been classified; never change it. Resolve "
             "references using history and rewrite the request into one faithful, "
             "self-contained standalone_query. Preserve technical identifiers and "

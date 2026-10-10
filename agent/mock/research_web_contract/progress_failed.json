@@ -1,0 +1,19 @@
+{
+  "schema_version": "research.progress.v1",
+  "research_id": "research-failed",
+  "status": "failed",
+  "result_status": null,
+  "current_stage": "semantic_verification",
+  "progress_percent": 86,
+  "task_total": 2,
+  "task_completed": 2,
+  "evidence_count": 4,
+  "claim_count": 2,
+  "started_at": "2026-09-01T12:00:00Z",
+  "updated_at": "2026-09-01T12:00:18Z",
+  "stages": [
+    { "key": "semantic_verification", "label": "正在验证研究结论", "status": "failed", "started_at": "2026-09-01T12:00:17Z", "completed_at": null }
+  ],
+  "tasks": [],
+  "error": { "stage": "semantic_verification", "code": "research_failed", "message": "研究任务执行失败，请稍后重试。" }
+}

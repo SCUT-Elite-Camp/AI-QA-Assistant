@@ -3,6 +3,7 @@ import { HTTPError } from 'nitro'
 import { getCookie, type HTTPEvent } from 'nitro/h3'
 import { and, eq, tables, useDrizzle } from './drizzle'
 import { useUserSession } from './session'
+import { requireEnabledActor } from './sourceAccess'
 
 export type TopicRole = 'owner' | 'editor' | 'viewer'
 const RANK: Record<TopicRole, number> = { viewer: 1, editor: 2, owner: 3 }
@@ -18,13 +19,7 @@ export function ensureOwnerContinuity(currentRole: TopicRole | undefined, nextRo
 }
 
 export async function requirePrincipal(event: HTTPEvent): Promise<string> {
-  const session = await useUserSession(event)
-  const userId = session.data.user?.id
-  if (userId) return userId
-  const allowAnonymous = process.env.NODE_ENV !== 'production'
-    && process.env.ALLOW_ANONYMOUS_UPLOAD === 'true'
-  if (allowAnonymous && session.id) return `anonymous:${session.id}`
-  throw new HTTPError({ statusCode: 401, statusMessage: 'login_required' })
+  return requireEnabledActor(event)
 }
 
 export function requireCsrf(event: HTTPEvent): void {

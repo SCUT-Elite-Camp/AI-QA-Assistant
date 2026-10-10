@@ -1,6 +1,6 @@
 # Agent 层集成分支说明
 
-本文档约定 Agent 层第三周起的分支协作方式。集成分支为 `agent-dev`。
+常规 Agent 团队集成分支为 `agent-dev`。2026-10-09 全系统整合使用 `integration/agent-demo-access-evidence`，以 #63 `cdbe02b` 为共同基线，保留 partner 的质量/UI 修复，再提出到 `dev` 的 PR。验收缺口和历史归属见[交接报告](../../docs/pr63-integration-acceptance.md)。
 
 ## 分支职责
 
@@ -22,7 +22,7 @@
 - `/api/chat` 请求和响应格式以 `docs/API_CONTRACT.md` 为准。
 - Tool Layer 检索接口以 `docs/cp1/tool_layer_interface.md` 为准。
 - `ChatRequest`、`ChatResponse`、`RetrievalResult` 字段不能在未同步文档和测试的情况下改名或删除。
-- Mock 模式必须始终可运行；真实模式只能通过环境变量显式开启。
+- 隔离测试可用 Mock；真实验收须显式配置实际服务，不得静默退回 Mock。本次跨层协议以根接入文档为准。
 
 ## 真实 Tool Layer 冒烟测试
 

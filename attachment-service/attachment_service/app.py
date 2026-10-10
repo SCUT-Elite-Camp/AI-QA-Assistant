@@ -113,11 +113,16 @@ class EvidenceCorrection(BaseModel):
     actor_id: str = Field(min_length=1, max_length=128)
 
 
+_QUERY_VECTOR_DIM = int(os.getenv("LOCAL_EMBEDDING_MODEL_DIM", "1024"))
+if not 1 <= _QUERY_VECTOR_DIM <= 65536:
+    raise ValueError("invalid_embedding_dimension")
+
+
 class SearchRequest(BaseModel):
     attachment_ids: list[str] = Field(max_length=100)
     query: str = Field(default="", max_length=4000)
     top_k: int = Field(default=10, ge=1, le=50)
-    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+    query_vector: list[float] | None = Field(default=None, min_length=_QUERY_VECTOR_DIM, max_length=_QUERY_VECTOR_DIM)
 
 
 class LibrarySearchRequest(BaseModel):
@@ -128,7 +133,7 @@ class LibrarySearchRequest(BaseModel):
     doc_ids: list[str] | None = Field(default=None, max_length=100)
     mode: str = Field(default="hybrid", pattern="^(hybrid|vector|bm25)$")
     navigation_mode: str = Field(default="direct", pattern="^(direct|hierarchical|hybrid)$")
-    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+    query_vector: list[float] | None = Field(default=None, min_length=_QUERY_VECTOR_DIM, max_length=_QUERY_VECTOR_DIM)
 
 
 class LibraryOutlineRequest(BaseModel):
@@ -137,7 +142,7 @@ class LibraryOutlineRequest(BaseModel):
     query: str = Field(min_length=1, max_length=4000)
     top_k: int = Field(default=8, ge=1, le=12)
     doc_ids: list[str] | None = Field(default=None, max_length=100)
-    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+    query_vector: list[float] | None = Field(default=None, min_length=_QUERY_VECTOR_DIM, max_length=_QUERY_VECTOR_DIM)
 
 
 class LibraryScopedSearchRequest(BaseModel):
@@ -148,7 +153,7 @@ class LibraryScopedSearchRequest(BaseModel):
     top_k: int = Field(default=10, ge=1, le=20)
     doc_ids: list[str] | None = Field(default=None, max_length=100)
     mode: str = Field(default="hybrid", pattern="^(hybrid|vector|bm25)$")
-    query_vector: list[float] | None = Field(default=None, min_length=1024, max_length=1024)
+    query_vector: list[float] | None = Field(default=None, min_length=_QUERY_VECTOR_DIM, max_length=_QUERY_VECTOR_DIM)
 
 
 class InspectRequest(BaseModel):
@@ -159,6 +164,8 @@ class InspectRequest(BaseModel):
 
 class ScopeUpdate(BaseModel):
     scope: str
+    chat_id: str | None = Field(default=None, max_length=256)
+    topic_id: str | None = Field(default=None, max_length=256)
     expires_at: int | None = None
     dedupe_domain: str | None = Field(default=None, min_length=1, max_length=256)
 
@@ -550,6 +557,8 @@ async def upload(
     x_document_id: str | None = Header(default=None),
     x_version_id: str | None = Header(default=None),
     x_source_scope: str | None = Header(default=None),
+    x_chat_id: str | None = Header(default=None),
+    x_topic_id: str | None = Header(default=None),
 ) -> dict[str, Any]:
     if not ATTACHMENT_ID_PATTERN.fullmatch(attachment_id):
         raise HTTPException(400, "invalid attachment id")
@@ -616,6 +625,7 @@ async def upload(
                 hashlib.sha256(x_owner_id.encode()).hexdigest()[:12], x_knowledge_base_id,
                 x_document_id, x_version_id,
             )
+        STORE.update_attachment(attachment_id, chat_id=x_chat_id, topic_id=x_topic_id)
         return _public_record(STORE.get_attachment(attachment_id) or record)
     except AttachmentValidationError as exc:
         raise HTTPException(422, {"code": exc.code, "message": str(exc)}) from exc
@@ -765,11 +775,18 @@ def update_scope(attachment_id: str, body: ScopeUpdate) -> dict[str, Any]:
     if body.scope == "topic":
         if not body.dedupe_domain or not body.dedupe_domain.startswith("topic:"):
             raise HTTPException(422, "topic dedupe domain is required")
+        if body.topic_id and body.topic_id != body.dedupe_domain.removeprefix('topic:'):
+            raise HTTPException(422, 'topic scope identity mismatch')
         try:
             _migrate_blob_domain(record, body.dedupe_domain)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
-    STORE.update_attachment(attachment_id, scope=body.scope, expires_at=body.expires_at)
+    topic_id = body.topic_id
+    if body.scope == 'topic':
+        expected_topic = body.dedupe_domain.removeprefix('topic:')
+        topic_id = expected_topic
+    STORE.update_attachment(attachment_id, scope=body.scope, expires_at=body.expires_at,
+        chat_id=body.chat_id if body.scope == 'chat' else record.get('chat_id'), topic_id=topic_id)
     return _public_record(STORE.get_attachment(attachment_id) or {})
 
 

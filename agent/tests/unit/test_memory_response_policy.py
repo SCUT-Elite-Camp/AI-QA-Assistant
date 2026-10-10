@@ -1,18 +1,36 @@
+import pytest
+
+from agent.config.settings import settings
 from agent.memory.memory_response_policy import MemoryResponsePolicy
 from agent.memory.persistent_models import PersistentFact
 
 
-def test_explicit_recall_returns_only_visible_requested_fact_category() -> None:
+@pytest.fixture(autouse=True)
+def _enable_session_facts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "我记住了什么？",
+        "我记住了什么",
+        "我之前确认的记忆是什么？",
+        "我之前确认的记忆是什么",
+        "what have you remembered?",
+        "what have you remembered",
+        "WHAT ARE MY CONFIRMED MEMORIES?",
+        "what are my confirmed memories",
+    ],
+)
+def test_exact_recall_returns_visible_facts_in_bff_order(query: str) -> None:
     policy = MemoryResponsePolicy(now_ms=lambda: 1000)
+
     recall = policy.resolve(
-        "我之前确认的目标是什么？",
+        query,
         [
             PersistentFact(id="goal", category="GOAL", value="完成答辩准备。"),
-            PersistentFact(
-                id="preference",
-                category="PREFERENCE",
-                value="使用中文。",
-            ),
+            PersistentFact(id="preference", category="PREFERENCE", value="使用中文。"),
             PersistentFact(
                 id="expired",
                 category="GOAL",
@@ -23,39 +41,53 @@ def test_explicit_recall_returns_only_visible_requested_fact_category() -> None:
     )
 
     assert recall.handled is True
-    assert recall.answer == "你此前确认的目标：\n- 完成答辩准备。"
+    assert recall.answer == "已确认的记忆：\n- GOAL: 完成答辩准备。\n- PREFERENCE: 使用中文。"
 
 
-def test_explicit_recall_reports_no_visible_confirmed_fact_without_model_guessing() -> None:
-    policy = MemoryResponsePolicy()
-    recall = policy.resolve("我之前确认的偏好是什么？", [])
+def test_exact_recall_reports_no_visible_confirmed_fact_without_model_guessing() -> None:
+    recall = MemoryResponsePolicy().resolve("我记住了什么？", [])
 
     assert recall.handled is True
-    assert recall.answer == "当前没有可见且未过期的已确认偏好。"
+    assert recall.answer == "当前没有可见且未过期的已确认记忆。"
 
 
-def test_explicit_visibility_cutoff_overrides_policy_clock() -> None:
-    policy = MemoryResponsePolicy(now_ms=lambda: 5000)
-    recall = policy.resolve(
+def test_non_exact_question_does_not_trigger_memory_recall() -> None:
+    recall = MemoryResponsePolicy().resolve(
         "我之前确认的目标是什么？",
-        [PersistentFact(
-            id="near-expiry",
-            category="GOAL",
-            value="Visible at the request cutoff.",
-            expires_at=1500,
-        )],
-        visibility_cutoff_ms=1000,
+        [PersistentFact(id="goal", category="GOAL", value="不应自动回答。")],
     )
 
-    assert recall.handled is True
-    assert "Visible at the request cutoff." in recall.answer
+    assert recall.handled is False
+    assert recall.answer is None
 
 
-def test_non_explicit_question_does_not_trigger_memory_recall() -> None:
-    policy = MemoryResponsePolicy()
-    recall = policy.resolve(
-        "如何设定项目目标？",
+@pytest.mark.parametrize(
+    "query",
+    [
+        "我记住了什么？？",
+        "我记住了什么！",
+        "我记住了什么内容",
+        "what have you remembered today",
+    ],
+)
+def test_non_exact_variants_do_not_trigger_memory_recall(query: str) -> None:
+    recall = MemoryResponsePolicy().resolve(
+        query,
         [PersistentFact(id="goal", category="GOAL", value="不应自动回答。")],
+    )
+
+    assert recall.handled is False
+    assert recall.answer is None
+
+
+def test_session_fact_gate_closed_does_not_bypass_model_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", False)
+
+    recall = MemoryResponsePolicy().resolve(
+        "我记住了什么？",
+        [PersistentFact(id="goal", category="GOAL", value="不应暴露。")],
     )
 
     assert recall.handled is False

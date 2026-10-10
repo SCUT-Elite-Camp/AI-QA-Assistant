@@ -3,14 +3,14 @@
   "baseline_id": "cp2-deep-research-a-v1",
   "frozen_at": "2026-09-14T19:49:53+08:00",
   "dataset_version": "cases.v1",
-  "generation_config_sha256": "e239f3dd0c00ae78fc68370a92f32ae409c1735766e050f9565ca77930229e1f",
+  "generation_config_sha256": "ff8920efdc3190ae6ff1020a130131a2d3bd35e451bd876342b13503fdb03e1b",
   "repository": {
     "url": "https://github.com/SCUT-Elite-Camp/AI-QA-Assistant/",
-    "branch": "dev",
-    "head_commit": "6f9809a1c2369882936c6c3f88b96a8463ab4443",
+    "branch": "agent-dev",
+    "head_commit": "2662b31bca1a93961051088e56fc1a0434b990f5",
     "working_tree_dirty_at_freeze": true,
-    "note": "HEAD equals origin/dev; pre-existing local changes are intentionally preserved and must be captured by each run's environment fingerprint.",
-    "working_tree_status_sha256": "d14cd1c248c2ccc3c265642415fcc0f92f7362c61805c57b3aecc8472dfeddcc"
+    "note": "A-side assets are based on origin/agent-dev immediately before their own commit.",
+    "working_tree_status_sha256": "9f279cf2332e5db6faef56780f7e79c74e739e11bfb2dde80d236b6514f70cf1"
   },
   "implementation": {
     "g1": {
@@ -21,7 +21,7 @@
     "g2": {
       "entry": "Current Deep Research",
       "required_path": "agent/deep_research",
-      "available_on_frozen_head": false
+      "available_on_frozen_head": true
     },
     "g3": {
       "entry": "Deep Research + Page Index",
@@ -29,15 +29,15 @@
       "available_on_frozen_head": false
     },
     "research_reference": {
-      "git_ref": "origin/feature/cp2-research-progress-backend",
-      "commit": "72e5386936bbbfcc94af6a36a148567ff237ba09",
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
+      "commit": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
       "contract_schema": "research.v2"
     }
   },
   "generation": {
     "provider": "openai-compatible",
-    "api_base": "http://127.0.0.1:11434/v1",
-    "model": "llama3.1",
+    "api_base": "https://ws-q0char890qpotj8f.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+    "model": "qwen3.8-2.4t-a95b",
     "model_revision": "provider-reported-required-per-run",
     "temperature": 0.1,
     "top_p": 1.0,
@@ -49,24 +49,30 @@
   "prompts": {
     "g1_answer": {
       "path": "agent/agent/prompt/templates.py",
-      "sha256": "5a67add56ce50b085e5101bc87fc388fbc73c57a7132f072b2c0093b3f2b50b2",
+      "sha256": "e66ae8f3400c82e11949d34d43d88fce8fe2bb24fed3799fcd5643ba081cacce",
       "assembly_path": "agent/agent/runtime/runner.py",
-      "assembly_sha256": "bed7161f633595b785b4c199a866dd79715667eb6e06f810d2c7889fc949578c"
+      "assembly_git_ref": "2662b31bca1a93961051088e56fc1a0434b990f5",
+      "assembly_git_sha256": "173a7e9dd4e60d65db0ec1e93a9aebd55a5a32b008f851c43724be38edb1b0d4",
+      "assembly_note": "Pin the merged P0 source for historical validation; retain the original Windows worktree hash below. Current product acceptance records its own commit and diff instead of rewriting this baseline.",
+      "assembly_sha256": "1d729d05612d582365c87d8fcda41c64f99618346ee78bd6fcc4afc3f38c81ba",
+      "git_ref": "7bb9687531787c8ab26ba6797b1556893ecf5fd6",
+      "git_sha256": "82d02a1ca79af2702b115f38ce0a4d255f2927e670d8f9aee31c615c90a7146b",
+      "git_note": "Immutable pre-merge prompt; sha256 retains its original Windows worktree bytes."
     },
     "planner": {
       "path": "agent/deep_research/planner.py",
-      "git_ref": "origin/feature/cp2-research-progress-backend",
-      "sha256": "af2951537fa51b107372f47eac28d1a0ec927414c98445625d5675b5c10a4e22"
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
+      "sha256": "4e6603c72bae1351fcbfcef69ac89c8d7f09b31073cc1df216688cbc81b8f0c5"
     },
     "worker": {
       "path": "agent/deep_research/worker.py",
-      "git_ref": "origin/feature/cp2-research-progress-backend",
-      "sha256": "f4ebbeb4b55cdc328bd51cd393cb8dcd0c29f39257e9f44dfef592ea0f44d7b5"
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
+      "sha256": "b8064a8d88a29a47f3d060363798d08d77aefb394f52999b66ab3b471810d1fb"
     },
     "report": {
       "path": "agent/deep_research/renderer.py",
-      "git_ref": "origin/feature/cp2-research-progress-backend",
-      "sha256": "bd07d7c135799281e179fe48d4c57fb4b238170d352a2018311da6d5458e1691"
+      "git_ref": "87db6d7907a88fac73094eb5c7632fb6b0c97ff8",
+      "sha256": "c4384ea5c47b3ee2ded367b675233d5a616ce1b56e1de038bf001e562ddf9552"
     },
     "judge": {
       "path": "eval/deep_research_a/prompts/model_judge.v1.md",

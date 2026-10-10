@@ -76,6 +76,8 @@ class QueryPlanner:
         try:
             response = self.llm.chat(messages)
             result = self._parse_response(response)
+            if not re.search(r'[\u4e00-\u9fff]', query) and any(re.search(r'[\u4e00-\u9fff]', q) for q in result.sub_queries):
+                result.sub_queries = []
         except Exception as exc:
             self.logger.warning(
                 "[QUERY_PLANNING] action=fallback error=%s query=%s",
@@ -122,14 +124,18 @@ class QueryPlanner:
     def _system_prompt() -> str:
         return (
             "Plan retrieval for an enterprise knowledge Agent. "
+            "Preserve the question's language; English retrieval targets must remain English. "
             "Return JSON only with keys sub_queries, filters, navigation_mode, scope, "
             "needs_structure, needs_knowledge, needs_version_reasoning, and reason. "
             "Use direct for exact facts, hierarchical for long cross-section or version "
             "reasoning, and hybrid for ambiguous, cross-document, or complex questions. "
             "scope is single_doc, multi_doc, or kb. needs_knowledge must be false. "
             "For comparison, create one self-contained sub-query per comparison "
-            "target. For other intents, use sub_queries only when decomposition "
-            "materially improves retrieval. Return at most four sub-queries. "
+            "target. For other intents, use sub_queries only when decomposition materially improves retrieval. "
+            "Preserve the requested entity and date or version in each target query. "
+            "For remaining limitations in a dated comparison, include them in the later target query, "
+            "rather than adding a broad undated limitations query. "
+            "Return at most four sub-queries. "
             "Extract filters only when explicitly stated by the user. Supported "
             "filter keys are doc_id, doc_ids, space, and doc_type. Do not infer "
             "unstated facts or add any other filter key. Example shape: "

@@ -1,13 +1,15 @@
-from unittest.mock import MagicMock
 from contextvars import Context
+from unittest.mock import MagicMock
+
 import pytest
-from agent.schemas.chat import ChatRequest
+
+from agent.agent import Agent
+from agent.errors.exceptions import LLMError
+from agent.llm.llm_client import LLMClient
+from agent.schemas.chat import ChatRequest, InternalChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from agent.agent import Agent
-from agent.llm.llm_client import LLMClient
 from toolset.tool_layer.search_tool import SearchTool
-from agent.errors.exceptions import LLMError
 
 
 def test_normal_query_returns_success() -> None:
@@ -193,3 +195,39 @@ def test_agent_routes_complex_completeness_check_to_configured_model(monkeypatch
     assert agent.completeness_llm.llm.model == "fast-completeness-model"
     assert agent.completeness_llm.llm.enable_thinking is False
     assert agent.runner.answer_completeness_checker.llm is agent.completeness_llm
+
+
+def test_explicit_internal_fact_command_bypasses_llm_and_rag(monkeypatch) -> None:
+    monkeypatch.setattr("agent.config.settings.settings.PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr("agent.config.settings.settings.SESSION_FACT_ENABLED", True)
+
+    agent = Agent()
+    monkeypatch.setattr(
+        agent.orchestrator,
+        "run",
+        lambda *args, **kwargs: pytest.fail("explicit Fact commands must not invoke orchestration"),
+    )
+
+    response, decision = agent.chat_with_memory(
+        InternalChatRequest(
+            query="记住目标：完成本地 Memory 演示",
+            session_id="fact-command-session",
+            memory_context={
+                "actor": {"user_id": "user-1", "authenticated": True},
+                "chat_id": "chat-1",
+                "revision": 1,
+                "current_message_id": "message-1",
+                "current_sequence": 1,
+                "snapshot": None,
+                "facts": [],
+                "tail": [],
+            },
+        )
+    )
+
+    assert response.status == StatusCode.SUCCESS
+    assert response.citations == []
+    assert response.answer == "已生成一条待确认的会话记忆，请在界面确认。"
+    assert [(proposal.category, proposal.value, proposal.source_message_id, proposal.expires_at) for proposal in decision.fact_proposals] == [
+        ("GOAL", "完成本地 Memory 演示", "message-1", None),
+    ]

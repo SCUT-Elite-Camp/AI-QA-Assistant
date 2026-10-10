@@ -1,0 +1,25 @@
+2026-10-09T09:16:29.0950022+08:00 started frontend pid=53848 host=66360
+2026-10-09T09:35:32.0983917+08:00 frontend exited code=
+2026-10-09T09:37:03.3996128+08:00 started frontend pid=50208 host=25740
+2026-10-09T09:42:15.0833775+08:00 frontend exited code=
+2026-10-09T09:43:56.6226889+08:00 started frontend pid=64568 host=13232
+2026-10-09T10:17:30.5447120+08:00 frontend exited code=
+2026-10-09T10:18:56.0733040+08:00 started frontend pid=60844 host=6552
+2026-10-09T10:18:56.2332321+08:00 frontend exited code=1
+2026-10-09T10:18:56.2644072+08:00 restarting frontend in 2 seconds
+2026-10-09T10:18:58.3029685+08:00 started frontend pid=71120 host=6552
+2026-10-09T10:18:58.5460262+08:00 frontend exited code=1
+2026-10-09T10:18:58.5511113+08:00 restarting frontend in 2 seconds
+2026-10-09T10:19:00.6339790+08:00 started frontend pid=52060 host=6552
+2026-10-09T10:19:00.8118368+08:00 frontend exited code=1
+2026-10-09T10:19:00.8154804+08:00 restarting frontend in 2 seconds
+2026-10-09T10:19:02.8574754+08:00 started frontend pid=62688 host=6552
+2026-10-09T10:19:03.0392610+08:00 frontend exited code=1
+2026-10-09T10:19:03.0464440+08:00 restarting frontend in 2 seconds
+2026-10-09T10:19:05.0996664+08:00 started frontend pid=17860 host=6552
+2026-10-09T10:19:05.2893400+08:00 frontend exited code=1
+2026-10-09T10:19:05.2915335+08:00 stopped after five rapid failures; inspect startup logs
+2026-10-09T10:19:51.1633879+08:00 started frontend pid=64680 host=71636
+2026-10-09T10:20:09.5065261+08:00 frontend exited code=-1
+2026-10-09T10:20:09.5292346+08:00 restarting frontend in 2 seconds
+2026-10-09T10:20:11.5741497+08:00 started frontend pid=37020 host=71636

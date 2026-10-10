@@ -1,43 +1,25 @@
 import { defineHandler } from 'nitro'
-import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
-import { loadAllFavoritesFromDisk } from '../../../utils/favoriteStorage'
+import { requireOwnedChat } from '../../../utils/chatAccess'
+import { assertMessageSources, requireEnabledActor } from '../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
-  const session = await useUserSession(event)
+  const userId = await requireEnabledActor(event)
   const db = useDrizzle()
-  const userId = session.data.user?.id || session.id!
-
-  // ── Primary source: disk (data-persistence/data/favorites/) ─────────────
-  const diskRecords = loadAllFavoritesFromDisk()
-
-  if (diskRecords.length > 0) {
-    // Map disk records back to chat-list format (same shape as /api/chats)
-    return diskRecords.map(r => ({
-      id: r.chatId,
-      title: r.chatTitle,
-      lastFavoritedAt: r.lastUpdatedAt,
-      favoriteMessages: r.messages
-    }))
+  const chats = await db.select().from(tables.chats).where(eq(tables.chats.userId, userId))
+  const favorites = []
+  for (const chat of chats) {
+    try { await requireOwnedChat(event, chat.id) }
+    catch (error: any) {
+      if ([403, 404, 409].includes(error?.status ?? error?.statusCode)) continue
+      throw error
+    }
+    const messages = await db.query.messages.findMany({ where: (messages, { and, eq }) => and(eq(messages.chatId, chat.id), eq(messages.isFavorite, true)) })
+    const visible = []
+    for (const message of messages) {
+      try { await assertMessageSources(userId, message); visible.push(message) } catch { /* legacy/revoked bodies stay inaccessible */ }
+    }
+    if (visible.length) favorites.push({ id: chat.id, title: '收藏对话', lastFavoritedAt: chat.updatedAt, favoriteMessages: visible })
   }
-
-  // ── Fallback: query DB for messages with isFavorite=true ─────────────────
-  let userChats = await db.select().from(tables.chats).where(eq(tables.chats.userId, userId))
-  if (!userChats || userChats.length === 0) {
-    userChats = await db.select().from(tables.chats)
-  }
-
-  const favMessages = await db.select().from(tables.messages).where(eq(tables.messages.isFavorite, true))
-  const favChatIds = new Set(favMessages.map(m => m.chatId))
-
-  const favoriteChats = userChats.filter(c => favChatIds.has(c.id))
-
-  return favoriteChats
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .map(c => ({
-      id: c.id,
-      title: c.title || 'Untitled',
-      lastFavoritedAt: c.updatedAt,
-      favoriteMessages: []
-    }))
+  return favorites
 })

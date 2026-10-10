@@ -9,6 +9,7 @@ import {
   toFactView
 } from '../../../../../utils/memoryRepository'
 import { isSessionFactEnabled } from '../../../../../utils/sessionFactGate'
+import { assertDerivedSources } from '../../../../../utils/sourceAccess'
 
 function factError (status: number, code: string, message: string): Response {
   return Response.json({ code, message }, { status })
@@ -45,7 +46,12 @@ export default defineHandler(async (event) => {
       chatId: id,
       historyRevision: owned.chat.historyRevision
     })
-    return { facts: facts.map(toFactView) }
+    const visible = []
+    for (const fact of facts) {
+      try { await assertDerivedSources(owned.actor.userId, fact.evidenceProvenance); visible.push(toFactView(fact)) }
+      catch { /* Unknown/revoked lineage never becomes trusted by confirmation. */ }
+    }
+    return { facts: visible }
   } catch (error) {
     if (error instanceof MemoryRepositoryError) {
       return factError(404, 'not_found', 'Not found')

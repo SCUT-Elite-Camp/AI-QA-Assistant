@@ -37,9 +37,9 @@ def find_page_by_title(title):
 def create_or_update_page(title, md_content, parent_id=None):
     html_content = md_to_html(md_content)
     existing = find_page_by_title(title)
-    
+
     headers = {"Content-Type": "application/json"}
-    
+
     if existing:
         page_id = existing["id"]
         current_version = existing["version"]["number"]
@@ -60,7 +60,7 @@ def create_or_update_page(title, md_content, parent_id=None):
         }
         if parent_id:
             payload["ancestors"] = [{"id": str(parent_id)}]
-            
+
         r = requests.put(f"{BASE_URL}/rest/api/content/{page_id}", json=payload, auth=AUTH, headers=headers)
         if r.status_code in [200, 201]:
             print(f"[UPDATED] '{title}' (ID: {page_id})")
@@ -82,7 +82,7 @@ def create_or_update_page(title, md_content, parent_id=None):
         }
         if parent_id:
             payload["ancestors"] = [{"id": str(parent_id)}]
-            
+
         r = requests.post(f"{BASE_URL}/rest/api/content", json=payload, auth=AUTH, headers=headers)
         if r.status_code in [200, 201]:
             page_id = r.json().get("id")
@@ -129,7 +129,7 @@ This documentation knowledge base is organized into three main sections:
     sec0_title = "00. Project Overall Records & Milestones"
     sec0_md = "# 00. Project Overall Records & Milestones\n\nHigh-level architectural evolution, milestones, delivery matrix, and master changelog."
     sec0_id = create_or_update_page(sec0_title, sec0_md, parent_id=root_id)
-    
+
     overall_files = [
         ("01_project_milestones_and_roadmap.md", "01. Project Milestones & Delivery Roadmap"),
         ("02_system_architecture_evolution.md", "02. System Architecture Evolution"),
@@ -156,16 +156,16 @@ This documentation knowledge base is organized into three main sections:
         folder_path = os.path.join(sprints_dir, folder)
         if not os.path.isdir(folder_path):
             continue
-        
+
         w_upper = folder.upper()
         master_file = [f for f in os.listdir(folder_path) if f.startswith("00_w") and f.endswith(".md")]
         if not master_file:
             continue
-            
+
         master_path = os.path.join(folder_path, master_file[0])
         with open(master_path, "r", encoding="utf-8") as f:
             master_content = f.read()
-            
+
         sprint_page_title = f"Sprint {w_upper} Master Delivery Report"
         sprint_page_id = create_or_update_page(sprint_page_title, master_content, parent_id=sec1_id)
         time.sleep(0.3)
@@ -178,7 +178,7 @@ This documentation knowledge base is organized into three main sections:
             ("m4_toolset", f"Sprint {w_upper} - M4 Toolset Module Deliverables"),
             ("m5_web", f"Sprint {w_upper} - M5 Web Module Deliverables")
         ]
-        
+
         for key, mod_title in module_files:
             target_f = [f for f in os.listdir(folder_path) if key in f and f.endswith(".md")]
             if target_f:

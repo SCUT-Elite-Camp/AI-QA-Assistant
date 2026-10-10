@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sqlite3
 import threading
 import time
@@ -136,6 +137,8 @@ class AttachmentStore:
             ("document_id", "TEXT"),
             ("version_id", "TEXT"),
             ("source_scope", "TEXT"),
+            ("chat_id", "TEXT"),
+            ("topic_id", "TEXT"),
             ("active", "INTEGER NOT NULL DEFAULT 0"),
             ("version_number", "INTEGER NOT NULL DEFAULT 0"),
             ("vector_ref", "TEXT"),
@@ -564,6 +567,21 @@ class AttachmentStore:
             item["content"] = item.pop("current_content")
             item["locator"] = json.loads(item["locator"] or "{}")
             item["confirmed"] = bool(item["confirmed"])
+            attachment = self.get_attachment(str(item["attachment_id"]))
+            if attachment is None:
+                continue
+            excerpt_hash = hashlib.sha256(str(item["content"]).encode("utf-8")).hexdigest()
+            personal = attachment.get("scope") == "library" and attachment.get("source_scope") == "personal"
+            item.update({
+                "content_hash": attachment["sha256"] if personal else excerpt_hash,
+                "normalized_content_hash": excerpt_hash,
+                "source_content_hash": attachment["sha256"],
+                "source_version": attachment["evidence_version"],
+                "read_status": "derived_visual_analysis" if item.get("source_type") == "vision_analysis" else "original_excerpt_loaded",
+                "evidence_ref": "ev_" + hashlib.sha256("\x1f".join((
+                    str(item["attachment_id"]), str(item["evidence_id"]),
+                    str(attachment["evidence_version"]), excerpt_hash)).encode()).hexdigest()[:32],
+            })
             result.append(item)
         return result
 

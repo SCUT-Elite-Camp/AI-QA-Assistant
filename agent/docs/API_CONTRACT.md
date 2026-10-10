@@ -1,5 +1,7 @@
 # API Contract
 
+Current cross-layer contract (2026-10-09): [integration](../../docs/access-evidence-integration.md), [architecture](../../docs/access-evidence-architecture.md). Responses add verifiable `evidence_provenance` without removing existing fields. Knowledge use requires current enabled identity, local/native ACL and original version/hash checks. July Q1 anonymous/Mock specifications do not govern this build.
+
 ## Authentication (shared secret)
 
 All `/api/*` business endpoints require an `Authorization: Bearer <AGENT_API_KEY>`
@@ -31,14 +33,23 @@ request validation -> MemoryCoordinator -> QueryUnderstanding -> QueryPlan
 -> JSON response
 ```
 
+The Chat path is strictly Chat-only. Its internal `ChatRoutePolicy` exposes
+only bounded `chat_l0_direct`, `chat_l1_retrieval`, and
+`chat_l2_bounded_multi_step` routes. `/api/chat` never creates a Research Job;
+Local Deep Research uses the separate manual `/api/research/jobs` entry and an
+explicit Plan + SourceManifest approval flow. See `docs/cp2/chat_route_policy.md`.
+
 The Agent does not cache or restore conversation history by `session_id`. The
 Web/BFF must explicitly include a trusted `memory_context` on the internal
 request when prior conversation context is needed. Public `/api/chat` requests
 without that trusted context are stateless across requests.
 
-`stream` on `POST /api/chat` is reserved and does not change its JSON response.
-The separate `POST /api/chat/stream` endpoint uses the same Agent execution
-pipeline and adapts its completed `ChatResponse` to the demo SSE contract below.
+`POST /api/chat` remains JSON even with `stream: true`. Dedicated `/api/chat/stream`
+and trusted `/api/internal/chat/retrieval/stream` return SSE with
+`done.evidence_provenance`. The BFF buffers, verifies and saves successful answers
+before release. Insufficient context is a non-durable status, not a saved
+successful answer.
+
 
 ## Frozen internal persistent-Memory contract (Unit 04)
 
@@ -160,7 +171,7 @@ Fields:
       "title": "Agent 层 Q1 范围",
       "source_url": "https://example.local/docs/agent-q1-plan",
       "doc_id": "agent-q1-plan",
-      "chunk_id": "chunk-001",
+      "chunk_id": "agent-q1-plan_chunk_0",
       "score": 0.96,
       "snippet": "Q1 只实现简化版单轮 RAG Agent，使用 Mock Retrieval 和 Mock LLM 打通最小闭环。"
     }
@@ -186,7 +197,9 @@ Fields:
 - `title`: Source chunk title.
 - `source_url`: Optional source URL.
 - `doc_id`: Source document ID.
-- `chunk_id`: Source chunk ID.
+- `chunk_id`: Stable source chunk ID in canonical
+  `{doc_id}_chunk_{zero_based_index}` form. Legacy Tool Layer values such as
+  `{doc_id}::chunk_{index}` are normalized at the Agent trust boundary.
 - `score`: Retrieval score.
 - `snippet`: Short excerpt from `chunk_text` for Web display.
 
@@ -205,6 +218,98 @@ Fields:
 `clarification_required` keeps `answer` empty and puts the Agent's clarification
 question in `message`, matching the existing Web error/status rendering path.
 
+## Internal Persistent Memory contract (not a public endpoint)
+
+The public `POST /api/chat` request and `ChatResponse` above remain unchanged.
+They reject the internal-only `memory_context` field. The token-protected
+`/api/internal/*` routes are introduced separately in Unit 04a; Unit 04 only
+defines their Pydantic DTOs and configuration.
+
+`InternalChatRequest` contains all existing `ChatRequest` fields plus a required
+`memory_context`:
+
+```text
+InternalActor { user_id, authenticated: true }
+MemoryMessage { id, sequence, revision, role, content }
+MemorySnapshotInput { id, version, revision, covered_to_sequence, summary }
+MemoryFactInput { id, category, value, expires_at: epoch-ms | null }
+MemoryContextInput { actor, chat_id, revision, current_message_id,
+                     current_sequence, snapshot: nullable, facts, tail }
+```
+
+The future internal chat response is
+`InternalChatResponse { response: ChatResponse, memory_decision }`. Its
+`memory_decision` may contain a `context_artifact`, `recall`, and
+`fact_proposals`; `fact_proposals` is always an empty array through Units 01--08.
+The compaction and short-window reset DTOs are also internal-only. BFF remains
+the only writer of ChatMessage, Snapshot, and Fact records.
+
+From Unit 09 onward, an internal response may contain one `FactProposal` only
+when both persistent Memory and `SESSION_FACT_ENABLED` are enabled and the
+authenticated user sent an exact supported remember command. The proposal is a
+four-field candidate with `expires_at: null`; it is neither persisted nor
+confirmed. The Web BFF remains the only writer and computes expiry on confirm.
+Explicit recall is limited to the documented exact queries and never creates a
+RAG citation.
+
+Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
+`AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
+the example file intentionally leaves it empty.
+
+## Unit 11 Memory flags and safe events
+
+`PERSISTENT_MEMORY_ENABLED=false` and `SESSION_FACT_ENABLED=false` are both
+safe defaults. With the Fact gate disabled, candidate proposals and deterministic
+recall are suppressed and `ContextArtifact.memory_brief` omits Facts, while
+trusted Snapshot/Tail context can still be resolved when persistent Memory is
+enabled. `MEMORY_CACHE_ENABLED=true` is rejected at Agent configuration time
+with the fixed `memory_cache_not_supported` error; this release has no Redis
+support.
+
+The Agent reads `MEMORY_TAIL_MESSAGES=8`,
+`MEMORY_COMPACTION_MIN_MESSAGES=12`, and
+`MEMORY_COMPACTION_SOFT_TOKENS=1000` as positive configuration bounds. Its
+only Memory observability events contain finite enums and numbers:
+`memory_resolve {source, outcome, duration_ms}`,
+`memory_compaction {outcome, tail_count, snapshot_version?}`, and
+`memory_fact {action, outcome}`, and
+`memory_prompt {model_history_chars}`. The latter is emitted only after the
+Runner executes with trusted persistent context, and records the non-negative
+character count of its `model_history` only. These events never include user
+text, Fact values, Snapshot summaries, Tail messages, message/chat IDs,
+prompts, or tokens.
+
+## BFF-only internal Memory endpoints (Unit 04a)
+
+`POST /api/internal/chat`, `POST /api/internal/memory/compaction-plan`, and
+`POST /api/internal/memory/reset-short-window` require both JSON input and an
+exact `X-Agent-Internal-Token`. The Agent compares this token in constant time;
+missing, blank, or incorrect values all receive the same `403` response.
+
+- `/chat` accepts only `InternalChatRequest`. With the Agent persistent flag
+  disabled it returns `409 { "code": "persistent_memory_disabled" }`. When
+  enabled, it delegates to the shared Agent, resolves the trusted Memory context
+  and returns `InternalChatResponse`; `memory_decision.fact_proposals=[]`
+  remains fixed through Unit 08.
+- `/memory/compaction-plan` validates BFF-supplied current-revision messages
+  and returns either `{ "should_compact": false }` or a pure optimistic
+  Snapshot plan. It never reads or writes the Web database: the BFF applies a
+  positive plan only after the assistant message is durable, using the returned
+  expected active Snapshot ID/version for its transaction. Snapshot summaries
+  are deterministically bounded by `MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS`
+  (default `1200`) and omit a whole message when the fixed sensitive-value
+  policy matches it. During the BFF transition, the internal-only
+  `tail_size`, `min_coverable_messages`, and `soft_token_budget` request fields
+  may be omitted. Older BFF calls may still send them, but each supplied value
+  must be a strict positive integer and is ignored by the Planner. Agent
+  settings remain the sole authority for all three thresholds; unknown fields
+  are rejected and no public API version or DTO changes.
+- `/memory/reset-short-window` calls only the existing in-process
+  `ConversationMemory.clear(chat_id)`. It never writes Snapshot or Fact data.
+
+The former unauthenticated `DELETE /api/chat/memory/{session_id}` endpoint has
+been removed. Public `/api/chat` and its response remain unchanged.
+
 ## Week 3 Quality Rules
 
 - Empty or whitespace-only `query` returns `invalid_query` before retrieval or LLM calls.
@@ -218,6 +323,9 @@ question in `message`, matching the existing Web error/status rendering path.
   executed search is recorded and consumes one `max_tool_calls` slot. The
   corrective retrieval batch is bounded by `max_retrieval_attempts`; multiple
   missing-target searches in that batch share one retrieval attempt.
+- Semantically identical tool calls emitted in parallel in one model turn are
+  executed once and replayed with one matching tool response. An identical
+  call repeated in a later model turn still triggers the loop safety limit.
 - Thinking performs Direct retrieval first and applies `EvidenceGate` before
   `CoverageAssessor` / `ExplorationController` can decide whether Wiki starts.
   `exploration_mode=auto` starts the bounded Wiki sequence only for an accepted
@@ -288,6 +396,9 @@ The Agent trust boundary converts Tool Layer `dict` results into
 - `source_url`
 - `score`
 
+At this boundary, parseable legacy chunk IDs are normalized to
+`{doc_id}_chunk_{index}`. Unknown non-empty locator formats are preserved
+rather than guessed.
 For document-level intents, Toolset also exposes:
 
 - `find_documents`: returns document identity and bounded match summaries;
@@ -313,6 +424,97 @@ The retrieval call always receives `standalone_query`, `top_k`,
 `trace_id`. Non-direct calls additionally receive `navigation_mode`. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
+## Local Deep Research API
+
+Deep Research is local-source-only and must be started explicitly. Creating a
+Job only persists `status=created`; the application-scoped durable dispatcher
+then freezes the `SourceManifest` and creates the approval Plan. Clients poll
+the Job endpoint instead of holding the create request open.
+
+```text
+POST /api/research/jobs
+GET  /api/research/jobs/{research_id}
+GET  /api/research/jobs/{research_id}/plan
+POST /api/research/jobs/{research_id}/approve
+POST /api/research/jobs/{research_id}/cancel
+GET  /api/research/jobs/{research_id}/report
+GET  /api/research/jobs/{research_id}/progress
+GET  /api/research/jobs/{research_id}/events?after_event_id={event_id}&limit={limit}
+```
+
+Create request:
+
+```json
+{
+  "query": "比较 Alpha 与 Beta 的部署状态",
+  "source_scope": {
+    "document_ids": ["project-alpha", "project-beta"]
+  },
+  "report_spec": {
+    "format": "markdown",
+    "include_citations": true
+  }
+}
+```
+
+Approval is an immutable snapshot of exactly the Plan and sources the user
+reviewed:
+
+```json
+{
+  "plan_version": 1,
+  "manifest_hash": "<hash returned by the Job and Plan views>"
+}
+```
+
+The dispatcher only executes approved `ready` Jobs. Execution and result state
+are independent: a workflow may finish with `status=completed` and
+`result_status=degraded` when required evidence is missing or conflicting.
+Reports are Markdown and preserve Evidence IDs plus original document locators.
+For documents that contain structured `chunks`, local search and original read
+use the exact canonical chunk locator and return that chunk's source text.
+The `line:start-end` locator remains a compatibility fallback only for
+documents without structured chunks.
+
+`GET /progress` is the authoritative UI read model. It returns
+`research.progress.v1`, including the fixed stage timeline, backend-computed
+percentage, task status, Evidence/Claim counts, timestamps, and a user-safe
+error. The Web client must not reconstruct these values from `ResearchJob`.
+
+`GET /events` returns append-only `research.events.v1` activity. Clients pass
+the last `next_after_event_id` as `after_event_id`; `limit` must be between 1
+and 100. Stable `event_key` values make stage and task replay idempotent after
+a process restart.
+
+```json
+{
+  "schema_version": "research.progress.v1",
+  "research_id": "research-example",
+  "status": "researching",
+  "result_status": null,
+  "current_stage": "execute_tasks",
+  "progress_percent": 34,
+  "task_total": 2,
+  "task_completed": 1,
+  "evidence_count": 2,
+  "claim_count": 0,
+  "started_at": "2026-09-01T10:00:00Z",
+  "updated_at": "2026-09-01T10:00:08Z",
+  "stages": [],
+  "tasks": [],
+  "error": null
+}
+```
+
+Runtime configuration:
+
+- `RESEARCH_DATABASE_PATH`: authoritative SQLite business store.
+- `RESEARCH_CHECKPOINT_PATH`: LangGraph cursor/checkpoint store.
+- `RESEARCH_DOCUMENTS_DIR`: local processed JSON document catalog.
+- `RESEARCH_DISPATCH_INTERVAL_SECONDS`: bounded polling interval; default `2.0`.
+
+Web sources, parallel workers, Replan, and SSE replay are outside
+this Core Vertical Slice.
 ## Permission Filtering
 
 Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id` 可访问的
@@ -377,6 +579,10 @@ The OpenAI function-calling representation is available internally through
 `registry.to_openai_schemas()` and is intentionally separate from this public
 metadata response. See `docs/cp2/tool_registry.md` for the complete contract.
 
+## GET /ready
+
+Reports application-scoped resource initialization and retrieval warmup state.
+It does not create a Chat turn or a Research Job:
 ## Service Health And Readiness
 
 `GET /health` remains the lightweight liveness endpoint and returns:
@@ -395,11 +601,17 @@ Ready response:
 ```json
 {
   "status": "ready",
+  "initialized": true,
+  "initialization_count": 1,
+  "initialization_ms": 18,
   "retrieval_ready": true,
   "detail": ""
 }
 ```
 
+`status="degraded"` means the service remains alive for diagnostics but the
+shared retrieval tool did not complete warmup. `/api/chat` continues to use the
+existing public response contract.
 If local embedding, BM25, or Milvus initialization fails, the service remains
 available for diagnostics and returns `status="degraded"`,
 `retrieval_ready=false`, and a non-secret error summary in `detail`.

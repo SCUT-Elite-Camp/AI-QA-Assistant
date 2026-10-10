@@ -4,6 +4,8 @@ import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { syncTopicToDisk } from '../../../utils/topicStorage'
 import { requireCsrf, requireTopicRole } from '../../../utils/attachmentAuth'
+import { assertDerivedSources } from '../../../utils/sourceAccess'
+import { readableTopic } from '../../../utils/topicEvidence'
 
 
 export default defineHandler(async (event) => {
@@ -11,7 +13,7 @@ export default defineHandler(async (event) => {
     id: z.string()
   }).parse)
   requireCsrf(event)
-  await requireTopicRole(event, id, 'editor')
+  const { userId } = await requireTopicRole(event, id, 'editor')
 
   const body = await readValidatedBody(event, z.object({
     title: z.string().optional(),
@@ -30,6 +32,9 @@ export default defineHandler(async (event) => {
   }
 
   const updateData: Record<string, any> = {}
+  if (body.soulContent !== undefined || body.title !== undefined || body.tags !== undefined) {
+    await assertDerivedSources(userId, topic.evidenceProvenance)
+  }
   if (body.title !== undefined) updateData.title = body.title
   if (body.soulContent !== undefined) updateData.soulContent = body.soulContent
   if (body.tags !== undefined) updateData.tags = body.tags
@@ -45,6 +50,6 @@ export default defineHandler(async (event) => {
   })
   syncTopicToDisk(updated.id, updated, updated.soulContent, docs)
 
-  return updated
+  return readableTopic(userId, updated)
 })
 

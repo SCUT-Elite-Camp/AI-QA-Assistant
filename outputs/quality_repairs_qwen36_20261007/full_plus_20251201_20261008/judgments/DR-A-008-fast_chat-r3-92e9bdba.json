@@ -1,0 +1,35 @@
+{
+  "run_id": "DR-A-008-fast_chat-r3-92e9bdba",
+  "case_id": "DR-A-008",
+  "group": "fast_chat",
+  "api_success": true,
+  "judge_model": "qwen-plus-2025-12-01",
+  "rubric_sha256": "43ae67965a83fe48f4a8ebfbad8e5c45ec7d834db53118a00f4ad50444e1089d",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation."
+  },
+  "verified_evidence": [],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation.",
+      "evidence_ids": []
+    }
+  ],
+  "citations": [],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 5,
+    "completeness": 5,
+    "faithfulness": 5,
+    "answer_relevance": 5,
+    "limitation_disclosure": 5,
+    "conflict_handling": 5,
+    "required_fact_ids_supported": [
+      "clarification"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: The report correctly identifies the ambiguity in the question and requests clarification among the three specified scopes (current code, CP2 target, or September Deep Research demo), matching the required fact description exactly; no numeric or factual error is present. Completeness: It fully addresses the single required fact — requesting clarification of scope — with precise alignment to the description. Faithfulness: The claim has no evidence_ids, but it makes no factual assertion requiring support; it is a neutral, evidence-agnostic request for disambiguation, so all present claims are inherently faithful. Answer relevance: The response directly and exclusively resolves the question’s insufficiency by prompting for the needed scoping information, with zero digression. Limitation disclosure: No uncertainty, missing data, or boundary issue requires disclosure beyond the explicit request for clarification — and it is provided transparently. Conflict handling: No source excerpts exist, so no conflict is possible; the report correctly avoids inventing or mischaracterizing any conflict."
+  }
+}

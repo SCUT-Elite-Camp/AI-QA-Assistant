@@ -217,7 +217,10 @@ export async function persistCurrentUserMessage(
   return appendMessage(db, {
     chatId: input.chatId,
     id: input.id,
-    parts: input.parts,
+    parts: [
+      ...(Array.isArray(input.parts) ? input.parts.filter((part: any) => part?.type !== 'data-evidence-provenance') : []),
+      { type: 'data-evidence-provenance', data: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] } },
+    ],
     replaceExisting: true,
     requestId: input.id,
     role: 'user'

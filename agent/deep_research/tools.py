@@ -1,0 +1,475 @@
+"""Manifest-scoped local Search and original-read adapter."""
+
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from dataclasses import dataclass, field
+import hashlib
+import json
+import math
+from collections import Counter
+from pathlib import Path
+import re
+from typing import Any, Protocol
+
+from agent.evidence.locator import canonical_chunk_id
+from agent.schemas.research import SourceManifest
+from .manifest import LocalDocumentResolver
+from .access import ResearchAccessPolicy
+
+
+class SearchBackend(Protocol):
+    def search(self, query: str, **kwargs) -> list[dict]: ...
+
+
+class LocalJsonSearchBackend:
+    """Deterministic local fallback used by the fixed-fixture vertical slice.
+
+    It deliberately implements only bounded lexical discovery over the JSON
+    document catalog.  It does not replace the Tool Layer search backend in
+    production, but gives Local Research a repeatable, network-free adapter
+    for demos and recovery tests.
+    """
+
+    def __init__(self, documents_dir: str | Path) -> None:
+        self.documents_dir = Path(documents_dir).resolve()
+
+    def search(self, query: str, **kwargs: Any) -> list[dict]:
+        top_k = max(1, int(kwargs.get("top_k", 5)))
+        filters = kwargs.get("filters") or {}
+        allowed_ids = {str(item) for item in filters.get("doc_ids", [])}
+        query_tokens = self._tokens(query)
+        rows: list[dict] = []
+        title_tokens: set[str] = set()
+        for path in sorted(self.documents_dir.glob("*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            doc_id = str(payload.get("doc_id") or path.stem)
+            if allowed_ids and doc_id not in allowed_ids:
+                continue
+            if payload.get("chunks"):
+                title_tokens.update(self._tokens(str(payload.get("title") or "")))
+            candidates = self._candidates(payload, doc_id)
+            if not candidates:
+                continue
+            for index, locator, text in candidates:
+                rows.append({
+                    "doc_id": doc_id,
+                    "chunk_id": locator,
+                    "chunk_index": index,
+                    "chunk_text": text,
+                })
+        # Rank sections, not one flattened document. Rare query terms should
+        # outweigh recurring sprint headings and boilerplate.
+        token_sets = [self._tokens(row["chunk_text"]) for row in rows]
+        frequencies = Counter(token for tokens in token_sets for token in tokens)
+        # The planner often repeats the full document title in every task.
+        # Once a document is scoped, that must not swamp section-specific terms.
+        has_section_terms = bool(query_tokens - title_tokens)
+        weights = {token: math.log(1 + len(rows) / (1 + frequencies[token]))
+                   * (0.1 if has_section_terms and token in title_tokens else 1.0)
+                   for token in query_tokens}
+        denominator = sum(weights.values()) or 1.0
+        for row, tokens in zip(rows, token_sets):
+            row["score"] = sum(weights[t] for t in query_tokens & tokens) / denominator
+        rows.sort(key=lambda item: (-item["score"], item["doc_id"], item["chunk_index"]))
+        # Round-robin ranked documents preserves comparisons while allowing
+        # multiple distinct sections from the same document into the budget.
+        buckets: dict[str, list[dict]] = {}
+        for row in rows:
+            buckets.setdefault(row["doc_id"], []).append(row)
+        selected = []
+        while buckets and len(selected) < top_k:
+            for doc_id in list(buckets):
+                selected.append(buckets[doc_id].pop(0))
+                if not buckets[doc_id]:
+                    del buckets[doc_id]
+                if len(selected) == top_k:
+                    break
+        return selected
+
+    @staticmethod
+    def _lines(payload: dict[str, Any]) -> list[str]:
+        content = LocalDocumentResolver._searchable_text(payload)
+        return [line.strip() for line in content.splitlines() if line.strip()]
+
+    @classmethod
+    def _candidates(
+        cls,
+        payload: dict[str, Any],
+        doc_id: str,
+    ) -> list[tuple[int, str, str]]:
+        chunks = payload.get("chunks") or []
+        candidates: list[tuple[int, str, str]] = []
+        for position, chunk in enumerate(chunks):
+            if not isinstance(chunk, dict):
+                continue
+            text = str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+            if not text:
+                continue
+            try:
+                index = int(chunk.get("index", position))
+            except (TypeError, ValueError):
+                index = position
+            locator = canonical_chunk_id(doc_id, chunk.get("chunk_id"), index)
+            candidates.append((index, locator, text))
+        if candidates:
+            return candidates
+        return [
+            (index, f"line:{index + 1}-{index + 1}", line)
+            for index, line in enumerate(cls._lines(payload))
+        ]
+
+    @staticmethod
+    def _tokens(text: str) -> set[str]:
+        tokens = set(
+            re.findall(
+                r"[A-Za-z][A-Za-z0-9_-]*|\d+(?:\.\d+)?%?|[\u4e00-\u9fff]",
+                text.casefold(),
+            )
+        )
+        # Preserve identifiers, but also match source-code paths such as
+        # intent_classifier.py against natural language 'intent classifier'.
+        tokens.update(part for token in list(tokens) for part in re.split(r"[_-]", token) if part)
+        return tokens
+
+
+class LocalToolError(RuntimeError):
+    pass
+
+
+class LocalToolTimeout(LocalToolError):
+    pass
+
+
+class ManifestAccessError(LocalToolError):
+    pass
+
+
+@dataclass(frozen=True)
+class ToolCallContext:
+    research_id: str
+    task_id: str
+    trace_id: str
+    user_id: str
+    source_manifest: SourceManifest
+    timeout_seconds: float = 30.0
+    retrieval_mode: str = "hybrid"
+
+
+@dataclass(frozen=True)
+class SearchHit:
+    doc_id: str
+    locator_hint: str
+    snippet: str
+    score: float
+    retrieval_metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class OriginalRead:
+    doc_id: str
+    document_version: str | None
+    locator: str
+    excerpt: str
+    content_hash: str
+    anchor_excerpt: str | None = None
+
+
+class LocalResearchToolAdapter:
+    REQUIRED_TOOLS = frozenset({"list_documents", "keyword_search", "semantic_search", "read_document_range"})
+
+    def __init__(self, search_backend: SearchBackend, documents_dir: str | Path) -> None:
+        self.search_backend = search_backend
+        self.documents_dir = Path(documents_dir).resolve()
+        self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="research-local-tool")
+
+    @staticmethod
+    def _allowed(context: ToolCallContext) -> dict[str, object]:
+        return {item.doc_id: item for item in context.source_manifest.documents}
+
+    def _run(self, callback, timeout: float):
+        future = self._executor.submit(callback)
+        try:
+            return future.result(timeout=timeout)
+        except FutureTimeout as exc:
+            future.cancel()
+            raise LocalToolTimeout("research_tool_timeout") from exc
+
+    def list_documents(self, context: ToolCallContext) -> list[dict]:
+        return [item.model_dump(mode="json") for item in self._allowed(context).values()]
+
+    def search(
+        self,
+        query: str,
+        context: ToolCallContext,
+        *,
+        mode: str = "hybrid",
+        top_k: int = 5,
+        source_ids: list[str] | None = None,
+    ) -> list[SearchHit]:
+        manifest_allowed = self._allowed(context)
+        if source_ids is None:
+            allowed = manifest_allowed
+        else:
+            requested = set(source_ids)
+            outside = requested - set(manifest_allowed)
+            if outside:
+                raise ManifestAccessError(
+                    "document_outside_manifest:" + ",".join(sorted(outside))
+                )
+            allowed = {
+                doc_id: manifest_allowed[doc_id]
+                for doc_id in source_ids
+                if doc_id in manifest_allowed
+            }
+        if not allowed:
+            return []
+        rows = self._run(
+            lambda: self.search_backend.search(
+                query=query, top_k=top_k, mode=mode,
+                filters={"doc_ids": list(allowed)}, trace_id=context.trace_id,
+            ),
+            context.timeout_seconds,
+        )
+        hits: list[SearchHit] = []
+        for row in rows:
+            doc_id = str(row.get("doc_id", ""))
+            if doc_id not in allowed:
+                continue
+            index = int(row.get("chunk_index", 0))
+            snippet = str(row.get("chunk_text") or row.get("text") or "").strip()
+            if not snippet:
+                continue
+            hits.append(
+                SearchHit(
+                    doc_id=doc_id,
+                    locator_hint=canonical_chunk_id(
+                        doc_id,
+                        row.get("chunk_id"),
+                        index,
+                    ),
+                    snippet=snippet,
+                    score=float(row.get("score", 0.0)),
+                    retrieval_metadata=dict(row.get("retrieval_metadata") or {}),
+                )
+            )
+        return hits
+
+    def read_document_range(
+        self,
+        doc_id: str,
+        context: ToolCallContext,
+        *,
+        start_line: int = 1,
+        end_line: int | None = None,
+        locator: str | None = None,
+    ) -> OriginalRead:
+        manifest_item = self._allowed(context).get(doc_id)
+        if manifest_item is None:
+            raise ManifestAccessError(f"document_outside_manifest:{doc_id}")
+        if start_line < 1 or (end_line is not None and end_line < start_line):
+            raise LocalToolError("invalid_document_range")
+
+        def load():
+            path = (self.documents_dir / f"{doc_id}.json").resolve()
+            if path.parent != self.documents_dir or not path.is_file():
+                raise ManifestAccessError(f"document_not_found:{doc_id}")
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            owner = payload.get("user_id") or payload.get("owner_id")
+            if owner is not None and str(owner) != context.user_id:
+                raise ManifestAccessError(f"document_forbidden:{doc_id}")
+            return payload
+
+        payload = self._run(load, context.timeout_seconds)
+        content = LocalDocumentResolver._searchable_text(payload)
+        snapshot = LocalDocumentResolver._snapshot(doc_id, payload)
+        content_hash = snapshot.content_hash
+        if content_hash != manifest_item.content_hash:
+            raise ManifestAccessError(f"document_version_changed:{doc_id}")
+        version = snapshot.version
+        if locator:
+            requested_locator = canonical_chunk_id(doc_id, locator)
+            chunks = payload.get("chunks") or []
+            for position, chunk in enumerate(chunks):
+                if not isinstance(chunk, dict):
+                    continue
+                try:
+                    index = int(chunk.get("index", position))
+                except (TypeError, ValueError):
+                    index = position
+                chunk_locator = canonical_chunk_id(
+                    doc_id,
+                    chunk.get("chunk_id"),
+                    index,
+                )
+                if chunk_locator != requested_locator:
+                    continue
+                radius = len(chunks) if len(chunks) <= 12 and len(content) <= 6000 else 2
+                excerpt = self._chunk_context(chunks, position, radius=radius)
+                if not excerpt:
+                    raise LocalToolError("empty_document_excerpt")
+                return OriginalRead(
+                    doc_id=doc_id,
+                    document_version=(
+                        str(version) if version is not None else None
+                    ),
+                    locator=chunk_locator,
+                    excerpt=excerpt,
+                    content_hash=content_hash,
+                    anchor_excerpt=str(chunk.get("text") or chunk.get("chunk_text") or ""),
+                )
+            raise LocalToolError(f"document_chunk_not_found:{requested_locator}")
+        lines = content.splitlines() or [content]
+        if start_line > len(lines):
+            raise LocalToolError("document_range_out_of_bounds")
+        effective_end = min(end_line or len(lines), len(lines))
+        excerpt = "\n".join(lines[start_line - 1:effective_end]).strip()
+        if not excerpt:
+            raise LocalToolError("empty_document_excerpt")
+        return OriginalRead(
+            doc_id=doc_id,
+            document_version=str(version) if version is not None else None,
+            locator=f"line:{start_line}-{effective_end}",
+            excerpt=excerpt,
+            content_hash=content_hash,
+        )
+
+    @classmethod
+    def _chunk_context(
+        cls,
+        chunks: list[Any],
+        anchor_position: int,
+        *,
+        radius: int = 2,
+    ) -> str:
+        """Read a bounded context window around a matched chunk.
+
+        Ingested chunks overlap, and headings/tables frequently cross a chunk
+        boundary.  Keep the matched chunk as the citation anchor while adding
+        two neighbouring chunks on either side for report synthesis. Adjacent
+        overlap is removed so the model does not see duplicated assertions.
+        """
+
+        start = max(0, anchor_position - radius)
+        end = min(len(chunks), anchor_position + radius + 1)
+        texts = []
+        for chunk in chunks[start:end]:
+            if not isinstance(chunk, dict):
+                continue
+            text = str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+            if text:
+                texts.append(text)
+        if not texts:
+            return ""
+        merged = texts[0]
+        for text in texts[1:]:
+            merged = cls._merge_overlapping_text(merged, text)
+        return merged.strip()
+
+    @staticmethod
+    def _merge_overlapping_text(left: str, right: str) -> str:
+        max_overlap = min(len(left), len(right))
+        # Chunks may be tiny in tests and in short table sections.  Four
+        # characters is long enough to remove a repeated line while avoiding
+        # accidental one- or two-character joins in Chinese prose.
+        for size in range(max_overlap, 3, -1):
+            if left[-size:] == right[:size]:
+                return left + right[size:]
+        return left.rstrip() + "\n\n" + right.lstrip()
+
+    def close(self) -> None:
+        self._executor.shutdown(wait=False, cancel_futures=True)
+
+
+class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
+    """Use the Chat tool instances, live ACL and approved source versions."""
+
+    def __init__(self, search_tool, read_tool, access_policy: ResearchAccessPolicy) -> None:
+        super().__init__(search_tool, search_tool.documents_dir)
+        if read_tool.repository.documents_dir != self.documents_dir:
+            raise ValueError("research_tool_catalog_mismatch")
+        self.read_tool = read_tool
+        self.access_policy = access_policy
+
+    def _allowed(self, context: ToolCallContext) -> dict[str, object]:
+        frozen = super()._allowed(context)
+        current = self.access_policy.accessible_doc_ids(context.user_id, sorted(frozen))
+        if current is not None and not set(frozen).issubset(current):
+            raise ManifestAccessError("research_source_access_revoked")
+        return frozen
+
+    def search(self, query: str, context: ToolCallContext, **kwargs) -> list[SearchHit]:
+        # The request's persisted mode governs both keyword/semantic worker calls.
+        kwargs["mode"] = context.retrieval_mode
+        hits = super().search(query, context, **kwargs)
+        self._allowed(context)  # A revocation during a slow retrieval also blocks its output.
+        return [SearchHit(
+            doc_id=hit.doc_id, locator_hint=hit.locator_hint,
+            snippet=hit.snippet, score=hit.score,
+            retrieval_metadata={"retrieval_mode": context.retrieval_mode,
+                                "retrieval_backend": "toolset.search_documents",
+                                "retrieval_fallback_used": False},
+        ) for hit in hits]
+
+    def read_document_range(self, doc_id: str, context: ToolCallContext, *,
+                            start_line: int = 1, end_line: int | None = None,
+                            locator: str | None = None) -> OriginalRead:
+        item = self._allowed(context).get(doc_id)
+        if item is None:
+            raise ManifestAccessError("document_outside_manifest")
+
+        def read():
+            payload = self.read_tool.repository.load(doc_id)
+            if payload is None:
+                raise ManifestAccessError("document_not_found")
+            snapshot = LocalDocumentResolver._snapshot(doc_id, payload)
+            if snapshot.content_hash != item.content_hash or snapshot.version != item.version:
+                raise ManifestAccessError("document_version_changed")
+            chunks = sorted((c for c in payload.get("chunks", []) if isinstance(c, dict)),
+                            key=lambda c: int(c.get("index", 0)))
+            if locator:
+                target = canonical_chunk_id(doc_id, locator)
+                position = next((pos for pos, chunk in enumerate(chunks)
+                                 if canonical_chunk_id(doc_id, chunk.get("chunk_id"),
+                                                       int(chunk.get("index", pos))) == target), None)
+                if position is None:
+                    raise LocalToolError("document_chunk_not_found")
+                short_note = len(chunks) <= 12 and len(str(payload.get('content') or '')) <= 6000
+                offset = 0 if short_note else max(0, position - 2)
+                limit = max(1, len(chunks)) if short_note else 5
+                page = self.read_tool.execute(doc_id=doc_id, offset=offset, limit=limit,
+                                              expected_hash=item.content_hash, expected_version=item.version)
+                # Reader adds provenance fields; compare authoritative chunk identity/text,
+                # not dictionaries whose projection metadata deliberately differs.
+                identity = lambda rows: [(c.get("chunk_id"), c.get("text", c.get("chunk_text", ""))) for c in rows]
+                if page.get("error") or identity(page.get("chunks", [])) != identity(chunks[offset:offset + limit]):
+                    raise ManifestAccessError("document_version_changed")
+                excerpt = self._chunk_context(page["chunks"], position - offset, radius=len(chunks) if short_note else 2)
+                location = target
+            else:
+                body = str(payload.get("content") or "") or "\n\n".join(str(c.get("text") or c.get("chunk_text") or "") for c in chunks)
+                lines = body.splitlines()
+                if start_line < 1 or start_line > len(lines) or (end_line is not None and end_line < start_line):
+                    raise LocalToolError("invalid_document_range")
+                last = min(end_line or len(lines), len(lines))
+                excerpt = "\n".join(lines[start_line - 1:last]).strip()
+                location = f"line:{start_line}-{last}"
+            if not excerpt:
+                raise LocalToolError("empty_document_excerpt")
+            self._allowed(context)
+            anchor = str(chunks[position].get("text") or chunks[position].get("chunk_text") or "") if locator else excerpt
+            return OriginalRead(doc_id, snapshot.version, location, excerpt, snapshot.content_hash, anchor)
+
+        return self._run(read, context.timeout_seconds)
+
+
+__all__ = [
+    "EnterpriseResearchToolAdapter",
+    "LocalJsonSearchBackend", "LocalResearchToolAdapter", "LocalToolError", "LocalToolTimeout", "ManifestAccessError",
+    "OriginalRead", "SearchHit", "ToolCallContext",
+]

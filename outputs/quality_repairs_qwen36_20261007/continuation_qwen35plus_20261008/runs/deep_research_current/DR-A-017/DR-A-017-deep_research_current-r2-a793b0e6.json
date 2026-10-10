@@ -1,0 +1,1841 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-017-deep_research_current-r2-a793b0e6",
+  "case_id": "DR-A-017",
+  "group": "deep_research_current",
+  "repetition": 2,
+  "started_at": "2026-10-08T11:49:11.707425+00:00",
+  "completed_at": "2026-10-08T11:49:27.944115+00:00",
+  "elapsed_ms": 16236,
+  "config_hash": "cdb102ca9ddebf1947a56bf16f771ea6fc003b4bb589288b82709db43c1cf205",
+  "success": true,
+  "result": {
+    "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Compare Data Pipeline and Toolset Lifecycle Archives. Give lifetime commits and all sprints with explicitly recorded commits. Identify Toolset's busiest sprint.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+            "1e65fa842d26d7e7b9259d749ace380a"
+          ],
+          "topic": "multi_document_lifecycle_comparison"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "degraded",
+      "plan_version": 1,
+      "manifest_hash": "37f9a6229a2daf553fe0e3a4cfd3caa624aca08b5edcb61ee3d2c63a0eb6dcac",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 5,
+      "task_completed": 5,
+      "evidence_count": 15,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T11:49:11.710437Z",
+      "updated_at": "2026-10-08T11:49:27.364074Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+      "version": 1,
+      "objective": "Compare Data Pipeline and Toolset Lifecycle Archives. Give lifetime commits and all sprints with explicitly recorded commits. Identify Toolset's busiest sprint.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "1e65fa842d26d7e7b9259d749ace380a"
+        ],
+        "topic": "multi_document_lifecycle_comparison"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "37f9a6229a2daf553fe0e3a4cfd3caa624aca08b5edcb61ee3d2c63a0eb6dcac",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the exact 'lifetime commits' count recorded in the M3+-+Data+Pipeline+Module+Lifecycle+Archive document?",
+          "purpose": "Retrieve the canonical total commit count for the Data Pipeline module to avoid recounting partial history.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "1e65fa842d26d7e7b9259d749ace380a",
+            "7ac2cf3c61a7c81bb8acf2a43c45b10a"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "What is the exact 'lifetime commits' count recorded in the M4+-+Toolset+Module+Lifecycle+Archive document?",
+          "purpose": "Retrieve the canonical total commit count for the Toolset module to enable direct comparison with Data Pipeline.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "1e65fa842d26d7e7b9259d749ace380a",
+            "7ac2cf3c61a7c81bb8acf2a43c45b10a"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "List all sprints in the M3+-+Data+Pipeline+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "purpose": "Extract the detailed sprint-level commit data for the Data Pipeline module as requested.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "1e65fa842d26d7e7b9259d749ace380a",
+            "7ac2cf3c61a7c81bb8acf2a43c45b10a"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-4",
+          "question": "List all sprints in the M4+-+Toolset+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "purpose": "Extract the detailed sprint-level commit data for the Toolset module to identify the busiest sprint.",
+          "dependencies": [
+            "task-3"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "1e65fa842d26d7e7b9259d749ace380a",
+            "7ac2cf3c61a7c81bb8acf2a43c45b10a"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-4",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-5",
+          "question": "Which sprint in the M4+-+Toolset+Module+Lifecycle+Archive has the highest explicitly recorded commit count, and what is that count?",
+          "purpose": "Identify Toolset's busiest sprint based on the extracted sprint data.",
+          "dependencies": [
+            "task-4"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "1e65fa842d26d7e7b9259d749ace380a",
+            "7ac2cf3c61a7c81bb8acf2a43c45b10a"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-5",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+      "status": "completed",
+      "result_status": "degraded",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 5,
+      "task_completed": 5,
+      "evidence_count": 15,
+      "claim_count": 5,
+      "started_at": "2026-10-08T11:49:11.710437Z",
+      "updated_at": "2026-10-08T11:49:27.364074Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:11.712442Z",
+          "completed_at": "2026-10-08T11:49:13.240650Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:13.241652Z",
+          "completed_at": "2026-10-08T11:49:24.635250Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:24.636090Z",
+          "completed_at": "2026-10-08T11:49:24.989696Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:24.990935Z",
+          "completed_at": "2026-10-08T11:49:26.639994Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:26.640505Z",
+          "completed_at": "2026-10-08T11:49:27.277341Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.278360Z",
+          "completed_at": "2026-10-08T11:49:27.284365Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.284365Z",
+          "completed_at": "2026-10-08T11:49:27.292836Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.292836Z",
+          "completed_at": "2026-10-08T11:49:27.304368Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.305372Z",
+          "completed_at": "2026-10-08T11:49:27.319172Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.319172Z",
+          "completed_at": "2026-10-08T11:49:27.355618Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.356621Z",
+          "completed_at": "2026-10-08T11:49:27.364762Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T11:49:27.365322Z",
+          "completed_at": "2026-10-08T11:49:27.366615Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "What is the exact 'lifetime commits' count recorded in the M3+-+Data+Pipeline+Module+Lifecycle+Archive document?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "What is the exact 'lifetime commits' count recorded in the M4+-+Toolset+Module+Lifecycle+Archive document?",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "List all sprints in the M3+-+Data+Pipeline+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-4",
+          "question": "List all sprints in the M4+-+Toolset+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-5",
+          "question": "Which sprint in the M4+-+Toolset+Module+Lifecycle+Archive has the highest explicitly recorded commit count, and what is that count?",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 2373,
+        "actions_used": 20,
+        "tool_calls": 20,
+        "documents_read": 2,
+        "evidence_accepted": 15,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-24022c86aedf32bd8b465842",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'lifetime commits' count recorded in the M3+-+Data+Pipeline+Module+Lifecycle+Archive document?",
+          "created_at": "2026-10-08T11:49:26.747831Z"
+        },
+        {
+          "observation_id": "observation-a387a766fc11e0e19dfb2de3",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "locator_hint": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'lifetime commits' count recorded in the M3+-+Data+Pipeline+Module+Lifecycle+Archive document?",
+          "created_at": "2026-10-08T11:49:26.752837Z"
+        },
+        {
+          "observation_id": "observation-05433c5aa2c51ffd93dbb7a1",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "score": 0.16821142577875195,
+          "snippet": "| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "query": "What is the exact 'lifetime commits' count recorded in the M3+-+Data+Pipeline+Module+Lifecycle+Archive document?",
+          "created_at": "2026-10-08T11:49:26.756981Z"
+        },
+        {
+          "observation_id": "observation-510b4ac516b485f2a39946c9",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'lifetime commits' count recorded in the M4+-+Toolset+Module+Lifecycle+Archive document?",
+          "created_at": "2026-10-08T11:49:26.901024Z"
+        },
+        {
+          "observation_id": "observation-7d5a69b203c16f36e5f003ee",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "locator_hint": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "What is the exact 'lifetime commits' count recorded in the M4+-+Toolset+Module+Lifecycle+Archive document?",
+          "created_at": "2026-10-08T11:49:26.907748Z"
+        },
+        {
+          "observation_id": "observation-a54e7b14ef5dd785ab14e6da",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "score": 0.16483835138846478,
+          "snippet": "| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "query": "What is the exact 'lifetime commits' count recorded in the M4+-+Toolset+Module+Lifecycle+Archive document?",
+          "created_at": "2026-10-08T11:49:26.912899Z"
+        },
+        {
+          "observation_id": "observation-5555966ad972e5613f352d39",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "List all sprints in the M3+-+Data+Pipeline+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "created_at": "2026-10-08T11:49:27.064183Z"
+        },
+        {
+          "observation_id": "observation-c56e30b55eaf87dcc351e42f",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "locator_hint": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "List all sprints in the M3+-+Data+Pipeline+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "created_at": "2026-10-08T11:49:27.068917Z"
+        },
+        {
+          "observation_id": "observation-7e19d62f4b3ab7069bd7c4f6",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "score": 0.15660764692640627,
+          "snippet": "| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "query": "List all sprints in the M3+-+Data+Pipeline+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "created_at": "2026-10-08T11:49:27.073532Z"
+        },
+        {
+          "observation_id": "observation-9f4eaa32e50bc9a4a0be998f",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "List all sprints in the M4+-+Toolset+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "created_at": "2026-10-08T11:49:27.156038Z"
+        },
+        {
+          "observation_id": "observation-3a89aab880e409093e562900",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "tool_name": "source_scope_read",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "locator_hint": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "List all sprints in the M4+-+Toolset+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "created_at": "2026-10-08T11:49:27.163109Z"
+        },
+        {
+          "observation_id": "observation-9968ba5d54c16feb1c6d14e1",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "tool_name": "search",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "score": 0.15496901797482857,
+          "snippet": "| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "query": "List all sprints in the M4+-+Toolset+Module+Lifecycle+Archive that have explicitly recorded commit counts, including the sprint identifier and the specific number of commits for each.",
+          "created_at": "2026-10-08T11:49:27.167623Z"
+        },
+        {
+          "observation_id": "observation-8319f3722f4234a862a983fc",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "tool_name": "source_scope_read",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Which sprint in the M4+-+Toolset+Module+Lifecycle+Archive has the highest explicitly recorded commit count, and what is that count?",
+          "created_at": "2026-10-08T11:49:27.259300Z"
+        },
+        {
+          "observation_id": "observation-434bab7fa952d0af85de9111",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "tool_name": "source_scope_read",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "locator_hint": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Which sprint in the M4+-+Toolset+Module+Lifecycle+Archive has the highest explicitly recorded commit count, and what is that count?",
+          "created_at": "2026-10-08T11:49:27.264300Z"
+        },
+        {
+          "observation_id": "observation-92c218db87a871c64c9ca87a",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "tool_name": "search",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "locator_hint": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "score": 0.18828509760790524,
+          "snippet": "| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "query": "Which sprint in the M4+-+Toolset+Module+Lifecycle+Archive has the highest explicitly recorded commit count, and what is that count?",
+          "created_at": "2026-10-08T11:49:27.268826Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-2e1c87ed95fd82c5538ff912",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:26.750835Z"
+        },
+        {
+          "evidence_id": "evidence-d5fc5f68adeb669dc00c4655",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "document_version": "2026-09-04T08:42:04.696Z",
+          "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+          "created_at": "2026-10-08T11:49:26.755358Z"
+        },
+        {
+          "evidence_id": "evidence-7f6af09c754626bb09c2b3ec",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:26.760706Z"
+        },
+        {
+          "evidence_id": "evidence-6e6ed97e909048fc9ee14962",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:26.904008Z"
+        },
+        {
+          "evidence_id": "evidence-eec206e6462a4ab73a67d711",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "document_version": "2026-09-04T08:42:04.696Z",
+          "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+          "created_at": "2026-10-08T11:49:26.910899Z"
+        },
+        {
+          "evidence_id": "evidence-b370347a6fcadfa9657999bc",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:26.916163Z"
+        },
+        {
+          "evidence_id": "evidence-dd055c8e8fe95cc7297ac533",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:27.066516Z"
+        },
+        {
+          "evidence_id": "evidence-c8f5b6e3280e4bf34af6eee3",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "document_version": "2026-09-04T08:42:04.696Z",
+          "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+          "created_at": "2026-10-08T11:49:27.071849Z"
+        },
+        {
+          "evidence_id": "evidence-3281bdb99ccfe156b0667f16",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:27.077675Z"
+        },
+        {
+          "evidence_id": "evidence-c94f061a5a727876a374a7f6",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:27.160103Z"
+        },
+        {
+          "evidence_id": "evidence-542ee5e5f74bb80a7e2a761e",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "document_version": "2026-09-04T08:42:04.696Z",
+          "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+          "created_at": "2026-10-08T11:49:27.165106Z"
+        },
+        {
+          "evidence_id": "evidence-931ac70b8d1407f9be61191b",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:27.169950Z"
+        },
+        {
+          "evidence_id": "evidence-e77206142831caae63942000",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:27.262299Z"
+        },
+        {
+          "evidence_id": "evidence-e27e7e35130aca4429622d5a",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "document_version": "2026-09-04T08:42:04.696Z",
+          "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153",
+          "created_at": "2026-10-08T11:49:27.266299Z"
+        },
+        {
+          "evidence_id": "evidence-8f7919072edf15021da026e6",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2",
+          "created_at": "2026-10-08T11:49:27.270824Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-7a04d91ca91b0d3e65146b7d",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-1",
+          "statement": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-2e1c87ed95fd82c5538ff912",
+            "evidence-d5fc5f68adeb669dc00c4655",
+            "evidence-7f6af09c754626bb09c2b3ec"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-63f2449ea51aa8ecb528e2a4",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-2",
+          "statement": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-6e6ed97e909048fc9ee14962",
+            "evidence-eec206e6462a4ab73a67d711",
+            "evidence-b370347a6fcadfa9657999bc"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-4a9360d634dc89f18b2d0b4e",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-3",
+          "statement": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-dd055c8e8fe95cc7297ac533",
+            "evidence-c8f5b6e3280e4bf34af6eee3",
+            "evidence-3281bdb99ccfe156b0667f16"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        },
+        {
+          "finding_id": "finding-408018d9d9a37e92f2565709",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-4",
+          "statement": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-c94f061a5a727876a374a7f6",
+            "evidence-542ee5e5f74bb80a7e2a761e",
+            "evidence-931ac70b8d1407f9be61191b"
+          ],
+          "covers": [
+            "criterion-4"
+          ]
+        },
+        {
+          "finding_id": "finding-42e2fae4a25906a84d5357ca",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "task_id": "task-5",
+          "statement": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-e77206142831caae63942000",
+            "evidence-e27e7e35130aca4429622d5a",
+            "evidence-8f7919072edf15021da026e6"
+          ],
+          "covers": [
+            "criterion-5"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-7a04d91ca91b0d3e65146b7d",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "claim_text": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-2e1c87ed95fd82c5538ff912",
+            "evidence-d5fc5f68adeb669dc00c4655",
+            "evidence-7f6af09c754626bb09c2b3ec"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-63f2449ea51aa8ecb528e2a4",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "claim_text": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-6e6ed97e909048fc9ee14962",
+            "evidence-eec206e6462a4ab73a67d711",
+            "evidence-b370347a6fcadfa9657999bc"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-4a9360d634dc89f18b2d0b4e",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "claim_text": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-dd055c8e8fe95cc7297ac533",
+            "evidence-c8f5b6e3280e4bf34af6eee3",
+            "evidence-3281bdb99ccfe156b0667f16"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-408018d9d9a37e92f2565709",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "claim_text": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-c94f061a5a727876a374a7f6",
+            "evidence-542ee5e5f74bb80a7e2a761e",
+            "evidence-931ac70b8d1407f9be61191b"
+          ],
+          "criterion_ids": [
+            "criterion-4"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-42e2fae4a25906a84d5357ca",
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "claim_text": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "evidence_ids": [
+            "evidence-e77206142831caae63942000",
+            "evidence-e27e7e35130aca4429622d5a",
+            "evidence-8f7919072edf15021da026e6"
+          ],
+          "criterion_ids": [
+            "criterion-5"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-7a04d91ca91b0d3e65146b7d",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-2e1c87ed95fd82c5538ff912",
+            "evidence-d5fc5f68adeb669dc00c4655",
+            "evidence-7f6af09c754626bb09c2b3ec"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-63f2449ea51aa8ecb528e2a4",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-6e6ed97e909048fc9ee14962",
+            "evidence-eec206e6462a4ab73a67d711",
+            "evidence-b370347a6fcadfa9657999bc"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-4a9360d634dc89f18b2d0b4e",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-dd055c8e8fe95cc7297ac533",
+            "evidence-c8f5b6e3280e4bf34af6eee3",
+            "evidence-3281bdb99ccfe156b0667f16"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-408018d9d9a37e92f2565709",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c94f061a5a727876a374a7f6",
+            "evidence-542ee5e5f74bb80a7e2a761e",
+            "evidence-931ac70b8d1407f9be61191b"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-42e2fae4a25906a84d5357ca",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-e77206142831caae63942000",
+            "evidence-e27e7e35130aca4429622d5a",
+            "evidence-8f7919072edf15021da026e6"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-7a04d91ca91b0d3e65146b7d",
+          "status": "conflicting",
+          "evidence_ids": [
+            "evidence-2e1c87ed95fd82c5538ff912",
+            "evidence-d5fc5f68adeb669dc00c4655",
+            "evidence-7f6af09c754626bb09c2b3ec"
+          ],
+          "reason": "evidence_contains_conflicting_numeric_values"
+        },
+        {
+          "claim_id": "claim-finding-63f2449ea51aa8ecb528e2a4",
+          "status": "conflicting",
+          "evidence_ids": [
+            "evidence-6e6ed97e909048fc9ee14962",
+            "evidence-eec206e6462a4ab73a67d711",
+            "evidence-b370347a6fcadfa9657999bc"
+          ],
+          "reason": "evidence_contains_conflicting_numeric_values"
+        },
+        {
+          "claim_id": "claim-finding-408018d9d9a37e92f2565709",
+          "status": "conflicting",
+          "evidence_ids": [
+            "evidence-c94f061a5a727876a374a7f6",
+            "evidence-542ee5e5f74bb80a7e2a761e",
+            "evidence-931ac70b8d1407f9be61191b"
+          ],
+          "reason": "evidence_contains_conflicting_numeric_values"
+        },
+        {
+          "claim_id": "claim-finding-4a9360d634dc89f18b2d0b4e",
+          "status": "conflicting",
+          "evidence_ids": [
+            "evidence-dd055c8e8fe95cc7297ac533",
+            "evidence-c8f5b6e3280e4bf34af6eee3",
+            "evidence-3281bdb99ccfe156b0667f16"
+          ],
+          "reason": "evidence_contains_conflicting_numeric_values"
+        },
+        {
+          "claim_id": "claim-finding-42e2fae4a25906a84d5357ca",
+          "status": "conflicting",
+          "evidence_ids": [
+            "evidence-e77206142831caae63942000",
+            "evidence-e27e7e35130aca4429622d5a",
+            "evidence-8f7919072edf15021da026e6"
+          ],
+          "reason": "evidence_contains_conflicting_numeric_values"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+      "events": [
+        {
+          "event_id": 14117,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:11.711439Z"
+        },
+        {
+          "event_id": 14118,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:11.712442Z"
+        },
+        {
+          "event_id": 14119,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:13.240650Z"
+        },
+        {
+          "event_id": 14120,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:13.241652Z"
+        },
+        {
+          "event_id": 14121,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:24.635250Z"
+        },
+        {
+          "event_id": 14122,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:24.636090Z"
+        },
+        {
+          "event_id": 14123,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T11:49:24.988682Z"
+        },
+        {
+          "event_id": 14124,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:24.989696Z"
+        },
+        {
+          "event_id": 14125,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:24.990935Z"
+        },
+        {
+          "event_id": 14126,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:26.639994Z"
+        },
+        {
+          "event_id": 14127,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:26.640505Z"
+        },
+        {
+          "event_id": 14129,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:26.653354Z"
+        },
+        {
+          "event_id": 14130,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:49:26.765025Z"
+        },
+        {
+          "event_id": 14131,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:26.765025Z"
+        },
+        {
+          "event_id": 14132,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:49:26.928768Z"
+        },
+        {
+          "event_id": 14133,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:26.934970Z"
+        },
+        {
+          "event_id": 14134,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:49:27.082647Z"
+        },
+        {
+          "event_id": 14135,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-4:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.083255Z"
+        },
+        {
+          "event_id": 14136,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-4:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-4",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:49:27.174340Z"
+        },
+        {
+          "event_id": 14137,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-5:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-5",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.174923Z"
+        },
+        {
+          "event_id": 14138,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:task:task-5:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-5",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:49:27.273826Z"
+        },
+        {
+          "event_id": 14139,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.277341Z"
+        },
+        {
+          "event_id": 14140,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.278360Z"
+        },
+        {
+          "event_id": 14141,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.284365Z"
+        },
+        {
+          "event_id": 14142,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.284365Z"
+        },
+        {
+          "event_id": 14143,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.292836Z"
+        },
+        {
+          "event_id": 14144,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.292836Z"
+        },
+        {
+          "event_id": 14145,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.304368Z"
+        },
+        {
+          "event_id": 14146,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.305372Z"
+        },
+        {
+          "event_id": 14147,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.319172Z"
+        },
+        {
+          "event_id": 14148,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.319172Z"
+        },
+        {
+          "event_id": 14149,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:report:report-research-d5e1f6128b71448daa96e86a74fce293:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-d5e1f6128b71448daa96e86a74fce293"
+          },
+          "created_at": "2026-10-08T11:49:27.350579Z"
+        },
+        {
+          "event_id": 14150,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.355618Z"
+        },
+        {
+          "event_id": 14151,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.356621Z"
+        },
+        {
+          "event_id": 14152,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.364762Z"
+        },
+        {
+          "event_id": 14153,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.365322Z"
+        },
+        {
+          "event_id": 14154,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:49:27.366615Z"
+        },
+        {
+          "event_id": 14155,
+          "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+          "event_key": "research-d5e1f6128b71448daa96e86a74fce293:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "degraded"
+          },
+          "created_at": "2026-10-08T11:49:27.367186Z"
+        }
+      ],
+      "next_after_event_id": 14155
+    },
+    "report": {
+      "report_id": "report-research-d5e1f6128b71448daa96e86a74fce293",
+      "research_id": "research-d5e1f6128b71448daa96e86a74fce293",
+      "markdown": "## Summary\n\nData Pipeline has 11 lifetime commits. [2][3] Toolset has 20 lifetime commits. [1]\n\n## Evidence and analysis\n\n| Sprint | Data Pipeline commits | Toolset commits |\n| --- | --- | --- |\n| 2026-W25 | 1 | 1 [2][3][1] |\n| 2026-W26 | 0 | 1 [2][3][1] |\n| 2026-W27 | 4 | 11 [2][3][1] |\n| 2026-W30 | 1 | 1 [2][3][1] |\n| 2026-W31 | 1 | 1 [2][3][1] |\n| 2026-W32 | 3 | 4 [2][3][1] |\n| 2026-W33 | 1 | 1 [2][3][1] |\n\nToolset's busiest recorded sprint is 2026-W27, with 11 commits. [1]\n\n## Limitations and uncertainty\n\nThe table includes every sprint with a positive recorded count in either selected archive. Zero cells come from explicitly recorded zero counts, without inference. Figures describe the selected archive snapshots. [2][3][1]\n\n## Sources\n\n1. [**M4+-+Toolset+Module+Lifecycle+Archive**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive) · 2026-09-04T08:42:04.696Z · 1e65fa842d26d7e7b9259d749ace380a_chunk_0\n2. [**M3+-+Data+Pipeline+Module+Lifecycle+Archive**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive) · 2026-09-04T08:42:02.690Z · 7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3\n3. [**M3+-+Data+Pipeline+Module+Lifecycle+Archive**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive) · 2026-09-04T08:42:02.690Z · 7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0\n",
+      "result_status": "degraded",
+      "claim_ids": [
+        "claim-finding-408018d9d9a37e92f2565709",
+        "claim-finding-42e2fae4a25906a84d5357ca",
+        "claim-finding-4a9360d634dc89f18b2d0b4e",
+        "claim-finding-63f2449ea51aa8ecb528e2a4",
+        "claim-finding-7a04d91ca91b0d3e65146b7d"
+      ],
+      "evidence_ids": [
+        "evidence-542ee5e5f74bb80a7e2a761e",
+        "evidence-931ac70b8d1407f9be61191b",
+        "evidence-c94f061a5a727876a374a7f6",
+        "evidence-8f7919072edf15021da026e6",
+        "evidence-e27e7e35130aca4429622d5a",
+        "evidence-e77206142831caae63942000",
+        "evidence-3281bdb99ccfe156b0667f16",
+        "evidence-c8f5b6e3280e4bf34af6eee3",
+        "evidence-dd055c8e8fe95cc7297ac533",
+        "evidence-6e6ed97e909048fc9ee14962",
+        "evidence-b370347a6fcadfa9657999bc",
+        "evidence-eec206e6462a4ab73a67d711",
+        "evidence-2e1c87ed95fd82c5538ff912",
+        "evidence-7f6af09c754626bb09c2b3ec",
+        "evidence-d5fc5f68adeb669dc00c4655"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-542ee5e5f74bb80a7e2a761e",
+          "evidence_ids": [
+            "evidence-542ee5e5f74bb80a7e2a761e",
+            "evidence-e27e7e35130aca4429622d5a",
+            "evidence-c8f5b6e3280e4bf34af6eee3",
+            "evidence-eec206e6462a4ab73a67d711",
+            "evidence-d5fc5f68adeb669dc00c4655"
+          ],
+          "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+          "title": "M4+-+Toolset+Module+Lifecycle+Archive",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:42:04.696Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:42:04.696Z",
+          "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+          "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-931ac70b8d1407f9be61191b",
+          "evidence_ids": [
+            "evidence-931ac70b8d1407f9be61191b",
+            "evidence-8f7919072edf15021da026e6",
+            "evidence-3281bdb99ccfe156b0667f16",
+            "evidence-b370347a6fcadfa9657999bc",
+            "evidence-7f6af09c754626bb09c2b3ec"
+          ],
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+          "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-c94f061a5a727876a374a7f6",
+          "evidence_ids": [
+            "evidence-c94f061a5a727876a374a7f6",
+            "evidence-e77206142831caae63942000",
+            "evidence-dd055c8e8fe95cc7297ac533",
+            "evidence-6e6ed97e909048fc9ee14962",
+            "evidence-2e1c87ed95fd82c5538ff912"
+          ],
+          "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+          "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:42:02.690Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:42:02.690Z",
+          "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+          "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+          "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2"
+        }
+      ],
+      "conflicts": [
+        {
+          "conflict_id": "conflict-3c47359c86acca64",
+          "subject": "《M3+-+Data+Pipeline+Module+Lifecycle+Archive》与《M4+-+Toolset+Module+Lifecycle+Archive》的版本差异",
+          "conflict_type": "version",
+          "summary": "多个来源对同一研究问题给出了不一致的信息。",
+          "alternatives": [
+            {
+              "citation_number": 3,
+              "evidence_id": "evidence-c94f061a5a727876a374a7f6",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive；**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**；1. Module Description & Responsibilities；Document ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 1,
+              "evidence_id": "evidence-542ee5e5f74bb80a7e2a761e",
+              "source_title": "M4+-+Toolset+Module+Lifecycle+Archive",
+              "value_summary": "Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive；**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**；1. Module Description & Responsibilities；Knowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为2026-06-22 ~ 2026-06-22，Commits为1，Deliverables Highlights为feat(toolset): implement CP2 hybrid retrieval；Sprint为2026-W27，Date Range为2026-06-29 ~ 2026-07-05，Commits为11，Deliverables Highlights为feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-01 ~ 2026-08-01，Commits为1，Deliverables Highlights为feat(toolset): add English BM25 and reranking；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-07，Commits为4，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:04.696Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:04.696Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 2,
+              "evidence_id": "evidence-931ac70b8d1407f9be61191b",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            }
+          ],
+          "resolution_status": "unresolved",
+          "resolution": ""
+        },
+        {
+          "conflict_id": "conflict-87ad8763ddea745a",
+          "subject": "《M3+-+Data+Pipeline+Module+Lifecycle+Archive》与《M4+-+Toolset+Module+Lifecycle+Archive》的版本差异",
+          "conflict_type": "version",
+          "summary": "多个来源对同一研究问题给出了不一致的信息。",
+          "alternatives": [
+            {
+              "citation_number": 3,
+              "evidence_id": "evidence-e77206142831caae63942000",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive；**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**；1. Module Description & Responsibilities；Document ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 1,
+              "evidence_id": "evidence-e27e7e35130aca4429622d5a",
+              "source_title": "M4+-+Toolset+Module+Lifecycle+Archive",
+              "value_summary": "Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive；**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**；1. Module Description & Responsibilities；Knowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为2026-06-22 ~ 2026-06-22，Commits为1，Deliverables Highlights为feat(toolset): implement CP2 hybrid retrieval；Sprint为2026-W27，Date Range为2026-06-29 ~ 2026-07-05，Commits为11，Deliverables Highlights为feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-01 ~ 2026-08-01，Commits为1，Deliverables Highlights为feat(toolset): add English BM25 and reranking；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-07，Commits为4，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:04.696Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:04.696Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 2,
+              "evidence_id": "evidence-8f7919072edf15021da026e6",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            }
+          ],
+          "resolution_status": "unresolved",
+          "resolution": ""
+        },
+        {
+          "conflict_id": "conflict-38cd115a91dfd104",
+          "subject": "《M3+-+Data+Pipeline+Module+Lifecycle+Archive》与《M4+-+Toolset+Module+Lifecycle+Archive》的版本差异",
+          "conflict_type": "version",
+          "summary": "多个来源对同一研究问题给出了不一致的信息。",
+          "alternatives": [
+            {
+              "citation_number": 3,
+              "evidence_id": "evidence-dd055c8e8fe95cc7297ac533",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive；**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**；1. Module Description & Responsibilities；Document ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 1,
+              "evidence_id": "evidence-c8f5b6e3280e4bf34af6eee3",
+              "source_title": "M4+-+Toolset+Module+Lifecycle+Archive",
+              "value_summary": "Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive；**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**；1. Module Description & Responsibilities；Knowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为2026-06-22 ~ 2026-06-22，Commits为1，Deliverables Highlights为feat(toolset): implement CP2 hybrid retrieval；Sprint为2026-W27，Date Range为2026-06-29 ~ 2026-07-05，Commits为11，Deliverables Highlights为feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-01 ~ 2026-08-01，Commits为1，Deliverables Highlights为feat(toolset): add English BM25 and reranking；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-07，Commits为4，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:04.696Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:04.696Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 2,
+              "evidence_id": "evidence-3281bdb99ccfe156b0667f16",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            }
+          ],
+          "resolution_status": "unresolved",
+          "resolution": ""
+        },
+        {
+          "conflict_id": "conflict-81ed17b152ed4731",
+          "subject": "《M3+-+Data+Pipeline+Module+Lifecycle+Archive》与《M4+-+Toolset+Module+Lifecycle+Archive》的版本差异",
+          "conflict_type": "version",
+          "summary": "多个来源对同一研究问题给出了不一致的信息。",
+          "alternatives": [
+            {
+              "citation_number": 3,
+              "evidence_id": "evidence-6e6ed97e909048fc9ee14962",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive；**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**；1. Module Description & Responsibilities；Document ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 1,
+              "evidence_id": "evidence-eec206e6462a4ab73a67d711",
+              "source_title": "M4+-+Toolset+Module+Lifecycle+Archive",
+              "value_summary": "Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive；**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**；1. Module Description & Responsibilities；Knowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为2026-06-22 ~ 2026-06-22，Commits为1，Deliverables Highlights为feat(toolset): implement CP2 hybrid retrieval；Sprint为2026-W27，Date Range为2026-06-29 ~ 2026-07-05，Commits为11，Deliverables Highlights为feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-01 ~ 2026-08-01，Commits为1，Deliverables Highlights为feat(toolset): add English BM25 and reranking；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-07，Commits为4，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:04.696Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:04.696Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 2,
+              "evidence_id": "evidence-b370347a6fcadfa9657999bc",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            }
+          ],
+          "resolution_status": "unresolved",
+          "resolution": ""
+        },
+        {
+          "conflict_id": "conflict-463057dfb13bb754",
+          "subject": "《M3+-+Data+Pipeline+Module+Lifecycle+Archive》与《M4+-+Toolset+Module+Lifecycle+Archive》的版本差异",
+          "conflict_type": "version",
+          "summary": "多个来源对同一研究问题给出了不一致的信息。",
+          "alternatives": [
+            {
+              "citation_number": 3,
+              "evidence_id": "evidence-2e1c87ed95fd82c5538ff912",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive；**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**；1. Module Description & Responsibilities；Document ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 1,
+              "evidence_id": "evidence-d5fc5f68adeb669dc00c4655",
+              "source_title": "M4+-+Toolset+Module+Lifecycle+Archive",
+              "value_summary": "Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive；**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**；1. Module Description & Responsibilities；Knowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.；2. Sprint-by-Sprint Evolution；3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为2026-06-22 ~ 2026-06-22，Commits为1，Deliverables Highlights为feat(toolset): implement CP2 hybrid retrieval；Sprint为2026-W27，Date Range为2026-06-29 ~ 2026-07-05，Commits为11，Deliverables Highlights为feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-01 ~ 2026-08-01，Commits为1，Deliverables Highlights为feat(toolset): add English BM25 and reranking；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-07，Commits为4，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:04.696Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:04.696Z",
+              "authority": "internal",
+              "authority_rank": 0
+            },
+            {
+              "citation_number": 2,
+              "evidence_id": "evidence-7f6af09c754626bb09c2b3ec",
+              "source_title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+              "value_summary": "3. All Historical Commits for this Module；Sprint为2026-W23，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W24，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W25，Date Range为2026-06-17 ~ 2026-06-17，Commits为1，Deliverables Highlights为init monorepo structure；Sprint为2026-W26，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W27，Date Range为2026-07-04 ~ 2026-07-05，Commits为4，Deliverables Highlights为feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers；Sprint为2026-W28，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle；Sprint为2026-W30，Date Range为2026-07-20 ~ 2026-07-20，Commits为1，Deliverables Highlights为system update；Sprint为2026-W31，Date Range为2026-08-02 ~ 2026-08-02，Commits为1，Deliverables Highlights为feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules；Sprint为2026-W32，Date Range为2026-08-03 ~ 2026-08-05，Commits为3，Deliverables Highlights为feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation；Sprint为2026-W33，Date Range为2026-08-11 ~ 2026-08-11，Commits为1，Deliverables Highlights为feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout；Sprint为2026-W34，Date Range为-，Commits为0，Deliverables Highlights为Maintenance / Idle",
+              "document_version": "2026-09-04T08:42:02.690Z",
+              "effective_at": null,
+              "updated_at": "2026-09-04T08:42:02.690Z",
+              "authority": "internal",
+              "authority_rank": 0
+            }
+          ],
+          "resolution_status": "unresolved",
+          "resolution": ""
+        }
+      ],
+      "limitations": [],
+      "generated_at": "2026-10-08T11:49:27.327268Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-542ee5e5f74bb80a7e2a761e",
+        "evidence_ids": [
+          "evidence-542ee5e5f74bb80a7e2a761e",
+          "evidence-e27e7e35130aca4429622d5a",
+          "evidence-c8f5b6e3280e4bf34af6eee3",
+          "evidence-eec206e6462a4ab73a67d711",
+          "evidence-d5fc5f68adeb669dc00c4655"
+        ],
+        "doc_id": "1e65fa842d26d7e7b9259d749ace380a",
+        "title": "M4+-+Toolset+Module+Lifecycle+Archive",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:42:04.696Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:42:04.696Z",
+        "locator": "1e65fa842d26d7e7b9259d749ace380a_chunk_0",
+        "excerpt": "# Toolset Module (Retrieval & Plugins) - Complete Lifecycle Archive\n\n**Module Key:toolset|Root Directory:/toolsetTotal Lifetime Commits:20|Contributors: CodexSandboxOffline, YourGitHubUsername, mgy2006@outlook.com, tao-991, unknown**\n\n## 1. Module Description & Responsibilities\n\nKnowledge base retrieval adapters, search tool integration, vector store connectors, and plugin tools.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(toolset): implement CP2 hybrid retrieval |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 11 | feat(toolset): add CP3 logging and evaluation; feat: add CP4 agent integration |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-01 ~ 2026-08-01 | 1 | feat(toolset): add English BM25 and reranking |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 4 | feat(data-process): upgrade data processing pipeline; feat(toolset): add fail-open query enhancement |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+        "content_hash": "87e6e625a849b77e1b4b4c8674a3ab6e74c8a74473c34703d6821157a2839153"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-931ac70b8d1407f9be61191b",
+        "evidence_ids": [
+          "evidence-931ac70b8d1407f9be61191b",
+          "evidence-8f7919072edf15021da026e6",
+          "evidence-3281bdb99ccfe156b0667f16",
+          "evidence-b370347a6fcadfa9657999bc",
+          "evidence-7f6af09c754626bb09c2b3ec"
+        ],
+        "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+        "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:42:02.690Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:42:02.690Z",
+        "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_3",
+        "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 3c880814e | 2026-06-17 | tao-991 | Maintenance / Chore | init monorepo structure |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 8f804f099 | 2026-07-04 | YourGitHubUsername | Refactoring | refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| a7396869b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: move retrieval package from data-pipeline to toolset, ensure data-pipeline is clean of retrieval logic |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| f4f6d7a03 | 2026-08-02 | mgy2006@outlook.com | Feature | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| f818fddd1 | 2026-08-05 | 钟家进 | Feature | feat(data-pipeline): add Confluence HTML & attachment crawler |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |",
+        "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-c94f061a5a727876a374a7f6",
+        "evidence_ids": [
+          "evidence-c94f061a5a727876a374a7f6",
+          "evidence-e77206142831caae63942000",
+          "evidence-dd055c8e8fe95cc7297ac533",
+          "evidence-6e6ed97e909048fc9ee14962",
+          "evidence-2e1c87ed95fd82c5538ff912"
+        ],
+        "doc_id": "7ac2cf3c61a7c81bb8acf2a43c45b10a",
+        "title": "M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:42:02.690Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:42:02.690Z",
+        "locator": "7ac2cf3c61a7c81bb8acf2a43c45b10a_chunk_0",
+        "excerpt": "# Data Pipeline Module (Crawling & Processing) - Complete Lifecycle Archive\n\n**Module Key:data-pipeline|Root Directory:/data-pipelineTotal Lifetime Commits:11|Contributors: YourGitHubUsername, mgy2006@outlook.com, tao-991, 钟家进**\n\n## 1. Module Description & Responsibilities\n\nDocument ingestion, Confluence/HTML crawler, text cleaning, chunking, and embedding preparation.\n\n## 2. Sprint-by-Sprint Evolution\n\n| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | - | 0 | Maintenance / Idle |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | init monorepo structure |\n| 2026-W26 | - | 0 | Maintenance / Idle |\n| 2026-W27 | 2026-07-04 ~ 2026-07-05 | 4 | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format; refactor: abstract high-level DocumentParser class in data-pipeline parsers |\n| 2026-W28 | - | 0 | Maintenance / Idle |\n| 2026-W30 | 2026-07-20 ~ 2026-07-20 | 1 | system update |\n| 2026-W31 | 2026-08-02 ~ 2026-08-02 | 1 | feat(data-pipeline): add knowledge cards, precompressor, segmenter, and benchmark modules |\n| 2026-W32 | 2026-08-03 ~ 2026-08-05 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | - | 0 | Maintenance / Idle |\n\n## 3. All Historical Commits for this Module",
+        "content_hash": "ba85e96eeb3c8e7f916a573a0dba554953df2222dd4ddfef279a133c1f992bc2"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046257/M4+-+Toolset+Module+Lifecycle+Archive",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d5e1f6128b71448daa96e86a74fce293/documents/1e65fa842d26d7e7b9259d749ace380a/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 87
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d5e1f6128b71448daa96e86a74fce293/documents/7ac2cf3c61a7c81bb8acf2a43c45b10a/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 121
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34013443/M3+-+Data+Pipeline+Module+Lifecycle+Archive",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-d5e1f6128b71448daa96e86a74fce293/documents/7ac2cf3c61a7c81bb8acf2a43c45b10a/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 100
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

@@ -67,6 +67,8 @@ class ObservedLLM(BaseLLM):
         self.stage = stage
 
     def generate(self, prompt: str) -> str:
+        from agent.service.access_guard import check_model_access
+        check_model_access()
         started = time.perf_counter()
         success = False
         try:
@@ -77,6 +79,8 @@ class ObservedLLM(BaseLLM):
             self._record(started, success)
 
     def chat(self, messages: list[dict], tools: list[dict] = None, **kwargs) -> dict:
+        from agent.service.access_guard import check_model_access
+        check_model_access()
         started = time.perf_counter()
         success = False
         try:

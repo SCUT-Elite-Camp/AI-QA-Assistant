@@ -1,4 +1,10 @@
 import { z } from 'zod'
+import { sourceDependencySchema } from './evidenceContract'
+
+const sourceMetadata = {
+  source_dependencies: z.array(sourceDependencySchema).optional(),
+  provenance_complete: z.boolean().optional(),
+}
 
 export const memoryFactCategorySchema = z.enum([
   'GOAL',
@@ -17,7 +23,8 @@ export const memoryMessageSchema = z.object({
   sequence: z.number().int().positive(),
   revision: z.number().int().positive(),
   role: z.enum(['user', 'assistant', 'system']),
-  content: z.string()
+  content: z.string(),
+  ...sourceMetadata,
 }).strict()
 
 export const memorySnapshotInputSchema = z.object({
@@ -25,7 +32,8 @@ export const memorySnapshotInputSchema = z.object({
   version: z.number().int().positive(),
   revision: z.number().int().positive(),
   covered_to_sequence: z.number().int().positive(),
-  summary: z.string()
+  summary: z.string(),
+  ...sourceMetadata,
 }).strict()
 
 /** Unix epoch milliseconds in UTC, or null when the Fact does not expire. */
@@ -35,7 +43,8 @@ export const memoryFactInputSchema = z.object({
   id: z.string().min(1),
   category: memoryFactCategorySchema,
   value: z.string(),
-  expires_at: memoryExpiresAtSchema
+  expires_at: memoryExpiresAtSchema,
+  ...sourceMetadata,
 }).strict()
 
 export const internalActorSchema = z.object({
@@ -51,7 +60,8 @@ export const memoryContextInputSchema = z.object({
   current_sequence: z.number().int().positive(),
   snapshot: memorySnapshotInputSchema.nullable().default(null),
   facts: z.array(memoryFactInputSchema),
-  tail: z.array(memoryMessageSchema)
+  tail: z.array(memoryMessageSchema),
+  ...sourceMetadata,
 }).strict().superRefine((context, issue) => {
   if (context.snapshot && context.snapshot.revision !== context.revision) {
     issue.addIssue({
@@ -224,6 +234,7 @@ export const expectedActiveSnapshotSchema = z.object({
 }).strict()
 
 export const newMemorySnapshotSchema = z.object({
+  ...sourceMetadata,
   covered_from_sequence: z.number().int().positive(),
   covered_to_sequence: z.number().int().positive(),
   covered_from_message_id: z.string().min(1),

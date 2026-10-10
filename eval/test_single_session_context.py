@@ -36,7 +36,7 @@ def send_chat_request(query: str, session_id: str, top_k: int = 3) -> dict:
         data=data,
         headers={"Content-Type": "application/json"}
     )
-    
+
     start_t = time.time()
     try:
         with urllib.request.urlopen(req, timeout=90) as response:
@@ -192,12 +192,12 @@ def run_test():
             if not fact_pass:
                 turn_status = "DRIFT_FACT"
                 drift_reasons.append(f"丢失事实记忆: {missing_facts}")
-            
+
             if not tag_pass:
                 if turn_status == "PASS":
                     turn_status = "DRIFT_INSTRUCTION"
                 drift_reasons.append("未遵循标签指令 [TAG: SESSION_ACTIVE]")
-                
+
             if not list_pass:
                 if turn_status == "PASS":
                     turn_status = "DRIFT_INSTRUCTION"

@@ -1,0 +1,45 @@
+{
+  "schema_version": "deep-research-cases.v1",
+  "description": "Member B infrastructure smoke cases over the frozen Confluence RAG corpus; not the final A-owned evaluation set.",
+  "cases": [
+    {
+      "case_id": "B-SMOKE-001",
+      "category": "multi_document_summary",
+      "question": "基于这些工程记录，总结 Agent 模块从 W32 到 W34 的主要变化，并区分已经交付的能力与仍需后续验证的事项。",
+      "source_scope": {
+        "document_ids": [
+          "5f58d55287f36841c6375219cd6b75ec",
+          "54892d2bcaa53239e12a0013a309806a",
+          "5206845e81108d7e4fd77581f0bf7bc5"
+        ]
+      },
+      "expected_behavior": "answer"
+    },
+    {
+      "case_id": "B-SMOKE-002",
+      "category": "cross_section_relationship",
+      "question": "将系统架构演进说明与 W34 Web 模块交付记录交叉核对，说明前端、Agent 与检索链路之间已经形成了哪些连接；资料没有明确证明的内容不要下结论。",
+      "source_scope": {
+        "document_ids": [
+          "508c7adf3f8b03ba3a3b660e8a0a6437",
+          "2a562f9efa2e4f5af59d1fab4209eba8",
+          "54892d2bcaa53239e12a0013a309806a"
+        ]
+      },
+      "expected_behavior": "answer"
+    },
+    {
+      "case_id": "B-SMOKE-003",
+      "category": "insufficient_information",
+      "question": "根据这些记录，给出 Deep Research 上线后准确率提升的精确百分比、P95 延时降低比例和统计显著性结论。",
+      "source_scope": {
+        "document_ids": [
+          "508c7adf3f8b03ba3a3b660e8a0a6437",
+          "5206845e81108d7e4fd77581f0bf7bc5",
+          "54892d2bcaa53239e12a0013a309806a"
+        ]
+      },
+      "expected_behavior": "degraded"
+    }
+  ]
+}

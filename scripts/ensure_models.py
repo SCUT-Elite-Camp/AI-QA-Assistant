@@ -14,7 +14,7 @@ def is_model_directory_valid(model_path: str | Path) -> bool:
     path = Path(model_path)
     if not path.exists() or not path.is_dir():
         return False
-    
+
     # Must have config.json and at least one weights file or tokenizer file
     has_config = (path / "config.json").exists()
     has_weights = (
@@ -31,9 +31,9 @@ def download_embedding_model(target_dir: str | Path, model_id: str = DEFAULT_MOD
     """
     target_path = Path(target_dir).resolve()
     target_path.mkdir(parents=True, exist_ok=True)
-    
+
     logger.info(f"Downloading embedding model '{model_id}' to: {target_path}")
-    
+
     # Strategy 1: Try ModelScope (fastest for domestic networks)
     try:
         logger.info("Attempting download via ModelScope...")
@@ -50,7 +50,7 @@ def download_embedding_model(target_dir: str | Path, model_id: str = DEFAULT_MOD
         logger.info("Attempting download via Hugging Face Hub (hf-mirror.com)...")
         if "HF_ENDPOINT" not in os.environ:
             os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-        
+
         from huggingface_hub import snapshot_download as hf_download
         downloaded_dir = hf_download(
             repo_id=model_id,
@@ -77,18 +77,18 @@ def ensure_embedding_model(target_dir: str | Path | None = None) -> str:
     """
     if target_dir is None:
         target_dir = os.environ.get("LOCAL_EMBEDDING_MODEL_PATH")
-    
+
     if not target_dir:
         # Default to data-persistence/models/bge-small-en-v1.5
         project_root = Path(__file__).resolve().parent.parent
         target_dir = project_root / "data-persistence" / "models" / "bge-small-en-v1.5"
-    
+
     target_path = Path(target_dir).resolve()
-    
+
     if is_model_directory_valid(target_path):
         logger.info(f"Embedding model already present and verified: {target_path}")
         return str(target_path)
-    
+
     logger.info(f"Embedding model missing or incomplete at {target_path}. Starting automatic download...")
     return download_embedding_model(target_path)
 

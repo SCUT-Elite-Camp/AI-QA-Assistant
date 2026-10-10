@@ -88,9 +88,22 @@ export function resetDrizzleForTests(): void {
 
 async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   await client.execute('PRAGMA busy_timeout=5000')
+  await ensureColumns(client, 'users', [
+    ['role', "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"],
+    ['disabled', 'ALTER TABLE users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0'],
+  ])
+  // ACL tables were previously present only in manually initialized databases.
+  // Empty new tables grant no access; permissions remain owned by administrators.
+  await client.execute("CREATE TABLE IF NOT EXISTS files (id TEXT PRIMARY KEY NOT NULL,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,name TEXT NOT NULL,original_name TEXT NOT NULL,mime_type TEXT NOT NULL,size INTEGER NOT NULL,storage_path TEXT NOT NULL,visibility TEXT NOT NULL DEFAULT 'private',doc_id TEXT,created_at INTEGER NOT NULL)")
+  await client.execute("CREATE TABLE IF NOT EXISTS departments (id TEXT PRIMARY KEY NOT NULL,name TEXT NOT NULL UNIQUE,parent_id TEXT,created_at INTEGER NOT NULL)")
+  await client.execute("CREATE TABLE IF NOT EXISTS user_departments (user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,department_id TEXT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,PRIMARY KEY(user_id,department_id))")
+  await client.execute("CREATE TABLE IF NOT EXISTS file_permissions (id TEXT PRIMARY KEY NOT NULL,file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,grant_type TEXT NOT NULL,grant_id TEXT,created_at INTEGER NOT NULL)")
+  await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS files_doc_id_idx ON files(doc_id)')
+  await client.execute('CREATE INDEX IF NOT EXISTS file_permissions_file_idx ON file_permissions(file_id)')
   await client.execute("CREATE TABLE IF NOT EXISTS topics (id TEXT PRIMARY KEY, title TEXT NOT NULL, main_chat_id TEXT NOT NULL, soul_content TEXT NOT NULL DEFAULT '', description TEXT, tags TEXT, status TEXT NOT NULL DEFAULT 'ready', consecutive_no_new_docs_count INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
 
   await ensureColumns(client, 'topics', [
+    ['evidence_provenance', 'ALTER TABLE topics ADD COLUMN evidence_provenance TEXT'],
     ['soul_content', "ALTER TABLE topics ADD COLUMN soul_content TEXT NOT NULL DEFAULT ''"],
     ['description', 'ALTER TABLE topics ADD COLUMN description TEXT'],
     ['tags', 'ALTER TABLE topics ADD COLUMN tags TEXT'],
@@ -133,6 +146,7 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   // TypeScript schema does not migrate those existing SQLite tables by itself,
   // so add the nullable/defaulted columns before any route can insert a row.
   await ensureColumns(client, 'chats', [
+    ['evidence_provenance', 'ALTER TABLE chats ADD COLUMN evidence_provenance TEXT'],
     ['topic_id', 'ALTER TABLE chats ADD COLUMN topic_id TEXT REFERENCES topics(id) ON DELETE SET NULL'],
     ['weight_mode', "ALTER TABLE chats ADD COLUMN weight_mode TEXT NOT NULL DEFAULT 'fast'"],
     ['is_branch', 'ALTER TABLE chats ADD COLUMN is_branch INTEGER NOT NULL DEFAULT 0'],
@@ -158,6 +172,9 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
     ['is_favorite', 'ALTER TABLE messages ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0'],
     ['suggestion_text', 'ALTER TABLE messages ADD COLUMN suggestion_text TEXT'],
   ])
+  for (const table of ['memory_snapshots', 'memory_facts']) {
+    await ensureColumns(client, table, [['evidence_provenance', `ALTER TABLE ${table} ADD COLUMN evidence_provenance TEXT`]])
+  }
   await ensureColumns(client, 'library_documents', [
     ['desired_version_id', 'ALTER TABLE library_documents ADD COLUMN desired_version_id TEXT'],
     ['latest_version_number', 'ALTER TABLE library_documents ADD COLUMN latest_version_number INTEGER NOT NULL DEFAULT 0'],

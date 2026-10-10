@@ -1,0 +1,22 @@
+{
+  "schema_version": "research.progress.v1",
+  "research_id": "research-degraded",
+  "status": "completed",
+  "result_status": "degraded",
+  "current_stage": "completed",
+  "progress_percent": 100,
+  "task_total": 2,
+  "task_completed": 1,
+  "evidence_count": 1,
+  "claim_count": 1,
+  "started_at": "2026-09-01T11:00:00Z",
+  "updated_at": "2026-09-01T11:00:20Z",
+  "stages": [
+    { "key": "completed", "label": "研究已完成", "status": "completed", "started_at": "2026-09-01T11:00:20Z", "completed_at": "2026-09-01T11:00:20Z" }
+  ],
+  "tasks": [
+    { "task_id": "task-1", "question": "定位已有事实", "status": "succeeded", "evidence_count": 1 },
+    { "task_id": "task-2", "question": "补充缺失指标", "status": "failed", "evidence_count": 0 }
+  ],
+  "error": null
+}

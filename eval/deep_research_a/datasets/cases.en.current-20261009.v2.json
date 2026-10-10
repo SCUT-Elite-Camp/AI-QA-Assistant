@@ -1,0 +1,201 @@
+{
+  "frozen_before_generation": true,
+  "prior_dataset_sha256": "d5612e6ea683e8d70e0af322be8c67b269160ac46d9f28e7602c04900fe32bea",
+  "cases": [
+    {
+      "case_id": "DR-A-006-v2",
+      "category": "version_conflict",
+      "question": "Compare the Agent CP2 Optimization Plan scope with the current CP2 Goals entries for multi_entity_comparison and technology_selection Skills. Distinguish scope, recorded status and demonstrated delivery; do not treat plans as delivered features.",
+      "source_manifest": "manifest:DR-A-006",
+      "expected_behavior": "conflict_review",
+      "allowed_document_ids": [
+        "2130586138d434591e7edf6d7580ee16",
+        "7a046574e728d8449133f24f98fbbbde"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {
+          "doc_id": "2130586138d434591e7edf6d7580ee16",
+          "chunk_id": "2130586138d434591e7edf6d7580ee16_chunk_4",
+          "quote": "CP2 Will Not Build a Complete Skills System"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "quote": "AG-M16"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "quote": "AG-M11"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-006",
+      "supersedes_case_id": "DR-A-006",
+      "baseline_version": "Confluence-current-20261009",
+      "repair_informed": true,
+      "language": "en-US",
+      "source_scope": {
+        "document_ids": [
+          "2130586138d434591e7edf6d7580ee16",
+          "7a046574e728d8449133f24f98fbbbde"
+        ],
+        "knowledge_base_ids": []
+      },
+      "checks": [
+        "Optimization Plan excludes building a complete Skills System in CP2.",
+        "Current Goals AG-E1 multi_entity_comparison and AG-E2 technology_selection are Not started, target Wk05 and Wk05-Wk06 respectively.",
+        "Planned skills and scope snapshots are not proof of delivery."
+      ],
+      "source_projection_manifest": {
+        "documents": [
+          {
+            "doc_id": "2130586138d434591e7edf6d7580ee16",
+            "content_sha256": "35590860504bd2d11b1b5a53442ce50c28bceb04f61ebb39e62cce094b3ba914",
+            "runtime_file_sha256": "049c492976474703dc7a1db1f9bda1ec76bdb3469e0a8e7527ffa335fd3ec443",
+            "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+            "version": null
+          },
+          {
+            "doc_id": "7a046574e728d8449133f24f98fbbbde",
+            "content_sha256": "8c0755c6e0b4dd5f2e6e884aea6bc01cd664b6c007a837cc0bc839a346f3618f",
+            "runtime_file_sha256": "2045e27a4c6534afab7be2934b2e30e60ea859100625a09bc915977914e51932",
+            "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+            "version": "18"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "DR-A-012-v2",
+      "category": "table_interpretation",
+      "question": "Using only CP2 Goals, report the recorded statuses of AG-M6, AG-M7, AG-M8 (Research Graph), AG-M9, AG-M10, both AG-M11 entries, and AG-M16. Name duplicate IDs by their capability and report a blank status as \"not recorded\".",
+      "source_manifest": "manifest:DR-A-012",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "7a046574e728d8449133f24f98fbbbde"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "quote": "AG-M16"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "quote": "AG-M11"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-012",
+      "supersedes_case_id": "DR-A-012",
+      "baseline_version": "Confluence-current-20261009",
+      "repair_informed": true,
+      "language": "en-US",
+      "source_scope": {
+        "document_ids": [
+          "7a046574e728d8449133f24f98fbbbde"
+        ],
+        "knowledge_base_ids": []
+      },
+      "checks": [
+        "M6, M7, Research Graph M8, M9 and recoverable research jobs M10 are Finished.",
+        "Both AG-M11 entries (multi-step research execution and evidence-based report generation) are Finished; distinguish their duplicate ID.",
+        "AG-M16 Report Writer / Claim-Evidence mapping status is blank: not recorded; do not infer Finished."
+      ],
+      "source_projection_manifest": {
+        "documents": [
+          {
+            "doc_id": "7a046574e728d8449133f24f98fbbbde",
+            "content_sha256": "8c0755c6e0b4dd5f2e6e884aea6bc01cd664b6c007a837cc0bc839a346f3618f",
+            "runtime_file_sha256": "2045e27a4c6534afab7be2934b2e30e60ea859100625a09bc915977914e51932",
+            "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+            "version": "18"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "DR-A-018-v2",
+      "category": "current_state_synthesis",
+      "question": "Using CP2 Goals and the 2026-09-08 meeting minutes, summarize demonstrated Deep Research capabilities, unresolved issues and the team's next evaluation priorities.",
+      "source_manifest": "manifest:DR-A-018",
+      "expected_behavior": "answer",
+      "allowed_document_ids": [
+        "7a046574e728d8449133f24f98fbbbde",
+        "a0f35f4075be8b80576727e78756952d"
+      ],
+      "forbidden_document_ids": [],
+      "required_facts": [],
+      "forbidden_claims": [],
+      "key_source_locations": [
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "quote": "AG-M16"
+        },
+        {
+          "doc_id": "7a046574e728d8449133f24f98fbbbde",
+          "chunk_id": "7a046574e728d8449133f24f98fbbbde_chunk_0",
+          "quote": "AG-M11"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_3",
+          "quote": "workflow is still hard-coded"
+        },
+        {
+          "doc_id": "a0f35f4075be8b80576727e78756952d",
+          "chunk_id": "a0f35f4075be8b80576727e78756952d_chunk_4",
+          "quote": "Q&A performance"
+        }
+      ],
+      "report_language": "en-US",
+      "translation_source_case_id": "DR-A-018",
+      "supersedes_case_id": "DR-A-018",
+      "baseline_version": "Confluence-current-20261009",
+      "repair_informed": true,
+      "language": "en-US",
+      "source_scope": {
+        "document_ids": [
+          "7a046574e728d8449133f24f98fbbbde",
+          "a0f35f4075be8b80576727e78756952d"
+        ],
+        "knowledge_base_ids": []
+      },
+      "checks": [
+        "Meeting demonstrates complete question-to-report frontend/backend flow.",
+        "Meeting records hard-coded workflow and broken evidence links as unresolved in that snapshot.",
+        "Follow-up is to fix evidence links and turn fixed workflow into reusable tools.",
+        "Current Goals M6-M9 and M10 recoverable research jobs are Finished; do not rename M10 as Evidence/Citation Checker.",
+        "Meeting prioritizes Q&A performance and challenging multidimensional test cases.",
+        "Distinguish the current Goals status table from dated meeting issues: neither alone proves the historical evidence-link problem is now resolved."
+      ],
+      "source_projection_manifest": {
+        "documents": [
+          {
+            "doc_id": "7a046574e728d8449133f24f98fbbbde",
+            "content_sha256": "8c0755c6e0b4dd5f2e6e884aea6bc01cd664b6c007a837cc0bc839a346f3618f",
+            "runtime_file_sha256": "2045e27a4c6534afab7be2934b2e30e60ea859100625a09bc915977914e51932",
+            "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/26607617/CP2+-+Goals",
+            "version": "18"
+          },
+          {
+            "doc_id": "a0f35f4075be8b80576727e78756952d",
+            "content_sha256": "2b8a77374eab87e9e09e528b1f80c5307fa65634bcb5c59368bc2b716badfeee",
+            "runtime_file_sha256": "ba8f481688922885951ae5e4cd1f10271008b1080a399d8a18938fe70033f0ca",
+            "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+            "version": null
+          }
+        ]
+      }
+    }
+  ]
+}

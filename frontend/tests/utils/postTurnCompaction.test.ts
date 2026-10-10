@@ -31,7 +31,7 @@ async function createPersistedTurnFixture (firstMessageText = 'turn-1') {
     messages.push(await appendMessage(db, {
       chatId,
       id: randomUUID(),
-      parts: [{ text: sequence === 1 ? firstMessageText : `turn-${sequence}`, type: 'text' }],
+      parts: [{ text: sequence === 1 ? firstMessageText : `turn-${sequence}`, type: 'text' }, { type: 'data-evidence-provenance', data: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] } }],
       role: sequence % 2 === 0 ? 'assistant' : 'user'
     }))
   }
@@ -58,6 +58,8 @@ function successfulPlanResponse (request: {
     should_compact: true,
     expected_active_snapshot: null,
     new_snapshot: {
+      source_dependencies: [],
+      provenance_complete: true,
       covered_from_sequence: request.messages[0]!.sequence,
       covered_to_sequence: request.messages[11]!.sequence,
       covered_from_message_id: request.messages[0]!.id,

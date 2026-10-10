@@ -74,6 +74,7 @@ vi.mock('../../server/utils/memoryRepository', () => ({
 type RouteHandler = (event: unknown) => Promise<unknown>
 
 const internalFact = {
+  evidenceProvenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] },
   category: 'PREFERENCE',
   chatId: 'chat-1',
   confirmedAt: null,
@@ -140,7 +141,7 @@ beforeEach(() => {
   mocks.readCurrentRevisionFactSource.mockResolvedValue({
     historyRevision: 3,
     id: 'message-1',
-    parts: [{ text: 'Use concise Chinese responses.', type: 'text' }],
+    parts: [{ text: 'Use concise Chinese responses.', type: 'text' }, { type: 'data-evidence-provenance', data: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] } }],
     role: 'user'
   })
   mocks.toFactView.mockReturnValue(browserFact)

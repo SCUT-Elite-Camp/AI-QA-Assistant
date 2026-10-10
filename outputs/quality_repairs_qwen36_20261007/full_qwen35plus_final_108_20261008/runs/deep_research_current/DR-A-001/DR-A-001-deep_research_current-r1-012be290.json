@@ -1,0 +1,1251 @@
+{
+  "schema_version": "deep-research-run.v1",
+  "run_id": "DR-A-001-deep_research_current-r1-012be290",
+  "case_id": "DR-A-001",
+  "group": "deep_research_current",
+  "repetition": 1,
+  "started_at": "2026-10-08T11:39:58.890927+00:00",
+  "completed_at": "2026-10-08T11:40:11.773598+00:00",
+  "elapsed_ms": 12882,
+  "config_hash": "7f6e04b3ae2cd3812749dd2a9fc8f0d6afb41c504d87b187834227ffa345db0e",
+  "success": true,
+  "result": {
+    "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+    "job": {
+      "schema_version": "research.v2",
+      "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+      "user_id": "dev-user",
+      "request": {
+        "schema_version": "research.v1",
+        "query": "Compare Agent deliveries in 2026-W30 and 2026-W34. Give total commits, features, bug fixes and other improvements for each sprint, and calculate the changes.",
+        "source_scope": {
+          "knowledge_base_ids": [
+            "RAG"
+          ],
+          "document_ids": [
+            "833ac861944160a33080f47f6a0d0302",
+            "54892d2bcaa53239e12a0013a309806a"
+          ],
+          "topic": "multi_document_summary"
+        },
+        "report_spec": {
+          "format": "markdown",
+          "language": "en-US",
+          "title": "",
+          "sections": [],
+          "include_citations": true,
+          "include_limitations": true
+        },
+        "profile": "standard",
+        "user_notes": null
+      },
+      "status": "completed",
+      "result_status": "complete",
+      "plan_version": 1,
+      "manifest_hash": "78e91d191100c8321f0e2e6541086dd30413b1a8b6bac836f689afc522ec824e",
+      "current_stage": "completed",
+      "current_task_id": null,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "failure_stage": null,
+      "error_code": null,
+      "created_at": "2026-10-08T11:39:59.136724Z",
+      "updated_at": "2026-10-08T11:40:11.298029Z"
+    },
+    "plan": {
+      "schema_version": "research.v2",
+      "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+      "version": 1,
+      "objective": "Compare Agent deliveries in 2026-W30 and 2026-W34. Give total commits, features, bug fixes and other improvements for each sprint, and calculate the changes.",
+      "out_of_scope": [
+        "Sources outside SourceManifest",
+        "Speculation not verifiable in original sources"
+      ],
+      "source_scope": {
+        "knowledge_base_ids": [
+          "RAG"
+        ],
+        "document_ids": [
+          "833ac861944160a33080f47f6a0d0302",
+          "54892d2bcaa53239e12a0013a309806a"
+        ],
+        "topic": "multi_document_summary"
+      },
+      "report_spec": {
+        "format": "markdown",
+        "language": "en-US",
+        "title": "",
+        "sections": [],
+        "include_citations": true,
+        "include_limitations": true
+      },
+      "manifest_hash": "78e91d191100c8321f0e2e6541086dd30413b1a8b6bac836f689afc522ec824e",
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables' for the 2026-W30 sprint period.",
+          "purpose": "To retrieve the baseline delivery metrics for Sprint 2026-W30 without inferring values from partial commit histories.",
+          "dependencies": [],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "54892d2bcaa53239e12a0013a309806a",
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-1",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-2",
+          "question": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W34+-+M1+Agent+Module+Deliverables' for the 2026-W34 sprint period.",
+          "purpose": "To retrieve the comparison delivery metrics for Sprint 2026-W34 without inferring values from partial commit histories.",
+          "dependencies": [
+            "task-1"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "54892d2bcaa53239e12a0013a309806a",
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-2",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "critical",
+          "max_actions": 4,
+          "status": "pending"
+        },
+        {
+          "task_id": "task-3",
+          "question": "Calculate the numerical difference for total commits, features, bug fixes, and other improvements by subtracting the 2026-W30 values from the 2026-W34 values, and verify if the sum of features and bug fixes in each sprint meets any stated combined minimum thresholds.",
+          "purpose": "To compute the exact changes between sprints and validate arithmetic conditions regarding combined feature and bug fix counts as requested.",
+          "dependencies": [
+            "task-2"
+          ],
+          "allowed_tools": [
+            "keyword_search",
+            "read_document_range"
+          ],
+          "source_ids": [
+            "54892d2bcaa53239e12a0013a309806a",
+            "833ac861944160a33080f47f6a0d0302"
+          ],
+          "acceptance_criteria": [
+            {
+              "criterion_id": "criterion-3",
+              "description": "evidence: Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "requires_evidence": true,
+              "dimension": "evidence",
+              "target": "Cited original excerpts answer this task, separating confirmed facts, planned work and unknown status; source silence is not proof of absence.",
+              "required": true
+            }
+          ],
+          "priority": "normal",
+          "max_actions": 4,
+          "status": "pending"
+        }
+      ],
+      "budget": {
+        "max_tasks": 6,
+        "max_actions": 24,
+        "max_tool_calls": 24,
+        "max_tokens": 12000,
+        "max_runtime_seconds": 300
+      },
+      "status": "awaiting_approval"
+    },
+    "progress": {
+      "schema_version": "research.progress.v1",
+      "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+      "status": "completed",
+      "result_status": "complete",
+      "current_stage": "completed",
+      "progress_percent": 100,
+      "task_total": 3,
+      "task_completed": 3,
+      "evidence_count": 9,
+      "claim_count": 3,
+      "started_at": "2026-10-08T11:39:59.136724Z",
+      "updated_at": "2026-10-08T11:40:11.298029Z",
+      "stages": [
+        {
+          "key": "created",
+          "label": "已创建研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:39:59.141996Z",
+          "completed_at": "2026-10-08T11:39:59.965962Z"
+        },
+        {
+          "key": "planning",
+          "label": "正在生成研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:39:59.967352Z",
+          "completed_at": "2026-10-08T11:40:09.014810Z"
+        },
+        {
+          "key": "awaiting_approval",
+          "label": "等待确认研究计划",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:09.014810Z",
+          "completed_at": "2026-10-08T11:40:09.438684Z"
+        },
+        {
+          "key": "ready",
+          "label": "研究任务等待执行",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:09.439689Z",
+          "completed_at": "2026-10-08T11:40:11.021855Z"
+        },
+        {
+          "key": "execute_tasks",
+          "label": "正在执行研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.022820Z",
+          "completed_at": "2026-10-08T11:40:11.260409Z"
+        },
+        {
+          "key": "coverage",
+          "label": "正在检查资料覆盖度",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.261409Z",
+          "completed_at": "2026-10-08T11:40:11.266408Z"
+        },
+        {
+          "key": "generate_claims",
+          "label": "正在整理研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.266408Z",
+          "completed_at": "2026-10-08T11:40:11.271925Z"
+        },
+        {
+          "key": "structural_verification",
+          "label": "正在检查引用完整性",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.271925Z",
+          "completed_at": "2026-10-08T11:40:11.277430Z"
+        },
+        {
+          "key": "semantic_verification",
+          "label": "正在验证研究结论",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.278435Z",
+          "completed_at": "2026-10-08T11:40:11.287300Z"
+        },
+        {
+          "key": "render_report",
+          "label": "正在生成研究报告",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.287300Z",
+          "completed_at": "2026-10-08T11:40:11.293523Z"
+        },
+        {
+          "key": "finalize",
+          "label": "正在完成研究任务",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.294523Z",
+          "completed_at": "2026-10-08T11:40:11.298029Z"
+        },
+        {
+          "key": "completed",
+          "label": "研究已完成",
+          "status": "completed",
+          "started_at": "2026-10-08T11:40:11.299035Z",
+          "completed_at": "2026-10-08T11:40:11.300038Z"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "task-1",
+          "question": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables' for the 2026-W30 sprint period.",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-2",
+          "question": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W34+-+M1+Agent+Module+Deliverables' for the 2026-W34 sprint period.",
+          "status": "succeeded",
+          "evidence_count": 3
+        },
+        {
+          "task_id": "task-3",
+          "question": "Calculate the numerical difference for total commits, features, bug fixes, and other improvements by subtracting the 2026-W30 values from the 2026-W34 values, and verify if the sum of features and bug fixes in each sprint meets any stated combined minimum thresholds.",
+          "status": "succeeded",
+          "evidence_count": 3
+        }
+      ],
+      "metrics": {
+        "elapsed_ms": 1858,
+        "actions_used": 12,
+        "tool_calls": 12,
+        "documents_read": 2,
+        "evidence_accepted": 9,
+        "evidence_rejected": 0,
+        "retry_count": 0,
+        "recovery_count": 0
+      },
+      "error": null
+    },
+    "evaluation_trace": {
+      "observations": [
+        {
+          "observation_id": "observation-d4e3998130e64aff104cdbd6",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "locator_hint": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables' for the 2026-W30 sprint period.",
+          "created_at": "2026-10-08T11:40:11.107537Z"
+        },
+        {
+          "observation_id": "observation-8c02cd2beaf7a569f43daf7a",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "tool_name": "source_scope_read",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables' for the 2026-W30 sprint period.",
+          "created_at": "2026-10-08T11:40:11.113543Z"
+        },
+        {
+          "observation_id": "observation-d750eea8eb54007e285839b7",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "tool_name": "search",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "locator_hint": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "score": 0.4623883801063225,
+          "snippet": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)",
+          "query": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W30+-+M1+Agent+Module+Deliverables' for the 2026-W30 sprint period.",
+          "created_at": "2026-10-08T11:40:11.117824Z"
+        },
+        {
+          "observation_id": "observation-9f6d4394d6d8fa5288e9b9ff",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "locator_hint": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W34+-+M1+Agent+Module+Deliverables' for the 2026-W34 sprint period.",
+          "created_at": "2026-10-08T11:40:11.179392Z"
+        },
+        {
+          "observation_id": "observation-39f412b399d244b0dab4a115",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "tool_name": "source_scope_read",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W34+-+M1+Agent+Module+Deliverables' for the 2026-W34 sprint period.",
+          "created_at": "2026-10-08T11:40:11.183390Z"
+        },
+        {
+          "observation_id": "observation-56b274d4637902894d496ef0",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "tool_name": "search",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "locator_hint": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "score": 0.4623883801063225,
+          "snippet": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)",
+          "query": "Extract the total commits count, features count, bug fixes count, and other improvements count explicitly listed in 'Sprint+2026-W34+-+M1+Agent+Module+Deliverables' for the 2026-W34 sprint period.",
+          "created_at": "2026-10-08T11:40:11.186078Z"
+        },
+        {
+          "observation_id": "observation-c2be58d5bc62fd093378f390",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "locator_hint": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Calculate the numerical difference for total commits, features, bug fixes, and other improvements by subtracting the 2026-W30 values from the 2026-W34 values, and verify if the sum of features and bug fixes in each sprint meets any stated combined minimum thresholds.",
+          "created_at": "2026-10-08T11:40:11.244282Z"
+        },
+        {
+          "observation_id": "observation-158e21992794bfda8ce3acef",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "tool_name": "source_scope_read",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "locator_hint": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "score": null,
+          "snippet": "Canonical document summary",
+          "query": "Calculate the numerical difference for total commits, features, bug fixes, and other improvements by subtracting the 2026-W30 values from the 2026-W34 values, and verify if the sum of features and bug fixes in each sprint meets any stated combined minimum thresholds.",
+          "created_at": "2026-10-08T11:40:11.248303Z"
+        },
+        {
+          "observation_id": "observation-2c27bbe47659a3f97250eb2b",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "tool_name": "search",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "locator_hint": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "score": 0.22883159282270182,
+          "snippet": "treaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)",
+          "query": "Calculate the numerical difference for total commits, features, bug fixes, and other improvements by subtracting the 2026-W30 values from the 2026-W34 values, and verify if the sum of features and bug fixes in each sprint meets any stated combined minimum thresholds.",
+          "created_at": "2026-10-08T11:40:11.252315Z"
+        }
+      ],
+      "verified_evidence": [
+        {
+          "evidence_id": "evidence-c07c04e7db268c189b4e178d",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "created_at": "2026-10-08T11:40:11.111542Z"
+        },
+        {
+          "evidence_id": "evidence-4d6765e9be55e9240a655ce9",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:40:11.115318Z"
+        },
+        {
+          "evidence_id": "evidence-dbb68b42c65d43b963846b18",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)\n\n- f295ed9ee- fix: pass keyword arguments to _save_conversation_turn in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 7db171493- fix: import Citation in chat_routes and improve SSE stream error handling in post.ts(by @YourGitHubUsername on 2026-08-18)\n\n- 562658c32- fix: safely extract evidence fields from dict or object in Citations building(by @YourGitHubUsername on 2026-08-18)\n\n## 3. Impacted Code Files",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "created_at": "2026-10-08T11:40:11.120399Z"
+        },
+        {
+          "evidence_id": "evidence-fa45a0208986cc5c1f9581b2",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "created_at": "2026-10-08T11:40:11.181818Z"
+        },
+        {
+          "evidence_id": "evidence-02b6523ec8fb0c173b9ee057",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:40:11.185012Z"
+        },
+        {
+          "evidence_id": "evidence-ddc0bad18cd4c0567d7a02bf",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)\n\n- f295ed9ee- fix: pass keyword arguments to _save_conversation_turn in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 7db171493- fix: import Citation in chat_routes and improve SSE stream error handling in post.ts(by @YourGitHubUsername on 2026-08-18)\n\n- 562658c32- fix: safely extract evidence fields from dict or object in Citations building(by @YourGitHubUsername on 2026-08-18)\n\n## 3. Impacted Code Files",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "created_at": "2026-10-08T11:40:11.188116Z"
+        },
+        {
+          "evidence_id": "evidence-cba3c0297c79962eabbe1be0",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "created_at": "2026-10-08T11:40:11.246284Z"
+        },
+        {
+          "evidence_id": "evidence-cbfc7fd74ddeb624a260c235",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b",
+          "created_at": "2026-10-08T11:40:11.250315Z"
+        },
+        {
+          "evidence_id": "evidence-88ec33da5b1692b98474789e",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)\n\n- f295ed9ee- fix: pass keyword arguments to _save_conversation_turn in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 7db171493- fix: import Citation in chat_routes and improve SSE stream error handling in post.ts(by @YourGitHubUsername on 2026-08-18)\n\n- 562658c32- fix: safely extract evidence fields from dict or object in Citations building(by @YourGitHubUsername on 2026-08-18)\n\n## 3. Impacted Code Files",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb",
+          "created_at": "2026-10-08T11:40:11.254316Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "finding-89669de5ddd296fbe0b59baa",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-1",
+          "statement": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "evidence_ids": [
+            "evidence-c07c04e7db268c189b4e178d",
+            "evidence-4d6765e9be55e9240a655ce9",
+            "evidence-dbb68b42c65d43b963846b18"
+          ],
+          "covers": [
+            "criterion-1"
+          ]
+        },
+        {
+          "finding_id": "finding-3b953cbdbde7ba923e68e4e1",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-2",
+          "statement": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "evidence_ids": [
+            "evidence-fa45a0208986cc5c1f9581b2",
+            "evidence-02b6523ec8fb0c173b9ee057",
+            "evidence-ddc0bad18cd4c0567d7a02bf"
+          ],
+          "covers": [
+            "criterion-2"
+          ]
+        },
+        {
+          "finding_id": "finding-c0fc3f2b882b8cf514675812",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "task_id": "task-3",
+          "statement": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "evidence_ids": [
+            "evidence-cba3c0297c79962eabbe1be0",
+            "evidence-cbfc7fd74ddeb624a260c235",
+            "evidence-88ec33da5b1692b98474789e"
+          ],
+          "covers": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-finding-3b953cbdbde7ba923e68e4e1",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "claim_text": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "evidence_ids": [
+            "evidence-fa45a0208986cc5c1f9581b2",
+            "evidence-02b6523ec8fb0c173b9ee057",
+            "evidence-ddc0bad18cd4c0567d7a02bf"
+          ],
+          "criterion_ids": [
+            "criterion-2"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-89669de5ddd296fbe0b59baa",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "claim_text": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "evidence_ids": [
+            "evidence-c07c04e7db268c189b4e178d",
+            "evidence-4d6765e9be55e9240a655ce9",
+            "evidence-dbb68b42c65d43b963846b18"
+          ],
+          "criterion_ids": [
+            "criterion-1"
+          ]
+        },
+        {
+          "claim_id": "claim-finding-c0fc3f2b882b8cf514675812",
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "claim_text": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "evidence_ids": [
+            "evidence-cba3c0297c79962eabbe1be0",
+            "evidence-cbfc7fd74ddeb624a260c235",
+            "evidence-88ec33da5b1692b98474789e"
+          ],
+          "criterion_ids": [
+            "criterion-3"
+          ]
+        }
+      ],
+      "verifications": [
+        {
+          "claim_id": "claim-finding-89669de5ddd296fbe0b59baa",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c07c04e7db268c189b4e178d",
+            "evidence-4d6765e9be55e9240a655ce9",
+            "evidence-dbb68b42c65d43b963846b18"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-3b953cbdbde7ba923e68e4e1",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-fa45a0208986cc5c1f9581b2",
+            "evidence-02b6523ec8fb0c173b9ee057",
+            "evidence-ddc0bad18cd4c0567d7a02bf"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-c0fc3f2b882b8cf514675812",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-cba3c0297c79962eabbe1be0",
+            "evidence-cbfc7fd74ddeb624a260c235",
+            "evidence-88ec33da5b1692b98474789e"
+          ],
+          "reason": "structural_checks_passed"
+        },
+        {
+          "claim_id": "claim-finding-3b953cbdbde7ba923e68e4e1",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-fa45a0208986cc5c1f9581b2",
+            "evidence-02b6523ec8fb0c173b9ee057",
+            "evidence-ddc0bad18cd4c0567d7a02bf"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-89669de5ddd296fbe0b59baa",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-c07c04e7db268c189b4e178d",
+            "evidence-4d6765e9be55e9240a655ce9",
+            "evidence-dbb68b42c65d43b963846b18"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        },
+        {
+          "claim_id": "claim-finding-c0fc3f2b882b8cf514675812",
+          "status": "supported",
+          "evidence_ids": [
+            "evidence-cba3c0297c79962eabbe1be0",
+            "evidence-cbfc7fd74ddeb624a260c235",
+            "evidence-88ec33da5b1692b98474789e"
+          ],
+          "reason": "claim_text_found_in_original_evidence"
+        }
+      ]
+    },
+    "events": {
+      "schema_version": "research.events.v1",
+      "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+      "events": [
+        {
+          "event_id": 13216,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:job:created",
+          "event_type": "job_created",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:39:59.139366Z"
+        },
+        {
+          "event_id": 13217,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:created:started",
+          "event_type": "stage_started",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:39:59.141996Z"
+        },
+        {
+          "event_id": 13218,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:created:completed",
+          "event_type": "stage_completed",
+          "stage": "created",
+          "task_id": null,
+          "message": "已创建研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:39:59.965962Z"
+        },
+        {
+          "event_id": 13219,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:planning:started",
+          "event_type": "stage_started",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:39:59.967352Z"
+        },
+        {
+          "event_id": 13220,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:planning:completed",
+          "event_type": "stage_completed",
+          "stage": "planning",
+          "task_id": null,
+          "message": "正在生成研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:09.014810Z"
+        },
+        {
+          "event_id": 13221,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:awaiting_approval:started",
+          "event_type": "stage_started",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:09.014810Z"
+        },
+        {
+          "event_id": 13222,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:plan:1:approved",
+          "event_type": "plan_approved",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "研究计划已确认",
+          "payload": {
+            "plan_version": 1
+          },
+          "created_at": "2026-10-08T11:40:09.437678Z"
+        },
+        {
+          "event_id": 13223,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:awaiting_approval:completed",
+          "event_type": "stage_completed",
+          "stage": "awaiting_approval",
+          "task_id": null,
+          "message": "等待确认研究计划完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:09.438684Z"
+        },
+        {
+          "event_id": 13224,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:ready:started",
+          "event_type": "stage_started",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:09.439689Z"
+        },
+        {
+          "event_id": 13225,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:ready:completed",
+          "event_type": "stage_completed",
+          "stage": "ready",
+          "task_id": null,
+          "message": "研究任务等待执行完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.021855Z"
+        },
+        {
+          "event_id": 13226,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:execute_tasks:started",
+          "event_type": "stage_started",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.022820Z"
+        },
+        {
+          "event_id": 13228,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:task:task-1:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.047450Z"
+        },
+        {
+          "event_id": 13229,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:task:task-1:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-1",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:40:11.122399Z"
+        },
+        {
+          "event_id": 13230,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:task:task-2:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.123397Z"
+        },
+        {
+          "event_id": 13231,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:task:task-2:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-2",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:40:11.191114Z"
+        },
+        {
+          "event_id": 13232,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:task:task-3:started",
+          "event_type": "task_started",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "开始执行研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.192116Z"
+        },
+        {
+          "event_id": 13233,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:task:task-3:completed",
+          "event_type": "task_completed",
+          "stage": "execute_tasks",
+          "task_id": "task-3",
+          "message": "研究任务已完成",
+          "payload": {
+            "actions_used": 4,
+            "evidence_count": 3,
+            "status": "succeeded"
+          },
+          "created_at": "2026-10-08T11:40:11.257315Z"
+        },
+        {
+          "event_id": 13234,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:execute_tasks:completed",
+          "event_type": "stage_completed",
+          "stage": "execute_tasks",
+          "task_id": null,
+          "message": "正在执行研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.260409Z"
+        },
+        {
+          "event_id": 13235,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:coverage:started",
+          "event_type": "stage_started",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.261409Z"
+        },
+        {
+          "event_id": 13236,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:coverage:completed",
+          "event_type": "stage_completed",
+          "stage": "coverage",
+          "task_id": null,
+          "message": "正在检查资料覆盖度完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.266408Z"
+        },
+        {
+          "event_id": 13237,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:generate_claims:started",
+          "event_type": "stage_started",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.266408Z"
+        },
+        {
+          "event_id": 13238,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:generate_claims:completed",
+          "event_type": "stage_completed",
+          "stage": "generate_claims",
+          "task_id": null,
+          "message": "正在整理研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.271925Z"
+        },
+        {
+          "event_id": 13239,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:structural_verification:started",
+          "event_type": "stage_started",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.271925Z"
+        },
+        {
+          "event_id": 13240,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:structural_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "structural_verification",
+          "task_id": null,
+          "message": "正在检查引用完整性完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.277430Z"
+        },
+        {
+          "event_id": 13241,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:semantic_verification:started",
+          "event_type": "stage_started",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.278435Z"
+        },
+        {
+          "event_id": 13242,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:semantic_verification:completed",
+          "event_type": "stage_completed",
+          "stage": "semantic_verification",
+          "task_id": null,
+          "message": "正在验证研究结论完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.287300Z"
+        },
+        {
+          "event_id": 13243,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:render_report:started",
+          "event_type": "stage_started",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.287300Z"
+        },
+        {
+          "event_id": 13244,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:report:report-research-97d7fc16e84b40e59d846e86d166e75f:ready",
+          "event_type": "report_ready",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "研究报告已生成",
+          "payload": {
+            "report_id": "report-research-97d7fc16e84b40e59d846e86d166e75f"
+          },
+          "created_at": "2026-10-08T11:40:11.291526Z"
+        },
+        {
+          "event_id": 13245,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:render_report:completed",
+          "event_type": "stage_completed",
+          "stage": "render_report",
+          "task_id": null,
+          "message": "正在生成研究报告完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.293523Z"
+        },
+        {
+          "event_id": 13246,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:finalize:started",
+          "event_type": "stage_started",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.294523Z"
+        },
+        {
+          "event_id": 13247,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:finalize:completed",
+          "event_type": "stage_completed",
+          "stage": "finalize",
+          "task_id": null,
+          "message": "正在完成研究任务完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.298029Z"
+        },
+        {
+          "event_id": 13248,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:completed:started",
+          "event_type": "stage_started",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.299035Z"
+        },
+        {
+          "event_id": 13249,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:stage:completed:completed",
+          "event_type": "stage_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成完成",
+          "payload": {},
+          "created_at": "2026-10-08T11:40:11.300038Z"
+        },
+        {
+          "event_id": 13250,
+          "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+          "event_key": "research-97d7fc16e84b40e59d846e86d166e75f:job:completed",
+          "event_type": "job_completed",
+          "stage": "completed",
+          "task_id": null,
+          "message": "研究已完成",
+          "payload": {
+            "result_status": "complete"
+          },
+          "created_at": "2026-10-08T11:40:11.300038Z"
+        }
+      ],
+      "next_after_event_id": 13250
+    },
+    "report": {
+      "report_id": "report-research-97d7fc16e84b40e59d846e86d166e75f",
+      "research_id": "research-97d7fc16e84b40e59d846e86d166e75f",
+      "markdown": "## Summary\n\nThe recorded Agent delivery counts are compared below. [1][2]\n\n## Evidence and analysis\n\nChanges mean 2026-W34 minus 2026-W30.\n\n| Metric | 2026-W30 | 2026-W34 | Change |\n| --- | --- | --- | --- |\n| Total Commits | 9 [1] | 8 [2] | -1 [1][2] |\n| New Features Delivered | 5 [1] | 3 [2] | -2 [1][2] |\n| Bug Fixes Resolved | 1 [1] | 5 [2] | +4 [1][2] |\n| Other Improvements | 3 [1] | 0 [2] | -3 [1][2] |\n\n## Limitations and uncertainty\n\nThese counts describe the selected sprint reports; they do not establish production quality or subsequent delivery. [1][2]\n\n## Sources\n\n1. [**Sprint+2026-W30+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:40:52.925Z · 833ac861944160a33080f47f6a0d0302_chunk_0\n2. [**Sprint+2026-W34+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:41:46.172Z · 54892d2bcaa53239e12a0013a309806a_chunk_1\n3. [**Sprint+2026-W34+-+M1+Agent+Module+Deliverables**](https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables) · 2026-09-04T08:41:46.172Z · 54892d2bcaa53239e12a0013a309806a_chunk_0\n",
+      "result_status": "complete",
+      "claim_ids": [
+        "claim-finding-3b953cbdbde7ba923e68e4e1",
+        "claim-finding-89669de5ddd296fbe0b59baa",
+        "claim-finding-c0fc3f2b882b8cf514675812"
+      ],
+      "evidence_ids": [
+        "evidence-02b6523ec8fb0c173b9ee057",
+        "evidence-ddc0bad18cd4c0567d7a02bf",
+        "evidence-fa45a0208986cc5c1f9581b2",
+        "evidence-4d6765e9be55e9240a655ce9",
+        "evidence-c07c04e7db268c189b4e178d",
+        "evidence-dbb68b42c65d43b963846b18",
+        "evidence-88ec33da5b1692b98474789e",
+        "evidence-cba3c0297c79962eabbe1be0",
+        "evidence-cbfc7fd74ddeb624a260c235"
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "evidence_id": "evidence-02b6523ec8fb0c173b9ee057",
+          "evidence_ids": [
+            "evidence-02b6523ec8fb0c173b9ee057",
+            "evidence-4d6765e9be55e9240a655ce9",
+            "evidence-cbfc7fd74ddeb624a260c235"
+          ],
+          "doc_id": "833ac861944160a33080f47f6a0d0302",
+          "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:40:52.925Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:40:52.925Z",
+          "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+          "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+          "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+        },
+        {
+          "number": 2,
+          "evidence_id": "evidence-ddc0bad18cd4c0567d7a02bf",
+          "evidence_ids": [
+            "evidence-ddc0bad18cd4c0567d7a02bf",
+            "evidence-dbb68b42c65d43b963846b18",
+            "evidence-88ec33da5b1692b98474789e"
+          ],
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)\n\n- f295ed9ee- fix: pass keyword arguments to _save_conversation_turn in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 7db171493- fix: import Citation in chat_routes and improve SSE stream error handling in post.ts(by @YourGitHubUsername on 2026-08-18)\n\n- 562658c32- fix: safely extract evidence fields from dict or object in Citations building(by @YourGitHubUsername on 2026-08-18)\n\n## 3. Impacted Code Files",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb"
+        },
+        {
+          "number": 3,
+          "evidence_id": "evidence-fa45a0208986cc5c1f9581b2",
+          "evidence_ids": [
+            "evidence-fa45a0208986cc5c1f9581b2",
+            "evidence-c07c04e7db268c189b4e178d",
+            "evidence-cba3c0297c79962eabbe1be0"
+          ],
+          "doc_id": "54892d2bcaa53239e12a0013a309806a",
+          "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+          "source_type": "local_document",
+          "authority": "internal",
+          "authority_rank": 0,
+          "document_version": "2026-09-04T08:41:46.172Z",
+          "effective_at": null,
+          "updated_at": "2026-09-04T08:41:46.172Z",
+          "locator": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+          "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+          "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb"
+        }
+      ],
+      "conflicts": [],
+      "limitations": [],
+      "generated_at": "2026-10-08T11:40:11.290524Z"
+    },
+    "citations": [
+      {
+        "number": 1,
+        "evidence_id": "evidence-02b6523ec8fb0c173b9ee057",
+        "evidence_ids": [
+          "evidence-02b6523ec8fb0c173b9ee057",
+          "evidence-4d6765e9be55e9240a655ce9",
+          "evidence-cbfc7fd74ddeb624a260c235"
+        ],
+        "doc_id": "833ac861944160a33080f47f6a0d0302",
+        "title": "Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:40:52.925Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:40:52.925Z",
+        "locator": "833ac861944160a33080f47f6a0d0302_chunk_0",
+        "excerpt": "# [2026-W30] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-07-20 to 2026-07-26 |Module:agentContributors: YourGitHubUsername, fionaxi |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W30.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 9\n\n- New Features Delivered: 5\n\n- Bug Fixes Resolved: 1\n\n- Other Improvements: 3\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 42376c860- feat: add agent tool registry(by @fionaxi on 2026-07-24)\n\n- 32559e07a- feat: add query rewriter(by @fionaxi on 2026-07-25)\n\n- e93c32fbf- feat: add clarification decision(by @fionaxi on 2026-07-25)\n\n- 9a974d720- feat: define query plan contract(by @fionaxi on 2026-07-25)\n\n- 3d3f27dda- feat: add intent classifier(by @fionaxi on 2026-07-25)\n\n### 🐛 Bug Fixes & Stability\n\n- d9fa78df1- fix: use toolset registry adapter(by @fionaxi on 2026-07-25)\n\n### 🛠️ Refactoring & Engineering Tasks\n\n- 1e4d97ed3- system update(by @YourGitHubUsername on 2026-07-20)\n\n- 0249936ee- docs: organize cp1 and cp2 documentation(by @fionaxi on 2026-07-25)\n\n- 480b89944- docs: translate cp2 contracts to English(by @fionaxi on 2026-07-25)\n\n## 3. Impacted Code Files",
+        "content_hash": "e309cb22b9d4b6dcbe214781aa6bb1ee9d67cc0bbe68ff089ca3ba4e5139b90b"
+      },
+      {
+        "number": 2,
+        "evidence_id": "evidence-ddc0bad18cd4c0567d7a02bf",
+        "evidence_ids": [
+          "evidence-ddc0bad18cd4c0567d7a02bf",
+          "evidence-dbb68b42c65d43b963846b18",
+          "evidence-88ec33da5b1692b98474789e"
+        ],
+        "doc_id": "54892d2bcaa53239e12a0013a309806a",
+        "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:46.172Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:46.172Z",
+        "locator": "54892d2bcaa53239e12a0013a309806a_chunk_1",
+        "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)\n\n- f295ed9ee- fix: pass keyword arguments to _save_conversation_turn in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 7db171493- fix: import Citation in chat_routes and improve SSE stream error handling in post.ts(by @YourGitHubUsername on 2026-08-18)\n\n- 562658c32- fix: safely extract evidence fields from dict or object in Citations building(by @YourGitHubUsername on 2026-08-18)\n\n## 3. Impacted Code Files",
+        "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb"
+      },
+      {
+        "number": 3,
+        "evidence_id": "evidence-fa45a0208986cc5c1f9581b2",
+        "evidence_ids": [
+          "evidence-fa45a0208986cc5c1f9581b2",
+          "evidence-c07c04e7db268c189b4e178d",
+          "evidence-cba3c0297c79962eabbe1be0"
+        ],
+        "doc_id": "54892d2bcaa53239e12a0013a309806a",
+        "title": "Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+        "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+        "source_type": "local_document",
+        "authority": "internal",
+        "authority_rank": 0,
+        "document_version": "2026-09-04T08:41:46.172Z",
+        "effective_at": null,
+        "updated_at": "2026-09-04T08:41:46.172Z",
+        "locator": "54892d2bcaa53239e12a0013a309806a_chunk_0",
+        "excerpt": "# [2026-W34] Agent Module (Orchestration & Reasoning) Weekly Deliverable Report\n\n**Sprint Period: 2026-08-18 to 2026-08-21 |Module:agentContributors: YourGitHubUsername |Status: 🟢 Completed**\n\n## 1. Executive Summary\n\n**This report details the work delivered for theAgent Module (Orchestration & Reasoning)during2026-W34.Module Scope: Core LLM orchestration, multi-turn dialogue management, streaming SSE protocol, and reasoning logic.**\n\n### Key Highlights & Deliverables\n\n- Total Commits: 8\n\n- New Features Delivered: 3\n\n- Bug Fixes Resolved: 5\n\n- Other Improvements: 0\n\n## 2. Work Breakdown & Deliverables\n\n### 🚀 New Features & Enhancements\n\n- 094ee4b00- feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain(by @YourGitHubUsername on 2026-08-18)\n\n- 121df91ff- fix: add message argument to ChatResponse in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- d12c92e79- feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default(by @YourGitHubUsername on 2026-08-18)\n\n### 🐛 Bug Fixes & Stability\n\n- 61d1ceec8- fix: construct Citation instances directly from evidence in streaming endpoint(by @YourGitHubUsername on 2026-08-18)\n\n- 747effd5e- fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch(by @YourGitHubUsername on 2026-08-18)",
+        "content_hash": "879681773f280f9edb89964597831e904e152dd5835ae7a4260424059dd1fabb"
+      }
+    ],
+    "source_checks": [
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947729/Sprint+2026-W30+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-97d7fc16e84b40e59d846e86d166e75f/documents/833ac861944160a33080f47f6a0d0302/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 85
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-97d7fc16e84b40e59d846e86d166e75f/documents/54892d2bcaa53239e12a0013a309806a/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 84
+      },
+      {
+        "url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/34046225/Sprint+2026-W34+-+M1+Agent+Module+Deliverables",
+        "checked_url": "http://127.0.0.1:8010/api/research/jobs/research-97d7fc16e84b40e59d846e86d166e75f/documents/54892d2bcaa53239e12a0013a309806a/source",
+        "status": 200,
+        "ok": true,
+        "latency_ms": 65
+      }
+    ],
+    "retrieval_profile": "current"
+  },
+  "error": null
+}

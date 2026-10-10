@@ -240,7 +240,7 @@ def save_llm_config(
     settings.LLM_TIMEOUT = int(updates["LLM_TIMEOUT"])
 
     # 4. Reset singleton Agent instance so newly configured client is created on next request
-    chat_routes._agent_instance = None
+    chat_routes.get_application_container().shutdown()
 
     return LLMSaveResponse(
         success=True,

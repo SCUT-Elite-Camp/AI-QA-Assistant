@@ -8,7 +8,18 @@ from agent.schemas.chat import ChatResponse, Citation
 
 class StubAgent:
     def __init__(self) -> None:
+        self.permission_service = None  # Explicit component-only authorization double.
         self.memory = type("Memory", (), {"clear": lambda _self, _chat_id: None})()
+
+    def chat_with_memory(self, request):
+        from agent.schemas.chat import MemoryDecision
+        return self.chat(request), MemoryDecision()
+
+    def stream_chat(self, request):
+        response = self.chat(request)
+        yield "citations", [item.model_dump() for item in response.citations]
+        yield "token", {"content": response.answer}
+        yield "done", {"status": response.status}
 
     def chat(self, _request):
         return ChatResponse(
@@ -129,6 +140,8 @@ def test_internal_compaction_plan_is_deterministic_and_contains_only_data(monkey
         "should_compact": True,
         "expected_active_snapshot": None,
         "new_snapshot": {
+            "source_dependencies": [],
+            "provenance_complete": True,
             "covered_from_sequence": 1,
             "covered_to_sequence": 12,
             "covered_from_message_id": "message-1",

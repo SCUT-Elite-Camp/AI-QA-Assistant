@@ -26,7 +26,8 @@ function handleSave() {
 </script>
 
 <template>
-  <UModal :model-value="open" prevent-close :ui="{ content: 'sm:max-w-2xl' }" @update:model-value="emit('update:open', $event)">
+  <UModal :open="open" :dismissible="false" :ui="{ content: 'sm:max-w-2xl' }" @update:open="emit('update:open', $event)">
+    <template #content>
     <UCard :ui="{ root: 'ring-0 divide-y divide-zinc-200 dark:divide-zinc-800' }">
       <template #header>
         <div class="flex items-center justify-between">
@@ -71,5 +72,6 @@ function handleSave() {
         </div>
       </div>
     </UCard>
+    </template>
   </UModal>
 </template>

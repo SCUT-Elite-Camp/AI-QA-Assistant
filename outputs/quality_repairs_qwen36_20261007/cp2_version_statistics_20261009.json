@@ -1,0 +1,41 @@
+{
+  "population": "108 accepted unique case/group/repetition coordinates",
+  "p95_definition": "nearest rank",
+  "timing": "benchmark RunEnvelope.elapsed_ms; includes client polling and source validation; excludes judge",
+  "groups": {
+    "deep_research_current": {
+      "n": 54,
+      "raw_pass": 48,
+      "mean_s": 16.009,
+      "median_s": 14.186,
+      "p95_s": 25.002,
+      "min_s": 7.177,
+      "max_s": 35.854,
+      "scores": {
+        "correctness": 5,
+        "completeness": 4.852,
+        "faithfulness": 4.889,
+        "answer_relevance": 4.907,
+        "limitation_disclosure": 4.981,
+        "conflict_handling": 5
+      }
+    },
+    "fast_chat": {
+      "n": 54,
+      "raw_pass": 50,
+      "mean_s": 14.246,
+      "median_s": 13.611,
+      "p95_s": 26.759,
+      "min_s": 0.01,
+      "max_s": 41.406,
+      "scores": {
+        "correctness": 4.963,
+        "completeness": 4.852,
+        "faithfulness": 4.944,
+        "answer_relevance": 4.907,
+        "limitation_disclosure": 5,
+        "conflict_handling": 4.944
+      }
+    }
+  }
+}

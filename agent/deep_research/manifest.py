@@ -1,0 +1,258 @@
+"""SourceManifest resolution for the Local Deep Research control plane."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+from typing import Any, Protocol
+
+from agent.schemas.research import SourceManifest, SourceManifestDocument, SourceScope
+
+
+class ManifestResolutionError(ValueError):
+    """A requested local source cannot be frozen into a manifest."""
+
+    def __init__(self, code: str, message: str) -> None:
+        self.code = code
+        super().__init__(message)
+
+
+class SourceResolver(Protocol):
+    def list_documents(self) -> list[SourceManifestDocument]:
+        """List catalog metadata; callers must apply the current user's ACL."""
+
+    def resolve(self, research_id: str, scope: SourceScope, *, allowed_doc_ids: set[str] | None = None) -> SourceManifest:
+        """Resolve an explicit local scope into an immutable manifest."""
+
+    def read_document(self, doc_id: str) -> tuple[str, str]:
+        """Return the frozen catalog title and complete source text."""
+
+
+class LocalDocumentResolver:
+    """Resolve source metadata from the repository's processed JSON documents.
+
+    The resolver only reads the local document catalog.  It never follows a
+    URL, and it never adds a document after the manifest has been returned.
+    """
+
+    def __init__(self, documents_dir: str | Path | None = None) -> None:
+        project_root = Path(__file__).resolve().parents[2]
+        self.documents_dir = Path(documents_dir) if documents_dir else (
+            project_root / "data-persistence" / "data" / "documents"
+        )
+        self.documents_dir = self.documents_dir.resolve()
+
+    def resolve(self, research_id: str, scope: SourceScope, *, allowed_doc_ids: set[str] | None = None) -> SourceManifest:
+        if not scope.has_explicit_scope():
+            raise ManifestResolutionError(
+                "research_source_scope_required",
+                "source scope must name a local knowledge base, document, or topic",
+            )
+        if not self.documents_dir.is_dir():
+            raise ManifestResolutionError(
+                "source_manifest_catalog_unavailable",
+                f"local document catalog does not exist: {self.documents_dir}",
+            )
+
+        records = self._load_catalog()
+        if allowed_doc_ids is not None:
+            records = {key: value for key, value in records.items() if key in allowed_doc_ids}
+        selected: dict[str, dict[str, Any]] = {}
+
+        for doc_id in scope.document_ids:
+            record = records.get(doc_id)
+            if record is None:
+                raise ManifestResolutionError(
+                    "source_manifest_document_not_found",
+                    f"document '{doc_id}' is not present in the local catalog",
+                )
+            selected[doc_id] = record
+
+        knowledge_base_ids = set(scope.knowledge_base_ids)
+        topic = scope.topic.casefold()
+        for doc_id, record in records.items():
+            if knowledge_base_ids and str(record.get("space", "")) not in knowledge_base_ids:
+                continue
+            if topic and topic not in self._searchable_text(record).casefold():
+                continue
+            if knowledge_base_ids or topic:
+                selected[doc_id] = record
+
+        if not selected:
+            raise ManifestResolutionError(
+                "source_manifest_no_matching_documents",
+                "the explicit local source scope matched no documents",
+            )
+
+        documents = [self._snapshot(doc_id, record) for doc_id, record in selected.items()]
+        return SourceManifest.from_documents(research_id, documents)
+
+    def _load_catalog(self) -> dict[str, dict[str, Any]]:
+        catalog: dict[str, dict[str, Any]] = {}
+        for path in sorted(self.documents_dir.glob("*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            doc_id = str(payload.get("doc_id") or path.stem)
+            catalog[doc_id] = payload
+        return catalog
+
+    def list_documents(self) -> list[SourceManifestDocument]:
+        if not self.documents_dir.is_dir():
+            raise ManifestResolutionError(
+                "source_manifest_catalog_unavailable", "local document catalog is unavailable"
+            )
+        return [self._snapshot(doc_id, record) for doc_id, record in self._load_catalog().items()]
+
+    def read_document(self, doc_id: str) -> tuple[str, str]:
+        """Read one catalog document without accepting a filesystem path."""
+
+        record = self._load_catalog().get(doc_id)
+        if record is None:
+            raise ManifestResolutionError(
+                "source_manifest_document_not_found",
+                f"document '{doc_id}' is not present in the local catalog",
+            )
+        content = str(record.get("content") or "").strip()
+        if not content:
+            chunks = record.get("chunks") or []
+            content = "\n\n".join(
+                str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+                for chunk in chunks
+                if isinstance(chunk, dict)
+            ).strip()
+        if not content:
+            raise ManifestResolutionError(
+                "source_document_content_unavailable",
+                f"document '{doc_id}' has no readable source content",
+            )
+        return str(record.get("title") or doc_id), content
+
+    @staticmethod
+    def _searchable_text(record: dict[str, Any]) -> str:
+        chunks = record.get("chunks") or []
+        chunk_text = " ".join(
+            str(chunk.get("text") or chunk.get("chunk_text") or "")
+            for chunk in chunks
+            if isinstance(chunk, dict)
+        )
+        return " ".join(
+            str(value)
+            for value in (record.get("title", ""), record.get("content", ""), chunk_text)
+        )
+
+    @staticmethod
+    def _snapshot(doc_id: str, record: dict[str, Any]) -> SourceManifestDocument:
+        # Compute from the actual normalized body, never a cached index hash.
+        # Chat, Research and the evidence reader share the same projection.
+        from toolset.tool_layer.evidence_metadata import source_metadata
+        projection = source_metadata(record)
+        content_hash = projection["content_hash"]
+        version = projection["source_version"]
+        supersedes = record.get("supersedes") or []
+        if isinstance(supersedes, str):
+            supersedes = [supersedes]
+        if not isinstance(supersedes, list):
+            supersedes = []
+        return SourceManifestDocument(
+            doc_id=doc_id,
+            title=str(record.get("title") or doc_id),
+            source_url=(str(record["source_url"]) if record.get("source_url") else None),
+            source_type=str(record.get("source_type") or "local_document"),
+            authority=str(record.get("authority") or "internal"),
+            authority_rank=int(record.get("authority_rank") or 0),
+            version=str(version) if version is not None else None,
+            effective_at=(
+                str(record["effective_at"])
+                if record.get("effective_at") is not None
+                else None
+            ),
+            updated_at=(
+                str(record["last_updated"])
+                if record.get("last_updated") is not None
+                else None
+            ),
+            supersedes=[str(item) for item in supersedes],
+            content_hash=content_hash,
+        )
+
+
+class InMemoryDocumentResolver:
+    """Deterministic resolver used by control-plane tests and local demos."""
+
+    def __init__(self, documents: dict[str, dict[str, Any]]) -> None:
+        self.documents = dict(documents)
+
+    def list_documents(self) -> list[SourceManifestDocument]:
+        return [
+            LocalDocumentResolver._snapshot(doc_id, record)
+            for doc_id, record in self.documents.items()
+        ]
+
+    def resolve(self, research_id: str, scope: SourceScope, *, allowed_doc_ids: set[str] | None = None) -> SourceManifest:
+        selected: dict[str, dict[str, Any]] = {}
+        for doc_id in scope.document_ids:
+            if doc_id not in self.documents:
+                raise ManifestResolutionError(
+                    "source_manifest_document_not_found",
+                    f"document '{doc_id}' is not present in the in-memory catalog",
+                )
+            selected[doc_id] = self.documents[doc_id]
+
+        topic = scope.topic.casefold()
+        knowledge_base_ids = set(scope.knowledge_base_ids)
+        for doc_id, record in self.documents.items():
+            if allowed_doc_ids is not None and doc_id not in allowed_doc_ids:
+                continue
+            searchable = LocalDocumentResolver._searchable_text(record).casefold()
+            if topic and topic not in searchable:
+                continue
+            if knowledge_base_ids and str(record.get("space", "")) not in knowledge_base_ids:
+                continue
+            if topic or knowledge_base_ids:
+                selected[doc_id] = record
+
+        if not selected:
+            raise ManifestResolutionError(
+                "source_manifest_no_matching_documents",
+                "the explicit local source scope matched no documents",
+            )
+
+        return SourceManifest.from_documents(
+            research_id,
+            [LocalDocumentResolver._snapshot(doc_id, record) for doc_id, record in selected.items()],
+        )
+
+    def read_document(self, doc_id: str) -> tuple[str, str]:
+        record = self.documents.get(doc_id)
+        if record is None:
+            raise ManifestResolutionError(
+                "source_manifest_document_not_found",
+                f"document '{doc_id}' is not present in the in-memory catalog",
+            )
+        content = str(record.get("content") or "").strip()
+        if not content:
+            chunks = record.get("chunks") or []
+            content = "\n\n".join(
+                str(chunk.get("text") or chunk.get("chunk_text") or "").strip()
+                for chunk in chunks
+                if isinstance(chunk, dict)
+            ).strip()
+        if not content:
+            raise ManifestResolutionError(
+                "source_document_content_unavailable",
+                f"document '{doc_id}' has no readable source content",
+            )
+        return str(record.get("title") or doc_id), content
+
+
+__all__ = [
+    "InMemoryDocumentResolver",
+    "LocalDocumentResolver",
+    "ManifestResolutionError",
+    "SourceResolver",
+]

@@ -1,0 +1,117 @@
+{
+  "run_id": "DR-A-008-deep_research_current-r1-4a2032fe",
+  "case_id": "DR-A-008",
+  "group": "deep_research_current",
+  "api_success": true,
+  "judge_model": "qwen-plus-2025-12-01",
+  "rubric_sha256": "43ae67965a83fe48f4a8ebfbad8e5c45ec7d834db53118a00f4ad50444e1089d",
+  "origin": "actual final API answer; candidate blocks are not preverified claims",
+  "report": {
+    "text": "# Architecture scope\n\n## Scope clarification\n\nPlease clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation."
+  },
+  "verified_evidence": [
+    {
+      "evidence_id": "citation-1",
+      "doc_id": "a0f35f4075be8b80576727e78756952d",
+      "locator": "a0f35f4075be8b80576727e78756952d_chunk_2",
+      "excerpt": "Hi all,\n\nThank you so much for your attendance. Please kindly check the meeting minutes below for the meeting.\n\nDate: Monday, 8thSeptember, 2026\n\nTime: 16:30 HK time\n\nAttendees: Vincent Liang, Loura Guo, Tao Huang, Jiajin Zhong, Daijiang Xie, Yixi Wang, Suijie Song, Guangyuan Mu, Huifang Liu, Jiaxing Dai, Shu Cheng\n\n**Quick Recap**\n\nThis weekly progress meeting reviewed AI search system updates, including multimodal optimization, retrieval upgrades, deep research integration, and fast vs. thinking mode comparisons. Vincent emphasized prioritizing Q&A effectiveness over complex permission controls and proposed building a more challenging question set from existing conference data.\n\n**Discussion Summary**\n\n- Jiajin Zhong extended OCR with visual models to analyze image content, but image description accuracy remained unsatisfactory. Vincent advise testing higher-quality visual models via API rather than local model.\n\n- Jiaxing Dai upgraded the retrieval system to a hybrid of hierarchical navigation and knowledge layers for better long-document handling.\n\n- Yixi Wang compared fast vs. thinking modes and found fast mode superior in both speed and quality with lower latency.\n\n- Shu Cheng tested the permission isolation feature, confirming users from different departments cannot access unauthorized files.\n\n- Huifang Liu and Daijiang Xie presented the deep research feature front-to-back, enabling a full flow from question input to report generation, though the workflow is still hard-coded.\n\n- Vincent emphasized that the project should focus on improving Q&A performance rather than building complex features, and suggested the team create a more challenging question set from existing conference page data to evaluate the system's capabilities.\n\n**Action Items**\n\n- Huifang Liu will fix broken evidence links with Dai Jiaxing and split the fixed workflow into reusable tools for a smarter agent mode."
+    },
+    {
+      "evidence_id": "citation-2",
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "locator": "2130586138d434591e7edf6d7580ee16_chunk_7",
+      "excerpt": "and Non-Goals\n\n### 3.1 P0: Required\n\n- Persistent short-term conversation memory based onsession_id.\n\n- Intent recognition and Query Understanding.\n\n- Intent-based Policy Routing.\n\n- Contextual reference resolution and query rewriting.\n\n- Proactive clarification for ambiguous queries and clarification-state recovery.\n\n- A ReAct-lite execution loop constrained by hard budgets.\n\n- Consumption of theToolRegistryprovided by Toolset.\n\n- Tool execution results without shared mutable state.\n\n- End-to-end propagation ofquery,filters,trace_id, and retrieval parameters.\n\n- An Evidence Gate before final answer generation.\n\n- At most one corrective retrieval when evidence is insufficient.\n\n- Citation consistency validation.\n\n- Structured execution logs and stop reasons.\n\n- Synchronized Web, Agent, Toolset, and Data Persistence interfaces.\n\n- Automated tests and a basic evaluation set.\n\n### 3.2 P1: Optional\n\n- Multi-query retrieval and RRF fusion.\n\n- Neighboring-chunk expansion.\n\n- Lightweight reranking.\n\n- Conversation-history summarization.\n\n- Dynamic prompt assembly.\n\n- Intent-based candidate-tool filtering.\n\n- Document version-conflict and freshness checks.\n\n- Answer-confidence indicators.\n\n- True SSE step and token streaming.\n\n- User-feedback statistics API.\n\n### 3.3 Out of Scope for This Iteration\n\n- A complete Skills system.\n\n- Multi-Agent collaboration.\n\n- Long-term user profiles and automatic experience learning.\n\n- Direct Agent connections to Milvus, BM25, or Confluence.\n\n- Dynamic MCP and OpenAPI tools.\n\n- Code-as-Action.\n\n- Unlimited Agent loops.\n\n- Exposing the model's raw Chain-of-Thought to the frontend.\n\n- A complete production-grade identity and permission system.\n\n## 4. Target Architecture\n\n## 5. Intent Recognition\n\n### 5.1 Core Intents Supported by CP2\n\nTwo additional properties are used:\n\n### 5.2 Policies for Different Intents\n\n| Intent | Retrieval | Evidence Requirement | Answer Format |\n| --- | --- | --- | --- |\n| knowledge_qa | Hybrid | At least one valid item of evidence | Concise Q&A |\n| document_search | Metadata/BM25 | Accurate document identity and source | Document list |\n| summarization | Hybrid with a largertop_k | Coverage of multiple topics | Structured summary |\n| comparison | Multi-query Hybrid | Evidence for both comparison targets | Comparison table |\n| casual_chat | No retrieval | None | Direct response |\n| system_help | No retrieval or fixed capability configuration | None | Capability description |\n| unsupported | No tool calls | None | Unsupported-task notice |"
+    },
+    {
+      "evidence_id": "citation-3",
+      "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+      "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_3",
+      "excerpt": "| Sprint | Date Range | Commits | Deliverables Highlights |\n| --- | --- | --- | --- |\n| 2026-W23 | 2026-06-05 ~ 2026-06-05 | 1 | Initialize project skeleton structure |\n| 2026-W24 | - | 0 | Maintenance / Idle |\n| 2026-W25 | 2026-06-17 ~ 2026-06-17 | 1 | Create .gitkeep |\n| 2026-W26 | 2026-06-22 ~ 2026-06-22 | 1 | feat(agent): add week2 rag integration |\n| 2026-W27 | 2026-06-29 ~ 2026-07-05 | 14 | feat(agent): sync week3 quality controls; feat(agent): complete q1 week4 handoff |\n| 2026-W28 | 2026-07-09 ~ 2026-07-10 | 3 | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API; fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 2026-W30 | 2026-07-20 ~ 2026-07-25 | 9 | system update; feat: add agent tool registry |\n| 2026-W31 | 2026-07-27 ~ 2026-08-02 | 8 | feat: align cp2 query contracts and routing; feat: add structured tool executor |\n| 2026-W32 | 2026-08-03 ~ 2026-08-07 | 3 | feat(data-process): upgrade data processing pipeline; feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 2026-W33 | 2026-08-11 ~ 2026-08-11 | 1 | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 2026-W34 | 2026-08-18 ~ 2026-08-18 | 8 | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain; fix: construct Citation instances directly from evidence in streaming endpoint |\n\n## 3. All Historical Commits for this Module\n\n| Short Hash | Date | Author | Category | Commit Message |\n| --- | --- | --- | --- | --- |\n| 65cf2366a | 2026-06-05 | YourGitHubUsername | Maintenance / Chore | Initialize project skeleton structure |\n| 73252593d | 2026-06-17 | Tao | Maintenance / Chore | Create .gitkeep |\n| 61f91e885 | 2026-06-22 | Ivan | Feature | feat(agent): add week2 rag integration |\n| 21f7a308e | 2026-06-29 | Ivan | Feature | feat(agent): sync week3 quality controls |\n| 2b1350a1d | 2026-07-03 | Ivan | Feature | feat(agent): complete q1 week4 handoff |\n| 0c9933872 | 2026-07-04 | YourGitHubUsername | Feature | feat: implement automatic RAG model preloading on startup and fix Vercel AI SDK stream serialization format |\n| 53217c7fb | 2026-07-04 | YourGitHubUsername | Feature | feat: make MockLLM dynamic by reading prompt context and generating realistic answers |\n| 54a97a3df | 2026-07-04 | YourGitHubUsername | Bug Fix | fix: adjust MockLLM parser to handle colon-separated fields from ContextAssembler |\n| cd0add9a2 | 2026-07-04 | YourGitHubUsername | Feature | feat: return raw retrieval context directly in MockLLM |\n| 64b357c8b | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: optimize project structures, decouple modules, remove redundant code across all layers |\n| 539e24d91 | 2026-07-05 | YourGitHubUsername | Feature | feat: implement SQLite chat history audit logging store and GET history API endpoint |\n| d03fa544d | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: replace single-turn RAG with autonomous Agent Loop, remove RetrievalAdapter & MockLLM, rewrite unit tests with standard mocks |\n| 5b33d37ed | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: delete service folder, place agent.py directly in agent package root, rename unit test to test_agent.py |\n| 3dd3fef78 | 2026-07-05 | YourGitHubUsername | Refactoring | refactor: extract AOP auxiliary concerns into trace and audit services in service folder, call them within Agent run loop |\n| 8136bebaa | 2026-07-05 | YourGitHubUsername | Maintenance / Chore | chore: set default max_iterations to 1 in Agent run() |\n| 64e76cc78 | 2026-07-05 | YourGitHubUsername | Feature | feat: support bypass_llm setting in Agent to directly return tool search outcomes, disable bypass in tests |\n| 43c9c75eb | 2026-07-05 | YourGitHubUsername | Bug Fix | fix: inject project folders into sys.path in app.py to prevent ModuleNotFoundErrors when running server directly |\n| b56957250 | 2026-07-09 | YourGitHubUsername | Feature | feat(agent): integrate local Ollama qwen2.5:14b via OpenAI-compatible API |\n| 1739c6004 | 2026-07-09 | YourGitHubUsername | Bug Fix | fix(agent): rewrite run() to proper RAG flow to fix NO_RELEVANT_CONTEXT |\n| 32a1bfc45 | 2026-07-10 | YourGitHubUsername | Bug Fix | fix: display tooltip below badge and send full citation snippet from backend |\n| 1e4d97ed3 | 2026-07-20 | YourGitHubUsername | Maintenance / Chore | system update |\n| 42376c860 | 2026-07-24 | fionaxi | Feature | feat: add agent tool registry |\n| 32559e07a | 2026-07-25 | fionaxi | Feature | feat: add query rewriter |\n| e93c32fbf | 2026-07-25 | fionaxi | Feature | feat: add clarification decision |\n| d9fa78df1 | 2026-07-25 | fionaxi | Bug Fix | fix: use toolset registry adapter |\n| 9a974d720 | 2026-07-25 | fionaxi | Feature | feat: define query plan contract |\n| 0249936ee | 2026-07-25 | fionaxi | Documentation | docs: organize cp1 and cp2 documentation |\n| 480b89944 | 2026-07-25 | fionaxi | Documentation | docs: translate cp2 contracts to English |\n| 3d3f27dda | 2026-07-25 | fionaxi | Feature | feat: add intent classifier |\n| b555c8db1 | 2026-07-27 | fionaxi | Feature | feat: align cp2 query contracts and routing |\n| ce26046c2 | 2026-07-28 | fionaxi | Feature | feat: add structured tool executor |\n| 145f085e7 | 2026-07-28 | fionaxi | Feature | feat: add cp2 evidence quality controls |\n| c48dc9fbb | 2026-07-28 | fionaxi | Feature | feat: add query planning enrichment |\n| e51fee3e5 | 2026-07-29 | fionaxi | Documentation | docs: refresh cp2 unit test report |\n| f16ef8552 | 2026-07-30 | Ivan | Feature | feat(agent): integrate CP2 memory and bounded runner |\n| f72968339 | 2026-07-30 | Ivan | Documentation | docs(agent): record merged CP2 verification baseline |\n| 70b8c3b2c | 2026-08-02 | Ivan | Feature | feat(agent): orchestrate CP2 components in chat flow |\n| ba1a6cc07 | 2026-08-03 | mgy2006@outlook.com | Feature | feat(data-process): upgrade data processing pipeline |\n| ae1a13871 | 2026-08-05 | YourGitHubUsername | Feature | feat: multi-turn chat, data persistence, doc parser, markdown rendering, and auto title generation |\n| 80f3e4462 | 2026-08-07 | YourGitHubUsername | Feature | feat: complete topic management, dialogue branching, multi-turn chat, data persistence, and integrate remote dev |\n| 5cdccce39 | 2026-08-11 | YourGitHubUsername | Feature | feat: add Hit Rate & Similarity monitoring drawer, optimize agent streaming resilience and UI navbar layout |\n| 094ee4b00 | 2026-08-18 | YourGitHubUsername | Feature | feat: implement real token-by-token LLM streaming and full reasoning_content thinking chain |\n| 61d1ceec8 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: construct Citation instances directly from evidence in streaming endpoint |\n| 121df91ff | 2026-08-18 | YourGitHubUsername | Feature | fix: add message argument to ChatResponse in streaming endpoint |\n| 747effd5e | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: use runner._execute_tool in streaming endpoint for correct keyword argument dispatch |\n| f295ed9ee | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: pass keyword arguments to _save_conversation_turn in streaming endpoint |\n| 7db171493 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: import Citation in chat_routes and improve SSE stream error handling in post.ts |\n| 562658c32 | 2026-08-18 | YourGitHubUsername | Bug Fix | fix: safely extract evidence fields from dict or object in Citations building |\n| d12c92e79 | 2026-08-18 | YourGitHubUsername | Feature | feat: switch mode selector to Auto, Fast, and Thinking with Thinking as current default |"
+    },
+    {
+      "evidence_id": "citation-4",
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "locator": "2130586138d434591e7edf6d7580ee16_chunk_18",
+      "excerpt": "he Agent adds a ToolExecutor responsible for:\n\n- Looking up tools by name.\n\n- Parsing argument JSON.\n\n- Validating argument schemas.\n\n- Enforcing timeouts.\n\n- Propagatingtrace_id.\n\n- Mapping errors.\n\n- Producing structured logs.\n\n- Converting results intoToolExecutionResult.\n\n### 10.3 Structured Tool Results\n\nTool results must be returned with the current call and must no longer depend onlatest_results.\n\n## 11. Evidence Gate and Corrective Retrieval\n\n### 11.1 Basic Rules\n\n- Do not call final generation when no Evidence is available.\n\n- Discard results below the score threshold.\n\n- Deduplicate bydoc_id + chunk_id.\n\n- Generate Citations only for Evidence that actually enters the final context.\n\n- Passfiltersto SearchTool.\n\n- Record the original query, rewritten query, retrieval mode, scores, and elapsed time.\n\n### 11.2 Intent-Specific Evidence Requirements\n\n### 11.3 Corrective Retrieval\n\nWhen Evidence fails the first evaluation, the Agent may:\n\n- Adjust the query.\n\n- Relax non-mandatory filters.\n\n- Switch between BM25, Vector, and Hybrid retrieval.\n\n- Retrieve only the missing comparison target.\n\nIf Evidence still fails the second evaluation, return:\n\nThe system must not continue looping in the hope of finding a result.\n\n## 12. Dynamic Prompts and Answer Policies\n\nPrompts are assembled from multiple blocks:\n\nDifferent intents use different answer formats:\n\n- Knowledge Q&A: concise answer.\n\n- Document search: document list.\n\n- Summarization: topic-based summary.\n\n- Comparison: comparison table.\n\n- Clarification: ask only one question.\n\n- System help: describe only actual capabilities.\n\n- Unsupported tasks: clearly state the capability boundary.\n\nDynamic prompts and tool filtering may remain P1. At P0, different intents must at least enter different execution paths.\n\n## 13. API Extensions\n\nPreserve the CP1 fields and add an optional run summary:\n\nNew statuses:\n\nClarification example:\n\n## 14. Work Allocation\n\n### Workstream 1: Conversation State and Agent Runtime\n\nResponsibilities:\n\n- ConversationMemory.\n\n- Clarification-state storage and recovery.\n\n- AgentState.\n\n- Controlled Agent Runner.\n\n- Iteration, timeout, and tool-call limits.\n\n- Repeated-tool-call protection.\n\n- Chat API integration.\n\n- Run summaries and Trace.\n\n- Multi-turn conversation and stop-condition tests.\n\nEstimated effort: approximately nine person-days.\n\n### Workstream 2: Query Understanding and Answer Quality\n\nResponsibilities:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Query rewriting.\n\n- QueryPlan."
+    },
+    {
+      "evidence_id": "citation-5",
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "locator": "2130586138d434591e7edf6d7580ee16_chunk_19",
+      "excerpt": "t call final generation when no Evidence is available.\n\n- Discard results below the score threshold.\n\n- Deduplicate bydoc_id + chunk_id.\n\n- Generate Citations only for Evidence that actually enters the final context.\n\n- Passfiltersto SearchTool.\n\n- Record the original query, rewritten query, retrieval mode, scores, and elapsed time.\n\n### 11.2 Intent-Specific Evidence Requirements\n\n### 11.3 Corrective Retrieval\n\nWhen Evidence fails the first evaluation, the Agent may:\n\n- Adjust the query.\n\n- Relax non-mandatory filters.\n\n- Switch between BM25, Vector, and Hybrid retrieval.\n\n- Retrieve only the missing comparison target.\n\nIf Evidence still fails the second evaluation, return:\n\nThe system must not continue looping in the hope of finding a result.\n\n## 12. Dynamic Prompts and Answer Policies\n\nPrompts are assembled from multiple blocks:\n\nDifferent intents use different answer formats:\n\n- Knowledge Q&A: concise answer.\n\n- Document search: document list.\n\n- Summarization: topic-based summary.\n\n- Comparison: comparison table.\n\n- Clarification: ask only one question.\n\n- System help: describe only actual capabilities.\n\n- Unsupported tasks: clearly state the capability boundary.\n\nDynamic prompts and tool filtering may remain P1. At P0, different intents must at least enter different execution paths.\n\n## 13. API Extensions\n\nPreserve the CP1 fields and add an optional run summary:\n\nNew statuses:\n\nClarification example:\n\n## 14. Work Allocation\n\n### Workstream 1: Conversation State and Agent Runtime\n\nResponsibilities:\n\n- ConversationMemory.\n\n- Clarification-state storage and recovery.\n\n- AgentState.\n\n- Controlled Agent Runner.\n\n- Iteration, timeout, and tool-call limits.\n\n- Repeated-tool-call protection.\n\n- Chat API integration.\n\n- Run summaries and Trace.\n\n- Multi-turn conversation and stop-condition tests.\n\nEstimated effort: approximately nine person-days.\n\n### Workstream 2: Query Understanding and Answer Quality\n\nResponsibilities:\n\n- Intent recognition.\n\n- Reference resolution.\n\n- Query rewriting.\n\n- QueryPlan.\n\n- IntentPolicy and Policy Routing.\n\n- ToolRegistry adapter.\n\n- ToolExecutor.\n\n- Evidence Gate.\n\n- Corrective retrieval.\n\n- Citation validation and evaluation.\n\nEstimated effort: approximately nine person-days.\n\n### Shared Responsibilities\n\n- Freeze public schemas on Day 1.\n\n- Repair the CP1 test baseline.\n\n- Review Web, Toolset, and Persistence interfaces.\n\n- Integration testing.\n\n- Demo and documentation.\n\n- PR review and final acceptance.\n\n## 15. Two-Week Implementation Schedule"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "answer-block-1",
+      "text": "Please clarify which architecture you mean: the current code implementation, the planned target architecture, or a demonstrated architecture at a particular date. Specify the branch, release or date if you want the current implementation.",
+      "evidence_ids": []
+    }
+  ],
+  "citations": [
+    {
+      "citation_id": "1",
+      "evidence_ids": [
+        "citation-1"
+      ],
+      "doc_id": "a0f35f4075be8b80576727e78756952d",
+      "locator": "a0f35f4075be8b80576727e78756952d_chunk_2",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/36339729/Meeting+Minutes+of+2026+09+08",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "2",
+      "evidence_ids": [
+        "citation-2"
+      ],
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "locator": "2130586138d434591e7edf6d7580ee16_chunk_7",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "3",
+      "evidence_ids": [
+        "citation-3"
+      ],
+      "doc_id": "5206845e81108d7e4fd77581f0bf7bc5",
+      "locator": "5206845e81108d7e4fd77581f0bf7bc5_chunk_3",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/33947889/M1+-+Agent+Module+Lifecycle+Archive",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "4",
+      "evidence_ids": [
+        "citation-4"
+      ],
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "locator": "2130586138d434591e7edf6d7580ee16_chunk_18",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+      "claim_ids": []
+    },
+    {
+      "citation_id": "5",
+      "evidence_ids": [
+        "citation-5"
+      ],
+      "doc_id": "2130586138d434591e7edf6d7580ee16",
+      "locator": "2130586138d434591e7edf6d7580ee16_chunk_19",
+      "source_url": "https://huifengagent.atlassian.net/wiki/spaces/RAG/pages/21135422/Agent+Layer+CP2+Optimization+Plan",
+      "claim_ids": []
+    }
+  ],
+  "model_judge": {
+    "judge_version": "judge.v1",
+    "correctness": 5,
+    "completeness": 5,
+    "faithfulness": 5,
+    "answer_relevance": 5,
+    "limitation_disclosure": 5,
+    "conflict_handling": 5,
+    "required_fact_ids_supported": [
+      "clarification"
+    ],
+    "unsupported_claim_ids": [],
+    "rationale": "Correctness: The report correctly identifies the ambiguity in 'latest Agent architecture' and explicitly requests clarification among the three mutually exclusive scopes (current code, CP2 target architecture, September Deep Research demonstration), matching the required fact description exactly; no unsupported factual claims are made. Completeness: The report fully satisfies the single required fact — providing the precise clarification request as specified — with no omission. Faithfulness: The claim is not tied to any evidence_id (as it's a meta-request for user input, not a factual assertion about the system), and the frozen excerpts contain no conflicting or contradictory statements about architecture scope; absence of supporting evidence is appropriate here since the claim is a procedural clarification, not a factual statement requiring citation. Answer relevance: The response is focused, direct, and avoids digression — it does not attempt to infer or guess architecture details, nor does it paste irrelevant source excerpts. Limitation disclosure: No uncertainty, permission boundary, missing evidence, or degraded behavior requires disclosure because the expected behavior is 'request_more_information', and the report fulfills that precisely without overcommitting. Conflict handling: No source conflict exists — the excerpts describe different aspects (meeting notes, CP2 requirements, commit history, architecture docs) without contradiction; the report correctly avoids inventing or mislabeling any conflict."
+  }
+}

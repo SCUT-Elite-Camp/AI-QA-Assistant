@@ -8,6 +8,7 @@ from agent.config.settings import settings
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
 from agent.query.schemas import ClarificationDecision
+from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
 
 
 class Clarifier:
@@ -39,6 +40,10 @@ class Clarifier:
 
         if not self.enabled:
             return self._continue("clarification_disabled")
+
+        if not history and needs_architecture_scope(normalized_query):
+            return ClarificationDecision(needs_clarification=True, question=ARCHITECTURE_SCOPE_QUESTION,
+                                         reason="architecture_snapshot_scope_required")
 
         messages = [
             {"role": "system", "content": self._system_prompt()},

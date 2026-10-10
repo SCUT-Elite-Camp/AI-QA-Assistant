@@ -323,7 +323,7 @@ describe('memory repository', () => {
     const newAssistant = await appendMessage(fixture.db, {
       chatId: fixture.chatId,
       id: randomUUID(),
-      parts: [{ text: 'New regenerated answer.', type: 'text' }],
+      parts: [{ text: 'New regenerated answer.', type: 'text' }, { type: 'data-evidence-provenance', data: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] } }],
       role: 'assistant'
     })
     const nextUser = await appendMessage(fixture.db, {

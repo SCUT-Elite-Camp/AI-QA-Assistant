@@ -1,0 +1,46 @@
+{
+  "schema_version": "deep-research-benchmark.v1",
+  "frozen_at": "2026-10-08T07:09:11.978342+00:00",
+  "git": {
+    "branch": "agent-dev-infra",
+    "commit": "3b5c6f90e0efdf32dc1448e32faa0f9d78f57d51",
+    "dirty": true,
+    "tracked_dirty": true
+  },
+  "runtime": {
+    "python": "3.11.15",
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "model": {
+    "api_base": "https://ws-5z34r0ycxdln3rf1.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+    "fallback_policy": "no_implicit_model_fallback",
+    "name": "qwen3.5-27b",
+    "temperature": 0.1,
+    "max_tokens": 2000,
+    "timeout_seconds": 60
+  },
+  "retrieval": {
+    "mode": "hybrid",
+    "top_k": 5,
+    "min_score": 0.0,
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "g1_backend": "hybrid_milvus_bm25",
+    "g2_backend": "local_json",
+    "bm25_index_sha256": "5fb5334813a10865b8518017a2195d35451885097bcb526e5c25a84738362fa7",
+    "page_index_provider": "unavailable_until_capability_probe_passes"
+  },
+  "research": {
+    "dispatcher_interval_seconds": 2.0,
+    "max_agent_iterations": 5,
+    "max_repeated_tool_calls": 2
+  },
+  "documents_manifest_hash": "ee5c98bd286db81fbb76f5d120524e33e44f7a805f3fd110dcfc1b89d74d5339",
+  "documents_count": 107,
+  "prompt_hashes": {
+    "g1_answer": "5a67add56ce50b085e5101bc87fc388fbc73c57a7132f072b2c0093b3f2b50b2",
+    "g1_assembly": "33a2e882eb579c1a356d1e5e593498cce4c52de6f261b71f9282d87c8db4a071",
+    "planner": "ef575598058ef1148d735233c8b82d74960ccd3f2e632d77af36e5270b0eada2",
+    "report": "8f2c3122440c678c31e60b74505c9809d825f56279eebf619c35d69f0428a76b"
+  },
+  "config_hash": "3d1de720a35d09a934647e04c81f80088f7f8bd72bf51230145b5ad729d103bd"
+}
