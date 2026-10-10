@@ -44,6 +44,7 @@ class EvidenceLedger:
             document_version=read.document_version,
             locator=read.locator,
             excerpt=read.excerpt,
+            anchor_excerpt=read.anchor_excerpt,
             content_hash=read.content_hash,
         )
         return self.repository.save_evidence(item)

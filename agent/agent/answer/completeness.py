@@ -137,7 +137,13 @@ class AnswerCompletenessChecker:
             tools=None,
         )
         content = response.get("content", "") if isinstance(response, dict) else ""
-        return content.strip() if isinstance(content, str) else ""
+        if not isinstance(content, str):
+            return ""
+        # Reject a copied review prompt; stripping labels could still publish
+        # the source dump or unsupported original claim as a repaired answer.
+        if re.search(r"(?im)^\s*(?:Missing aspects|Missing critical facts|Original answer|Question|Evidence)\s*:", content):
+            return ""
+        return content.strip()
 
     def _repair_prompt(
         self,

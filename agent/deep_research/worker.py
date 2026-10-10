@@ -82,6 +82,7 @@ class OriginalRead:
     excerpt: str
     document_version: str | None = None
     content_hash: str | None = None
+    anchor_excerpt: str | None = None
 
     @classmethod
     def from_value(cls, value: "OriginalRead | Mapping[str, Any]") -> "OriginalRead":
@@ -107,6 +108,7 @@ class OriginalRead:
             excerpt=excerpt,
             document_version=str(version) if version is not None else None,
             content_hash=str(content_hash) if content_hash else None,
+            anchor_excerpt=value.get("anchor_excerpt"),
         )
 
 
@@ -465,6 +467,7 @@ class LocalResearchWorker:
                 document_version=original.document_version or manifest_document.version,
                 locator=original.locator,
                 excerpt=original.excerpt,
+                anchor_excerpt=original.anchor_excerpt,
                 content_hash=original.content_hash
                 or manifest_document.content_hash,
             )

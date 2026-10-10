@@ -67,7 +67,7 @@ class PipelineLLM:
             return self._json(
                 {"needs_clarification": False, "question": "", "reason": "clear"}
             )
-        if "查询重写器" in system:
+        if "Rewrite the current question" in system:
             return self._json(
                 {
                     "rewritten_query": "rewritten standalone query",

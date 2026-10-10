@@ -129,8 +129,12 @@ class AccessGuard:
             if source_type == "knowledge":
                 actual = self._knowledge_snapshot(doc_id)
                 document = self.permissions.source_provider._load(doc_id)
-                text = record.get("content") or record.get("chunk_text") or record.get("text") or record.get("snippet")
-                if text and not self._matches_original(str(text), document):
+                text = record.get("content") or record.get("chunk_text") or record.get("text") or record.get("snippet") or record.get("match_summary")
+                # Discovery may return a title when no content passage matched.
+                # This is metadata, not an original excerpt; only the exact
+                # current title is permitted, and only for discovery records.
+                title_only = name == "find_documents" and str(record.get("chunk_id") or "").endswith("::document") and text == document.get("title")
+                if text and not title_only and not self._matches_original(str(text), document):
                     raise PermissionResolutionError("source_evidence_changed", 409)
                 if record.get("title") and record["title"] != document.get("title"):
                     raise PermissionResolutionError("source_evidence_changed", 409)
@@ -161,7 +165,7 @@ class AccessGuard:
         body = str(document.get("content") or "")
         if text.strip() and text.strip() in body:
             return True
-        return any(text.strip() == str(c.get("text") or c.get("chunk_text") or "").strip()
+        return any(bool(text.strip()) and text.strip() in str(c.get("text") or c.get("chunk_text") or "").strip()
                    for c in document.get("chunks", []) if isinstance(c, dict))
 
     def _check_one(self, dependency: SourceDependency, *, permission_checked: bool = False):

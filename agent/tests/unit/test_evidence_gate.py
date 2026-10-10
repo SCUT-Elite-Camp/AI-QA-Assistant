@@ -9,6 +9,16 @@ from agent.schemas.tool_execution import Evidence
 pytestmark = pytest.mark.no_storage
 
 
+def test_dated_meeting_original_read_covers_source_without_fabricating_search_hit():
+    item = Evidence(doc_id='meeting', chunk_id='meeting_chunk_0', title='Meeting+Minutes+of+2030+09+08',
+        content='A recorded meeting observation.', score=1, retrieval_query='meeting', retrieval_mode='document',
+        read_status='original_excerpt_loaded')
+    assert EvidenceGate._has_retrieval_for('September 8 meeting observed a workflow', [item])
+    assert not EvidenceGate._has_retrieval_for('September 9 meeting observed a workflow', [item])
+    assert not EvidenceGate._has_retrieval_for('September 8 2031 meeting observed a workflow', [item])
+    assert not EvidenceGate._has_retrieval_for('September 8 meeting observed a workflow', [item.model_copy(update={'read_status': 'retrieval_hit'})])
+
+
 def _plan(
     intent: QueryIntent,
     *,

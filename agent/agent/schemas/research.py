@@ -503,6 +503,7 @@ class VerifiedEvidence(ResearchContractModel):
     document_version: str | None = Field(default=None, max_length=200)
     locator: str = Field(min_length=1, max_length=500)
     excerpt: str = Field(min_length=1, max_length=20_000)
+    anchor_excerpt: str | None = Field(default=None, max_length=20_000)
     content_hash: str = Field(min_length=8, max_length=128)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -621,6 +622,7 @@ class ResearchCitation(ResearchContractModel):
     updated_at: str | None = Field(default=None, max_length=100)
     locator: str = Field(min_length=1, max_length=500)
     excerpt: str = Field(min_length=1, max_length=20_000)
+    anchor_excerpt: str | None = Field(default=None, max_length=20_000)
     content_hash: str = Field(min_length=8, max_length=128)
 
     @field_validator("evidence_ids")

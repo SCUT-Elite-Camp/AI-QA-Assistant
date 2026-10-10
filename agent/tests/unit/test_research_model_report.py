@@ -2,6 +2,86 @@ from deep_research.model_report import EvidenceReportSynthesizer
 import pytest
 
 
+def test_refusal_cites_inspected_source_heading_not_missing_number():
+    from types import SimpleNamespace
+    sources = [SimpleNamespace(number=2, excerpt='# Agent Module Weekly Report\nTotal Commits: 8')]
+    answer = EvidenceReportSynthesizer._unsupported_counts_answer('Web', sources)
+    assert '"Agent Module Weekly Report". [2]' in answer
+    assert 'do not establish the requested exact Web counts' in answer
+    assert '8' not in answer
+
+
+def test_refusal_does_not_create_citation_for_unrelated_plain_excerpt():
+    from types import SimpleNamespace
+    answer = EvidenceReportSynthesizer._unsupported_counts_answer('Web', [
+        SimpleNamespace(number=1, excerpt='Other module information.')])
+    assert '[1]' not in answer
+
+
+def test_named_skill_scope_uses_exact_exclusion_and_table_rows():
+    from types import SimpleNamespace
+    sources = [SimpleNamespace(number=4, excerpt='CP2 Will Not Build a Complete Skills System'),
+               SimpleNamespace(number=9, excerpt='| Goal ID | Goal | Current Status | Target Week |\n'
+                   '| AG-E1 | example\\_compare Skill | Not started | Wk05 |\n'
+                   '| AG-E2 | example\\_select Skill | In progress | Wk06 |')]
+    query = 'Compare example_compare and example_select Skills with plan scope.'
+    answer = EvidenceReportSynthesizer._named_skill_scope_answer(query, sources)
+    assert 'complete Skills System. [4]' in answer
+    assert '| AG-E1 | example_compare | Not started [9] | Wk05 [9] |' in answer
+    assert '| AG-E2 | example_select | In progress [9] | Wk06 [9] |' in answer
+    assert 'not demonstrated delivery' in answer
+    assert EvidenceReportSynthesizer._named_skill_scope_answer(query + ' and missing_skill', sources) is None
+
+
+def test_named_skill_scope_rejects_conflicting_status_rows():
+    from types import SimpleNamespace
+    citations = [SimpleNamespace(number=1, excerpt='CP2 Will Not Build a Complete Skills System')]
+    for number, status in [(2, 'Finished'), (3, 'Not started')]:
+        citations.append(SimpleNamespace(number=number, excerpt='| Goal ID | Goal | Current Status | Target Week |\n'
+            f'| AG-E1 | example_skill Skill | {status} | Wk05 |'))
+    assert EvidenceReportSynthesizer._named_skill_scope_answer('Compare example_skill Skills scope.', citations) is None
+
+
+def test_bold_native_headers_duplicate_goal_ids_and_blank_status():
+    from types import SimpleNamespace
+    client = EvidenceReportSynthesizer(api_base='', api_key='', model='')
+    table = ('| **Goal ID** | **Goal** | **Current Status** |\n'
+             '| AG-M11 | Multi-step execution | Finished |\n'
+             '| AG-M11 | Evidence report generation | Finished |\n'
+             '| AG-M16 | Report Writer | |')
+    answer = client._recorded_goal_answer('Report statuses in Goals for AG-M11 and AG-M16.', [
+        SimpleNamespace(number=7, excerpt=table)])
+    assert '| AG-M11 | Multi-step execution | Finished [7] |' in answer
+    assert '| AG-M11 | Evidence report generation | Finished [7] |' in answer
+    assert '| AG-M16 | Report Writer | not recorded [7] |' in answer
+
+
+def test_dated_comparison_uses_statement_date_not_export_time():
+    from types import SimpleNamespace
+    client = EvidenceReportSynthesizer(api_base='', api_key='', model='')
+    sources = [SimpleNamespace(number=1, title='Implementation plan', document_version='2026-09-04',
+        excerpt='Reporting date:26 July 2026Module:Web\n\nReal integration is an external dependency.'),
+        SimpleNamespace(number=2, title='Meeting+Minutes+of+2026+09+08', document_version='2026-09-13',
+        excerpt='Date: Monday, 8thSeptember, 2026\n\nThe team presented Deep Research front-to-back, enabling a full flow; the workflow is still hard-coded.\n\nThe team will fix broken evidence links and split the fixed workflow into reusable tools.')]
+    answer = client._dated_evidence_answer('Compare dates of Deep Research integration and state remaining limitations.', sources)
+    assert '**2026-07-26**' in answer and '**2026-09-08**' in answer
+    assert 'hard-coded' in answer and 'broken evidence links' in answer
+    assert 'development over time' in answer
+
+
+def test_commit_locator_must_contain_fact_in_anchor_not_adjacent_context():
+    from types import SimpleNamespace
+    fact = 'abc123def- feat: add query parser by @alice on 2030-01-02'
+    context = '# Sprint 2030-W01\nModule: Example\n' + fact
+    sources = [SimpleNamespace(number=1, doc_id='d', excerpt=context, anchor_excerpt='Unrelated neighboring paragraph.',
+        locator='d_chunk_2', source_url='https://example.test/source'),
+        SimpleNamespace(number=2, doc_id='d', excerpt=context, anchor_excerpt=fact,
+        locator='d_chunk_5', source_url='https://example.test/source')]
+    answer = EvidenceReportSynthesizer._commit_identity_answer('Locate the W01 Example query parser delivery. Give the original Confluence source link and chunk locator.', sources)
+    assert '`d_chunk_5`. [2]' in answer and 'd_chunk_2' not in answer
+    assert 'Limitations and uncertainty' not in answer
+
+
 def grounding_fixture(monkeypatch):
     from deep_research.renderer import MarkdownReportRenderer
     from agent.schemas.research import ResearchReport, ResearchCitation, ResearchResultStatus
@@ -28,8 +108,8 @@ def test_fast_source_identity_preserves_url_and_real_locator_without_total(monke
     assert 'https://example.org/report. [2]' in answer
     assert '`doc-a_chunk_5`. [2]' in answer
     assert 'first occurrence' not in answer
-    assert 'adjacent chunk context' in answer
-    assert 'Live external Confluence accessibility has not been verified' in answer
+    assert 'Limitations and uncertainty' not in answer
+    assert 'accessibility has not been verified' not in answer
 
 
 def test_master_totals_find_header_after_long_chronology_and_compute_from_recorded_counts():
@@ -1069,3 +1149,17 @@ def test_fresh_report_local_correction_must_pass_evidence_review(monkeypatch):
     result = client.render(objective='State delivery status.',language='en-US')
     assert result.result_status==ResearchResultStatus.COMPLETE
     assert 'P1 retrieval is planned.' in result.markdown
+
+
+def test_sprint_counts_are_independent_of_citation_chunk_order():
+    from types import SimpleNamespace
+    def citation(number, doc, period, text):
+        return SimpleNamespace(number=number, doc_id=doc, title=f'Sprint+{period}+-+Agent+Deliverables', excerpt=text)
+    sources = [citation(1,'a','2031-W03','Commit verification log without heading or counts.'),
+        citation(2,'a','2031-W03','# [2031-W03] Agent report\nModule:agentContributors: Test\nTotal Commits: 9\nNew Features Delivered: 5\nBug Fixes Resolved: 1\nOther Improvements: 3'),
+        citation(3,'b','2031-W04','# [2031-W04] Agent report\nModule:agentContributors: Test\nTotal Commits: 8\nNew Features Delivered: 3\nBug Fixes Resolved: 5\nOther Improvements: 0')]
+    question='Compare Agent deliveries in 2031-W03 and 2031-W04. Give commits, features, bug fixes and other improvements.'
+    answer=EvidenceReportSynthesizer._sprint_counts_answer(question,sources)
+    assert '| Total Commits | 9 [2] | 8 [3] | -1 [2][3] |' in answer
+    assert 'Limitations and uncertainty' not in answer
+    assert 'not specified' not in answer

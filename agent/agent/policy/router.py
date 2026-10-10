@@ -76,4 +76,17 @@ class IntentPolicyRouter:
     }
     def route(self, query_plan: QueryPlan) -> IntentPolicy:
         """Return the fixed policy for the plan's validated intent."""
-        return self._POLICIES[query_plan.intent]
+        policy = self._POLICIES[query_plan.intent]
+        # A small explicit source selection needs bounded original reads for
+        # chronology/precise locators; rank-only retrieval cannot guarantee
+        # both sides of the comparison. Grants still come from AccessGuard.
+        ids = query_plan.filters.get('doc_ids', [])
+        if isinstance(ids, str):
+            ids = [ids]
+        if 0 < len(ids) <= 4 and query_plan.intent in {QueryIntent.KNOWLEDGE_QA, QueryIntent.COMPARISON}:
+            return policy.model_copy(update={
+                'candidate_tools': tuple(dict.fromkeys((*policy.candidate_tools, 'get_document'))),
+                'max_tool_calls': max(policy.max_tool_calls, len(ids) + 1),
+                'max_retrieval_attempts': max(policy.max_retrieval_attempts, len(ids) + 1),
+            })
+        return policy

@@ -127,7 +127,7 @@ class AgentRunner:
             if query_plan.intent.value == "unsupported":
                 return AgentRunResult(
                     stop_reason=StopReason.UNSUPPORTED,
-                    message="当前请求超出 Agent 的能力范围。",
+                    message=("This action is outside the Agent's supported capabilities." if not re.search(r"[\u4e00-\u9fff]", query_plan.original_query) else "当前请求超出 Agent 的能力范围。"),
                     error_code="unsupported_intent",
                 )
             return AgentRunResult(
@@ -222,9 +222,21 @@ class AgentRunner:
                     # Replaying the prior assistant tool call can make some
                     # providers request the same tool again even when schemas
                     # are hidden, which then costs a second answer-model call.
+                    self._read_selected_comparison_sources(state, policy, tool_executor)
                     response = self._generate_from_clean_evidence_context(state)
                 elif available_tools:
-                    response = self.llm.chat(state.messages, tools=available_tools)
+                    # Explicit evidence questions cannot consume their bounded
+                    # budget guessing an answer before the first source read.
+                    # Force only the existing scoped search tool, never a grant.
+                    structured = self._needs_scoped_original(query_plan.original_query)
+                    names = {s.get('function', {}).get('name') for s in available_tools}
+                    if structured and 'doc_ids' in query_plan.filters and retrieval_route is None and 'search_documents' in names:
+                        response = {'role': 'assistant', 'content': None, 'tool_calls': [{
+                            'id': f'scoped-search-{iteration}', 'type': 'function',
+                            'function': {'name': 'search_documents', 'arguments': json.dumps({'query': query_plan.standalone_query})},
+                        }]}
+                    else:
+                        response = self.llm.chat(state.messages, tools=available_tools)
                 else:
                     response = self._chat_for_answer(state, state.messages)
             except Exception as exc:
@@ -675,6 +687,12 @@ class AgentRunner:
                         state.evidence = self._merge_evidence(state.evidence, evidence)
                     if navigation_enabled and tool_name != "wiki_search_evidence":
                         state.evidence = state.evidence[:settings.EXPLORATION_MAX_EVIDENCE]
+
+                    if tool_name == 'search_documents':
+                        # Complete the selected source window before the gate;
+                        # otherwise a one-sided ranking can terminate the run
+                        # before the later source is ever read.
+                        self._read_selected_comparison_sources(state, policy, tool_executor)
 
                     # Do not judge an intentionally partial multi-source batch
                     # as a complete answer, nor correct it with another source.
@@ -1240,6 +1258,81 @@ class AgentRunner:
         )
         return self._format_search_observation(evidence), evidence, True
 
+    @staticmethod
+    def _needs_scoped_original(query: str) -> bool:
+        from deep_research.model_report import EvidenceReportSynthesizer
+        return (EvidenceReportSynthesizer.needs_dated_comparison(query)
+                or bool(re.search(r'\b(?:counts?|commits?|chunk locator|compar\w*|status(?:es)?|goals?|capabilities|priorities)\b', query, re.I)))
+
+    def _read_selected_comparison_sources(self, state, policy, executor) -> None:
+        """Read bounded selected sources through the same live guarded executor.
+
+        Ranking alone must not hide the later half of a dated comparison or
+        supply an adjacent context block as a precise source locator.
+        """
+        query = state.query_plan.original_query
+        needs_read = self._needs_scoped_original(query)
+        ids = state.query_plan.filters.get('doc_ids', [])
+        if isinstance(ids, str):
+            ids = [ids]
+        if not needs_read or not 0 < len(ids) <= 4 or executor is None or policy is None or 'get_document' not in policy.candidate_tools:
+            return
+        for doc_id in ids:
+            call_id = f'selected-original-{doc_id}'
+            if any(record.tool_call_id == call_id for record in state.tool_calls):
+                continue
+            if len(state.tool_calls) >= policy.max_tool_calls or state.retrieval_attempts >= policy.max_retrieval_attempts:
+                break
+            arguments = {'doc_id': doc_id, 'offset': 0, 'limit': 8}
+            result = executor.execute(tool_call_id=call_id, tool_name='get_document', arguments=arguments,
+                                      trace_id=state.trace_id, retrieval_attempt=min(5, state.retrieval_attempts + 1))
+            state.tool_calls.append(ToolCallRecord(iteration=state.iteration, tool_call_id=call_id,
+                tool_name='get_document', arguments=arguments, success=result.success, error_code=result.error_code))
+            state.retrieval_attempts += 1
+            if result.success:
+                state.evidence = self._merge_evidence(state.evidence, [e.model_dump() for e in result.evidence])
+
+    @staticmethod
+    def _verified_structured_answer(state) -> str | None:
+        from types import SimpleNamespace
+        from deep_research.model_report import EvidenceReportSynthesizer
+        from agent.evidence.locator import canonical_chunk_id
+        query = state.query_plan.original_query
+        if re.search(r'[\u4e00-\u9fff]', query):
+            return None
+        citations = [SimpleNamespace(number=i, doc_id=e['doc_id'], title=e.get('title', ''),
+            excerpt=e.get('content', ''), anchor_excerpt=e.get('content', ''),
+            locator=canonical_chunk_id(e['doc_id'], e.get('chunk_id'), e.get('chunk_index')),
+            source_url=e.get('source_url'), document_version=str(e.get('source_version') or ''))
+            for i, e in enumerate(state.evidence, 1) if e.get('source_type', 'knowledge') == 'knowledge']
+        # Preserve indices into the original accepted Evidence array.
+        if not citations:
+            return None
+        cls = EvidenceReportSynthesizer
+        answer = (cls._sprint_counts_answer(query, citations) or cls._commit_identity_answer(query, citations)
+                  or cls._named_skill_scope_answer(query, citations))
+        if answer:
+            return answer
+        if re.search(r'\bgoals\b', query, re.I) and re.search(r'\b(?:status(?:es)?|capabilities)\b', query, re.I):
+            # Reuse the row-based Research renderer. The model may translate
+            # names only; identifiers, statuses and references remain parsed.
+            # Research's request-local model guard must inherit the Chat guard.
+            from deep_research.access import model_access_scope
+            from agent.service.access_guard import check_model_access
+            synthesizer = cls(api_base=settings.LLM_API_BASE, api_key=settings.LLM_API_KEY,
+                              model=settings.LLM_MODEL)
+            with model_access_scope(check_model_access):
+                table = (synthesizer._recorded_goal_answer(query, citations)
+                         or synthesizer._capability_snapshot_answer(query, citations))
+            if table:
+                return table
+        unsupported = cls._unsupported_count_entity(query, citations)
+        if unsupported:
+            return cls._unsupported_counts_answer(unsupported, citations)
+        if cls.needs_dated_comparison(query):
+            return cls(api_base='', api_key='', model='')._dated_evidence_answer(query, citations)
+        return None
+
     def _generate_from_clean_evidence_context(
         self,
         state: AgentState,
@@ -1251,6 +1344,9 @@ class AgentRunner:
                 state.query_plan.standalone_query or state.query_plan.original_query,
                 state.evidence,
             )
+        grounded = self._verified_structured_answer(state)
+        if grounded:
+            return {"role": "assistant", "content": grounded}
         evidence_context = self._format_search_observation(state.evidence)
         context_history = self._history_before_current_query(state)
         question_context = f"Original question: {state.query_plan.original_query}"
@@ -1264,7 +1360,9 @@ class AgentRunner:
                 "content": (
                     f"{SYSTEM_ROLE}\n\n{ANSWER_RULES}\n\n"
                     "Retrieval is complete. Do not call or describe tools. "
-                    "Answer only from the supplied evidence and include citation markers."
+                    "Answer only from the supplied evidence and include citation markers. "
+                    "Each marker refers to exactly that numbered excerpt, not the whole document. "
+                    "Cite the excerpt containing the fact; another chunk from the same source is insufficient."
                 ),
             },
             *context_history,
@@ -1907,6 +2005,9 @@ class AgentRunner:
         policy: IntentPolicy | None,
         answer: str,
     ) -> str:
+        structured = self._verified_structured_answer(state)
+        if structured:
+            return structured
         checker = self.answer_completeness_checker
         if checker is None or policy is None or not policy.requires_citations:
             return answer

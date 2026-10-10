@@ -1,0 +1,98 @@
+[
+  {
+    "name": "g2_acl_denied_r1",
+    "status": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "name": "g1_acl_denied_r1",
+    "status": 200,
+    "expected": 200,
+    "passed": true
+  },
+  {
+    "name": "cross_user_report_r1",
+    "status": 404,
+    "expected": 404,
+    "passed": true
+  },
+  {
+    "name": "cross_user_events_r1",
+    "status": 404,
+    "expected": 404,
+    "passed": true
+  },
+  {
+    "name": "cross_user_documents/54892d2bcaa53239e12a0013a309806a/source_r1",
+    "status": 404,
+    "expected": 404,
+    "passed": true
+  },
+  {
+    "name": "anonymous_reader_r1",
+    "status": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "name": "authorized_reader_r1",
+    "status": 200,
+    "expected": 200,
+    "passed": true
+  },
+  {
+    "name": "missing_csrf_r1",
+    "status": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "name": "g2_acl_denied_r2",
+    "status": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "name": "g1_acl_denied_r2",
+    "status": 200,
+    "expected": 200,
+    "passed": true
+  },
+  {
+    "name": "cross_user_report_r2",
+    "status": 404,
+    "expected": 404,
+    "passed": true
+  },
+  {
+    "name": "cross_user_events_r2",
+    "status": 404,
+    "expected": 404,
+    "passed": true
+  },
+  {
+    "name": "cross_user_documents/54892d2bcaa53239e12a0013a309806a/source_r2",
+    "status": 404,
+    "expected": 404,
+    "passed": true
+  },
+  {
+    "name": "anonymous_reader_r2",
+    "status": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "name": "authorized_reader_r2",
+    "status": 200,
+    "expected": 200,
+    "passed": true
+  },
+  {
+    "name": "missing_csrf_r2",
+    "status": 403,
+    "expected": 403,
+    "passed": true
+  }
+]

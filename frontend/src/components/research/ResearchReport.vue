@@ -4,12 +4,15 @@ import type { ResearchEvent, ResearchJob, ResearchPlan, ResearchProgress, Resear
 import ChatComark from '../chat/Comark'
 import ResearchMessageActions from './ResearchMessageActions.vue'
 import ResearchSources from './ResearchSources.vue'
+import ModalDocumentViewer from '../chat/ModalDocumentViewer.vue'
 import type { ChunkCitation } from '../chat/tool/Sources.vue'
 import { formatResearchCitations } from '../../utils/researchMarkdown'
 import { researchSourceHref } from '../../utils/research'
 
 const props = defineProps<{ job: ResearchJob, report: ResearchReport, plan?: ResearchPlan | null, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ restart: [], askSelectedText: [text: string], regenerate: [] }>()
+const sourceOpen = ref(false)
+const selectedSource = ref<ChunkCitation | null>(null)
 const selectedText = ref('')
 const selectionPosition = ref<{ x: number, y: number } | null>(null)
 const latestRecovery = computed(() => [...(props.events ?? [])].reverse().find(event => event.event_type === 'job_recovered'))
@@ -23,13 +26,17 @@ const sourceCitations = computed<ChunkCitation[]>(() => props.report.citations.m
     title: citation.title,
     source_url: researchSourceHref(props.job.research_id, citation.doc_id),
     chunk_text: citation.excerpt,
+    content_hash: citation.content_hash,
+    normalized_content_hash: citation.content_hash,
+    source_version: citation.document_version ?? undefined,
+    locator: { chunk_id: citation.locator },
 })))
 const citationMap = computed(() => new Map(sourceCitations.value.map(citation => [citation.index, citation])))
 
 provide('ragCitationMap', citationMap)
 provide('openCitation', (index: number) => {
   const citation = citationMap.value.get(index)
-  if (citation) window.open(researchSourceHref(props.job.research_id, citation.doc_id), '_blank', 'noopener,noreferrer')
+  if (citation) { selectedSource.value = citation; sourceOpen.value = true }
 })
 
 function downloadMarkdown() {
@@ -86,6 +93,7 @@ function askSelectedText() {
 
 <template>
   <div class="space-y-6">
+    <ModalDocumentViewer v-model:open="sourceOpen" :doc="selectedSource" :research-id="job.research_id" />
     <p class="max-w-[72ch] text-base leading-7 text-highlighted">
       研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.conflicts?.length">；其中仍有资料冲突，需要你结合实际情况复核</span><span v-else-if="report.result_status !== 'complete'">；报告存在待确认事项或未通过质量核验，请查看说明</span>。
     </p>

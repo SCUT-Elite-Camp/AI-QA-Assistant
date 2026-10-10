@@ -152,6 +152,11 @@ class IntentClassifier:
         result: IntentResult,
     ) -> IntentResult:
         """Correct narrow, explicit intent cues when the model under-classifies."""
+        if result.intent == QueryIntent.UNSUPPORTED and re.search(
+            r"\b(?:give|what|which|compare|locate|find|state|report)\b.*\b(?:counts?|commits?|evidence|documents?|reports?|sources?|citations?)\b",
+            query, re.I | re.S,
+        ) and not re.search(r"\b(?:delete|modify|upload|deploy|send|purchase|execute|run code)\b", query, re.I):
+            return result.model_copy(update={"intent": QueryIntent.KNOWLEDGE_QA, "reason": "evidence_question_is_supported"})
         if (
             cls._SUMMARY_REQUEST.search(query)
             and result.intent
@@ -176,7 +181,12 @@ class IntentClassifier:
                 r"\b(?:commits?|files?)\b.*\b(?:implement\w*|add(?:ed)?|chang(?:e|ed)|modif(?:y|ied)|remov(?:e|ed)|fix(?:ed)?)\b",
                 query, re.IGNORECASE | re.DOTALL,
             )
-            if asks_change_facts and not locates_documents:
+            asks_identity_facts = re.search(r'\bgive\b.*\b(?:commit|author|date|chunk locator)\b', query, re.I | re.S)
+            asks_status_facts = re.search(
+                r'\b(?:report|state|give|find|what|which)\b.*\bstatus(?:es)?\b',
+                query, re.I | re.S,
+            )
+            if (asks_change_facts or asks_identity_facts or asks_status_facts) and not locates_documents:
                 return result.model_copy(update={
                     "intent": QueryIntent.KNOWLEDGE_QA,
                     "reason": "explicit_change_fact_request",

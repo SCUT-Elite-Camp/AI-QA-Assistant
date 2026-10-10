@@ -177,6 +177,7 @@ class OriginalRead:
     locator: str
     excerpt: str
     content_hash: str
+    anchor_excerpt: str | None = None
 
 
 class LocalResearchToolAdapter:
@@ -308,7 +309,8 @@ class LocalResearchToolAdapter:
                 )
                 if chunk_locator != requested_locator:
                     continue
-                excerpt = self._chunk_context(chunks, position)
+                radius = len(chunks) if len(chunks) <= 12 and len(content) <= 6000 else 2
+                excerpt = self._chunk_context(chunks, position, radius=radius)
                 if not excerpt:
                     raise LocalToolError("empty_document_excerpt")
                 return OriginalRead(
@@ -319,6 +321,7 @@ class LocalResearchToolAdapter:
                     locator=chunk_locator,
                     excerpt=excerpt,
                     content_hash=content_hash,
+                    anchor_excerpt=str(chunk.get("text") or chunk.get("chunk_text") or ""),
                 )
             raise LocalToolError(f"document_chunk_not_found:{requested_locator}")
         lines = content.splitlines() or [content]
@@ -395,7 +398,7 @@ class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
 
     def _allowed(self, context: ToolCallContext) -> dict[str, object]:
         frozen = super()._allowed(context)
-        current = self.access_policy.accessible_doc_ids(context.user_id)
+        current = self.access_policy.accessible_doc_ids(context.user_id, sorted(frozen))
         if current is not None and not set(frozen).issubset(current):
             raise ManifestAccessError("research_source_access_revoked")
         return frozen
@@ -436,15 +439,17 @@ class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
                                                        int(chunk.get("index", pos))) == target), None)
                 if position is None:
                     raise LocalToolError("document_chunk_not_found")
-                offset = max(0, position - 2)
-                page = self.read_tool.execute(doc_id=doc_id, offset=offset, limit=5,
+                short_note = len(chunks) <= 12 and len(str(payload.get('content') or '')) <= 6000
+                offset = 0 if short_note else max(0, position - 2)
+                limit = max(1, len(chunks)) if short_note else 5
+                page = self.read_tool.execute(doc_id=doc_id, offset=offset, limit=limit,
                                               expected_hash=item.content_hash, expected_version=item.version)
                 # Reader adds provenance fields; compare authoritative chunk identity/text,
                 # not dictionaries whose projection metadata deliberately differs.
                 identity = lambda rows: [(c.get("chunk_id"), c.get("text", c.get("chunk_text", ""))) for c in rows]
-                if page.get("error") or identity(page.get("chunks", [])) != identity(chunks[offset:offset + 5]):
+                if page.get("error") or identity(page.get("chunks", [])) != identity(chunks[offset:offset + limit]):
                     raise ManifestAccessError("document_version_changed")
-                excerpt = self._chunk_context(page["chunks"], position - offset)
+                excerpt = self._chunk_context(page["chunks"], position - offset, radius=len(chunks) if short_note else 2)
                 location = target
             else:
                 body = str(payload.get("content") or "") or "\n\n".join(str(c.get("text") or c.get("chunk_text") or "") for c in chunks)
@@ -457,7 +462,8 @@ class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
             if not excerpt:
                 raise LocalToolError("empty_document_excerpt")
             self._allowed(context)
-            return OriginalRead(doc_id, snapshot.version, location, excerpt, snapshot.content_hash)
+            anchor = str(chunks[position].get("text") or chunks[position].get("chunk_text") or "") if locator else excerpt
+            return OriginalRead(doc_id, snapshot.version, location, excerpt, snapshot.content_hash, anchor)
 
         return self._run(read, context.timeout_seconds)
 

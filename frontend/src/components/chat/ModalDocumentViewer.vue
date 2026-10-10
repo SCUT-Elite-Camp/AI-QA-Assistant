@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { $fetch } from 'ofetch'
+import { $fetch, ofetch } from 'ofetch'
 import type { ChunkCitation } from './tool/Sources.vue'
 import ChatComark from './Comark'
 import { evidenceUrl, evidenceError } from '../../utils/evidence'
 
-const props = defineProps<{ open: boolean, doc: ChunkCitation | null, allCitations?: ChunkCitation[], messageId?: string }>()
+const props = defineProps<{ open: boolean, doc: ChunkCitation | null, allCitations?: ChunkCitation[], messageId?: string, researchId?: string }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -40,7 +40,12 @@ async function loadFullDocument() {
   source.value = null
   try {
     if (!props.doc) throw new Error('未选择引用。')
-    if (props.messageId) {
+    if (props.researchId) {
+      const content = await ofetch<string, 'text'>(`/api/research/jobs/${encodeURIComponent(props.researchId)}/documents/${encodeURIComponent(props.doc.doc_id)}/source`, { responseType: 'text' })
+      if (revision !== requestRevision) return
+      evidence.value = props.doc
+      source.value = { doc_id: props.doc.doc_id, title: props.doc.title, content }
+    } else if (props.messageId) {
       const result = await $fetch<{ evidence: ChunkCitation, source?: typeof source.value }>(evidenceUrl(props.messageId, props.doc.evidence_ref || ''))
       if (revision !== requestRevision) return
       evidence.value = result.evidence
@@ -57,7 +62,7 @@ async function loadFullDocument() {
     if (revision === requestRevision) loading.value = false
   }
 }
-watch(() => [props.open, props.doc, props.messageId], () => {
+watch(() => [props.open, props.doc, props.messageId, props.researchId], () => {
   if (props.open && props.doc) void loadFullDocument()
   else { requestRevision++; evidence.value = null; source.value = null; error.value = null; loading.value = false }
 }, { immediate: true })

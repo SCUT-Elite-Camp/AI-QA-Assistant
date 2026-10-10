@@ -59,6 +59,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 or self._commit_identity_answer(str(kwargs['objective']),base_report.citations)
                 or self._commit_files_answer(str(kwargs['objective']),base_report.citations)
                 or self._directory_answer(str(kwargs['objective']),base_report.citations)
+                or self._named_skill_scope_answer(str(kwargs['objective']),base_report.citations)
                 or self._component_scope_answer(str(kwargs['objective']),base_report.citations)
                 or self._capability_snapshot_answer(str(kwargs['objective']),base_report.citations)
                 or self._capability_evidence_answer(str(kwargs['objective']),base_report.citations))
@@ -75,11 +76,10 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
 
         unsupported_entity = self._unsupported_count_entity(str(kwargs['objective']), base_report.citations)
         if language == 'en-US' and unsupported_entity:
-            references = ''.join(f'[{item.number}]' for item in base_report.citations[:3])
             return base_report.model_copy(update={
-                'markdown': f"# Requested counts are not established\n\n## Summary\n\nThe authorized excerpts do not establish the requested exact {unsupported_entity} counts. " + references
-                    + "\n\n## Evidence and analysis\n\nCounts from another module cannot substitute for the requested module. " + references
-                    + "\n\n## Limitations and uncertainty\n\nA matching module and period report is needed within the authorized source scope before these exact figures can be confirmed. " + references,
+                'markdown': "# Requested counts are not established\n\n## Summary\n\n"
+                    + self._unsupported_counts_answer(unsupported_entity, base_report.citations)
+                    + "\n\n## Limitations and uncertainty\n\nA matching module and period report is needed within the authorized source scope before these exact figures can be confirmed.",
                 'result_status': ResearchResultStatus.DEGRADED,
                 'limitations': [*base_report.limitations, ResearchLimitation(code='requested_entity_not_supported', message=f'The selected excerpts do not establish exact {unsupported_entity} counts.')],
             })
@@ -809,6 +809,24 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         return entity
 
     @staticmethod
+    def _unsupported_counts_answer(entity: str, citations) -> str:
+        """Cite what was inspected, rather than citing absence as a positive fact."""
+        context = []
+        seen = set()
+        for item in citations:
+            for line in str(getattr(item, 'excerpt', '')).splitlines():
+                heading = line.strip().lstrip('#').strip()
+                if line.strip().startswith('#') and heading and heading not in seen:
+                    seen.add(heading)
+                    context.append(f'The inspected source records "{heading}". [{item.number}]')
+                    break
+            if len(context) == 2:
+                break
+        return (' '.join(context) + ('\n\n' if context else '')
+                + f'The authorized excerpts do not establish the requested exact {entity} counts. '
+                'Counts for another module cannot substitute for them.')
+
+    @staticmethod
     def _goal_records(evidence: str) -> list[tuple[str, str, str]]:
         """Read named status columns rather than guessing from neighboring cells."""
         records = set()
@@ -818,7 +836,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         # column position.
         for line in evidence.splitlines():
             table_line = line[line.find('|'):] if '|' in line else line
-            cells = [cell.strip() for cell in table_line.strip().strip('|').split('|')]
+            cells = [cell.strip().strip('*') for cell in table_line.strip().strip('|').split('|')]
             if 'Goal ID' in cells and 'Current Status' in cells:
                 columns = (cells.index('Goal ID'), next((i for i,c in enumerate(cells) if c.startswith('Goal（') or c == 'Goal'), -1), cells.index('Current Status'))
                 break
@@ -827,7 +845,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 line = line[line.find('|'):]
             if not line.startswith('|'):
                 continue
-            cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+            cells = [cell.strip().strip('*') for cell in line.strip().strip('|').split('|')]
             if 'Goal ID' in cells and 'Current Status' in cells:
                 columns = (cells.index('Goal ID'), next((i for i,c in enumerate(cells) if c.startswith('Goal（') or c == 'Goal'), -1), cells.index('Current Status'))
                 continue
@@ -845,7 +863,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
     def _recorded_goal_answer(self, objective: str, citations) -> str | None:
         """Render requested table statuses from parsed rows; the model translates names only."""
         identifiers = list(dict.fromkeys(re.findall(r'\b[A-Z]{2,}-M\d+\b',objective)))
-        if len(identifiers)<2 or not re.search(r'\bgoals\b',objective,re.I) or not re.search(r'\bstatus\b',objective,re.I):
+        if len(identifiers)<2 or not re.search(r'\bgoals\b',objective,re.I) or not re.search(r'\bstatus(?:es)?\b',objective,re.I):
             return None
         if re.search(r'\b(?:demonstrat\w*|capabilities|priorities|why|compare|owners?|who|when|dates?|weeks?|acceptance|criteria|links|dependencies|reasons?)\b',objective,re.I):
             return None
@@ -985,7 +1003,8 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             if not key or normalize(key.group(1))!=normalize(module) or not re.search(r'\b\d{4}-'+period+r'\b',header[:250]):
                 continue
             identities=[]
-            for line in citation.excerpt.splitlines():
+            anchor = getattr(citation, 'anchor_excerpt', None)
+            for line in (citation.excerpt if anchor is None else anchor).splitlines():
                 if subject.casefold() not in line.casefold():
                     continue
                 identity=re.search(r'\b([a-f0-9]{7,40})\b.*?by\s+@([A-Za-z0-9_.-]+)\s+on\s+(\d{4}-\d{2}-\d{2})',line,re.I)
@@ -1008,10 +1027,9 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 return None
             return (f'## Summary\n\nThe {period} {module} {subject} delivery is commit `{commit}`, recorded by **{author}** '
                 f'on **{date}**. [{number}]\n\n## Evidence and analysis\n\nRecorded original Confluence URL: {url}. '
-                f'[{number}]\n\nVerified source read locator: `{locator}`. [{number}]\n\n## Limitations and uncertainty\n\n'
-                'The recorded URL identifies the original source. Live external Confluence accessibility has not been verified; '
-                'the local original-source view is separate from access to that external site. '
-                'The locator identifies the verified read anchor; an excerpt may include adjacent chunk context.')
+                f'[{number}]\n\nVerified source read locator: `{locator}`. [{number}]'
+                + ('\n\nExternal browser accessibility has not been verified by these recorded excerpts.'
+                   if re.search(r'\b(?:accessible|accessibility)\b', objective, re.I) else ''))
         return (f'## Summary\n\nThe {period} {module} {subject} commit is `{commit}`, recorded by **{author}** '
             f'on **{date}**. [{number}]\n\n## Evidence and analysis\n\nThe {module} sprint report records **{total} total commits**. '
             f'[{total_ref}] This is the module total, without substituting the Master project total or another module\'s count.'
@@ -1166,7 +1184,12 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 key = re.search(r'Module:\s*([a-z0-9_-]+?)(?=Contributors|\||\s|\*|$)',header_source,re.I)
                 if not key or normalize(key.group(1))!=normalize(comparison.group(1)):
                     continue
-                document_period = re.search(r'\b\d{4}-W\d{2}\b',header_source[:250])
+                # Chunk ordering must not hide a document's heading behind its commit log.
+                period_headers = [re.search(r'\b\d{4}-W\d{2}\b', c.excerpt[:250]) for c in related]
+                document_periods = {match.group() for match in period_headers if match}
+                document_period = re.search(r'\b\d{4}-W\d{2}\b', getattr(citation, 'title', '') or '')
+                if not document_period and len(document_periods) == 1:
+                    document_period = re.search(r'\b\d{4}-W\d{2}\b', next(iter(document_periods)))
                 if not document_period or document_period.group()!=period:
                     continue
                 values = [re.search(re.escape(metric)+r':\s*(\d+)',citation.excerpt,re.I) for metric in metrics]
@@ -1186,7 +1209,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             f'| Metric | {periods[0]} | {periods[1]} | Change |\n| --- | --- | --- | --- |\n')
         body += '\n'.join(f'| {metric} | {left} [{first_ref}] | {right} [{second_ref}] | {right-left:+d} {refs} |'
             for metric,left,right in zip(metrics,first,second))
-        return body + '\n\n## Limitations and uncertainty\n\nThese counts describe the selected sprint reports; they do not establish production quality or subsequent delivery. '+refs
+        return body + '\n'
 
     def _capability_snapshot_answer(self, objective: str, citations) -> str | None:
         """Use literal meeting observations and a separately translated goal table."""
@@ -1249,8 +1272,9 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             '### Recorded goal states\n\n'+rows+'\n\n### Unresolved issues\n\n'+bullets('issues')
             +'\n\n### Next evaluation priorities\n\n'+bullets('priorities')
             +'\n\n## Limitations and uncertainty\n\nMeeting demonstrations and goal statuses are separate evidence. '
-            'A finished goal is not proof that its implementation was demonstrated. Action items remain pending; '
-            'blank goal statuses remain not recorded. These historical snapshots do not establish later delivery.')
+            'A finished goal is not proof that its implementation was demonstrated. The issues and action items above '
+            'are recorded in the dated meeting; the current goal table alone does not establish whether those historical '
+            'issues were later resolved. Blank goal statuses remain not recorded.')
 
     def _capability_evidence_answer(self, objective: str, citations) -> str | None:
         """Keep compound capability reviews bound to exact excerpts and goal rows."""
@@ -1328,6 +1352,49 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 'blank statuses remain not recorded. Subsequent delivery is not established by these snapshots. '+refs)
         except (ValueError,KeyError,TypeError,requests.RequestException):
             return None
+
+    @classmethod
+    def _named_skill_scope_answer(cls, objective: str, citations) -> str | None:
+        """Compare literal scope exclusions with explicitly named skill rows."""
+        if not re.search(r'\bcompar\w*\b', objective, re.I) or not re.search(r'\bskills?\b', objective, re.I):
+            return None
+        exclusion = next((c for c in citations if re.search(
+            r'\b(?:will not build|excludes?|out of scope).{0,100}\bcomplete Skills? System\b', c.excerpt, re.I)), None)
+        if exclusion is None:
+            return None
+        rows = {}
+        for citation in citations:
+            columns = None
+            for line in citation.excerpt.splitlines():
+                cells = [cell.strip().strip('*') for cell in line.strip().strip('|').split('|')]
+                if 'Goal ID' in cells and 'Current Status' in cells and 'Target Week' in cells:
+                    name_index = next((i for i, cell in enumerate(cells) if cell == 'Goal' or cell.startswith('Goal（')), None)
+                    if name_index is not None:
+                        columns = (cells.index('Goal ID'), name_index, cells.index('Current Status'), cells.index('Target Week'))
+                    continue
+                if columns is None or len(cells) <= max(columns):
+                    continue
+                ident, name, status, week = (cells[i] for i in columns)
+                name = name.replace('\\_', '_')
+                skill = re.search(r'\b([A-Za-z][A-Za-z0-9_]+)\s+Skill\b', name)
+                if not skill or skill.group(1).casefold() not in objective.casefold() or not re.fullmatch(r'[A-Z]+-[ME]\d+', ident):
+                    continue
+                key = (ident, skill.group(1))
+                value = (status or 'not recorded', week or 'not recorded', citation.number)
+                if key in rows and rows[key][:2] != value[:2]:
+                    return None
+                rows[key] = value
+        if not rows:
+            return None
+        requested_names = set(re.findall(r'\b[a-z]+(?:_[a-z]+)+\b', objective.casefold()))
+        if requested_names and not requested_names.issubset({skill.casefold() for _, skill in rows}):
+            return None
+        body = ('## Summary\n\nThe plan excludes building a complete Skills System. '
+                f'[{exclusion.number}] Individual planned skills are a narrower scope; their listed goals do not establish delivery.\n\n'
+                '## Evidence and analysis\n\n| Goal ID | Named skill | Recorded status | Planned target |\n| --- | --- | --- | --- |\n')
+        body += '\n'.join(f'| {ident} | {skill} | {status} [{number}] | {week} [{number}] |'
+                          for (ident, skill), (status, week, number) in rows.items())
+        return body + '\n\nThese are recorded scope and goal snapshots. Target weeks are schedules, not completion dates; planned work is not demonstrated delivery.'
 
     @classmethod
     def _component_scope_answer(cls, objective: str, citations) -> str | None:
@@ -1549,13 +1616,51 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             logger.warning("Dated answer quality validation unavailable: %s", type(exc).__name__)
             return None
 
+    @staticmethod
+    def _statement_date(item, *, fallback_to_version: bool = True) -> str | None:
+        """Prefer the recorded event/report date over the export timestamp."""
+        from datetime import date
+        title = str(getattr(item, 'title', '') or '').replace('+', ' ')
+        text = str(getattr(item, 'excerpt', '') or '')
+        event = re.search(r'\b(\d{4})\D+(\d{2})\D+(\d{2})\b', title)
+        if event:
+            try:
+                return date(*map(int, event.groups())).isoformat()
+            except ValueError:
+                return None
+        months = ('January February March April May June July August September October November December').split()
+        for pattern, order in ((r'(?:Reporting date|Date)\s*:\s*(?:[A-Za-z]+,\s*)?(\d{1,2})(?:st|nd|rd|th)?\s*(' + '|'.join(months) + r')\s*,?\s*(\d{4})', 'dmy'),
+                               (r'(?:Reporting date|Date)\s*:\s*(\d{4})-(\d{2})-(\d{2})', 'ymd')):
+            match = re.search(pattern, text, re.I)
+            if match:
+                try:
+                    if order == 'dmy':
+                        day, month, year = match.groups()
+                        return date(int(year), next(i + 1 for i, name in enumerate(months) if name.casefold() == month.casefold()), int(day)).isoformat()
+                    return date(*map(int, match.groups())).isoformat()
+                except ValueError:
+                    return None
+        if not fallback_to_version:
+            return None
+        version = str(getattr(item, 'document_version', '') or '')
+        return version[:10] if re.match(r'\d{4}-\d{2}-\d{2}', version) else None
+
     def _dated_evidence_answer(self, objective: str, citations) -> str | None:
         """Select exact dated statements instead of inferring current capability gaps."""
         dated = []
+        document_dates = {}
         for item in citations:
-            match = re.match(r"\d{4}-\d{2}-\d{2}", item.document_version or '')
-            if match:
-                dated.append((match.group(), item))
+            doc_id = getattr(item, 'doc_id', None)
+            explicit = self._statement_date(item, fallback_to_version=False)
+            if doc_id and explicit:
+                document_dates.setdefault(doc_id, set()).add(explicit)
+        for item in citations:
+            dates_for_doc = document_dates.get(getattr(item, 'doc_id', None), set())
+            # Propagate an unambiguous report date to body chunks whose own
+            # metadata only has the later export timestamp.
+            date = next(iter(dates_for_doc)) if len(dates_for_doc) == 1 else self._statement_date(item)
+            if date:
+                dated.append((date, item))
         dates = {date for date, _ in dated}
         if len(dated) < 2:
             return None
@@ -1588,17 +1693,24 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 if re.search(r'\bdeep research\b',objective,re.I) and re.search(r'\b(?:integration|dependencies|dependency)\b',objective,re.I):
                     dependencies,demonstrations = [],[]
                     for date,item in dated:
-                        for paragraph in item.excerpt.split('\n\n'):
+                        paragraphs = item.excerpt.split('\n\n')
+                        for index, paragraph in enumerate(paragraphs):
                             paragraph = paragraph.strip()
                             if not 20<=len(paragraph)<=700 or re.search(r'Reporting date:.*Module:.*Scope:',paragraph,re.I):
                                 continue
                             if date==earlier and re.search(r'\bexternal dependency\b|\bcurrently returns mock answers\b',paragraph,re.I):
+                                if paragraph.startswith('#') and index + 1 < len(paragraphs):
+                                    extended = paragraph + '\n\n' + paragraphs[index + 1].strip()
+                                    if len(extended) <= 700:
+                                        paragraph = extended
                                 dependencies.append({'citation':item.number,'quote':paragraph})
                             if date==later and re.search(r'\b(?:presented|demonstrated)\b',paragraph,re.I) and re.search(r'\bdeep research\b',paragraph,re.I) and re.search(r'\bflow\b',paragraph,re.I):
                                 demonstrations.append({'citation':item.number,'quote':paragraph})
                     if dependencies and demonstrations:
                         selected = {'earlier':dependencies[0],'later':demonstrations[0],'relationship':'development_over_time'}
                 if selected is None:
+                    if not self.api_key:
+                        return None
                     response = self._chat({"model":self.model,"messages":self._evidence_messages(prompt),
                         "temperature":0,"max_tokens":1200,"response_format":{"type":"json_object"}})
                     choice = response['choices'][0]
@@ -1624,8 +1736,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                     if quote in paragraph and len(paragraph.strip()) <= 700:
                         quote = paragraph.strip()
                         break
-                event = re.search(r"(\d{4})\D+(\d{2})\D+(\d{2})", item.title)
-                label = '-'.join(event.groups()) if event else date
+                label = date
                 quote = re.sub(r"(?m)^#{1,6}\s+|^-\s+", "", quote)
                 quote = self._CITATION.sub(lambda match: f"〔{match.group(1)}〕", quote)
                 paragraphs = '\n\n'.join(f"{paragraph} [{item.number}]" for paragraph in quote.split('\n\n') if paragraph.strip())
