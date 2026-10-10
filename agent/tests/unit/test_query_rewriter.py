@@ -6,6 +6,13 @@ from agent.query import QueryRewriter
 from tests.helpers import FakeLLM
 
 
+def test_english_question_is_not_translated_for_english_retrieval():
+    query = 'Compare the July plan with the September meeting.'
+    result = QueryRewriter(llm=FakeLLM(llm_json('比较七月计划与九月会议'))).rewrite(query, [])
+    assert result.rewritten_query == query
+    assert result.reason == 'rewrite_language_changed'
+
+
 def llm_json(rewritten_query: str, reason: str = "") -> dict:
     return {
         "role": "assistant",

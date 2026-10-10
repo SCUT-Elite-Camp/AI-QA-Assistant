@@ -79,3 +79,17 @@ def test_live_checks_only_cover_frozen_scope_without_caching_grants(environment)
     policy.accessible_doc_ids.return_value = set()
     with pytest.raises(ManifestAccessError):
         adapter.read_document_range('shared', context, locator='shared:0')
+
+
+def test_short_note_read_keeps_full_context_and_exact_anchor(environment):
+    adapter, context, _, _, path, payload = environment
+    payload['content'] = 'Event date.\n\nObserved workflow.\n\nEvidence links need repair.'
+    payload['chunks'] = [{'chunk_id': f'shared:{i}', 'index': i, 'text': text}
+                         for i, text in enumerate(['Event date.', 'Observed workflow.', 'Evidence links need repair.'])]
+    (path/'shared.json').write_text(json.dumps(payload))
+    manifest = LocalDocumentResolver(path).resolve('research-test', SourceScope(document_ids=['shared']))
+    context = ToolCallContext('research-test', 'task', 'trace', 'alice', manifest, retrieval_mode='hybrid')
+    read = adapter.read_document_range('shared', context, locator='shared:0')
+    assert read.anchor_excerpt == 'Event date.'
+    assert 'Evidence links need repair.' in read.excerpt
+    assert read.locator == 'shared:0'

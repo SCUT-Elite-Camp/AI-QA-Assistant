@@ -30,6 +30,13 @@ class ScriptedLLM:
         return self.responses.pop(0)
 
 
+def test_repair_rejects_internal_review_prompt_echo():
+    llm = ScriptedLLM([{'content': 'Answer.\nMissing aspects: [UI]\nMissing critical facts: []\nEvidence: raw source dump'}])
+    checker = AnswerCompletenessChecker(llm)
+    result = AnswerCompletenessResult(complete=False, missing_aspects=['UI'])
+    assert checker.repair(_plan(), 'Original answer.', _evidence(), result) == ''
+
+
 def _plan() -> QueryPlan:
     return QueryPlan(
         original_query="Who were Boeing's customers and what was the government share?",

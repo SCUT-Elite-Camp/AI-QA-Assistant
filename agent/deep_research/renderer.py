@@ -371,6 +371,7 @@ class MarkdownReportRenderer:
             updated_at=(metadata.updated_at if metadata else None),
             locator=evidence.locator,
             excerpt=evidence.excerpt,
+            anchor_excerpt=evidence.anchor_excerpt,
             content_hash=evidence.content_hash,
         )
 

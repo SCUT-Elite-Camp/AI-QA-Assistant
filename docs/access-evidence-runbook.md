@@ -92,3 +92,13 @@ G1 为普通 Chat；G2 为创建、规划、批准、执行、读取报告的完
 | 回答短缺但 HTTP 200 | 原文正确章节覆盖、实际 Citation、正文与机器评分 | 把任务完成等同质量通过 |
 
 回滚先停写并备份；不反向执行 0015，不用旧代码解释新的 lineage 数据。故障恢复后先恢复原 fixture grant，再验证 Reader 和历史，最后跑质量。详细结果见[整合验收报告](pr63-integration-acceptance.md)。
+
+## 来源更新后的测试基准（2026-10-10）
+
+历史 v1 预期不能直接用于已经修改的 Confluence 页面。先通过 `data-pipeline/confluence_pull.py --page-id ... --env-file <ignored path> --output-dir <isolated export>` 只读导出当前 XHTML/Markdown/metadata，再用现有 snapshot 校验、原生 parser/chunker 生成新投影。直接调用导出脚本时需将仓库根加入 `PYTHONPATH`，以加载 `shared_runtime`。
+
+为新投影建立独立 BM25 文件和全新 Milvus collection；不得删除或覆盖旧集合。使用同一实际 embedding，核对向量维度和实体数量。`AI_QA_DATA_DIR/documents` 与 `RESEARCH_DOCUMENTS_DIR` 必须是同一正文目录；Toolset 当前使用前者，Research 配置使用后者，单独改后者不能切换工具层资料。Web SQLite、Research DB/checkpoint、Topic 和附件路径仍必须在隔离区并由服务共享。
+
+依据新源文本，在生成任何模型答案前创建独立版本的问题、检查项与 source hash/version。保留旧题、旧 manifest 和旧成绩；有重复 Goal ID 时同时以能力名称区分，空状态不从相邻行推断。仓库中的 `eval/deep_research_a/datasets/cases.en.current-20261009.v2.json` 是三个当前版本回归用例，不是未见留出集；正文和运行数据库仍位于 ignored/outside-checkout 路径。
+
+结构化机器裁判对 Qwen 使用显式 `enable_thinking=false`，独立于业务回答的思考设置。保存实际请求选项、每次原始输出与验证结果；非法格式或明确理由/布尔矛盾仅重试一次，有效失败评分不重试、不翻转，异常仍作为未评分。重评现成答案必须记录原始记录路径和答案 hash，不覆盖原评分或重新生成回答来消除评分异常。

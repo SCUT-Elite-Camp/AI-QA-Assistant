@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
@@ -63,6 +64,8 @@ class QueryRewriter:
             rewritten_query = output.rewritten_query.strip()
             if not rewritten_query:
                 raise ValueError("rewritten_query must not be empty")
+            if not re.search(r'[\u4e00-\u9fff]', normalized_query) and re.search(r'[\u4e00-\u9fff]', rewritten_query):
+                return self._unchanged(original_query, 'rewrite_language_changed')
         except Exception as exc:
             self.logger.warning(
                 "[QUERY_REWRITE] action=fallback error=%s original_query=%s",
@@ -89,12 +92,10 @@ class QueryRewriter:
     @staticmethod
     def _system_prompt() -> str:
         return (
-            "你是查询重写器。你的任务是结合对话历史，把当前问题改写为"
-            "可以独立理解、适合知识库检索的问题。"
-            "不得改变用户原始意图，不得添加历史中不存在的事实；"
-            "必须保留模块名、接口名、代码标识符和专业术语。"
-            "如果当前问题已经明确，保持原文。"
-            "只返回 JSON，不要使用 Markdown。格式为："
+            "Rewrite the current question using conversation history into a self-contained retrieval question. "
+            "Preserve the original language: English questions must stay English. "
+            "Do not change intent or add facts absent from history. Preserve module names, APIs, identifiers and technical terms. "
+            "Keep an already clear question unchanged. Return JSON only, without Markdown, in this format: "
             '{"rewritten_query":"...","reason":"..."}'
         )
 

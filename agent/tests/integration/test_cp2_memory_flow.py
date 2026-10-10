@@ -54,7 +54,7 @@ class InspectingLLM:
                     }
                 ),
             }
-        if "查询重写器" in system_prompt:
+        if "Rewrite the current question" in system_prompt:
             return {
                 "role": "assistant",
                 "content": json.dumps(

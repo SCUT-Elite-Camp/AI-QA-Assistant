@@ -103,6 +103,20 @@ def test_never_rebind_unverified_text_or_title_to_current_source(fixture, record
     with pytest.raises(PermissionResolutionError): fixture[0].capture_tool('search_documents', {'items':[record]}, [])
 
 
+def test_discovery_title_is_metadata_but_stale_summary_still_blocks(fixture):
+    from agent.schemas.tool_execution import Evidence
+    guard, _, docs, *_ = fixture
+    title = docs['doc1']['title']
+    evidence = Evidence(doc_id='doc1', chunk_id='doc1::document', title=title, content=title,
+                        score=1, retrieval_query='title', retrieval_mode='document')
+    guard.capture_tool('find_documents', {'documents': [{'doc_id': 'doc1', 'title': title}]}, [evidence])
+    assert guard.provenance().dependencies[0].content_hash == source_metadata(docs['doc1'])['content_hash']
+    with pytest.raises(PermissionResolutionError):
+        guard.capture_tool('find_documents', {'documents': [{'doc_id': 'doc1', 'title': title, 'match_summary': 'Stale secret'}]}, [])
+    with pytest.raises(PermissionResolutionError):
+        guard.capture_tool('search_documents', {}, [evidence])
+
+
 def test_legacy_memory_and_soul_cannot_be_promoted_to_authorized_context(fixture):
     guard, _, docs, *_ = fixture
     guard.request = guard.request.model_copy(update={'soul_content':'Untrusted secret','topic_titles':['Secret title'],

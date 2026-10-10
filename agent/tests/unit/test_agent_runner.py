@@ -6,6 +6,39 @@ import pytest
 
 from agent.runtime import AgentRunner, StopReason
 
+
+@pytest.mark.parametrize('query', [
+    'Compare the selected plan scope with current Goals.',
+    'Report recorded statuses of the selected goals.',
+    'Summarize demonstrated capabilities and next priorities.',
+])
+def test_selected_scope_questions_read_originals_before_generation(query):
+    assert AgentRunner._needs_scoped_original(query)
+
+
+def test_goal_translation_inherits_chat_model_access_guard(monkeypatch):
+    from types import SimpleNamespace
+    from deep_research.model_report import EvidenceReportSynthesizer
+    from deep_research.access import check_research_model_access
+    import agent.service.access_guard as access
+    checked = []
+    monkeypatch.setattr(access, 'check_model_access', lambda: checked.append(True))
+    def translate(self, payload):
+        check_research_model_access()
+        return {'choices': [{'message': {'content': json.dumps({'names': [
+            {'row': 0, 'english_name': 'Alpha testing'},
+            {'row': 1, 'english_name': 'Beta testing'}]})}}]}
+    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', translate)
+    state = SimpleNamespace(query_plan=SimpleNamespace(original_query='Report statuses in Goals for AG-M11 and AG-M16.'),
+        evidence=[dict(doc_id='d', chunk_id='d_0', title='Goals', content=
+            '| **Goal ID** | **Goal** | **Current Status** |\n'
+            '| AG-M11 | Alpha 验证 | Finished |\n'
+            '| AG-M16 | Beta 验证 | |')])
+    answer = AgentRunner._verified_structured_answer(state)
+    assert checked
+    assert '| AG-M11 | Alpha testing | Finished [1] |' in answer
+    assert '| AG-M16 | Beta testing | not recorded [1] |' in answer
+
 from agent.schemas.query_plan import QueryPlan
 
 from agent.service.audit_service import AuditService
@@ -611,6 +644,17 @@ def test_search_loop_uses_standalone_query_filters_and_trace_id() -> None:
     assert "CP2 分工文档内容" in answer_messages[1]["content"]
     assert llm.calls[0]["tools"]
     assert llm.calls[1]["tools"] is None
+
+
+def test_scoped_fact_question_searches_before_model_can_spend_budget():
+    search = RecordingSearchTool()
+    llm = ScriptedLLM([{'role': 'assistant', 'content': 'Source fact. [1]'}])
+    runner = make_runner(llm, [search])
+    plan = QueryPlan(original_query='Give the commit date.', standalone_query='Give the commit date.', filters={'doc_ids': ['doc-1']})
+    result = runner.run(plan, policy=IntentPolicy(candidate_tools=('search_documents',), requires_citations=False), trace_id='forced-fact')
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert len(search.calls) == 1 and len(llm.calls) == 1
+    assert result.tool_calls[0].tool_name == 'search_documents'
 
 
 def test_clean_evidence_answer_keeps_memory_context_before_the_current_query() -> None:

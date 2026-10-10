@@ -76,6 +76,8 @@ class QueryPlanner:
         try:
             response = self.llm.chat(messages)
             result = self._parse_response(response)
+            if not re.search(r'[\u4e00-\u9fff]', query) and any(re.search(r'[\u4e00-\u9fff]', q) for q in result.sub_queries):
+                result.sub_queries = []
         except Exception as exc:
             self.logger.warning(
                 "[QUERY_PLANNING] action=fallback error=%s query=%s",
@@ -122,6 +124,7 @@ class QueryPlanner:
     def _system_prompt() -> str:
         return (
             "Plan retrieval for an enterprise knowledge Agent. "
+            "Preserve the question's language; English retrieval targets must remain English. "
             "Return JSON only with keys sub_queries, filters, navigation_mode, scope, "
             "needs_structure, needs_knowledge, needs_version_reasoning, and reason. "
             "Use direct for exact facts, hierarchical for long cross-section or version "

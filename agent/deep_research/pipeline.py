@@ -130,6 +130,7 @@ class ManifestScopedWorkerTools:
             locator=item.locator,
             excerpt=item.excerpt,
             content_hash=item.content_hash,
+            anchor_excerpt=item.anchor_excerpt,
         )
 
 

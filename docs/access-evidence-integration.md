@@ -79,3 +79,9 @@ Chat 中途失败只能产生安全状态提示，不能保存成成功回答。
 ### Research inline source Reader (2026-10-09)
 
 Report citation buttons open the existing themed Reader in-page. Research reads use the session-owned BFF `/api/research/jobs/{research_id}/documents/{doc_id}/source` endpoint; frozen job membership, current ACL/native permissions and source version/hash are checked server-side on each read. The UI displays the selected report excerpt/version/hash and the authorized full text; it does not substitute an unrestricted document endpoint or browser authorization context.
+
+Research Evidence and Citation may include `anchor_excerpt`: the text of the exact locator block, independently of the surrounding `excerpt` context. Precise commit/source locator answers must find the requested fact in this anchor, rather than infer its location from neighboring blocks. Older records without this optional field retain their existing excerpt semantics; they are not backfilled as new verified anchors. Small documents (at most 12 chunks and 6000 body characters) can supply bounded complete context, while the anchor remains the exact original chunk. Every read still checks current native permissions and frozen version/hash.
+
+For G1 factual/comparison requests, including selected scope comparisons, recorded status tables and capability summaries, with at most four explicitly selected documents, the policy allows bounded original reads through the existing guarded ToolExecutor. This expands evidence coverage, not authorization. Calendar comparisons use the document's recorded meeting/report date when unambiguous; the source version/export timestamp remains provenance and is not rewritten to that event date.
+
+For evidence-insufficient entity/count answers, citations support quoted headings from the inspected sources. A missing requested number is expressed as a scope limitation, without pretending an unrelated source positively proves that absent value.
