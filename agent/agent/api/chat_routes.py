@@ -44,6 +44,7 @@ def chat_history(
     raise HTTPException(410, "legacy_history_quarantined", headers={"Cache-Control": "no-store"})
 
 
+
 @router.get("/tools")
 def list_available_tools(
     agent: Agent = Depends(get_agent),

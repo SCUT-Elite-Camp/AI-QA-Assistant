@@ -29,8 +29,14 @@ export default defineHandler(async (event) => {
   }
   const messages = chat.messages.filter(m => m.historyRevision === chat!.historyRevision)
   const discussion = messages.length ? await discussionEvidence(userId, messages) : { text: title, proof: authoredProvenance() }
-  const [topic] = await db.insert(tables.topics).values({ title, mainChatId: chat.id,
-    soulContent: '', tags: [], status: 'generating', weightMode: 'auto', evidenceProvenance: authoredProvenance() }).returning()
+  const [topic] = await db.insert(tables.topics).values({
+    title,
+    mainChatId: chat.id,
+    soulContent: '',
+    tags: [],
+    status: 'generating',
+    evidenceProvenance: authoredProvenance(),
+  }).returning()
   await db.insert(tables.topicMembers).values({ topicId: topic.id, userId, role: 'owner' }).onConflictDoNothing()
   await db.update(tables.chats).set({ topicId: topic.id }).where(eq(tables.chats.id, chat.id))
   await syncAllTopicDocuments(db, topic.id)

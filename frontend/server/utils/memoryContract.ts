@@ -130,7 +130,7 @@ const publicAgentChatRequestSchema = z.object({
   stream: z.boolean().default(false),
   retrieval_mode: z.enum(['vector', 'bm25', 'hybrid']).default('hybrid'),
   topic_id: z.string().nullable().optional(),
-  weight_mode: z.enum(['deeper', 'auto', 'wider']).nullable().optional(),
+  weight_mode: z.enum(['auto', 'fast', 'thinking']).nullable().optional(),
   topic_doc_ids: z.array(z.string()).nullable().optional(),
   topic_titles: z.array(z.string()).nullable().optional(),
   consecutive_no_new_docs_count: z.number().int().nonnegative().default(0),

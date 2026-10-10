@@ -2,11 +2,13 @@ import logging
 import os
 import re
 from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, EvidenceGate
+from agent.evidence.locator import canonical_chunk_id
 from agent.formatter.answer_formatter import AnswerFormatter
 from agent.llm.base import BaseLLM
 from agent.llm.llm_client import LLMClient
@@ -16,11 +18,9 @@ from agent.llm.observability import (
     snapshot_llm_metrics,
     start_llm_metrics,
 )
-from agent.memory import ConversationMemory, get_default_memory
+from agent.memory.coordinator import MemoryCoordinator
 from agent.memory.fact_proposal_policy import FactProposalPolicy
 from agent.memory.memory_observability import MemoryObservability
-from agent.evidence.locator import canonical_chunk_id
-from agent.schemas.chat import FactProposal, MemoryDecision
 from agent.orchestration import AgentOrchestrator, OrchestrationResult
 from agent.policy import IntentPolicyRouter
 from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
@@ -35,14 +35,22 @@ from agent.query import (
     UnifiedQueryAnalyzer,
 )
 from agent.retrieval import CorrectiveRetrievalPlanner
-from agent.runtime import AgentRunResult, AgentRunner, StopReason, AgentState
-from agent.schemas.chat import ChatRequest, ChatResponse, Citation, InternalChatRequest
+from agent.runtime import AgentRunResult, AgentRunner, StopReason
+from agent.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    Citation,
+    FactProposal,
+    InternalChatRequest,
+    MemoryDecision,
+)
 from agent.schemas.common import StatusCode
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryPlan, QueryIntent
 from agent.schemas.retrieval import RetrievalResult
 from agent.service import AuditService, PermissionService, TraceService
 from agent.service.access_guard import AccessGuard, CURRENT_ACCESS_GUARD, check_model_access
+from agent.streaming.sse import chat_response_events
 from agent.tools import ToolExecutor, ToolRegistryAdapter
 from toolset.tool_layer import BaseTool, SearchTool
 from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
@@ -51,15 +59,23 @@ from toolset.tool_layer.registry import ToolRegistry as ToolsetRegistry
 logger = logging.getLogger("agent-layer")
 
 
+@dataclass(frozen=True)
+class AgentChatExecution:
+    """Request-local result retained across response and audit assembly."""
+
+    response: ChatResponse
+    orchestration: OrchestrationResult | None = None
+
+
 class Agent:
-    """Chat orchestrator for CP2 memory, permissions, and bounded Agent execution."""
+    """Chat orchestrator for trusted Memory, permissions, and bounded execution."""
 
     def __init__(
         self,
         llm: BaseLLM | None = None,
         tools: list[BaseTool] | None = None,
         answer_formatter: AnswerFormatter | None = None,
-        memory: ConversationMemory | None = None,
+        memory_coordinator: MemoryCoordinator | None = None,
         runner: AgentRunner | None = None,
         query_understanding: QueryUnderstanding | None = None,
         policy_router: IntentPolicyRouter | None = None,
@@ -125,7 +141,6 @@ class Agent:
             if repository is not None:
                 self.permission_service.source_provider.documents_dir = repository.documents_dir
                 self.permission_service.source_provider.document_loader = repository.load
-        self.memory = memory or get_default_memory()
 
         search_tool = self.registry.get_tool("search_documents")
         if isinstance(search_tool, SearchTool):
@@ -183,7 +198,7 @@ class Agent:
         )
         self.citation_checker = citation_checker or CitationChecker()
         self.orchestrator = orchestrator or AgentOrchestrator(
-            memory=self.memory,
+            memory_coordinator=memory_coordinator,
             query_understanding=self.query_understanding,
             policy_router=self.policy_router,
             runner=self.runner,
@@ -192,35 +207,45 @@ class Agent:
             corrective_retrieval=self.corrective_retrieval,
             citation_checker=self.citation_checker,
         )
-        self._last_run_result = ContextVar(f"agent_run_{id(self)}", default=None)
-        self._last_orchestration = ContextVar(f"agent_orchestration_{id(self)}", default=None)
-        self._last_citation_check = ContextVar(f"agent_citations_{id(self)}", default=None)
-        self.last_run_result: AgentRunResult | None = None
-        self.last_orchestration: OrchestrationResult | None = None
-        self.last_citation_check = None
+        # Compatibility diagnostics stay local to the current request context.
+        self._last_run_result: ContextVar[AgentRunResult | None] = ContextVar(
+            f"agent_last_run_result_{id(self)}",
+            default=None,
+        )
+        self._last_orchestration: ContextVar[OrchestrationResult | None] = ContextVar(
+            f"agent_last_orchestration_{id(self)}",
+            default=None,
+        )
+        self._last_citation_check: ContextVar[Any | None] = ContextVar(
+            f"agent_last_citation_check_{id(self)}",
+            default=None,
+        )
 
     @property
-    def last_run_result(self):
+    def last_run_result(self) -> AgentRunResult | None:
+        """Return diagnostics for this request context, for compatibility only."""
         return self._last_run_result.get()
 
     @last_run_result.setter
-    def last_run_result(self, value):
+    def last_run_result(self, value: AgentRunResult | None) -> None:
         self._last_run_result.set(value)
 
     @property
-    def last_orchestration(self):
+    def last_orchestration(self) -> OrchestrationResult | None:
+        """Return diagnostics for this request context, for compatibility only."""
         return self._last_orchestration.get()
 
     @last_orchestration.setter
-    def last_orchestration(self, value):
+    def last_orchestration(self, value: OrchestrationResult | None) -> None:
         self._last_orchestration.set(value)
 
     @property
-    def last_citation_check(self):
+    def last_citation_check(self) -> Any | None:
+        """Return diagnostics for this request context, for compatibility only."""
         return self._last_citation_check.get()
 
     @last_citation_check.setter
-    def last_citation_check(self, value):
+    def last_citation_check(self, value: Any | None) -> None:
         self._last_citation_check.set(value)
 
     @property
@@ -274,42 +299,19 @@ class Agent:
                         library_context.access_token if library_context else "",
                         secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
                     )
-            response = self._chat_internal(request, trace_id, query_plan=query_plan)
+            execution = self._chat_internal(request, trace_id, query_plan=query_plan)
+            response = execution.response
             response.evidence_provenance = guard.provenance()
             latency_ms = self.audit_service.stop_timer(start_time)
-            if not persistent_memory_request:
-                self.audit_service.record(
-                    trace_id=trace_id,
-                    query=request.query,
-                    answer=self._audit_answer(response),
-                    status=response.status,
-                    latency_ms=latency_ms,
-                    session_id=request.session_id,
-                )
+            logger.debug("Agent request completed trace_id=%s latency_ms=%s", trace_id, latency_ms)
             return response
         except Exception as exc:
             latency_ms = self.audit_service.stop_timer(start_time)
-            if not persistent_memory_request:
-                self.audit_service.record(
-                    trace_id=trace_id,
-                    query=request.query,
-                    answer=f"Error: {exc}",
-                    status=StatusCode.AGENT_LIMIT_REACHED,
-                    latency_ms=latency_ms,
-                    session_id=request.session_id,
-                )
+            logger.debug("Agent request failed trace_id=%s latency_ms=%s", trace_id, latency_ms)
             raise exc
         finally:
             CURRENT_ACCESS_GUARD.reset(guard_token)
             clear_llm_metrics(metrics_token)
-            for tool_name in (
-                "search_attachments", "inspect_attachment", "search_library",
-                "wiki_search", "wiki_read_page", "wiki_read_sources",
-                "wiki_search_evidence",
-            ):
-                tool = self.registry.get_tool(tool_name)
-                if tool is not None and hasattr(tool, "clear_request_context"):
-                    tool.clear_request_context()
             self.trace_service.clear_trace()
 
     def _resolve_filters(self, request: ChatRequest) -> Optional[dict[str, Any]]:
@@ -334,10 +336,10 @@ class Agent:
         trace_id: str,
         *,
         query_plan: QueryPlan | None = None,
-    ) -> ChatResponse:
+    ) -> "AgentChatExecution":
         query = request.query.strip()
         if not query:
-            return self._error_response(
+            return AgentChatExecution(self._error_response(
                 trace_id=trace_id,
                 query=request.query,
                 status=StatusCode.INVALID_QUERY,
@@ -345,7 +347,7 @@ class Agent:
                 stage="validation",
                 retrieval_mode=request.retrieval_mode,
                 top_k=request.top_k,
-            )
+            ))
 
         if self._propose_explicit_facts(request):
             return ChatResponse(trace_id=trace_id, status=StatusCode.SUCCESS, answer="已生成一条待确认的会话记忆，请在界面确认。", message="", citations=[])
@@ -356,13 +358,6 @@ class Agent:
             request = request.model_copy(update={"filters": resolved_filters})
 
         try:
-            search_tool = self.registry.get_tool("search_documents")
-            if isinstance(search_tool, SearchTool):
-                search_tool.topic_doc_ids = request.topic_doc_ids
-                search_tool.topic_titles = request.topic_titles
-                search_tool.weight_mode = request.weight_mode or "auto"
-                search_tool.consecutive_no_new_docs_count = request.consecutive_no_new_docs_count or 0
-
             orchestration = self.orchestrator.run(
                 request,
                 trace_id=trace_id,
@@ -370,7 +365,7 @@ class Agent:
             )
 
         except ValueError as exc:
-            return self._error_response(
+            return AgentChatExecution(self._error_response(
                 trace_id=trace_id,
                 query=request.query,
                 status=StatusCode.INVALID_QUERY,
@@ -379,7 +374,7 @@ class Agent:
                 retrieval_mode=request.retrieval_mode,
                 top_k=request.top_k,
                 error=str(exc),
-            )
+            ))
 
         self.last_orchestration = orchestration
         plan = orchestration.query_plan
@@ -390,13 +385,13 @@ class Agent:
 
         memory_recall = orchestration.memory_recall
         if memory_recall is not None and memory_recall.handled:
-            return ChatResponse(
+            return AgentChatExecution(ChatResponse(
                 trace_id=trace_id,
                 status=StatusCode.SUCCESS,
                 answer=memory_recall.answer or "",
                 message="",
                 citations=[],
-            )
+            ), orchestration)
 
         if run_result is None:
             raise RuntimeError("orchestration returned no runtime result")
@@ -408,27 +403,12 @@ class Agent:
             retrieval_mode=orchestration.retrieval_mode,
             top_k=orchestration.top_k,
         )
-        if run_result.coverage_assessments or run_result.exploration_rounds:
-            response.diagnostics = {
-                "actual_path": [
-                    record.tool_name for record in run_result.tool_calls
-                    if record.tool_name in {
-                        "search_documents", "search_library", "wiki_search",
-                        "wiki_read_page", "wiki_read_sources", "wiki_search_evidence",
-                    }
-                ],
-                "exploration_rounds": run_result.exploration_rounds,
-                "evidence_count": len(run_result.evidence),
-                "coverage": (
-                    run_result.coverage_assessments[-1]
-                    if run_result.coverage_assessments else None
-                ),
-            }
-
         is_first = request.is_first_message
         if is_first is None:
-            history_msgs = self.memory.get_messages(request.session_id) if request.session_id else []
-            is_first = (len(history_msgs) == 0)
+            is_first = not any(
+                message.get("role") != "system"
+                for message in orchestration.history
+            )
 
         extracted_title, clean_answer = self._separate_title_and_answer(response.answer)
         if extracted_title:
@@ -437,16 +417,17 @@ class Agent:
         elif is_first:
             response.chat_title = self._generate_fallback_title(request.query)
 
-        self.last_citation_check = self.orchestrator.validate_citations(
+        citation_check = self.orchestrator.validate_citations(
             response.answer,
             response.citations,
             run_result.evidence,
         )
-        if not self.last_citation_check.valid:
+        self.last_citation_check = citation_check
+        if not citation_check.valid:
             logger.warning(
                 "[CITATION_CHECK] trace_id=%s errors=%s",
                 trace_id,
-                self.last_citation_check.errors,
+                citation_check.errors,
             )
         run_result.llm_metrics = snapshot_llm_metrics()
         logger.info(
@@ -454,13 +435,7 @@ class Agent:
             trace_id,
             run_result.llm_metrics,
         )
-        self._save_conversation_turn(
-            session_id=request.session_id,
-            query=plan.original_query,
-            response=response,
-            persistent_memory=self._is_persistent_memory_request(request),
-        )
-        return response
+        return AgentChatExecution(response, orchestration)
 
     @staticmethod
     def _separate_title_and_answer(answer_text: str) -> tuple[Optional[str], str]:
@@ -948,6 +923,12 @@ class Agent:
 
     def stream_chat(self, request: ChatRequest):
         """Buffer source-bearing output until live access and provenance pass."""
+        if "chat" in self.__dict__:
+            try:
+                yield from chat_response_events(self.chat(request))
+            except Exception as exc:
+                yield "error", {"message": str(exc)}
+            return
         # The mature Runner owns private-source routing; the partner's independent
         # Fast enterprise path and its quality checks remain intact below.
         from agent.query.source_intent import heuristic_source_intent
@@ -1370,3 +1351,4 @@ class Agent:
             fact_proposals=proposals,
             recall=orchestration.memory_recall if orchestration is not None else None,
         )
+

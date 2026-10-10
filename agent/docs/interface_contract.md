@@ -91,13 +91,15 @@ and document/section navigation as separate contracts.
   "status": "success",
   "answer": "Answer content [1]",
   "message": "",
-  "citations": []
+  "citations": [],
+  "chat_title": null
 }
 ```
 
-The public response remains limited to these five fields in CP2. Iteration
-counts and tool traces stay in Agent logs and internal run summaries until a
-separate Web contract revision approves an optional `run` field.
+The public response schema has six fields: `trace_id`, `status`, `answer`,
+`message`, `citations`, and optional `chat_title`. Execution details,
+exploration coverage, and tool traces remain internal and do not enter JSON or
+SSE payloads.
 
 The Agent's Direct-only versus Direct+Wiki route and `WIKI_CONTEXT_TOP_K` are
 internal runtime details. They do not add fields to `ChatRequest`,
@@ -169,11 +171,13 @@ reserved for an identical call repeated across model turns.
 
 ## CP2 Conversation Rules
 
-- Web must pass the same `session_id` throughout one conversation when
-  multi-turn context is enabled.
-- An empty `session_id` produces a stateless single-turn request.
-- Current memory is short-term, in-process Agent memory and is not shared across
-  restarts or multiple workers.
+- `session_id` identifies a request conversation but does not make the Agent
+  retain or retrieve history.
+- Public `/api/chat` requests are stateless across requests. For multi-turn
+  context, the authenticated Web/BFF sends the trusted `memory_context` with
+  every internal chat request.
+- Persistent Memory storage, history loading, and compaction remain Web/BFF
+  responsibilities; the Agent creates a bounded request-local view only.
 - Agent public response fields remain unchanged. Iteration counts and tool
   traces stay in internal Agent run summaries and logs.
 

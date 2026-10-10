@@ -12,9 +12,9 @@ const emit = defineEmits<{
 }>()
 
 const categoryLabel: Record<FactView['category'], string> = {
-  GOAL: '目标',
-  PREFERENCE: '偏好',
-  PLAN_CONSTRAINT: '计划约束'
+  GOAL: 'Goal',
+  PREFERENCE: 'Preference',
+  PLAN_CONSTRAINT: 'Constraint'
 }
 
 const visibleFacts = computed(() => props.facts.filter(fact => (
@@ -23,7 +23,7 @@ const visibleFacts = computed(() => props.facts.filter(fact => (
 )))
 
 function formatExpiry(expiresAt: string | null): string {
-  if (!expiresAt) return '无到期日'
+  if (!expiresAt) return 'No expiry'
   return new Date(expiresAt).toLocaleDateString()
 }
 </script>
@@ -39,7 +39,7 @@ function formatExpiry(expiresAt: string | null): string {
           name="i-lucide-brain"
           class="size-4 text-primary"
         />
-        <span class="font-medium">本会话记忆</span>
+        <span class="font-medium">Session Memory</span>
       </div>
     </template>
 
@@ -58,7 +58,7 @@ function formatExpiry(expiresAt: string | null): string {
             >
               {{ categoryLabel[fact.category] }}
             </UBadge>
-            <span class="text-xs text-muted">到期：{{ formatExpiry(fact.expiresAt) }}</span>
+            <span class="text-xs text-muted">Expires: {{ formatExpiry(fact.expiresAt) }}</span>
           </div>
           <p class="mt-1 text-sm whitespace-pre-wrap break-words">
             {{ fact.value }}
@@ -72,7 +72,7 @@ function formatExpiry(expiresAt: string | null): string {
           :disabled="isPending(fact.id)"
           @click="emit('revoke', fact.id)"
         >
-          撤销
+          Revoke
         </UButton>
       </li>
     </ul>

@@ -6,27 +6,28 @@ from typing import Any
 
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
-from agent.memory import ConversationMemory
-from agent.memory.context_resolver import ContextResolver
-from agent.memory.memory_response_policy import MemoryResponsePolicy
-from agent.memory.persistent_models import PersistentMemoryContext
+from agent.memory.coordinator import MemoryCoordinator
 from agent.policy import IntentPolicyRouter, ChatRoutePolicy, ChatRoute, ChatRouteDecision
 from agent.query import QueryUnderstanding, heuristic_source_intent
-from agent.query.subquery_router import SubQueryRouter
 from agent.retrieval import CorrectiveRetrievalPlanner
-from agent.runtime import AgentRunResult, AgentRunner
+from agent.runtime import (
+    AgentRunResult,
+    AgentRunner,
+    ExecutionProfile,
+    ExecutionProfileResolver,
+    FastLoop,
+    ExecutionMode,
+)
 from agent.schemas.chat import (
     AttachmentContext,
     ChatRequest,
     Citation,
     ContextArtifact,
-    MemoryContextInput,
     MemoryRecall,
     PersonalLibraryContext,
 )
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent, SourceKind
-from agent.schemas.subquery_routing import SubQueryRoutingResult
 from agent.schemas.tool_execution import Evidence
 from agent.tools import ToolExecutor
 
@@ -50,10 +51,10 @@ class OrchestrationResult:
     history: list[dict[str, Any]]
     retrieval_mode: str
     top_k: int
-    chat_route: ChatRouteDecision
-    subquery_routing: SubQueryRoutingResult = field(default_factory=SubQueryRoutingResult)
+    chat_route: ChatRouteDecision | None = None
     context_artifact: ContextArtifact | None = None
     memory_recall: MemoryRecall | None = None
+    execution_profile: ExecutionProfile | None = None
 
 
 class AgentOrchestrator:
@@ -67,7 +68,7 @@ class AgentOrchestrator:
     def __init__(
         self,
         *,
-        memory: ConversationMemory,
+        memory_coordinator: MemoryCoordinator | None = None,
         query_understanding: QueryUnderstanding,
         policy_router: IntentPolicyRouter,
         runner: AgentRunner,
@@ -75,26 +76,28 @@ class AgentOrchestrator:
         evidence_gate: EvidenceGate,
         corrective_retrieval: CorrectiveRetrievalPlanner,
         citation_checker: CitationChecker,
-        subquery_router: SubQueryRouter | None = None,
         chat_route_policy: ChatRoutePolicy | None = None,
-        context_resolver: ContextResolver | None = None,
-        memory_response_policy: MemoryResponsePolicy | None = None,
+        fast_loop: FastLoop | None = None,
+        profile_resolver: ExecutionProfileResolver | None = None,
     ) -> None:
         self.chat_route_policy = chat_route_policy or ChatRoutePolicy()
-        self.memory = memory
         self.query_understanding = query_understanding
         self.policy_router = policy_router
         self.runner = runner
+        self.fast_loop = fast_loop or (
+            FastLoop(
+                answer_generator=runner.answer_generator,
+                runtime_support=runner.runtime_support,
+            )
+            if isinstance(runner, AgentRunner)
+            else None
+        )
+        self.profile_resolver = profile_resolver or ExecutionProfileResolver()
         self.tool_executor = tool_executor
         self.evidence_gate = evidence_gate
         self.corrective_retrieval = corrective_retrieval
         self.citation_checker = citation_checker
-        self.context_resolver = context_resolver or ContextResolver()
-        self.memory_response_policy = memory_response_policy or MemoryResponsePolicy()
-        classifier = getattr(query_understanding, "intent_classifier", None)
-        self.subquery_router = subquery_router
-        if self.subquery_router is None and classifier is not None:
-            self.subquery_router = SubQueryRouter(classifier, policy_router)
+        self.memory_coordinator = memory_coordinator or MemoryCoordinator()
 
     def run(
         self,
@@ -105,12 +108,10 @@ class AgentOrchestrator:
     ) -> OrchestrationResult:
         """Run the complete CP2 Agent pipeline for one Chat request."""
 
-        context_artifact, memory_recall = self._resolve_persistent_memory(request)
-        history = (
-            self._history_from_context_artifact(context_artifact)
-            if context_artifact is not None
-            else self._read_history(request.session_id)
-        )
+        memory_view = self.memory_coordinator.prepare(request)
+        context_artifact = memory_view.context_artifact
+        memory_recall = memory_view.recall
+        history = memory_view.history_for_model()
         if memory_recall is not None and memory_recall.handled:
             plan = self._resolve_recall_query_plan(request, query_plan)
             policy = self.policy_router.route(plan)
@@ -122,7 +123,6 @@ class AgentOrchestrator:
                 history=history,
                 retrieval_mode=retrieval_mode,
                 top_k=top_k,
-                subquery_routing=SubQueryRoutingResult(),
                 chat_route=ChatRouteDecision(route=ChatRoute.L0_DIRECT, reason="persistent_memory_exact_recall"),
                 context_artifact=context_artifact,
                 memory_recall=memory_recall,
@@ -153,39 +153,66 @@ class AgentOrchestrator:
             source_intent,
         )
         navigation_scopes = self._navigation_scopes(request, source_intent)
-        policy = self._apply_exploration_policy(
-            request,
+        fast_retrieval_available = (
+            "search_documents" in policy.candidate_tools
+            and self.tool_executor.registry.get("search_documents") is not None
+        )
+        profile = self.profile_resolver.resolve(
+            request.weight_mode,
             plan,
             policy,
-            navigation_scopes=navigation_scopes,
+            exploration_mode=request.exploration_mode,
+            fast_retrieval_available=fast_retrieval_available,
         )
-        subquery_routing = (
-            self.subquery_router.route(plan)
-            if self.subquery_router is not None
-            else SubQueryRoutingResult(is_complex=len(plan.sub_queries) >= 2)
-        )
+        if profile.mode == ExecutionMode.THINKING:
+            policy = self._apply_exploration_policy(
+                request,
+                plan,
+                policy,
+                navigation_scopes=navigation_scopes,
+            )
         retrieval_mode, top_k = self._effective_retrieval_options(
             request,
             policy,
         )
-        is_first = request.is_first_message if request.is_first_message is not None else (len(history) == 0)
+        is_first = (
+            request.is_first_message
+            if request.is_first_message is not None
+            else not memory_view.has_prior_messages
+        )
         context_tools = self._configure_tool_contexts(request)
         try:
-            run_result = self.runner.run(
-                plan,
-                policy=policy,
-                tool_executor=self.tool_executor,
-                evidence_gate=self.evidence_gate,
-                corrective_retrieval=self.corrective_retrieval,
-                history=history,
-                trace_id=trace_id,
-                mode=retrieval_mode,
-                top_k=top_k,
-                is_first_message=is_first,
-                soul_content=request.soul_content,
-                exploration_mode=request.exploration_mode,
-                navigation_scopes=navigation_scopes,
-            )
+            if profile.mode == ExecutionMode.FAST and self.fast_loop is not None:
+                run_result = self.fast_loop.run(
+                    plan,
+                    policy=policy,
+                    tool_executor=self.tool_executor,
+                    evidence_gate=self.evidence_gate,
+                    corrective_retrieval=self.corrective_retrieval,
+                    history=history,
+                    trace_id=trace_id,
+                    mode=retrieval_mode,
+                    top_k=top_k,
+                    is_first_message=is_first,
+                    soul_content=request.soul_content,
+                )
+            else:
+                run_result = self.runner.run(
+                    plan,
+                    policy=policy,
+                    tool_executor=self.tool_executor,
+                    evidence_gate=self.evidence_gate,
+                    corrective_retrieval=self.corrective_retrieval,
+                    history=history,
+                    trace_id=trace_id,
+                    mode=retrieval_mode,
+                    top_k=top_k,
+                    is_first_message=is_first,
+                    soul_content=request.soul_content,
+                    exploration_mode=profile.exploration_mode,
+                    navigation_scopes=navigation_scopes,
+                    answer_model_preference=profile.answer_model_preference,
+                )
         finally:
             for tool in context_tools:
                 tool.clear_request_context()
@@ -196,9 +223,9 @@ class AgentOrchestrator:
             history=history,
             retrieval_mode=retrieval_mode,
             top_k=top_k,
-            subquery_routing=subquery_routing,
             chat_route=self.chat_route_policy.route(plan),
             context_artifact=context_artifact,
+            execution_profile=profile,
         )
 
     def validate_citations(
@@ -404,42 +431,6 @@ class AgentOrchestrator:
             scopes.append("personal")
         return tuple(scopes)
 
-    def _read_history(self, session_id: str | None) -> list[dict[str, Any]]:
-        from agent.service.access_guard import CURRENT_ACCESS_GUARD
-        if CURRENT_ACCESS_GUARD.get() is not None:
-            # Legacy process memory has neither actor scope nor source lineage.
-            return []
-        if not settings.MEMORY_ENABLED or not session_id:
-            return []
-        return self.memory.get_messages(session_id)
-
-    def _resolve_persistent_memory(
-        self,
-        request: ChatRequest,
-    ) -> tuple[ContextArtifact | None, MemoryRecall | None]:
-        memory_context = getattr(request, "memory_context", None)
-        if not isinstance(memory_context, MemoryContextInput):
-            return None, None
-
-        artifact = self.context_resolver.resolve(memory_context)
-        if artifact is None:
-            # Trusted conversational history is independent of persistent Facts.
-            return ContextArtifact(memory_brief="", model_history=memory_context.tail), None
-
-        persistent_context = PersistentMemoryContext.from_input(memory_context)
-        return artifact, self.memory_response_policy.resolve(
-            request.query,
-            persistent_context.facts,
-        )
-
-    @staticmethod
-    def _history_from_context_artifact(
-        artifact: ContextArtifact,
-    ) -> list[dict[str, Any]]:
-        return [
-            {"role": message.role, "content": message.content}
-            for message in artifact.model_history
-        ]
 
     @staticmethod
     def _resolve_recall_query_plan(
@@ -462,6 +453,27 @@ class AgentOrchestrator:
     ) -> QueryPlan:
         if query_plan is not None:
             return self._merge_request_constraints(request, query_plan)
+
+        # 如果外部注入了特定的 QueryUnderstanding（例如测试中注入的 FixedQueryUnderstanding），优先尊重注入逻辑
+        if type(self.query_understanding).__name__ != "QueryUnderstanding":
+            analyzed_plan = self.query_understanding.analyze(
+                request.query,
+                list(history),
+                filters=request.filters,
+            )
+            return self._merge_request_constraints(request, analyzed_plan)
+
+        # Fast 模式极速直通：无需前置 LLM 进行意图分类、改写与澄清，直接采用原始问题快速检索
+        if request.weight_mode == "fast":
+            direct_plan = QueryPlan(
+                original_query=request.query,
+                standalone_query=request.query.strip(),
+                intent=QueryIntent.KNOWLEDGE_QA,
+                intent_confidence=1.0,
+                filters=dict(request.filters or {}),
+                source_intent=SourceIntent(sources=[SourceKind.ENTERPRISE_KB]),
+            )
+            return self._merge_request_constraints(request, direct_plan)
 
         effective_history = list(history)
         if not history and request.soul_content:

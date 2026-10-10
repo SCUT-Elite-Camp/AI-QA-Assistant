@@ -32,7 +32,10 @@ from agent.schemas.chat import (
     ResetShortWindowResponse,
     ChatRequest,
     NoCompactionPlan,
+    ChatResponse,
 )
+from agent.memory.compaction_planner import CompactionPlanner
+from agent.streaming.sse import build_sse_event, chat_response_events
 
 
 class PrivateMemoryRoute(APIRoute):

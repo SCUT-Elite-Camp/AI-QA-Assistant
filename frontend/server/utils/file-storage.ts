@@ -27,6 +27,22 @@ export async function saveFile(buffer: Buffer, originalName: string): Promise<st
 
 /** 讀取文件內容 */
 export async function readFile(storagePath: string): Promise<Buffer> {
+  if (storagePath.startsWith('confluence://')) {
+    const parts = storagePath.replace('confluence://', '').split('/')
+    const docId = parts[1] || parts[0]
+    const possiblePaths = [
+      path.resolve(process.cwd(), '..', 'data-persistence', 'data', 'documents', `${docId}.json`),
+      path.resolve(process.cwd(), 'data-persistence', 'data', 'documents', `${docId}.json`),
+    ]
+    for (const p of possiblePaths) {
+      try {
+        const raw = await fs.readFile(p, 'utf8')
+        const doc = JSON.parse(raw)
+        return Buffer.from(doc.content || `# ${doc.title || docId}\n\n(No content available)`, 'utf8')
+      } catch {}
+    }
+  }
+
   // 安全檢查：確保路徑在 UPLOAD_DIR 內
   const resolved = path.resolve(storagePath)
   if (!resolved.startsWith(path.resolve(UPLOAD_DIR))) {

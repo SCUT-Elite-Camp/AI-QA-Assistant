@@ -1,16 +1,12 @@
 import logging
 import time
-from data_persistence.chat import ChatHistoryStore
 from agent.logger.app_logger import log_chat_result
 
 logger = logging.getLogger("agent-layer")
 
 
 class AuditService:
-    """Service for timing query latency, recording chat outcomes to SQLite, and logging steps."""
-
-    def __init__(self) -> None:
-        self.store = ChatHistoryStore()
+    """Service for request timing and structured operational logging."""
 
     def start_timer(self) -> float:
         """Starts timing request latency."""
@@ -19,28 +15,6 @@ class AuditService:
     def stop_timer(self, start_time: float) -> int:
         """Stops timing request latency and returns the duration in milliseconds."""
         return int((time.perf_counter() - start_time) * 1000)
-
-    def record(
-        self,
-        trace_id: str,
-        query: str,
-        answer: str,
-        status: str,
-        latency_ms: int,
-        session_id: str = None
-    ) -> None:
-        """Saves audit record to SQLite database."""
-        try:
-            self.store.add_record(
-                trace_id=trace_id,
-                session_id=session_id,
-                user_query=query,
-                assistant_answer=answer,
-                status=status,
-                latency_ms=latency_ms,
-            )
-        except Exception as e:
-            logger.error(f"Failed to save audit history: {e}")
 
     def log_step(self, step: int, query: str) -> None:
         """Logs each step iteration of the Agent loop."""

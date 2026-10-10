@@ -148,7 +148,8 @@ export default defineHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string().min(1) }).parse)
   const { actor, chat } = await requireOwnedChat(event, id, 'editor')
   const body = await readValidatedBody(event, z.object({
-    model: z.string().optional(), messages: z.array(uiMessageSchema).min(1).max(100),
+    model: z.string().optional(),
+    messages: z.array(uiMessageSchema).min(1).max(100),
     weightMode: z.enum(['thinking', 'auto', 'fast']).optional(),
   }).parse)
   const last = body.messages.at(-1)!
@@ -223,7 +224,7 @@ export default defineHandler(async (event) => {
             body: JSON.stringify({
               query, user_id: actor.userId, session_id: chat.id, top_k: 5, stream: true, retrieval_mode: 'hybrid',
               exploration_mode: chatExplorationMode(metadata, last.parts),
-              weight_mode: body.weightMode || 'thinking', topic_id: chat.topicId || undefined,
+              weight_mode: (chat as any).weightMode || 'thinking', topic_id: chat.topicId || undefined,
               is_first_message: handoff.currentSequence === 1,
               knowledge_base_retrieval_enabled: knowledgeBaseRetrievalEnabled(metadata, last.parts),
               memory_context: memoryContext, personal_library_context: personalContext,

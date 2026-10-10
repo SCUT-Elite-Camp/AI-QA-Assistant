@@ -35,7 +35,6 @@ export function syncTopicToDisk(
     id: string
     title: string
     mainChatId: string
-    weightMode: string
     consecutiveNoNewDocsCount: number
     createdAt?: any
     updatedAt?: any
@@ -90,6 +89,14 @@ export function loadTopicFromDisk(topicId: string) {
 
     const infoPath = path.join(topicDir, 'topic_info.json')
     const topicInfo = fs.existsSync(infoPath) ? JSON.parse(fs.readFileSync(infoPath, 'utf-8')) : null
+    if (topicInfo && typeof topicInfo === 'object' && 'weightMode' in topicInfo) {
+      delete topicInfo.weightMode
+      try {
+        fs.writeFileSync(infoPath, JSON.stringify(topicInfo, null, 2), 'utf-8')
+      } catch (error) {
+        logger.warn(`[TopicStorage] Failed to remove legacy weightMode from ${infoPath}:`, error)
+      }
+    }
 
     const docsPath = path.join(topicDir, 'documents_pool.json')
     const documentsPool = fs.existsSync(docsPath) ? JSON.parse(fs.readFileSync(docsPath, 'utf-8')) : []

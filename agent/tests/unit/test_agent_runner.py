@@ -53,6 +53,7 @@ import pytest
 
 from agent.config.settings import settings
 from agent.evidence import EvidenceGate
+from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunner, StopReason
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryIntent, QueryPlan
@@ -119,6 +120,22 @@ class RecordingSearchTool(RecordingTool):
                 "score": 0.9,
             }
         ]
+
+
+class CorrectiveSearchTool(RecordingSearchTool):
+    def __init__(self, *, fail_corrective: bool = False) -> None:
+        super().__init__()
+        self.fail_corrective = fail_corrective
+
+    def search(self, **kwargs: Any) -> list[dict[str, Any]]:
+        call_number = len(self.calls) + 1
+        if self.fail_corrective and call_number == 2:
+            self.calls.append(kwargs)
+            raise RuntimeError("corrective retrieval failed")
+        evidence = super().search(**kwargs)
+        if call_number == 1:
+            evidence[0]["score"] = 0.1
+        return evidence
 
 
 class WikiEvidenceTool(RecordingTool):
@@ -191,6 +208,151 @@ def make_plan(**updates: Any) -> QueryPlan:
     return QueryPlan(**values)
 
 
+def run_with_corrective_search(
+    search: CorrectiveSearchTool,
+    *,
+    max_tool_calls: int = 3,
+):
+    runner = make_runner(
+        ScriptedLLM([
+            {"tool_calls": [tool_call(
+                "search_documents",
+                {"query": "ignored"},
+                "initial-search",
+            )]},
+            {"role": "assistant", "content": "答案 [1]"},
+        ]),
+        [search],
+    )
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents",),
+            max_iterations=3,
+            max_tool_calls=max_tool_calls,
+            max_retrieval_attempts=2,
+        ),
+        tool_executor=ToolExecutor(
+            ToolRegistryAdapter(ToolRegistry(tools=[search]))
+        ),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        corrective_retrieval=CorrectiveRetrievalPlanner(),
+        trace_id="trace-corrective-accounting",
+    )
+    return result, search
+
+
+def test_corrective_retrieval_is_recorded_as_a_tool_call() -> None:
+    result, search = run_with_corrective_search(CorrectiveSearchTool())
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.retrieval_attempts == 2
+    assert [call.tool_name for call in result.tool_calls] == [
+        "search_documents",
+        "search_documents",
+    ]
+    corrective_call = result.tool_calls[1]
+    assert corrective_call.tool_call_id == "corrective-initial-search-1"
+    assert corrective_call.arguments["query"] == "CP2 分工文档内容"
+    assert corrective_call.success is True
+    assert len(search.calls) == 2
+    assert result.evidence_gate_reason == "evidence_accepted"
+    assert result.covered_evidence_targets == ["CP2 分工文档内容"]
+    assert result.missing_evidence_targets == []
+    assert result.eligible_evidence_count == 1
+    assert result.rejected_evidence_count == 1
+
+
+def test_corrective_retrieval_respects_tool_call_budget() -> None:
+    result, search = run_with_corrective_search(
+        CorrectiveSearchTool(),
+        max_tool_calls=1,
+    )
+
+    assert result.stop_reason == StopReason.POLICY_LIMIT
+    assert result.error_code == "max_tool_calls"
+    assert result.retrieval_attempts == 1
+    assert len(result.tool_calls) == 1
+    assert len(search.calls) == 1
+
+
+def test_failed_corrective_retrieval_is_recorded_before_returning_error() -> None:
+    result, search = run_with_corrective_search(
+        CorrectiveSearchTool(fail_corrective=True),
+    )
+
+    assert result.stop_reason == StopReason.TOOL_ERROR
+    assert result.tool_calls[-1].tool_name == "search_documents"
+    assert result.tool_calls[-1].tool_call_id == "corrective-initial-search-1"
+    assert result.tool_calls[-1].success is False
+    assert result.tool_calls[-1].error_code == "retrieval_error"
+    assert len(search.calls) == 2
+
+
+def test_multi_target_corrective_searches_share_one_retrieval_attempt() -> None:
+    class PartialComparisonSearch(RecordingSearchTool):
+        initial_targets: set[str]
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.initial_targets = set()
+
+        def search(self, **kwargs: Any) -> list[dict[str, Any]]:
+            query = kwargs["query"]
+            if query in {"A", "B"} and query not in self.initial_targets:
+                self.initial_targets.add(query)
+                self.calls.append(kwargs)
+                return []
+            return super().search(**kwargs)
+
+    search = PartialComparisonSearch()
+    runner = make_runner(
+        ScriptedLLM([{
+            "tool_calls": [tool_call(
+                "search_documents",
+                {"query": "ignored"},
+                "comparison-search",
+            )],
+        }]),
+        [search],
+    )
+    result = runner.run(
+        make_plan(
+            original_query="compare A and B",
+            standalone_query="A and B",
+            intent=QueryIntent.COMPARISON,
+            sub_queries=["A", "B"],
+        ),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents",),
+            evidence_policy="bilateral_coverage",
+            max_iterations=3,
+            max_tool_calls=2,
+            max_retrieval_attempts=2,
+        ),
+        tool_executor=ToolExecutor(
+            ToolRegistryAdapter(ToolRegistry(tools=[search]))
+        ),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        corrective_retrieval=CorrectiveRetrievalPlanner(),
+        trace_id="trace-multi-target-budget",
+    )
+
+    corrective_calls = [
+        call for call in result.tool_calls
+        if call.tool_call_id.startswith("corrective-")
+    ]
+    assert result.stop_reason == StopReason.POLICY_LIMIT
+    assert result.error_code == "max_tool_calls"
+    assert result.retrieval_attempts == 2
+    assert len(search.calls) == 3
+    assert sorted(call["query"] for call in search.calls) == ["A", "A", "B"]
+    assert len(corrective_calls) == 1
+    assert corrective_calls[0].arguments["query"] == "A"
+    assert corrective_calls[0].success is True
+    assert len(result.tool_calls) == 2
+
+
 @pytest.mark.parametrize("wiki_top_k", [3, 0])
 def test_wiki_navigation_returns_to_authoritative_evidence(
     monkeypatch,
@@ -240,7 +402,7 @@ def test_wiki_navigation_returns_to_authoritative_evidence(
     tools = [search, wiki_search, wiki_page, wiki_sources, wiki_evidence]
     registry = ToolRegistry(tools=tools)
     llm = ScriptedLLM([
-        {"tool_calls": [tool_call("wiki_search", {"query": "ignored"}, "wiki-1")]},
+        {"tool_calls": [tool_call("search_documents", {"query": "ignored"}, "direct-1")]},
         {"tool_calls": [tool_call("wiki_read_page", {"page_ref": "page-1"}, "wiki-2")]},
         {"tool_calls": [tool_call("wiki_read_sources", {"page_id": "page-1"}, "wiki-3")]},
         {"tool_calls": [tool_call("wiki_search_evidence", {
@@ -280,6 +442,11 @@ def test_wiki_navigation_returns_to_authoritative_evidence(
     ]
     assert {call["query"] for call in search.calls} == {"主题 A", "主题 B"}
     assert result.exploration_rounds == 4
+    assert result.evidence_gate_reason == "comparison_coverage_sufficient"
+    assert {"主题 A", "主题 B"}.issubset(result.covered_evidence_targets)
+    assert result.missing_evidence_targets == []
+    assert result.eligible_evidence_count >= 2
+    assert result.rejected_evidence_count == 0
     evidence_ids = [
         item.get("document_id") or item["doc_id"] for item in result.evidence
     ]
@@ -295,7 +462,9 @@ def test_wiki_navigation_returns_to_authoritative_evidence(
     initial_tool_names = {
         schema["function"]["name"] for schema in llm.calls[0]["tools"]
     }
-    assert initial_tool_names == {"search_documents", "wiki_search"}
+    assert initial_tool_names == {"search_documents"}
+    assert len(result.coverage_assessments) == 1
+    assert result.coverage_assessments[0]["should_explore"] is True
 
 
 def test_agent_can_select_direct_only_when_wiki_tools_are_available(
@@ -342,7 +511,116 @@ def test_agent_can_select_direct_only_when_wiki_tools_are_available(
     assert [call.tool_name for call in result.tool_calls] == ["search_documents"]
     assert len(search.calls) == 1
     assert wiki_search.calls == []
+    assert result.coverage_assessments[0]["sufficient"] is True
+    assert result.coverage_assessments[0]["should_explore"] is False
     assert "检索路由规则" in llm.calls[0]["messages"][0]["content"]
+
+
+def test_exploration_off_never_starts_wiki(monkeypatch) -> None:
+    search = RecordingSearchTool()
+    wiki_search = RecordingTool(name="wiki_search")
+    registry = ToolRegistry(tools=[search, wiki_search])
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call("search_documents", {"query": "ignored"})]},
+        {"role": "assistant", "content": "Direct answer [1]"},
+    ])
+    runner = AgentRunner(llm=llm, registry=registry, audit_service=AuditService())
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=4,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        trace_id="trace-exploration-off",
+        exploration_mode="off",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert [call.tool_name for call in result.tool_calls] == ["search_documents"]
+    assert wiki_search.calls == []
+    assert result.coverage_assessments == []
+
+
+def test_force_exploration_waits_for_evidence_gate(monkeypatch) -> None:
+    search = RecordingSearchTool()
+    wiki_search = RecordingTool(name="wiki_search")
+    registry = ToolRegistry(tools=[search, wiki_search])
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call("search_documents", {"query": "ignored"})]},
+    ])
+    runner = AgentRunner(llm=llm, registry=registry, audit_service=AuditService())
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=4,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.99),
+        trace_id="trace-force-requires-gated-evidence",
+        exploration_mode="force",
+        navigation_scopes=("enterprise",),
+    )
+
+    assert result.stop_reason == StopReason.NO_RELEVANT_CONTEXT
+    assert wiki_search.calls == []
+    assert result.coverage_assessments == []
+
+
+def test_exploration_does_not_expand_explicit_iteration_budget(monkeypatch) -> None:
+    class EmptyWikiSearch(RecordingTool):
+        def __init__(self) -> None:
+            super().__init__(name="wiki_search")
+
+        @property
+        def parameters(self) -> dict[str, Any]:
+            return {"type": "object", "additionalProperties": True}
+
+        def execute(self, **kwargs: Any) -> Any:
+            self.calls.append(kwargs)
+            return {"pages": []}
+
+    search = RecordingSearchTool()
+    wiki_search = EmptyWikiSearch()
+    registry = ToolRegistry(tools=[search, wiki_search])
+    llm = ScriptedLLM([
+        {"tool_calls": [tool_call("search_documents", {"query": "ignored"})]},
+    ])
+    runner = AgentRunner(llm=llm, registry=registry, audit_service=AuditService())
+    monkeypatch.setattr(settings, "AGENTIC_EXPLORATION_ENABLED", True)
+
+    result = runner.run(
+        make_plan(),
+        policy=IntentPolicy(
+            candidate_tools=("search_documents", "wiki_search"),
+            max_iterations=4,
+            max_tool_calls=4,
+            max_retrieval_attempts=3,
+        ),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
+        evidence_gate=EvidenceGate(min_score=0.5),
+        trace_id="trace-explicit-iteration-budget",
+        exploration_mode="force",
+        navigation_scopes=("enterprise",),
+        max_iterations=1,
+    )
+
+    assert result.stop_reason == StopReason.MAX_ITERATIONS
+    assert result.iterations == 1
+    assert [call.tool_name for call in result.tool_calls] == [
+        "search_documents", "wiki_search",
+    ]
 
 
 def test_evidence_required_answer_without_route_is_reprompted(monkeypatch) -> None:
@@ -505,6 +783,9 @@ def test_force_mode_starts_direct_plus_wiki_without_model_route_choice(
     registry = ToolRegistry(tools=tools)
     llm = ScriptedLLM([
         {"tool_calls": [tool_call(
+            "search_documents", {"query": "ignored"}, "forced-direct-1",
+        )]},
+        {"tool_calls": [tool_call(
             "wiki_read_page", {"page_ref": "page-1"}, "forced-wiki-2",
         )]},
         {"tool_calls": [tool_call(
@@ -546,10 +827,11 @@ def test_force_mode_starts_direct_plus_wiki_without_model_route_choice(
     ]
     assert wiki_search.calls[0]["query"] == "CP2 分工文档内容"
     assert len(search.calls) == 1
-    assert len(llm.calls) == 4
+    assert len(llm.calls) == 5
     assert {
         schema["function"]["name"] for schema in llm.calls[0]["tools"]
-    } == {"wiki_read_page"}
+    } == {"search_documents"}
+    assert result.coverage_assessments[-1]["reason"] == "forced_exploration"
 
 
 def test_empty_wiki_navigation_still_gates_direct_prefetch(monkeypatch) -> None:
@@ -571,8 +853,9 @@ def test_empty_wiki_navigation_still_gates_direct_prefetch(monkeypatch) -> None:
     registry = ToolRegistry(tools=tools)
     llm = ScriptedLLM([
         {"tool_calls": [tool_call(
-            "wiki_search", {"query": "ignored"}, "empty-wiki",
+            "search_documents", {"query": "ignored"}, "direct-before-empty-wiki",
         )]},
+        {"role": "assistant", "content": "Direct evidence answer [1]"},
     ])
     runner = AgentRunner(
         llm=llm,
@@ -590,15 +873,18 @@ def test_empty_wiki_navigation_still_gates_direct_prefetch(monkeypatch) -> None:
             max_retrieval_attempts=3,
         ),
         tool_executor=ToolExecutor(ToolRegistryAdapter(registry)),
-        evidence_gate=EvidenceGate(min_score=0.95),
+        evidence_gate=EvidenceGate(min_score=0.5),
         trace_id="trace-empty-wiki-gates-direct",
+        exploration_mode="force",
         navigation_scopes=("enterprise",),
     )
 
-    assert result.stop_reason == StopReason.NO_RELEVANT_CONTEXT
-    assert result.answer == ""
-    assert result.evidence == []
-    assert len(llm.calls) == 1
+    assert result.stop_reason == StopReason.FINAL_ANSWER
+    assert result.answer == "Direct evidence answer [1]"
+    assert result.evidence
+    assert [call.tool_name for call in result.tool_calls] == [
+        "search_documents", "wiki_search",
+    ]
 
 
 def test_search_loop_uses_standalone_query_filters_and_trace_id() -> None:
@@ -895,7 +1181,7 @@ def test_answer_evidence_prioritizes_directly_named_contract() -> None:
     ]
 
     ranked = AgentRunner._prioritize_evidence_for_answer(
-        "Which ConversationMemory field identifies a session?",
+        "How does MemoryCoordinator prepare trusted context for one request?",
         evidence,
     )
 

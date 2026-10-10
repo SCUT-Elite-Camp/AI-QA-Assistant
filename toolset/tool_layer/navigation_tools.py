@@ -7,6 +7,28 @@ from .search_tool import SearchTool
 from .search_library_tool import SearchLibraryTool
 
 
+_MAX_DOCUMENT_IDS = 100
+_MAX_SECTION_IDS = 20
+_SOURCE_SCOPES = frozenset({"enterprise", "personal"})
+_SEARCH_MODES = frozenset({"hybrid", "vector", "bm25"})
+
+
+def _valid_id_list(value: Any, *, minimum: int = 0, maximum: int) -> bool:
+    return (
+        isinstance(value, list)
+        and minimum <= len(value) <= maximum
+        and all(isinstance(item, str) for item in value)
+    )
+
+
+def _valid_top_k(value: Any, *, maximum: int) -> int | None:
+    if value is None:
+        return None
+    if type(value) is not int or not 1 <= value <= maximum:
+        return None
+    return value
+
+
 class BrowseDocumentOutlineTool(BaseTool):
     def __init__(
         self,
@@ -45,14 +67,44 @@ class BrowseDocumentOutlineTool(BaseTool):
         }
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        if kwargs.get("source_scope") == "personal":
+        source_scope = kwargs.get("source_scope", "enterprise")
+        if type(source_scope) is not str or source_scope not in _SOURCE_SCOPES:
+            return {
+                "error": "invalid_navigation_query",
+                "sections": [],
+                "citation_authority": False,
+            }
+        query = kwargs.get("query")
+        if type(query) is not str or not query.strip():
+            return {
+                "error": "invalid_navigation_query",
+                "sections": [],
+                "citation_authority": False,
+            }
+        if source_scope == "personal":
             if self.library_tool is None:
                 return {"error": "personal_library_unavailable", "sections": []}
             return self.library_tool.browse_outline(**kwargs)
+        doc_ids = kwargs.get("doc_ids")
+        if doc_ids is not None and not _valid_id_list(
+            doc_ids, maximum=_MAX_DOCUMENT_IDS
+        ):
+            return {
+                "error": "invalid_navigation_query",
+                "sections": [],
+                "citation_authority": False,
+            }
+        top_k = _valid_top_k(kwargs.get("top_k", 8), maximum=12)
+        if top_k is None:
+            return {
+                "error": "invalid_navigation_query",
+                "sections": [],
+                "citation_authority": False,
+            }
         sections = self.search_tool.browse_document_outline(
-            str(kwargs.get("query") or ""),
-            doc_ids=kwargs.get("doc_ids"),
-            top_k=min(12, max(1, int(kwargs.get("top_k", 8)))),
+            query,
+            doc_ids=doc_ids,
+            top_k=top_k,
         )
         return {"sections": sections, "citation_authority": False}
 
@@ -100,15 +152,60 @@ class SearchEvidenceInScopeTool(BaseTool):
         }
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        if kwargs.get("source_scope") == "personal":
+        source_scope = kwargs.get("source_scope", "enterprise")
+        if type(source_scope) is not str or source_scope not in _SOURCE_SCOPES:
+            return {
+                "error": "invalid_navigation_query",
+                "items": [],
+                "citation_authority": True,
+            }
+        query = kwargs.get("query")
+        if type(query) is not str or not query.strip():
+            return {
+                "error": "invalid_navigation_query",
+                "items": [],
+                "citation_authority": True,
+            }
+        mode = kwargs.get("mode", "hybrid")
+        if type(mode) is not str or mode not in _SEARCH_MODES:
+            return {
+                "error": "invalid_navigation_query",
+                "items": [],
+                "citation_authority": True,
+            }
+        if source_scope == "personal":
             if self.library_tool is None:
                 return {"error": "personal_library_unavailable", "items": []}
-            return self.library_tool.search_evidence_in_scope(**kwargs)
+            return self.library_tool.search_evidence_in_scope(
+                **{**kwargs, "query": query, "mode": mode}
+            )
+        section_ids = kwargs.get("section_ids")
+        doc_ids = kwargs.get("doc_ids")
+        if (
+            not _valid_id_list(
+                section_ids, minimum=1, maximum=_MAX_SECTION_IDS
+            )
+            or (doc_ids is not None and not _valid_id_list(
+                doc_ids, maximum=_MAX_DOCUMENT_IDS
+            ))
+        ):
+            return {
+                "error": "invalid_navigation_query",
+                "items": [],
+                "citation_authority": True,
+            }
+        top_k = _valid_top_k(kwargs.get("top_k", 10), maximum=20)
+        if top_k is None:
+            return {
+                "error": "invalid_navigation_query",
+                "items": [],
+                "citation_authority": True,
+            }
         rows = self.search_tool.search_evidence_in_scope(
-            str(kwargs.get("query") or ""),
-            section_ids=list(kwargs.get("section_ids") or []),
-            doc_ids=kwargs.get("doc_ids"),
-            top_k=min(20, max(1, int(kwargs.get("top_k", 10)))),
-            mode=str(kwargs.get("mode") or "hybrid"),
+            query,
+            section_ids=section_ids,
+            doc_ids=doc_ids,
+            top_k=top_k,
+            mode=mode,
         )
         return {"items": rows, "citation_authority": True}

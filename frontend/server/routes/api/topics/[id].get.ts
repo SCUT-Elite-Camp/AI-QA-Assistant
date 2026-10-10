@@ -17,7 +17,6 @@ export default defineHandler(async (event) => {
   const topic = await db.query.topics.findFirst({
     where: eq(tables.topics.id, id),
     with: {
-      chats: true,
       documents: true
     }
   })
@@ -34,7 +33,7 @@ export default defineHandler(async (event) => {
 
   return {
     ...visible,
-    chats: await Promise.all(topic.chats.map(chat => readableChatMetadata(userId, chat))),
+    ...(topic.chats ? { chats: await Promise.all(topic.chats.map(chat => readableChatMetadata(userId, chat))) } : {}),
     documents: await readableTopicDocuments(userId, userUploadedDocs)
   }
 })

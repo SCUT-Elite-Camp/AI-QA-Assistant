@@ -349,7 +349,24 @@ class ToolExecutor:
                 raise ValueError("get_document must return document metadata")
             doc_id = str(document.get("doc_id") or arguments.get("doc_id") or "")
             title = str(document.get("title") or doc_id)
-            for chunk in data.get("chunks", []):
+            all_chunks = list(data.get("chunks", []))
+            next_offset = data.get("next_offset")
+            if arguments.get("offset", 0) == 0:
+                while next_offset is not None and data.get("has_more") and len(all_chunks) < 100:
+                    try:
+                        more_data = tool.execute(doc_id=doc_id, offset=next_offset, limit=50)
+                    except Exception:
+                        break
+                    if not isinstance(more_data, dict) or "error" in more_data:
+                        break
+                    new_chunks = more_data.get("chunks", [])
+                    if not new_chunks:
+                        break
+                    all_chunks.extend(new_chunks)
+                    if not more_data.get("has_more"):
+                        break
+                    next_offset = more_data.get("next_offset")
+            for chunk in all_chunks:
                 if not isinstance(chunk, dict):
                     continue
                 index = int(chunk.get("index", 0))

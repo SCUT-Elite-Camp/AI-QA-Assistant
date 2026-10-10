@@ -167,23 +167,18 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
         ge=1,
     )
-    # Persistent Memory is separately gated and remains disabled until rollout.
-    PERSISTENT_MEMORY_ENABLED: bool = Field(
-        default_factory=lambda: _env_bool("PERSISTENT_MEMORY_ENABLED", False),
-    )
-    SESSION_FACT_ENABLED: bool = Field(
-        default_factory=lambda: _env_bool("SESSION_FACT_ENABLED", False),
-    )
-    MEMORY_CACHE_ENABLED: bool = Field(
-        default_factory=lambda: _env_bool("MEMORY_CACHE_ENABLED", False),
-    )
+    PERSISTENT_MEMORY_ENABLED: bool = _env_bool("PERSISTENT_MEMORY_ENABLED", False)
+    SESSION_FACT_ENABLED: bool = _env_bool("SESSION_FACT_ENABLED", False)
+    MEMORY_CACHE_ENABLED: bool = _env_bool("MEMORY_CACHE_ENABLED", False)
     MEMORY_TAIL_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
         ge=1,
+        le=100,
     )
     MEMORY_BRIEF_MAX_CHARS: int = Field(
         default_factory=lambda: _env_int("MEMORY_BRIEF_MAX_CHARS", 1200),
-        ge=1,
+        ge=128,
+        le=12000,
     )
     MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS: int = Field(
         default_factory=lambda: _env_int("MEMORY_SNAPSHOT_SUMMARY_MAX_CHARS", 1200),
@@ -199,12 +194,10 @@ class Settings(BaseModel):
     )
     MEMORY_MODEL_HISTORY_MAX_CHARS: int = Field(
         default_factory=lambda: _env_int("MEMORY_MODEL_HISTORY_MAX_CHARS", 6000),
-        ge=1,
+        ge=256,
+        le=60000,
     )
-    # Empty by default; 04a rejects private requests unless the configured token matches.
-    AGENT_INTERNAL_TOKEN: str = Field(
-        default_factory=lambda: os.getenv("AGENT_INTERNAL_TOKEN", ""),
-    )
+    AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
     MAX_AGENT_ITERATIONS: int = Field(
         default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
         ge=1,

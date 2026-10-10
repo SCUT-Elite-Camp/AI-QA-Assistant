@@ -44,7 +44,7 @@ class ChatRequest(BaseModel):
     retrieval_mode: Literal["vector", "bm25", "hybrid"] = "hybrid"
     exploration_mode: Literal["auto", "off", "force"] = "auto"
     topic_id: Optional[str] = None
-    weight_mode: Optional[Literal["thinking", "auto", "fast", "deeper", "wider"]] = "thinking"
+    weight_mode: Optional[Literal["auto", "fast", "thinking"]] = "fast"
     soul_content: Optional[str] = None
     topic_doc_ids: Optional[list[str]] = None
     topic_titles: Optional[list[str]] = None
@@ -183,7 +183,6 @@ class MemoryContextInput(_InternalMemoryContractModel):
         return self
 
 
-
 class PersonalLibraryContext(BaseModel):
     """Server-authenticated library scope; never accepted by the public route."""
 
@@ -314,3 +313,4 @@ class ResetShortWindowRequest(_InternalMemoryContractModel):
 
 class ResetShortWindowResponse(_InternalMemoryContractModel):
     status: Literal["ok"]
+

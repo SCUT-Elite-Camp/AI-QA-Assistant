@@ -119,7 +119,7 @@ async function submit() {
           <UInput v-model="form.avatar" class="w-full" />
         </UFormField>
 
-        <UCheckbox v-model="form.disabled" label="禁用该用户" description="禁止此用户登录系统。" />
+        <UCheckbox v-model="form.disabled" label="Suspend this account" description="Prevent this user from logging into the platform." />
       </div>
     </template>
 

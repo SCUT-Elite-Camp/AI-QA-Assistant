@@ -63,7 +63,7 @@ async function upload(event: Event) {
     })
     await loadFiles()
   } catch (error) {
-    toast.add({ color: 'error', description: error instanceof Error ? error.message : '上传失败' })
+    toast.add({ color: 'error', description: error instanceof Error ? error.message : 'Upload failed' })
   } finally {
     uploading.value = false
     input.value = ''
@@ -103,7 +103,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
     <template #header>
       <Navbar>
         <template #title>
-          <span class="font-semibold">我的资料库</span>
+          <span class="font-semibold">My Library</span>
         </template>
       </Navbar>
     </template>
@@ -115,7 +115,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
               Personal Knowledge Library
             </h1>
             <p class="text-sm text-muted mt-1">
-              长期保存个人文件，并在聊天中通过“我的资料库”检索。
+              Store personal documents for long term, and retrieve them in chat through "My Library".
             </p>
           </div>
           <input
@@ -129,20 +129,20 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
             :loading="uploading"
             @click="chooseNewFile"
           >
-            上传文件
+            Upload File
           </UButton>
         </div>
         <div
           v-if="loading"
           class="py-10 text-center text-muted"
         >
-          正在加载…
+          Loading…
         </div>
         <div
           v-else-if="!files.length"
           class="border border-dashed rounded-xl py-16 text-center text-muted"
         >
-          还没有文件
+          No documents yet
         </div>
         <div
           v-else
@@ -169,7 +169,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
               color="neutral"
               variant="ghost"
               icon="i-lucide-upload-cloud"
-              aria-label="上传新版本"
+              aria-label="Upload new version"
               @click="chooseUpdate(item)"
             />
             <UButton

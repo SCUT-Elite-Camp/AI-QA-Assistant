@@ -1,31 +1,15 @@
+from contextvars import Context
 from unittest.mock import MagicMock
 
 import pytest
 
+from agent.agent import Agent
+from agent.errors.exceptions import LLMError
+from agent.llm.llm_client import LLMClient
 from agent.schemas.chat import ChatRequest, InternalChatRequest
-
-from agent.schemas.common import StatusCode
-
-from agent.schemas.retrieval import RetrievalResult
-
-from agent.agent import Agent
-
-from agent.llm.llm_client import LLMClient
-
-from toolset.tool_layer.search_tool import SearchTool
-
-from agent.errors.exceptions import LLMError
-
-
-from unittest.mock import MagicMock
-import pytest
-from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
-from agent.agent import Agent
-from agent.llm.llm_client import LLMClient
 from toolset.tool_layer.search_tool import SearchTool
-from agent.errors.exceptions import LLMError
 
 
 def test_normal_query_returns_success() -> None:
@@ -45,6 +29,23 @@ def test_empty_query_returns_invalid_query() -> None:
     assert response.answer == ""
     assert response.message == "请输入有效问题。"
     assert response.citations == []
+
+
+def test_compatibility_diagnostics_are_request_context_local() -> None:
+    agent = Agent()
+    other_request = Context()
+
+    other_request.run(
+        lambda: (
+            setattr(agent, "last_run_result", object()),
+            setattr(agent, "last_orchestration", object()),
+            setattr(agent, "last_citation_check", object()),
+        )
+    )
+
+    assert agent.last_run_result is None
+    assert agent.last_orchestration is None
+    assert agent.last_citation_check is None
 
 
 def test_empty_retrieval_returns_no_relevant_context(monkeypatch) -> None:

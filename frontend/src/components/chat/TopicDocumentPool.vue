@@ -149,8 +149,8 @@ onMounted(() => {
         <div class="py-2">
           <section class="mb-5 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3">
             <div class="mb-2 flex items-center justify-between">
-              <h4 class="text-sm font-medium">Topic 附件池（{{ attachments.length }}）</h4>
-              <span class="text-xs text-zinc-500">与知识库引用文档分离</span>
+              <h4 class="text-sm font-medium">Topic Attachment Pool ({{ attachments.length }})</h4>
+              <span class="text-xs text-zinc-500">Separated from Knowledge Base docs</span>
             </div>
             <AttachmentTray v-if="topicRole !== 'viewer'" scope="topic" :topic-id="topicId" @change="fetchAttachments" />
             <div v-for="attachment in attachments" :key="attachment.id" class="mt-2 flex items-center gap-2 rounded border border-zinc-200 dark:border-zinc-800 p-2 text-xs">
@@ -162,13 +162,13 @@ onMounted(() => {
             </div>
           </section>
           <section v-if="topicRole === 'owner'" class="mb-5 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3">
-            <h4 class="mb-2 text-sm font-medium">Topic 成员（{{ members.length }}）</h4>
+            <h4 class="mb-2 text-sm font-medium">Topic Members ({{ members.length }})</h4>
             <div class="mb-3 flex gap-2">
-              <UInput v-model="memberIdentifier" class="min-w-0 flex-1" placeholder="用户 ID、邮箱或用户名" />
+              <UInput v-model="memberIdentifier" class="min-w-0 flex-1" placeholder="User ID, email or username" />
               <select v-model="memberRole" class="rounded border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-2 text-xs">
                 <option value="viewer">viewer</option><option value="editor">editor</option><option value="owner">owner</option>
               </select>
-              <UButton label="添加" size="xs" @click="saveMember(memberIdentifier, memberRole)" />
+              <UButton label="Add" size="xs" @click="saveMember(memberIdentifier, memberRole)" />
             </div>
             <div v-for="member in members" :key="member.userId" class="flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 py-2 text-xs">
               <div class="min-w-0 flex-1"><div class="truncate">{{ member.name || member.username || member.userId }}</div><div class="truncate text-zinc-500">{{ member.email || member.userId }}</div></div>

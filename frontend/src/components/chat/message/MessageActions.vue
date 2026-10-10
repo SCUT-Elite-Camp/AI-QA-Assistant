@@ -63,15 +63,15 @@ function toggleFavorite() {
 
 const memoryCategoryItems = [
   {
-    label: '保存为目标',
+    label: 'Save as Goal',
     onSelect: () => emit('saveMemory', props.message, 'GOAL')
   },
   {
-    label: '保存为偏好',
+    label: 'Save as Preference',
     onSelect: () => emit('saveMemory', props.message, 'PREFERENCE')
   },
   {
-    label: '保存为计划约束',
+    label: 'Save as Constraint',
     onSelect: () => emit('saveMemory', props.message, 'PLAN_CONSTRAINT')
   }
 ]
@@ -208,56 +208,58 @@ const earliestDataDate = computed<string | null>(() => {
   </template>
 
   <template v-if="message.role === 'user' && !streaming && !editing">
-    <UTooltip
-      v-if="formattedDate"
-      :text="formattedDate.full"
-    >
-      <time
-        :datetime="formattedDate.iso"
-        class="text-xs text-muted mr-1.5"
+    <div class="flex items-center justify-end gap-1 w-full pt-1 opacity-70 hover:opacity-100 transition-opacity">
+      <UTooltip
+        v-if="formattedDate"
+        :text="formattedDate.full"
       >
-        {{ formattedDate.time }}
-      </time>
-    </UTooltip>
+        <time
+          :datetime="formattedDate.iso"
+          class="text-xs text-zinc-400 dark:text-zinc-500 mr-1 select-none font-mono"
+        >
+          {{ formattedDate.time }}
+        </time>
+      </UTooltip>
 
-    <UTooltip text="Copy">
-      <UButton
-        size="sm"
-        :color="copied ? 'primary' : 'neutral'"
-        variant="ghost"
-        :icon="copied ? 'i-lucide-copy-check' : 'i-lucide-copy'"
-        aria-label="Copy prompt"
-        @click="copy"
-      />
-    </UTooltip>
+      <UTooltip text="Copy">
+        <UButton
+          size="xs"
+          :color="copied ? 'primary' : 'neutral'"
+          variant="ghost"
+          :icon="copied ? 'i-lucide-copy-check' : 'i-lucide-copy'"
+          aria-label="Copy prompt"
+          @click="copy"
+        />
+      </UTooltip>
 
-    <UTooltip
-      v-if="!hasFiles"
-      text="Edit message"
-    >
-      <UButton
-        size="sm"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-pencil"
-        aria-label="Edit message"
-        @click="emit('edit', message)"
-      />
-    </UTooltip>
+      <UTooltip
+        v-if="!hasFiles"
+        text="Edit message"
+      >
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-pencil"
+          aria-label="Edit message"
+          @click="emit('edit', message)"
+        />
+      </UTooltip>
 
-    <UDropdownMenu
-      v-if="memoryEnabled"
-      :items="memoryCategoryItems"
-      :content="{ align: 'end' }"
-    >
-      <UButton
-        size="sm"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-brain"
-        aria-label="Save as session memory"
-        :disabled="memoryBusy"
-      />
-    </UDropdownMenu>
+      <UDropdownMenu
+        v-if="memoryEnabled"
+        :items="memoryCategoryItems"
+        :content="{ align: 'end' }"
+      >
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-brain"
+          aria-label="Save as session memory"
+          :disabled="memoryBusy"
+        />
+      </UDropdownMenu>
+    </div>
   </template>
 </template>

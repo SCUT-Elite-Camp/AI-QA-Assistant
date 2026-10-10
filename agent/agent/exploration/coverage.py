@@ -63,6 +63,11 @@ class CoverageAssessor:
         available = set(available_actions)
         actions: list[ExplorationAction] = []
         if (
+            exploration_mode.casefold() == "force"
+            and ExplorationAction.WIKI_SEARCH in available
+        ):
+            actions.append(ExplorationAction.WIKI_SEARCH)
+        elif (
             {"cross_document_coverage", "evidence_breadth", "topic_coverage"}
             & set(missing)
             and ExplorationAction.WIKI_SEARCH in available

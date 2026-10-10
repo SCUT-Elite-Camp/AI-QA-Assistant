@@ -77,6 +77,14 @@ class SearchToolTest(unittest.TestCase):
     def test_search_schema_does_not_advertise_automatic_navigation(self):
         self.assertNotIn("navigation_mode", SearchTool(backend=FakeBackend()).parameters["properties"])
 
+    def test_search_schema_matches_top_k_and_mode_constraints(self):
+        properties = SearchTool(backend=FakeBackend()).parameters["properties"]
+
+        self.assertEqual(properties["top_k"]["minimum"], 1)
+        self.assertEqual(properties["top_k"]["maximum"], 20)
+        self.assertEqual(properties["mode"]["enum"], ["vector", "bm25", "hybrid"])
+        self.assertIn(properties["mode"]["default"], properties["mode"]["enum"])
+
     def test_accepts_all_cp1_modes(self):
         backend = FakeBackend()
         tool = SearchTool(backend=backend)
@@ -86,6 +94,61 @@ class SearchToolTest(unittest.TestCase):
         tool.search("query", mode="hybrid")
 
         self.assertEqual([call["mode"] for call in backend.calls], ["vector", "bm25", "hybrid"])
+
+    def test_invalid_modes_raise_stable_parameter_error_before_backend(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        for mode in ("dense", True, 1, [], {}):
+            with self.subTest(mode=mode):
+                with self.assertRaises(RetrievalParameterError):
+                    tool.search("query", mode=mode)
+
+        self.assertEqual(backend.calls, [])
+
+    def test_rejects_internal_chunk_filter_at_public_search_boundary(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        for filters in (
+            {"chunk_ids": ["chunk-1"]},
+            {"space": "HR", "chunk_ids": ["chunk-1"]},
+        ):
+            with self.subTest(filters=filters):
+                with self.assertRaisesRegex(RetrievalParameterError, "unsupported filter keys: chunk_ids"):
+                    tool.search("query", filters=filters)
+
+        self.assertEqual(backend.calls, [])
+
+    def test_rejects_filter_shapes_outside_public_schema_before_backend(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        invalid_filters = (
+            {"doc_id": ["doc_001"]},
+            {"doc_id": ("doc_001",)},
+            {"doc_id": {"doc_001"}},
+            {"doc_ids": "doc_001"},
+            {"doc_ids": ("doc_001",)},
+            {"doc_ids": {"doc_001"}},
+        )
+        for filters in invalid_filters:
+            with self.subTest(filters=filters):
+                with self.assertRaises(RetrievalParameterError):
+                    tool.search("query", filters=filters)
+
+        self.assertEqual(backend.calls, [])
+
+    def test_invalid_navigation_modes_raise_stable_parameter_error(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        for navigation_mode in ("invalid", True, 1, [], {}):
+            with self.subTest(navigation_mode=navigation_mode):
+                with self.assertRaises(RetrievalParameterError):
+                    tool.search("query", navigation_mode=navigation_mode)
+
+        self.assertEqual(backend.calls, [])
 
     def test_returns_agent_contract_fields(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -130,6 +193,29 @@ class SearchToolTest(unittest.TestCase):
         with self.assertRaises(RetrievalParameterError):
             tool.search("query", filters={"unsupported": "value"})
 
+    def test_rejects_non_string_query_before_backend(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        for query in (None, 1, True, ["query"]):
+            with self.subTest(query=query):
+                with self.assertRaises(RetrievalParameterError):
+                    tool.search(query)
+
+        self.assertEqual(backend.calls, [])
+
+    def test_top_k_rejects_bool_and_accepts_integer_boundaries(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        with self.assertRaises(RetrievalParameterError):
+            tool.search("query", top_k=True)
+
+        tool.search("query", top_k=1)
+        tool.search("query", top_k=20)
+
+        self.assertEqual([call["top_k"] for call in backend.calls], [1, 20])
+
     def test_normalizes_filters_before_backend_call(self):
         backend = FakeBackend()
         tool = SearchTool(backend=backend)
@@ -143,6 +229,17 @@ class SearchToolTest(unittest.TestCase):
             backend.calls[0]["filters"],
             {"doc_ids": ["doc_001"], "doc_type": "pdf"},
         )
+
+    def test_public_doc_id_aliases_keep_intersection_semantics(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+
+        tool.search(
+            "query",
+            filters={"doc_id": "doc_001", "doc_ids": ["doc_001", "doc_002"]},
+        )
+
+        self.assertEqual(backend.calls[0]["filters"], {"doc_ids": ["doc_001"]})
 
     def test_empty_doc_allowlist_does_not_call_backend(self):
         backend = FakeBackend()

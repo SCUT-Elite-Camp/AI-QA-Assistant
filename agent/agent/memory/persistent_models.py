@@ -59,7 +59,7 @@ class PersistentFact(BaseModel):
 
 
 class PersistentMemoryContext(BaseModel):
-    """Trusted BFF context with only resolver-local lifecycle metadata."""
+    """Normalized trusted Memory projection shared within one Agent turn."""
 
     model_config = ConfigDict(extra="forbid", strict=True)
 

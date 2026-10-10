@@ -14,6 +14,7 @@ declare module 'vue' {
     AdminNav: typeof import('./src/components/admin/AdminNav.vue')['default']
     AttachmentEvidenceModal: typeof import('./src/components/chat/AttachmentEvidenceModal.vue')['default']
     AttachmentTray: typeof import('./src/components/chat/AttachmentTray.vue')['default']
+    CascadingModeSelector: typeof import('./src/components/chat/CascadingModeSelector.vue')['default']
     Chart: typeof import('./src/components/chat/tool/Chart.vue')['default']
     ChatTitle: typeof import('./src/components/chat/ChatTitle.vue')['default']
     ChatVisibility: typeof import('./src/components/chat/ChatVisibility.vue')['default']
@@ -93,6 +94,5 @@ declare module 'vue' {
     UTextarea: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internation_7c14ad9f2ae317bc85e1f3cf6e3d6ea3/node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
     UTooltip: typeof import('./node_modules/.pnpm/@nuxt+ui@4.8.2_@internation_7c14ad9f2ae317bc85e1f3cf6e3d6ea3/node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']
     Weather: typeof import('./src/components/chat/tool/Weather.vue')['default']
-    WeightModeSelect: typeof import('./src/components/chat/WeightModeSelect.vue')['default']
   }
 }

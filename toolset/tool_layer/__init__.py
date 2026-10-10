@@ -10,7 +10,7 @@ from .wiki_tool import (
     WikiSearchEvidenceTool,
     WikiSearchTool,
 )
-from .registry import ToolRegistry, get_tools
+from .registry import ToolRegistry
 
 
 __all__ = [
@@ -31,6 +31,5 @@ __all__ = [
     "WikiReadSourcesTool",
     "WikiSearchEvidenceTool",
     "ToolRegistry",
-    "get_tools",
 ]
 

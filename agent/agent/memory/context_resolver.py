@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from time import perf_counter, time
 
 from agent.config.settings import settings
+from agent.memory.fact_visibility import current_time_ms, visible_session_facts
 from agent.memory.memory_observability import MemoryObservability
-from agent.memory.persistent_models import PersistentFact, PersistentMemoryContext
+from agent.memory.persistent_models import (
+    PersistentFact,
+    PersistentMemoryContext,
+    PersistentSnapshot,
+)
 from agent.schemas.chat import ContextArtifact, MemoryContextInput, MemoryMessage
 
 
@@ -46,7 +50,7 @@ class ContextResolver:
             if model_history_max_chars is None
             else model_history_max_chars
         )
-        self._now_ms = now_ms or (lambda: int(time() * 1000))
+        self._now_ms = now_ms or current_time_ms
         self._observability = observability or MemoryObservability()
 
         if self._tail_messages < 1:
@@ -59,6 +63,8 @@ class ContextResolver:
     def resolve(
         self,
         memory_context: MemoryContextInput | PersistentMemoryContext | None,
+        *,
+        visibility_cutoff_ms: int | None = None,
     ) -> ContextArtifact | None:
         """Return a bounded artifact, or ``None`` for the legacy short-window path."""
         started_at = perf_counter()

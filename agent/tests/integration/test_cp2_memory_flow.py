@@ -5,10 +5,11 @@ import pytest
 
 from agent.agent import Agent
 from agent.config.settings import settings
-from agent.memory import InMemoryConversationMemory
+from agent.memory import MemoryCoordinator
 from agent.schemas.chat import ChatRequest, InternalChatRequest
 from agent.schemas.common import StatusCode
-from agent.schemas.query_plan import QueryPlan
+from agent.schemas.query_plan import QueryIntent, QueryPlan
+from toolset.tool_layer import BaseTool
 
 
 @pytest.fixture(autouse=True)
@@ -84,6 +85,43 @@ class NoModelCallLLM:
         raise AssertionError("explicit memory recall must not call an LLM")
 
 
+class MemorySearchTool(BaseTool):
+    @property
+    def name(self) -> str:
+        return "search_documents"
+
+    @property
+    def description(self) -> str:
+        return "Return one deterministic test document."
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "top_k": {"type": "integer"},
+                "mode": {"type": "string"},
+            },
+            "required": ["query"],
+        }
+
+    def execute(self, **kwargs: Any) -> list[dict[str, Any]]:
+        return self.search(**kwargs)
+
+    def search(self, **kwargs: Any) -> list[dict[str, Any]]:
+        query = kwargs["query"]
+        return [{
+            "doc_id": "doc-memory",
+            "chunk_id": "doc-memory::chunk-0",
+            "chunk_index": 0,
+            "chunk_text": f"Evidence for {query}",
+            "title": "Memory test document",
+            "source_url": "https://example.test/memory",
+            "score": 0.95,
+        }]
+
+
 def persistent_memory_context(*, facts: list[dict] | None = None) -> dict:
     return {
         "actor": {"user_id": "user-a", "authenticated": True},
@@ -111,18 +149,16 @@ def persistent_memory_context(*, facts: list[dict] | None = None) -> dict:
     }
 
 
-def test_persistent_context_reaches_runner_once_and_skips_legacy_double_write(
-    monkeypatch,
-) -> None:
+def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
     monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
-    memory = InMemoryConversationMemory()
     llm = InspectingLLM(["Persistent answer [1]"])
-    agent = Agent(llm=llm, tools=[], memory=memory)
+    agent = Agent(llm=llm, tools=[])
     request = InternalChatRequest(
         query="Current persistent question",
         session_id="persistent-chat",
         is_first_message=False,
+        weight_mode="thinking",
         memory_context=persistent_memory_context(
             facts=[
                 {
@@ -135,11 +171,9 @@ def test_persistent_context_reaches_runner_once_and_skips_legacy_double_write(
         ),
     )
 
-    assert agent._is_persistent_memory_request(request) is True
     response = agent.chat(request)
 
     assert response.status == StatusCode.SUCCESS
-    assert agent._is_persistent_memory_request(request) is True
     assert agent.last_orchestration is not None
     assert agent.last_orchestration.context_artifact is not None
     runner_messages = llm.messages_seen[-1]
@@ -157,20 +191,53 @@ def test_persistent_context_reaches_runner_once_and_skips_legacy_double_write(
         message["content"] == "Current persistent question"
         for message in runner_messages
     ) == 1
-    assert memory.get_messages("persistent-chat") == []
+    assert agent.last_orchestration.execution_profile is not None
+    assert agent.last_orchestration.execution_profile.mode.value == "thinking"
 
 
-def test_explicit_persistent_fact_recall_bypasses_models_and_agent_audit_storage(
-    monkeypatch,
-) -> None:
-    from unittest.mock import MagicMock
+def test_persistent_context_reaches_fast_loop_once(monkeypatch) -> None:
+    from unittest.mock import Mock
 
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
     monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
-    memory = InMemoryConversationMemory()
+    coordinator = MemoryCoordinator()
+    coordinator.prepare = Mock(wraps=coordinator.prepare)  # type: ignore[method-assign]
+    llm = InspectingLLM(["Fast persistent answer [1]"])
+    agent = Agent(
+        llm=llm,
+        tools=[MemorySearchTool()],
+        memory_coordinator=coordinator,
+    )
+    request = InternalChatRequest(
+        query="Current persistent question",
+        session_id="persistent-chat",
+        is_first_message=False,
+        weight_mode="fast",
+        memory_context=persistent_memory_context(),
+    )
+
+    response = agent.chat(request)
+
+    assert response.status == StatusCode.SUCCESS
+    assert coordinator.prepare.call_count == 1
+    assert agent.last_orchestration is not None
+    assert agent.last_orchestration.execution_profile is not None
+    assert agent.last_orchestration.execution_profile.mode.value == "fast"
+    assert agent.last_orchestration.context_artifact is not None
+    fast_messages = llm.messages_seen[-1]
+    assert "Memory Context follows" in fast_messages[1]["content"]
+    assert fast_messages[2]["content"] == "Earlier assistant answer."
+    assert "Original question: Current persistent question" in fast_messages[-1]["content"]
+
+
+def test_explicit_persistent_fact_recall_bypasses_models_and_tools(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = NoModelCallLLM()
-    agent = Agent(llm=llm, tools=[], memory=memory)
-    agent.audit_service.record = MagicMock()
+    coordinator = MemoryCoordinator(now_ms=lambda: 1000)
+    agent = Agent(llm=llm, tools=[], memory_coordinator=coordinator)
     request = InternalChatRequest(
         query="我之前确认的记忆是什么？",
         session_id="persistent-chat",
@@ -181,7 +248,7 @@ def test_explicit_persistent_fact_recall_bypasses_models_and_agent_audit_storage
                     "id": "fact-1",
                     "category": "GOAL",
                     "value": "完成答辩准备。",
-                    "expires_at": None,
+                    "expires_at": 1001,
                 }
             ]
         ),
@@ -194,14 +261,14 @@ def test_explicit_persistent_fact_recall_bypasses_models_and_agent_audit_storage
     assert response.citations == []
     assert llm.calls == 0
     assert agent.last_run_result is None
-    assert memory.get_messages("persistent-chat") == []
-    agent.audit_service.record.assert_not_called()
+    assert agent.last_orchestration is not None
+    assert agent.last_orchestration.context_artifact is not None
+    assert "完成答辩准备。" in agent.last_orchestration.context_artifact.memory_brief
 
 
-def test_same_session_history_is_injected_but_other_sessions_are_isolated() -> None:
-    memory = InMemoryConversationMemory(max_messages=10)
+def test_repeated_requests_do_not_share_implicit_session_history() -> None:
     llm = InspectingLLM(["第一次回答", "第二次回答", "新会话回答"])
-    agent = Agent(llm=llm, tools=[], memory=memory)
+    agent = Agent(llm=llm, tools=[])
 
     first = agent.chat(ChatRequest(query="第一个问题", session_id="session-a"))
     second = agent.chat(ChatRequest(query="接着说", session_id="session-a"))
@@ -209,17 +276,16 @@ def test_same_session_history_is_injected_but_other_sessions_are_isolated() -> N
 
     assert first.status == second.status == third.status == StatusCode.SUCCESS
     second_messages = llm.messages_seen[1]
-    assert {"role": "user", "content": "第一个问题"} in second_messages
-    assert {"role": "assistant", "content": "第一次回答"} in second_messages
+    assert "第一个问题" not in {message.get("content") for message in second_messages}
+    assert "第一次回答" not in {message.get("content") for message in second_messages}
     assert "第一个问题" not in {
         message.get("content") for message in llm.messages_seen[2]
     }
 
 
-def test_missing_session_id_does_not_read_or_write_memory() -> None:
-    memory = InMemoryConversationMemory()
+def test_missing_memory_context_is_stateless_even_with_session_id() -> None:
     llm = InspectingLLM(["第一次回答", "第二次回答"])
-    agent = Agent(llm=llm, tools=[], memory=memory)
+    agent = Agent(llm=llm, tools=[])
 
     agent.chat(ChatRequest(query="无会话问题"))
     agent.chat(ChatRequest(query="第二个无会话问题"))
@@ -228,13 +294,11 @@ def test_missing_session_id_does_not_read_or_write_memory() -> None:
         message.get("content") != "无会话问题"
         for message in llm.messages_seen[1]
     )
-    assert memory.get_messages("unused-session") == []
 
 
-def test_clarification_question_is_saved_without_calling_llm_or_tools() -> None:
-    memory = InMemoryConversationMemory()
+def test_clarification_question_is_not_saved_to_agent_memory() -> None:
     llm = InspectingLLM([])
-    agent = Agent(llm=llm, tools=[], memory=memory)
+    agent = Agent(llm=llm, tools=[])
     query = "它什么时候更新？"
     plan = QueryPlan(
         original_query=query,
@@ -253,26 +317,29 @@ def test_clarification_question_is_saved_without_calling_llm_or_tools() -> None:
     assert response.answer == ""
     assert response.message == "你指的是哪个文档？"
     assert llm.messages_seen == []
-    assert memory.get_messages("session-clarify") == [
-        {"role": "user", "content": query},
-        {"role": "assistant", "content": "你指的是哪个文档？"},
-    ]
 
 
-def test_query_plan_filters_merge_without_losing_hard_constraints() -> None:
+def test_query_plan_filters_merge_through_chat_orchestration() -> None:
     query = "总结文档"
     plan = QueryPlan(
         original_query=query,
         standalone_query="总结 doc-1",
+        intent=QueryIntent.CASUAL_CHAT,
         filters={"space_key": "RAG", "doc_id": "doc-1"},
     )
     request = ChatRequest(
         query=query,
         filters={"doc_type": "md"},
+        weight_mode="thinking",
+        is_first_message=False,
     )
+    agent = Agent(llm=InspectingLLM(["已收到请求。"]), tools=[])
 
-    resolved = Agent._resolve_query_plan(request, plan)
+    response = agent.chat(request, query_plan=plan)
 
+    assert response.status == StatusCode.SUCCESS
+    assert agent.last_orchestration is not None
+    resolved = agent.last_orchestration.query_plan
     assert resolved.standalone_query == "总结 doc-1"
     assert resolved.filters == {
         "space_key": "RAG",

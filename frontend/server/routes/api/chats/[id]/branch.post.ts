@@ -33,16 +33,30 @@ export default defineHandler(async (event) => {
   }
   let topicId = parentChat.topicId
   if (!topicId) {
-    const [topic] = await db.insert(tables.topics).values({ title: '话题项目', mainChatId: parentChat.id, soulContent: '', evidenceProvenance: authoredProvenance(), weightMode: 'thinking' }).returning()
+    const [topic] = await db.insert(tables.topics).values({
+      title: parentChat.title || '话题项目',
+      mainChatId: parentChat.id,
+      soulContent: `# 话题认知: ${parentChat.title || '分支探讨'}`,
+      evidenceProvenance: authoredProvenance(),
+      consecutiveNoNewDocsCount: 0,
+    }).returning()
     if (!topic) throw new HTTPError({ statusCode: 500, statusMessage: 'topic_create_failed' })
     topicId = topic.id
     await db.insert(tables.topicMembers).values({ topicId, userId, role: 'owner' }).onConflictDoNothing()
     await db.update(tables.chats).set({ topicId }).where(eq(tables.chats.id, parentChat.id))
   }
   const [branchChat] = await db.insert(tables.chats).values({
-    title: '分支对话', userId, visibility: 'private', topicId, isBranch: true, parentChatId: parentChat.id,
+    title: '分支对话',
+    userId,
+    visibility: 'private',
+    topicId,
+    weightMode: parentChat.weightMode || 'fast',
+    isBranch: true,
+    parentChatId: parentChat.id,
     evidenceProvenance: authoredProvenance(),
-    parentMessageId: body.parentMessageId || null, historyRevision: 1, nextMessageSequence: 1,
+    parentMessageId: body.parentMessageId || null,
+    historyRevision: 1,
+    nextMessageSequence: 1,
   }).returning()
   if (!branchChat) throw new HTTPError({ statusCode: 500, statusMessage: 'chat_create_failed' })
   for (const message of copies) await appendMessage(db, { chatId: branchChat.id, role: message.role, parts: message.parts })

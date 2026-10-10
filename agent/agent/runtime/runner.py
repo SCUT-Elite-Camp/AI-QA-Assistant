@@ -1,17 +1,17 @@
 import json
 import logging
-import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextvars import copy_context
 from typing import Any
 
-from agent.answer import AnswerCompletenessChecker, should_accept_repair
-from agent.answer.complexity import answer_complexity_reasons
+from agent.answer import AnswerCompletenessChecker
+from agent.answer.generator import AnswerGenerator, AnswerModelPreference
 from agent.config.settings import settings
 from agent.evidence import EvidenceGate, WikiEvidenceSupplementer
+from agent.exploration.controller import ExplorationController
 from agent.llm.base import BaseLLM
-from agent.prompt.templates import ANSWER_RULES, SYSTEM_ROLE
 from agent.retrieval.corrective import CorrectiveRetrievalPlanner
+from agent.runtime.support import RuntimeSupport
 from agent.runtime.state import (
     AgentRunResult,
     AgentState,
@@ -70,13 +70,21 @@ class AgentRunner:
         answer_completeness_checker: AnswerCompletenessChecker | None = None,
         answer_llm: BaseLLM | None = None,
         fast_answer_llm: BaseLLM | None = None,
+        answer_generator: AnswerGenerator | None = None,
+        exploration_controller: ExplorationController | None = None,
     ) -> None:
         self.llm = llm
         self.registry = registry
         self.audit_service = audit_service
         self.answer_completeness_checker = answer_completeness_checker
+        self.runtime_support = RuntimeSupport(answer_completeness_checker)
         self.answer_llm = answer_llm or llm
         self.fast_answer_llm = fast_answer_llm
+        self.answer_generator = answer_generator or AnswerGenerator(
+            complex_llm=self.answer_llm,
+            fast_llm=self.fast_answer_llm,
+        )
+        self.exploration_controller = exploration_controller or ExplorationController()
         self.max_iterations = (
             max_iterations
             if max_iterations is not None
@@ -110,6 +118,7 @@ class AgentRunner:
         soul_content: str | None = None,
         exploration_mode: str = "auto",
         navigation_scopes: tuple[str, ...] = (),
+        answer_model_preference: AnswerModelPreference = "auto",
     ) -> AgentRunResult:
         """Execute a bounded Agent run.
 
@@ -145,6 +154,7 @@ class AgentRunner:
         state = AgentState(
             trace_id=trace_id,
             query_plan=query_plan,
+            answer_model_preference=answer_model_preference,
             messages=self._build_messages(
                 query_plan,
                 history or [],
@@ -194,8 +204,6 @@ class AgentRunner:
                 if available_tools and retrieval_route is None:
                     available_tools = self._route_entry_schemas(
                         available_tools,
-                        navigation_enabled=navigation_enabled,
-                        force_wiki=(exploration_mode == "force"),
                     )
                 if next_wiki_tool:
                     available_tools = [
@@ -362,7 +370,9 @@ class AgentRunner:
 
             state.messages.append(self._assistant_tool_call_message(response, tool_calls))
 
-            for raw_call in tool_calls:
+            pending_calls = list(tool_calls)
+            while pending_calls:
+                raw_call = pending_calls.pop(0)
                 if policy is not None and len(state.tool_calls) >= policy.max_tool_calls:
                     return self._result(
                         state,
@@ -420,7 +430,6 @@ class AgentRunner:
                     navigation_enabled
                     and not wiki_route_active
                     and tool_name in exploration_tools
-                    and tool_name != "wiki_search"
                 ):
                     state.tool_calls.append(ToolCallRecord(
                         iteration=iteration,
@@ -435,8 +444,8 @@ class AgentRunner:
                         "tool_call_id": call_id,
                         "name": tool_name,
                         "content": (
-                            "Wiki retrieval must start with wiki_search. "
-                            "Choose wiki_search or a Direct retrieval tool."
+                            "Wiki retrieval is started by the coverage controller "
+                            "after accepted Direct evidence. Continue with Direct retrieval."
                         ),
                     })
                     continue
@@ -515,35 +524,10 @@ class AgentRunner:
 
                 if (
                     navigation_enabled
-                    and tool_name == "wiki_search"
-                    and not wiki_route_active
-                ):
-                    retrieval_route = "direct_plus_wiki"
-                    logger.info(
-                        "[RETRIEVAL_ROUTE] trace_id=%s route=%s selected_tool=%s",
-                        trace_id,
-                        retrieval_route,
-                        tool_name,
-                    )
-                    self._prefetch_direct(
-                        state=state,
-                        query_plan=query_plan,
-                        policy=policy,
-                        tool_executor=tool_executor,
-                        schemas=schemas,
-                        trace_id=trace_id,
-                        mode=mode,
-                        top_k=top_k,
-                        navigation_scopes=navigation_scopes,
-                    )
-                    wiki_route_active = True
-
-                if (
-                    navigation_enabled
                     and retrieval_route is None
                     and tool_name in self._DIRECT_ROUTE_TOOLS
                 ):
-                    retrieval_route = "direct_only"
+                    retrieval_route = "direct_pending_coverage"
                     logger.info(
                         "[RETRIEVAL_ROUTE] trace_id=%s route=%s selected_tool=%s",
                         trace_id,
@@ -621,6 +605,29 @@ class AgentRunner:
                             tool_executor=tool_executor,
                             retrieval_attempt=state.retrieval_attempts + 1,
                         )
+                        if (
+                            tool_name == "search_documents"
+                            and query_plan.intent.value == "summarization"
+                            and tool_executor is not None
+                            and evidence
+                            and policy is not None
+                            and "get_document" in policy.candidate_tools
+                        ):
+                            target_doc_id = evidence[0].get("doc_id") or evidence[0].get("document_id")
+                            if target_doc_id:
+                                try:
+                                    doc_result = tool_executor.execute(
+                                        tool_call_id=f"{call_id}-full-doc",
+                                        tool_name="get_document",
+                                        arguments={"doc_id": target_doc_id},
+                                        trace_id=trace_id,
+                                        retrieval_attempt=state.retrieval_attempts + 1,
+                                    )
+                                    if doc_result.success and doc_result.evidence:
+                                        evidence = [item.model_dump() for item in doc_result.evidence]
+                                        observation = self._format_search_observation(evidence)
+                                except Exception as doc_exc:
+                                    logger.warning("[Runner] Auto full-document retrieval failed: %s", doc_exc)
                 except Exception as exc:
                     logger.exception(
                         "[AGENT_TOOL_ERROR] trace_id=%s iteration=%s tool=%s error=%s",
@@ -701,12 +708,34 @@ class AgentRunner:
                     try:
                         if remaining_sources:
                             evidence = list(state.evidence)
+                            corrective_observations = []
+                            tool_budget_exhausted = False
                         else:
-                            evidence, corrective_observations = self._apply_evidence_policy(
-                                query_plan=query_plan, policy=policy, evidence_gate=evidence_gate,
-                                corrective_retrieval=corrective_retrieval, tool_executor=tool_executor,
-                                trace_id=trace_id, state=state, previous_mode=mode, previous_top_k=top_k,
-                                preserve_evidence_order=(tool_name == "wiki_search_evidence" and settings.WIKI_CONTEXT_TOP_K > 0),
+                            (
+                                evidence,
+                                corrective_observations,
+                                tool_budget_exhausted,
+                            ) = self._apply_evidence_policy(
+                                query_plan=query_plan,
+                                policy=policy,
+                                evidence_gate=evidence_gate,
+                                corrective_retrieval=corrective_retrieval,
+                                tool_executor=tool_executor,
+                                trace_id=trace_id,
+                                state=state,
+                                previous_mode=mode,
+                                previous_top_k=top_k,
+                                preserve_evidence_order=(
+                                    tool_name == "wiki_search_evidence"
+                                    and settings.WIKI_CONTEXT_TOP_K > 0
+                                ),
+                            )
+                        if tool_budget_exhausted:
+                            return self._result(
+                                state,
+                                StopReason.POLICY_LIMIT,
+                                message="Agent 已达到当前意图的工具调用预算。",
+                                error_code="max_tool_calls",
                             )
                     except ToolExecutionFailure as exc:
                         return self._result(
@@ -729,6 +758,42 @@ class AgentRunner:
                         )
 
                     state.evidence = list(evidence)
+                    if (
+                        navigation_enabled
+                        and retrieval_route == "direct_pending_coverage"
+                        and tool_name in self._DIRECT_ROUTE_TOOLS
+                    ):
+                        assessment = self.exploration_controller.assess_after_direct(
+                            query_plan,
+                            self._typed_evidence(state.evidence),
+                            exploration_mode=exploration_mode,
+                            wiki_available=any(
+                                schema.get("function", {}).get("name") == "wiki_search"
+                                for schema in schemas
+                                if isinstance(schema, dict)
+                            ),
+                        )
+                        state.coverage_assessments.append(assessment)
+                        if assessment.should_explore:
+                            retrieval_route = "direct_plus_wiki"
+                            wiki_route_active = True
+                            next_wiki_tool = "wiki_search"
+                            wiki_call = self._controller_wiki_search_call(query_plan)
+                            pending_calls.append(wiki_call)
+                            # Keep the controller-started call in the same
+                            # assistant/tool exchange for provider-safe history.
+                            state.messages[-1]["tool_calls"].append(wiki_call)
+                        else:
+                            retrieval_route = "direct_only"
+                        logger.info(
+                            "[EXPLORATION_DECISION] trace_id=%s route=%s reason=%s "
+                            "missing=%s evidence=%s",
+                            trace_id,
+                            retrieval_route,
+                            assessment.reason,
+                            assessment.missing_facets,
+                            assessment.unique_evidence,
+                        )
                     if tool_name == "wiki_search_evidence":
                         observation = self._format_search_observation(state.evidence)
                 elif tool_name in exploration_tools and next_wiki_tool is None:
@@ -736,7 +801,11 @@ class AgentRunner:
                     # that case the Direct prefetch remains usable, but it must
                     # pass the same EvidenceGate before answer generation.
                     try:
-                        evidence, corrective_observations = self._apply_evidence_policy(
+                        (
+                            evidence,
+                            corrective_observations,
+                            tool_budget_exhausted,
+                        ) = self._apply_evidence_policy(
                             query_plan=query_plan,
                             policy=policy,
                             evidence_gate=evidence_gate,
@@ -748,6 +817,13 @@ class AgentRunner:
                             previous_top_k=top_k,
                             preserve_evidence_order=False,
                         )
+                        if tool_budget_exhausted:
+                            return self._result(
+                                state,
+                                StopReason.POLICY_LIMIT,
+                                message="Agent 已达到当前意图的工具调用预算。",
+                                error_code="max_tool_calls",
+                            )
                     except ToolExecutionFailure as exc:
                         return self._result(
                             state,
@@ -796,44 +872,14 @@ class AgentRunner:
         soul_content: str | None = None,
         policy: IntentPolicy | None = None,
     ) -> list[dict[str, Any]]:
-        title_directive = (
-            "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
-            if is_first_message
-            else ""
+        return RuntimeSupport.build_messages(
+            query_plan,
+            history,
+            is_first_message=is_first_message,
+            soul_content=soul_content,
+            policy=policy,
         )
-        soul_directive = (
-            f"\n\n【话题归属认知 (Topic Cognition - Soul.md)】:\n"
-            f"当前对话运行在特定话题空间（Topic Workspace）内。以下是本话题的核心技术认知、领域实体与边界指引。在回答与使用检索工具时，请务必紧密结合此话题背景进行定位：\n"
-            f"{soul_content}\n"
-            if soul_content and soul_content.strip()
-            else ""
-        )
-        system_content = (
-            f"{SYSTEM_ROLE}\n\n"
-            "你可以使用提供的工具获取回答所需的证据。"
-            "工具返回后，基于观察结果给出最终答案；不要编造不存在的证据。\n\n"
-            f"{soul_directive}\n"
-            + (f"Standalone retrieval query: {query_plan.standalone_query}\n\n" if query_plan.standalone_query != query_plan.original_query else "")
-            +
-            f"回答约束：\n{ANSWER_RULES}"
-            f"{AgentRunner._document_tool_guidance(policy)}"
-            f"{title_directive}"
-        )
-        messages: list[dict[str, Any]] = [
-            {"role": "system", "content": system_content}
-        ]
-        for message in history:
-            role = message.get("role")
-            content = message.get("content")
-            if role in {"system", "user", "assistant"} and isinstance(content, str):
-                messages.append({"role": role, "content": content})
-        messages.append(
-            {
-                "role": "user",
-                "content": query_plan.original_query,
-            }
-        )
-        return messages
+
 
     def _tool_schemas(self, policy: IntentPolicy | None = None) -> list[dict[str, Any]]:
         if hasattr(self.registry, "to_openai_schemas"):
@@ -873,17 +919,10 @@ class AgentRunner:
     def _route_entry_schemas(
         cls,
         schemas: list[dict[str, Any]],
-        *,
-        navigation_enabled: bool,
-        force_wiki: bool,
     ) -> list[dict[str, Any]]:
-        allowed = (
-            {"wiki_search"}
-            if navigation_enabled and force_wiki
-            else cls._DIRECT_ROUTE_TOOLS | (
-                {"wiki_search"} if navigation_enabled else set()
-            )
-        )
+        # Establish and gate Direct evidence before ExplorationController can
+        # start the bounded Wiki route.
+        allowed = cls._DIRECT_ROUTE_TOOLS
         return [
             schema
             for schema in schemas
@@ -891,30 +930,26 @@ class AgentRunner:
         ]
 
     @staticmethod
-    def _forced_wiki_route_response(query_plan: QueryPlan) -> dict[str, Any]:
+    def _controller_wiki_search_call(query_plan: QueryPlan) -> dict[str, Any]:
         return {
-            "role": "assistant",
-            "content": None,
-            "tool_calls": [{
-                "id": "forced-wiki-route",
-                "type": "function",
-                "function": {
-                    "name": "wiki_search",
-                    "arguments": json.dumps(
-                        {"query": query_plan.standalone_query},
-                        ensure_ascii=False,
-                    ),
+            "id": "controller-wiki-route",
+            "type": "function",
+            "function": {
+                "name": "wiki_search",
+                "arguments": json.dumps(
+                    {"query": query_plan.standalone_query},
+                    ensure_ascii=False,
+                ),
                 },
-            }],
         }
 
     @staticmethod
     def _route_required_message(*, navigation_enabled: bool) -> str:
         if navigation_enabled:
             return (
-                "This request requires cited Evidence. Before answering, choose "
-                "exactly one retrieval route: call a Direct retrieval tool for "
-                "precise facts, or call wiki_search for Direct + Wiki retrieval."
+                "This request requires cited Evidence. Retrieve Direct evidence "
+                "before answering; the server will start Wiki exploration only "
+                "when its coverage assessment finds a gap."
             )
         return (
             "This request requires cited Evidence. Call an available Direct "
@@ -923,37 +958,7 @@ class AgentRunner:
 
     @staticmethod
     def _document_tool_guidance(policy: IntentPolicy | None) -> str:
-        tools = set(policy.candidate_tools) if policy is not None else set()
-        if "wiki_search" in tools:
-            return (
-                "\n\n检索路由规则：在首次检索前选择一条路由。"
-                "精确事实、数字、代码、指定文档或局部片段查询，选择 Direct "
-                "工具（如 search_documents 或 search_library），不启动 Wiki。"
-                "概念全景、主题关系、跨文档综合或多跳问题，可选择 wiki_search；"
-                "一旦选择 Wiki，服务端会自动同时执行 Direct 分支，不要再手动"
-                "重复调用 Direct。随后按 wiki_search -> wiki_read_page -> "
-                "wiki_read_sources -> wiki_search_evidence 完成导航。Wiki 页面"
-                "和关系元数据仅用于导航；最终结论只能引用原始 Evidence。"
-            )
-        if {"find_documents", "get_document"}.issubset(tools):
-            return (
-                "\n\n工具选择规则：未知 doc_id 时先用 find_documents 定位文档；"
-                "已知 doc_id 且需要通读或摘要时用 get_document。"
-                "get_document 返回 has_more=true 时，按 next_offset 继续分页读取；"
-                "只需查找相关片段时用 search_documents。"
-            )
-        if "find_documents" in tools:
-            return (
-                "\n\n工具选择规则：使用 find_documents 查找或列出文档；"
-                "其结果是文档身份与摘要，不得视为全文。"
-            )
-        if "search_attachments" in tools:
-            return (
-                "\n\n工具选择规则：先用 search_attachments 检索当前请求已授权附件；"
-                "仅当文本/OCR 证据不足且需要理解图片或页面区域时，"
-                "才使用 inspect_attachment。不得自行构造 attachment_id。"
-            )
-        return ""
+        return RuntimeSupport.document_tool_guidance(policy)
 
     def _get_tool(
         self,
@@ -1140,6 +1145,8 @@ class AgentRunner:
                 "wiki_search_evidence",
             }:
                 return self._format_search_observation(evidence), evidence, True
+            if tool_name == "find_documents" and query_plan.intent.value != "document_search":
+                return self._stringify_result(result.data or {}), [], False
             is_retrieval = tool_name in {
                 "find_documents",
                 "get_document",
@@ -1339,46 +1346,20 @@ class AgentRunner:
     ) -> dict[str, Any]:
         """Generate an answer without carrying tool-call history forward."""
 
-        if not state.wiki_evidence_supplements:
-            state.evidence = self._prioritize_evidence_for_answer(
-                state.query_plan.standalone_query or state.query_plan.original_query,
-                state.evidence,
-            )
         grounded = self._verified_structured_answer(state)
         if grounded:
             return {"role": "assistant", "content": grounded}
-        evidence_context = self._format_search_observation(state.evidence)
         context_history = self._history_before_current_query(state)
-        question_context = f"Original question: {state.query_plan.original_query}"
-        if state.query_plan.standalone_query != state.query_plan.original_query:
-            question_context += (
-                f"\nStandalone question: {state.query_plan.standalone_query}"
-            )
-        clean_messages: list[dict[str, Any]] = [
-            {
-                "role": "system",
-                "content": (
-                    f"{SYSTEM_ROLE}\n\n{ANSWER_RULES}\n\n"
-                    "Retrieval is complete. Do not call or describe tools. "
-                    "Answer only from the supplied evidence and include citation markers. "
-                    "Each marker refers to exactly that numbered excerpt, not the whole document. "
-                    "Cite the excerpt containing the fact; another chunk from the same source is insufficient."
-                ),
-            },
-            *context_history,
-            *[m for m in state.messages if m.get("role") == "system" and "禁止继续调用任何工具" in str(m.get("content"))],
-            {
-                "role": "user",
-                "content": (
-                    f"{question_context}\n"
-                    f"Answer style: {state.query_plan.intent.value}\n\n"
-                    "Accepted evidence:\n"
-                    "[AUTHORITATIVE_EVIDENCE version=1]\n"
-                    f"{evidence_context}\n"
-                    "[/AUTHORITATIVE_EVIDENCE]"
-                ),
-            },
-        ]
+        clean_messages, ordered_evidence = self.answer_generator.build_evidence_messages(
+            state.query_plan,
+            state.evidence,
+            context_history,
+            preserve_evidence_order=bool(state.wiki_evidence_supplements),
+        )
+        state.evidence = ordered_evidence
+        stop_msgs = [m for m in state.messages if m.get("role") == "system" and "禁止继续调用任何工具" in str(m.get("content"))]
+        if stop_msgs and len(clean_messages) >= 1:
+            clean_messages = clean_messages[:-1] + stop_msgs + clean_messages[-1:]
         response = self._chat_for_answer(
             state,
             clean_messages,
@@ -1420,35 +1401,13 @@ class AgentRunner:
     ) -> list[dict[str, Any]]:
         """Prefer directly named technical documents without dropping evidence."""
 
-        stopwords = {
-            "which", "what", "how", "does", "the", "and", "from", "into",
-            "with", "that", "this", "field", "module", "answer", "question",
-            "request", "system", "use", "uses", "using", "performs",
-        }
-
-        def tokens(value: str) -> set[str]:
-            expanded = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", value)
-            return {
-                token
-                for token in re.findall(r"[a-z0-9]+", expanded.casefold().replace("_", " "))
-                if len(token) >= 3 and token not in stopwords
-            }
-
-        query_tokens = tokens(query)
-        ranked = []
-        for index, item in enumerate(evidence):
-            title = str(item.get("title") or "")
-            overlap = len(query_tokens & tokens(title))
-            ranked.append((-overlap, index, item))
-        ranked.sort(key=lambda entry: (entry[0], entry[1]))
-        return [item for _, _, item in ranked]
+        return AnswerGenerator._prioritize_evidence(query, evidence)
 
     def _chat_for_answer(
         self,
         state: AgentState,
         messages: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        selected = self._select_answer_llm(state)
         if not re.search(r"[\u4e00-\u9fff]", state.query_plan.original_query):
             instruction = (
                 "The user's question is in English. Write the entire answer in English. "
@@ -1460,34 +1419,23 @@ class AgentRunner:
                 messages[0]["content"] = str(messages[0].get("content", "")) + "\n\n" + instruction
             else:
                 messages.insert(0, {"role": "system", "content": instruction})
-        try:
-            return selected.chat(messages, tools=None)
-        except Exception as exc:
-            if self.fast_answer_llm is None or selected is not self.fast_answer_llm:
-                raise
-            logger.warning(
-                "[ANSWER_MODEL_FALLBACK] trace_id=%s error=%s",
-                state.trace_id,
-                exc.__class__.__name__,
-            )
-            return self.answer_llm.chat(messages, tools=None)
+        return self.answer_generator.chat(
+            messages,
+            query_plan=state.query_plan,
+            retrieval_attempts=state.retrieval_attempts,
+            trace_id=state.trace_id,
+            preference=state.answer_model_preference,  # type: ignore[arg-type]
+        )
 
     def _select_answer_llm(self, state: AgentState) -> BaseLLM:
-        if self.fast_answer_llm is None:
-            return self.answer_llm
-        plan = state.query_plan
-        complexity_reasons = answer_complexity_reasons(
-            plan,
+        from agent.answer.complexity import answer_complexity_reasons
+
+        if self.fast_answer_llm is None or answer_complexity_reasons(
+            state.query_plan,
             retrieval_attempts=state.retrieval_attempts,
-        )
-        selected = self.answer_llm if complexity_reasons else self.fast_answer_llm
-        logger.info(
-            "[ANSWER_MODEL_ROUTE] trace_id=%s route=%s reasons=%s",
-            state.trace_id,
-            "complex" if complexity_reasons else "fast",
-            complexity_reasons or ["single_target"],
-        )
-        return selected
+        ):
+            return self.answer_llm
+        return self.fast_answer_llm
 
     def _apply_evidence_policy(
         self,
@@ -1502,14 +1450,14 @@ class AgentRunner:
         previous_mode: str,
         previous_top_k: int,
         preserve_evidence_order: bool,
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
         """Gate retrieval evidence and perform at most one corrective pass."""
 
         current = self._typed_evidence(state.evidence)
         if policy is None or evidence_gate is None:
             if not state.evidence:
                 raise NoRelevantContext("No relevant context passed the Agent evidence threshold.")
-            return state.evidence or [], []
+            return state.evidence or [], [], False
 
         gate_result = evidence_gate.evaluate(
             query_plan,
@@ -1517,13 +1465,13 @@ class AgentRunner:
             current,
             retrieval_attempt=state.retrieval_attempts,
         )
-        self._record_gate_diagnostics(state, gate_result)
+        self.runtime_support.record_evidence_gate(state, gate_result)
         if gate_result.accepted:
             return self._accepted_evidence(
                 current,
                 gate_result.evidence,
                 preserve_order=preserve_evidence_order,
-            ), []
+            ), [], False
 
         if (
             "search_documents" not in policy.candidate_tools
@@ -1543,10 +1491,11 @@ class AgentRunner:
             previous_top_k=previous_top_k,
         )
         if not requests:
-            return [], []
+            return [], [], False
 
         correction_messages: list[dict[str, Any]] = []
         corrected = list(current)
+        base_call_id = state.tool_calls[-1].tool_call_id
         direct_corrected: list[Evidence] = []
         if preserve_evidence_order:
             supplement_keys = {
@@ -1558,7 +1507,9 @@ class AgentRunner:
                 if evidence_gate.evidence_key(item) not in supplement_keys
             ]
         for index, request in enumerate(requests, start=1):
-            call_id = f"corrective-{state.tool_calls[-1].tool_call_id}-{index}"
+            if len(state.tool_calls) >= policy.max_tool_calls:
+                return [], [], True
+            call_id = f"corrective-{base_call_id}-{index}"
             arguments = {
                 "query": request.query,
                 "top_k": request.top_k,
@@ -1571,6 +1522,16 @@ class AgentRunner:
                 arguments=arguments,
                 trace_id=trace_id,
                 retrieval_attempt=request.retrieval_attempt,
+            )
+            state.tool_calls.append(
+                ToolCallRecord(
+                    iteration=state.iteration,
+                    tool_call_id=call_id,
+                    tool_name="search_documents",
+                    arguments=arguments,
+                    success=result.success,
+                    error_code=result.error_code,
+                )
             )
             if not result.success:
                 raise ToolExecutionFailure(
@@ -1617,14 +1578,14 @@ class AgentRunner:
             corrected,
             retrieval_attempt=state.retrieval_attempts,
         )
-        self._record_gate_diagnostics(state, second_gate)
+        self.runtime_support.record_evidence_gate(state, second_gate)
         if not second_gate.accepted:
             raise NoRelevantContext(self._insufficient_evidence_message(second_gate))
         return self._accepted_evidence(
             corrected,
             second_gate.evidence,
             preserve_order=preserve_evidence_order,
-        ), correction_messages
+        ), correction_messages, False
 
     @staticmethod
     def _accepted_evidence(
@@ -1643,136 +1604,8 @@ class AgentRunner:
         ]
 
     @staticmethod
-    def _record_gate_diagnostics(state: AgentState, gate_result) -> None:
-        state.evidence_gate_reason = gate_result.reason
-        state.covered_evidence_targets = list(gate_result.covered_targets)
-        state.missing_evidence_targets = list(gate_result.missing_targets)
-        state.eligible_evidence_count = gate_result.eligible_evidence_count
-        state.rejected_evidence_count = gate_result.rejected_evidence_count
-        logger.info(
-            "[EVIDENCE_GATE] trace_id=%s accepted=%s reason=%s candidates=%s "
-            "eligible=%s rejected=%s covered=%s missing=%s attempt=%s",
-            state.trace_id,
-            gate_result.accepted,
-            gate_result.reason,
-            gate_result.candidate_evidence_count,
-            gate_result.eligible_evidence_count,
-            gate_result.rejected_evidence_count,
-            gate_result.covered_targets,
-            gate_result.missing_targets,
-            gate_result.retrieval_attempt,
-        )
-
-    @staticmethod
     def _insufficient_evidence_message(gate_result) -> str:
-        missing = ", ".join(gate_result.missing_targets) or "unspecified evidence"
-        return (
-            "Evidence remained insufficient after bounded retrieval "
-            f"({gate_result.reason}); missing: {missing}."
-        )
-
-    def _prefetch_direct(
-        self,
-        *,
-        state: AgentState,
-        query_plan: QueryPlan,
-        policy: IntentPolicy,
-        tool_executor: ToolExecutor,
-        schemas: list[dict[str, Any]],
-        trace_id: str,
-        mode: str,
-        top_k: int,
-        navigation_scopes: tuple[str, ...],
-    ) -> None:
-        """Run Direct retrieval after the Agent selects the Wiki route."""
-        available = {
-            schema.get("function", {}).get("name", "")
-            for schema in schemas
-            if isinstance(schema, dict)
-        }
-        direct_tools = [
-            name
-            for name in ("search_documents", "search_library")
-            if name in available
-            and name in policy.candidate_tools
-            and (
-                (name == "search_documents" and "enterprise" in navigation_scopes)
-                or (name == "search_library" and "personal" in navigation_scopes)
-            )
-        ]
-        for index, tool_name in enumerate(direct_tools, 1):
-            arguments: dict[str, Any] = {
-                "query": query_plan.standalone_query,
-                "top_k": top_k,
-                "mode": mode,
-            }
-            if tool_name == "search_documents":
-                arguments["filters"] = dict(query_plan.filters)
-                arguments["navigation_mode"] = query_plan.navigation_mode
-            elif query_plan.filters.get("doc_ids"):
-                arguments["doc_ids"] = list(query_plan.filters["doc_ids"])
-
-            call_id = f"initial-direct-{index}"
-            retrieval_attempt = state.retrieval_attempts + 1
-            if (
-                tool_name == "search_documents"
-                and query_plan.intent.value == "comparison"
-                and len(query_plan.sub_queries) >= 2
-            ):
-                try:
-                    _, parallel_evidence, _ = (
-                        self._execute_parallel_comparison_retrieval(
-                            query_plan=query_plan,
-                            arguments=arguments,
-                            trace_id=trace_id,
-                            tool_call_id=call_id,
-                            tool_executor=tool_executor,
-                            retrieval_attempt=retrieval_attempt,
-                        )
-                    )
-                    success = True
-                    error_code = ""
-                    evidence = parallel_evidence
-                except ToolExecutionFailure as exc:
-                    success = False
-                    error_code = exc.error_code
-                    evidence = []
-            else:
-                result = tool_executor.execute(
-                    tool_call_id=call_id,
-                    tool_name=tool_name,
-                    arguments=arguments,
-                    trace_id=trace_id,
-                    retrieval_attempt=retrieval_attempt,
-                )
-                success = result.success
-                error_code = result.error_code
-                evidence = [item.model_dump() for item in result.evidence]
-            state.tool_calls.append(ToolCallRecord(
-                iteration=0,
-                tool_call_id=call_id,
-                tool_name=tool_name,
-                arguments=arguments,
-                success=success,
-                error_code=error_code,
-            ))
-            if success:
-                state.retrieval_attempts += 1
-                state.evidence = self._merge_evidence(
-                    state.evidence,
-                    evidence,
-                )[:settings.EXPLORATION_MAX_EVIDENCE]
-
-        observation = self._format_search_observation(state.evidence)
-        state.messages.append({
-            "role": "system",
-            "content": (
-                "The Agent selected Direct + Wiki retrieval. The server also "
-                "completed the Direct branch. "
-                "Only original Evidence may support claims and citations; Wiki "
-                "pages are navigation metadata.\n\n" + observation
-            ),
-        })
+        return RuntimeSupport.insufficient_evidence_message(gate_result)
 
     @staticmethod
     def _next_wiki_tool(tool_name: str, observation: str) -> str | None:
@@ -1961,41 +1794,12 @@ class AgentRunner:
         message: str = "",
         error_code: str = "",
     ) -> AgentRunResult:
-        state.stop_reason = stop_reason
-        logger.info(
-            "[AGENT_STOP] trace_id=%s stop_reason=%s iterations=%s "
-            "tool_calls=%s retrieval_attempts=%s error_code=%s",
-            state.trace_id,
+        return RuntimeSupport.result(
+            state,
             stop_reason,
-            state.iteration,
-            len(state.tool_calls),
-            state.retrieval_attempts,
-            error_code or "-",
-        )
-        return AgentRunResult(
-            stop_reason=stop_reason,
             answer=answer,
             message=message,
-            iterations=state.iteration,
-            retrieval_attempts=state.retrieval_attempts,
-            tool_calls=state.tool_calls,
-            evidence=state.evidence,
-            coverage_assessments=state.coverage_assessments,
-            exploration_rounds=state.exploration_rounds,
-            messages=state.messages,
             error_code=error_code,
-            evidence_gate_reason=state.evidence_gate_reason,
-            covered_evidence_targets=state.covered_evidence_targets,
-            missing_evidence_targets=state.missing_evidence_targets,
-            eligible_evidence_count=state.eligible_evidence_count,
-            rejected_evidence_count=state.rejected_evidence_count,
-            answer_completeness_checked=state.answer_completeness_checked,
-            answer_complete=state.answer_complete,
-            missing_answer_aspects=state.missing_answer_aspects,
-            missing_critical_facts=state.missing_critical_facts,
-            answer_repair_attempted=state.answer_repair_attempted,
-            answer_repair_rolled_back=state.answer_repair_rolled_back,
-            answer_repair_guard_reason=state.answer_repair_guard_reason,
         )
 
     def _check_and_repair_answer(
@@ -2008,58 +1812,8 @@ class AgentRunner:
         structured = self._verified_structured_answer(state)
         if structured:
             return structured
-        checker = self.answer_completeness_checker
-        if checker is None or policy is None or not policy.requires_citations:
-            return answer
-        if not state.evidence:
-            logger.info(
-                "[ANSWER_COMPLETENESS] trace_id=%s skipped=no_accepted_evidence",
-                state.trace_id,
-            )
-            state.answer_completeness_checked = False
-            return answer
-
-        try:
-            typed_evidence = [Evidence.model_validate(item) for item in state.evidence]
-            result = checker.check(state.query_plan, answer, typed_evidence)
-            state.answer_completeness_checked = result.check_performed
-            state.answer_complete = result.complete
-            state.missing_answer_aspects = result.missing_aspects
-            state.missing_critical_facts = result.missing_critical_facts
-            logger.info(
-                "[ANSWER_COMPLETENESS] trace_id=%s complete=%s missing_aspects=%s "
-                "missing_critical_facts=%s coverage=%s",
-                state.trace_id,
-                result.complete,
-                result.missing_aspects,
-                result.missing_critical_facts,
-                result.coverage,
-            )
-            if result.complete:
-                return answer
-
-            state.answer_repair_attempted = True
-            repaired = checker.repair(state.query_plan, answer, typed_evidence, result)
-            targets = result.required_targets or [
-                *result.missing_aspects,
-                *result.missing_critical_facts,
-            ]
-            accepted, reason = should_accept_repair(answer, repaired, targets)
-            state.answer_repair_guard_reason = reason
-            if not accepted:
-                state.answer_repair_rolled_back = True
-                logger.info(
-                    "[ANSWER_COMPLETENESS] trace_id=%s repair_rolled_back=%s",
-                    state.trace_id,
-                    reason,
-                )
-                return answer
-            state.answer_complete = True
-            return repaired
-        except Exception as exc:
-            logger.warning(
-                "[ANSWER_COMPLETENESS] trace_id=%s check_failed=%s; preserving original answer",
-                state.trace_id,
-                exc,
-            )
-            return answer
+        return self.runtime_support.check_and_repair_answer(
+            state=state,
+            policy=policy,
+            answer=answer,
+        )

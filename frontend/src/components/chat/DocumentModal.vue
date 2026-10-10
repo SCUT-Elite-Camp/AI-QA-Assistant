@@ -22,7 +22,7 @@ const selectionPopoverPos = ref<{ x: number; y: number } | null>(null)
 async function fetchDoc() {
   if (props.docContent) {
     doc.value = {
-      title: props.docTitle || '文档详情',
+      title: props.docTitle || 'Document Details',
       content: props.docContent
     }
     return
@@ -30,8 +30,8 @@ async function fetchDoc() {
 
   if (!props.docId) {
     doc.value = {
-      title: props.docTitle || '文档详情',
-      content: props.targetSnippet || '暂无详细内容'
+      title: props.docTitle || 'Document Details',
+      content: props.targetSnippet || 'No detailed content available'
     }
     return
   }
@@ -44,14 +44,14 @@ async function fetchDoc() {
       if (props.docTitle) doc.value.title = props.docTitle
     } else {
       doc.value = {
-        title: props.docTitle || '文档详情',
-        content: props.targetSnippet || '暂无详细内容'
+        title: props.docTitle || 'Document Details',
+        content: props.targetSnippet || 'No detailed content available'
       }
     }
   } catch {
     doc.value = {
-      title: props.docTitle || '文档详情',
-      content: props.targetSnippet || '暂无详细内容'
+      title: props.docTitle || 'Document Details',
+      content: props.targetSnippet || 'No detailed content available'
     }
   } finally {
     loading.value = false

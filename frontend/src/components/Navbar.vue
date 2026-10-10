@@ -10,25 +10,18 @@
     <template #right>
       <slot />
 
+      <UButton
+        to="/admin"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-shield-check"
+        title="Admin Console"
+        aria-label="Admin Panel"
+      />
+
       <UColorModeButton />
 
-      <UButton
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-library"
-        to="/library"
-        aria-label="My Library"
-      />
-
       <slot name="right-end" />
-
-      <UButton
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-library"
-        to="/library"
-        aria-label="My Library"
-      />
 
       <UButton
         color="neutral"
