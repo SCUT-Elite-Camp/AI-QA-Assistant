@@ -24,14 +24,14 @@ onMounted(() => {
     <template #header>
       <div class="flex items-center gap-3 px-4 py-3 border-b border-default/50">
         <UIcon name="i-lucide-star" class="w-5 h-5 text-amber-400" />
-        <h1 class="text-lg font-semibold text-highlighted">Favorites</h1>
+        <h1 class="page-title text-lg text-highlighted">收藏</h1>
         <span class="text-xs text-muted bg-accented/60 px-2 py-0.5 rounded-full">
-          {{ favoriteChats.length }} saved
+          {{ favoriteChats.length }}
         </span>
         <div class="ms-auto w-64">
           <UInput
             v-model="searchQuery"
-            placeholder="Search favorites..."
+            placeholder="搜索收藏…"
             icon="i-lucide-search"
             size="sm"
             variant="subtle"
@@ -57,11 +57,11 @@ onMounted(() => {
             <UIcon name="i-lucide-star" class="w-8 h-8 text-amber-400" />
           </div>
           <div>
-            <p class="text-lg font-semibold text-highlighted">No favorites yet</p>
-            <p class="text-sm text-muted mt-1">Star ★ any message in a conversation to save it here</p>
+            <p class="page-title text-lg text-highlighted">还没有收藏</p>
+            <p class="text-sm text-muted mt-1">在对话里给回答加星，就会出现在这里</p>
           </div>
           <UButton
-            label="Go to chats"
+            label="去提问"
             icon="i-lucide-message-circle"
             color="neutral"
             variant="outline"
@@ -77,7 +77,7 @@ onMounted(() => {
           class="flex flex-col items-center gap-3 py-16 text-center"
         >
           <UIcon name="i-lucide-search-x" class="w-8 h-8 text-muted" />
-          <p class="text-sm text-muted">No results for "<span class="text-highlighted">{{ searchQuery }}</span>"</p>
+          <p class="text-sm text-muted">没有与「<span class="text-highlighted">{{ searchQuery }}</span>」匹配的收藏</p>
         </div>
 
         <!-- Favorites Grid -->
@@ -85,12 +85,9 @@ onMounted(() => {
           <div
             v-for="chat in filtered"
             :key="chat.id"
-            class="group relative rounded-2xl border border-default/40 bg-elevated/60 hover:bg-elevated hover:border-amber-400/40 hover:shadow-lg hover:shadow-amber-400/5 transition-all duration-200 cursor-pointer overflow-hidden"
+            class="group relative rounded-2xl bg-elevated/50 hover:bg-elevated shadow-[inset_0_0_0_1px_var(--ui-border)] transition-colors duration-200 cursor-pointer overflow-hidden"
             @click="router.push(chat.to)"
           >
-            <!-- Top accent bar -->
-            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400/0 via-amber-400/60 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-
             <div class="p-4 flex flex-col gap-3">
               <!-- Header -->
               <div class="flex items-start gap-3">
@@ -102,14 +99,14 @@ onMounted(() => {
                     {{ chat.label }}
                   </p>
                   <p v-if="chat.lastFavoritedAt" class="text-xs text-muted mt-0.5">
-                    {{ new Date(chat.lastFavoritedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+                    {{ new Date(chat.lastFavoritedAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) }}
                   </p>
                 </div>
               </div>
 
               <!-- Footer -->
               <div class="flex items-center justify-between pt-1 border-t border-default/30">
-                <span class="text-xs text-muted">Favorited conversation</span>
+                <span class="text-xs text-muted">收藏的对话</span>
                 <UIcon
                   name="i-lucide-arrow-right"
                   class="w-3.5 h-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"

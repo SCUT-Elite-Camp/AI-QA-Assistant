@@ -164,7 +164,7 @@ async function devLogin() {
       <UContainer class="flex-1 py-8 max-w-3xl">
         <div class="flex items-center justify-between mb-8">
           <div>
-            <h1 class="text-2xl font-bold text-highlighted">文件管理</h1>
+            <h1 class="page-title text-2xl text-highlighted">文件管理</h1>
             <p class="text-dimmed mt-1">上传、查看和管理您的文件。</p>
           </div>
           <div>

@@ -42,13 +42,9 @@ const router = useRouter()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  let timeGreeting = 'Good evening'
-  if (hour < 12) timeGreeting = 'Good morning'
-  else if (hour < 18) timeGreeting = 'Good afternoon'
-
+  const timeGreeting = hour < 11 ? '早上好' : hour < 14 ? '中午好' : hour < 18 ? '下午好' : '晚上好'
   const name = user.value?.name?.split(' ')[0] || user.value?.username
-
-  return name ? `${timeGreeting}, ${name}` : timeGreeting
+  return name ? `${timeGreeting}，${name}` : timeGreeting
 })
 
 async function createChat(prompt: string) {
@@ -94,14 +90,31 @@ function onSubmit() {
   createChat(text)
 }
 
-const quickChats = [
-  { label: 'Introduce yourself', icon: 'i-lucide-bot' },
-  { label: "What's the weather today?", icon: 'i-lucide-sun' },
-  { label: 'Help me analyze sales data', icon: 'i-lucide-line-chart' },
-  { label: 'What is a vector database?', icon: 'i-lucide-database' },
-  { label: 'Write a Vue 3 component example', icon: 'i-logos-vue' },
-  { label: 'How to optimize RAG retrieval?', icon: 'i-lucide-search' },
-  { label: 'Explain the Transformer architecture', icon: 'i-lucide-brain' },
+const starters = [
+  {
+    title: '先认识一下',
+    hint: '这个助手能基于知识库做什么',
+    icon: 'i-lucide-sparkles',
+    prompt: '介绍一下你自己，以及你能基于知识库回答哪些问题'
+  },
+  {
+    title: '把检索调准',
+    hint: '更深或更广，该怎么选',
+    icon: 'i-lucide-scan-search',
+    prompt: '如何优化 RAG 检索？更深和更广的加权该怎么选'
+  },
+  {
+    title: '看一份数据',
+    hint: '把数字讲成值得注意的变化',
+    icon: 'i-lucide-chart-line',
+    prompt: '帮我分析一组销售数据，并指出最值得关注的变化'
+  },
+  {
+    title: '讲清一个概念',
+    hint: '向量库和 Transformer',
+    icon: 'i-lucide-book-open',
+    prompt: '用通俗的方式解释向量数据库和 Transformer 分别解决什么问题'
+  }
 ]
 
 const deepResearchMode = ref(false)
@@ -118,7 +131,7 @@ const plusMenuItems = computed(() => [[
     onSelect: () => { useKnowledgeBase.value = !useKnowledgeBase.value }
   },
   {
-    label: deepResearchMode.value ? 'Deep Research: ON' : 'Deep Research',
+    label: deepResearchMode.value ? '深度检索：开' : '深度检索',
     icon: 'i-lucide-telescope',
     onSelect: () => { deepResearchMode.value = !deepResearchMode.value }
   }
@@ -136,18 +149,23 @@ const plusMenuItems = computed(() => [[
     </template>
 
     <template #body>
-      <UContainer class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
-        <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-          {{ greeting }}
-        </h1>
+      <UContainer class="flex-1 flex flex-col justify-center gap-6 max-w-2xl w-full py-16">
+        <div class="space-y-2">
+          <h1 class="display-title">
+            {{ greeting }}
+          </h1>
+          <p class="home-lead">
+            有什么想从知识库里弄清楚的？回答会带上来源。
+          </p>
+        </div>
 
         <UChatPrompt
           v-model="input"
           :status="loading ? 'streaming' : 'ready'"
-          class="[view-transition-name:chat-prompt] rounded-2xl shadow-md"
+          class="composer [view-transition-name:chat-prompt]"
           variant="subtle"
           :ui="{ base: 'px-1.5' }"
-          placeholder="Ask me anything..."
+          placeholder="问一个问题…"
           @submit="onSubmit"
         >
           <template #footer>
@@ -157,21 +175,19 @@ const plusMenuItems = computed(() => [[
               :disabled="loading"
               @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
             />
-            <!-- + Menu: Attachments / Knowledge Base / Deep Research -->
             <UDropdownMenu :items="plusMenuItems" :content="{ align: 'start' }">
               <UButton
                 color="neutral"
                 variant="ghost"
                 size="sm"
                 icon="i-lucide-plus"
-                :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-emerald-400 rotate-45' : 'text-zinc-400 hover:text-zinc-100']"
+                :class="['rounded-full cursor-pointer transition-transform', deepResearchMode ? 'text-primary rotate-45' : 'text-muted hover:text-highlighted']"
               />
             </UDropdownMenu>
 
-            <span v-if="useKnowledgeBase" class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库检索</span>
-            <span v-if="deepResearchMode" class="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Deep Research</span>
+            <span v-if="useKnowledgeBase" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">企业知识库</span>
+            <span v-if="deepResearchMode" class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">深度检索</span>
 
-            <!-- Right: WeightMode + Submit -->
             <div class="ms-auto flex items-center gap-1">
               <WeightModeSelect v-model="currentWeightMode" />
               <UChatPromptSubmit color="neutral" size="sm" class="cursor-pointer" />
@@ -179,18 +195,20 @@ const plusMenuItems = computed(() => [[
           </template>
         </UChatPrompt>
 
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            v-for="quickChat in quickChats"
-            :key="quickChat.label"
-            :icon="quickChat.icon"
-            :label="quickChat.label"
-            size="sm"
-            color="neutral"
-            variant="outline"
-            class="rounded-full"
-            @click="createChat(quickChat.label)"
-          />
+        <div class="starter-grid">
+          <button
+            v-for="starter in starters"
+            :key="starter.title"
+            type="button"
+            class="starter-card"
+            @click="createChat(starter.prompt)"
+          >
+            <UIcon :name="starter.icon" class="size-4 mt-0.5 text-muted shrink-0" />
+            <span>
+              <span class="starter-title">{{ starter.title }}</span>
+              <span class="starter-hint">{{ starter.hint }}</span>
+            </span>
+          </button>
         </div>
       </UContainer>
     </template>

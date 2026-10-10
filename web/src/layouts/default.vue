@@ -186,7 +186,7 @@ function getChatActions(item: { id: string, label: string, topicId?: string | nu
   const isTopicChat = !!item.topicId
   const topicMenuItem = isTopicChat
     ? {
-        label: 'Remove from Topic',
+        label: '移出话题',
         icon: 'i-heroicons-folder-minus',
         onSelect: async () => {
           await addChatToTopic(item.id, null)
@@ -194,7 +194,7 @@ function getChatActions(item: { id: string, label: string, topicId?: string | nu
         }
       }
     : {
-        label: 'Add to Topic',
+        label: '加入话题',
         icon: 'i-heroicons-folder-plus',
         onSelect: () => openSelectTopicModal(item.id)
       }
@@ -202,7 +202,7 @@ function getChatActions(item: { id: string, label: string, topicId?: string | nu
   return [[
     topicMenuItem,
     {
-      label: 'Topic',
+      label: '新建话题',
       icon: 'i-heroicons-sparkles',
       onSelect: async () => {
         const topic = await createTopicForChat(item.id)
@@ -214,13 +214,13 @@ function getChatActions(item: { id: string, label: string, topicId?: string | nu
       }
     },
     {
-      label: 'Rename',
+      label: '重命名',
       icon: 'i-lucide-pencil',
       onSelect: () => renameChat(item.id, item.label === 'Untitled' ? '' : item.label)
     }
   ], [
     {
-      label: 'Delete',
+      label: '删除',
       icon: 'i-lucide-trash',
       color: 'error' as const,
       onSelect: () => deleteChat(item.id)
@@ -246,15 +246,20 @@ defineShortcuts({
       :min-size="12"
       collapsible
       resizable
-      class="border-r-0 py-4"
+      class="app-sidebar border-e border-default/70 py-3"
     >
       <template #header="{ collapsed }">
         <ULink
           v-if="!collapsed"
           to="/"
-          class="flex items-center gap-0.5"
+          class="flex items-center gap-2 min-w-0"
         >
-          <span class="text-xl font-bold text-highlighted">Chat</span>
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M6 7.5h12M6 12h8M6 16.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="text-[15px] font-medium tracking-tight text-highlighted">问答</span>
         </ULink>
 
         <UDashboardSidebarCollapse class="ms-auto" />
@@ -263,21 +268,21 @@ defineShortcuts({
       <template #default="{ collapsed }">
         <UNavigationMenu
           :items="[{
-            label: 'New chat',
+            label: '新对话',
             to: '/',
             kbds: ['meta', 'o'],
             icon: 'i-lucide-circle-plus'
           }, {
-            label: 'Search',
+            label: '搜索',
             icon: 'i-lucide-search',
             kbds: ['meta', 'k'],
             onSelect: () => { searchOpen = true }
           }, {
-            label: 'Topics',
+            label: '话题',
             to: '/topics',
             icon: 'i-heroicons-squares-2x2'
           }, {
-            label: 'Favorites',
+            label: '收藏',
             to: '/favorites',
             icon: 'i-lucide-star'
           }]"
@@ -306,7 +311,7 @@ defineShortcuts({
 
           <!-- Topic Groups (collapsible & drop targets) -->
           <template v-if="topics.length">
-            <p class="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 pt-3 pb-1">Topics</p>
+            <p class="text-[11px] font-medium text-muted tracking-wide px-1.5 pt-3 pb-1">话题</p>
             <div v-for="topic in topics" :key="topic.id" class="space-y-0.5">
               <!-- Topic header row (Drop target for dragging chats) -->
               <div
@@ -323,7 +328,7 @@ defineShortcuts({
                   class="w-3.5 h-3.5 text-muted shrink-0 transition-transform"
                 />
                 <span class="flex-1 truncate font-medium text-highlighted text-xs">
-                  {{ topic.title || 'Untitled Topic' }}
+                  {{ topic.title || '未命名话题' }}
                 </span>
 
                 <!-- "+" button: add chat to this topic -->
@@ -369,8 +374,8 @@ defineShortcuts({
                   </div>
                 </div>
                 <!-- Empty state for topic -->
-                <p v-if="!getTopicChats(topic.id).length" class="ml-5 text-[11px] text-muted px-2 py-1 italic">
-                  No chats
+                <p v-if="!getTopicChats(topic.id).length" class="ml-5 text-[11px] text-muted px-2 py-1">
+                  还没有对话
                 </p>
               </template>
             </div>
@@ -379,13 +384,13 @@ defineShortcuts({
           <!-- Standalone Chats (no topic, Draggable & Drop target to remove from topic) -->
           <template v-if="standaloneChats.length">
             <p
-              class="text-[11px] font-semibold text-muted uppercase tracking-wider px-1.5 pt-3 pb-1 rounded-lg transition-all"
+              class="text-[11px] font-medium text-muted tracking-wide px-1.5 pt-3 pb-1 rounded-lg transition-all"
               :class="{ 'ring-2 ring-emerald-500 bg-emerald-500/10 text-emerald-400': dragOverStandalone }"
               @dragover.prevent="handleDragOverStandalone($event)"
               @dragleave="handleDragLeaveStandalone($event)"
               @drop.prevent="handleDropOnStandalone($event)"
             >
-              Chats
+              对话
             </p>
             <div
               v-for="chat in standaloneChats"
@@ -428,7 +433,7 @@ defineShortcuts({
             icon="i-lucide-layout-dashboard"
             color="neutral"
             variant="none"
-            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-emerald-400 hover:bg-zinc-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            class="w-10 h-10 rounded-full flex items-center justify-center bg-elevated text-muted hover:text-highlighted hover:bg-accented transition-all cursor-pointer active:scale-95 shrink-0"
             aria-label="Dashboard"
             :ui="{ leadingIcon: 'w-5 h-5' }"
             @click="openDashboard"
@@ -439,7 +444,7 @@ defineShortcuts({
             icon="i-lucide-settings"
             color="neutral"
             variant="none"
-            class="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-sky-400 hover:bg-zinc-800 hover:border-sky-500/50 transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+            class="w-10 h-10 rounded-full flex items-center justify-center bg-elevated text-muted hover:text-highlighted hover:bg-accented transition-all cursor-pointer active:scale-95 shrink-0"
             aria-label="Settings"
             :ui="{ leadingIcon: 'w-5 h-5' }"
             @click="showSettingsModal = true"
@@ -450,18 +455,18 @@ defineShortcuts({
 
     <UDashboardSearch
       v-model:open="searchOpen"
-      placeholder="Search chats..."
+      placeholder="搜索对话…"
       :groups="[{
         id: 'links',
         items: [{
-          label: 'New chat',
+          label: '新对话',
           to: '/',
           icon: 'i-lucide-circle-plus'
         }]
       }, ...searchGroups]"
     />
 
-    <div class="flex-1 flex m-4 lg:ml-0 rounded-lg ring ring-default bg-default/75 shadow min-w-0 overflow-hidden">
+    <div class="flex-1 flex min-w-0 overflow-hidden bg-default">
       <RouterView :key="route.path" />
     </div>
 
