@@ -93,11 +93,11 @@ async function createChat(prompt: string) {
         exploration_mode: 'auto',
       }
     })
-    await fetchChats()
     if (chat?.id) {
       input.value = ''
       attachmentTray.value?.resetAfterSend()
-      router.push(`/chat/${chat.id}?mode=${chosenMode}`)
+      void fetchChats()
+      await router.push(`/chat/${chat.id}?mode=${chosenMode}`)
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to create chat'

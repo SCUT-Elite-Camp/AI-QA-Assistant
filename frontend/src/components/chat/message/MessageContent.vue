@@ -63,6 +63,21 @@ const hasTextContent = computed(() => {
   return otherParts.value.some(part => isTextUIPart(part) && (part.text || '').trim().length > 0)
 })
 
+interface AttachmentPartData {
+  attachment_id?: string
+  filename?: string
+  mime_type?: string
+  status?: string
+  accepted_review?: boolean
+}
+
+const userAttachments = computed<AttachmentPartData[]>(() => {
+  if (props.message.role !== 'user' || !Array.isArray(props.message.parts)) return []
+  return (props.message.parts as any[])
+    .filter(part => part && typeof part === 'object' && part.type === 'data-attachment' && part.data)
+    .map(part => part.data as AttachmentPartData)
+})
+
 /** Transform [1] or [1, 2] markers into <cite-mark index="1"></cite-mark> components */
 function formatMarkdownWithCitations(markdown: string): string {
   if (!markdown) return ''
@@ -97,6 +112,28 @@ async function setCitationOpen(open: boolean) {
 <template>
   <!-- User Message -->
   <template v-if="message.role === 'user'">
+    <!-- Attached Files (if any) -->
+    <div
+      v-if="userAttachments.length"
+      class="flex flex-wrap gap-2 mb-2 w-full"
+    >
+      <div
+        v-for="att in userAttachments"
+        :key="att.attachment_id || att.filename"
+        class="inline-flex items-center gap-2 max-w-xs rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm px-3 py-1.5 text-xs shadow-xs"
+      >
+        <UIcon
+          :name="att.mime_type?.startsWith('image/') ? 'i-lucide-image' : 'i-lucide-file-text'"
+          class="w-4 h-4 shrink-0 text-primary"
+        />
+        <div class="flex flex-col min-w-0">
+          <span class="truncate font-medium text-zinc-800 dark:text-zinc-200" :title="att.filename">
+            {{ att.filename }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <template v-for="(part, index) in getMergedParts(message.parts)" :key="`${message.id}-${part.type}-${index}`">
       <ChatMessageEdit
         v-if="editing && isTextUIPart(part)"
