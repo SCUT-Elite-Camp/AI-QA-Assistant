@@ -4,9 +4,11 @@ import { computed } from 'vue'
 const props = withDefaults(defineProps<{
   modelValue?: 'auto' | 'fast' | 'thinking'
   disabled?: boolean
+  expandOnHover?: boolean
 }>(), {
   modelValue: 'fast',
-  disabled: false
+  disabled: false,
+  expandOnHover: false
 })
 
 const emit = defineEmits<{
@@ -58,7 +60,42 @@ function cycleNext() {
 </script>
 
 <template>
+  <!-- Expand on hover mode: minimal circle with glowing colored dot, expands to pill on hover -->
   <button
+    v-if="props.expandOnHover"
+    type="button"
+    :disabled="props.disabled"
+    :aria-label="`Mode: ${currentMode.label}`"
+    :title="`Current mode: ${currentMode.label} (Click to toggle)`"
+    :class="[
+      'group relative h-8.5 sm:h-9 rounded-full cursor-pointer flex items-center border shadow-2xs select-none active:scale-95 shrink-0 transition-all duration-300 ease-out overflow-hidden',
+      'min-w-[34px] max-w-[34px] sm:min-w-[36px] sm:max-w-[36px] hover:max-w-[140px] justify-center hover:justify-start px-0 hover:px-3',
+      'bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800/90 dark:hover:bg-zinc-700/80 border-zinc-200/90 dark:border-zinc-700/70 text-zinc-800 dark:text-zinc-100',
+      props.disabled ? 'opacity-50 cursor-not-allowed' : ''
+    ]"
+    @click="cycleNext"
+  >
+    <Transition name="roller-slide">
+      <div
+        :key="currentMode.id"
+        class="flex items-center shrink-0 whitespace-nowrap select-none font-sans"
+      >
+        <span
+          class="w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200 group-hover:scale-110"
+          :class="currentMode.dotClass"
+        />
+        <span
+          class="max-w-0 opacity-0 group-hover:max-w-24 group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out overflow-hidden text-xs sm:text-sm font-medium leading-none text-zinc-700 dark:text-zinc-200"
+        >
+          {{ currentMode.label }}
+        </span>
+      </div>
+    </Transition>
+  </button>
+
+  <!-- Standard mode (full pill display with roller transition) -->
+  <button
+    v-else
     type="button"
     :disabled="props.disabled"
     :aria-label="`Mode: ${currentMode.label}`"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { $fetch } from 'ofetch'
 import { useCsrf } from '../../composables/useCsrf'
 
@@ -27,10 +27,16 @@ const props = withDefaults(defineProps<{
 }>(), {
   hideTrigger: false
 })
-const emit = defineEmits<{ change: [ids: string[], acceptedNeedsReviewIds: string[]] }>()
+const emit = defineEmits<{
+  change: [ids: string[], acceptedNeedsReviewIds: string[]]
+  'count-change': [count: number]
+}>()
 const { csrf, headerName } = useCsrf()
 const inputRef = ref<HTMLInputElement | null>(null)
 const items = ref<TrayAttachment[]>([])
+watch(() => items.value.length, (count) => {
+  emit('count-change', count)
+})
 const batchId = ref<string | null>(null)
 let batchPromise: Promise<string> | null = null
 const polling = new Map<string, ReturnType<typeof setTimeout>>()
