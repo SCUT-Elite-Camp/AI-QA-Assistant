@@ -623,16 +623,19 @@ onBeforeUnmount(() => {
           />
 
           <template #right-end>
-            <!-- Hit Rate Monitor Button at the absolute far right top navbar (Solid White Icon) -->
+            <!-- Hit Rate Monitor Button at the absolute far right top navbar -->
             <UButton
               color="neutral"
               variant="ghost"
               icon="i-lucide-bar-chart-3"
               size="sm"
               title="Hit Rate Monitoring"
+              aria-label="Hit Rate Monitoring"
               :class="[
-                'cursor-pointer transition-colors text-zinc-100 dark:text-white',
-                showHitRateDrawer ? 'bg-zinc-800 text-emerald-400 font-bold' : 'hover:text-white hover:bg-zinc-800/80'
+                'cursor-pointer transition-colors text-zinc-700 dark:text-zinc-200',
+                showHitRateDrawer
+                  ? 'bg-zinc-200/80 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-bold'
+                  : 'hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80'
               ]"
               @click="showHitRateDrawer = !showHitRateDrawer"
             />
