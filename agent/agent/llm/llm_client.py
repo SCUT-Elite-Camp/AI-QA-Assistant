@@ -185,6 +185,7 @@ class LLMClient(BaseLLM):
             if resp.status_code != 200:
                 raise LLMError(f"LLM API returned status {resp.status_code}: {resp.text}")
 
+            resp.encoding = "utf-8"
             for line in resp.iter_lines(decode_unicode=True):
                 if not line or not line.startswith("data:"):
                     continue
