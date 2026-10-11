@@ -31,7 +31,6 @@ import SessionFactPanel from '../../components/chat/memory/SessionFactPanel.vue'
 import QuickNavDial from '../../components/chat/QuickNavDial.vue'
 import HitRateDrawer from '../../components/chat/HitRateDrawer.vue'
 import ProgressIndicator from '../../components/chat/ProgressIndicator.vue'
-import ReasoningFloatingWindow from '../../components/chat/ReasoningFloatingWindow.vue'
 import ResearchModeNotice from '../../components/research/ResearchModeNotice.vue'
 import { useResearchLaunch } from '../../composables/useResearchLaunch'
 import type { Vote } from '../../../server/utils/drizzle'
@@ -46,7 +45,7 @@ const toast = useToast()
 const showHitRateDrawer = ref(false)
 const isWeightModeSaving = ref(false)
 const selectedResearchDocumentIds = ref<string[]>([])
-const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
+const { launchResearch, researchLaunchError } = useResearchLaunch()
 
 const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('fast')
 
@@ -273,11 +272,6 @@ const chat = new Chat({
 provide('is-chat-streaming', computed(() => chat.status === 'streaming'))
 
 void textareaRef
-
-const activeReasoningMessage = computed<UIMessage | null>(() => {
-  const assistantMessages = chat.messages.filter(m => m.role === 'assistant')
-  return assistantMessages.length > 0 ? (assistantMessages[assistantMessages.length - 1] ?? null) : null
-})
 
 async function handleSubmit(e: Event) {
   e.preventDefault()
@@ -651,12 +645,6 @@ onBeforeUnmount(() => {
       <div class="flex-1 flex flex-row min-h-0 relative overflow-hidden w-full h-full">
         <!-- Main Chat Area (Left Panel) -->
         <div class="flex-1 flex flex-col min-w-0 h-full overflow-y-auto relative">
-          <!-- Top-Right Floating Reasoning Window -->
-          <ReasoningFloatingWindow
-            :message="activeReasoningMessage"
-            :status="launchingResearch ? 'streaming' : chat.status"
-          />
-
           <!-- Empty Chat / Branch New Chat Landing View -->
           <div v-if="!visibleMessages.length" class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 w-full h-full min-h-0">
             <div class="w-full max-w-3xl sm:max-w-4xl flex flex-col items-center gap-8">
