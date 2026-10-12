@@ -28,7 +28,6 @@ const hasAttachments = computed(() => attachmentCount.value > 0 || attachmentIds
 const useKnowledgeBase = ref(true)
 const route = useRoute()
 const deepResearchMode = ref(route.query.research === '1')
-const selectedResearchDocumentIds = ref<string[]>([])
 const { launchResearch, launchingResearch, researchLaunchError } = useResearchLaunch()
 watch(() => route.query.research, value => { deepResearchMode.value = value === '1' })
 const loading = ref(false)
@@ -69,7 +68,7 @@ async function createChat(prompt: string) {
       toast.add({ description: 'Deep Research uses selected knowledge base documents. Remove draft attachments or switch to chat.', color: 'warning' })
       return
     }
-    if (await launchResearch(prompt, selectedResearchDocumentIds.value)) input.value = ''
+    if (await launchResearch(prompt)) input.value = ''
     return
   }
   if (attachmentTray.value?.hasBlockingAttachments()) {
@@ -91,13 +90,14 @@ async function createChat(prompt: string) {
         accepted_needs_review_ids: acceptedNeedsReviewIds.value,
         knowledge_base_retrieval_enabled: useKnowledgeBase.value,
         exploration_mode: 'auto',
+        weight_mode: chosenMode,
       }
     })
     if (chat?.id) {
       input.value = ''
       attachmentTray.value?.resetAfterSend()
       void fetchChats()
-      await router.push(`/chat/${chat.id}?mode=${chosenMode}`)
+      await router.push(`/chat/${chat.id}`)
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to create chat'
@@ -186,7 +186,7 @@ const plusMenuItems = computed(() => [
 
           <!-- Deep Research Notice when active -->
           <div v-if="deepResearchMode" class="w-full max-w-2xl">
-            <ResearchModeNotice v-model="selectedResearchDocumentIds" />
+            <ResearchModeNotice />
             <p v-if="researchLaunchError" role="alert" class="px-3 py-2 text-sm text-error">{{ researchLaunchError }}</p>
           </div>
 

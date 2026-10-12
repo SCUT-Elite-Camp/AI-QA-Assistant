@@ -57,6 +57,12 @@ results = tool.search(
 相关实现位于 `retrieval/`、`tool_layer/search_tool.py`、`data-pipeline/` 和
 `data-persistence/`。
 
+## 附件解析服务
+
+附件上传执行格式、大小和正文校验后直接排队解析，返回可用于问答的上下文和定位信息。开发和生产均不依赖病毒扫描器；旧 `ATTACHMENT_SCANNER`、`ALLOW_FAKE_ATTACHMENT_SCANNER` 配置已移除。新上传状态为 `parsing`，完成后为 `ready` 或 `needs_review`。`/health/ready` 不再包含 `scanner_ready`。
+
+配置服务端 `ATTACHMENT_INTERNAL_SECRET`（与 Web/Agent 相同）、`ATTACHMENT_ENCRYPTION_KEY`、checkout 外的 `ATTACHMENT_DATA_DIR`，并把仓库根与 `toolset` 加入 `PYTHONPATH`；在 `toolset/` 执行 `python -m attachment_service`，默认监听回环 `8200`。Web 使用同源附件接口，浏览器不持有内部密钥。
+
 ## 本地检查
 
 当某次改动需要运行 Toolset 检查时，可在本目录执行：

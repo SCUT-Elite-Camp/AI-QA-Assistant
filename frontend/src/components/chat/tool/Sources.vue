@@ -20,6 +20,7 @@ export interface ChunkCitation {
   source_content_hash?: string
   normalized_content_hash?: string
   excerpt?: string
+  anchor_excerpt?: string | null
   snippet?: string
   read_status?: string
 }
@@ -58,7 +59,7 @@ const dedupedDocs = computed(() => {
       v-for="{ citation, indices } in dedupedDocs"
       :key="citation.doc_id"
       type="button"
-      :aria-label="`核对来源：${citation.title}`"
+      :aria-label="`Verify source: ${citation.title}`"
       class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-elevated/50 transition-colors min-w-0 cursor-pointer group"
       @click="emit('select-doc', citation)"
     >

@@ -27,11 +27,12 @@ from pipeline.rag_lifecycle import (
 )
 from retrieval.bm25_index import BM25Index
 from data_persistence.documents import save_document
+from data_persistence._paths import data_dir
 from shared_runtime.wiki_paths import resolve_wiki_db_path
 
 # 配置默认目录
-RAWS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "raws"
-DOCS_DIR = PROJECT_ROOT / "data-persistence" / "data" / "documents"
+RAWS_DIR = data_dir() / "raws"
+DOCS_DIR = data_dir() / "documents"
 
 def _scan_folder(folder_path: str) -> list[str]:
     """递归扫描文件夹，返回所有支持的文件绝对路径"""

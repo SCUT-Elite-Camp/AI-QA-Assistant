@@ -20,6 +20,7 @@ def test_fast_stream_uses_current_search_contract_and_authorization(monkeypatch,
     agent = Agent(permission_service=SimpleNamespace(get_accessible_doc_ids=lambda _: accessible))
     monkeypatch.setattr(agent.query_understanding.query_planner, 'enrich', lambda *args: SimpleNamespace(sub_queries=[]))
     prompts = []
+    agent.fast_answer_llm = None
     def stream(messages):
         prompts.extend(messages)
         yield {'content': 'The selected evidence does not establish the answer.'}
@@ -31,12 +32,21 @@ def test_fast_stream_uses_current_search_contract_and_authorization(monkeypatch,
     assert 'Answer in English' in prompts[0]['content']
 
 
-def test_fast_stream_respects_disabled_knowledge_base(monkeypatch):
+@pytest.mark.parametrize('mode', ['fast', 'auto', 'thinking'])
+def test_fast_stream_respects_disabled_knowledge_base(monkeypatch, mode):
     def forbidden_search(*args, **kwargs):
         pytest.fail('Disabled knowledge base must not be searched')
     monkeypatch.setattr(SearchTool, 'search', forbidden_search)
     agent = Agent()
-    assert list(agent.stream_chat(ChatRequest(query='Hello', weight_mode='fast', knowledge_base_retrieval_enabled=False)))[-1][0] == 'done'
+    prompts = []
+    agent.fast_answer_llm = None
+    def stream(messages):
+        prompts.extend(messages)
+        yield {'content': 'Hello'}
+    monkeypatch.setattr(agent.llm, 'stream_chat', stream)
+    assert list(agent.stream_chat(ChatRequest(query='Hello', weight_mode=mode, knowledge_base_retrieval_enabled=False)))[-1][0] == 'done'
+    assert 'general knowledge' in prompts[0]['content']
+    assert 'only the authorized reference context' not in prompts[0]['content']
 
 
 @pytest.mark.parametrize('checked', ['The earlier dependency has unconfirmed later status. [1]', None])
@@ -174,6 +184,7 @@ def test_explicit_multi_document_scope_cannot_be_starved_by_search_ranking(monke
 
 def test_fast_source_metadata_is_available_to_answer_generation(monkeypatch):
     agent = Agent()
+    agent.fast_answer_llm = None
     monkeypatch.setattr(agent, '_retrieve_fast_context', lambda *args: [{'doc_id':'doc','chunk_id':'doc_chunk_5','title':'Rewriter report','source_url':'https://example.org/report','chunk_text':'Commit abc, author Sam.'}])
     calls=[]
     def stream(messages):

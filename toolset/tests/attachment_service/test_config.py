@@ -15,21 +15,11 @@ def _required_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_fake_scanner_is_forbidden_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_production_parser_needs_no_scanner_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     _required_environment(monkeypatch)
     monkeypatch.setenv("NODE_ENV", "production")
-    monkeypatch.setenv("ALLOW_FAKE_ATTACHMENT_SCANNER", "true")
-    with pytest.raises(RuntimeError, match="forbidden in production"):
-        AttachmentSettings.from_env()
-
-
-def test_fake_scanner_remains_available_for_explicit_development_testing(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    _required_environment(monkeypatch)
-    monkeypatch.setenv("NODE_ENV", "development")
-    monkeypatch.setenv("ALLOW_FAKE_ATTACHMENT_SCANNER", "true")
-    assert AttachmentSettings.from_env().allow_fake_scanner is True
+    settings = AttachmentSettings.from_env()
+    assert settings.internal_secret == "test-secret"
 
 
 def test_hierarchical_navigation_is_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:

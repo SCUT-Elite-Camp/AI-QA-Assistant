@@ -80,13 +80,14 @@ def test_research_contract_rejects_unknown_fields_and_external_source_ids() -> N
             }
         )
 
-    with pytest.raises(ValidationError, match="research_source_scope_required"):
-        ResearchRequest.model_validate(
-            {
-                "query": "研究资料",
-                "source_scope": {},
-            }
-        )
+    request = ResearchRequest.model_validate({"query": "研究资料", "source_scope": {}})
+    assert request.source_scope.all_documents is True
+    assert request.source_scope.document_ids == []
+
+    with pytest.raises(ValidationError, match="research_source_scope_ambiguous"):
+        ResearchRequest.model_validate({"query": "研究资料", "source_scope": {
+            "all_documents": True, "document_ids": ["doc-1"],
+        }})
 
 
 def test_empty_source_scope_has_a_deterministic_plan_error() -> None:

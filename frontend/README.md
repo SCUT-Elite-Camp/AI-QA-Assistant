@@ -2,10 +2,22 @@
 
 基于 **Vue 3 + TypeScript + Nuxt UI + AI SDK + Nitro** 的全栈智能问答应用。
 
+Deep Research searches all knowledge base documents the signed-in user can
+currently access. Enable Deep Research, enter a question, then review and approve
+the generated plan. No document selection is required. The BFF requests
+`source_scope: {all_documents: true}`; the Agent freezes explicit authorized
+document IDs and source versions before execution. Research prompts, controls,
+activity messages and the source Reader are English.
+
 2026-10-09 的服务端接入以[访问/证据契约](../docs/access-evidence-integration.md)为准。浏览器只调用同源 BFF，Python Agent 负责模型与检索；模型密钥不进入前端。完整联调见[运行手册](../docs/access-evidence-runbook.md)。
 
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 [![Nitro](https://img.shields.io/badge/Built%20with-Nitro-ff637e?logo=nitro&labelColor=18181B)](https://nitro.build)
+
+Chat streams the model's actual answer fragments into a transient preview after
+current source checks. The final verified answer replaces the preview and is
+saved for reloads; failed previews are cleared. The rightmost header control uses
+panel-open/panel-close icons to toggle the retrieval monitor.
 
 ## 功能
 
@@ -150,6 +162,12 @@ pnpm preview
 - [ ] 主色/中性色自定义
 - [ ] 快捷键 meta+o 新建对话, meta+k 搜索
 - [ ] 真实依赖故障清晰展示（不保存为成功答案）
+
+## Retrieval monitor
+
+The chat navbar opens an English retrieval monitor that follows the application's light/dark mode, primary color and neutral palette. Desktop layouts keep it beside the conversation; narrow screens show it over the chat without squeezing the message area.
+
+Citation coverage counts returned answers with recorded `rag_search` citations, rather than claiming all retrieval attempts succeeded. Pending answers are excluded. The monitor supports All / Cited / Uncited filters and expandable chunk details. Only explicit vector similarity values are displayed as cosine percentages; absent scores or unavailable administrator-only index counts appear as “—”. A zero score or zero document count remains zero.
 
 ## 当前限制
 

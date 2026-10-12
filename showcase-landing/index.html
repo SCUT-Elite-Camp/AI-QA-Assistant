@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-QA-Assistant | 企业知识智能问答系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Reset & Design Variables */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-canvas: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #fafafa;
+
+      --text-primary: #0a0f1d;
+      --text-secondary: #4b5563;
+      --text-muted: #9ca3af;
+
+      --brand-blue: #1d4ed8;
+      --brand-blue-hover: #1e40af;
+
+      --border-light: #e5e7eb;
+      --border-subtle: #f3f4f6;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, "Inter", sans-serif;
+      --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    html, body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部极简导航 Header */
+    .header {
+      width: 100%;
+      height: 72px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 44px;
+      background: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      color: var(--brand-blue);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+    }
+
+    .brand-divider {
+      color: #cbd5e1;
+      font-size: 15px;
+      font-weight: 300;
+      margin: 0 1px;
+    }
+
+    .brand-subtitle {
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-item a {
+      text-decoration: none;
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.15s ease;
+      position: relative;
+      padding: 6px 0;
+    }
+
+    .nav-item.active a {
+      color: var(--brand-blue);
+      font-weight: 600;
+    }
+
+    .nav-item.active a::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background-color: var(--brand-blue);
+      border-radius: 2px;
+    }
+
+    .nav-item a:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #0b1329;
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 7px;
+      font-size: 13.5px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.18s ease;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-cta:hover {
+      background-color: #1e293b;
+      transform: translateY(-1px);
+    }
+
+    /* 主视口容器 */
+    .main-content {
+      width: 100%;
+      max-width: 1340px;
+      margin: 0 auto;
+      padding: 0 44px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Hero 首屏区 */
+    .hero-section {
+      padding-top: 88px;
+      padding-bottom: 56px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-title {
+      font-size: 64px;
+      line-height: 1.24;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      max-width: 860px;
+    }
+
+    .hero-title .accent-text {
+      color: var(--brand-blue);
+      display: inline-block;
+    }
+
+    .hero-lead {
+      font-size: 17px;
+      line-height: 1.7;
+      font-weight: 400;
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin-bottom: 34px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: #0b1329;
+      color: #ffffff;
+      padding: 12px 28px;
+      border-radius: 7px;
+      font-size: 14.5px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.18s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #1e293b;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ffffff;
+      color: var(--text-primary);
+      padding: 12px 28px;
+      border-radius: 7px;
+      font-size: 14.5px;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid var(--border-light);
+      transition: all 0.18s ease;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-subtle);
+      border-color: #cbd5e1;
+    }
+
+    .hero-sub-tags {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .hero-sub-tags .dot {
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    /* 模块入口区 Section */
+    .modules-section {
+      padding-top: 48px;
+      padding-bottom: 72px;
+      width: 100%;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .section-more-link {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.15s ease;
+    }
+
+    .section-more-link:hover {
+      color: var(--brand-blue);
+    }
+
+    /* 横向四卡片布局 (精确对齐参考图微调，支持渐进式悬停展现) */
+    .module-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      width: 100%;
+    }
+
+    .module-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      text-decoration: none;
+      color: inherit;
+      min-height: 106px;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .module-card:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px -4px rgba(15, 23, 42, 0.06);
+    }
+
+    .card-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .card-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .card-number {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: -0.01em;
+      transition: color 0.2s ease;
+    }
+
+    .module-card:hover .card-number {
+      color: var(--brand-blue);
+    }
+
+    .card-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-en-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .card-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.015em;
+    }
+
+    .card-arrow {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .module-card:hover .card-arrow {
+      background-color: #0b1329;
+      color: #ffffff;
+      transform: translateX(2px);
+    }
+
+    /* 渐进式展示：悬停展开说明 (Progressive Disclosure) */
+    .card-detail {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0;
+      transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease, margin-top 0.24s ease;
+    }
+
+    .module-card:hover .card-detail {
+      max-height: 60px;
+      opacity: 1;
+      margin-top: 14px;
+    }
+
+    .card-description {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 10px;
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 1024px) {
+      .module-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .header {
+        padding: 0 24px;
+      }
+      .nav-links {
+        display: none;
+      }
+      .hero-title {
+        font-size: 46px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .module-cards-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-title {
+        font-size: 36px;
+      }
+      .hero-section {
+        padding-top: 48px;
+      }
+      .main-content {
+        padding: 0 20px;
+      }
+      .brand-subtitle, .brand-divider {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 顶部极简导航区 -->
+  <header class="header">
+    <a href="index.html" class="brand-group">
+      <!-- 极简几何 Logo (粗壮蓝色人字形三角) -->
+      <svg class="brand-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 25L16 5L26 25" stroke="currentColor" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 18H22" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-title">AI-QA-Assistant</span>
+      <span class="brand-divider">|</span>
+      <span class="brand-subtitle">企业知识智能问答系统</span>
+    </a>
+
+    <nav>
+      <ul class="nav-links">
+        <li class="nav-item active"><a href="index.html">概览</a></li>
+        <li class="nav-item"><a href="01_system_architecture.html">架构</a></li>
+        <li class="nav-item"><a href="02_data_pipeline.html">知识</a></li>
+        <li class="nav-item"><a href="#agent">Agent</a></li>
+        <li class="nav-item"><a href="#security">安全</a></li>
+        <li class="nav-item"><a href="#experience">体验</a></li>
+      </ul>
+    </nav>
+
+    <a href="01_system_architecture.html" class="nav-cta">
+      <span>探索系统</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="m12 5 7 7-7 7"></path>
+      </svg>
+    </a>
+  </header>
+
+  <!-- 2. 主页面容器 -->
+  <main class="main-content">
+
+    <!-- Hero 首屏区 (居中大标题、大量留白、无架构图) -->
+    <section class="hero-section">
+      <h1 class="hero-title">
+        让企业知识，<br>
+        成为<span class="accent-text">可信的回答。</span>
+      </h1>
+
+      <p class="hero-lead">
+        将企业内部沉淀的知识资产，通过智能解析、动态检索与 Agent 推理，转化为可理解、可追溯的答案。
+      </p>
+
+      <div class="hero-actions">
+        <a href="01_system_architecture.html" class="btn-primary">
+          <span>探索系统</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </a>
+        <a href="#modules" class="btn-secondary">查看系统组成</a>
+      </div>
+
+      <div class="hero-sub-tags">
+        <span>KNOWLEDGE</span>
+        <span class="dot">/</span>
+        <span>REASONING</span>
+        <span class="dot">/</span>
+        <span>SECURITY</span>
+        <span class="dot">/</span>
+        <span>EXPERIENCE</span>
+      </div>
+    </section>
+
+    <!-- 3. 系统组成入口区 (横向 4 列卡片，点击直接跳转至独立章节页面) -->
+    <section id="modules" class="modules-section">
+      <div class="section-header">
+        <div class="section-meta">
+          <span class="section-eyebrow">SYSTEM OVERVIEW</span>
+          <h2 class="section-title">探索系统组成</h2>
+        </div>
+        <a href="01_system_architecture.html" class="section-more-link">
+          <span>从知识到回答的完整链路</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </a>
+      </div>
+
+      <!-- 横向四列入口卡片 -->
+      <div class="module-cards-grid">
+        <!-- 01 Architecture 系统架构 (点击直接跳转进入 01_system_architecture.html) -->
+        <a href="01_system_architecture.html" class="module-card">
+          <div class="card-main-row">
+            <div class="card-left">
+              <span class="card-number">01</span>
+              <div class="card-title-group">
+                <span class="card-en-title">Architecture</span>
+                <span class="card-label">系统架构</span>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="card-detail">
+            <p class="card-description">理解系统整体结构、模块关系与知识流转方式。</p>
+          </div>
+        </a>
+
+        <!-- 02 Knowledge 知识处理 -->
+        <a href="02_data_pipeline.html" class="module-card">
+          <div class="card-main-row">
+            <div class="card-left">
+              <span class="card-number">02</span>
+              <div class="card-title-group">
+                <span class="card-en-title">Knowledge</span>
+                <span class="card-label">知识处理</span>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="card-detail">
+            <p class="card-description">从企业文档到可检索知识资产的完整处理流程。</p>
+          </div>
+        </a>
+
+        <!-- 03 Intelligence Agent 智能 -->
+        <a href="#intelligence" class="module-card">
+          <div class="card-main-row">
+            <div class="card-left">
+              <span class="card-number">03</span>
+              <div class="card-title-group">
+                <span class="card-en-title">Intelligence</span>
+                <span class="card-label">Agent 智能</span>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="card-detail">
+            <p class="card-description">探索 Fast / Thinking 双轨推理以及复杂问题处理机制。</p>
+          </div>
+        </a>
+
+        <!-- 04 Experience 企业体验 -->
+        <a href="#experience" class="module-card">
+          <div class="card-main-row">
+            <div class="card-left">
+              <span class="card-number">04</span>
+              <div class="card-title-group">
+                <span class="card-en-title">Experience</span>
+                <span class="card-label">企业体验</span>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="card-detail">
+            <p class="card-description">查看权限、安全与用户交互如何共同构成完整体验。</p>
+          </div>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

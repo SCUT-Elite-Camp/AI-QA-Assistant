@@ -29,7 +29,7 @@ export function researchBackendPath(path: string, method: string): string {
   const segments = path.split('/').map(pathSegment)
   const resource = segments.join('/')
   const validGet = resource === 'documents'
-    || /^jobs\/research-[a-zA-Z0-9]+(?:\/(?:plan|report|progress|events|evaluation-trace))?$/.test(resource)
+    || /^jobs\/research-[a-zA-Z0-9]+(?:\/(?:plan|report|progress|events|snapshot|evaluation-trace))?$/.test(resource)
     || (segments.length === 5 && segments[0] === 'jobs'
       && /^research-[a-zA-Z0-9]+$/.test(segments[1]!)
       && segments[2] === 'documents' && segments[4] === 'source')

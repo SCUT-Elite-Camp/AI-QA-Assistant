@@ -2,9 +2,32 @@
 
 Current access/lineage contract (2026-10-09): [integration guide](../../docs/access-evidence-integration.md). Browsers use session-authenticated same-origin BFF routes, not a public Agent URL/token. Source permissions are rechecked for retrieval, model calls, release and stored history/Memory/Reader. `evidence.provenance.v1` is part of the response; unknown/stale lineage is not trusted.
 
+## Live Chat
+
+Fast, Auto and Thinking stream actual answer-model deltas through the Agent and
+authenticated BFF. Each release boundary rechecks current source permissions,
+versions and hashes; no positive authorization result is cached between batches.
+`source` carries provenance, `answer-start` resets a draft, `token`/`reasoning`
+carry model output, and optional `answer` replaces a draft after quality repair.
+The Web displays checked drafts using transient `data-answer-preview` events.
+Only the final verified answer is persisted. Failure clears the preview; history,
+Memory and citation Reader continue to use the saved answer and its lineage.
+Specialized quality gates may withhold text until their validation completes.
+When knowledge retrieval is disabled and no private attachment workflow is
+requested, all three modes stream direct model answers with the checked Memory
+view. Fast/Auto use the configured fast model; Thinking uses the reasoning model.
+The default application container preserves those configured model choices.
+
 ## Local Deep Research
 
 Local Deep Research is separate from Chat and must be manually started.
+
+The Web client sends `source_scope: {all_documents: true}` by default, without
+requiring document selection. Omitted/empty scope has the same API meaning.
+The authenticated server resolves all readable enterprise Confluence documents
+to explicit IDs before planning; approval freezes the source versions/hashes.
+Current permissions and source versions are still checked on every subsequent
+use. UI labels, plan instructions and lifecycle messages are English.
 
 ```text
 POST /api/research/jobs
@@ -29,7 +52,16 @@ IDs frozen into the approved `SourceManifest`.
 
 Current Research scope is enterprise Confluence only. A manifest freezes content, not permission: native mapping and local/native ACL must still allow it. Creation requires trusted `X-User-ID`; resources belong to that creator. Other users get 404; revoked sources, unavailable permission checks or version drift block report/progress/events/trace/source access. Worker search/read uses the shared enterprise Toolset and requested retrieval mode.
 
-The Research detail page polls three independent views at low frequency:
+The Research detail page polls `GET /jobs/{id}/snapshot?after_event_id=...`
+for Job, progress and incremental events together. Each response rechecks current
+identity, local/native permissions and frozen source versions once for the entire
+response; no authorization result is cached between polls. Scheduled polls wait
+five seconds after the previous response (longer in background tabs). Responses
+from a superseded polling generation are discarded. Native checks
+use at most 16 parallel reads within each boundary. Plan/report/Reader requests
+retain their own current authorization checks.
+
+Individual read endpoints remain available:
 
 - `GET /jobs/{id}` for lifecycle controls;
 - `GET /jobs/{id}/progress` for the authoritative percentage, stage timeline,

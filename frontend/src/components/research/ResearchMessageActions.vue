@@ -84,6 +84,6 @@ async function handleVote(_message: UIMessage, next: boolean) {
     :open="suggestionOpen"
     :message-id="messageId"
     @update:open="suggestionOpen = $event"
-    @submit="toast.add({ title: '感谢反馈', description: '改进建议已保存。', color: 'success' })"
+    @submit="toast.add({ title: 'Thanks for your feedback', description: 'Your suggestions have been saved.', color: 'success' })"
   />
 </template>

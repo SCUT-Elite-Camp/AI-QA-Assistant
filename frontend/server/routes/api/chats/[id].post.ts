@@ -31,8 +31,8 @@ import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentS
 import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
 import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
 import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
-import { requireCsrf } from '../../../utils/attachmentAuth'
-import { assertSourceDependencies, evidenceProvenanceSchema, provenancePart, citationsCovered, type EvidenceProvenance } from '../../../utils/sourceAccess'
+import { requireCsrf, requireTopicRole } from '../../../utils/attachmentAuth'
+import { assertDerivedSources, assertSourceDependencies, evidenceProvenanceSchema, provenancePart, citationsCovered, type EvidenceProvenance } from '../../../utils/sourceAccess'
 import {
   appendMessage,
   createAssistantStreamState,
@@ -193,6 +193,16 @@ export default defineHandler(async (event) => {
   let chatTitle: string | undefined
   let memoryRecall = false
   let reasoning = ''
+  let responseStarted = false
+  let liveReasoning = false
+  let liveProvenance: EvidenceProvenance | undefined
+  const startResponse = (writer: { write: (part: any) => void }) => {
+    if (!responseStarted) {
+      writer.write({ type: 'start', messageId: assistantId })
+      writer.write({ type: 'text-start', id: assistantId })
+      responseStarted = true
+    }
+  }
   let agentStatus: string | undefined
   const startedAt = Date.now()
   let guardPhase = 'context'
@@ -208,7 +218,28 @@ export default defineHandler(async (event) => {
           state.assistantContent = parts.filter((part: any) => part.type === 'text').map((part: any) => part.text || '').join('')
           citations = parts.flatMap((part: any) => part.type === 'tool-rag_search' ? part.output || [] : [])
         } else {
-          const memoryContext = await buildPersistentMemoryContext(db, handoff)
+          let memoryContext = await buildPersistentMemoryContext(db, handoff)
+          let topicSoul: string | undefined
+          let topicTitles: string[] | undefined
+          if (chat.topicId) {
+            await requireTopicRole(event, chat.topicId, 'viewer')
+            const topic = await db.query.topics.findFirst({ where: eq(tables.topics.id, chat.topicId) })
+            if (topic) {
+              try {
+                const proof = await assertDerivedSources(actor.userId, topic.evidenceProvenance)
+                topicSoul = topic.soulContent || undefined
+                topicTitles = [topic.title]
+                memoryContext = {
+                  ...memoryContext,
+                  provenance_complete: true,
+                  source_dependencies: proof.dependencies,
+                }
+              } catch (error) {
+                if ((error as any)?.statusCode === 503) throw error
+                // Stale or unproven topic cognition is excluded from model context.
+              }
+            }
+          }
           const topicAttachments = chat.topicId ? await db.query.attachments.findMany({ where: and(
             eq(tables.attachments.topicId, chat.topicId), eq(tables.attachments.scope, 'topic'),
           ) }) : []
@@ -227,6 +258,7 @@ export default defineHandler(async (event) => {
               weight_mode: (chat as any).weightMode || 'thinking', topic_id: chat.topicId || undefined,
               is_first_message: handoff.currentSequence === 1,
               knowledge_base_retrieval_enabled: knowledgeBaseRetrievalEnabled(metadata, last.parts),
+              soul_content: topicSoul, topic_titles: topicTitles,
               memory_context: memoryContext, personal_library_context: personalContext,
               attachment_context: { selected_attachment_ids: selection.attachmentIds, allowed_attachment_ids: allowedIds },
             }), signal: controller.signal,
@@ -237,21 +269,40 @@ export default defineHandler(async (event) => {
           const decoder = new TextDecoder()
           let buffer = ''
           let completed = false
-          const processFrame = (frame: string) => {
+          const processFrame = async (frame: string) => {
             const lines = frame.split('\n')
             const eventType = lines.find(line => line.startsWith('event:'))?.slice(6).trim() || 'message'
             const value = lines.filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n')
             if (!value) return
             const data = JSON.parse(value)
-            if (eventType === 'citations') {
+            if (eventType === 'source') {
+              const proof = evidenceProvenanceSchema.parse(data.evidence_provenance)
+              if (!proof.complete) throw new Error('source_provenance_incomplete')
+              await assertSourceDependencies(actor.userId, proof.dependencies)
+              await requireOwnedChat(event, chat.id, 'editor')
+              if (controller.signal.aborted) throw new Error('request_aborted')
+              liveProvenance = proof
+            } else if (eventType === 'answer-start') {
+              state.assistantContent = ''
+              writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
+            } else if (eventType === 'answer') {
+              // Quality repair may replace the streamed draft. Only this final
+              // answer is persisted and released as a completed message.
+              state.assistantContent = String(data.content || '')
+            } else if (eventType === 'citations') {
               if (!Array.isArray(data)) throw new Error('invalid_citations')
               citations = data.map((citation: any, index: number) => {
                 if (!citation.doc_id || !citation.chunk_id || !citation.evidence_ref || !citation.content_hash) throw new Error('incomplete_citation')
                 return { ...citation, index: index + 1, chunk_text: citation.snippet || '' }
               })
             } else if (eventType === 'token') {
-              state.assistantContent += String(data.content || '')
+              const delta = String(data.content || '')
+              state.assistantContent += delta
               if (state.assistantContent.length > 100000) throw new Error('answer_limit')
+              if (liveProvenance && delta) {
+                startResponse(writer)
+                writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, delta } } as any)
+              }
             } else if (eventType === 'done') {
               provenance = evidenceProvenanceSchema.parse(data.evidence_provenance)
               agentStatus = data.status
@@ -260,7 +311,16 @@ export default defineHandler(async (event) => {
               chatTitle = data.chat_title
               state.agentSucceeded = data.status === 'success' || data.status === 'clarification_required'
               completed = true
-            } else if (eventType === 'reasoning') reasoning += String(data.content || '')
+            } else if (eventType === 'reasoning') {
+              const delta = String(data.content || '')
+              reasoning += delta
+              if (liveProvenance && delta) {
+                startResponse(writer)
+                if (!liveReasoning) writer.write({ type: 'reasoning-start', id: assistantId })
+                liveReasoning = true
+                writer.write({ type: 'reasoning-delta', id: assistantId, delta })
+              }
+            }
             else if (eventType === 'error') throw new Error('agent_failed')
           }
           while (true) {
@@ -268,9 +328,9 @@ export default defineHandler(async (event) => {
             buffer += decoder.decode(chunk.value, { stream: !chunk.done }).replace(/\r\n/g, '\n')
             let boundary
             while ((boundary = buffer.indexOf('\n\n')) >= 0) {
-              processFrame(buffer.slice(0, boundary)); buffer = buffer.slice(boundary + 2)
+              await processFrame(buffer.slice(0, boundary)); buffer = buffer.slice(boundary + 2)
             }
-            if (chunk.done) { if (buffer.trim()) processFrame(buffer); break }
+            if (chunk.done) { if (buffer.trim()) await processFrame(buffer); break }
           }
           if (!completed) throw new Error('incomplete_stream')
           if (!state.agentSucceeded && agentStatus !== 'no_relevant_context') throw new Error('agent_failed')
@@ -282,6 +342,7 @@ export default defineHandler(async (event) => {
         await requireOwnedChat(event, chat.id, 'editor')
         if (controller.signal.aborted) throw new Error('request_aborted')
         if (agentStatus === 'no_relevant_context') {
+          writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
           // An abstention is a transient UI status, not a durable, sourced answer.
           // Do not expose model tokens/citations or create Memory side effects.
           const statusId = `no-context:${assistantId}`
@@ -307,8 +368,9 @@ export default defineHandler(async (event) => {
         guardPhase = 'release_check'
         await assertSourceDependencies(actor.userId, provenance.dependencies)
         await requireOwnedChat(event, chat.id, 'editor')
-        writer.write({ type: 'start', messageId: existing?.id || savedAssistant?.id || assistantId })
-        if (reasoning) {
+        if (!responseStarted) writer.write({ type: 'start', messageId: existing?.id || savedAssistant?.id || assistantId })
+        if (liveReasoning) writer.write({ type: 'reasoning-end', id: assistantId })
+        else if (reasoning) {
           writer.write({ type: 'reasoning-start', id: assistantId })
           writer.write({ type: 'reasoning-delta', id: assistantId, delta: reasoning })
           writer.write({ type: 'reasoning-end', id: assistantId })
@@ -319,9 +381,10 @@ export default defineHandler(async (event) => {
         }
         writer.write({ type: 'data-evidence-provenance', data: provenance } as any)
         if (memoryRecall) writer.write({ type: 'data-memory-recall', data: { messageId: savedAssistant?.id || assistantId } } as any)
-        writer.write({ type: 'text-start', id: assistantId })
+        if (!responseStarted) writer.write({ type: 'text-start', id: assistantId })
         writer.write({ type: 'text-delta', id: assistantId, delta: state.assistantContent })
         writer.write({ type: 'text-end', id: assistantId })
+        writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
         if (existing) state.agentSucceeded = true
         state.streamCompleted = true
         recordAiCall(Date.now() - startedAt, Date.now() - startedAt, Math.round(state.assistantContent.length * 0.75))
@@ -329,9 +392,13 @@ export default defineHandler(async (event) => {
         // Never log source bodies, request payloads, Zod input or credentials.
         console.warn('[chat_access_guard]', { phase: guardPhase,
           errorClass: error instanceof Error ? error.name : 'unknown',
+          code: error instanceof Error && /^(agent_unavailable|source_provenance_incomplete|request_aborted|invalid_citations|incomplete_citation|answer_limit|agent_failed|incomplete_stream)$/.test(error.message) ? error.message : undefined,
           status: error instanceof HTTPError ? error.status : undefined })
         state.streamFailed = true
         state.assistantContent = ''
+        writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
+        if (liveReasoning) writer.write({ type: 'reasoning-end', id: assistantId })
+        if (!responseStarted) writer.write({ type: 'start', messageId: assistantId })
         writer.write({ type: 'text-start', id: 'access-error' })
         writer.write({ type: 'text-delta', id: 'access-error', delta: 'The answer could not pass identity, source access, version, or persistence checks. No answer is being released. Please retry.' })
         writer.write({ type: 'text-end', id: 'access-error' })

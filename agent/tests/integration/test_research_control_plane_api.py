@@ -229,13 +229,13 @@ def test_conflict_choice_persists_report_without_clearing_quality_gaps(tmp_path:
         assert invalid.json()['action'] == 'clarify'
         assert repository.get_report(research_id).report_id == 'report-original'
 
-        response = client.post(f'/api/research/jobs/{research_id}/messages', json={'message': '采用来源 2'})
+        response = client.post(f'/api/research/jobs/{research_id}/messages', json={'message': 'use source 2'})
         assert response.status_code == 200
         assert response.json()['action'] == 'conflict_resolved'
         persisted = client.get(f'/api/research/jobs/{research_id}/report').json()
         assert persisted['report_id'] != 'report-original'
         assert persisted['conflicts'][0]['resolution_status'] == 'resolved_by_user'
-        assert '采用来源 [2]' in persisted['markdown']
+        assert 'Selected source [2]' in persisted['markdown']
         assert persisted['result_status'] == 'degraded'
         assert persisted['limitations'][0]['code'] == 'required_coverage_missing'
         assert persisted['citations'] == report.model_dump(mode='json')['citations']

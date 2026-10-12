@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from agent.config.settings import settings
 from agent.errors.exceptions import LLMError
 from agent.llm.base import BaseLLM
+from agent.llm.provider_options import apply_provider_options, is_openrouter
 
 
 class LLMClient(BaseLLM):
@@ -28,6 +29,12 @@ class LLMClient(BaseLLM):
 
         self.model = model.strip() if isinstance(model, str) and model.strip() else settings.LLM_MODEL
         self.enable_thinking = enable_thinking
+        if enable_thinking is None and is_openrouter(settings.LLM_API_BASE):
+            self.enable_thinking = (
+                settings.ANSWER_FAST_MODEL_THINKING
+                if self.model == settings.ANSWER_FAST_MODEL
+                else settings.LLM_THINKING_MODE == 'enabled'
+            )
         if enable_thinking is None and self.model.lower().startswith(('qwen3', 'qwen-flash', 'qwen-turbo', 'deepseek')):
             self.enable_thinking = settings.LLM_THINKING_MODE == 'enabled'
         self.fallback_models = fallback_models
@@ -71,6 +78,7 @@ class LLMClient(BaseLLM):
             payload["tools"] = tools
         if self.enable_thinking is not None:
             payload["enable_thinking"] = self.enable_thinking
+        payload = apply_provider_options(payload, settings.LLM_API_BASE)
 
         headers = {
             "Content-Type": "application/json",
@@ -81,7 +89,7 @@ class LLMClient(BaseLLM):
         candidate_models = [self.model]
         fallback_models = self.fallback_models
         if fallback_models is None:
-            fallback_models = (
+            fallback_models = () if is_openrouter(settings.LLM_API_BASE) else (
                 "gemini-3.6-flash",
                 "gemini-3.5-flash-lite",
                 "gemini-3.1-flash-lite-preview",
@@ -142,6 +150,7 @@ class LLMClient(BaseLLM):
             payload["tools"] = tools
         if self.enable_thinking is not None:
             payload["enable_thinking"] = self.enable_thinking
+        payload = apply_provider_options(payload, settings.LLM_API_BASE)
 
         headers = {
             "Content-Type": "application/json",
@@ -152,7 +161,7 @@ class LLMClient(BaseLLM):
         answer_emitted = False
         for attempt in range(2):
             try:
-                yield from self._stream_response(endpoint, payload, headers)
+                yield from self._coalesce_deltas(self._stream_response(endpoint, payload, headers))
                 return
             except requests.RequestException as exc:
                 # Retrying after answer tokens were delivered would duplicate
@@ -171,6 +180,34 @@ class LLMClient(BaseLLM):
                         return
                 raise LLMError(f"LLM streaming request failed: {exc}") from exc
 
+    @staticmethod
+    def _coalesce_deltas(deltas):
+        """Release first text immediately, then bounded live provider batches.
+
+        Source checks run at each release boundary. Avoid performing a remote
+        permission round trip for every single character; never split a finished
+        answer or add a typing delay.
+        """
+        pending = {"content": "", "reasoning_content": ""}
+        seen = set()
+        started = time.monotonic()
+        try:
+            for delta in deltas:
+                new_kind = any(delta.get(key) and key not in seen for key in pending)
+                for key in pending:
+                    pending[key] += delta.get(key) or ""
+                    if delta.get(key):
+                        seen.add(key)
+                if new_kind or sum(map(len, pending.values())) >= 192 or time.monotonic() - started >= 0.3:
+                    yield pending
+                    pending = {"content": "", "reasoning_content": ""}
+                    started = time.monotonic()
+            if any(pending.values()):
+                yield pending
+        finally:
+            if callable(getattr(deltas, 'close', None)):
+                deltas.close()
+
     def _stream_response(self, endpoint: str, payload: dict, headers: dict):
         answer_emitted = False
         resp = None
@@ -186,7 +223,7 @@ class LLMClient(BaseLLM):
                 raise LLMError(f"LLM API returned status {resp.status_code}: {resp.text}")
 
             resp.encoding = "utf-8"
-            for line in resp.iter_lines(decode_unicode=True):
+            for line in resp.iter_lines(chunk_size=1, decode_unicode=True):
                 if not line or not line.startswith("data:"):
                     continue
                 data_str = line[5:].strip()
@@ -198,7 +235,7 @@ class LLMClient(BaseLLM):
                     if choices:
                         delta = choices[0].get("delta") or {}
                         content = delta.get("content") or ""
-                        reasoning = delta.get("reasoning_content") or ""
+                        reasoning = delta.get("reasoning_content") or delta.get("reasoning") or ""
                         if content or reasoning:
                             answer_emitted = answer_emitted or bool(content)
                             yield {

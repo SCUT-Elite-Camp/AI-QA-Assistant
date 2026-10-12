@@ -32,6 +32,7 @@ export type ResearchEventType =
   | 'conflict_resolved'
 
 export interface SourceScope {
+  all_documents?: boolean
   knowledge_base_ids: string[]
   document_ids: string[]
   topic: string
@@ -162,6 +163,7 @@ export interface ResearchCitation {
   updated_at: string | null
   locator: string
   excerpt: string
+  anchor_excerpt?: string | null
   content_hash: string
 }
 
@@ -266,6 +268,12 @@ export interface ResearchEventsResponse {
   research_id: string
   events: ResearchEvent[]
   next_after_event_id: number
+}
+
+export interface ResearchSnapshot {
+  job: ResearchJob
+  progress: ResearchProgress
+  events: ResearchEventsResponse
 }
 
 export interface ResearchApiError {

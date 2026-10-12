@@ -90,6 +90,17 @@ class ObservedLLM(BaseLLM):
         finally:
             self._record(started, success)
 
+    def stream_chat(self, messages: list[dict], tools: list[dict] = None, **kwargs):
+        from agent.service.access_guard import check_model_access
+        check_model_access()
+        started = time.perf_counter()
+        success = False
+        try:
+            yield from self.llm.stream_chat(messages, tools=tools, **kwargs)
+            success = True
+        finally:
+            self._record(started, success)
+
     def _record(self, started: float, success: bool) -> None:
         metrics = _CURRENT_METRICS.get()
         if metrics is not None:

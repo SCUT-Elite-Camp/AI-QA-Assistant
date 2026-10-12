@@ -46,8 +46,9 @@ without that trusted context are stateless across requests.
 
 `POST /api/chat` remains JSON even with `stream: true`. Dedicated `/api/chat/stream`
 and trusted `/api/internal/chat/retrieval/stream` return SSE with
-`done.evidence_provenance`. The BFF buffers, verifies and saves successful answers
-before release. Insufficient context is a non-durable status, not a saved
+`done.evidence_provenance`. Checked provider deltas appear as transient previews;
+the BFF verifies and saves the final answer before publishing its completed message.
+Insufficient context is a non-durable status, not a saved
 successful answer.
 
 
@@ -440,15 +441,16 @@ POST /api/research/jobs/{research_id}/cancel
 GET  /api/research/jobs/{research_id}/report
 GET  /api/research/jobs/{research_id}/progress
 GET  /api/research/jobs/{research_id}/events?after_event_id={event_id}&limit={limit}
+GET  /api/research/jobs/{research_id}/snapshot?after_event_id={event_id}&limit={limit}
 ```
 
 Create request:
 
 ```json
 {
-  "query": "比较 Alpha 与 Beta 的部署状态",
+  "query": "Compare Alpha and Beta deployment status",
   "source_scope": {
-    "document_ids": ["project-alpha", "project-beta"]
+    "all_documents": true
   },
   "report_spec": {
     "format": "markdown",
@@ -456,6 +458,19 @@ Create request:
   }
 }
 ```
+
+The default source scope includes all enterprise Confluence documents currently
+readable by the authenticated user. An omitted or empty `source_scope` is
+equivalent to `{"all_documents": true}`. Creation resolves current local and
+native permissions and stores explicit document IDs before planning. Explicit
+document/KB/topic selectors remain available to API clients; combining them
+with `all_documents=true` is rejected. The browser requires no document picker.
+The manifest and task source lists support catalogs larger than 100 documents;
+the existing action, time and token budgets still bound execution.
+Research interface labels, plan instructions, status events and command
+responses are English. Report content follows the requested report language.
+The browser polls `snapshot` for `{job, progress, events}` in one authorized,
+non-cached response, with a five-second delay after each completed request.
 
 Approval is an immutable snapshot of exactly the Plan and sources the user
 reviewed:
@@ -520,26 +535,30 @@ this Core Vertical Slice.
 Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id` 可访问的
 `doc_id` 白名单，并注入检索过滤器（Milvus / BM25），实现文档级权限隔离。
 
-- 管理员（`users.role == 'admin'`）返回 `None`，表示不过滤全部文档。
-- 权限查询异常时的行为由 `PERMISSION_FAIL_OPEN` 控制：
-  - `false`（默认，fail-closed）：返回空列表，拒绝全部文档访问。
-  - `true`（fail-open）：返回 `None`（不过滤），仅用于排查/降级。
+- 当前授权为本地 ACL 与 Confluence 原生 read 权限的交集，需要显式站点/account 绑定；管理员不能绕过原生来源权限。
+- 权限查询不可用时拒绝释放来源内容；不使用匿名或 fail-open 回退。
 
 ## Not Implemented In Current Version
 
-- Production-level real LLM streaming.
+- Full production load and streaming stability acceptance.
 - Cross-process or restart-persistent conversation memory.
 - Production-level retrieval quality tuning.
 - Production secret management.
 
-## Demo SSE Endpoint
+## Live Chat SSE Endpoint
 
 `POST /api/chat/stream` is available for the Web demo UI. It returns
-`text/event-stream` events from the same `Agent.chat()` result as the JSON
-endpoint. The demo adapter emits the completed answer in bounded chunks; it is
-not live model-token streaming. Event names are:
+`text/event-stream`. Fast uses a streaming final-answer model; Auto and Thinking
+retain their retrieval/tool workflow and stream the answer model's actual deltas.
+A bounded worker queue preserves request ContextVars and applies backpressure.
+No artificial typing delay or completed-answer splitting is used for live models.
+Event names are:
 
 - `token`
+- `source` (complete provenance checked at each release boundary)
+- `answer-start` (a new answer generation replaces a previous draft)
+- `answer` (the final answer, including any evidence-quality repairs)
+- `reasoning`
 - `citations`
 - `done`
 - `error`
@@ -547,13 +566,17 @@ not live model-token streaming. Event names are:
 `citations` carries the citation array, `token` carries a `{ "content": ... }`
 chunk, and `done` carries the trace ID, status, citation count, and optional
 chat title. Non-success responses emit `citations` followed by `error` with a
-message. Concatenating `token` chunks reproduces the JSON answer exactly.
+message. `answer`, when present, replaces concatenated draft `token` chunks.
+Final citations and complete provenance must cover the same current sources.
 
 The token-protected `/api/internal/chat/retrieval/stream` uses the same event
-adapter over its trusted request context. The private and public endpoints keep
+protocol over its trusted request context. The private and public endpoints keep
 their separate authentication and request schemas.
 
-This endpoint reuses the normal chat response and emits demo streaming events. The stable integration contract remains `POST /api/chat`.
+Web displays checked deltas via transient `data-answer-preview` events, clears
+them on failure and publishes only a verified, durable final message. Specialized
+dated-claim quality gates may hold answer text until validation finishes.
+The stable JSON integration contract remains `POST /api/chat`.
 
 ## GET /api/tools
 

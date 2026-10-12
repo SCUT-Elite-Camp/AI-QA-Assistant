@@ -17,8 +17,6 @@ def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", "test-internal-secret")
     monkeypatch.setenv("ATTACHMENT_ENCRYPTION_KEY", base64.urlsafe_b64encode(b"k" * 32).decode())
     monkeypatch.setenv("ATTACHMENT_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("ATTACHMENT_SCANNER", "disabled")
-    monkeypatch.setenv("ALLOW_FAKE_ATTACHMENT_SCANNER", "true")
     monkeypatch.setenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "false")
     sys.modules.pop("attachment_service.app", None)
     module = importlib.import_module("attachment_service.app")
@@ -153,39 +151,15 @@ def test_topic_promotion_requires_topic_dedupe_domain(service) -> None:
     assert promoted.status_code == 422
 
 
-def test_malware_is_quarantined_and_content_is_inaccessible(service, monkeypatch: pytest.MonkeyPatch) -> None:
-    module, client = service
-
-    def reject(*_args, **_kwargs):
-        raise module.MalwareDetected("detected")
-
-    monkeypatch.setattr(module, "scan_file", reject)
-    response = client.post("/v1/attachments/att_bad01", headers=_headers("bad.txt"), content=b"malicious")
+def test_parser_readiness_requires_no_external_scanner(service) -> None:
+    _, client = service
+    response = client.get("/health/ready", headers={"Authorization": "Bearer test-internal-secret"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+    response = client.post("/v1/attachments/att_parseronly", headers=_headers("note.txt"), content=b"context")
     assert response.status_code == 201
-    assert response.json()["status"] == "quarantined"
-    content = client.get("/v1/attachments/att_bad01/content", headers={"Authorization": "Bearer test-internal-secret"})
-    assert content.status_code == 404
-    inspect = client.post(
-        "/v1/attachments/att_bad01/inspect",
-        headers={"Authorization": "Bearer test-internal-secret"},
-        json={"question": "分析这个文件"},
-    )
-    assert inspect.status_code == 409
-
-
-def test_readiness_fails_closed_when_scanner_self_test_failed(service) -> None:
-    module, client = service
-    original = module.SCANNER_READY
-    module.SCANNER_READY = False
-    try:
-        response = client.get(
-            "/health/ready",
-            headers={"Authorization": "Bearer test-internal-secret"},
-        )
-        assert response.status_code == 503
-        assert response.json()["detail"]["code"] == "scanner_unavailable"
-    finally:
-        module.SCANNER_READY = original
+    assert response.json()["status"] in {"parsing", "ready"}
+    assert _wait_status(client, "att_parseronly", {"ready"})["status"] == "ready"
 
 
 def test_length_mismatch_and_internal_auth_are_rejected(service) -> None:

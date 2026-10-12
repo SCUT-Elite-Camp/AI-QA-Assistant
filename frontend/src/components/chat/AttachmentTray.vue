@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { $fetch } from 'ofetch'
 import { useCsrf } from '../../composables/useCsrf'
+import { attachmentErrorCode, attachmentErrorMessage } from '../../utils/attachmentError'
 
 type Scope = 'draft' | 'chat' | 'topic'
 interface TrayAttachment {
@@ -16,6 +17,8 @@ interface TrayAttachment {
   expiresAt?: number
   xhr?: XMLHttpRequest
   cancelled?: boolean
+  file?: File
+  pollFailures?: number
 }
 
 const props = withDefaults(defineProps<{
@@ -64,8 +67,11 @@ function controlledMime(file: File): string {
 function statusText(item: TrayAttachment): string {
   const labels: Record<string, string> = {
     uploading: 'Uploading...',
-    scanning: 'Security scan',
+    scanning: 'Processing...',
     parsing: 'Processing...',
+    chunking: 'Processing...',
+    embedding: 'Indexing...',
+    indexing: 'Indexing...',
     ready: 'Ready',
     needs_review: 'Review needed',
     failed: 'Failed',
@@ -97,15 +103,21 @@ async function ensureBatch(): Promise<string> {
   return batchPromise
 }
 
-function uploadFile(file: File) {
-  if (items.value.length >= 10) return
-  const item = reactive<TrayAttachment>({ filename: file.name, mimeType: controlledMime(file), sizeBytes: file.size, progress: 0, status: 'uploading' })
-  items.value.push(item)
+function uploadFile(file: File, existing?: TrayAttachment) {
+  if (!existing && items.value.length >= 10) return
+  const item = existing || reactive<TrayAttachment>({ filename: file.name, mimeType: controlledMime(file), sizeBytes: file.size, progress: 0, status: 'uploading', file })
+  if (!existing) items.value.push(item)
+  item.cancelled = false
+  item.status = 'uploading'
+  item.errorCode = ''
+  item.progress = 0
+  notify()
   ensureBatch().then((id) => {
     if (item.cancelled) return
     const xhr = new XMLHttpRequest()
     item.xhr = xhr
     xhr.open('POST', `/api/attachment-batches/${id}/files`)
+    xhr.timeout = 180_000
     xhr.setRequestHeader(headerName, csrf())
     const filenameBytes = new TextEncoder().encode(file.name)
     let filenameBinary = ''
@@ -114,6 +126,7 @@ function uploadFile(file: File) {
     xhr.setRequestHeader('Content-Type', item.mimeType)
     xhr.upload.onprogress = event => { if (event.lengthComputable) item.progress = Math.round(event.loaded * 100 / event.total) }
     xhr.onerror = () => { item.status = 'failed'; item.errorCode = 'network_error'; notify() }
+    xhr.ontimeout = () => { item.status = 'failed'; item.errorCode = 'upload_timeout'; notify() }
     xhr.onabort = () => { item.status = 'cancelled'; notify() }
     xhr.onload = () => {
       let payload: any = {}
@@ -127,17 +140,18 @@ function uploadFile(file: File) {
         return
       }
       if (xhr.status < 200 || xhr.status >= 300) {
-        item.status = 'failed'; item.errorCode = payload?.statusMessage || payload?.detail?.code || 'upload_failed'; notify(); return
+        item.status = 'failed'; item.errorCode = attachmentErrorCode(payload); notify(); return
       }
       item.id = payload.id
       item.status = payload.status || 'parsing'
       item.expiresAt = payload.expires_at
+      item.errorCode = payload.error_code || ''
       item.progress = 100
       notify()
       poll(item)
     }
     xhr.send(file)
-  }).catch(() => { item.status = 'failed'; item.errorCode = 'batch_failed'; notify() })
+  }).catch((error) => { item.status = 'failed'; item.errorCode = attachmentErrorCode(error?.data, 'batch_failed'); notify() })
 }
 
 async function poll(item: TrayAttachment) {
@@ -147,7 +161,11 @@ async function poll(item: TrayAttachment) {
     const result = await $fetch<any>(`/api/attachments/${item.id}`)
     item.status = result.status
     item.errorCode = result.error_code || ''
-  } catch { item.status = 'failed'; item.errorCode = 'status_unavailable' }
+    item.pollFailures = 0
+  } catch {
+    item.pollFailures = (item.pollFailures || 0) + 1
+    if (item.pollFailures >= 3) { item.status = 'failed'; item.errorCode = 'status_unavailable' }
+  }
   notify()
   if (!item.cancelled && !['ready', 'needs_review', 'failed', 'quarantined', 'expired', 'deleted'].includes(item.status)) {
     polling.set(item.id, setTimeout(() => poll(item), 1500))
@@ -156,7 +174,7 @@ async function poll(item: TrayAttachment) {
 
 function addFiles(files: FileList | File[]) {
   if (props.disabled) return
-  Array.from(files).slice(0, 10 - items.value.length).forEach(uploadFile)
+  Array.from(files).slice(0, 10 - items.value.length).forEach(file => uploadFile(file))
   if (inputRef.value) inputRef.value.value = ''
 }
 
@@ -173,10 +191,19 @@ async function remove(item: TrayAttachment) {
 }
 
 function retry(item: TrayAttachment) {
-  if (!item.id) return
+  if (!item.id) {
+    if (item.errorCode === 'batch_expired') batchId.value = null
+    if (item.file) uploadFile(item.file, item)
+    return
+  }
+  const statusOnly = item.errorCode === 'status_unavailable'
   item.status = 'parsing'
+  item.errorCode = ''
+  item.pollFailures = 0
+  notify()
+  if (statusOnly) { poll(item); return }
   $fetch(`/api/attachments/${item.id}/retry`, { method: 'POST', headers: { [headerName]: csrf() } })
-    .then(() => poll(item)).catch(() => { item.status = 'failed' })
+    .then(() => poll(item)).catch((error) => { item.status = 'failed'; item.errorCode = attachmentErrorCode(error?.data, 'parse_failed'); notify() })
 }
 
 function onPaste(event: ClipboardEvent) {
@@ -194,7 +221,7 @@ function resetAfterSend() {
 
 function hasBlockingAttachments(): boolean {
   return items.value.some(item =>
-    ['uploading', 'scanning', 'parsing'].includes(item.status)
+    ['uploading', 'scanning', 'parsing', 'chunking', 'embedding', 'indexing'].includes(item.status)
     || (item.status === 'needs_review' && !item.acceptedReview),
   )
 }
@@ -257,11 +284,11 @@ defineExpose({
           <span v-if="item.status === 'uploading'"> · {{ item.progress }}%</span>
         </div>
         <div v-if="item.expiresAt" class="text-muted text-[10px]">Expires: {{ new Date(item.expiresAt * 1000).toLocaleString() }}</div>
-        <div v-if="item.errorCode" class="text-error text-[11px]">{{ item.errorCode }}</div>
+        <div v-if="item.errorCode" class="text-error text-[11px]">{{ attachmentErrorMessage(item.errorCode) }}</div>
         <div v-if="item.status === 'needs_review'" class="mt-1 flex items-center gap-1 text-[11px]">
           <input v-model="item.acceptedReview" type="checkbox" @change="notify"><span>Confirm low-confidence result</span>
         </div>
-        <UButton v-if="item.status === 'failed' && item.id" label="Retry" size="xs" variant="soft" color="error" class="mt-1" @click="retry(item)" />
+        <UButton v-if="item.status === 'failed' && (item.id || item.file)" label="Retry" size="xs" variant="soft" color="error" class="mt-1" @click="retry(item)" />
       </div>
     </div>
   </div>

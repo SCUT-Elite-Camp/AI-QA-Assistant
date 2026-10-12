@@ -68,6 +68,9 @@ class SourceAccessProvider:
         self.base_url = base_url or os.getenv("CONFLUENCE_BASE") or credentials.get("CONFLUENCE_BASE") or ""
         self.email = email or os.getenv("CONFLUENCE_EMAIL") or credentials.get("CONFLUENCE_EMAIL") or ""
         self.token = token or os.getenv("CONFLUENCE_TOKEN") or credentials.get("CONFLUENCE_TOKEN") or ""
+        if transport is None and os.getenv('CONFLUENCE_HTTP_TRANSPORT') == 'curl':
+            from shared_runtime.curl_transport import CurlSession
+            transport = CurlSession()
         self.transport = transport or requests.Session()
         self.document_loader = document_loader
         self.document_ids_loader = document_ids_loader
@@ -123,7 +126,7 @@ class SourceAccessProvider:
         # Independent reads within this one boundary may run concurrently. No
         # positive result survives the boundary or substitutes for a later read.
         from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=min(4, max(1, len(candidates)))) as pool:
+        with ThreadPoolExecutor(max_workers=min(16, max(1, len(candidates)))) as pool:
             decisions = list(pool.map(check, candidates))
         return [doc_id for doc_id, granted in zip(candidates, decisions) if granted]
 

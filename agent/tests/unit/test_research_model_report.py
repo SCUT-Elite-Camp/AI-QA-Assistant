@@ -210,6 +210,12 @@ def test_grounding_edits_cannot_rewrite_ambiguous_targets_or_whole_report(conten
         EvidenceReportSynthesizer._apply_grounding_edits(content, json.dumps({'edits': [edit]}))
 
 
+@pytest.mark.parametrize('raw', ['[]', '{"edits":[[]]}', '{"edits":[null]}'])
+def test_grounding_edits_reject_array_objects_for_bounded_recovery(raw):
+    with pytest.raises(ValueError):
+        EvidenceReportSynthesizer._apply_grounding_edits('Fact [1].', raw)
+
+
 def test_ambiguous_architecture_report_does_not_dump_candidate_sources(monkeypatch):
     from deep_research.renderer import MarkdownReportRenderer
     from agent.schemas.research import ResearchReport, ResearchResultStatus
@@ -549,6 +555,35 @@ def test_report_transport_preserves_explicit_thinking_choice(monkeypatch, mode, 
     assert calls[1]['enable_thinking'] is not expected
     client._chat({'model': 'other-model'})
     assert 'enable_thinking' not in calls[2]
+
+
+def test_gemini_audit_omits_other_provider_thinking_fields(monkeypatch):
+    from types import SimpleNamespace
+    import requests
+    sent = []
+    def post(self, url, **kwargs):
+        sent.append(kwargs['json'])
+        return SimpleNamespace(raise_for_status=lambda: None, json=lambda: {'choices': []})
+    monkeypatch.setattr(requests.Session, 'post', post)
+    client = EvidenceReportSynthesizer(api_base='https://example.test/v1', api_key='test', model='gemini-test')
+    payload = {'model': 'gemini-test', 'enable_thinking': False, 'thinking_budget': 100, 'thinking': {'type': 'disabled'}}
+    client._chat(payload)
+    assert sent == [{'model': 'gemini-test'}]
+    assert payload['enable_thinking'] is False
+
+
+def test_array_http_error_preserves_rejection_and_redacts_credentials(monkeypatch, caplog):
+    from types import SimpleNamespace
+    import requests
+    response = SimpleNamespace(status_code=400, json=lambda: [{'error': {'code': 400, 'message': 'invalid test-secret'}}])
+    def post(self, url, **kwargs):
+        raise requests.HTTPError('request rejected', response=response)
+    monkeypatch.setattr(requests.Session, 'post', post)
+    client = EvidenceReportSynthesizer(api_base='https://example.test/v1', api_key='test-secret', model='gemini-test')
+    with pytest.raises(requests.HTTPError):
+        client._chat({'model': 'gemini-test'})
+    assert 'test-secret' not in caplog.text
+    assert 'invalid [redacted]' in caplog.text
 
 
 def test_report_quality_gate_requires_citation_on_each_factual_block() -> None:
@@ -1097,6 +1132,16 @@ def test_malformed_audit_recovery_requires_independent_boolean_verification(monk
             client._audit_issues(payload)
     else:
         assert (client._audit_issues(payload)==[]) == accepted
+
+
+def test_list_shaped_grounding_verdict_uses_bounded_retry(monkeypatch):
+    client = EvidenceReportSynthesizer(api_base='unused', api_key='test', model='test')
+    replies = iter(['[]', '{"verdict":"supported","issues":[]}'])
+    monkeypatch.setattr(client, '_chat', lambda payload: {'choices': [
+        {'finish_reason': 'stop', 'message': {'content': next(replies)}}]})
+    payload = {'messages': client._evidence_messages('Audit evidence.\n\nQuestion: State status.\n\n'
+        'Candidate:\nA is planned. [1]\n\nSources:\n[1] A is planned.')}
+    assert client._audit_issues(payload) == []
 
 
 @pytest.mark.parametrize('source,expected', [('Action: repair broken links.',True),('Invented source quotation.',False)])

@@ -10,6 +10,7 @@ import requests
 import os
 
 from agent.config.settings import settings
+from agent.llm.provider_options import apply_provider_options
 from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
 from agent.schemas.research import ResearchResultStatus, ResearchLimitation
 from .renderer import MarkdownReportRenderer
@@ -155,6 +156,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             "You are a rigorous research report writer. Use only the frozen, verified local evidence below. "
             "Do not browse, add facts from memory, or invent sources. "
             f"{output_instruction} Every factual paragraph or table row must include its matching [n] citation. "
+            "Use the smallest set of excerpts that directly supports each claim; do not attach every available citation to every paragraph. "
             "Cover every part of the user's question that the evidence can support, synthesize rather than copy raw Markdown, "
             "and distinguish confirmed facts from pending verification. Do not output a title, source list, or code fence. "
             "Do not infer causes, production readiness, permissions, scalability or mock implementation from silence in the sources. "
@@ -198,6 +200,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 "Put each heading on its own line, followed by a blank line. "
                 "Write multiple citations separately, for example [1][2], never [1,2]. "
                 " Every factual paragraph and table row needs its matching outer [n] citations. "
+                "Use the smallest set of excerpts that directly supports each claim; do not attach every available citation to every paragraph. "
                 "Answer only the requested outputs. Do not add architectural, causal or production-readiness commentary. "
                 "Do not add contributors, owner names or completion dates unless requested. A target week is not an actual completion date. "
                 "A complete system and a registry or individual skill have different scopes; including the smaller planned component "
@@ -447,7 +450,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 if self._structural_issues(content, len(base_report.citations), choice.get("finish_reason"), evidence_text=evidence_text, language=language, objective=str(kwargs['objective'])):
                     return fallback
         except Exception as exc:
-            logger.warning("Report grounding validation unavailable: %s: %s", type(exc).__name__, str(exc)[:200])
+            logger.warning("Report grounding validation unavailable: %s: %s", type(exc).__name__, str(exc)[:200], exc_info=True)
             return fallback
 
         source_lines = ["", "## 来源" if language == "zh-CN" else "## Sources", ""]
@@ -697,6 +700,8 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                 check = self._chat({"model": self.model, "messages": self._evidence_messages(check_prompt),
                     "temperature": 0, "max_tokens": 500, "response_format": {"type": "json_object"}})
                 coverage = json.loads(check['choices'][0]['message']['content'])
+                if not isinstance(coverage, dict):
+                    raise ValueError('invalid coverage verification')
                 if not isinstance(coverage.get('candidate_quote'), str):
                     raise ValueError("invalid repair coverage audit")
                 quote = str(coverage.get('candidate_quote') or '').strip()
@@ -1822,7 +1827,10 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                     choice = self._chat(verification)['choices'][0]
                     if choice.get('finish_reason')=='length':
                         raise ValueError('independent evidence verification truncated')
-                    supported = json.loads(choice['message']['content']).get('supported')
+                    verification_result = json.loads(choice['message']['content'])
+                    if not isinstance(verification_result, dict):
+                        raise ValueError('independent evidence verification unavailable')
+                    supported = verification_result.get('supported')
                     if type(supported) is not bool:
                         raise ValueError('independent evidence verification unavailable')
                     return [] if supported else ['The independent source comparison found an unsupported claim, wrong citation or missing requested fact; rebuild from the frozen evidence.']
@@ -1873,6 +1881,8 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         if raw.startswith("```"):
             raw = "\n".join(raw.splitlines()[1:-1])
         verdict = json.loads(raw)
+        if not isinstance(verdict, dict):
+            raise ValueError('invalid grounding audit')
         issues = verdict.get("issues")
         if not isinstance(issues, list):
             raise ValueError("invalid grounding audit")
@@ -2082,10 +2092,15 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             choice=response['choices'][0]
             if choice.get('finish_reason')=='length':
                 return content
-            supports=json.loads(choice['message']['content']).get('supports',[])
+            support_result = json.loads(choice['message']['content'])
+            if not isinstance(support_result, dict) or not isinstance(support_result.get('supports'), list):
+                raise ValueError('invalid citation support result')
+            supports = support_result['supports']
             sources={c.number:c.excerpt for c in citations}
             used=set()
             for support in supports:
+                if not isinstance(support, dict):
+                    raise ValueError('invalid citation support item')
                 index,number,quote=(support.get(k) for k in ('block_id','citation','source_quote'))
                 if (type(index) is not int or not 0<=index<len(blocks) or index in used
                     or type(number) is not int or number not in sources):
@@ -2101,7 +2116,8 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                         'Verify citation support.\n\nAnswer block:\n'+block+'\n\nActual source:\n'+sources[number])
                     check=self._chat({'model':self.model,'messages':self._evidence_messages(check_prompt),'enable_thinking':False,
                         'temperature':0,'max_tokens':200,'response_format':{'type':'json_object'}})['choices'][0]
-                    if check.get('finish_reason')=='length' or json.loads(check['message']['content']).get('supported') is not True:
+                    support_check = json.loads(check['message']['content'])
+                    if check.get('finish_reason')=='length' or not isinstance(support_check, dict) or support_check.get('supported') is not True:
                         continue
                 if content.count(block)!=1:
                     continue
@@ -2160,12 +2176,17 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         raw = raw.strip()
         if raw.startswith("```"):
             raw = "\n".join(raw.splitlines()[1:-1])
-        edits = json.loads(raw).get("edits")
+        edit_result = json.loads(raw)
+        if not isinstance(edit_result, dict):
+            raise ValueError("invalid grounding edits")
+        edits = edit_result.get("edits")
         if not isinstance(edits, list) or not 1 <= len(edits) <= 8:
             raise ValueError("invalid grounding edits")
         blocks = EvidenceReportSynthesizer._editable_blocks(content)
         used_blocks = set()
         for edit in edits:
+            if not isinstance(edit, dict):
+                raise ValueError("invalid grounding edit item")
             if "block_id" in edit:
                 index = edit["block_id"]
                 if type(index) is not int or not 0 <= index < len(blocks) or index in used_blocks:
@@ -2320,6 +2341,11 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             # JSON audits/quote selection need answer tokens, not an exhausted
             # reasoning-only completion. Explicit opt-in still takes precedence.
             request_payload.setdefault("enable_thinking", settings.LLM_THINKING_MODE == "enabled")
+        if str(payload.get("model", self.model)).casefold().startswith("gemini"):
+            # Google's compatible endpoint rejects provider-specific Qwen/DeepSeek
+            # fields, including those requested by the bounded audit helpers.
+            for key in ("enable_thinking", "thinking_budget", "thinking"):
+                request_payload.pop(key, None)
         if str(payload.get("model", self.model)).casefold().startswith("qwen-flash") and settings.LLM_THINKING_MODE != "disabled":
             # This model needs bounded reasoning for source status and chronology,
             # including synthesis and localized repairs, not just the audit.
@@ -2328,6 +2354,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
             request_payload.setdefault("thinking_budget", 2048)
             if request_payload.get("enable_thinking"):
                 request_payload["max_tokens"] = max(int(request_payload.get("max_tokens", 1800)), int(request_payload["thinking_budget"]) + 1800)
+        request_payload = apply_provider_options(request_payload, self.api_base)
         last_error: Exception | None = None
         # Match the regular answer client's proxy-aware transport. urllib used
         # a different TLS/proxy path and failed while ordinary answers worked.
@@ -2352,7 +2379,12 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
                         rejected_response = http_error.response
                         if rejected_response is None:
                             raise ValueError('no response body')
-                        error = rejected_response.json().get('error', {})
+                        error_body = rejected_response.json()
+                        if isinstance(error_body, list):
+                            error_body = next((item for item in error_body if isinstance(item, dict)), {})
+                        error = error_body.get('error', {}) if isinstance(error_body, dict) else {}
+                        if not isinstance(error, dict):
+                            error = {}
                         message = str(error.get('message', ''))[:300].replace(self.api_key, '[redacted]')
                         logger.warning('Research model HTTP %s (%s): %s', rejected_response.status_code, error.get('code'), message)
                     except (ValueError, TypeError):

@@ -43,8 +43,8 @@ const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
 const toast = useToast()
 const showHitRateDrawer = ref(false)
+const liveAnswer = ref<{ messageId: string, text: string } | null>(null)
 const isWeightModeSaving = ref(false)
-const selectedResearchDocumentIds = ref<string[]>([])
 const { launchResearch, researchLaunchError } = useResearchLaunch()
 
 const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('fast')
@@ -193,7 +193,11 @@ const greeting = computed(() => {
 })
 
 const visibleMessages = computed(() => {
-  return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant') || []
+  return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant').map(message => {
+    if (!liveAnswer.value || message.id !== liveAnswer.value.messageId || !liveAnswer.value.text) return message
+    return { ...message, parts: [...message.parts.filter(part => part.type !== 'text'),
+      { type: 'text' as const, text: liveAnswer.value.text, state: 'streaming' as const }] }
+  }) || []
 })
 
 const deepResearchMode = ref(chatExplorationMode(
@@ -230,6 +234,12 @@ const chat = new Chat({
     },
   }),
   onData: (dataPart) => {
+    if (dataPart.type === 'data-answer-preview') {
+      const value = dataPart.data as { messageId: string, delta?: string, reset?: boolean }
+      if (value.reset) liveAnswer.value = null
+      else liveAnswer.value = { messageId: value.messageId,
+        text: (liveAnswer.value?.messageId === value.messageId ? liveAnswer.value.text : '') + (value.delta || '') }
+    }
     if (dataPart.type === 'data-chat-title') {
       fetchChats()
     }
@@ -241,6 +251,7 @@ const chat = new Chat({
     }
   },
   onFinish: ({ message, isAbort, isDisconnect, isError }) => {
+    liveAnswer.value = null
     if (hasPendingTrustedMemoryRecall.value && !isAbort && !isDisconnect && !isError && message.role === 'assistant') {
       if (!memoryRecallMessageIds.value.includes(message.id)) {
         memoryRecallMessageIds.value = [...memoryRecallMessageIds.value, message.id]
@@ -277,7 +288,7 @@ async function handleSubmit(e: Event) {
   e.preventDefault()
   if (deepResearchMode.value) {
     if (input.value.trim()) {
-      const launched = await launchResearch(input.value.trim(), selectedResearchDocumentIds.value)
+      const launched = await launchResearch(input.value.trim())
       if (launched) input.value = ''
     }
     return
@@ -323,10 +334,10 @@ function cancelEdit() {
 async function saveEdit(message: UIMessage, text: string) {
   if (isWeightModeSaving.value || chat.status === 'streaming') return
   try {
-    await $fetch(`/api/chats/messages/${data!.id}`, {
+    await $fetch(`/api/chats/messages/${encodeURIComponent(message.id)}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
-      body: { messageId: message.id, type: 'edit' },
+      body: { chatId: data!.id, type: 'edit' },
     })
   } catch {
     toast.add({
@@ -356,10 +367,10 @@ async function saveEdit(message: UIMessage, text: string) {
 async function regenerateMessage(message: UIMessage) {
   if (isWeightModeSaving.value || chat.status === 'streaming') return
   try {
-    await $fetch(`/api/chats/messages/${data!.id}`, {
+    await $fetch(`/api/chats/messages/${encodeURIComponent(message.id)}`, {
       method: 'DELETE',
       headers: { [headerName]: csrf() },
-      body: { messageId: message.id, type: 'regenerate' },
+      body: { chatId: data!.id, type: 'regenerate' },
     })
   } catch {
     toast.add({
@@ -623,19 +634,20 @@ onBeforeUnmount(() => {
           />
 
           <template #right-end>
-            <!-- Hit Rate Monitor Button at the absolute far right top navbar -->
+            <!-- Retrieval monitor follows the application's appearance settings. -->
             <UButton
               color="neutral"
               variant="ghost"
-              icon="i-lucide-bar-chart-3"
+              :icon="showHitRateDrawer ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
               size="sm"
-              title="Hit Rate Monitoring"
-              aria-label="Hit Rate Monitoring"
+              :title="showHitRateDrawer ? 'Close retrieval sidebar' : 'Open retrieval sidebar'"
+              :aria-label="showHitRateDrawer ? 'Close retrieval sidebar' : 'Open retrieval sidebar'"
+              :aria-expanded="showHitRateDrawer"
               :class="[
-                'cursor-pointer transition-colors text-zinc-700 dark:text-zinc-200',
+                'cursor-pointer transition-colors',
                 showHitRateDrawer
-                  ? 'bg-zinc-200/80 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-bold'
-                  : 'hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/80'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted hover:text-highlighted hover:bg-elevated'
               ]"
               @click="showHitRateDrawer = !showHitRateDrawer"
             />
@@ -770,7 +782,7 @@ onBeforeUnmount(() => {
 
             <UChatMessages
               should-auto-scroll
-              :messages="chat.messages"
+              :messages="visibleMessages"
               :status="chat.status"
               :spacing-offset="isOwner ? 160 : 0"
               :user="{
@@ -891,7 +903,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-if="isOwner && deepResearchMode" class="sticky bottom-20 z-10 w-full max-w-3xl sm:max-w-4xl mx-auto px-4 sm:px-0 mb-2">
-              <ResearchModeNotice v-model="selectedResearchDocumentIds" />
+              <ResearchModeNotice />
               <p v-if="researchLaunchError" role="alert" class="px-3 py-2 text-sm text-error">{{ researchLaunchError }}</p>
             </div>
 

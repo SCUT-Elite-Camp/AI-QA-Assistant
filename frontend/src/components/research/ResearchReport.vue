@@ -11,6 +11,8 @@ import { researchSourceHref } from '../../utils/research'
 
 const props = defineProps<{ job: ResearchJob, report: ResearchReport, plan?: ResearchPlan | null, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ restart: [], askSelectedText: [text: string], regenerate: [] }>()
+const useMock = import.meta.env.VITE_RESEARCH_USE_MOCK === 'true'
+const downloadHref = computed(() => `/api/research/download?researchId=${encodeURIComponent(props.job.research_id)}`)
 const sourceOpen = ref(false)
 const selectedSource = ref<ChunkCitation | null>(null)
 const selectedText = ref('')
@@ -26,6 +28,7 @@ const sourceCitations = computed<ChunkCitation[]>(() => props.report.citations.m
     title: citation.title,
     source_url: researchSourceHref(props.job.research_id, citation.doc_id),
     chunk_text: citation.excerpt,
+    anchor_excerpt: citation.anchor_excerpt,
     content_hash: citation.content_hash,
     normalized_content_hash: citation.content_hash,
     source_version: citation.document_version ?? undefined,
@@ -40,15 +43,6 @@ provide('openCitation', (index: number) => {
 })
 
 function downloadMarkdown() {
-  if (import.meta.env.VITE_RESEARCH_USE_MOCK !== 'true') {
-    const link = document.createElement('a')
-    link.href = `/api/research/download?researchId=${encodeURIComponent(props.job.research_id)}`
-    link.download = `${props.report.report_id}.md`
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    return
-  }
   const blob = new Blob([props.report.markdown], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -95,7 +89,7 @@ function askSelectedText() {
   <div class="space-y-6">
     <ModalDocumentViewer v-model:open="sourceOpen" :doc="selectedSource" :research-id="job.research_id" />
     <p class="max-w-[72ch] text-base leading-7 text-highlighted">
-      研究已经完成。以下结论来自已核验的资料与原文引用<span v-if="report.conflicts?.length">；其中仍有资料冲突，需要你结合实际情况复核</span><span v-else-if="report.result_status !== 'complete'">；报告存在待确认事项或未通过质量核验，请查看说明</span>。
+      Research is complete. The findings below include verified evidence and source citations<span v-if="report.conflicts?.length">; source conflicts require your review</span><span v-else-if="report.result_status !== 'complete'">; some findings need confirmation or did not pass quality checks. Review the limitations</span>.
     </p>
 
     <article
@@ -123,7 +117,7 @@ function askSelectedText() {
           name="i-lucide-copy"
           class="size-3.5"
         />
-        复制
+        Copy
       </button>
       <span class="h-3.5 w-px bg-zinc-700/60" />
       <button
@@ -135,7 +129,7 @@ function askSelectedText() {
           name="i-lucide-message-circle-question"
           class="size-3.5"
         />
-        划词提问
+        Ask about selection
       </button>
     </div>
 
@@ -150,10 +144,10 @@ function askSelectedText() {
         />
         <div>
           <h2 class="font-semibold text-highlighted">
-            冲突核验
+            Conflict review
           </h2>
           <p class="mt-1 text-sm text-muted">
-            系统保留了不同来源的原始说法，并单独记录处理依据。
+            Original statements from each source and resolution reasons are recorded separately.
           </p>
         </div>
       </div>
@@ -167,12 +161,12 @@ function askSelectedText() {
             <UBadge
               color="warning"
               variant="soft"
-              :label="conflict.conflict_type === 'version' ? '版本冲突' : conflict.conflict_type === 'numeric' ? '数值冲突' : '来源冲突'"
+              :label="conflict.conflict_type === 'version' ? 'Version conflict' : conflict.conflict_type === 'numeric' ? 'Numeric conflict' : 'Source conflict'"
             />
             <UBadge
               :color="conflict.resolution_status !== 'unresolved' ? 'success' : 'neutral'"
               variant="soft"
-              :label="conflict.resolution_status === 'resolved_by_user' ? '已由你确认' : conflict.resolution_status === 'resolved_by_authority' ? '已有处理依据' : '需要人工复核'"
+              :label="conflict.resolution_status === 'resolved_by_user' ? 'Resolved by you' : conflict.resolution_status === 'resolved_by_authority' ? 'Resolution recorded' : 'Needs review'"
             />
           </div>
           <p class="mt-3 text-sm leading-6 text-highlighted">
@@ -193,21 +187,21 @@ function askSelectedText() {
               <dl class="mt-3 space-y-1 text-xs">
                 <div>
                   <dt class="inline">
-                    版本：
+                    Version:
                   </dt><dd class="inline">
-                    {{ alternative.document_version || '未标注' }}
+                    {{ alternative.document_version || 'Not recorded' }}
                   </dd>
                 </div>
                 <div>
                   <dt class="inline">
-                    更新时间：
+                    Updated:
                   </dt><dd class="inline">
-                    {{ alternative.updated_at || alternative.effective_at || '未标注' }}
+                    {{ alternative.updated_at || alternative.effective_at || 'Not recorded' }}
                   </dd>
                 </div>
                 <div>
                   <dt class="inline">
-                    权威等级：
+                    Authority:
                   </dt><dd class="inline">
                     {{ alternative.authority }}（{{ alternative.authority_rank }}）
                   </dd>
@@ -227,8 +221,8 @@ function askSelectedText() {
 
     <UChatTool
       v-if="sourceCitations.length"
-      text="已检索知识库"
-      :suffix="`${sourceCitations.length} 条证据`"
+      text="Knowledge base sources"
+      :suffix="`${sourceCitations.length} evidence items`"
       :streaming="false"
       chevron="leading"
       class="max-w-[72ch]"
@@ -245,41 +239,41 @@ function askSelectedText() {
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="font-semibold text-highlighted">
-          执行记录
+          Execution summary
         </h2>
         <UBadge
           v-if="latestRecovery"
           color="primary"
           variant="soft"
           icon="i-lucide-history"
-          label="已从检查点恢复"
+          label="Restored from checkpoint"
         />
       </div>
       <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
         <div>
           <dt class="text-xs text-muted">
-            执行耗时
+            Elapsed time
           </dt><dd class="mt-1 font-semibold text-highlighted">
-            {{ (progress.metrics.elapsed_ms / 1000).toFixed(1) }} 秒
+            {{ (progress.metrics.elapsed_ms / 1000).toFixed(1) }} seconds
           </dd>
         </div>
         <div>
           <dt class="text-xs text-muted">
-            动作使用
+            Actions used
           </dt><dd class="mt-1 font-semibold text-highlighted">
             {{ progress.metrics.actions_used }} / {{ plan?.budget?.max_actions ?? '—' }}
           </dd>
         </div>
         <div>
           <dt class="text-xs text-muted">
-            读取资料
+            Documents read
           </dt><dd class="mt-1 font-semibold text-highlighted">
             {{ progress.metrics.documents_read }}
           </dd>
         </div>
         <div>
           <dt class="text-xs text-muted">
-            恢复次数
+            Recoveries
           </dt><dd class="mt-1 font-semibold text-highlighted">
             {{ progress.metrics.recovery_count }}
           </dd>
@@ -289,7 +283,7 @@ function askSelectedText() {
         v-if="latestRecovery"
         class="mt-4 text-xs leading-5 text-muted"
       >
-        {{ latestRecovery.message }}，恢复过程未重复写入证据或报告。
+        Restored from checkpoint. Recovery did not duplicate evidence or reports.
       </p>
     </section>
 
@@ -302,17 +296,21 @@ function askSelectedText() {
           :created-at="report.generated_at"
           @regenerate="emit('regenerate')"
         />
+        <a v-if="!useMock" :href="downloadHref" :download="`${report.report_id}.md`" class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-elevated hover:text-highlighted">
+          <UIcon name="i-lucide-download" class="size-4" />Download
+        </a>
         <UButton
+          v-else
           color="neutral"
           variant="ghost"
           size="sm"
           icon="i-lucide-download"
-          label="下载"
+          label="Download"
           @click="downloadMarkdown"
         />
       </div>
       <div class="ml-auto flex items-center gap-1 text-xs text-muted">
-        <span>{{ report.result_status === 'complete' ? '研究完成' : '需要复核' }}</span>
+        <span>{{ report.result_status === 'complete' ? 'Research complete' : 'Needs review' }}</span>
         <span aria-hidden="true">·</span>
         <time :datetime="report.generated_at">{{ new Date(report.generated_at).toLocaleString() }}</time>
       </div>
@@ -322,7 +320,7 @@ function askSelectedText() {
         variant="ghost"
         size="sm"
         icon="i-lucide-rotate-ccw"
-        label="发起新的研究"
+        label="Start new research"
         @click="emit('restart')"
       />
     </div>

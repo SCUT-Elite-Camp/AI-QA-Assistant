@@ -225,6 +225,46 @@ beforeEach(() => {
 })
 
 describe('chat to Fact proposal lifecycle', () => {
+  it('shows checked provider deltas before completion and persists only the final answer', async () => {
+    let controller!: ReadableStreamDefaultController<Uint8Array>
+    const encoder = new TextEncoder()
+    const proof = { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] }
+    const push = (event: string, data: unknown) => controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+    mocks.agentFetch.mockResolvedValueOnce({ ok: true, body: new ReadableStream({ start(value) { controller = value } }) })
+    const handler = await loadChatHandler()
+    const stream = await handler({})
+    let seen!: () => void
+    const preview = new Promise<void>(resolve => { seen = resolve })
+    const write = vi.fn((part: any) => { if (part.type === 'data-answer-preview' && part.data.delta) seen() })
+    const running = stream.execute({ writer: { write } })
+    push('source', { evidence_provenance: proof })
+    push('token', { content: 'First provider delta' })
+    await preview
+    expect(mocks.assertSourceDependencies).toHaveBeenCalled()
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({ type: 'data-answer-preview', transient: true,
+      data: { messageId: 'message-1:assistant', delta: 'First provider delta' } }))
+    push('answer', { content: 'Final checked answer' })
+    push('done', { status: 'success', evidence_provenance: proof })
+    controller.close()
+    await running
+    expect(mocks.appendMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      parts: expect.arrayContaining([{ type: 'text', text: 'Final checked answer' }]),
+    }))
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({ type: 'data-answer-preview', data: { messageId: 'message-1:assistant', reset: true } }))
+  })
+
+  it('does not preview a token after current source verification fails', async () => {
+    mocks.assertSourceDependencies.mockRejectedValueOnce(new Error('source_access_revoked'))
+    mocks.agentFetch.mockResolvedValueOnce(createSseStreamResponse([
+      { event: 'source', data: { evidence_provenance: { schema_version: 'evidence.provenance.v1', complete: true, dependencies: [] } } },
+      { event: 'token', data: { content: 'revoked source text' } },
+    ]))
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+    expect(JSON.stringify(write.mock.calls)).not.toContain('revoked source text')
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
+  })
   it.each([true, false])('persists after normal response closure only (writableEnded=%s)', async (writableEnded) => {
     let responseClose!: () => void
     const requestOn = vi.fn()

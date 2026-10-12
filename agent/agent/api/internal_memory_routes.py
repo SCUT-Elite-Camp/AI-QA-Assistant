@@ -191,10 +191,12 @@ def reset_short_window(
     agent: Annotated[Agent, Depends(get_agent)],
     user_id: str = Depends(require_user_id),
 ) -> ResetShortWindowResponse:
-    """Clear only legacy in-process ConversationMemory after a Web transaction."""
+    """Clear legacy in-process memory when present after a Web transaction."""
 
     resolve_access(agent, user_id, [])
-    agent.memory.clear(request.chat_id)
+    legacy_memory = getattr(agent, "memory", None)
+    if legacy_memory is not None:
+        legacy_memory.clear(request.chat_id)
     return ResetShortWindowResponse(status="ok")
 
 
@@ -211,11 +213,11 @@ def internal_retrieval_stream(
         raise HTTPException(403, "trusted_actor_mismatch")
     request = request.model_copy(update={"user_id": user_id})
     validate_memory_context(request.memory_context)
-    try:
-        events = list(agent.stream_chat(request))
-    except PermissionResolutionError as exc:
-        raise HTTPException(exc.status_code, exc.code, headers={"Cache-Control": "no-store"}) from exc
+    resolve_access(agent, user_id, [])
     def event_stream():
-        for name, data in events:
-            yield build_sse_event(name, data)
-    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+        try:
+            for name, data in agent.stream_chat(request):
+                yield build_sse_event(name, data)
+        except Exception:
+            yield build_sse_event("error", {"message": "stream_access_or_model_failed"})
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})

@@ -69,7 +69,13 @@ class AnswerGenerator:
                 "[TITLE: 3-10字精炼标题]，然后换行回答。\n" + question_context
             )
         soul_directive = (
-            f"\n\n【话题归属认知】:\n{soul_content[:600]}"
+            "\n\n[VERIFIED_TOPIC_MEMORY]\n"
+            f"{soul_content[:600]}\n"
+            "[/VERIFIED_TOPIC_MEMORY]\n"
+            "For questions about facts remembered in this Topic, this verified memory "
+            "is usable context. Answer directly from it when it contains the requested fact; "
+            "do not claim the fact is absent merely because retrieved documents omit it. "
+            "Do not attach document citation markers to a fact supported only by Topic memory."
             if soul_content and soul_content.strip()
             else ""
         )
@@ -77,7 +83,8 @@ class AnswerGenerator:
             {"role": "system", "content": (
                 f"{SYSTEM_ROLE}\n\n{ANSWER_RULES}\n\n{soul_directive}\n\n"
                 "Retrieval is complete. Do not call or describe tools. "
-                "Answer only from the supplied evidence and include citation markers."
+                "Answer from the accepted document evidence or verified Topic memory. "
+                "Use citation markers for claims grounded in numbered document evidence."
             )},
             *context_history,
             {"role": "user", "content": (
@@ -140,8 +147,23 @@ class AnswerGenerator:
             complexity_reasons or (["explicit_complex"] if preference == "complex" else ["single_target"]),
         )
         try:
+            from agent.streaming.live import CURRENT_STREAM_SINK, emit_model_event
+            if CURRENT_STREAM_SINK.get() is not None:
+                emit_model_event("answer-start", {})
+                content = []
+                for delta in selected.stream_chat(messages, tools=None):
+                    if delta.get("reasoning_content"):
+                        emit_model_event("reasoning", {"content": delta["reasoning_content"]})
+                    if delta.get("content"):
+                        content.append(delta["content"])
+                        emit_model_event("token", {"content": delta["content"]})
+                return {"role": "assistant", "content": "".join(content)}
             return selected.chat(messages, tools=None)
         except Exception as exc:
+            # A second model must never splice its answer into a partial stream.
+            from agent.streaming.live import CURRENT_STREAM_SINK
+            if CURRENT_STREAM_SINK.get() is not None:
+                raise
             if not use_fast:
                 raise
             logger.warning(

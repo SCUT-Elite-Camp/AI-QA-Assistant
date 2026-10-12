@@ -67,7 +67,7 @@ function sourceHref(citation: ResearchCitation) {
         <button
           type="button"
           class="min-w-0 flex-1 truncate text-start text-sm text-muted outline-none transition-colors hover:text-highlighted focus-visible:rounded focus-visible:ring-2 focus-visible:ring-primary"
-          :aria-label="`查看 ${document.title} 的原文`"
+          :aria-label="`View source: ${document.title}`"
           @click="toggleCitation(document.citations[0]!.number)"
         >
           {{ document.title }}
@@ -79,7 +79,7 @@ function sourceHref(citation: ResearchCitation) {
             type="button"
             class="inline-flex size-5 items-center justify-center rounded-full text-[11px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary"
             :class="openCitationNumber === citation.number ? 'bg-primary text-inverted' : 'bg-primary/10 text-primary hover:bg-primary/20'"
-            :aria-label="`查看引用 ${citation.number} 原文`"
+            :aria-label="`View source for citation ${citation.number}`"
             :aria-expanded="openCitationNumber === citation.number"
             @click="toggleCitation(citation.number)"
           >
@@ -102,15 +102,15 @@ function sourceHref(citation: ResearchCitation) {
           class="border-t border-default bg-elevated/40 px-4 py-3"
         >
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-            <span class="font-medium text-highlighted">[{{ citation.number }}] 原文片段</span>
+            <span class="font-medium text-highlighted">[{{ citation.number }}] Source excerpt</span>
             <span v-if="citation.locator">{{ citation.locator }}</span>
-            <span v-if="citation.document_version">版本 {{ citation.document_version }}</span>
+            <span v-if="citation.document_version">Version {{ citation.document_version }}</span>
             <span v-if="formatDate(citation.updated_at || citation.effective_at)">
               {{ formatDate(citation.updated_at || citation.effective_at) }}
             </span>
           </div>
           <div class="evidence-scroll mt-3 max-h-72 overflow-y-auto whitespace-pre-wrap break-words pe-3 text-sm leading-6 text-highlighted selection:bg-primary/20">
-            {{ citation.excerpt || '当前证据没有可显示的原文片段。' }}
+            {{ citation.excerpt || 'No source excerpt is available for this evidence.' }}
           </div>
           <a
             :href="sourceHref(citation)"
@@ -118,7 +118,7 @@ function sourceHref(citation: ResearchCitation) {
             rel="noopener noreferrer"
             class="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
           >
-            打开来源
+            Open source
             <UIcon
               name="i-lucide-external-link"
               class="size-3"

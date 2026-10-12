@@ -6,6 +6,7 @@ import json
 import logging
 import time
 from agent.config.settings import settings
+from agent.llm.provider_options import apply_provider_options
 import re
 from typing import Protocol
 from urllib.request import Request, urlopen
@@ -62,96 +63,42 @@ class MockResearchPlanner:
         scoped_documents = [
             document for document in manifest.documents if document.doc_id in scoped_ids
         ]
-        source_names = "、".join(f"《{document.title}》" for document in scoped_documents)
-        version_focus = "、".join(
-            f"《{document.title}》（{document.version or '未标注版本'}）"
-            for document in scoped_documents
-        )
-
-        tasks = [
-            ResearchTask(
-                task_id="task-1",
-                question=f"分别核验{source_names}中能回答“{request.query}”的具体事实、实现状态和原文位置。",
-                purpose=f"为{source_names}分别建立可追溯的证据摘要。",
-                allowed_tools=["keyword_search", "read_document_range"],
-                source_ids=scoped_ids,
-                acceptance_criteria=[
-                    AcceptanceCriterion(
-                        criterion_id="criterion-1",
-                        dimension="evidence",
-                        target="所选资料的具体事实与原文",
-                        required=True,
-                    )
-                ],
-                priority=ResearchTaskPriority.CRITICAL,
-                max_actions=2,
-            ),
-            ResearchTask(
-                task_id="task-2",
-                question=f"对照{version_focus}回答“{request.query}”时的一致点、版本差异和真正的语义冲突。",
-                purpose="区分版本演进、适用范围差异和需要用户裁决的事实冲突。",
-                dependencies=["task-1"],
-                allowed_tools=["keyword_search", "read_document_range"],
-                source_ids=scoped_ids,
-                acceptance_criteria=[
-                    AcceptanceCriterion(
-                        criterion_id="criterion-2",
-                        dimension="locator",
-                        target="各文档的版本、一致点、差异点与完整原文",
-                        required=True,
-                    )
-                ],
-                priority=ResearchTaskPriority.CRITICAL,
-                max_actions=4,
-            ),
-            ResearchTask(
-                task_id="task-3",
-                question=f"基于{source_names}列出问题中仍无法确认的事项、资料边界和需要补充的证据。",
-                purpose="阻止超出已选资料范围的推测进入最终报告。",
-                dependencies=["task-2"],
-                allowed_tools=["keyword_search", "read_document_range"],
-                source_ids=scoped_ids,
-                acceptance_criteria=[
-                    AcceptanceCriterion(
-                        criterion_id="criterion-3",
-                        dimension="limitation",
-                        target="所选资料未覆盖或无法确认的事项",
-                        required=False,
-                    )
-                ],
-                priority=ResearchTaskPriority.NORMAL,
-                max_actions=2,
-            ),
+        # The manifest is the complete search boundary, not a requirement to
+        # read every document. Keep fallback instructions bounded for large KBs.
+        names = (", ".join(document.title for document in scoped_documents)[:160]
+                 if len(scoped_documents) <= 4
+                 else f"{len(scoped_documents)} authorized documents")
+        subject = request.query[:700]
+        descriptions = [
+            (f'Verify facts, implementation status and original locators in {names} that answer "{subject}".',
+             "Find relevant source passages and establish traceable evidence.",
+             "Specific facts with cited original excerpts", "evidence", 2, True),
+            (f'Compare relevant source versions, agreements and semantic conflicts when answering "{subject}".',
+             "Distinguish changes over time and scope differences from factual conflicts.",
+             "Document versions, agreements, differences and original excerpts", "locator", 4, True),
+            (f'Identify unanswered parts, evidence boundaries and additional evidence required for "{subject}".',
+             "Record evidence gaps without inferring facts from source silence.",
+             "Items not covered or established by available sources", "limitation", 2, False),
         ]
-
-        if request.report_spec.language == "en-US":
-            names = ", ".join(document.title for document in scoped_documents)
-            versions = ", ".join(f"{document.title} ({document.version or 'version not recorded'})" for document in scoped_documents)
-            descriptions = [
-                (f'Individually verify facts, implementation status and original locators in {names} that answer "{request.query}".',
-                 f"Establish a traceable evidence summary for each source in {names}.", f"Specific facts and original excerpts from {names}"),
-                (f'Compare {versions} for agreement, version differences and genuine semantic conflicts when answering "{request.query}".',
-                 "Distinguish development over time and scope differences from factual conflicts requiring a decision.",
-                 "Document versions, agreements, differences and complete original excerpts"),
-                (f"Using {names}, identify unanswered parts of the question, evidence boundaries and additional evidence required.",
-                 "Keep speculation beyond the selected source scope out of the final report.", f"Items not covered or not established by {names}"),
-            ]
-            for task, (question, purpose, target) in zip(tasks, descriptions):
-                task.question = question
-                task.purpose = purpose
-                # Source IDs already bind the task to its manifest. Long titles
-                # must not create a plan that cannot be read back from storage.
-                task.acceptance_criteria[0].target = target if len(target) <= 200 else "Specific facts and original excerpts from the task's selected sources"
-                task.acceptance_criteria[0].description = f"{task.acceptance_criteria[0].dimension}: {task.acceptance_criteria[0].target}"
+        tasks = [ResearchTask(
+            task_id=f"task-{index}", question=question, purpose=purpose,
+            dependencies=[] if index == 1 else [f"task-{index - 1}"],
+            allowed_tools=["keyword_search", "read_document_range"], source_ids=scoped_ids,
+            acceptance_criteria=[AcceptanceCriterion(
+                criterion_id=f"criterion-{index}", dimension=dimension,
+                target=target, required=required,
+            )],
+            priority=ResearchTaskPriority.CRITICAL if required else ResearchTaskPriority.NORMAL,
+            max_actions=actions,
+        ) for index, (question, purpose, target, dimension, actions, required)
+          in enumerate(descriptions, start=1)]
 
         plan = ResearchPlan(
             schema_version="research.v2",
             research_id=manifest.research_id,
             version=version,
             objective=request.query,
-            out_of_scope=(["Sources outside SourceManifest", "Speculation not verifiable in original sources"]
-                          if request.report_spec.language == "en-US"
-                          else ["未列入 SourceManifest 的资料", "无法从原文核验的推测"]),
+            out_of_scope=["Sources outside SourceManifest", "Speculation not verifiable in original sources"],
             source_scope=request.source_scope,
             report_spec=request.report_spec,
             manifest_hash=manifest.manifest_hash,
@@ -207,9 +154,7 @@ class ModelResearchPlanner:
                 research_id=manifest.research_id,
                 version=version,
                 objective=request.query,
-                out_of_scope=(["Sources outside SourceManifest", "Speculation not verifiable in original sources"]
-                              if request.report_spec.language == "en-US"
-                              else ["未列入 SourceManifest 的资料", "无法从原文核验的推测"]),
+                out_of_scope=["Sources outside SourceManifest", "Speculation not verifiable in original sources"],
                 source_scope=request.source_scope,
                 report_spec=request.report_spec,
                 manifest_hash=manifest.manifest_hash,
@@ -241,7 +186,7 @@ class ModelResearchPlanner:
             }
             for item in manifest.documents
         ]
-        language = "Chinese" if request.report_spec.language == "zh-CN" else "English"
+        language = "English"
         prompt = (
             "Create a specific research plan for the question and frozen local documents below. "
             "Return JSON only: {\"tasks\":[{\"question\":string,\"purpose\":string}]}. "
@@ -294,8 +239,6 @@ class ModelResearchPlanner:
             target = (
                 "Cited original excerpts answer this task, separating confirmed facts, "
                 "planned work and unknown status; source silence is not proof of absence."
-                if language == "English" else
-                "引用原文回答此任务，区分已确认事实、计划工作与未知状态；资料未提及不等于不存在。"
             )
             if min(len(question), len(purpose), len(target)) < 4:
                 raise PlannerError("model returned an incomplete task")
@@ -355,6 +298,7 @@ class ModelResearchPlanner:
 
     def _chat(self, payload: dict) -> dict:
         from .access import check_research_model_access
+        payload = apply_provider_options(payload, self.api_base)
         last_error: Exception | None = None
         for attempt in range(2):
             check_research_model_access()

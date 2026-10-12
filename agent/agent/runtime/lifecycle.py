@@ -52,8 +52,12 @@ class ApplicationContainer:
 
             started = time.perf_counter()
             registry = self._registry_factory()
-            llm = self._llm_factory()
-            self._agent = Agent(llm=llm, toolset_registry=registry)
+            # The default Agent constructs its configured Fast/query/complex
+            # clients. Passing the production client as a custom test injection
+            # would disable those model choices.
+            self._agent = (Agent(toolset_registry=registry)
+                if self._llm_factory is LLMClient
+                else Agent(llm=self._llm_factory(), toolset_registry=registry))
             self._registry = registry
             self._initialization_count += 1
             self._initialization_ms = max(

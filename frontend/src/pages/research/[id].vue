@@ -34,9 +34,7 @@ let reportLoadInFlight = false
 let chatRegistrationInFlight = false
 
 const { job, progress, events, loading, error: pollingError, restart, stop } = useResearchPolling(
-  () => api.getJob(researchId.value),
-  () => api.getProgress(researchId.value),
-  afterEventId => api.getEvents(researchId.value, afterEventId),
+  afterEventId => api.getSnapshot(researchId.value, afterEventId),
 )
 
 watch(job, async (nextJob) => {
@@ -122,13 +120,11 @@ function regenerateConversationEvent(eventId: number) {
 }
 
 function regenerateReport() {
-  void sendConversationMessage(job.value?.request.report_spec.language === 'en-US'
-    ? 'Regenerate the research answer in English using the verified evidence, with a clearer structure and traceable citations.'
-    : '请基于当前已核验的证据重新生成一份结构更完整、表达更清晰的研究回答，并保留可追踪引用。')
+  void sendConversationMessage('Regenerate the research answer using the verified evidence, with a clearer structure and traceable citations.')
 }
 
 async function askAboutSelectedText(text: string) {
-  conversationInput.value = job.value?.request.report_spec.language === 'en-US' ? `Regarding "${text}": ` : `关于“${text}”：`
+  conversationInput.value = `Regarding "${text}": `
   await nextTick()
   conversationInputRef.value?.focus()
 }
@@ -156,10 +152,10 @@ function conversationMarkdown(message: string) {
 
 const statusTitle = computed(() => {
   const status = job.value?.status
-  if (status === 'awaiting_approval') return '确认研究计划'
-  if (status === 'completed') return '研究报告'
-  if (status === 'failed') return '研究执行失败'
-  if (status === 'cancelled') return '研究已取消'
+  if (status === 'awaiting_approval') return 'Review research plan'
+  if (status === 'completed') return 'Research report'
+  if (status === 'failed') return 'Research failed'
+  if (status === 'cancelled') return 'Research cancelled'
   return 'Deep Research'
 })
 </script>
@@ -193,7 +189,7 @@ const statusTitle = computed(() => {
               <UIcon
                 name="i-lucide-loader-circle"
                 class="size-8 animate-spin text-primary"
-              /><p>正在恢复 Research Job…</p>
+              /><p>Restoring research…</p>
             </div>
 
             <div
@@ -204,7 +200,7 @@ const statusTitle = computed(() => {
                 name="i-lucide-circle-alert"
                 class="mx-auto size-8 text-error"
               /><h2 class="mt-3 font-semibold text-highlighted">
-                无法加载研究任务
+                Unable to load research
               </h2><p class="mt-2 text-sm text-muted">
                 {{ formatResearchError(pollingError) }}
               </p><div class="mt-5 flex justify-center gap-2">
@@ -212,9 +208,9 @@ const statusTitle = computed(() => {
                   to="/research/new"
                   color="neutral"
                   variant="soft"
-                  label="新建研究"
+                  label="New research"
                 /><UButton
-                  label="重试"
+                  label="Retry"
                   @click="restart"
                 />
               </div>
@@ -251,10 +247,10 @@ const statusTitle = computed(() => {
                     </span>
                     <div class="max-w-2xl py-1 text-sm leading-6">
                       <p class="font-semibold text-highlighted">
-                        研究计划已确认
+                        Research plan approved
                       </p>
                       <p class="mt-1 text-muted">
-                        我会按照计划 v{{ plan.version }} 完成 {{ plan.tasks.length }} 个任务，并持续保存执行状态。
+                        Research will follow plan v{{ plan.version }} with {{ plan.tasks.length }} tasks. Progress is saved automatically.
                       </p>
                     </div>
                   </div>
@@ -276,10 +272,10 @@ const statusTitle = computed(() => {
                             name="i-lucide-loader-circle"
                             class="size-4 animate-spin text-primary"
                           />
-                          <span>我正在整理资料范围并生成研究计划。</span>
+                          <span>Preparing the source scope and research plan.</span>
                         </div>
                         <p class="mt-2 text-sm leading-6 text-muted">
-                          计划生成后会先发给你确认，在你批准前不会开始检索。
+                          Review and approve the plan to begin research.
                         </p>
                       </div>
 
@@ -303,7 +299,7 @@ const statusTitle = computed(() => {
                             name="i-lucide-loader-circle"
                             class="size-4 animate-spin text-primary"
                           />
-                          <span>研究正在进行，详细进度可以在右侧状态栏查看。</span>
+                          <span>Research is in progress. Follow updates in the activity panel.</span>
                         </div>
                         <UButton
                           v-if="job.status === 'ready'"
@@ -311,7 +307,7 @@ const statusTitle = computed(() => {
                           color="neutral"
                           variant="ghost"
                           size="sm"
-                          label="取消研究"
+                          label="Cancel research"
                           @click="cancel"
                         />
                       </div>
@@ -335,7 +331,7 @@ const statusTitle = computed(() => {
                         <UIcon
                           name="i-lucide-loader-circle"
                           class="size-7 animate-spin text-primary"
-                        /><p>正在加载研究报告…</p>
+                        /><p>Loading research report…</p>
                       </div>
 
                       <div
@@ -346,19 +342,19 @@ const statusTitle = computed(() => {
                           name="i-lucide-octagon-alert"
                           class="mx-auto size-10 text-error"
                         /><h1 class="mt-4 text-2xl font-bold text-highlighted">
-                          研究执行失败
+                          Research failed
                         </h1><p class="mt-3 text-sm text-muted">
-                          失败阶段：{{ progress?.error?.stage || job.failure_stage || job.current_stage }}
+                          Failed stage: {{ progress?.error?.stage || job.failure_stage || job.current_stage }}
                         </p><p class="mt-3 text-sm text-error">
-                          {{ progress?.error?.message || '研究任务执行失败，请稍后重试。' }}
+                          {{ progress?.error?.message || 'Research failed. Please try again.' }}
                         </p><div class="mt-6 flex justify-center gap-2">
                           <UButton
                             to="/research/new"
                             color="neutral"
                             variant="soft"
-                            label="新建研究"
+                            label="New research"
                           /><UButton
-                            label="重新加载"
+                            label="Reload"
                             @click="restart"
                           />
                         </div>
@@ -372,13 +368,13 @@ const statusTitle = computed(() => {
                           name="i-lucide-circle-slash"
                           class="mx-auto size-10 text-muted"
                         /><h1 class="mt-4 text-2xl font-bold text-highlighted">
-                          研究已取消
+                          Research cancelled
                         </h1><p class="mt-3 text-sm text-muted">
-                          已保留取消前的任务状态和资料快照。
+                          Task progress and source snapshots have been saved.
                         </p><UButton
                           class="mt-6"
                           to="/research/new"
-                          label="发起新的研究"
+                          label="Start new research"
                         />
                       </div>
 
@@ -461,9 +457,9 @@ const statusTitle = computed(() => {
                   ref="conversationInputRef"
                   v-model="conversationInput"
                   rows="1"
-                  :placeholder="job.status === 'awaiting_approval' ? '回复“批准”，或直接描述要修改的步骤…' : job.status === 'completed' && report?.conflicts?.some(conflict => conflict.resolution_status === 'unresolved') ? '回复“采用来源 2”，或说明你的处理意见…' : '继续询问这项研究…'"
+                  :placeholder="job.status === 'awaiting_approval' ? 'Reply &quot;approve&quot;, or describe the changes you want…' : job.status === 'completed' && report?.conflicts?.some(conflict => conflict.resolution_status === 'unresolved') ? 'Reply &quot;use source 2&quot;, or explain how to resolve the conflict…' : 'Ask a follow-up question…'"
                   class="min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3 py-2.5 text-base leading-6 text-highlighted outline-none placeholder:text-muted"
-                  aria-label="研究对话消息"
+                  aria-label="Research message"
                   @keydown.enter.exact.prevent="sendConversationMessage()"
                 />
                 <UButton
@@ -472,7 +468,7 @@ const statusTitle = computed(() => {
                   color="neutral"
                   :loading="actionLoading"
                   :disabled="!conversationInput.trim() || actionLoading"
-                  aria-label="发送研究消息"
+                  aria-label="Send research message"
                   class="rounded-full"
                 />
               </form>

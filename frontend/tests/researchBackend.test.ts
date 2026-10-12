@@ -20,6 +20,10 @@ beforeEach(() => {
 })
 
 describe('trusted Research proxy', () => {
+  it('allows the authenticated aggregate polling endpoint', () => {
+    expect(researchBackendPath('jobs/research-123/snapshot', 'GET')).toBe('/api/research/jobs/research-123/snapshot')
+    expect(() => researchBackendPath('jobs/research-123/snapshot', 'POST')).toThrow()
+  })
   it('uses the enabled session identity and ignores browser credentials', async () => {
     const event = { req: new Request('http://web/api/research/jobs', { method: 'POST', headers: {
       'X-User-ID': 'admin', Authorization: 'Bearer browser-key',

@@ -87,6 +87,9 @@ export function resetDrizzleForTests(): void {
 }
 
 async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
+  if (resolveRuntimeDatabaseUrl().startsWith('file:')) {
+    await client.execute('PRAGMA journal_mode=WAL')
+  }
   await client.execute('PRAGMA busy_timeout=5000')
   await ensureColumns(client, 'users', [
     ['role', "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"],
@@ -112,6 +115,9 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
   ])
 
   await client.execute('CREATE TABLE IF NOT EXISTS topic_documents (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, doc_id TEXT NOT NULL, title TEXT NOT NULL, source_url TEXT, snippet TEXT, recall_count INTEGER NOT NULL DEFAULT 1, last_recalled_at INTEGER NOT NULL, score REAL, is_removed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
+  await ensureColumns(client, 'topic_documents', [
+    ['is_user_uploaded', 'ALTER TABLE topic_documents ADD COLUMN is_user_uploaded INTEGER NOT NULL DEFAULT 0'],
+  ])
   await client.execute('CREATE TABLE IF NOT EXISTS message_feedbacks (id TEXT PRIMARY KEY, chat_id TEXT NOT NULL, message_id TEXT NOT NULL, is_favorite INTEGER NOT NULL DEFAULT 0, suggestion_text TEXT, created_at INTEGER NOT NULL)')
   await client.execute("CREATE TABLE IF NOT EXISTS topic_members (topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE, user_id TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('owner','editor','viewer')), created_at INTEGER NOT NULL, PRIMARY KEY(topic_id,user_id))")
   await client.execute('CREATE TABLE IF NOT EXISTS attachment_batches (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, scope TEXT NOT NULL, chat_id TEXT REFERENCES chats(id) ON DELETE CASCADE, topic_id TEXT REFERENCES topics(id) ON DELETE CASCADE, file_count INTEGER NOT NULL DEFAULT 0, total_bytes INTEGER NOT NULL DEFAULT 0, expires_at INTEGER, created_at INTEGER NOT NULL)')

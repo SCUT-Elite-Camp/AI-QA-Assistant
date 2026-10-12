@@ -60,15 +60,15 @@ def chat_stream(
     agent: Agent = Depends(get_agent),
     _: None = Depends(verify_agent_key),
 ) -> StreamingResponse:
-    try:
-        events = list(agent.stream_chat(request))
-    except PermissionResolutionError as exc:
-        raise HTTPException(exc.status_code, exc.code, headers={"Cache-Control": "no-store"}) from exc
+    agent.permission_service.get_accessible_doc_ids_strict(request.user_id or "", doc_ids=[])
     def event_stream():
-        for event_name, event_data in events:
-            yield build_sse_event(event_name, event_data)
+        try:
+            for event_name, event_data in agent.stream_chat(request):
+                yield build_sse_event(event_name, event_data)
+        except Exception:
+            yield build_sse_event("error", {"message": "stream_access_or_model_failed"})
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
 
 from pydantic import BaseModel, Field

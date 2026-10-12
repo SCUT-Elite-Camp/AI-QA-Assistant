@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ResearchEvent, ResearchJob, ResearchProgress } from '../../types/research'
+import { researchEventLabel } from '../../utils/research'
 
 const props = defineProps<{ job: ResearchJob, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
 
 const statusLabel = computed(() => ({
-  created: '准备研究',
-  planning: '生成计划',
-  awaiting_approval: '等待审批',
-  ready: '等待执行',
-  researching: '检索与核验',
-  synthesizing: '整理报告',
-  completed: '研究完成',
-  failed: '执行失败',
-  cancelled: '已取消',
-}[props.job.status] ?? '处理中'))
+  created: 'Preparing research',
+  planning: 'Planning',
+  awaiting_approval: 'Awaiting approval',
+  ready: 'Queued',
+  researching: 'Searching and verifying',
+  synthesizing: 'Writing report',
+  completed: 'Research complete',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
+}[props.job.status] ?? 'Processing'))
 
 const percent = computed(() => props.progress?.progress_percent ?? (props.job.status === 'completed' ? 100 : 10))
 const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0, 6))
@@ -23,7 +24,7 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
 <template>
   <aside
     class="border-b border-default bg-default px-1 pb-4 lg:border-b-0 lg:border-l lg:px-5 lg:py-4"
-    aria-label="研究活动"
+    aria-label="Research activity"
   >
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
@@ -31,7 +32,7 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
           name="i-lucide-telescope"
           class="size-4 text-primary"
         />
-        <span class="text-sm font-semibold text-highlighted">研究活动</span>
+        <span class="text-sm font-semibold text-highlighted">Research activity</span>
       </div>
       <span class="text-xs tabular-nums text-muted">{{ percent }}%</span>
     </div>
@@ -48,8 +49,8 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
       v-if="progress"
       class="mt-3 flex gap-4 text-xs text-muted"
     >
-      <span>{{ progress.task_completed }}/{{ progress.task_total }} 任务</span>
-      <span>{{ progress.evidence_count }} 证据</span>
+      <span>{{ progress.task_completed }}/{{ progress.task_total }} tasks</span>
+      <span>{{ progress.evidence_count }} evidence items</span>
     </div>
     <ol
       v-if="progress?.stages?.length"
@@ -73,18 +74,18 @@ const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0,
       class="mt-5 hidden border-t border-default pt-4 lg:block"
     >
       <p class="text-xs font-medium text-highlighted">
-        最近活动
+        Recent activity
       </p>
       <p
         v-for="event in recentEvents"
         :key="event.event_id"
         class="mt-2 text-[11px] leading-4 text-muted"
       >
-        {{ event.message }}
+        {{ researchEventLabel(event) }}
       </p>
     </div>
     <p class="mt-4 hidden text-[11px] leading-4 text-muted lg:block">
-      状态已保存，刷新页面后可继续。
+      Progress is saved and restored when you refresh.
     </p>
   </aside>
 </template>

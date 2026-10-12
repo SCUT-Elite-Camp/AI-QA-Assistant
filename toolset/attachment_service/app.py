@@ -32,7 +32,6 @@ from .library_service import (
 from .crypto import decrypt_file, encrypt_file
 from .parser_runner import parse_with_timeout
 from .office import remove_office_tree
-from .scanner import MalwareDetected, ScannerUnavailable, scan_file
 from .store import AttachmentStore
 from .structure import build_document_sections
 from .validation import AttachmentValidationError, safe_filename, validate_file
@@ -52,7 +51,6 @@ VECTOR_PENDING: set[str] = set()
 VECTOR_PENDING_LOCK = threading.Lock()
 VECTOR_WAKE = threading.Event()
 VECTOR_FAILURE_LOGGED: set[str] = set()
-SCANNER_READY = False
 ATTACHMENT_ID_PATTERN = re.compile(r"^(?:att|ver)_[A-Za-z0-9]{1,60}$")
 
 
@@ -491,31 +489,13 @@ def _cleanup() -> None:
                 LOGGER.warning("temporary cleanup deferred type=%s", "directory" if temporary.is_dir() else "file")
 
 
-def _verify_scanner() -> None:
-    temporary_dir = SETTINGS.data_dir / "temporary"
-    temporary_dir.mkdir(parents=True, exist_ok=True)
-    probe = temporary_dir / f"scanner_probe_{uuid4().hex}.txt"
-    try:
-        probe.write_bytes(b"CP2 attachment scanner readiness probe")
-        scan_file(probe, SETTINGS.scanner_mode, SETTINGS.allow_fake_scanner)
-    finally:
-        probe.unlink(missing_ok=True)
-
-
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global SCANNER_READY
     STOP.clear()
     validate_library_configuration(
         library_enabled=os.getenv("PERSONAL_LIBRARY_ENABLED", "false").lower() in {"1", "true", "yes", "on"},
         vector_enabled=VECTOR_INDEX.enabled,
     )
-    try:
-        await asyncio.to_thread(_verify_scanner)
-        SCANNER_READY = True
-    except (ScannerUnavailable, MalwareDetected):
-        SCANNER_READY = False
-        LOGGER.error("attachment scanner readiness check failed")
     workers = [threading.Thread(target=_worker, daemon=True, name="attachment-parser")]
     if VECTOR_INDEX.enabled:
         workers.append(threading.Thread(target=_vector_worker, daemon=True, name="attachment-vector-index"))
@@ -524,7 +504,6 @@ async def lifespan(_: FastAPI):
         worker.start()
     yield
     STOP.set()
-    SCANNER_READY = False
     for worker in workers:
         worker.join(timeout=3)
 
@@ -539,9 +518,7 @@ def live() -> dict[str, str]:
 
 @app.get("/health/ready", dependencies=[Depends(_authorize)])
 def ready() -> dict[str, Any]:
-    if not SCANNER_READY:
-        raise HTTPException(503, {"code": "scanner_unavailable"})
-    return {"status": "ready", "vision_enabled": SETTINGS.vision_enabled, "scanner_ready": True}
+    return {"status": "ready", "vision_enabled": SETTINGS.vision_enabled}
 
 
 @app.post("/v1/attachments/{attachment_id}", status_code=201, dependencies=[Depends(_authorize)])
@@ -600,13 +577,12 @@ async def upload(
             max_pdf_pages=SETTINGS.max_pdf_pages,
             max_image_pixels=SETTINGS.max_image_pixels,
         )
-        scan_file(temporary, SETTINGS.scanner_mode, SETTINGS.allow_fake_scanner)
         record = _persist_uploaded_file(
             temporary=temporary, attachment_id=attachment_id, filename=filename,
             mime_type=request.headers.get("content-type", ""), extension=validated.extension,
             size=size, sha256=digest.hexdigest(), owner_id=x_owner_id,
             dedupe_domain=x_dedupe_domain, scope=x_scope, expires_at=x_expires_at,
-            status="scanning",
+            status="parsing",
         )
         if x_scope == "library":
             STORE.update_attachment(
@@ -617,7 +593,6 @@ async def upload(
                 source_scope="personal",
                 active=0,
             )
-        STORE.transition_attachment(attachment_id, "parsing")
         STORE.enqueue(f"job_{uuid4().hex}", attachment_id, "parse")
         if x_scope == "library":
             LOGGER.info(
@@ -629,17 +604,6 @@ async def upload(
         return _public_record(STORE.get_attachment(attachment_id) or record)
     except AttachmentValidationError as exc:
         raise HTTPException(422, {"code": exc.code, "message": str(exc)}) from exc
-    except MalwareDetected as exc:
-        LOGGER.warning("malware quarantined attachment_id=%s hash=%s", attachment_id, digest.hexdigest()[:12])
-        return _public_record(_persist_uploaded_file(
-            temporary=temporary, attachment_id=attachment_id, filename=filename,
-            mime_type=request.headers.get("content-type", ""), extension=validated.extension,
-            size=size, sha256=digest.hexdigest(), owner_id=x_owner_id,
-            dedupe_domain=x_dedupe_domain, scope=x_scope, expires_at=x_expires_at,
-            status="quarantined", error_code="malware_detected",
-        ))
-    except ScannerUnavailable as exc:
-        raise HTTPException(503, {"code": "scanner_unavailable", "message": str(exc)}) from exc
     except HTTPException:
         raise
     except Exception as exc:

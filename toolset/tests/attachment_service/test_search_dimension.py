@@ -15,8 +15,7 @@ def test_search_schemas_follow_configured_dimension(tmp_path, dimension):
         "PYTHONPATH": f"{Path(__file__).resolve().parents[2]}{os.pathsep}{repo_root}",
         "ATTACHMENT_INTERNAL_SECRET": "test-only-secret",
         "ATTACHMENT_ENCRYPTION_KEY": base64.urlsafe_b64encode(b"d" * 32).decode(),
-        "ATTACHMENT_DATA_DIR": str(tmp_path), "ATTACHMENT_VECTOR_INDEX_ENABLED": "false",
-        "ALLOW_FAKE_ATTACHMENT_SCANNER": "true", "ATTACHMENT_SCANNER": "disabled"}
+        "ATTACHMENT_DATA_DIR": str(tmp_path), "ATTACHMENT_VECTOR_INDEX_ENABLED": "false"}
     code = """
 from pydantic import ValidationError
 from attachment_service.app import SearchRequest, LibrarySearchRequest, LibraryScopedSearchRequest, LibraryOutlineRequest

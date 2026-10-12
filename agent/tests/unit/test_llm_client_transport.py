@@ -119,3 +119,40 @@ def test_empty_stream_rescues_from_non_stream_completion_without_duplicate_token
     monkeypatch.setattr(client,'chat',chat)
     assert list(PRODUCT_STREAM_CHAT(client,[{'role':'user','content':'Question'}])) == [{'content':'Verified non-stream answer','reasoning_content':''}]
     assert len(calls) == 1
+
+
+def test_openrouter_fast_stream_uses_reasoning_flag_and_normalizes_delta(monkeypatch):
+    from types import SimpleNamespace
+    from agent.config.settings import settings
+    monkeypatch.setattr(settings, 'LLM_API_BASE', 'https://openrouter.ai/api/v1')
+    monkeypatch.setattr(settings, 'ANSWER_FAST_MODEL', 'nvidia/lightning:free')
+    monkeypatch.setattr(settings, 'ANSWER_FAST_MODEL_THINKING', False)
+    monkeypatch.setattr(settings, 'LLM_THINKING_MODE', 'enabled')
+    client = LLMClient(model=settings.ANSWER_FAST_MODEL)
+    calls = []
+    def post(*args, **kwargs):
+        calls.append(kwargs['json'])
+        lines = [
+            'data: '+json.dumps({'choices':[{'delta':{'reasoning':'Provider reasoning'}}]}),
+            'data: '+json.dumps({'choices':[{'delta':{'content':'4'}}]}),
+            'data: [DONE]',
+        ]
+        return SimpleNamespace(status_code=200, iter_lines=lambda **kwargs: iter(lines), close=lambda:None)
+    monkeypatch.setattr(client._session, 'post', post)
+    result = list(PRODUCT_STREAM_CHAT(client, [{'role':'user','content':'2+2?'}]))
+    assert calls[0]['reasoning'] == {'enabled': False}
+    assert 'enable_thinking' not in calls[0]
+    assert result[0]['reasoning_content'] == 'Provider reasoning'
+    assert result[1]['content'] == '4'
+
+
+def test_openrouter_research_translates_thinking_and_reserves_answer_budget(monkeypatch):
+    from agent.config.settings import settings
+    from agent.llm.provider_options import apply_provider_options
+    monkeypatch.setattr(settings, 'LLM_REASONING_EFFORT', 'medium')
+    payload = {'thinking': {'type':'enabled'}, 'max_tokens':1200}
+    result = apply_provider_options(payload, 'https://openrouter.ai/api/v1')
+    assert result['reasoning'] == {'enabled':True, 'effort':'medium'}
+    assert result['max_tokens'] >= 4096
+    assert 'thinking' not in result
+    assert payload['max_tokens'] == 1200

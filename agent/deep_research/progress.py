@@ -38,18 +38,18 @@ STAGE_ORDER = (
 )
 
 STAGE_LABELS = {
-    "created": "已创建研究任务",
-    "planning": "正在生成研究计划",
-    "awaiting_approval": "等待确认研究计划",
-    "ready": "研究任务等待执行",
-    "execute_tasks": "正在执行研究任务",
-    "coverage": "正在检查资料覆盖度",
-    "generate_claims": "正在整理研究结论",
-    "structural_verification": "正在检查引用完整性",
-    "semantic_verification": "正在验证研究结论",
-    "render_report": "正在生成研究报告",
-    "finalize": "正在完成研究任务",
-    "completed": "研究已完成",
+    "created": "Research created",
+    "planning": "Creating research plan",
+    "awaiting_approval": "Awaiting plan approval",
+    "ready": "Research queued",
+    "execute_tasks": "Executing research tasks",
+    "coverage": "Checking evidence coverage",
+    "generate_claims": "Organizing findings",
+    "structural_verification": "Checking citation integrity",
+    "semantic_verification": "Verifying findings",
+    "render_report": "Writing research report",
+    "finalize": "Finalizing research",
+    "completed": "Research complete",
 }
 
 STAGE_PROGRESS = {
@@ -68,12 +68,12 @@ STAGE_PROGRESS = {
 }
 
 _SAFE_ERROR_MESSAGES = {
-    "planning_failed": "研究计划生成失败，请检查所选资料后重试。",
-    "research_checkpoint_missing": "研究任务缺少可恢复的执行位置。",
-    "research_checkpoint_unsafe": "研究任务的恢复位置不安全，已停止执行。",
-    "research_checkpoint_plan_mismatch": "研究计划版本与恢复位置不一致。",
-    "ManifestAccessError": "所选资料已变化或当前无法访问。",
-    "LocalToolTimeout": "读取研究资料超时，请稍后重试。",
+    "planning_failed": "Research planning failed. Check source availability and try again.",
+    "research_checkpoint_missing": "No checkpoint is available to resume this research.",
+    "research_checkpoint_unsafe": "Research stopped because the checkpoint could not be safely resumed.",
+    "research_checkpoint_plan_mismatch": "The checkpoint does not match the current plan version.",
+    "ManifestAccessError": "Sources have changed or are no longer accessible.",
+    "LocalToolTimeout": "Reading research sources timed out. Please try again.",
 }
 
 
@@ -288,7 +288,7 @@ class ResearchProgressService:
             code=code,
             message=_SAFE_ERROR_MESSAGES.get(
                 code,
-                "研究任务执行失败，请稍后重试。",
+                "Research failed. Please try again.",
             ),
         )
 

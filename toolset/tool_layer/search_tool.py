@@ -269,9 +269,21 @@ class SearchTool(BaseTool):
         trace = trace_id or "-"
         filters = _normalize_public_filters(filters)
         filters = self._narrow_week_scope(query, filters)
+        dated_filters = self._narrow_dated_scope(query, filters)
+        focused_doc_id = None
+        if len(filters.get("doc_ids") or []) > 1 and len(dated_filters.get("doc_ids") or []) == 1:
+            focused_doc_id = dated_filters["doc_ids"][0]
+        filters = dated_filters
+        if not focused_doc_id:
+            named_filters = self._narrow_named_scope(query, filters)
+            if len(filters.get("doc_ids") or []) > 1 and len(named_filters.get("doc_ids") or []) == 1:
+                focused_doc_id = named_filters["doc_ids"][0]
+            filters = named_filters
 
         try:
             raw_results = self._search_internal(query.strip(), top_k, mode, filters)
+            if focused_doc_id:
+                raw_results = self._focus_scoped_section(query, focused_doc_id, raw_results, top_k)
             results = self._normalize_results(raw_results, filters, float(min_score))
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
@@ -291,6 +303,78 @@ class SearchTool(BaseTool):
         top_scores = [row["score"] for row in results[:5]]
         self._log(trace, mode, top_k, len(results), latency_ms, top_scores)
         return results
+
+    def _focus_scoped_section(self, query: str, doc_id: str, raw: List[Dict], top_k: int) -> List[Dict]:
+        """Keep the relevant section together after selecting one authorized page."""
+        document = self._load_document_meta(doc_id)
+        chunks = document.get("chunks") or []
+        sections: Dict[str, List[Dict]] = {}
+        for chunk in chunks:
+            if not isinstance(chunk, dict):
+                continue
+            path = chunk.get("section_path") or []
+            if not isinstance(path, list) or not path:
+                continue
+            heading = str(path[-1]).strip()
+            if not heading or heading == document.get("title"):
+                continue
+            sections.setdefault(heading, []).append(chunk)
+        query_words = set(re.findall(r"[a-z]{3,}", query.casefold()))
+        title_text = str(document.get("title") or "").casefold()
+        title_words = set(re.findall(r"[a-z]{3,}", title_text))
+        stopwords = {
+            "how", "does", "the", "current", "what", "which", "from", "this", "that", "meeting",
+            "list", "all", "four", "and", "for", "with", "into", "their", "there", "where",
+        }
+        meaningful_words = query_words - title_words - stopwords
+        ordered_words = re.findall(r"[a-z]{3,}", query.casefold())
+        query_bigrams = {
+            " ".join(pair) for pair in zip(ordered_words, ordered_words[1:])
+            if pair[0] not in stopwords and pair[1] not in stopwords
+        }
+        best: List[Dict] = []
+        best_score = 0
+        for heading, group in sections.items():
+            section_text = " ".join(str(item.get("text") or "") for item in group).casefold()
+            heading_text = heading.casefold()
+            heading_matches = query_words & set(re.findall(r"[a-z]{3,}", heading_text))
+            score = 4 * len(heading_matches - title_words) + len(heading_matches & title_words)
+            score += 2 * len(meaningful_words & set(re.findall(r"[a-z]{3,}", section_text)))
+            score += sum(
+                (4 if phrase in title_text else 20)
+                for phrase in query_bigrams
+                if phrase in heading_text or phrase in section_text
+            )
+            if score > best_score:
+                best_score, best = score, group
+        if best_score < 6:
+            return raw
+        focused = []
+        for position, chunk in enumerate(best[:top_k]):
+            focused.append({
+                "doc_id": doc_id,
+                "chunk_index": chunk.get("index"),
+                "chunk_text": chunk.get("text", ""),
+                "title": document.get("title", ""),
+                "source_url": document.get("source_url", ""),
+                "score": 1.0 - position * 0.001,
+            })
+        selected = {(str(row.get("doc_id")), row.get("chunk_index")) for row in focused}
+        return (focused + [row for row in raw if (str(row.get("doc_id")), row.get("chunk_index")) not in selected])[:top_k]
+
+    def _narrow_named_scope(self, query: str, filters: Dict) -> Dict:
+        """Match a full document title only within the caller's authorized allowlist."""
+        allowed = filters.get("doc_ids") or []
+        if len(allowed) < 2:
+            return filters
+        normalized_query = " ".join(re.findall(r"[a-z0-9]+", query.casefold()))
+        matching = []
+        for doc_id in allowed:
+            title = str(self._load_document_meta(doc_id).get("title") or "")
+            title_words = re.findall(r"[a-z0-9]+", title.casefold())
+            if len(title_words) >= 3 and " ".join(title_words) in normalized_query:
+                matching.append(doc_id)
+        return {**filters, "doc_ids": matching} if len(matching) == 1 else filters
 
     def _search_sections(self, query: str, filters: Dict, *, top_k: int) -> List[Dict]:
         """Rank version-local Section metadata after document authorization."""

@@ -3,7 +3,7 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getRouterParam } from 'nitro/h3'
 import { and, eq, sql, tables, useDrizzle } from '../../../../utils/drizzle'
 import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../../utils/attachmentAuth'
-import { attachmentServiceJson } from '../../../../utils/attachmentService'
+import { attachmentServiceFetch, attachmentServiceJson } from '../../../../utils/attachmentService'
 import { attachmentBatchExpired, isAnonymousAttachmentPrincipal } from '../../../../../shared/utils/attachmentScope'
 
 const BATCH_MAX_FILES = 10
@@ -78,7 +78,7 @@ export default defineHandler(async (event) => {
     })
     return result
   } catch (error) {
-    await fetch(`${process.env.ATTACHMENT_SERVICE_URL || 'http://127.0.0.1:8200'}/v1/attachments/${attachmentId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${process.env.ATTACHMENT_INTERNAL_SECRET || ''}` } }).catch(() => undefined)
+    await attachmentServiceFetch(`/v1/attachments/${attachmentId}`, { method: 'DELETE', signal: AbortSignal.timeout(5000) }).catch(() => undefined)
     throw error
   }
 })

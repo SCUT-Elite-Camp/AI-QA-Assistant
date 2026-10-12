@@ -23,14 +23,6 @@
 
       <slot name="right-end" />
 
-      <UButton
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-circle-plus"
-        to="/"
-        class="lg:hidden"
-        aria-label="New chat"
-      />
     </template>
   </UDashboardNavbar>
 </template>

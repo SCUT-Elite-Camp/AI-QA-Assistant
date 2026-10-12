@@ -108,6 +108,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/pipeline': RouteRecordInfo<
+      '/pipeline',
+      '/pipeline',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/research/[id]': RouteRecordInfo<
       '/research/[id]',
       '/research/:id',
@@ -225,6 +232,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/library/index.vue': {
       routes:
         | '/library/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/pipeline.vue': {
+      routes:
+        | '/pipeline'
       views:
         | never
       pathParamNames:

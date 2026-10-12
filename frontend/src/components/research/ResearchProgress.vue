@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ResearchEvent, ResearchJob, ResearchProgress } from '../../types/research'
+import { researchEventLabel } from '../../utils/research'
 
 const props = defineProps<{ job: ResearchJob, progress: ResearchProgress, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ cancel: [] }>()
-const activeLabel = computed(() => props.progress.stages.find(item => item.key === props.progress.current_stage)?.label ?? '研究处理中')
+const activeLabel = computed(() => props.progress.stages.find(item => item.key === props.progress.current_stage)?.label ?? 'Research in progress')
 const recentEvents = computed(() => [...(props.events ?? [])].reverse().slice(0, 5))
 const latestRecovery = computed(() => [...(props.events ?? [])].reverse().find(event => event.event_type === 'job_recovered'))
 const elapsedLabel = computed(() => {
   const seconds = Math.round(props.progress.metrics.elapsed_ms / 1000)
-  return seconds < 60 ? `${seconds} 秒` : `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`
+  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`
 })
 </script>
 
@@ -23,10 +24,10 @@ const elapsedLabel = computed(() => {
       <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><UIcon name="i-lucide-history" /></span>
       <div>
         <p class="text-sm font-semibold text-highlighted">
-          任务已从检查点恢复
+          Research restored from checkpoint
         </p>
         <p class="mt-1 text-xs leading-5 text-muted">
-          {{ latestRecovery.message }}，已复用此前保存的任务、证据和报告数据。
+          {{ researchEventLabel(latestRecovery) }}. Saved tasks, evidence, and reports have been restored.
         </p>
       </div>
     </section>
@@ -35,7 +36,7 @@ const elapsedLabel = computed(() => {
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p class="text-sm text-muted">
-              正在研究
+              Research in progress
             </p>
             <h2 class="mt-1 text-lg font-semibold text-highlighted">
               {{ activeLabel }}
@@ -46,7 +47,7 @@ const elapsedLabel = computed(() => {
           </div>
           <div class="text-right">
             <span class="text-base font-semibold text-highlighted">{{ progress.progress_percent }}%</span><p class="text-xs text-muted">
-              整体进度
+              Overall progress
             </p>
           </div>
         </div>
@@ -62,7 +63,7 @@ const elapsedLabel = computed(() => {
     <div class="space-y-5">
       <section>
         <h3 class="font-semibold text-highlighted">
-          执行流程
+          Research stages
         </h3>
         <ol class="mt-5 space-y-0">
           <li
@@ -90,7 +91,7 @@ const elapsedLabel = computed(() => {
               >
                 {{ stage.label }}
               </p><p class="mt-0.5 text-xs text-muted">
-                {{ stage.completed_at ? '已完成' : stage.started_at ? '执行中' : '等待执行' }}
+                {{ stage.completed_at ? 'Completed' : stage.started_at ? 'Running' : 'Queued' }}
               </p>
             </div>
           </li>
@@ -100,63 +101,63 @@ const elapsedLabel = computed(() => {
       <div class="space-y-5">
         <section class="border-t border-default pt-5">
           <h3 class="font-semibold text-highlighted">
-            研究统计
+            Research statistics
           </h3>
           <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
                 {{ progress.task_completed }}/{{ progress.task_total }}
               </p><p class="mt-1 text-xs text-muted">
-                任务
+                Tasks
               </p>
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
                 {{ progress.evidence_count }}
               </p><p class="mt-1 text-xs text-muted">
-                证据
+                Evidence
               </p>
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
                 {{ progress.claim_count }}
               </p><p class="mt-1 text-xs text-muted">
-                结论
+                Claims
               </p>
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
                 {{ progress.metrics.documents_read }}
               </p><p class="mt-1 text-xs text-muted">
-                已读资料
+                Documents read
               </p>
             </div>
           </div>
           <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-default pt-4 text-xs">
             <div>
               <dt class="text-muted">
-                已用时间
+                Elapsed time
               </dt><dd class="mt-1 font-medium text-highlighted">
                 {{ elapsedLabel }}
               </dd>
             </div>
             <div>
               <dt class="text-muted">
-                动作使用
+                Actions used
               </dt><dd class="mt-1 font-medium text-highlighted">
                 {{ progress.metrics.actions_used }}
               </dd>
             </div>
             <div>
               <dt class="text-muted">
-                工具调用
+                Tool calls
               </dt><dd class="mt-1 font-medium text-highlighted">
                 {{ progress.metrics.tool_calls }}
               </dd>
             </div>
             <div>
               <dt class="text-muted">
-                恢复次数
+                Recoveries
               </dt><dd class="mt-1 font-medium text-highlighted">
                 {{ progress.metrics.recovery_count }}
               </dd>
@@ -169,7 +170,7 @@ const elapsedLabel = computed(() => {
           class="border-t border-default pt-5"
         >
           <h3 class="font-semibold text-highlighted">
-            研究任务
+            Research tasks
           </h3>
           <ul class="mt-4 space-y-3">
             <li
@@ -191,7 +192,7 @@ const elapsedLabel = computed(() => {
           class="border-t border-default pt-5"
         >
           <h3 class="font-semibold text-highlighted">
-            最近活动
+            Recent activity
           </h3>
           <ul class="mt-4 space-y-3">
             <li
@@ -200,7 +201,7 @@ const elapsedLabel = computed(() => {
               class="flex items-start gap-3 text-sm"
             >
               <span class="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-              <span class="text-muted">{{ event.message }}</span>
+              <span class="text-muted">{{ researchEventLabel(event) }}</span>
             </li>
           </ul>
         </section>
@@ -209,14 +210,14 @@ const elapsedLabel = computed(() => {
 
     <div class="flex items-center justify-between gap-3 border-t border-default pt-4">
       <p class="text-xs text-muted">
-        当前阶段：<span class="font-mono">{{ progress.current_stage }}</span>。页面刷新后会从服务端恢复进度。
+        Current stage: <span class="font-mono">{{ progress.current_stage }}</span>. Progress is restored from the server when you refresh.
       </p>
       <UButton
         v-if="job.status === 'ready'"
         color="error"
         variant="soft"
         size="sm"
-        label="取消研究"
+        label="Cancel research"
         @click="emit('cancel')"
       />
     </div>

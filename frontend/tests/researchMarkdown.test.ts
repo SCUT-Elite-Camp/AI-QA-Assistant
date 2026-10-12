@@ -3,6 +3,21 @@ import { parse } from '@comark/vue/parse'
 import { formatResearchCitations, researchConversationText } from '../src/utils/researchMarkdown'
 
 describe('research citation rendering', () => {
+  it('preserves code in an unfinished live fence and transforms later prose after closure', () => {
+    const partial = 'Claim [1].\n```python\nitems = [1, 2]\nprint(items[1])'
+    const rendered = formatResearchCitations(partial, new Set([1, 2]))
+    expect(rendered.match(/cite-mark/g)).toHaveLength(1)
+    expect(rendered).toContain('items = [1, 2]')
+    expect(rendered).toContain('print(items[1])')
+    expect(formatResearchCitations(partial + '\n```\nNext claim [2].').match(/cite-mark/g)).toHaveLength(2)
+  })
+
+  it('leaves numeric brackets without matching saved evidence unchanged', () => {
+    expect(formatResearchCitations('Values [1, 2] and source [3].', new Set([3])))
+      .toBe('Values [1, 2] and source  :cite-mark{index="3"} .')
+    expect(formatResearchCitations('items[1]', new Set())).toBe('items[1]')
+  })
+
   it('restores the complete long conversation body while supporting legacy events', () => {
     const content = 'A grounded answer with citations [1]. '.repeat(30)
     expect(researchConversationText({ message: content.slice(0, 500), payload: { content } })).toBe(content)
@@ -23,5 +38,12 @@ describe('research citation rendering', () => {
     expect(JSON.stringify(result.nodes)).toContain('confirmed')
     expect(JSON.stringify(result.nodes)).toContain('cite-mark')
     expect(JSON.stringify(result.nodes)).not.toContain('</cite-mark>')
+  })
+
+  it('renders grouped fast-answer markers and leaves code examples alone', async () => {
+    const result = await parse(formatResearchCitations('Claims [1, 2,4,5]. `sample [9]`'))
+    const rendered = JSON.stringify(result.nodes)
+    expect(rendered.match(/cite-mark/g)).toHaveLength(4)
+    expect(rendered).toContain('sample [9]')
   })
 })

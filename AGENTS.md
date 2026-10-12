@@ -13,7 +13,7 @@
 - Model calls, release, historical derived content, Memory and citation Reader must recheck current sources and version/hash. Unknown lineage is quarantined, never backfilled as trusted.
 - Preserve ContextVar guards across thread-pool boundaries; do not use shared mutable last-request state.
 - Research currently accepts enterprise Confluence only. Wiki-derived navigation is quarantined until it proves its own full source lineage. Do not relax either boundary to make a demo pass.
-- Tests may inject fake transports/models. Real acceptance must use the actual model, embedding/Milvus, parser/scanner, BFF session/CSRF and native permissions.
+- Tests may inject fake transports/models. Real acceptance must use the actual model, embedding/Milvus, parser, BFF session/CSRF and native permissions. Attachment malware scanning was removed at the user's explicit request on 2026-10-12.
 
 ## State and runtime
 

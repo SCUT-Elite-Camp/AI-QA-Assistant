@@ -62,13 +62,23 @@ class ResearchAccessPolicy:
         """Freeze the authorized selector result into an explicit document list.
 
         Explicit unauthorized IDs reject the whole request. Broad KB/topic
-        selectors expose only their authorized intersection, never a global list.
+        selectors expose only their authorized intersection. The default scope
+        freezes all currently authorized catalog documents before planning.
         """
         explicit = set(request.source_scope.document_ids)
         allowed = self.accessible_doc_ids(user_id, sorted(explicit) if explicit else None)
         if allowed is not None and not explicit.issubset(allowed):
             raise ResearchAccessError("research_source_forbidden")
-        manifest = resolver.resolve("authorization-preview", request.source_scope, allowed_doc_ids=allowed)
+        scope = request.source_scope
+        if scope.all_documents:
+            document_ids = sorted({
+                item.doc_id for item in resolver.list_documents()
+                if allowed is None or item.doc_id in allowed
+            })
+            if not document_ids:
+                raise ResearchAccessError("research_source_forbidden")
+            scope = SourceScope(document_ids=document_ids)
+        manifest = resolver.resolve("authorization-preview", scope, allowed_doc_ids=allowed)
         document_ids = [
             item.doc_id for item in manifest.documents
             if allowed is None or item.doc_id in allowed

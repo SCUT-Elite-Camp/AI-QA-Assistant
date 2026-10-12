@@ -17,29 +17,25 @@ export function useResearchLaunch() {
   const researchLaunchError = ref('')
   let pendingJob: { key: string, id: string } | null = null
 
-  async function launchResearch(query: string, documentIds: string[] = []) {
+  async function launchResearch(query: string) {
     const normalizedQuery = query.trim()
     if (!normalizedQuery || launchingResearch.value) return false
-    if (!documentIds.length) {
-      researchLaunchError.value = 'Select at least one knowledge base document before starting Deep Research.'
-      return false
-    }
 
     launchingResearch.value = true
     researchLaunchError.value = ''
     try {
       if (!user.value) await fetchSession()
       if (!user.value) throw new Error('Sign in before starting Deep Research.')
-      const uniqueDocumentIds = [...new Set(documentIds)].sort()
-      const requestKey = JSON.stringify([normalizedQuery, uniqueDocumentIds])
+      const requestKey = normalizedQuery
       if (pendingJob?.key !== requestKey) {
         const job = await api.createJob({
           schema_version: 'research.v2',
           query: normalizedQuery,
           source_scope: {
             knowledge_base_ids: [],
-            document_ids: uniqueDocumentIds,
-            topic: Array.from(normalizedQuery).slice(0, 200).join(''),
+            document_ids: [],
+            topic: '',
+            all_documents: true,
           },
           report_spec: {
             format: 'markdown',

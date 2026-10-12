@@ -1,12 +1,10 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { ResearchEvent, ResearchEventsResponse, ResearchJob, ResearchProgress } from '../types/research'
+import type { ResearchEvent, ResearchJob, ResearchProgress, ResearchSnapshot } from '../types/research'
 import { isResearchTerminal } from '../utils/research'
 
 export function useResearchPolling(
-  fetchJob: () => Promise<ResearchJob>,
-  fetchProgress: () => Promise<ResearchProgress>,
-  fetchEvents: (afterEventId: number) => Promise<ResearchEventsResponse>,
-  intervalMs = 1600,
+  fetchSnapshot: (afterEventId: number) => Promise<ResearchSnapshot>,
+  intervalMs = 5000,
 ) {
   const job = ref<ResearchJob | null>(null)
   const progress = ref<ResearchProgress | null>(null)
@@ -15,22 +13,22 @@ export function useResearchPolling(
   const error = ref<unknown>(null)
   let timer: ReturnType<typeof setTimeout> | null = null
   let stopped = false
+  let generation = 0
   let eventCursor = 0
 
   function stop() {
     stopped = true
+    generation += 1
     if (timer) clearTimeout(timer)
     timer = null
   }
 
   async function refresh() {
     if (stopped) return
+    const activeGeneration = generation
     try {
-      const [nextJob, nextProgress, nextEvents] = await Promise.all([
-        fetchJob(),
-        fetchProgress(),
-        fetchEvents(eventCursor),
-      ])
+      const { job: nextJob, progress: nextProgress, events: nextEvents } = await fetchSnapshot(eventCursor)
+      if (stopped || activeGeneration !== generation) return
       job.value = nextJob
       progress.value = nextProgress
       if (nextEvents.events.length) {
@@ -39,13 +37,16 @@ export function useResearchPolling(
       }
       eventCursor = nextEvents.next_after_event_id
       error.value = null
-      if (isResearchTerminal(job.value)) return stop()
+      if (isResearchTerminal(job.value)) {
+        loading.value = false
+        return stop()
+      }
     } catch (reason) {
-      error.value = reason
+      if (!stopped && activeGeneration === generation) error.value = reason
     } finally {
-      loading.value = false
+      if (activeGeneration === generation) loading.value = false
     }
-    if (!stopped) timer = setTimeout(refresh, document.hidden ? intervalMs * 3 : intervalMs)
+    if (!stopped && activeGeneration === generation) timer = setTimeout(refresh, document.hidden ? intervalMs * 3 : intervalMs)
   }
 
   function restart() {

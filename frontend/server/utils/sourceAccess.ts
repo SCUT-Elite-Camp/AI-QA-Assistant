@@ -42,11 +42,17 @@ export async function assertSourceDependencies(userId: string, dependencies: Sou
     if (result.denied_doc_ids?.length || enterprise.some(id => !allowed.has(id))) {
       throw new HTTPError({ statusCode: 403, statusMessage: 'source_access_revoked' })
     }
-    for (const dependency of dependencies.filter(item => item.source_type === 'knowledge')) {
-      if (!dependency.content_hash) throw new HTTPError({ statusCode: 409, statusMessage: 'source_provenance_incomplete' })
-      const params = new URLSearchParams({ expected_hash: dependency.content_hash })
-      if (dependency.version != null) params.set('expected_version', String(dependency.version))
-      await accessBackend(userId, `documents/${encodeURIComponent(dependency.doc_id)}/source?${params}`)
+    const sources = [...new Map(dependencies.filter(item => item.source_type === 'knowledge')
+      .map(item => [JSON.stringify([item.doc_id, item.version, item.content_hash]), item])).values()]
+    // Independent live source reads share only this boundary, never a cached grant.
+    // Bound concurrency so a streaming batch does not serialize all source calls.
+    for (let offset = 0; offset < sources.length; offset += 8) {
+      await Promise.all(sources.slice(offset, offset + 8).map(async dependency => {
+        if (!dependency.content_hash) throw new HTTPError({ statusCode: 409, statusMessage: 'source_provenance_incomplete' })
+        const params = new URLSearchParams({ expected_hash: dependency.content_hash })
+        if (dependency.version != null) params.set('expected_version', String(dependency.version))
+        await accessBackend(userId, `documents/${encodeURIComponent(dependency.doc_id)}/source?${params}`)
+      }))
     }
   }
   const db = useDrizzle()

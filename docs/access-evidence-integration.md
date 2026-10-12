@@ -1,6 +1,13 @@
 # Web / Agent / Toolset 接入契约
 
-更新：2026-10-09。架构见[访问边界与证据链路](access-evidence-architecture.md)。
+更新：2026-10-12。架构见[访问边界与证据链路](access-evidence-architecture.md)。
+
+Deep Research 默认使用当前用户可访问的全部企业 Confluence 文档，网页不再要求选源。
+`source_scope.all_documents=true`（省略/空范围同义）由认证服务端转换为显式授权文档列表；
+后续 Plan/Manifest/Approval 仍绑定版本/hash，并继续逐次复核原生权限。
+Research 提示、计划说明、状态事件、操作确认及引用 Reader 统一为英文；回答正文遵循请求语言。
+
+附件服务按当前产品要求仅负责文件格式/大小校验、解析与上下文返回；病毒扫描功能已移除，开发和生产均不依赖 Defender/ClamAV。`ATTACHMENT_SCANNER`、`ALLOW_FAKE_ATTACHMENT_SCANNER` 和 readiness 的 `scanner_ready` 字段已删除。`/health/ready` 检查服务自身运行状态；新上传直接进入 `parsing`。既有附件身份、Chat/Topic 绑定、有效期与证据版本校验仍适用。
 
 ## 浏览器接口
 
@@ -59,9 +66,15 @@ Research 使用可信 `X-User-ID`；内部 Chat 同时检查请求体身份和 B
 
 `dependencies` 支持 `knowledge`、`personal`、`attachment`。个人库还必须绑定 `knowledge_base_id`、`document_id`、`version_id`；附件必须有有效 evidence version/hash。Pydantic 空 optional 字段的 wire 值可能为 `null`，Web 会正规化为空；这不免除各来源必填字段的校验。
 
-SSE 的 `done.evidence_provenance` 与输出 Citations 必须匹配，且全部来源仍有效。普通 BFF 会缓冲 Agent 流，校验和落库后才释放最终回答；因此使用 SSE 不代表逐 token 未校验输出。`data-answer-status={status:no_relevant_context,persisted:false}` 只表示未保存的不足证据提示。
+SSE 的 `done.evidence_provenance` 与输出 Citations 必须匹配，且全部来源仍有效。
+Chat 模型通过真实流式调用产生片段；Agent 每次释放片段前重新校验权限和版本/hash，并发送 `source.evidence_provenance`。
+BFF 在该边界重新校验当前身份与来源，才通过临时 `data-answer-preview` 显示后续模型片段；未携带完整证明的旧流保持缓冲。
+最终质量修复可通过 `answer` 替换草稿，完成后经过校验、落库与再次来源检查才发布完成的消息。
+失败、取消及不足证据不保存草稿；校验失败会清除网页草稿。来源型历史/Memory/引用 Reader 仍只使用已保存的最终消息。
+`data-answer-status={status:no_relevant_context,persisted:false}` 只表示未保存的不足证据提示。
 
 Memory 的 Snapshot/Fact/Tail、Topic 摘要须传递相同 lineage；不能用 `complete=true, dependencies=[]` 给已有知识回答洗白。纯用户偏好等不依赖资料的内容可以合法为空依赖。
+Chat 属于 Topic 时，Web 先校验当前成员身份与 Topic 摘要的完整来源，再把 `soul_content` 和来源依赖传给 Agent；Agent 在模型调用和回答释放前重查这些依赖。旧版或已撤权的摘要不进入模型上下文。Topic 文档池的 `is_user_uploaded` 列由迁移 0017 添加，运行时 schema reconcile 也会补齐旧库。
 
 ## 失败语义
 
@@ -80,7 +93,7 @@ Chat 中途失败只能产生安全状态提示，不能保存成成功回答。
 
 Report citation buttons open the existing themed Reader in-page. Research reads use the session-owned BFF `/api/research/jobs/{research_id}/documents/{doc_id}/source` endpoint; frozen job membership, current ACL/native permissions and source version/hash are checked server-side on each read. The UI displays the selected report excerpt/version/hash and the authorized full text; it does not substitute an unrestricted document endpoint or browser authorization context.
 
-Research Evidence and Citation may include `anchor_excerpt`: the text of the exact locator block, independently of the surrounding `excerpt` context. Precise commit/source locator answers must find the requested fact in this anchor, rather than infer its location from neighboring blocks. Older records without this optional field retain their existing excerpt semantics; they are not backfilled as new verified anchors. Small documents (at most 12 chunks and 6000 body characters) can supply bounded complete context, while the anchor remains the exact original chunk. Every read still checks current native permissions and frozen version/hash.
+Research Evidence and Citation may include `anchor_excerpt`: the text of the exact locator block, independently of the surrounding `excerpt` context. Reader highlights this anchor while still displaying the surrounding context; matching can ignore Markdown code delimiters and whitespace, while preserving substantive tokens and original-body offsets. Precise commit/source locator answers must find the requested fact in this anchor, rather than infer its location from neighboring blocks. Older records without this optional field retain their existing excerpt semantics; they are not backfilled as new verified anchors. Small documents (at most 12 chunks and 6000 body characters) can supply bounded complete context, while the anchor remains the exact original chunk. Every read still checks current native permissions and frozen version/hash.
 
 For G1 factual/comparison requests, including selected scope comparisons, recorded status tables and capability summaries, with at most four explicitly selected documents, the policy allows bounded original reads through the existing guarded ToolExecutor. This expands evidence coverage, not authorization. Calendar comparisons use the document's recorded meeting/report date when unambiguous; the source version/export timestamp remains provenance and is not rewritten to that event date.
 

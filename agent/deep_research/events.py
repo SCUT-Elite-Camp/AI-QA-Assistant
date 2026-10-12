@@ -23,7 +23,7 @@ class ResearchEventRecorder:
             research_id,
             "job:created",
             ResearchEventType.JOB_CREATED,
-            "已创建研究任务",
+            "Research created",
             stage="created",
         )
         self.stage_started(research_id, "created")
@@ -34,7 +34,7 @@ class ResearchEventRecorder:
             research_id,
             f"plan:{plan_version}:approved",
             ResearchEventType.PLAN_APPROVED,
-            "研究计划已确认",
+            "Research plan approved",
             stage="awaiting_approval",
             payload={"plan_version": plan_version},
         )
@@ -52,7 +52,7 @@ class ResearchEventRecorder:
             research_id,
             f"plan:{to_version}:revised",
             ResearchEventType.PLAN_REVISED,
-            f"研究计划已更新为 v{to_version}，需要重新确认",
+            f"Plan updated to v{to_version}. Approval is required.",
             stage="awaiting_approval",
             payload={
                 "from_version": from_version,
@@ -73,7 +73,7 @@ class ResearchEventRecorder:
             research_id,
             f"recovery:{attempt}",
             ResearchEventType.JOB_RECOVERED,
-            f"已从检查点恢复，继续执行{STAGE_LABELS.get(stage, '研究任务')}",
+            f"Restored from checkpoint. Resuming: {STAGE_LABELS.get(stage, 'Research')}",
             stage=stage,
             payload={"attempt": attempt, "resumed_stage": stage},
         )
@@ -83,17 +83,17 @@ class ResearchEventRecorder:
             research_id,
             f"stage:{stage}:started",
             ResearchEventType.STAGE_STARTED,
-            STAGE_LABELS.get(stage, "研究阶段已开始"),
+            STAGE_LABELS.get(stage, "Research stage started"),
             stage=stage,
         )
 
     def stage_completed(self, research_id: str, stage: str) -> ResearchEvent:
-        label = STAGE_LABELS.get(stage, "研究阶段")
+        label = STAGE_LABELS.get(stage, "Research stage")
         return self._append(
             research_id,
             f"stage:{stage}:completed",
             ResearchEventType.STAGE_COMPLETED,
-            f"{label}完成",
+            f"{label}: completed",
             stage=stage,
         )
 
@@ -106,7 +106,7 @@ class ResearchEventRecorder:
             research_id,
             f"task:{task_id}:started",
             ResearchEventType.TASK_STARTED,
-            "开始执行研究任务",
+            "Research task started",
             stage="execute_tasks",
             task_id=task_id,
         )
@@ -123,15 +123,15 @@ class ResearchEventRecorder:
         if status == ResearchTaskStatus.SUCCEEDED:
             event_type = ResearchEventType.TASK_COMPLETED
             suffix = "completed"
-            message = "研究任务已完成"
+            message = "Research task completed"
         elif status == ResearchTaskStatus.BLOCKED:
             event_type = ResearchEventType.TASK_BLOCKED
             suffix = "blocked"
-            message = "研究任务因依赖未完成而跳过"
+            message = "Research task skipped because a dependency did not complete"
         else:
             event_type = ResearchEventType.TASK_FAILED
             suffix = "failed"
-            message = "研究任务未取得可验证证据"
+            message = "Research task did not obtain verifiable evidence"
         return self._append(
             research_id,
             f"task:{task_id}:{suffix}",
@@ -151,7 +151,7 @@ class ResearchEventRecorder:
             research_id,
             f"report:{report_id}:ready",
             ResearchEventType.REPORT_READY,
-            "研究报告已生成",
+            "Research report ready",
             stage="render_report",
             payload={"report_id": report_id},
         )
@@ -161,7 +161,7 @@ class ResearchEventRecorder:
             research_id,
             "job:completed",
             ResearchEventType.JOB_COMPLETED,
-            "研究已完成",
+            "Research complete",
             stage="completed",
             payload={"result_status": result_status},
         )
@@ -171,7 +171,7 @@ class ResearchEventRecorder:
             research_id,
             "job:failed",
             ResearchEventType.JOB_FAILED,
-            "研究任务执行失败",
+            "Research failed",
             stage=stage,
             payload={"error_code": code},
         )
@@ -181,7 +181,7 @@ class ResearchEventRecorder:
             research_id,
             "job:cancelled",
             ResearchEventType.JOB_CANCELLED,
-            "研究任务已取消",
+            "Research cancelled",
             stage=stage,
         )
 

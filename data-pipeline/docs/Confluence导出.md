@@ -10,6 +10,7 @@
 站点根、`/wiki` 和页面地址均正规化到同一 Cloud `/wiki` 根。携凭据请求只允许
 同源 URL 且禁止跳转；分页 next 链接不能引导到外站。导出账号不会自动授权所有
 问答用户，在线授权见[跨层契约](../../docs/access-evidence-architecture.md)。
+若 Windows 本机 Python HTTPS 传输无法完成 Cloud TLS，可设置 `CONFLUENCE_HTTP_TRANSPORT=curl` 使用系统 `curl.exe`；凭据通过标准输入传递，仍限制 HTTPS 且不跟随跳转。
 
 ## 导出空间
 
@@ -38,5 +39,4 @@ python data-pipeline/confluence_pull.py `
 页面附件只保留链接，本阶段不下载或解析附件正文。无法可靠转换的宏会保留
 可见占位符并写入 warnings，避免静默丢失内容。
 
-导出不改变问答权威目录/索引。本轮使用历史冻结正文并检查源站当前权限，
-没有宣称源站最新正文已同步。新版本必须重新建立正文与索引投影。
+导出本身不改变问答权威目录或索引。更新在线问答还需运行原生 parser/chunker、embedding、Milvus 与 BM25 入库，并切换 Web/Agent 共享的当前正文与权限目录。

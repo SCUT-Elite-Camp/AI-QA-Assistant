@@ -79,6 +79,7 @@ def _calls(research_id: str, manifest_hash: str):
         ("GET", prefix, None), ("GET", prefix + "/plan", None),
         ("GET", prefix + "/report", None), ("GET", prefix + "/progress", None),
         ("GET", prefix + "/events", None), ("GET", prefix + "/evaluation-trace", None),
+        ("GET", prefix + "/snapshot", None),
         ("GET", prefix + "/documents/doc-public/source", None),
         ("POST", prefix + "/approve", {"plan_version": 1, "manifest_hash": manifest_hash}),
         ("POST", prefix + "/cancel", None),
@@ -140,6 +141,87 @@ def test_catalog_filters_before_returning_titles_and_scope_rejects_explicit_over
     assert set(scope["document_ids"]) == {"doc-public", "doc-private", "doc-grant"}
     assert scope["knowledge_base_ids"] == []
     assert scope["topic"] == ""
+
+
+@pytest.mark.parametrize("scope", [None, {}, {"all_documents": True}])
+def test_default_scope_freezes_all_authorized_documents_before_planning(environment, scope):
+    client, control, _, _ = environment
+    body = {"query": "Summarize the available knowledge"}
+    if scope is not None:
+        body["source_scope"] = scope
+    response = client.post("/api/research/jobs", json=body)
+    assert response.status_code == 201, response.text
+    job = response.json()
+    frozen = {"doc-public", "doc-private", "doc-grant"}
+    assert set(job["request"]["source_scope"]["document_ids"]) == frozen
+    assert job["request"]["source_scope"]["all_documents"] is False
+    control.resume_planning_job(job["research_id"])
+    manifest = control.get_manifest(job["research_id"])
+    assert {item.doc_id for item in manifest.documents} == frozen
+    assert "Bob secret title" not in response.text
+    assert all(set(task.source_ids) <= frozen for task in control.get_plan(job["research_id"]).tasks)
+
+
+def test_default_scope_rejects_an_empty_authorized_catalog(environment):
+    client, control, acl_path, _ = environment
+    with sqlite3.connect(acl_path) as db:
+        db.execute("UPDATE files SET user_id='bob', visibility='private'")
+        db.execute("DELETE FROM file_permissions")
+    response = client.post("/api/research/jobs", json={"query": "Research everything"})
+    assert response.status_code == 403
+    assert control.repository.list_jobs() == []
+
+
+def test_default_scope_does_not_keep_access_after_permission_revocation(environment):
+    client, control, acl_path, _ = environment
+    response = client.post("/api/research/jobs", json={"query": "Research everything"})
+    job = response.json()
+    control.resume_planning_job(job["research_id"])
+    with sqlite3.connect(acl_path) as db:
+        db.execute("UPDATE files SET user_id='bob' WHERE doc_id='doc-private'")
+    for method, url, payload in _calls(job["research_id"], job["manifest_hash"] or control.get_manifest(job["research_id"]).manifest_hash):
+        result = client.request(method, url, json=payload)
+        assert result.status_code == 403, (method, url, result.text)
+
+
+def test_default_scope_handles_more_than_one_hundred_authorized_documents(environment):
+    client, control, acl_path, _ = environment
+    with sqlite3.connect(acl_path) as db:
+        for index in range(110):
+            doc_id = f"extra-{index}"
+            control.source_resolver.documents[doc_id] = {
+                "title": "Additional document", "space": "kb", "content": "Evidence", "version": "1",
+            }
+            db.execute("INSERT INTO files VALUES (?,?,?,?)", (doc_id, "alice", doc_id, "private"))
+    response = client.post("/api/research/jobs", json={"query": "Research all accessible sources"})
+    assert response.status_code == 201, response.text
+    job = response.json()
+    assert len(job["request"]["source_scope"]["document_ids"]) == 113
+    control.resume_planning_job(job["research_id"])
+    assert len(control.get_plan(job["research_id"]).tasks[0].source_ids) == 113
+
+
+def test_snapshot_shares_one_fresh_permission_check_and_honors_event_cursor(environment, monkeypatch):
+    client, control, _, application = environment
+    job = _create(client, control)
+    policy = application.state.research_access_policy
+    original = policy.accessible_doc_ids
+    checks = []
+    def count_checks(user_id, doc_ids=None):
+        checks.append((user_id, doc_ids))
+        return original(user_id, doc_ids)
+    monkeypatch.setattr(policy, "accessible_doc_ids", count_checks)
+    response = client.get(f"/api/research/jobs/{job['research_id']}/snapshot")
+    assert response.status_code == 200, response.text
+    snapshot = response.json()
+    assert snapshot["job"]["status"] == "awaiting_approval"
+    assert snapshot["progress"]["research_id"] == job["research_id"]
+    assert len(checks) == 1
+    cursor = snapshot["events"]["next_after_event_id"]
+    second = client.get(f"/api/research/jobs/{job['research_id']}/snapshot", params={"after_event_id": cursor})
+    assert second.status_code == 200
+    assert second.json()["events"]["events"] == []
+    assert len(checks) == 2
 
 
 @pytest.mark.parametrize("actor", ["unknown", "disabled"])

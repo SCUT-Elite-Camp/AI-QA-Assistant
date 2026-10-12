@@ -79,7 +79,7 @@ function keepOpen() {
     <button
       type="button"
       class="cite-badge-btn inline-flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-300/80 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition-all cursor-pointer font-mono font-bold text-[10px] w-4.5 h-4.5 min-w-[18px] min-h-[18px] shadow-xs"
-      :aria-label="`查看引用 ${index} 的授权原文`"
+      :aria-label="`View authorized source for citation ${index}`"
       @mouseenter="show"
       @mouseleave="hide"
       @focusin="show"
@@ -111,8 +111,8 @@ function keepOpen() {
         </div>
         <!-- Scrollable content -->
         <div class="p-3 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed max-h-72 overflow-y-auto whitespace-pre-wrap select-text cite-scroll-container">
-          {{ citation.chunk_text || '（暂无摘要）' }}
-          <p class="mt-2 text-[11px] text-neutral-500">点击编号重新校验权限并核对原文。</p>
+          {{ citation.chunk_text || 'No excerpt available' }}
+          <p class="mt-2 text-[11px] text-neutral-500">Click the citation to verify access and inspect the source.</p>
         </div>
       </div>
     </Transition>

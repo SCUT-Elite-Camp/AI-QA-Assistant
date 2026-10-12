@@ -25,4 +25,4 @@ def chat_history_db_path() -> Path:
 
 def topics_dir() -> Path:
     """Return the default topic storage directory."""
-    return data_dir() / "topics"
+    return Path(os.getenv('TOPICS_DATA_DIR', str(data_dir() / 'topics'))).resolve()

@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 / DATA PIPELINE | 数据处理流水线 - AI-QA-Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* 基础重置与设计变量 (严格继承已有规范并对齐设计稿) */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-canvas: #fafaf8;
+      --bg-white: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-hover: #f1f5f9;
+
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+
+      /* 功能强调色规范 */
+      --brand-blue: #2563eb;
+      --brand-blue-hover: #1d4ed8;
+      --agent-purple: #8b5cf6;
+      --agent-purple-dark: #7c3aed;
+      --knowledge-green: #10b981;
+      --retrieval-cyan: #0284c7;
+      --danger-red: #ef4444;
+
+      --border-light: #e5e7eb;
+      --border-subtle: #edf2f7;
+      --border-focus: #cbd5e1;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, "Inter", sans-serif;
+      --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+      --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+    }
+
+    html, body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部导航 Header */
+    .header {
+      width: 100%;
+      height: 72px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      background: var(--bg-white);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      color: var(--brand-blue);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+    }
+
+    .brand-divider {
+      color: #cbd5e1;
+      font-size: 15px;
+      font-weight: 300;
+      margin: 0 1px;
+    }
+
+    .brand-subtitle {
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-item a {
+      text-decoration: none;
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.15s ease;
+      position: relative;
+      padding: 6px 0;
+    }
+
+    .nav-item.active a {
+      color: var(--brand-blue);
+      font-weight: 600;
+    }
+
+    .nav-item.active a::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background-color: var(--brand-blue);
+      border-radius: 2px;
+    }
+
+    .nav-item a:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #0b1329;
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 7px;
+      font-size: 13.5px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.18s ease;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-cta:hover {
+      background-color: #1e293b;
+      transform: translateY(-1px);
+    }
+
+    /* 主页面容器 */
+    .main-container {
+      width: 100%;
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 32px 48px 56px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      flex: 1;
+    }
+
+    /* 顶部主体区域: 三栏横向网格布局 (左侧说明 / 中间 Pipeline 流程 / 右侧 Wiki 概念层) */
+    .pipeline-hero-grid {
+      display: grid;
+      grid-template-columns: 290px 580px 1fr;
+      gap: 36px;
+      align-items: flex-start;
+      min-height: 540px;
+      position: relative;
+    }
+
+    /* 左栏: 章节标题与四大特征要点 */
+    .col-left {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding-top: 8px;
+    }
+
+    .chapter-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .chapter-title {
+      font-size: 38px;
+      line-height: 1.25;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    .chapter-title .accent-blue {
+      color: var(--brand-blue);
+    }
+
+    .chapter-subtitle {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    .pillar-points {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .pillar-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .pillar-icon-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--bg-white);
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pillar-text-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .pillar-heading {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .pillar-desc {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    /* 中栏: 纵向知识流水线主流程 */
+    .col-center-pipeline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      position: relative;
+    }
+
+    /* 管道步骤行 (包含左侧编号圈、中间卡片、右侧虚线连线与注释文本) */
+    .pipeline-step-row {
+      display: grid;
+      grid-template-columns: 36px 360px 1fr;
+      gap: 14px;
+      align-items: center;
+      width: 100%;
+      position: relative;
+    }
+
+    .step-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid #d1d5db;
+      background: var(--bg-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .pipeline-step-row:hover .step-badge,
+    .pipeline-step-row.active .step-badge {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* 中间节点卡片通用设计 */
+    .node-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .node-card:hover {
+      border-color: var(--border-focus);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .node-card.active {
+      border-color: var(--brand-blue);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .node-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .node-card:hover .node-icon-box {
+      transform: scale(1.05);
+    }
+
+    .node-text-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .node-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .node-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-weight: 400;
+    }
+
+    /* 右侧注释标注与虚线连接 */
+    .node-callout-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .callout-line {
+      width: 24px;
+      height: 1px;
+      border-top: 1.5px dashed #cbd5e1;
+      flex-shrink: 0;
+    }
+
+    .callout-text {
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: var(--text-muted);
+      white-space: pre-line;
+    }
+
+    /* 步进连线与双向箭头 (↕) */
+    .step-connector {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 36px 360px 1fr;
+      gap: 14px;
+      height: 28px;
+      align-items: center;
+      position: relative;
+    }
+
+    .connector-symbol {
+      grid-column: 2;
+      display: flex;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 15px;
+      line-height: 1;
+      cursor: default;
+      transition: color 0.15s ease;
+    }
+
+    .connector-symbol:hover {
+      color: var(--brand-blue);
+    }
+
+    /* 节点 03: 两级分块与知识拓扑 (核心视觉强化大卡片) */
+    .node-card.chunk-master-card {
+      padding: 16px 20px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      background: #fafbff;
+      border: 1.5px solid #dbeafe;
+    }
+
+    .node-card.chunk-master-card.active {
+      border-color: var(--brand-blue);
+      background: #ffffff;
+    }
+
+    .chunk-header-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
+
+    /* 内嵌双卡片容器 (Evidence Chunk + Section Tree) */
+    .chunk-subgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .chunk-subcard {
+      background: var(--bg-white);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .chunk-subcard:hover {
+      transform: translateY(-1.5px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chunk-subcard.evidence {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+    }
+
+    .chunk-subcard.evidence:hover,
+    .chunk-subcard.evidence.active {
+      border-color: var(--brand-blue);
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    .chunk-subcard.section {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .chunk-subcard.section:hover,
+    .chunk-subcard.section.active {
+      border-color: var(--knowledge-green);
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+
+    .chunk-subicon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .chunk-subcard.evidence .chunk-subicon {
+      background: #dbeafe;
+      color: var(--brand-blue);
+    }
+
+    .chunk-subcard.section .chunk-subicon {
+      background: #dcfce7;
+      color: var(--knowledge-green);
+    }
+
+    .chunk-subtext {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .chunk-subtitle-main {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .chunk-subdesc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    /* 右栏: Wiki 概念层 (优雅独立卡片与示意图) */
+    .col-right-wiki {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .wiki-panel-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 24px 26px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .wiki-panel-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .wiki-panel-card.active {
+      border-color: var(--brand-blue);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1);
+    }
+
+    .wiki-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .wiki-badge-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wiki-icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: var(--brand-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wiki-brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .wiki-arrow-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border-light);
+      background: var(--bg-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .wiki-panel-card:hover .wiki-arrow-btn {
+      color: var(--brand-blue);
+      border-color: var(--brand-blue);
+      transform: translateX(2px);
+    }
+
+    .wiki-intro-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .wiki-headline {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .wiki-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .wiki-features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 16px;
+    }
+
+    .wiki-feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .wiki-feature-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .wiki-feature-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .wiki-feature-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .wiki-feature-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* 底部概念矢量微图示 (Micro-illustration) */
+    .wiki-micro-art {
+      width: 100%;
+      height: 110px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 展开的技术详情抽屉 (Progressive Interactive Tech Drawer) */
+    .tech-detail-drawer {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 24px 28px;
+      box-shadow: var(--shadow-md);
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      display: none;
+      margin-top: -6px;
+    }
+
+    .tech-detail-drawer.visible {
+      display: block;
+      animation: fadeInSlide 0.24s ease-out;
+    }
+
+    @keyframes fadeInSlide {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .detail-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+
+    .detail-drawer-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .detail-drawer-badge {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #eff6ff;
+      color: var(--brand-blue);
+    }
+
+    .detail-drawer-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .detail-drawer-close {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .detail-drawer-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .detail-drawer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .detail-drawer-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .detail-cell-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .detail-cell-content {
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    /* 底部三大核心设计决策 Section */
+    .decisions-section {
+      width: 100%;
+      border-top: 1px solid var(--border-light);
+      padding-top: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .decisions-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .decisions-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .decisions-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .decisions-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .decisions-more-link {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .decisions-more-link:hover {
+      color: var(--brand-blue);
+      transform: translateX(2px);
+    }
+
+    .decisions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .decision-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 144px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .decision-card:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .decision-card.active {
+      border-color: var(--brand-blue);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
+    }
+
+    .decision-card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .decision-num {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-light);
+      line-height: 1;
+      margin-top: 2px;
+      transition: color 0.15s ease;
+    }
+
+    .decision-card:hover .decision-num,
+    .decision-card.active .decision-num {
+      color: var(--brand-blue);
+    }
+
+    .decision-icon-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .decision-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .decision-heading {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.015em;
+    }
+
+    .decision-desc {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text-muted);
+    }
+
+    .decision-arrow-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .decision-arrow {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bg-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .decision-card:hover .decision-arrow {
+      background: var(--brand-blue);
+      color: #ffffff;
+      transform: translateX(3px);
+    }
+
+    /* 响应式优化 */
+    @media (max-width: 1200px) {
+      .pipeline-hero-grid {
+        grid-template-columns: 260px 520px 1fr;
+        gap: 24px;
+      }
+      .pipeline-step-row {
+        grid-template-columns: 32px 320px 1fr;
+      }
+      .detail-drawer-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .pipeline-hero-grid {
+        grid-template-columns: 1fr;
+      }
+      .decisions-grid {
+        grid-template-columns: 1fr;
+      }
+      .header {
+        padding: 0 24px;
+      }
+      .main-container {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 顶部极简导航区 (继承首页与架构页设计) -->
+  <header class="header">
+    <a href="index.html" class="brand-group">
+      <!-- 极简几何 Logo -->
+      <svg class="brand-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 25L16 5L26 25" stroke="currentColor" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 18H22" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-title">AI-QA-Assistant</span>
+      <span class="brand-divider">|</span>
+      <span class="brand-subtitle">企业知识智能问答系统</span>
+    </a>
+
+    <nav>
+      <ul class="nav-links">
+        <li class="nav-item"><a href="index.html">概览</a></li>
+        <li class="nav-item"><a href="01_system_architecture.html">架构</a></li>
+        <li class="nav-item active"><a href="02_data_pipeline.html">知识</a></li>
+        <li class="nav-item"><a href="#agent">Agent</a></li>
+        <li class="nav-item"><a href="#security">安全</a></li>
+        <li class="nav-item"><a href="#experience">体验</a></li>
+      </ul>
+    </nav>
+
+    <a href="01_system_architecture.html" class="nav-cta">
+      <span>进入问答体验</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="m12 5 7 7-7 7"></path>
+      </svg>
+    </a>
+  </header>
+
+  <!-- 2. 主页面内容容器 -->
+  <main class="main-container">
+
+    <!-- 顶部主体: 三栏对齐网格 -->
+    <section class="pipeline-hero-grid">
+
+      <!-- 左栏: 章节标题与四大特征要点 -->
+      <div class="col-left">
+        <div>
+          <div class="chapter-eyebrow">02 / DATA PIPELINE</div>
+          <h1 class="chapter-title">
+            从原始文档，<br>
+            <span class="accent-blue">到结构化知识资产</span>
+          </h1>
+          <p class="chapter-subtitle">
+            通过自动化的数据处理流水线，将分散在 PDF、Word、Confluence 等多源异构文档，转化为可检索、可验证、可持续更新的知识资产。
+          </p>
+        </div>
+
+        <div class="pillar-points">
+          <!-- 01 多源异构解析 -->
+          <div class="pillar-item">
+            <div class="pillar-icon-box" style="color: #2563EB;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="pillar-text-group">
+              <span class="pillar-heading">多源异构解析</span>
+              <span class="pillar-desc">支持 PDF、Word、Confluence 等格式</span>
+            </div>
+          </div>
+
+          <!-- 02 结构化知识提取 -->
+          <div class="pillar-item">
+            <div class="pillar-icon-box" style="color: #8B5CF6;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </div>
+            <div class="pillar-text-group">
+              <span class="pillar-heading">结构化知识提取</span>
+              <span class="pillar-desc">保留文档层级、表格与语义结构</span>
+            </div>
+          </div>
+
+          <!-- 03 增量更新与撤权 -->
+          <div class="pillar-item">
+            <div class="pillar-icon-box" style="color: #10B981;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </div>
+            <div class="pillar-text-group">
+              <span class="pillar-heading">增量更新与撤权</span>
+              <span class="pillar-desc">变更秒级同步，删除文档彻底清理</span>
+            </div>
+          </div>
+
+          <!-- 04 内建权限同步 -->
+          <div class="pillar-item">
+            <div class="pillar-icon-box" style="color: #2563EB;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
+              </svg>
+            </div>
+            <div class="pillar-text-group">
+              <span class="pillar-heading">内建权限同步</span>
+              <span class="pillar-desc">知识入库即绑定访问边界</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中栏: 纵向流水线主流程 -->
+      <div class="col-center-pipeline">
+
+        <!-- 节点 01: 多源文档接入 -->
+        <div class="pipeline-step-row" data-node-id="node-01">
+          <div class="step-badge">01</div>
+          <div class="node-card">
+            <div class="node-icon-box" style="background: #eff6ff; color: #2563eb;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <div class="node-text-group">
+              <div class="node-title">多源文档接入</div>
+              <div class="node-subtitle">PDF / DOCX / PPTX / Confluence ...</div>
+            </div>
+          </div>
+          <div class="node-callout-wrap">
+            <div class="callout-line"></div>
+            <div class="callout-text">接入企业内多种文档源
+统一进入处理流水线。</div>
+          </div>
+        </div>
+
+        <!-- 步骤连线 01 -> 02 -->
+        <div class="step-connector">
+          <div class="connector-symbol">↕</div>
+        </div>
+
+        <!-- 节点 02: 结构化解析 -->
+        <div class="pipeline-step-row" data-node-id="node-02">
+          <div class="step-badge">02</div>
+          <div class="node-card">
+            <div class="node-icon-box" style="background: #f5f3ff; color: #8b5cf6;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </div>
+            <div class="node-text-group">
+              <div class="node-title">结构化解析</div>
+              <div class="node-subtitle">构建文档 AST，保留标题、表格、层级结构</div>
+            </div>
+          </div>
+          <div class="node-callout-wrap">
+            <div class="callout-line"></div>
+            <div class="callout-text">两遍扫描解析文档结构
+提取内容块与语义信息。</div>
+          </div>
+        </div>
+
+        <!-- 步骤连线 02 -> 03 -->
+        <div class="step-connector">
+          <div class="connector-symbol">↕</div>
+        </div>
+
+        <!-- 节点 03: 两级分块与知识拓扑 (核心视觉强化大卡片) -->
+        <div class="pipeline-step-row" data-node-id="node-03">
+          <div class="step-badge">03</div>
+          <div class="node-card chunk-master-card">
+            <div class="chunk-header-row">
+              <div class="node-icon-box" style="background: #eff6ff; color: #8b5cf6;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="node-text-group">
+                <div class="node-title">两级分块与知识拓扑</div>
+                <div class="node-subtitle">同时生成精确证据块与章节级导航</div>
+              </div>
+            </div>
+
+            <!-- 内嵌双卡片容器: Evidence Chunk (蓝) + Section Tree (绿) -->
+            <div class="chunk-subgrid">
+              <div class="chunk-subcard evidence" data-subtrack-id="chunk-evidence">
+                <div class="chunk-subicon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </div>
+                <div class="chunk-subtext">
+                  <span class="chunk-subtitle-main">Evidence Chunk</span>
+                  <span class="chunk-subdesc">精确事实片段</span>
+                </div>
+              </div>
+
+              <div class="chunk-subcard section" data-subtrack-id="chunk-section">
+                <div class="chunk-subicon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                </div>
+                <div class="chunk-subtext">
+                  <span class="chunk-subtitle-main">Section Tree</span>
+                  <span class="chunk-subdesc">章节层级结构</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="node-callout-wrap">
+            <div class="callout-line"></div>
+            <div class="callout-text">兼顾精准检索与全局理解
+为后续 Wiki 构建提供基础。</div>
+          </div>
+        </div>
+
+        <!-- 步骤连线 03 -> 04 -->
+        <div class="step-connector">
+          <div class="connector-symbol">↕</div>
+        </div>
+
+        <!-- 节点 04: 向量化与双路索引 -->
+        <div class="pipeline-step-row" data-node-id="node-04">
+          <div class="step-badge">04</div>
+          <div class="node-card">
+            <div class="node-icon-box" style="background: #eff6ff; color: #2563eb;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+            <div class="node-text-group">
+              <div class="node-title">向量化与双路索引</div>
+              <div class="node-subtitle">语义向量 + 关键词索引</div>
+            </div>
+          </div>
+          <div class="node-callout-wrap">
+            <div class="callout-line"></div>
+            <div class="callout-text">生成向量与倒排索引
+支持混合检索与权限过滤。</div>
+          </div>
+        </div>
+
+        <!-- 步骤连线 04 -> 05 -->
+        <div class="step-connector">
+          <div class="connector-symbol">↕</div>
+        </div>
+
+        <!-- 节点 05: 存储与权限同步 -->
+        <div class="pipeline-step-row" data-node-id="node-05">
+          <div class="step-badge">05</div>
+          <div class="node-card">
+            <div class="node-icon-box" style="background: #ecfdf5; color: #10b981;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+              </svg>
+            </div>
+            <div class="node-text-group">
+              <div class="node-title">存储与权限同步</div>
+              <div class="node-subtitle">知识入库，建立访问边界</div>
+            </div>
+          </div>
+          <div class="node-callout-wrap">
+            <div class="callout-line"></div>
+            <div class="callout-text">持久化存储并同步权限
+支持增量更新与文档撤回。</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 右栏: Wiki 概念层 (特色入口独立面板) -->
+      <div class="col-right-wiki">
+        <div class="wiki-panel-card" data-wiki-panel="true">
+          <div class="wiki-header-row">
+            <div class="wiki-badge-group">
+              <div class="wiki-icon-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+              </div>
+              <span class="wiki-brand-title">Wiki</span>
+            </div>
+            <div class="wiki-arrow-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+
+          <div class="wiki-intro-group">
+            <h2 class="wiki-headline">跨文档概念导航层</h2>
+            <p class="wiki-desc">
+              在本项目中，Wiki 由离线流水线自动化编译，用于构建跨文档的概念与实体网络，帮助 Agent 进行全景探索与主题关联。
+            </p>
+          </div>
+
+          <div class="wiki-features-list">
+            <!-- 01 仅做导航引导 -->
+            <div class="wiki-feature-item">
+              <div class="wiki-feature-icon" style="color: #2563EB;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                </svg>
+              </div>
+              <div class="wiki-feature-text">
+                <span class="wiki-feature-title">仅做导航引导</span>
+                <span class="wiki-feature-desc">提供概念关联与主题探索入口</span>
+              </div>
+            </div>
+
+            <!-- 02 不作为引用权威 -->
+            <div class="wiki-feature-item">
+              <div class="wiki-feature-icon" style="color: #EF4444;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+              </div>
+              <div class="wiki-feature-text">
+                <span class="wiki-feature-title">不作为引用权威</span>
+                <span class="wiki-feature-desc">最终答案必须回溯原始 Evidence</span>
+              </div>
+            </div>
+
+            <!-- 03 严格隔离与权限保护 -->
+            <div class="wiki-feature-item">
+              <div class="wiki-feature-icon" style="color: #2563EB;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <div class="wiki-feature-text">
+                <span class="wiki-feature-title">严格隔离与权限保护</span>
+                <span class="wiki-feature-desc">按租户隔离，默认关闭，防止信息泄露</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 底部微示意图 (矢量卡片与树状拓扑图解) -->
+          <div class="wiki-micro-art">
+            <!-- 左侧文档示意 -->
+            <div style="display:flex; flex-direction:column; gap:6px; width:72px;">
+              <div style="height:12px; background:#e2e8f0; border-radius:3px; width:100%;"></div>
+              <div style="height:6px; background:#cbd5e1; border-radius:2px; width:80%;"></div>
+              <div style="height:6px; background:#cbd5e1; border-radius:2px; width:65%;"></div>
+              <div style="height:6px; background:#cbd5e1; border-radius:2px; width:90%;"></div>
+            </div>
+
+            <!-- 中间连接箭头 -->
+            <svg width="40" height="20" viewBox="0 0 40 20" fill="none">
+              <path d="M2 10H34M34 10L26 4M34 10L26 16" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"/>
+            </svg>
+
+            <!-- 右侧拓扑节点示意 -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:8px; height:8px; border-radius:50%; background:#2563eb;"></div>
+                <div style="width:48px; height:6px; background:#93c5fd; border-radius:2px;"></div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; padding-left:12px;">
+                <div style="width:7px; height:7px; border-radius:50%; background:#8b5cf6;"></div>
+                <div style="width:40px; height:5px; background:#c4b5fd; border-radius:2px;"></div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; padding-left:12px;">
+                <div style="width:7px; height:7px; border-radius:50%; background:#10b981;"></div>
+                <div style="width:36px; height:5px; background:#a7f3d0; border-radius:2px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 3. 技术详情抽屉 (Progressive Disclosure - 点击节点/决策展开) -->
+    <div id="techDetailDrawer" class="tech-detail-drawer">
+      <div class="detail-drawer-header">
+        <div class="detail-drawer-title-group">
+          <span id="detailDrawerBadge" class="detail-drawer-badge">PIPELINE NODE</span>
+          <h3 id="detailDrawerTitle" class="detail-drawer-title">节点技术详情</h3>
+        </div>
+        <button id="detailDrawerClose" class="detail-drawer-close" aria-label="关闭详情">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="detail-drawer-grid">
+        <div class="detail-drawer-cell">
+          <span class="detail-cell-label">Why / 背景与痛点</span>
+          <p id="detailDrawerWhy" class="detail-cell-content">-</p>
+        </div>
+        <div class="detail-drawer-cell">
+          <span class="detail-cell-label">Design / 设计方案</span>
+          <p id="detailDrawerDesign" class="detail-cell-content">-</p>
+        </div>
+        <div class="detail-drawer-cell">
+          <span class="detail-cell-label">Technology / 核心技术</span>
+          <p id="detailDrawerTech" class="detail-cell-content">-</p>
+        </div>
+        <div class="detail-drawer-cell">
+          <span class="detail-cell-label">IO / 输入输出规约</span>
+          <p id="detailDrawerIO" class="detail-cell-content">-</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 底部三大核心设计决策 Section (严格对齐规范与参考图) -->
+    <section class="decisions-section">
+      <div class="decisions-header">
+        <div class="decisions-meta">
+          <span class="decisions-eyebrow">KEY DESIGN DECISIONS</span>
+          <h2 class="decisions-title">三大核心设计</h2>
+        </div>
+        <a href="#details" id="exploreAllBtn" class="decisions-more-link">
+          <span>探索完整技术细节</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </a>
+      </div>
+
+      <div class="decisions-grid">
+        <!-- 01 结构感知的文档解析 -->
+        <div class="decision-card" data-decision-id="decision-01">
+          <div class="decision-card-top">
+            <span class="decision-num">01</span>
+            <div class="decision-icon-wrap" style="background:#eff6ff; color:#2563eb;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <div class="decision-body">
+              <h3 class="decision-heading">结构感知的文档解析</h3>
+              <p class="decision-desc">保留标题层级、表格与附件关系，避免知识碎片化。</p>
+            </div>
+          </div>
+          <div class="decision-arrow-wrap">
+            <div class="decision-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 02 双粒度知识索引 -->
+        <div class="decision-card" data-decision-id="decision-02">
+          <div class="decision-card-top">
+            <span class="decision-num">02</span>
+            <div class="decision-icon-wrap" style="background:#f5f3ff; color:#8b5cf6;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </div>
+            <div class="decision-body">
+              <h3 class="decision-heading">双粒度知识索引</h3>
+              <p class="decision-desc">同时支持精确的证据片段检索与章节级的全局理解。</p>
+            </div>
+          </div>
+          <div class="decision-arrow-wrap">
+            <div class="decision-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 03 增量更新与权限同步 -->
+        <div class="decision-card" data-decision-id="decision-03">
+          <div class="decision-card-top">
+            <span class="decision-num">03</span>
+            <div class="decision-icon-wrap" style="background:#ecfdf5; color:#10b981;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </div>
+            <div class="decision-body">
+              <h3 class="decision-heading">增量更新与权限同步</h3>
+              <p class="decision-desc">通过变更感知和权限映射，实现知识的持续更新与安全下线。</p>
+            </div>
+          </div>
+          <div class="decision-arrow-wrap">
+            <div class="decision-arrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 数据驱动交互脚本: 渐进式展示与详情展开 -->
+  <script type="module">
+    import { pipelineNodes, wikiPanelData, designDecisions } from './pipelineData.js';
+
+    const drawer = document.getElementById('techDetailDrawer');
+    const badgeEl = document.getElementById('detailDrawerBadge');
+    const titleEl = document.getElementById('detailDrawerTitle');
+    const whyEl = document.getElementById('detailDrawerWhy');
+    const designEl = document.getElementById('detailDrawerDesign');
+    const techEl = document.getElementById('detailDrawerTech');
+    const ioEl = document.getElementById('detailDrawerIO');
+    const closeBtn = document.getElementById('detailDrawerClose');
+    const exploreAllBtn = document.getElementById('exploreAllBtn');
+
+    let activeEntityId = null;
+
+    // 显示并展开技术详情抽屉
+    function showDetail(type, entityId, customSubId = null) {
+      let detailData = null;
+      let badgeLabel = 'PIPELINE';
+
+      if (type === 'node') {
+        const node = pipelineNodes.find(n => n.id === entityId);
+        if (!node) return;
+        badgeLabel = `NODE ${node.step}`;
+        detailData = node.details;
+
+        if (customSubId && node.subtracks) {
+          const sub = node.subtracks.find(s => s.id === customSubId);
+          if (sub) {
+            badgeLabel = `CHUNKING · ${sub.name.toUpperCase()}`;
+            detailData = sub.details;
+          }
+        }
+      } else if (type === 'wiki') {
+        badgeLabel = 'WIKI LAYER';
+        detailData = wikiPanelData.details;
+      } else if (type === 'decision') {
+        const decision = designDecisions.find(d => d.id === entityId);
+        if (!decision) return;
+        badgeLabel = `DECISION ${decision.step}`;
+        detailData = decision.details;
+      }
+
+      if (!detailData) return;
+
+      badgeEl.textContent = badgeLabel;
+      titleEl.textContent = detailData.name;
+      whyEl.textContent = detailData.why || '-';
+      designEl.textContent = detailData.design || '-';
+      techEl.textContent = detailData.technology || '-';
+      ioEl.textContent = detailData.io || '-';
+
+      drawer.classList.add('visible');
+      activeEntityId = customSubId || entityId;
+
+      // 滚动到抽屉可视区域（如果被遮挡）
+      const drawerRect = drawer.getBoundingClientRect();
+      if (drawerRect.bottom > window.innerHeight) {
+        drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      updateActiveStates(entityId, customSubId);
+    }
+
+    function hideDetail() {
+      drawer.classList.remove('visible');
+      activeEntityId = null;
+      clearActiveStates();
+    }
+
+    function updateActiveStates(entityId, subId = null) {
+      clearActiveStates();
+
+      if (subId) {
+        const subEl = document.querySelector(`[data-subtrack-id="${subId}"]`);
+        if (subEl) subEl.classList.add('active');
+        const parentRow = document.querySelector(`[data-node-id="${entityId}"]`);
+        if (parentRow) parentRow.classList.add('active');
+        return;
+      }
+
+      const nodeRow = document.querySelector(`[data-node-id="${entityId}"]`);
+      if (nodeRow) nodeRow.classList.add('active');
+
+      if (entityId === 'wiki-panel' || entityId === 'wiki') {
+        const wikiCard = document.querySelector('[data-wiki-panel]');
+        if (wikiCard) wikiCard.classList.add('active');
+      }
+
+      const decisionCard = document.querySelector(`[data-decision-id="${entityId}"]`);
+      if (decisionCard) decisionCard.classList.add('active');
+    }
+
+    function clearActiveStates() {
+      document.querySelectorAll('.pipeline-step-row, .chunk-subcard, .wiki-panel-card, .decision-card').forEach(el => {
+        el.classList.remove('active');
+      });
+    }
+
+    // 绑定管道主流程节点点击事件
+    document.querySelectorAll('[data-node-id]').forEach(row => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('[data-subtrack-id]')) return;
+        const nodeId = row.getAttribute('data-node-id');
+        if (activeEntityId === nodeId && drawer.classList.contains('visible')) {
+          hideDetail();
+        } else {
+          showDetail('node', nodeId);
+        }
+      });
+    });
+
+    // 绑定 Chunking 子卡片点击事件 (Evidence Chunk / Section Tree)
+    document.querySelectorAll('[data-subtrack-id]').forEach(subEl => {
+      subEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const subId = subEl.getAttribute('data-subtrack-id');
+        if (activeEntityId === subId && drawer.classList.contains('visible')) {
+          hideDetail();
+        } else {
+          showDetail('node', 'node-03', subId);
+        }
+      });
+    });
+
+    // 绑定 Wiki 概念层面析点击事件
+    const wikiCard = document.querySelector('[data-wiki-panel]');
+    if (wikiCard) {
+      wikiCard.addEventListener('click', () => {
+        if (activeEntityId === 'wiki' && drawer.classList.contains('visible')) {
+          hideDetail();
+        } else {
+          showDetail('wiki', 'wiki-panel');
+        }
+      });
+    }
+
+    // 绑定底部核心设计决策卡片点击事件
+    document.querySelectorAll('[data-decision-id]').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const decisionId = card.getAttribute('data-decision-id');
+        if (activeEntityId === decisionId && drawer.classList.contains('visible')) {
+          hideDetail();
+        } else {
+          showDetail('decision', decisionId);
+        }
+      });
+    });
+
+    // 探索完整技术细节快速入口
+    if (exploreAllBtn) {
+      exploreAllBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showDetail('node', 'node-03');
+      });
+    }
+
+    // 绑定抽屉关闭按钮
+    closeBtn.addEventListener('click', hideDetail);
+
+  </script>
+</body>
+</html>

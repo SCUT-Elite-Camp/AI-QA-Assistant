@@ -23,7 +23,8 @@ export async function attachmentServiceJson<T>(path: string, init: RequestInit =
   const response = await attachmentServiceFetch(path, init)
   const body = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new HTTPError({ statusCode: response.status, statusMessage: (body as any)?.detail?.code || 'attachment_service_error', data: body })
+    const code = typeof (body as any)?.detail?.code === 'string' ? (body as any).detail.code : 'attachment_service_error'
+    throw new HTTPError({ statusCode: response.status, statusMessage: code, data: { code } })
   }
   return body as T
 }

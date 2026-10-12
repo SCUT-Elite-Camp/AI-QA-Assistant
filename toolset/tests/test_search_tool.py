@@ -37,6 +37,57 @@ class FakeBackend:
 
 
 class SearchToolTest(unittest.TestCase):
+    def test_named_authorized_page_expands_relevant_section(self):
+        class OpeningOnlyBackend:
+            def search(self, query, top_k, mode, filters=None):
+                return [{"doc_id": "access", "chunk_index": 0, "text": "Purpose", "score": 0.5}]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            docs = Path(tmp)
+            (docs / "access.json").write_text(json.dumps({
+                "doc_id": "access", "title": "Source Access and Citation System", "active_version": True,
+                "chunks": [
+                    {"index": 0, "text": "Purpose: access and citation remain bound", "section_path": ["Purpose"]},
+                    {"index": 1, "text": "Local permission and native permission intersect", "section_path": ["Design"]},
+                    {"index": 2, "text": "Retrieval and generation recheck permissions", "section_path": ["Design"]},
+                    {"index": 3, "text": "History and Reader check version and hash", "section_path": ["Design"]},
+                    {"index": 4, "text": "Inputs and Outputs include current source state", "section_path": ["Inputs and Outputs"]},
+                ],
+            }), encoding="utf-8")
+            (docs / "other.json").write_text(json.dumps({"title": "03 Technical Design"}), encoding="utf-8")
+            tool = SearchTool(backend=OpeningOnlyBackend(), documents_dir=str(docs))
+            rows = tool.search(
+                "How does Source Access and Citation System check permissions for retrieval, generation, history and Reader?",
+                filters={"doc_ids": ["access", "other"]},
+            )
+        self.assertEqual([row["chunk_index"] for row in rows[:3]], [1, 2, 3])
+
+    def test_dated_page_keeps_matching_section_evidence_together(self):
+        class TitleOnlyBackend:
+            def search(self, query, top_k, mode, filters=None):
+                return [{"doc_id": "meeting", "chunk_index": 0, "text": "Meeting 2026/05/18", "score": 0.5}]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            docs = Path(tmp)
+            (docs / "meeting.json").write_text(json.dumps({
+                "doc_id": "meeting", "title": "Meeting 2026/05/18 - Plan Sharing", "active_version": True,
+                "chunks": [
+                    {"index": 0, "text": "Meeting 2026/05/18", "section_path": ["Meeting 2026/05/18 - Plan Sharing"]},
+                    {"index": 1, "text": "Mu proposed memory", "section_path": ["Plan Sharing"]},
+                    {"index": 2, "text": "Song proposed RAG", "section_path": ["Plan Sharing"]},
+                    {"index": 3, "text": "Action Items: first", "section_path": ["Discussion Summary"]},
+                    {"index": 4, "text": "second action", "section_path": ["Discussion Summary"]},
+                ],
+            }), encoding="utf-8")
+            (docs / "other.json").write_text(json.dumps({"title": "Meeting 2026/06/01"}), encoding="utf-8")
+            tool = SearchTool(backend=TitleOnlyBackend(), documents_dir=str(docs))
+            allowed = {"doc_ids": ["meeting", "other"]}
+            proposal = tool.search("What did they propose in May 18 Plan Sharing?", filters=allowed)
+            actions = tool.search("List all four action items from the May 18 Plan Sharing meeting", filters=allowed)
+        self.assertEqual([row["chunk_index"] for row in proposal[:2]], [1, 2])
+        self.assertEqual([row["chunk_index"] for row in actions[:2]], [3, 4])
+        self.assertEqual(allowed, {"doc_ids": ["meeting", "other"]})
+
     def test_legacy_navigation_mode_does_not_auto_search_sections(self):
         class NavigationBackend:
             def search(self, query, top_k, mode, filters=None):

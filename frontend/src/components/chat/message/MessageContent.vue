@@ -78,17 +78,6 @@ const userAttachments = computed<AttachmentPartData[]>(() => {
     .map(part => part.data as AttachmentPartData)
 })
 
-/** Transform [1] or [1, 2] markers into <cite-mark index="1"></cite-mark> components */
-function formatMarkdownWithCitations(markdown: string): string {
-  if (!markdown) return ''
-  return markdown.replace(/(```[\s\S]*?```|`[^`\n]*`)|\[(\d+(?:\s*,\s*\d+)*)\]/g, (match, code, digits) => {
-    if (code) return code
-    if (!digits) return match
-    const numbers = digits.split(',').map((d: string) => d.trim()).filter(Boolean)
-    return numbers.map((n: string) => `<cite-mark index="${n}"></cite-mark>`).join('')
-  })
-}
-
 // Make citations available to all CiteMark children via inject
 provide('ragCitationMap', citationMap)
 const selectedCitation = ref<ChunkCitation | null>(null)
@@ -185,7 +174,7 @@ async function setCitationOpen(open: boolean) {
       />
       <ChatComark
         v-else-if="isTextUIPart(part)"
-        :markdown="citationMap.size ? formatResearchCitations(part.text) : formatMarkdownWithCitations(part.text)"
+        :markdown="citationMap.size ? formatResearchCitations(part.text, new Set(citationMap.keys())) : part.text"
         :streaming="isPartStreaming(part)"
       />
     </template>

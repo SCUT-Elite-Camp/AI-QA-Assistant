@@ -108,6 +108,9 @@ class ConfluenceClient:
         # tenants every such URL shares the same REST root at <origin>/wiki.
         self.base_url = normalize_confluence_base(base_url)
         self.origin = origin
+        if session is None and os.getenv('CONFLUENCE_HTTP_TRANSPORT') == 'curl':
+            from shared_runtime.curl_transport import CurlSession
+            session = CurlSession()
         self.session = session or requests.Session()
         self.session.auth = (email, token)
         self.session.headers.update({"Accept": "application/json"})

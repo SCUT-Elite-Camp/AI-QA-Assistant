@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import subprocess
 import zipfile
 from pathlib import Path
 
@@ -10,7 +9,6 @@ from PIL import Image
 
 from attachment_service.crypto import decrypt_file, encrypt_file
 from attachment_service.validation import AttachmentValidationError, safe_filename, validate_file
-from attachment_service.scanner import ScannerUnavailable, scan_file
 
 
 def _png(path: Path) -> None:
@@ -84,16 +82,3 @@ def test_text_magic_rejects_binary_nul_data(tmp_path: Path) -> None:
             max_image_bytes=1_000_000, max_document_bytes=1_000_000,
             max_pdf_pages=10, max_image_pixels=1000)
     assert error.value.code == "magic_mismatch"
-
-
-def test_scanner_timeout_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    target = tmp_path / "safe.txt"
-    target.write_text("safe", encoding="utf-8")
-    monkeypatch.setattr("attachment_service.scanner.shutil.which", lambda _: "clamscan")
-
-    def timeout(*_args, **_kwargs):
-        raise subprocess.TimeoutExpired("scanner", 120)
-
-    monkeypatch.setattr("attachment_service.scanner.subprocess.run", timeout)
-    with pytest.raises(ScannerUnavailable):
-        scan_file(target, "auto", allow_fake=False)

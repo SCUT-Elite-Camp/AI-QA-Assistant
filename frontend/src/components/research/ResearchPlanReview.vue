@@ -77,10 +77,10 @@ function addTask() {
     source_ids: sourceIds,
     acceptance_criteria: [{
       criterion_id: `criterion-${nextNumber}`,
-      description: 'evidence: 新任务取得可定位的原文依据',
+      description: 'evidence: Original evidence with a traceable locator for the new task',
       requires_evidence: true,
       dimension: 'evidence',
-      target: '新任务取得可定位的原文依据',
+      target: 'Original evidence with a traceable locator for the new task',
       required: true,
     }],
     priority: 'normal',
@@ -91,9 +91,9 @@ function addTask() {
 
 function saveRevision() {
   validationError.value = ''
-  if (!objective.value.trim()) validationError.value = '研究目标不能为空。'
-  else if (tasks.value.some(task => !task.question.trim() || !task.purpose.trim())) validationError.value = '每个任务都需要问题和执行目的。'
-  else if (totalActions.value > props.plan.budget.max_actions) validationError.value = `任务动作总数不能超过 ${props.plan.budget.max_actions}。`
+  if (!objective.value.trim()) validationError.value = 'Enter a research objective.'
+  else if (tasks.value.some(task => !task.question.trim() || !task.purpose.trim())) validationError.value = 'Every task needs a question and a purpose.'
+  else if (totalActions.value > props.plan.budget.max_actions) validationError.value = `Total task actions must not exceed ${props.plan.budget.max_actions}.`
   if (validationError.value) return
   emit('revise', {
     base_version: props.plan.version,
@@ -111,16 +111,16 @@ function saveRevision() {
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-highlighted">
-            研究计划
+            Research plan
           </h2>
           <p class="mt-1 text-sm text-muted">
-            开始前，你可以检查或修改以下步骤。
+            Review or edit the steps before starting.
           </p>
         </div>
         <UBadge
           color="primary"
           variant="soft"
-          :label="`${plan.tasks.length} 个任务`"
+          :label="`${plan.tasks.length} tasks`"
         />
       </div>
       <p
@@ -133,7 +133,7 @@ function saveRevision() {
         v-else
         class="mt-4 block"
       >
-        <span class="mb-2 block text-sm font-medium text-highlighted">研究目标</span>
+        <span class="mb-2 block text-sm font-medium text-highlighted">Research objective</span>
         <textarea
           v-model="objective"
           rows="3"
@@ -160,7 +160,7 @@ function saveRevision() {
                     color="neutral"
                     variant="ghost"
                     size="xs"
-                    aria-label="上移任务"
+                    aria-label="Move task up"
                     :disabled="index === 0"
                     @click="moveTask(index, -1)"
                   />
@@ -169,7 +169,7 @@ function saveRevision() {
                     color="neutral"
                     variant="ghost"
                     size="xs"
-                    aria-label="下移任务"
+                    aria-label="Move task down"
                     :disabled="index === tasks.length - 1"
                     @click="moveTask(index, 1)"
                   />
@@ -178,14 +178,14 @@ function saveRevision() {
                     color="error"
                     variant="ghost"
                     size="xs"
-                    aria-label="删除任务"
+                    aria-label="Remove task"
                     :disabled="tasks.length === 1"
                     @click="removeTask(index)"
                   />
                 </div>
               </div>
               <label class="mt-3 block">
-                <span class="mb-1.5 block text-xs font-medium text-muted">研究问题</span>
+                <span class="mb-1.5 block text-xs font-medium text-muted">Research question</span>
                 <textarea
                   v-model="task.question"
                   rows="2"
@@ -193,14 +193,14 @@ function saveRevision() {
                 />
               </label>
               <label class="mt-3 block">
-                <span class="mb-1.5 block text-xs font-medium text-muted">执行目的</span>
+                <span class="mb-1.5 block text-xs font-medium text-muted">Purpose</span>
                 <input
                   v-model="task.purpose"
                   class="h-10 w-full rounded-lg border border-default bg-default px-3 text-sm text-highlighted outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
               </label>
               <label class="mt-3 block max-w-40">
-                <span class="mb-1.5 block text-xs font-medium text-muted">最多动作数</span>
+                <span class="mb-1.5 block text-xs font-medium text-muted">Maximum actions</span>
                 <input
                   v-model.number="task.max_actions"
                   type="number"
@@ -219,7 +219,7 @@ function saveRevision() {
                   v-if="task.priority === 'critical'"
                   color="warning"
                   variant="soft"
-                  label="关键任务"
+                  label="Critical task"
                   size="sm"
                 />
               </div>
@@ -231,8 +231,8 @@ function saveRevision() {
                 <span
                   v-if="task.dependencies.length"
                   class="rounded-md bg-elevated px-2 py-1"
-                >依赖：{{ task.dependencies.join(', ') }}</span>
-                <span class="rounded-md bg-elevated px-2 py-1">最多 {{ task.max_actions }} 次动作</span>
+                >Dependencies: {{ task.dependencies.join(', ') }}</span>
+                <span class="rounded-md bg-elevated px-2 py-1">Up to {{ task.max_actions }} actions</span>
               </div>
               <ul class="mt-3 space-y-1 text-xs text-muted">
                 <li
@@ -261,19 +261,19 @@ function saveRevision() {
         icon="i-lucide-plus"
         color="neutral"
         variant="soft"
-        label="添加研究任务"
+        label="Add research task"
         @click="addTask"
       />
       <label class="mt-4 block">
-        <span class="mb-1.5 block text-xs font-medium text-muted">修改说明（可选）</span>
+        <span class="mb-1.5 block text-xs font-medium text-muted">Revision note (optional)</span>
         <input
           v-model="revisionNote"
-          placeholder="例如：增加对生效日期的核验"
+          placeholder="For example: verify the effective date"
           class="h-10 w-full rounded-lg border border-default bg-default px-3 text-sm text-highlighted outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
         >
       </label>
       <p class="mt-3 text-xs text-muted">
-        动作预算：{{ totalActions }} / {{ plan.budget.max_actions }}
+        Action budget: {{ totalActions }} / {{ plan.budget.max_actions }}
       </p>
       <p
         v-if="validationError"
@@ -290,21 +290,21 @@ function saveRevision() {
     >
       <div>
         <p class="text-xs text-muted">
-          计划版本
+          Plan version
         </p><p class="mt-1 font-medium">
           v{{ plan.version }}
         </p>
       </div>
       <div>
         <p class="text-xs text-muted">
-          最大运行时间
+          Maximum runtime
         </p><p class="mt-1 font-medium">
-          {{ plan.budget.max_runtime_seconds }} 秒
+          {{ plan.budget.max_runtime_seconds }} seconds
         </p>
       </div>
       <div>
         <p class="text-xs text-muted">
-          动作预算
+          Action budget
         </p><p class="mt-1 font-medium">
           {{ plan.tasks.reduce((sum, task) => sum + task.max_actions, 0) }} / {{ plan.budget.max_actions }}
         </p>
@@ -313,7 +313,7 @@ function saveRevision() {
 
     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-default pt-5">
       <p class="max-w-xl text-xs leading-5 text-muted">
-        保存修改会生成新的计划版本；任何已有批准都不会自动沿用。
+        Saving creates a new plan version that requires approval.
       </p>
       <div
         v-if="editing"
@@ -322,13 +322,13 @@ function saveRevision() {
         <UButton
           color="neutral"
           variant="ghost"
-          label="放弃修改"
+          label="Discard changes"
           :disabled="revising"
           @click="cancelEditing"
         />
         <UButton
           icon="i-lucide-save"
-          label="保存为新版本"
+          label="Save new version"
           :loading="revising"
           :disabled="revising"
           @click="saveRevision"
@@ -341,19 +341,19 @@ function saveRevision() {
         <UButton
           color="neutral"
           variant="ghost"
-          label="取消任务"
+          label="Cancel research"
           @click="emit('cancel')"
         />
         <UButton
           icon="i-lucide-pencil"
           color="neutral"
           variant="soft"
-          label="修改计划"
+          label="Edit plan"
           @click="startEditing"
         />
         <UButton
           icon="i-lucide-check"
-          label="批准并开始研究"
+          label="Approve and start research"
           :loading="approving"
           :disabled="approving"
           @click="emit('approve')"

@@ -30,6 +30,7 @@ from agent.schemas.research import (
     ResearchReport,
     ResearchRequest,
     ResearchResultStatus,
+    ResearchSnapshot,
     SourceManifestDocument,
     SourceScope,
 )
@@ -95,7 +96,7 @@ def _resolve_report_conflict(
         item for item in conflict.alternatives if item.citation_number == source_number
     )
 
-    resolution = f"用户确认采用来源 {source_number}：{reason}"
+    resolution = f"User selected source {source_number}: {reason}"
     conflicts = [
         item.model_copy(
             update={"resolution_status": "resolved_by_user", "resolution": resolution}
@@ -105,10 +106,10 @@ def _resolve_report_conflict(
         for item in report.conflicts
     ]
     resolved_section = (
-        "## 用户确认的冲突处理\n\n"
-        f"- **{conflict.subject}**：采用来源 [{source_number}]《{chosen.source_title}》。\n"
-        f"  原文：{chosen.value_summary}\n"
-        f"  处理理由：{reason}\n\n"
+        "## User-confirmed conflict resolution\n\n"
+        f'- **{conflict.subject}**: Selected source [{source_number}] "{chosen.source_title}".\n'
+        f"  Source excerpt: {chosen.value_summary}\n"
+        f"  Reason: {reason}\n\n"
     )
     markdown = report.markdown
     heading = re.match(r"^(#\s+[^\n]+\n+)", markdown)
@@ -135,7 +136,7 @@ def _resolve_report_conflict(
 def _answer_report_followup(report: ResearchReport, message: str, language: str = "en-US", *, objective: str = "") -> str:
     english = language == "en-US"
     if not report.citations or not settings.LLM_API_KEY:
-        return ("The report does not contain enough verified evidence to answer this follow-up." if english else "当前报告没有足够的已核验证据来回答这个追问。")
+        return "The report does not contain enough verified evidence to answer this follow-up."
     evidence = "\n\n".join(
         f"[{item.number}] {item.title}\nSource excerpt: {item.excerpt}"
         for item in report.citations
@@ -168,10 +169,8 @@ def _answer_report_followup(report: ResearchReport, message: str, language: str 
         if answer and citation_numbers and set(citation_numbers).issubset({item.number for item in report.citations}):
             return answer
     except Exception:
-        return ("The model service is unavailable. Check API access and model quota, then retry this follow-up."
-                if english else "模型服务暂时不可用，请检查接口权限与模型额度后重试。")
-    return ("The frozen evidence does not reliably answer this follow-up. Add local sources and start a new research task."
-            if english else "这份冻结证据目前无法可靠回答该追问。你可以补充本地资料后重新发起研究。")
+        return "The model service is unavailable. Check API access and model quota, then retry this follow-up."
+    return "The frozen evidence does not reliably answer this follow-up. Update the knowledge base and start a new research task."
 
 
 _default_control_plane: ResearchControlPlane | None = None
@@ -290,6 +289,26 @@ def get_research_plan(
 ) -> ResearchPlan:
     try:
         return control_plane.get_plan(research_id)
+    except Exception as exc:
+        _raise_http_error(exc)
+        raise AssertionError("unreachable")
+
+
+@router.get("/jobs/{research_id}/snapshot", response_model=ResearchSnapshot)
+def get_research_snapshot(
+    research_id: str,
+    after_event_id: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    job: ResearchJob = Depends(get_authorized_research_job),
+    progress_service: ResearchProgressService = Depends(get_research_progress_service),
+) -> ResearchSnapshot:
+    """Share one fresh authorization boundary across the three polling views."""
+    try:
+        return ResearchSnapshot(
+            job=job,
+            progress=progress_service.get_progress(research_id),
+            events=progress_service.get_events(research_id, after_event_id=after_event_id, limit=limit),
+        )
     except Exception as exc:
         _raise_http_error(exc)
         raise AssertionError("unreachable")
@@ -488,8 +507,7 @@ def send_research_message(
             message=message[:500],
             payload={"content": message},
         )
-        english = job.request.report_spec.language == "en-US"
-        response_text = "This command is unavailable at the current research stage." if english else "我还不能在当前阶段执行这条指令。"
+        response_text = "This command is unavailable at the current research stage."
         action = "clarify"
         plan: ResearchPlan | None = None
 
@@ -503,18 +521,20 @@ def send_research_message(
                     approved_by=user_id,
                 )
                 action = "approved"
-                response_text = f"Plan v{plan.version} approved. Research is starting." if english else f"已批准计划 v{plan.version}，现在开始执行研究。"
+                response_text = f"Plan v{plan.version} approved. Research is starting."
             elif re.search(r"(^|[，。\s])(取消|停止)([，。\s]|$)", message) or re.fullmatch(r"(?:please\s+)?(?:cancel|stop)(?:\s+(?:the\s+)?(?:task|research))?[.!]?", message, re.I):
                 job = control_plane.cancel_job(research_id)
                 action = "cancelled"
-                response_text = "Research cancelled. Existing state has been preserved." if english else "研究任务已取消，已有状态仍会保留。"
+                response_text = "Research cancelled. Existing state has been preserved."
             else:
                 match = re.search(r"把?第\s*([一二三四五六七八九十\d]+)\s*(?:步|个任务|项任务)?\s*(?:改为|修改为|调整为)\s*(.+)", message)
+                if not match:
+                    match = re.search(r"(?:change|update|revise)\s+(?:task|step)\s+(\d+)\s+to\s+(.+)", message, re.I)
                 if match:
                     number_map = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
                     index = int(match.group(1)) if match.group(1).isdigit() else number_map.get(match.group(1), 0)
                     if not 1 <= index <= len(plan.tasks):
-                        response_text = f"计划只有 {len(plan.tasks)} 个任务，请说明要修改哪一步。"
+                        response_text = f"The plan has {len(plan.tasks)} tasks. Specify a valid task number."
                     else:
                         tasks = [task.model_copy(deep=True) for task in plan.tasks]
                         tasks[index - 1] = tasks[index - 1].model_copy(
@@ -534,13 +554,15 @@ def send_research_message(
                         plan = revised
                         job = control_plane.get_job(research_id)
                         action = "plan_revised"
-                        response_text = f"已将第 {index} 步修改为“{match.group(2).strip()}”，生成计划 v{revised.version}，请重新确认。"
+                        response_text = f'Task {index} updated to "{match.group(2).strip()}". Plan v{revised.version} requires approval.'
                 else:
-                    response_text = "Reply \"approve\" to start, or use Edit plan to revise individual tasks." if english else "你可以回复“批准”，或说“把第 2 步改为……”。"
+                    response_text = 'Reply "approve" to start, or use Edit plan to revise individual tasks.'
         elif job.status.value == "completed":
             report = repository.get_report(research_id)
             access.validate_report(report, job, control_plane.get_manifest(research_id))
             source_match = re.search(r"(?:采用|选择|以)\s*来源\s*(\d+)", message)
+            if not source_match:
+                source_match = re.search(r"(?:use|select|choose)\s+source\s+(\d+)", message, re.I)
             if source_match and report.conflicts:
                 source_number = int(source_match.group(1))
                 conflict = next(
@@ -563,7 +585,7 @@ def send_research_message(
                         event_key=f"conversation:{interaction_id}:conflict",
                         event_type=ResearchEventType.CONFLICT_RESOLVED,
                         stage="completed",
-                        message=f"采用来源 {source_number}",
+                        message=f"Selected source {source_number}",
                         payload={
                             "conflict_id": conflict.conflict_id,
                             "citation_number": source_number,
@@ -572,18 +594,18 @@ def send_research_message(
                     )
                     action = "conflict_resolved"
                     response_text = (
-                        f"已采用来源 {source_number} 处理该项冲突，"
-                        "并保存了处理意见与对应来源引用。"
+                        f"Source {source_number} selected to resolve the conflict. "
+                        "The resolution and source citation have been saved."
                     )
                 else:
-                    response_text = f"来源 {source_number} 不属于当前待处理冲突，请打开引用后重新选择。"
+                    response_text = f"Source {source_number} is not part of this conflict. Review the citations and choose another source."
             else:
                 action = "followup_answered"
                 from deep_research.access import model_access_scope
                 with model_access_scope(lambda: access.authorize_job(job, control_plane.get_manifest(research_id))):
                     response_text = _answer_report_followup(report, message, job.request.report_spec.language, objective=job.request.query)
         elif job.status.value in {"ready", "researching", "synthesizing"}:
-            response_text = "研究正在执行中。我会持续更新任务进度；你也可以随时点击取消。"
+            response_text = "Research is running. Progress updates automatically. You can cancel at any time."
 
         access.authorize_job(job, control_plane.get_manifest(research_id) if job.manifest_hash else None)
         repository.append_event(

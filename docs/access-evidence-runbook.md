@@ -4,6 +4,11 @@
 
 ## 配置
 
+Deep Research 网页默认覆盖当前账号可读的全部 Confluence 文档，无需选源。
+计划审批仍绑定本次 Manifest；文档更新后应新建研究。提示和状态文字为英文。
+网页使用 `/api/research/jobs/{id}/snapshot` 合并轮询 Job/Progress/Events，
+每次请求仍实时复核权限和源版本，完成后等待 5 秒再次请求。
+
 基础配置仍以 `agent/.env.example`、`frontend/.env.example`、`attachment-service/.env.example` 为准。Windows 联调脚本另读取：
 
 1. `-BaseEnvironment` 指定的私有 PowerShell 配置脚本：设置真实 LLM、embedding 路径、Bearer、稳定 Session secret 等。
@@ -16,12 +21,13 @@
 | --- | --- |
 | `SOURCE_ACCESS_MODE=native` | Agent，Confluence 原生有效权限检查；不要设为离线授权模式代替验收 |
 | `CONFLUENCE_AUTH_ENV_FILE` | Agent，指定私有邮箱/token/绑定配置路径 |
+| `CONFLUENCE_HTTP_TRANSPORT=curl` | 可选 Windows 本地兼容模式：Confluence 导出与原生 read 检查使用系统 `curl.exe` 的 TLS；凭据经标准输入传递，仍禁止重定向 |
 | `CONFLUENCE_BASE/EMAIL/TOKEN/ACCOUNT_BINDINGS` | 源站与本地 user → `{site,account_id}` 映射；环境变量优先于文件 |
 | `AGENT_API_KEY`、`AGENT_INTERNAL_TOKEN` | Agent/Web，公共业务 Bearer 与内部请求 token |
 | `WEB_SQLITE_PATH`、`TURSO_DATABASE_URL` | Agent/Web 必须指向同一权限/会话库 |
 | `RESEARCH_DOCUMENTS_DIR`、`AI_QA_DATA_DIR`、`BM25_INDEX_PATH` | 权威正文、数据存储与词法索引隔离路径 |
 | `RESEARCH_DATABASE_PATH`、`RESEARCH_CHECKPOINT_PATH` | Research Job 与 checkpoint 隔离存储 |
-| `TOPICS_DATA_DIR` | Web Topic 文件隔离目录 |
+| `TOPICS_DATA_DIR` | Web/Agent 共享的 Topic 文件目录；两端必须相同 |
 | `ATTACHMENT_DATA_DIR`、`ATTACHMENT_SERVICE_URL`、`ATTACHMENT_INTERNAL_SECRET`、`ATTACHMENT_ENCRYPTION_KEY` | 私有解析服务、存储与认证/加密 |
 | `ATTACHMENTS_ENABLED`、`PERSONAL_LIBRARY_ENABLED`、`ATTACHMENT_VECTOR_INDEX_ENABLED` | 联调时均 true，私人向量集合不得与企业集合相同 |
 | `LOCAL_EMBEDDING_MODEL_DIM`、`MILVUS_COLLECTION`、`ATTACHMENT_MILVUS_COLLECTION` | 企业、私有查询向量与各自 collection schema 的维度必须一致；本轮 384 |
@@ -58,7 +64,7 @@ Docker Engine 未启动时先开启 Docker Desktop 并等待 `docker info` 可�
 
 ## 三类来源与真实质量验收
 
-先确认 `/health`、`/ready`、Milvus health。基础配置的模型调用会产生实际费用；不使用 mock scanner/embedding/model/ACL 冒充端到端。
+先确认 `/health`、`/ready`、Milvus health。基础配置的模型调用会产生实际费用；不使用 mock parser/embedding/model/ACL 冒充端到端。按 2026-10-12 产品要求，附件服务已移除病毒扫描依赖，上传只执行格式/大小校验、解析和上下文构建。
 
 ```powershell
 Push-Location agent
@@ -96,6 +102,7 @@ G1 为普通 Chat；G2 为创建、规划、批准、执行、读取报告的完
 ## 来源更新后的测试基准（2026-10-10）
 
 历史 v1 预期不能直接用于已经修改的 Confluence 页面。先通过 `data-pipeline/confluence_pull.py --page-id ... --env-file <ignored path> --output-dir <isolated export>` 只读导出当前 XHTML/Markdown/metadata，再用现有 snapshot 校验、原生 parser/chunker 生成新投影。直接调用导出脚本时需将仓库根加入 `PYTHONPATH`，以加载 `shared_runtime`。
+`data-pipeline/pipeline/auto_process.py` 的 raw 与 document 目录跟随 `AI_QA_DATA_DIR`；导出目标应放在该目录的 `raws/confluence` 下。切换当前索引时，Agent 的 `AI_QA_DATA_DIR`、`RESEARCH_DOCUMENTS_DIR`、`BM25_INDEX_PATH` 与 `MILVUS_COLLECTION` 必须同时指向同一批新投影。
 
 为新投影建立独立 BM25 文件和全新 Milvus collection；不得删除或覆盖旧集合。使用同一实际 embedding，核对向量维度和实体数量。`AI_QA_DATA_DIR/documents` 与 `RESEARCH_DOCUMENTS_DIR` 必须是同一正文目录；Toolset 当前使用前者，Research 配置使用后者，单独改后者不能切换工具层资料。Web SQLite、Research DB/checkpoint、Topic 和附件路径仍必须在隔离区并由服务共享。
 

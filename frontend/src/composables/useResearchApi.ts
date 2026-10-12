@@ -1,5 +1,5 @@
 import { $fetch } from 'ofetch'
-import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchInteractionResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest } from '../types/research'
+import type { ResearchApprovalRequest, ResearchEventsResponse, ResearchInteractionResponse, ResearchJob, ResearchPlan, ResearchPlanRevisionRequest, ResearchProgress, ResearchReport, ResearchRequest, ResearchSnapshot } from '../types/research'
 import { mockApproveResearch, mockCancelResearch, mockCreateResearch, mockGetEvents, mockGetPlan, mockGetProgress, mockGetReport, mockGetResearch, mockReviseResearchPlan } from '../mocks/research'
 import { useCsrf } from './useCsrf'
 
@@ -68,5 +68,15 @@ export function useResearchApi() {
     })
   }
 
-  return { createJob, getJob, getPlan, revisePlan, approveJob, cancelJob, sendMessage, getReport, getProgress, getEvents, useMock, apiBase }
+  async function getSnapshot(researchId: string, afterEventId = 0): Promise<ResearchSnapshot> {
+    if (useMock) {
+      const [job, progress, events] = await Promise.all([getJob(researchId), getProgress(researchId), getEvents(researchId, afterEventId)])
+      return { job, progress, events }
+    }
+    return $fetch<ResearchSnapshot>(`${apiBase}/jobs/${encodeURIComponent(researchId)}/snapshot`, {
+      query: { after_event_id: afterEventId, limit: 50 },
+    })
+  }
+
+  return { createJob, getJob, getPlan, revisePlan, approveJob, cancelJob, sendMessage, getReport, getProgress, getEvents, getSnapshot, useMock, apiBase }
 }

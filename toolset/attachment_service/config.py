@@ -30,8 +30,6 @@ class AttachmentSettings:
     max_image_pixels: int = 40_000_000
     parse_timeout_seconds: int = 300
     worker_count: int = 1
-    scanner_mode: str = "auto"
-    allow_fake_scanner: bool = False
     vision_enabled: bool = False
     vision_model_path: str = ""
     hierarchical_navigation_enabled: bool = False
@@ -48,12 +46,6 @@ class AttachmentSettings:
         secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "").strip()
         if not secret:
             raise RuntimeError("ATTACHMENT_INTERNAL_SECRET is required")
-        production = os.getenv("NODE_ENV", "development").strip().lower() == "production"
-        fake_scanner_requested = os.getenv(
-            "ALLOW_FAKE_ATTACHMENT_SCANNER", "false"
-        ).lower() in {"1", "true", "yes"}
-        if production and fake_scanner_requested:
-            raise RuntimeError("fake attachment scanner is forbidden in production")
         root = Path(__file__).resolve().parents[2]
         return cls(
             internal_secret=secret,
@@ -69,8 +61,6 @@ class AttachmentSettings:
             max_image_pixels=_positive_int("ATTACHMENT_MAX_IMAGE_PIXELS", 40_000_000),
             parse_timeout_seconds=_positive_int("ATTACHMENT_PARSE_TIMEOUT_SECONDS", 300),
             worker_count=1,
-            scanner_mode=os.getenv("ATTACHMENT_SCANNER", "auto").strip().lower(),
-            allow_fake_scanner=fake_scanner_requested,
             vision_enabled=os.getenv("LOCAL_VISION_ENABLED", "false").lower() in {"1", "true", "yes"},
             vision_model_path=os.getenv("LOCAL_VISION_MODEL_PATH", "").strip(),
             hierarchical_navigation_enabled=os.getenv(

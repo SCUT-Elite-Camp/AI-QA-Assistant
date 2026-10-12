@@ -151,11 +151,12 @@ def _validate_local_identifier(value: str, field_name: str) -> str:
 
 
 class SourceScope(ResearchContractModel):
-    """Explicitly allowlisted local knowledge sources for one research run."""
+    """A source selector; all_documents is resolved by authenticated policy."""
 
     knowledge_base_ids: list[str] = Field(default_factory=list, max_length=20)
-    document_ids: list[str] = Field(default_factory=list, max_length=100)
+    document_ids: list[str] = Field(default_factory=list)
     topic: str = Field(default="", max_length=200)
+    all_documents: bool = False
 
     @field_validator("knowledge_base_ids", "document_ids")
     @classmethod
@@ -205,7 +206,7 @@ class ResearchRequest(ResearchContractModel):
         RESEARCH_SCHEMA_VERSION
     )
     query: str = Field(min_length=1, max_length=4000)
-    source_scope: SourceScope
+    source_scope: SourceScope = Field(default_factory=lambda: SourceScope(all_documents=True))
     report_spec: ReportSpec = Field(default_factory=ReportSpec)
     profile: ResearchProfile = ResearchProfile.STANDARD
     retrieval_mode: Literal["hybrid", "bm25", "vector"] = "hybrid"
@@ -228,9 +229,11 @@ class ResearchRequest(ResearchContractModel):
         return normalized or None
 
     @model_validator(mode="after")
-    def require_explicit_source_scope(self) -> "ResearchRequest":
+    def normalize_default_source_scope(self) -> "ResearchRequest":
         if not self.source_scope.has_explicit_scope():
-            raise ValueError("research_source_scope_required")
+            self.source_scope = SourceScope(all_documents=True)
+        elif self.source_scope.all_documents:
+            raise ValueError("research_source_scope_ambiguous")
         return self
 
 
@@ -289,7 +292,7 @@ class ResearchTask(ResearchContractModel):
         default_factory=lambda: ["keyword_search", "read_document_range"],
         max_length=10,
     )
-    source_ids: list[str] = Field(default_factory=list, max_length=100)
+    source_ids: list[str] = Field(default_factory=list)
     acceptance_criteria: list[AcceptanceCriterion] = Field(default_factory=list, max_length=10)
     priority: ResearchTaskPriority = ResearchTaskPriority.NORMAL
     max_actions: int = Field(default=4, ge=1, le=50)
@@ -403,7 +406,7 @@ class SourceManifest(ResearchContractModel):
         RESEARCH_RUNTIME_SCHEMA_VERSION
     )
     research_id: str = Field(min_length=1, max_length=100)
-    documents: list[SourceManifestDocument] = Field(min_length=1, max_length=100)
+    documents: list[SourceManifestDocument] = Field(min_length=1)
     manifest_hash: str = Field(min_length=8, max_length=128)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -822,6 +825,14 @@ class ResearchProgress(ResearchContractModel):
     error: ResearchProgressError | None = None
 
 
+class ResearchSnapshot(ResearchContractModel):
+    """One currently authorized polling response for a research job."""
+
+    job: ResearchJob
+    progress: ResearchProgress
+    events: ResearchEventsResponse
+
+
 @dataclass(frozen=True)
 class PlanIssue:
     """Stable, machine-readable Planner validation issue."""
@@ -1104,6 +1115,7 @@ __all__ = [
     "ResearchPlanValidator",
     "ResearchProgress",
     "ResearchProgressError",
+    "ResearchSnapshot",
     "ResearchRunMetrics",
     "ResearchStageProgress",
     "ResearchStageStatus",

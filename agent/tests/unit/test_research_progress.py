@@ -66,7 +66,7 @@ def test_stage_contract_is_frozen() -> None:
         "completed",
     )
     assert tuple(STAGE_LABELS) == STAGE_ORDER
-    assert STAGE_LABELS["semantic_verification"] == "正在验证研究结论"
+    assert STAGE_LABELS["semantic_verification"] == "Verifying findings"
 
 
 def test_shared_web_fixtures_match_python_contract() -> None:

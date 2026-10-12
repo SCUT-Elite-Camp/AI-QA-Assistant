@@ -4,6 +4,7 @@ import { $fetch, ofetch } from 'ofetch'
 import type { ChunkCitation } from './tool/Sources.vue'
 import ChatComark from './Comark'
 import { evidenceUrl, evidenceError } from '../../utils/evidence'
+import { locateEvidenceExcerpt, stripConfluenceLocalIds } from '../../../shared/evidenceExcerpt'
 
 const props = defineProps<{ open: boolean, doc: ChunkCitation | null, allCitations?: ChunkCitation[], messageId?: string, researchId?: string }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -20,11 +21,13 @@ const sourceUrl = computed(() => {
   return /^https:\/\//.test(url) ? url : ''
 })
 const locator = computed(() => evidence.value?.locator ? JSON.stringify(evidence.value.locator) : '')
-const exactLocation = computed(() => !!excerpt.value && !!source.value?.content && source.value.content.includes(excerpt.value))
+const readableSource = computed(() => stripConfluenceLocalIds(source.value?.content || ''))
+const excerptRange = computed(() => locateEvidenceExcerpt(source.value?.content || '', evidence.value?.anchor_excerpt || excerpt.value))
+const exactLocation = computed(() => excerptRange.value !== null)
 const sourceSegments = computed(() => {
-  const text = source.value?.content || ''
-  const index = exactLocation.value ? text.indexOf(excerpt.value) : -1
-  return index < 0 ? null : { before: text.slice(0, index), excerpt: excerpt.value, after: text.slice(index + excerpt.value.length) }
+  const text = readableSource.value
+  const range = excerptRange.value
+  return range ? { before: text.slice(0, range.start), excerpt: text.slice(range.start, range.end), after: text.slice(range.end) } : null
 })
 async function jumpToExcerpt() {
   await nextTick()
@@ -39,7 +42,7 @@ async function loadFullDocument() {
   evidence.value = null
   source.value = null
   try {
-    if (!props.doc) throw new Error('未选择引用。')
+    if (!props.doc) throw new Error('No citation selected.')
     if (props.researchId) {
       const content = await ofetch<string, 'text'>(`/api/research/jobs/${encodeURIComponent(props.researchId)}/documents/${encodeURIComponent(props.doc.doc_id)}/source`, { responseType: 'text' })
       if (revision !== requestRevision) return
@@ -51,7 +54,7 @@ async function loadFullDocument() {
       evidence.value = result.evidence
       source.value = result.source ?? null
     } else {
-      if (!props.doc.doc_id) throw new Error('缺少真实文档 ID，不能按标题读取原文。')
+      if (!props.doc.doc_id) throw new Error('The source document ID is missing.')
       const result = await $fetch<NonNullable<typeof source.value>>(`/api/documents/${encodeURIComponent(props.doc.doc_id)}`)
       if (revision !== requestRevision) return
       source.value = result
@@ -69,47 +72,47 @@ watch(() => [props.open, props.doc, props.messageId, props.researchId], () => {
 </script>
 
 <template>
-  <UModal :open="open" title="核对回答依据" description="查看本条回答绑定的授权原文与版本" :ui="{ content: 'sm:max-w-5xl w-[92vw]' }" @update:open="emit('update:open', $event)">
+  <UModal :open="open" title="Verify answer sources" description="Inspect the authorized source text and version used for this answer" :ui="{ content: 'sm:max-w-5xl w-[92vw]' }" @update:open="emit('update:open', $event)">
     <template #content>
       <div class="flex max-h-[85vh] flex-col rounded-xl border border-default bg-default text-default">
         <header class="flex items-center justify-between gap-4 border-b border-default px-5 py-4">
-          <h2 class="min-w-0 break-words font-semibold">{{ evidence?.title || source?.title || '核对回答依据' }}</h2>
-          <UButton color="neutral" variant="ghost" icon="i-lucide-x" aria-label="关闭原文窗口" @click="emit('update:open', false)" />
+          <h2 class="min-w-0 break-words font-semibold">{{ evidence?.title || source?.title || 'Verify answer sources' }}</h2>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" aria-label="Close source viewer" @click="emit('update:open', false)" />
         </header>
         <div class="min-h-48 overflow-y-auto px-5 py-4" :aria-busy="loading">
-          <p v-if="loading" role="status" aria-live="polite">正在校验当前权限并读取原文…</p>
+          <p v-if="loading" role="status" aria-live="polite">Verifying access and loading the source…</p>
           <div v-else-if="error" role="alert" class="space-y-3">
             <p>{{ error }}</p>
-            <UButton color="neutral" variant="outline" @click="loadFullDocument">重新校验</UButton>
+            <UButton color="neutral" variant="outline" @click="loadFullDocument">Verify again</UButton>
           </div>
           <div v-else class="space-y-4">
             <dl v-if="evidence" class="grid gap-2 text-sm">
-              <div><dt class="inline text-muted">回答采用版本：</dt><dd class="inline">{{ version ?? '未知（未提供源版本）' }}</dd></div>
-              <div><dt class="inline text-muted">定位：</dt><dd class="inline break-all">{{ locator || '未知；仅展示实际摘录，不声称精确定位' }}</dd></div>
-              <div><dt class="inline text-muted">正文 hash：</dt><dd class="inline break-all font-mono">{{ evidence.normalized_content_hash || evidence.content_hash || '未知' }}</dd></div>
+              <div><dt class="inline text-muted">Source version used: </dt><dd class="inline">{{ version ?? 'Unknown (source version unavailable)' }}</dd></div>
+              <div><dt class="inline text-muted">Locator: </dt><dd class="inline break-all">{{ locator || 'Unknown; the excerpt has no verified exact location' }}</dd></div>
+              <div><dt class="inline text-muted">Content hash: </dt><dd class="inline break-all font-mono">{{ evidence.normalized_content_hash || evidence.content_hash || 'Unknown' }}</dd></div>
             </dl>
             <section v-if="excerpt" class="rounded-lg border border-default bg-elevated/40 p-4">
-              <h3 class="mb-2 text-sm font-semibold">本次回答采用的原文片段</h3>
+              <h3 class="mb-2 text-sm font-semibold">Source excerpt used for this answer</h3>
               <ChatComark :markdown="excerpt" />
             </section>
-            <p v-if="evidence && !excerpt" role="status">授权证据未提供摘录，请重新提问获取可核对的依据。</p>
+            <p v-if="evidence && !excerpt" role="status">The evidence has no excerpt. Ask again to obtain verifiable sources.</p>
             <section v-if="source?.content" class="space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="text-sm font-semibold">授权原文</h3>
-                <UButton v-if="exactLocation" color="neutral" variant="outline" size="sm" @click="jumpToExcerpt">跳转到原文片段</UButton>
+                <h3 class="text-sm font-semibold">Authorized source text</h3>
+                <UButton v-if="exactLocation" color="neutral" variant="outline" size="sm" @click="jumpToExcerpt">Jump to source excerpt</UButton>
               </div>
-              <p v-if="evidence && !exactLocation" role="status" class="text-sm text-muted">无法在返回全文中精确定位该摘录；下面是授权正文，不标记为已定位。</p>
+              <p v-if="evidence && !exactLocation" role="status" class="text-sm text-muted">The excerpt could not be located exactly in the returned text. The authorized source is shown below without a location highlight.</p>
               <div v-if="sourceSegments" class="whitespace-pre-wrap break-words font-mono text-sm">
                 <span>{{ sourceSegments.before }}</span><mark ref="locatedExcerpt" tabindex="-1" class="rounded bg-primary/20 text-default outline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">{{ sourceSegments.excerpt }}</mark><span>{{ sourceSegments.after }}</span>
               </div>
-              <ChatComark v-else :markdown="source.content" />
+              <ChatComark v-else :markdown="readableSource" />
             </section>
-            <p v-else-if="excerpt" class="text-sm text-muted">当前只展示本条回答绑定的片段，不代表已读取完整文档。未核对源站最新版。</p>
-            <a v-if="sourceUrl" :href="sourceUrl" target="_blank" rel="noopener noreferrer" class="inline-block rounded text-primary underline focus-visible:outline-2 focus-visible:outline-primary">打开源站当前页面（可能不同于回答版本）</a>
+            <p v-else-if="excerpt" class="text-sm text-muted">Only the excerpt used for this answer is available. The full document and latest source version have not been verified.</p>
+            <a v-if="sourceUrl" :href="sourceUrl" target="_blank" rel="noopener noreferrer" class="inline-block rounded text-primary underline focus-visible:outline-2 focus-visible:outline-primary">Open current source page (may differ from the answer version)</a>
           </div>
         </div>
         <footer class="flex justify-end border-t border-default px-5 py-3">
-          <UButton color="neutral" @click="emit('update:open', false)">关闭</UButton>
+          <UButton color="neutral" @click="emit('update:open', false)">Close</UButton>
         </footer>
       </div>
     </template>

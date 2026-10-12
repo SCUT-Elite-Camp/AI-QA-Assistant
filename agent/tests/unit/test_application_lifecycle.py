@@ -72,3 +72,15 @@ def test_warmup_uses_the_shared_search_tool() -> None:
     assert calls[0]["mode"] == settings.DEFAULT_RETRIEVAL_MODE
     assert container.snapshot().retrieval_ready is True
 
+
+def test_default_runtime_preserves_configured_fast_model(monkeypatch) -> None:
+    monkeypatch.setattr(settings, 'LLM_MODEL', 'reasoning-model')
+    monkeypatch.setattr(settings, 'ANSWER_FAST_MODEL', 'fast-model')
+    monkeypatch.setattr(settings, 'ANSWER_FAST_MODEL_THINKING', False)
+    container = ApplicationContainer(registry_factory=lambda: ToolRegistry(tools=[]))
+    agent = container.get_agent()
+    assert agent.llm.model == 'reasoning-model'
+    assert agent.fast_answer_llm is not None
+    assert agent.fast_answer_llm.llm.model == 'fast-model'
+    assert agent.fast_answer_llm.llm.enable_thinking is False
+

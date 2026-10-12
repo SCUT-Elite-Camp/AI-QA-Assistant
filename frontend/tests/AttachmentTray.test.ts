@@ -143,4 +143,30 @@ describe('AttachmentTray', () => {
     await flushPromises()
     expect(FakeXHR.instances[0].headers['Content-Type']).toBe('text/markdown')
   })
+
+  it('retries an upload that failed before receiving a server id', async () => {
+    FakeXHR.autoComplete = false
+    const wrapper = mount(AttachmentTray, {
+      props: { scope: 'draft' },
+      global: { stubs: { UButton: ButtonStub, UIcon: true } },
+    })
+    const input = wrapper.get('input[type="file"]')
+    const file = new File(['context'], 'retry.txt', { type: 'text/plain' })
+    Object.defineProperty(input.element, 'files', { configurable: true, value: [file] })
+    await input.trigger('change')
+    await flushPromises()
+    FakeXHR.instances[0].status = 503
+    FakeXHR.instances[0].responseText = JSON.stringify({ data: { code: 'attachments_unavailable' } })
+    FakeXHR.instances[0].onload?.()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Attachment service is unavailable')
+    await wrapper.get('button[label="Retry"]').trigger('click')
+    await flushPromises()
+    expect(FakeXHR.instances).toHaveLength(2)
+    expect(FakeXHR.instances[1].body).toBe(file)
+    FakeXHR.instances[1].onload?.()
+    await flushPromises()
+    expect(wrapper.emitted('change')?.at(-1)).toEqual([['att_ready_2'], []])
+    wrapper.unmount()
+  })
 })
