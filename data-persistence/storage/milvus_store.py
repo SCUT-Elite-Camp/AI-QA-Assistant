@@ -10,7 +10,31 @@ from storage.filtering import (
 )
 
 class MilvusStore:
-    
+    PROVENANCE_FIELDS = (
+        "chunk_type",
+        "block_id",
+        "table_id",
+        "page_number",
+        "bbox_json",
+        "metadata_json",
+    )
+    REQUIRED_FIELD_DEFINITIONS = {
+        "embedding": (DataType.FLOAT_VECTOR, None),
+        "chunk_id": (DataType.VARCHAR, 256),
+        "chunk_text": (DataType.VARCHAR, 65535),
+        "doc_id": (DataType.VARCHAR, 128),
+        "chunk_index": (DataType.INT32, None),
+        "source_url": (DataType.VARCHAR, 512),
+        "chunk_type": (DataType.VARCHAR, 64),
+        "block_id": (DataType.VARCHAR, 1024),
+        "table_id": (DataType.VARCHAR, 1024),
+        "page_number": (DataType.INT64, None),
+        "bbox_json": (DataType.VARCHAR, 256),
+        "metadata_json": (DataType.VARCHAR, 65535),
+    }
+    OPTIONAL_FIELD_DEFINITIONS = {"space": (DataType.VARCHAR, 256)}
+
+
     def __init__(
         self,
         host: str | None = None,
@@ -67,7 +91,7 @@ class MilvusStore:
     ) -> Collection:
         self.connect()
         collection_name = collection_name or self.collection_name
-       
+
         if utility.has_collection(collection_name):
             self.collection = Collection(collection_name)
             self._validate_embedding_dimension(self.collection, dim)
@@ -84,10 +108,16 @@ class MilvusStore:
                 FieldSchema(name="title", dtype=DataType.VARCHAR, max_length=512),
                 FieldSchema(name="space", dtype=DataType.VARCHAR, max_length=256),
                 FieldSchema(name="doc_type", dtype=DataType.VARCHAR, max_length=64),
+                FieldSchema(name="chunk_type", dtype=DataType.VARCHAR, max_length=64),
+                FieldSchema(name="block_id", dtype=DataType.VARCHAR, max_length=1024),
+                FieldSchema(name="table_id", dtype=DataType.VARCHAR, max_length=1024),
+                FieldSchema(name="page_number", dtype=DataType.INT64),
+                FieldSchema(name="bbox_json", dtype=DataType.VARCHAR, max_length=256),
+                FieldSchema(name="metadata_json", dtype=DataType.VARCHAR, max_length=65535),
             ]
             schema = CollectionSchema(fields, description="RAGent document chunks vector store")
             self.collection = Collection(collection_name, schema)
-            
+
             # 创建向量索引，默认使用 HNSW 算法和内积度量(IP)
             index_params = {
                 "metric_type": "IP",
@@ -95,10 +125,121 @@ class MilvusStore:
                 "params": {"M": 16, "efConstruction": 200}
             }
             self.collection.create_index("embedding", index_params)
-        
+            for field_name in ("doc_id", "space", "doc_type"):
+                try:
+                    self.collection.create_index(field_name, {"index_type": "Trie"})
+                except Exception:
+                    # Filtering still applies without the optional scalar index.
+                    pass
+
         # 将 collection 加载至内存，保证可供检索
         self.collection.load()
         return self.collection
+
+    def validate_chunk_schema(self, collection_name: str | None = None) -> None:
+        """Reject collections that cannot retain structured chunk provenance."""
+        if not hasattr(self, "collection") or self.collection is None:
+            raise ValueError("Initialize a Milvus collection before validating its schema.")
+        collection_name = collection_name or self.collection_name
+        fields = {field.name: field for field in self.collection.schema.fields}
+        issues = []
+        definitions = dict(self.REQUIRED_FIELD_DEFINITIONS)
+        definitions.update({
+            name: definition
+            for name, definition in self.OPTIONAL_FIELD_DEFINITIONS.items()
+            if name in fields
+        })
+        for name, (expected_dtype, minimum_length) in definitions.items():
+            field = fields.get(name)
+            if field is None:
+                issues.append(f"{name} (missing)")
+                continue
+            if getattr(field, "dtype", None) != expected_dtype:
+                issues.append(f"{name} (expected {expected_dtype.name})")
+                continue
+            if minimum_length is not None:
+                params = getattr(field, "params", None) or {}
+                try:
+                    actual_length = int(params.get("max_length", 0))
+                except (TypeError, ValueError):
+                    actual_length = 0
+                if actual_length < minimum_length:
+                    issues.append(f"{name} (max_length must be at least {minimum_length})")
+        if issues:
+            raise ValueError(
+                f"{collection_name} schema is missing PDF provenance fields or has "
+                f"incompatible definitions: {', '.join(issues)}. "
+                "Plan a rebuild into separate collections with scripts/safe_reindex.py. "
+                "See docs/DATA_PIPELINE.md; scripts/reindex.py requires explicit confirmation."
+            )
+
+    @staticmethod
+    def _in_expr(field_name: str, values: list[str]) -> str:
+        if not values:
+            raise ValueError("values must not be empty")
+        return f"{field_name} in [{', '.join(json.dumps(str(value)) for value in values)}]"
+
+    def _existing_collection(self, collection_name: str) -> Collection | None:
+        self.connect()
+        collection_name = collection_name or self.collection_name
+        if not utility.has_collection(collection_name):
+            return None
+        self.collection = Collection(collection_name)
+        self.collection.load()
+        return self.collection
+
+    def get_existing_collection(self, collection_name: str) -> Collection | None:
+        """Get an existing collection without inferring or creating a dimension."""
+        return self._existing_collection(collection_name)
+
+    def get_chunk_ids_by_doc_ids(
+        self,
+        doc_ids: list[str],
+        collection_name: str | None = None,
+        limit: int = 16384,
+    ) -> list[str]:
+        """Return stored chunk IDs for documents without creating a collection."""
+        if not doc_ids:
+            return []
+        collection = self._existing_collection(collection_name)
+        if collection is None:
+            return []
+        rows = collection.query(
+            expr=self._in_expr("doc_id", doc_ids),
+            output_fields=["chunk_id"],
+            limit=limit,
+        )
+        return [row["chunk_id"] for row in rows if row.get("chunk_id")]
+
+    def delete_by_doc_ids(
+        self,
+        doc_ids: list[str],
+        collection_name: str | None = None,
+    ) -> int:
+        """Delete all vectors for logical documents before re-ingestion."""
+        if not doc_ids:
+            return 0
+        collection = self._existing_collection(collection_name)
+        if collection is None:
+            return 0
+        result = collection.delete(expr=self._in_expr("doc_id", doc_ids))
+        collection.flush()
+        return int(getattr(result, "delete_count", 0) or 0)
+
+    def delete_by_chunk_ids(
+        self,
+        chunk_ids: list[str],
+        collection_name: str | None = None,
+    ) -> int:
+        """Delete selected vectors by their stable application-level IDs."""
+        if not chunk_ids:
+            return 0
+        collection = self._existing_collection(collection_name)
+        if collection is None:
+            return 0
+        result = collection.delete(expr=self._in_expr("chunk_id", chunk_ids))
+        collection.flush()
+        return int(getattr(result, "delete_count", 0) or 0)
 
     def insert_chunks(
         self,
@@ -112,6 +253,12 @@ class MilvusStore:
         spaces: list | None = None,
         doc_types: list | None = None,
         collection_name: str | None = None,
+        chunk_types: list | None = None,
+        block_ids: list | None = None,
+        table_ids: list | None = None,
+        page_numbers: list | None = None,
+        bbox_jsons: list | None = None,
+        metadata_jsons: list | None = None,
     ):
         if not embeddings:
             return None
@@ -119,7 +266,7 @@ class MilvusStore:
         # 动态检测向量维度
         dim = len(embeddings[0])
         collection = self.init_collection(collection_name, dim=dim)
-            
+
         if source_urls is None:
             source_urls = [""] * len(embeddings)
         if titles is None:
@@ -142,9 +289,26 @@ class MilvusStore:
                 self._normalize_doc_type(value)[:64] for value in doc_types
             ],
         }
+        provenance = {
+            "chunk_type": (chunk_types, ""),
+            "block_id": (block_ids, ""),
+            "table_id": (table_ids, ""),
+            "page_number": (page_numbers, 0),
+            "bbox_json": (bbox_jsons, ""),
+            "metadata_json": (metadata_jsons, ""),
+        }
+        if any(values is not None for values, _ in provenance.values()):
+            self.validate_chunk_schema(collection_name)
+        columns.update({
+            name: [default] * len(embeddings) if values is None else [
+                default if value is None else value for value in values
+            ]
+            for name, (values, default) in provenance.items()
+        })
         expected = len(embeddings)
         if any(len(column) != expected for column in columns.values()):
-            raise ValueError("all Milvus insert columns must have equal lengths")
+            mismatched = next(name for name, values in columns.items() if len(values) != expected)
+            raise ValueError(f"{mismatched} length {len(columns[mismatched])} does not match embeddings length {expected}")
 
         writable_fields = [
             field.name
@@ -158,7 +322,7 @@ class MilvusStore:
                 + ", ".join(sorted(unsupported))
             )
         data = [columns[name] for name in writable_fields]
-        
+
         insert_result = self.collection.insert(data)
         self.collection.flush()
         return insert_result
@@ -173,8 +337,6 @@ class MilvusStore:
         timeout_seconds: float = 2.0,
     ):
         dim = len(query_vector)
-        collection = self.init_collection(collection_name, dim=dim)
-
         combined_filters = dict(filters or {})
         if doc_ids_filter is not None:
             alias = "doc_id" if "doc_ids" in combined_filters else "doc_ids"
@@ -182,6 +344,7 @@ class MilvusStore:
         normalized_filters = normalize_filters(combined_filters)
         if normalized_filters.get("doc_ids") == []:
             return []
+        collection = self.init_collection(collection_name, dim=dim)
         available_fields = self._field_names(collection)
         required_fields = set(normalized_filters) - {"doc_ids", "chunk_ids"}
         if "doc_ids" in normalized_filters:
@@ -206,10 +369,11 @@ class MilvusStore:
                 "title",
                 "space",
                 "doc_type",
+                *self.PROVENANCE_FIELDS,
             )
             if field in available_fields
         ]
-            
+
         results = self.collection.search(
             data=[query_vector],
             anns_field="embedding",
@@ -224,7 +388,7 @@ class MilvusStore:
     def delete_collection(self, collection_name: str | None = None) -> None:
         self.connect()
         collection_name = collection_name or self.collection_name
- 
+
         if utility.has_collection(collection_name):
             utility.drop_collection(collection_name)
             if hasattr(self, 'collection') and self.collection.name == collection_name:

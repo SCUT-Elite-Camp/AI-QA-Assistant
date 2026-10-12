@@ -3,89 +3,196 @@ PDF 解析器：使用 PyMuPDF 提取文本、表格和结构信息。
 
 特性:
 - 表格提取：page.find_tables() → Markdown 表格
-- 页眉页脚去除：按 y 坐标过滤（上下各 15%）
+- 页眉页脚去除：跨页重复边缘内容检测
 - 标题检测：基于字体大小和加粗的启发式推断（PDF 无语义标题信息）
-- 结构保留：输出 ContentBlock 列表 + 渲染 Markdown
+- 结构保留：输出带版面来源的 ContentBlock 列表 + 渲染 Markdown
 """
 
 import re
+import unicodedata
+from dataclasses import replace
 
-import fitz  # pymupdf
-from models.document import Document, ContentBlock, BlockType
+import pymupdf as fitz
+from models.document import (
+    BlockType,
+    ContentBlock,
+    Document,
+    PageRegion,
+    ParseDiagnostics,
+    TableArtifact,
+)
 from parsers.base import BaseParser
+from parsers.ocr_backends import (
+    OCRRegion,
+    PageOCRBackend,
+    PageTextQuality,
+    PyMuPDFOCRBackend,
+    detect_ocr_regions,
+    evaluate_page_text_quality,
+)
+from parsers.pdf_layout import (
+    LayoutBlock,
+    LayoutDiagnostics,
+    extract_layout_blocks,
+    filter_repeated_edge_blocks,
+    find_repeated_edge_keys,
+    order_layout_blocks,
+)
+from parsers.table_backends import (
+    CamelotTableBackend,
+    GMFTTableBackend,
+    PaddleOCRTableBackend,
+    PyMuPDFTableBackend,
+)
+from parsers.table_router import TableRouter
 
 # ── 配置常量 ──
-HEADER_FOOTER_RATIO = 0.15       # 页面上/下边缘区域比例
 HEADING_FONT_RATIO = 1.15        # 字号超过正文中位数此倍数视为候选标题
+HEADING_LARGE_FONT_RATIO = 1.25  # 非粗体大字号也可作为标题候选
 HEADING_MIN_LEVEL_1_RATIO = 1.5  # 一级标题的最低字号比例
 HEADING_MIN_LEVEL_2_RATIO = 1.3  # 二级标题的最低字号比例
+MIN_RELIABLE_NATIVE_CHARACTERS = 4
+OCR_DUPLICATE_REGION_OVERLAP = 0.50
 
 class PDFParser(BaseParser):
     """使用 PyMuPDF 解析 PDF 文件，提取表格、结构信息并去除页眉页脚"""
+
+    def __init__(
+        self,
+        router: TableRouter | None = None,
+        ocr_backend: PageOCRBackend | None = None,
+    ):
+        self.table_router = router or TableRouter(
+            PyMuPDFTableBackend(),
+            CamelotTableBackend(),
+            PaddleOCRTableBackend(),
+            complex_fallback=GMFTTableBackend(),
+        )
+        self.ocr_backend = ocr_backend if ocr_backend is not None else PyMuPDFOCRBackend()
+        self.last_layout_diagnostics = LayoutDiagnostics()
 
     def parse(self, file_path: str) -> Document:
         pdf_doc = fitz.open(file_path)
         all_blocks: list[ContentBlock] = []
         body_font_sizes: list[float] = []
+        page_heights: dict[int, float] = {}
+        source_tables: dict[str, TableArtifact] = {}
+        page_count = len(pdf_doc)
+        table_messages_by_page: dict[int, list[str]] = {}
+        try:
+            # Pass one gathers native text without deleting edge content so
+            # repetition can be evaluated across the complete document.
+            layout_pages: list[list[LayoutBlock]] = []
+            ocr_diagnostics = LayoutDiagnostics()
+            for page_number, page in enumerate(pdf_doc, start=1):
+                native_blocks = extract_layout_blocks(page, page_number)
+                quality = evaluate_page_text_quality(page, native_blocks)
+                selected_blocks = native_blocks
+                ocr_regions = detect_ocr_regions(page, native_blocks, quality)
+                if ocr_regions:
+                    selected_blocks = self._select_page_text(
+                        page,
+                        page_number,
+                        native_blocks,
+                        quality,
+                        ocr_regions,
+                        ocr_diagnostics,
+                    )
+                layout_pages.append(selected_blocks)
+            repeated_edge_keys = find_repeated_edge_keys(layout_pages)
+            layout_pages, diagnostics = filter_repeated_edge_blocks(
+                layout_pages,
+                repeated_edge_keys,
+            )
+            diagnostics.ocr_attempted_pages = ocr_diagnostics.ocr_attempted_pages
+            diagnostics.ocr_applied_pages = ocr_diagnostics.ocr_applied_pages
+            diagnostics.ocr_unavailable_pages = ocr_diagnostics.ocr_unavailable_pages
+            diagnostics.ocr_failed_pages = ocr_diagnostics.ocr_failed_pages
+            diagnostics.ocr_empty_pages = ocr_diagnostics.ocr_empty_pages
+            diagnostics.ocr_not_improved_pages = ocr_diagnostics.ocr_not_improved_pages
+            diagnostics.ocr_candidate_regions = ocr_diagnostics.ocr_candidate_regions
+            diagnostics.ocr_processed_regions = ocr_diagnostics.ocr_processed_regions
+            diagnostics.ocr_added_blocks = ocr_diagnostics.ocr_added_blocks
+            diagnostics.ocr_replaced_blocks = ocr_diagnostics.ocr_replaced_blocks
+            diagnostics.ocr_messages = ocr_diagnostics.ocr_messages
+            self.last_layout_diagnostics = diagnostics
 
-        # ── 第一轮：逐页提取内容块和正文字号 ──
-        for page_number, page in enumerate(pdf_doc, 1):
-            page_height = page.rect.height
-            header_y = page_height * HEADER_FOOTER_RATIO
-            footer_y = page_height * (1 - HEADER_FOOTER_RATIO)
+            # Pass two reconciles accepted tables and reconstructs page order.
+            for page_index, page in enumerate(pdf_doc, start=1):
+                page_width = float(page.rect.width)
+                page_height = float(page.rect.height)
+                page_heights[page_index] = page_height
+                artifacts = self.table_router.route_page(
+                    page,
+                    page_number=page_index,
+                    text_coverage=self._text_coverage(page),
+                    file_path=file_path,
+                )
+                raw_table_messages = getattr(self.table_router, "last_diagnostics", [])
+                if isinstance(raw_table_messages, str):
+                    raw_table_messages = [raw_table_messages]
+                if isinstance(raw_table_messages, (list, tuple)):
+                    messages = list(dict.fromkeys(
+                        str(message)
+                        for message in raw_table_messages
+                        if message not in (None, "")
+                    ))
+                    if messages:
+                        table_messages_by_page[page_index] = messages
+                source_tables.update({artifact.table_id: artifact for artifact in artifacts})
+                ordered_inputs = list(layout_pages[page_index - 1])
+                table_by_layout_id: dict[int, TableArtifact] = {}
+                next_ordinal = max((block.ordinal for block in ordered_inputs), default=-1) + 1
+                for artifact_index, artifact in enumerate(artifacts):
+                    if artifact.bbox is None:
+                        bbox = (0.0, 0.0, page_width, 0.0)
+                    else:
+                        bbox = (
+                            artifact.bbox.x0,
+                            artifact.bbox.y0,
+                            artifact.bbox.x1,
+                            artifact.bbox.y1,
+                        )
+                    table_layout = LayoutBlock(
+                        text="",
+                        bbox=bbox,
+                        font_size=0.0,
+                        font_name="",
+                        flags=0,
+                        rotation=0.0,
+                        page_number=page_index,
+                        ordinal=next_ordinal + artifact_index,
+                        page_width=page_width,
+                        page_height=page_height,
+                        confidence=artifact.confidence,
+                        extraction_method=artifact.parser_name,
+                    )
+                    ordered_inputs.append(table_layout)
+                    table_by_layout_id[id(table_layout)] = artifact
 
-            # 1. 提取表格区域（用于后续排除文本块中的表格文字）
-            tables = page.find_tables()
-            table_regions = self._extract_table_regions(tables)
+                for block in order_layout_blocks(ordered_inputs, page_width):
+                    artifact = table_by_layout_id.get(id(block))
+                    all_blocks.append(
+                        _table_to_content_block(artifact)
+                        if artifact is not None
+                        else block.to_content_block()
+                    )
+        finally:
+            pdf_doc.close()
 
-            # 2. 提取结构化文本块
-            text_dict = page.get_text("dict")
-            blocks = text_dict.get("blocks", [])
-
-            # 用 (y_position, ContentBlock) 收集，便于按阅读顺序排序
-            positioned: list[tuple[float, ContentBlock]] = []
-
-            for block in blocks:
-                if block["type"] != 0:  # 只处理文本块
-                    continue
-                bbox = block["bbox"]
-                y_mid = (bbox[1] + bbox[3]) / 2
-
-                # 跳过页眉/页脚区域
-                if y_mid < header_y or y_mid > footer_y:
-                    continue
-
-                # 跳过与表格重叠的文本块
-                if self._overlaps_any_table(bbox, table_regions):
-                    continue
-
-                cb = self._block_to_content_block(block)
-                if cb:
-                    cb.locator = {"page": page_number, "bbox": list(bbox)}
-                    positioned.append((y_mid, cb))
-                    # 收集字号用于后续标题判定
-                    for line in block.get("lines", []):
-                        for span in line.get("spans", []):
-                            size = span.get("size", 0)
-                            if size > 0:
-                                body_font_sizes.append(size)
-
-            # 3. 提取表格内容块（用表格顶部作为 y 位置）
-            for table in tables:
-                cb = self._table_to_content_block(table)
-                if cb:
-                    cb.locator = {"page": page_number, "bbox": list(table.bbox)}
-                    try:
-                        table_y = table.bbox[1]  # 表格顶部 y 坐标
-                    except Exception:
-                        table_y = 0.0
-                    positioned.append((table_y, cb))
-
-            # 4. 按垂直位置排序，保持阅读顺序
-            positioned.sort(key=lambda item: item[0])
-            all_blocks.extend(cb for _, cb in positioned)
-
-        pdf_doc.close()
+        # Merge only strict, high-signal continuations: adjacent pages, same
+        # columns/headers, previous table at page bottom and next at page top.
+        all_blocks = self._stitch_table_blocks(all_blocks, page_heights)
+        all_blocks = self._exclude_text_overlapping_accepted_tables(
+            all_blocks,
+            source_tables,
+            diagnostics,
+        )
+        body_font_sizes = [
+            block.font_size
+            for block in all_blocks
+            if block.block_type != BlockType.TABLE and block.font_size > 0
+        ]
 
         # ── 第二轮：基于字号统计判定标题 ──
         if body_font_sizes:
@@ -99,13 +206,113 @@ class PDFParser(BaseParser):
 
         # ── 渲染为 Markdown 内容 ──
         content = "\n\n".join(
-            cb.to_markdown() for cb in all_blocks if not cb.is_empty
+            rendered
+            for cb in all_blocks
+            if not cb.is_empty
+            for rendered in (cb.to_index_markdown(),)
+            if rendered
         )
         content = self._clean_text(content)
 
-        return Document.from_file_path(file_path, content, content_blocks=all_blocks)
+        final_tables = [
+            block.table
+            for block in all_blocks
+            if block.block_type == BlockType.TABLE and block.table is not None
+        ]
+        parse_diagnostics = ParseDiagnostics(
+            parser_name="pdf",
+            page_count=page_count,
+            removed_headers=diagnostics.removed_headers,
+            removed_footers=diagnostics.removed_footers,
+            partial_table_overlaps=diagnostics.partial_table_overlaps,
+            ocr_attempted_pages=diagnostics.ocr_attempted_pages,
+            ocr_applied_pages=diagnostics.ocr_applied_pages,
+            ocr_unavailable_pages=diagnostics.ocr_unavailable_pages,
+            ocr_failed_pages=diagnostics.ocr_failed_pages,
+            ocr_empty_pages=diagnostics.ocr_empty_pages,
+            ocr_not_improved_pages=diagnostics.ocr_not_improved_pages,
+            ocr_candidate_regions=diagnostics.ocr_candidate_regions,
+            ocr_processed_regions=diagnostics.ocr_processed_regions,
+            ocr_added_blocks=diagnostics.ocr_added_blocks,
+            ocr_replaced_blocks=diagnostics.ocr_replaced_blocks,
+            ocr_messages=diagnostics.ocr_messages,
+            table_messages_by_page=table_messages_by_page,
+            accepted_tables=sum(table.acceptance == "accepted" for table in final_tables),
+            review_tables=sum(table.acceptance == "review" for table in final_tables),
+        )
+        return Document.from_file_path(
+            file_path,
+            content,
+            content_blocks=all_blocks,
+            parse_diagnostics=parse_diagnostics,
+        )
 
     # ── 区域与重叠判断 ──
+
+    def _select_page_text(
+        self,
+        page,
+        page_number: int,
+        native_blocks: list[LayoutBlock],
+        native_quality: PageTextQuality,
+        regions: list[OCRRegion],
+        diagnostics: LayoutDiagnostics,
+    ) -> list[LayoutBlock]:
+        """OCR selected regions and keep native text on any failure."""
+        diagnostics.ocr_candidate_regions += len(regions)
+        try:
+            available = self.ocr_backend.available()
+        except Exception as error:
+            diagnostics.ocr_failed_pages.append(page_number)
+            diagnostics.ocr_messages.append(
+                f"page {page_number}: OCR availability check failed: {error}"
+            )
+            return native_blocks
+        if not available:
+            diagnostics.ocr_unavailable_pages.append(page_number)
+            diagnostics.ocr_messages.append(
+                f"page {page_number}: OCR unavailable for low-quality native text "
+                f"({', '.join(native_quality.reasons)})"
+            )
+            return native_blocks
+
+        diagnostics.ocr_attempted_pages.append(page_number)
+        try:
+            extract_regions = getattr(self.ocr_backend, "extract_regions", None)
+            used_regional_backend = callable(extract_regions)
+            if used_regional_backend:
+                ocr_blocks = extract_regions(page, page_number, regions)
+                diagnostics.ocr_processed_regions += len(regions)
+            else:
+                ocr_blocks = self.ocr_backend.extract(page, page_number)
+                diagnostics.ocr_processed_regions += 1
+        except Exception as error:
+            diagnostics.ocr_failed_pages.append(page_number)
+            diagnostics.ocr_messages.append(f"page {page_number}: OCR failed: {error}")
+            return native_blocks
+
+        selected = _ocr_content_to_layout_blocks(ocr_blocks, page, page_number)
+        if not selected:
+            diagnostics.ocr_empty_pages.append(page_number)
+            diagnostics.ocr_messages.append(f"page {page_number}: OCR returned no usable text")
+            return native_blocks
+        selected, added_blocks, replaced_blocks = _fuse_native_and_ocr_blocks(
+            native_blocks,
+            selected,
+            float(page.rect.width),
+            keep_unmatched_unreliable=used_regional_backend,
+        )
+        ocr_quality = evaluate_page_text_quality(page, selected)
+        if _page_text_rank(ocr_quality) <= _page_text_rank(native_quality):
+            diagnostics.ocr_not_improved_pages.append(page_number)
+            diagnostics.ocr_messages.append(
+                f"page {page_number}: OCR did not improve native text quality"
+            )
+            return native_blocks
+        diagnostics.ocr_applied_pages.append(page_number)
+        diagnostics.ocr_added_blocks += added_blocks
+        diagnostics.ocr_replaced_blocks += replaced_blocks
+        return selected
 
     @staticmethod
     def _extract_table_regions(tables) -> list[tuple[float, float, float, float]]:
@@ -120,14 +327,8 @@ class PDFParser(BaseParser):
 
     @staticmethod
     def _overlaps_any_table(bbox: tuple, regions: list[tuple[float, float, float, float]]) -> bool:
-        """判断一个矩形是否与任一表格区域重叠"""
-        if not regions:
-            return False
-        ax0, ay0, ax1, ay1 = bbox
-        for (tx0, ty0, tx1, ty1) in regions:
-            if not (ax1 <= tx0 or ax0 >= tx1 or ay1 <= ty0 or ay0 >= ty1):
-                return True
-        return False
+        """Return whether a table covers at least half of the text block."""
+        return max((_overlap_ratio(bbox, region) for region in regions), default=0.0) >= 0.50
 
     # ── 文本块转换 ──
 
@@ -177,11 +378,14 @@ class PDFParser(BaseParser):
         if median_size <= 0:
             return
 
-        font_size = cb.level / 100.0  # 恢复暂存的字号
+        font_size = cb.font_size or cb.level / 100.0
         ratio = font_size / median_size
 
-        # 标题条件：字号 ≥ 中位数 1.15 倍 且 加粗
-        if ratio < HEADING_FONT_RATIO or not cb.bold:
+        # Preserve the existing font-size-plus-bold signal while allowing a
+        # sufficiently large face to identify headings without a bold flag.
+        if ratio < HEADING_LARGE_FONT_RATIO and not (
+            cb.bold and ratio >= HEADING_FONT_RATIO
+        ):
             cb.level = 0
             return
 
@@ -196,29 +400,6 @@ class PDFParser(BaseParser):
         cb.block_type = BlockType.HEADING
         cb.bold = False  # Markdown 标题自带加粗
 
-    # ── 表格转换 ──
-
-    @staticmethod
-    def _table_to_content_block(table) -> ContentBlock | None:
-        """将 PyMuPDF Table 对象转为 ContentBlock"""
-        try:
-            extracted = table.extract()
-            if not extracted or len(extracted) == 0:
-                return None
-            # 首行作表头
-            headers = [str(c or "") for c in extracted[0]]
-            body = [[str(c or "") for c in row] for row in extracted[1:]]
-            if not body:
-                body = [[str(c or "") for c in row] for row in extracted]
-                headers = []
-            return ContentBlock(
-                block_type=BlockType.TABLE,
-                headers=headers,
-                rows=body,
-            )
-        except Exception:
-            return None
-
     # ── 工具方法 ──
 
     @staticmethod
@@ -231,4 +412,365 @@ class PDFParser(BaseParser):
         text = re.sub(r"\n{3,}", "\n\n", text)
         text = re.sub(r"[ \t]{2,}", " ", text)
         return text.strip()
+
+    @staticmethod
+    def _stitch_table_blocks(
+        blocks: list[ContentBlock],
+        page_heights: dict[int, float],
+    ) -> list[ContentBlock]:
+        originals = [
+            block.table
+            for block in blocks
+            if block.block_type == BlockType.TABLE and block.table is not None
+        ]
+        stitched = _stitch_cross_page_tables(originals, page_heights)
+        if len(stitched) == len(originals):
+            return blocks
+
+        replacements = {table.source_table_ids[0]: table for table in stitched}
+        consumed = {
+            table_id
+            for table in stitched
+            for table_id in table.source_table_ids[1:]
+        }
+        result: list[ContentBlock] = []
+        for block in blocks:
+            if block.block_type != BlockType.TABLE or block.table is None:
+                result.append(block)
+                continue
+            table_id = block.table.table_id
+            if table_id in consumed:
+                continue
+            replacement = replacements.get(table_id)
+            result.append(
+                _table_to_content_block(replacement)
+                if replacement is not None
+                else block
+            )
+        return result
+
+    @staticmethod
+    def _exclude_text_overlapping_accepted_tables(
+        blocks: list[ContentBlock],
+        source_tables: dict[str, TableArtifact],
+        diagnostics: LayoutDiagnostics,
+    ) -> list[ContentBlock]:
+        """Drop text only for tables that remain accepted after stitching."""
+        regions_by_page: dict[int, list[tuple[float, float, float, float]]] = {}
+        for block in blocks:
+            table = block.table
+            if table is None or table.acceptance != "accepted":
+                continue
+            regions = list(table.page_regions)
+            if not regions:
+                regions = [
+                    PageRegion(
+                        page_number=source.page_number,
+                        bbox=source.bbox,
+                        table_ids=[source.table_id],
+                        sources=["table"],
+                        confidence=source.confidence,
+                    )
+                    for table_id in table.source_table_ids
+                    for source in [source_tables.get(table_id)]
+                    if source is not None and source.page_number is not None and source.bbox is not None
+                ]
+            for region in regions:
+                regions_by_page.setdefault(region.page_number, []).append((
+                    region.bbox.x0,
+                    region.bbox.y0,
+                    region.bbox.x1,
+                    region.bbox.y1,
+                ))
+
+        retained: list[ContentBlock] = []
+        for block in blocks:
+            if block.block_type == BlockType.TABLE or block.bbox is None or block.page_number is None:
+                retained.append(block)
+                continue
+            overlap = max(
+                (_overlap_ratio(
+                    (block.bbox.x0, block.bbox.y0, block.bbox.x1, block.bbox.y1),
+                    region,
+                ) for region in regions_by_page.get(block.page_number, [])),
+                default=0.0,
+            )
+            if overlap >= 0.50:
+                continue
+            if overlap > 0.0:
+                diagnostics.partial_table_overlaps += 1
+            retained.append(block)
+        return retained
+
+    @staticmethod
+    def _text_coverage(page) -> float:
+        """Estimate usable text density; scanned pages approach zero."""
+        try:
+            character_count = len(page.get_text("text").strip())
+            area_units = max(1.0, float(page.rect.width * page.rect.height) / 1000.0)
+            return min(1.0, character_count / area_units)
+        except Exception:
+            return 0.0
+
+
+def _ocr_content_to_layout_blocks(
+    blocks: list[ContentBlock],
+    page,
+    page_number: int,
+) -> list[LayoutBlock]:
+    """Normalize backend OCR output for shared filtering and page ordering."""
+    page_width = float(page.rect.width)
+    page_height = float(page.rect.height)
+    result: list[LayoutBlock] = []
+    for block in blocks:
+        if not block.text.strip() or block.bbox is None:
+            continue
+        flags = 0
+        if block.bold:
+            flags |= fitz.TEXT_FONT_BOLD
+        if block.italic:
+            flags |= fitz.TEXT_FONT_ITALIC
+        result.append(LayoutBlock(
+            text=block.text,
+            bbox=(block.bbox.x0, block.bbox.y0, block.bbox.x1, block.bbox.y1),
+            font_size=block.font_size,
+            font_name=block.font_name,
+            flags=flags,
+            rotation=block.rotation,
+            page_number=page_number,
+            ordinal=len(result),
+            page_width=page_width,
+            page_height=page_height,
+            confidence=block.confidence,
+            extraction_method="ocr",
+            source="ocr",
+        ))
+    return result
+
+
+def _fuse_native_and_ocr_blocks(
+    native_blocks: list[LayoutBlock],
+    ocr_blocks: list[LayoutBlock],
+    page_width: float,
+    *,
+    keep_unmatched_unreliable: bool = True,
+) -> tuple[list[LayoutBlock], int, int]:
+    """Fuse OCR at block level, replacing only worse overlapping native text."""
+    reliable_native = [
+        block for block in native_blocks if _reliable_native_text(block.text)
+    ]
+    unreliable_native = [
+        block for block in native_blocks if not _reliable_native_text(block.text)
+    ]
+    kept_native: list[LayoutBlock] = list(reliable_native)
+    kept_ocr_ids = {id(block) for block in ocr_blocks}
+    for ocr_block in ocr_blocks:
+        if any(
+            _layout_overlap_ratio(ocr_block.bbox, native_block.bbox)
+            >= OCR_DUPLICATE_REGION_OVERLAP
+            for native_block in reliable_native
+        ):
+            kept_ocr_ids.discard(id(ocr_block))
+
+    replaced_count = 0
+    replacement_ocr_ids: set[int] = set()
+    for native_block in unreliable_native:
+        overlapping = [
+            ocr_block
+            for ocr_block in ocr_blocks
+            if id(ocr_block) in kept_ocr_ids
+            and _layout_overlap_ratio(ocr_block.bbox, native_block.bbox)
+            >= OCR_DUPLICATE_REGION_OVERLAP
+        ]
+        if not overlapping:
+            if keep_unmatched_unreliable:
+                kept_native.append(native_block)
+            continue
+
+        best_ocr = max(overlapping, key=lambda block: _block_text_rank(block.text))
+        if _block_text_rank(best_ocr.text) > _block_text_rank(native_block.text):
+            replaced_count += 1
+            replacement_ocr_ids.add(id(best_ocr))
+            kept_ocr_ids.difference_update(
+                id(block) for block in overlapping if block is not best_ocr
+            )
+        else:
+            kept_native.append(native_block)
+            kept_ocr_ids.difference_update(id(block) for block in overlapping)
+
+    kept_ocr = [block for block in ocr_blocks if id(block) in kept_ocr_ids]
+    selected = [*kept_native, *kept_ocr]
+    ordered = order_layout_blocks(selected, page_width)
+    result = [replace(block, ordinal=index) for index, block in enumerate(ordered)]
+    replacement_result_ids = replacement_ocr_ids.intersection(kept_ocr_ids)
+    added_count = len(kept_ocr) - len(replacement_result_ids)
+    return result, added_count, replaced_count
+
+
+def _block_text_rank(text: str) -> tuple[bool, int]:
+    characters = [character for character in text if not character.isspace()]
+    invalid = sum(
+        character == "\ufffd" or unicodedata.category(character).startswith("C")
+        for character in characters
+    )
+    usable = len(characters) - invalid
+    return invalid == 0, usable
+
+
+def _reliable_native_text(text: str) -> bool:
+    characters = [character for character in text if not character.isspace()]
+    if len(characters) < MIN_RELIABLE_NATIVE_CHARACTERS:
+        return False
+    invalid = sum(
+        character == "\ufffd" or unicodedata.category(character).startswith("C")
+        for character in characters
+    )
+    return invalid / len(characters) < 0.10
+
+
+def _layout_overlap_ratio(
+    first: tuple[float, float, float, float],
+    second: tuple[float, float, float, float],
+) -> float:
+    first_x0, first_y0, first_x1, first_y1 = first
+    second_x0, second_y0, second_x1, second_y1 = second
+    intersection = (
+        max(0.0, min(first_x1, second_x1) - max(first_x0, second_x0))
+        * max(0.0, min(first_y1, second_y1) - max(first_y0, second_y0))
+    )
+    first_area = max(0.0, first_x1 - first_x0) * max(0.0, first_y1 - first_y0)
+    second_area = max(0.0, second_x1 - second_x0) * max(0.0, second_y1 - second_y0)
+    smaller_area = min(first_area, second_area)
+    return intersection / smaller_area if smaller_area > 0 else 0.0
+
+
+def _page_text_rank(quality: PageTextQuality) -> tuple[bool, int, float]:
+    """Rank text streams deterministically, preferring valid then fuller text."""
+    invalid = {"replacement_characters", "control_characters"}
+    contains_invalid_characters = bool(invalid.intersection(quality.reasons))
+    return (
+        not contains_invalid_characters,
+        quality.usable_character_count,
+        quality.usable_character_density,
+    )
+
+
+def _overlap_ratio(
+    block_bbox: tuple[float, float, float, float],
+    table_bbox: tuple[float, float, float, float],
+) -> float:
+    """Return the fraction of a text block covered by a table rectangle."""
+    bx0, by0, bx1, by1 = block_bbox
+    tx0, ty0, tx1, ty1 = table_bbox
+    x0 = max(bx0, tx0)
+    y0 = max(by0, ty0)
+    x1 = min(bx1, tx1)
+    y1 = min(by1, ty1)
+    intersection = max(0.0, x1 - x0) * max(0.0, y1 - y0)
+    block_area = max(1.0, (bx1 - bx0) * (by1 - by0))
+    return intersection / block_area
+
+
+def _table_to_content_block(table: TableArtifact) -> ContentBlock:
+    """Synchronize canonical table provenance onto its content block."""
+    return ContentBlock(
+        block_type=BlockType.TABLE,
+        block_id=table.table_id,
+        page_number=table.page_number,
+        bbox=table.bbox,
+        confidence=table.confidence,
+        source="table",
+        extraction_method=table.parser_name,
+        table=table,
+    )
+
+
+def _stitch_cross_page_tables(
+    tables: list[TableArtifact],
+    page_heights: dict[int, float],
+) -> list[TableArtifact]:
+    if not tables:
+        return []
+    ordered = sorted(
+        tables,
+        key=lambda table: (
+            table.page_number or 0,
+            table.bbox.y0 if table.bbox else 0.0,
+        ),
+    )
+    stitched: list[TableArtifact] = []
+    previous_original: TableArtifact | None = None
+    for table in ordered:
+        if (
+            stitched
+            and previous_original is not None
+            and _looks_like_continuation(previous_original, table, page_heights)
+        ):
+            stitched[-1] = _merge_continuation(stitched[-1], table)
+        else:
+            stitched.append(table)
+        previous_original = table
+    return stitched
+
+
+def _looks_like_continuation(
+    previous: TableArtifact,
+    current: TableArtifact,
+    page_heights: dict[int, float],
+) -> bool:
+    if previous.page_number is None or current.page_number != previous.page_number + 1:
+        return False
+    if previous.bbox is None or current.bbox is None:
+        return False
+    if previous.column_count != current.column_count:
+        return False
+    previous_height = page_heights.get(previous.page_number)
+    current_height = page_heights.get(current.page_number)
+    if not previous_height or not current_height:
+        return False
+    if previous.bbox.y1 < previous_height * 0.80 or current.bbox.y0 > current_height * 0.20:
+        return False
+    previous_headers = tuple(value.strip().casefold() for value in previous.legacy_headers())
+    current_headers = tuple(value.strip().casefold() for value in current.legacy_headers())
+    return bool(previous_headers and previous_headers == current_headers)
+
+
+def _merge_continuation(first: TableArtifact, second: TableArtifact) -> TableArtifact:
+    skip_rows = second.header_row_count
+    shifted_cells = list(first.cells)
+    for cell in second.cells:
+        if cell.row_index < skip_rows:
+            continue
+        shifted_cells.append(cell.model_copy(update={
+            "row_index": first.row_count + cell.row_index - skip_rows,
+            "is_header": False,
+        }))
+    backend_scores = [
+        score
+        for score in (first.backend_confidence, second.backend_confidence)
+        if score is not None
+    ]
+    return first.model_copy(update={
+        "cells": shifted_cells,
+        "row_count": first.row_count + second.row_count - skip_rows,
+        "confidence": min(first.confidence, second.confidence),
+        "backend_confidence": min(backend_scores) if backend_scores else None,
+        "quality_score": min(
+            score
+            for score in (first.quality_score or first.confidence, second.quality_score or second.confidence)
+        ),
+        "quality_evidence": {
+            **first.quality_evidence,
+            "cross_page_parts": float(len(first.source_table_ids) + len(second.source_table_ids)),
+        },
+        "acceptance": (
+            "accepted"
+            if first.acceptance == second.acceptance == "accepted"
+            else "review"
+        ),
+        "source_pages": list(dict.fromkeys(first.source_pages + second.source_pages)),
+        "source_table_ids": first.source_table_ids + second.source_table_ids,
+        "page_regions": [*first.page_regions, *second.page_regions],
+        "warnings": list(dict.fromkeys(first.warnings + second.warnings + ["cross_page_stitched"])),
+    })
 

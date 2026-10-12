@@ -1,5 +1,7 @@
 # 隔离联调运行与复现
 
+2026-10-12 表格解析整合补充：新企业 Evidence 集合增加结构化溯源字段；已有集合可继续读取，但新结构化写入在替换前检查 schema。向量与 BM25 使用 `index_text`，展示及上下文保留 `markdown_text`。迁移使用全新数据目录、Evidence/Section 集合并保持实际 embedding 维度一致；本次合并没有执行重建或切换既有索引。详见[现行管线契约](DATA_PIPELINE.md)及[本轮验证记录](table-processing-integration-20261012.md)。
+
 更新：2026-10-09。使用独立数据库、正文投影、BM25、Milvus 项目和集合，不覆盖原仓库索引/会话库。
 
 ## 配置

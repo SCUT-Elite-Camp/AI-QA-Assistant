@@ -60,6 +60,8 @@ Source access uses `SOURCE_ACCESS_MODE=native`, `CONFLUENCE_AUTH_ENV_FILE` and `
 
 Apply the full Web migration journal through `0015_evidence_lineage.sql` (chat/topic/Memory provenance). Evidence reads are message-bound; stored answers/Memory are rechecked after revocation or version drift. Ordinary Chat supports enterprise, personal and attachment sources; Research remains enterprise-only. Wiki navigation is quarantined until its own derived metadata has verifiable source lineage.
 
+Structured PDF/DOCX/XLSX table parsing, optional region OCR, semantic/display text views and chunk geometry are documented in the [current pipeline contract](docs/DATA_PIPELINE.md). Existing Milvus reads remain compatible; structured ingestion requires the provenance schema before replacing vectors. Use separate collections for migration and follow the [table integration record](docs/table-processing-integration-20261012.md) for validation limits.
+
 ## CI and dependency compatibility
 
 The Personal Library pull request workflow uses Python 3.11, Node.js 22, and pnpm 10. Its canonical install commands are:

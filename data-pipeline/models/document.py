@@ -1,9 +1,11 @@
 import hashlib
+import html
 import os
 from datetime import datetime, timezone
 from enum import StrEnum
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt, model_validator
 
 
 class BlockType(StrEnum):
@@ -14,23 +16,252 @@ class BlockType(StrEnum):
     LIST = "list"
 
 
+class BoundingBox(BaseModel):
+    """Page-relative table or cell coordinates."""
+
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+    @model_validator(mode="after")
+    def validate_extents(self) -> "BoundingBox":
+        if self.x1 < self.x0 or self.y1 < self.y0:
+            raise ValueError("bbox maximum coordinates must not precede minimum coordinates")
+        return self
+
+
+def _ordered_unique_strings(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(value for value in values if value))
+
+
+class PageRegion(BaseModel):
+    """One physical provenance region in a single page coordinate system."""
+
+    page_number: int = Field(ge=1)
+    bbox: BoundingBox
+    block_ids: list[str] = Field(default_factory=list)
+    table_ids: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def normalize_provenance(self) -> "PageRegion":
+        self.block_ids = _ordered_unique_strings(self.block_ids)
+        self.table_ids = _ordered_unique_strings(self.table_ids)
+        self.sources = _ordered_unique_strings(self.sources)
+        return self
+
+
+class ParseDiagnostics(BaseModel):
+    """Persistent, deterministic snapshot of document parsing decisions."""
+
+    parser_name: str = ""
+    page_count: int = Field(default=0, ge=0)
+    removed_headers: int = Field(default=0, ge=0)
+    removed_footers: int = Field(default=0, ge=0)
+    partial_table_overlaps: int = Field(default=0, ge=0)
+    ocr_attempted_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_applied_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_unavailable_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_failed_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_empty_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_not_improved_pages: list[PositiveInt] = Field(default_factory=list)
+    ocr_candidate_regions: int = Field(default=0, ge=0)
+    ocr_processed_regions: int = Field(default=0, ge=0)
+    ocr_added_blocks: int = Field(default=0, ge=0)
+    ocr_replaced_blocks: int = Field(default=0, ge=0)
+    ocr_messages: list[str] = Field(default_factory=list)
+    table_messages_by_page: dict[PositiveInt, list[str]] = Field(default_factory=dict)
+    accepted_tables: int = Field(default=0, ge=0)
+    review_tables: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def normalize_diagnostics(self) -> "ParseDiagnostics":
+        page_fields = (
+            "ocr_attempted_pages",
+            "ocr_applied_pages",
+            "ocr_unavailable_pages",
+            "ocr_failed_pages",
+            "ocr_empty_pages",
+            "ocr_not_improved_pages",
+        )
+        for field_name in page_fields:
+            setattr(self, field_name, sorted(set(getattr(self, field_name))))
+        self.ocr_messages = _ordered_unique_strings(self.ocr_messages)
+        self.table_messages_by_page = {
+            page_number: messages
+            for page_number, raw_messages in sorted(self.table_messages_by_page.items())
+            for messages in [_ordered_unique_strings(raw_messages)]
+            if messages
+        }
+        return self
+
+
+class TableCell(BaseModel):
+    row_index: int = Field(ge=0)
+    column_index: int = Field(ge=0)
+    text: str = ""
+    row_span: int = Field(default=1, ge=1)
+    column_span: int = Field(default=1, ge=1)
+    is_header: bool = False
+    bbox: BoundingBox | None = None
+
+
+class TableArtifact(BaseModel):
+    """Canonical table representation, preserving parser provenance."""
+
+    table_id: str
+    cells: list[TableCell] = Field(default_factory=list)
+    row_count: int = Field(ge=0)
+    column_count: int = Field(ge=0)
+    header_row_count: int = Field(default=0, ge=0)
+    caption: str = ""
+    page_number: int | None = Field(default=None, ge=1)
+    source_pages: list[int] = Field(default_factory=list)
+    source_table_ids: list[str] = Field(default_factory=list)
+    bbox: BoundingBox | None = None
+    page_regions: list[PageRegion] = Field(default_factory=list)
+    parser_name: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    backend_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    quality_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    quality_evidence: dict[str, float] = Field(default_factory=dict)
+    acceptance: Literal["accepted", "review", "rejected"] = "review"
+    image_path: str = ""
+    warnings: list[str] = Field(default_factory=list)
+    elapsed_ms: float | None = Field(default=None, ge=0.0)
+
+    @model_validator(mode="after")
+    def validate_shape(self) -> "TableArtifact":
+        if self.header_row_count > self.row_count:
+            raise ValueError("header_row_count cannot exceed row_count")
+        for cell in self.cells:
+            if cell.row_index + cell.row_span > self.row_count:
+                raise ValueError("cell row span exceeds table bounds")
+            if cell.column_index + cell.column_span > self.column_count:
+                raise ValueError("cell column span exceeds table bounds")
+        if not self.source_pages and self.page_number is not None:
+            self.source_pages = [self.page_number]
+        if not self.source_table_ids:
+            self.source_table_ids = [self.table_id]
+        if not self.page_regions and self.page_number is not None and self.bbox is not None:
+            self.page_regions = [PageRegion(
+                page_number=self.page_number,
+                bbox=self.bbox,
+                table_ids=list(self.source_table_ids),
+                sources=["table"],
+                confidence=self.confidence,
+            )]
+        if self.page_regions:
+            self.page_regions = sorted(self.page_regions, key=lambda region: region.page_number)
+            self.source_pages = sorted(set(
+                [*self.source_pages, *(region.page_number for region in self.page_regions)]
+            ))
+        return self
+
+    def to_matrix(self) -> list[list[str]]:
+        matrix = [["" for _ in range(self.column_count)] for _ in range(self.row_count)]
+        for cell in self.cells:
+            for row_index in range(cell.row_index, cell.row_index + cell.row_span):
+                for column_index in range(cell.column_index, cell.column_index + cell.column_span):
+                    matrix[row_index][column_index] = cell.text
+        return matrix
+
+    def header_rows(self) -> list[list[str]]:
+        return self.to_matrix()[: self.header_row_count]
+
+    def body_rows(self) -> list[list[str]]:
+        return self.to_matrix()[self.header_row_count :]
+
+    def legacy_headers(self) -> list[str]:
+        if not self.header_row_count:
+            return []
+        return [
+            " / ".join(dict.fromkeys(part for part in column if part))
+            for column in zip(*self.header_rows())
+        ]
+
+    def to_markdown(self) -> str:
+        return _table_to_markdown(self.body_rows(), self.legacy_headers())
+
+    def to_index_text(self) -> str:
+        """Render a compact plain-text representation for retrieval."""
+        rows = self.to_row_chunks()
+        parts = [self.caption.strip()] if self.caption.strip() else []
+        parts.extend(rows)
+        if not rows:
+            header_text = " | ".join(
+                value.strip() for value in self.legacy_headers() if value.strip()
+            )
+            if header_text:
+                parts.append(header_text)
+        return "\n".join(parts)
+
+    def to_html(self) -> str:
+        lines = [f'<table data-table-id="{html.escape(self.table_id, quote=True)}">']
+        if self.caption:
+            lines.append(f"  <caption>{html.escape(self.caption)}</caption>")
+        for row_index in range(self.row_count):
+            lines.append("  <tr>")
+            for cell in sorted((item for item in self.cells if item.row_index == row_index), key=lambda item: item.column_index):
+                tag = "th" if cell.is_header or row_index < self.header_row_count else "td"
+                spans = (f' rowspan="{cell.row_span}"' if cell.row_span > 1 else "") + (f' colspan="{cell.column_span}"' if cell.column_span > 1 else "")
+                lines.append(f"    <{tag}{spans}>{html.escape(cell.text).replace(chr(10), '<br>')}</{tag}>")
+            lines.append("  </tr>")
+        lines.append("</table>")
+        return "\n".join(lines)
+
+    def to_row_chunks(self) -> list[str]:
+        headers = self.legacy_headers()
+        return [" | ".join(f"{headers[index]}: {value.strip()}" if index < len(headers) and headers[index] else value.strip() for index, value in enumerate(row) if value.strip()) for row in self.body_rows()]
+
+
 class ContentBlock(BaseModel):
     """文档中的一个结构化内容块：段落、标题、表格、列表等"""
     block_type: BlockType
     level: int = 0                 # 标题层级 (1-6)，非标题为 0
     text: str = ""                 # 段落/标题/列表项的纯文本
+    block_id: str = ""
+    page_number: int | None = Field(default=None, ge=1)
+    bbox: BoundingBox | None = None
+    font_name: str = ""
+    font_size: float = Field(default=0.0, ge=0.0)
+    rotation: float = 0.0
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    source: Literal["native", "ocr", "table"] = "native"
+    extraction_method: str = ""
     rows: list[list[str]] = Field(default_factory=list)    # 表格数据
     headers: list[str] = Field(default_factory=list)        # 表格列头
+    table: TableArtifact | None = None
     bold: bool = False
     italic: bool = False
     locator: dict = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def derive_legacy_table_fields(self) -> "ContentBlock":
+        if self.block_type == BlockType.TABLE and self.table is not None:
+            if not self.headers:
+                self.headers = self.table.legacy_headers()
+            if not self.rows:
+                self.rows = self.table.body_rows()
+        return self
 
     @property
     def is_empty(self) -> bool:
         """判断该块是否无有效内容"""
         if self.block_type == BlockType.TABLE:
-            return not self.rows and not self.headers
+            return self.table is None and not self.rows and not self.headers
         return not self.text.strip()
+
+    @property
+    def is_indexable(self) -> bool:
+        """Whether this block belongs in the primary index/rendered content."""
+        return not (
+            self.block_type == BlockType.TABLE
+            and self.table is not None
+            and self.table.acceptance != "accepted"
+        )
 
     def to_markdown(self) -> str:
         """将内容块渲染为 Markdown 片段"""
@@ -38,7 +269,7 @@ class ContentBlock(BaseModel):
             level = max(1, min(6, self.level))
             return f"{'#' * level} {self.text}"
         elif self.block_type == BlockType.TABLE:
-            return _table_to_markdown(self.rows, self.headers)
+            return self.table.to_markdown() if self.table is not None else _table_to_markdown(self.rows, self.headers)
         elif self.block_type == BlockType.LIST:
             return f"- {self.text}"
         elif self.block_type == BlockType.PARAGRAPH:
@@ -47,11 +278,26 @@ class ContentBlock(BaseModel):
             return self.text
         return ""
 
+    def to_index_markdown(self) -> str:
+        """Render the Markdown display view, omitting review-only tables."""
+        return self.to_markdown() if self.is_indexable else ""
+
+    def to_index_text(self) -> str:
+        """Render plain semantic text without Markdown presentation syntax."""
+        if not self.is_indexable:
+            return ""
+        if self.block_type == BlockType.TABLE:
+            if self.table is not None:
+                return self.table.to_index_text()
+            return _table_to_index_text(self.rows, self.headers)
+        return self.text
+
 
 def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
     """将表格行和可选的表头转为 GitHub 风格 Markdown 表格"""
-    if not rows:
+    if not rows and not headers:
         return ""
+
     # 确保列数一致
     col_count = max(
         max((len(r) for r in rows), default=0),
@@ -67,22 +313,100 @@ def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
         padded_headers = [""] * col_count
 
     lines: list[str] = []
-    lines.append("| " + " | ".join(str(c) for c in padded_headers) + " |")
+    lines.append("| " + " | ".join(_escape_markdown_cell(c) for c in padded_headers) + " |")
     lines.append("| " + " | ".join(["---"] * col_count) + " |")
     for row in padded_rows:
-        lines.append("| " + " | ".join(str(c) for c in row) + " |")
+        lines.append("| " + " | ".join(_escape_markdown_cell(c) for c in row) + " |")
     return "\n".join(lines)
 
 
+def _table_to_index_text(rows: list[list[str]], headers: list[str]) -> str:
+    """Render legacy table fields as compact retrieval text."""
+    rendered_rows: list[str] = []
+    for row in rows:
+        parts: list[str] = []
+        for column_index, raw_value in enumerate(row):
+            value = str(raw_value).strip()
+            if not value:
+                continue
+            header = str(headers[column_index]).strip() if column_index < len(headers) else ""
+            parts.append(f"{header}: {value}" if header else value)
+        if parts:
+            rendered_rows.append(" | ".join(parts))
+    if rendered_rows:
+        return "\n".join(rendered_rows)
+    return " | ".join(str(value).strip() for value in headers if str(value).strip())
+
+
+def _escape_markdown_cell(value: object) -> str:
+    return str(value).replace("\\", "\\\\").replace("|", "\\|").replace("\r\n", "<br>").replace("\n", "<br>")
 class Chunk(BaseModel):
     """单个文本分块"""
     index: int
     text: str
+    index_text: str = ""
+    markdown_text: str = ""
     chunk_id: str  # 全局唯一分块 ID，格式: "{doc_id}_chunk_{index}"
     section_path: list[str] = Field(default_factory=list)
     block_start: int | None = None
     block_end: int | None = None
     overlap_prefix_length: int = 0  # duplicated retrieval context, not source content
+    chunk_type: str = "text"
+    table_id: str = ""
+    block_id: str = ""
+    page_number: int | None = Field(default=None, ge=1)
+    bbox: BoundingBox | None = None
+    source: Literal["native", "ocr", "table"] = "native"
+    source_pages: list[int] = Field(default_factory=list)
+    page_regions: list[PageRegion] = Field(default_factory=list)
+    metadata: dict[str, object] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def normalize_page_regions(self) -> "Chunk":
+        if not self.markdown_text:
+            self.markdown_text = self.text
+        if not self.text:
+            self.text = self.markdown_text
+        if not self.index_text:
+            self.index_text = self.text
+        if not self.page_regions and self.page_number is not None and self.bbox is not None:
+            raw_sources = self.metadata.get("sources", [])
+            if isinstance(raw_sources, str):
+                raw_sources = [raw_sources]
+            if not isinstance(raw_sources, list):
+                raw_sources = []
+            raw_block_ids = self.metadata.get("block_ids", [])
+            if isinstance(raw_block_ids, str):
+                raw_block_ids = [raw_block_ids]
+            if not isinstance(raw_block_ids, list):
+                raw_block_ids = []
+            raw_confidence = self.metadata.get("confidence", 1.0)
+            try:
+                confidence = float(raw_confidence)
+            except (TypeError, ValueError):
+                confidence = 1.0
+            if not 0.0 <= confidence <= 1.0:
+                confidence = 1.0
+            self.page_regions = [PageRegion(
+                page_number=self.page_number,
+                bbox=self.bbox,
+                block_ids=[self.block_id, *raw_block_ids],
+                table_ids=[self.table_id],
+                sources=[self.source, *raw_sources],
+                confidence=confidence,
+            )]
+        if self.page_regions:
+            self.page_regions = sorted(self.page_regions, key=lambda region: region.page_number)
+            self.source_pages = sorted(set(
+                [*self.source_pages, *(region.page_number for region in self.page_regions)]
+            ))
+            if len(self.source_pages) == 1 and len(self.page_regions) == 1:
+                self.page_number = self.source_pages[0]
+                self.bbox = self.page_regions[0].bbox
+            elif len(self.page_regions) > 1 or len(self.source_pages) > 1:
+                self.page_number = None
+                self.bbox = None
+        return self
 
 
 class DocumentSection(BaseModel):
@@ -131,6 +455,23 @@ class Document(BaseModel):
     version_id: str = ""
     active_version: bool = True
     sections: list[DocumentSection] = Field(default_factory=list)
+    parse_diagnostics: ParseDiagnostics | None = None
+
+    def render_index_content(self) -> str:
+        """Render the compatibility/index view from indexable content blocks.
+
+        Documents created by older parsers may not have structured blocks; in
+        that case their already-rendered ``content`` remains the fallback.
+        """
+        if not self.content_blocks:
+            return self.content
+        return "\n\n".join(
+            rendered
+            for block in self.content_blocks
+            if not block.is_empty
+            for rendered in (block.to_index_markdown(),)
+            if rendered
+        )
 
     @staticmethod
     def generate_doc_id(file_path: str) -> str:
@@ -157,6 +498,7 @@ class Document(BaseModel):
         file_path: str,
         content: str,
         content_blocks: list[ContentBlock] | None = None,
+        parse_diagnostics: ParseDiagnostics | None = None,
     ) -> "Document":
         """从文件路径、已提取文本、可选结构化块构建 Document
 
@@ -198,6 +540,7 @@ class Document(BaseModel):
             metadata=metadata,
             doc_type=doc_type,
             version_id=cls.generate_version_id(abs_path),
+            parse_diagnostics=parse_diagnostics,
         )
 
     @staticmethod

@@ -1,13 +1,6 @@
 import os
 import sys
-import json
 from pathlib import Path
-
-# Force offline mode for Hugging Face
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_DATASETS_OFFLINE"] = "1"
-os.environ["DISABLE_SYMLINKS_WARNING"] = "1"
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -15,13 +8,10 @@ sys.path.insert(0, str(PROJECT_ROOT / "data-pipeline"))
 sys.path.insert(0, str(PROJECT_ROOT / "data-persistence"))
 sys.path.insert(0, str(PROJECT_ROOT / "toolset"))
 
-os.environ["LOCAL_EMBEDDING_MODEL_PATH"] = str(PROJECT_ROOT / "data-persistence" / "models" / "bge-small-en-v1.5")
 
 from models.document import Document
 from parsers.registry import parse_file
-from pipeline.chunker import chunk_text, chunk_from_blocks
-from pipeline.embedder import embed_texts
-from data_persistence.documents import save_document
+from pipeline.auto_process import _index_document
 from data_persistence.vector import MilvusStore
 from retrieval.bm25_index import BM25Index
 
@@ -42,8 +32,15 @@ def process_specific_files(
 
     milvus = MilvusStore(host=milvus_host, port=milvus_port)
     has_milvus = False
+    section_name = os.getenv("SECTION_MILVUS_COLLECTION", "document_sections_bgem3")
+    if section_name.casefold() == milvus.collection_name.casefold():
+        raise RuntimeError("SECTION_MILVUS_COLLECTION must differ from Evidence collection")
+    section_milvus = MilvusStore(
+        host=milvus_host, port=milvus_port, collection_name=section_name,
+    )
     try:
         milvus.connect()
+        section_milvus.connect()
         has_milvus = True
         print(" [Milvus] Connected to Milvus vector store")
     except Exception as e:
@@ -68,59 +65,13 @@ def process_specific_files(
                     print(f"  [Skip] Empty document content for: {abs_path}")
                     continue
 
-                # 2. Chunking
-                if doc.content_blocks:
-                    chunks = chunk_from_blocks(doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
-                else:
-                    chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
+                if _index_document(
+                    doc, chunk_size=chunk_size, overlap=overlap,
+                    evidence_milvus=milvus, section_milvus=section_milvus,
+                    has_milvus=has_milvus,
+                ):
+                    processed_docs.append(doc)
 
-                doc.chunks = chunks
-                if not chunks:
-                    continue
-
-                # 3. Vectorization with local BGE
-                chunk_texts = [ch.text for ch in chunks]
-                print(f"  → Generating embeddings for {len(chunk_texts)} chunks...")
-                embeddings = embed_texts(chunk_texts)
-
-                # 4. Save JSON metadata to data-persistence/data/documents/
-                json_data = doc.model_dump(mode="json")
-                save_document(doc.doc_id, json_data)
-                print(f"  → Metadata JSON saved: {doc.doc_id}.json")
-
-                # 5. Write vectors to Milvus
-                if has_milvus:
-                    dim = len(embeddings[0])
-                    milvus.init_collection(collection_name="doc_chunks", dim=dim)
-
-                    # Clear existing chunks for doc_id if re-uploading
-                    try:
-                        milvus.collection.delete(expr=f"doc_id == '{doc.doc_id}'")
-                    except Exception:
-                        pass
-
-                    chunk_ids = [ch.chunk_id for ch in chunks]
-                    doc_ids = [doc.doc_id] * len(chunks)
-                    chunk_indices = [ch.index for ch in chunks]
-                    source_urls = [doc.source_url or os.path.basename(abs_path)] * len(chunks)
-                    titles = [doc.title] * len(chunks)
-                    spaces = [doc.space] * len(chunks)
-                    doc_types = [doc.doc_type] * len(chunks)
-
-                    milvus.insert_chunks(
-                        embeddings=embeddings,
-                        chunk_ids=chunk_ids,
-                        chunk_texts=chunk_texts,
-                        doc_ids=doc_ids,
-                        chunk_indices=chunk_indices,
-                        source_urls=source_urls,
-                        titles=titles,
-                        spaces=spaces,
-                        doc_types=doc_types,
-                    )
-                    print(f"  → Successfully wrote {len(chunks)} chunks to Milvus")
-
-                processed_docs.append(doc)
         except Exception as err:
             print(f"  [Error] Failed to process {abs_path}: {err}")
 

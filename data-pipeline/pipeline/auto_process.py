@@ -15,7 +15,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "toolset"))
 
 from models.document import Document
 from parsers.registry import parse_file, supported_extensions
-from pipeline.chunker import chunk_text, chunk_from_blocks
+from pipeline.structured_ingestion import prepare_ingestion_chunks, provenance_columns
 from pipeline.embedder import embed_texts
 from pipeline.structure import build_document_sections
 from pipeline.confluence_snapshot import deduplicate_confluence_paths
@@ -84,13 +84,7 @@ def _index_document(
     has_milvus: bool,
     section_milvus: MilvusStore | None = None,
 ) -> bool:
-    if doc.content_blocks:
-        chunks = chunk_from_blocks(
-            doc.content_blocks, doc.doc_id, chunk_size=chunk_size, overlap=overlap,
-            document_title=doc.title,
-        )
-    else:
-        chunks = chunk_text(doc.content, doc.doc_id, chunk_size=chunk_size, overlap=overlap)
+    chunks = prepare_ingestion_chunks(doc, chunk_size=chunk_size, overlap=overlap)
     doc.chunks = chunks
     doc.sections = build_document_sections(doc)
     print(f"  → 分块完成，共 {len(chunks)} 个分块、{len(doc.sections)} 个章节")
@@ -98,15 +92,22 @@ def _index_document(
         print("  [Warning] 分块内容为空，跳过该文档")
         return False
 
-    chunk_texts = [chunk.text for chunk in chunks]
+    # Retrieval vectors are deliberately built from the semantic view; the
+    # stored chunk remains Markdown so citations and model context retain the
+    # original layout.
+    chunk_texts = [chunk.markdown_text or chunk.text for chunk in chunks]
+    index_texts = [chunk.index_text or chunk.text for chunk in chunks]
     section_texts = [section.navigation_text for section in doc.sections if section.navigation_text]
     print(f"  → 正在生成 {len(chunk_texts)} 个 Evidence 向量")
-    embeddings = embed_texts(chunk_texts)
+    embeddings = embed_texts(index_texts)
     section_embeddings = embed_texts(section_texts) if has_milvus and section_texts else []
 
     if has_milvus:
         # Section and Evidence use different collections and ID namespaces.
         assert section_milvus is not None
+        # Validate the target schema before replacing any live vectors.
+        evidence_milvus.init_collection(dim=len(embeddings[0]))
+        evidence_milvus.validate_chunk_schema()
         section_milvus.init_collection(dim=len(section_embeddings[0]))
         section_milvus.collection.delete(expr=f'doc_id == "{doc.doc_id}"')
         section_milvus.collection.flush()
@@ -136,6 +137,7 @@ def _index_document(
             titles=[doc.title] * len(chunks),
             spaces=[doc.space] * len(chunks),
             doc_types=[doc.doc_type] * len(chunks),
+            **provenance_columns(chunks),
         )
 
     # The active JSON projection is switched only after all enabled indexes succeed.
@@ -170,6 +172,8 @@ def auto_process_raws(
     milvus_port: str = "19530",
     chunk_size: int = 500,
     overlap: int = 100,
+    force: bool = False,
+    strict: bool = False,
 ) -> None:
     """自动扫描新增/修改文件并进行增量入库"""
     # 确保必要目录存在
@@ -193,12 +197,14 @@ def auto_process_raws(
         if Document.generate_doc_id(os.path.abspath(path)) not in withdrawn_ids
     ]
     if not raw_files and not retractions:
+        if strict:
+            raise RuntimeError("No active sources available for strict reindex")
         print(f" [Info] 未在 {RAWS_DIR} 下找到任何支持的原始文件（支持格式: {supported_extensions()}）。")
         print(f" [Tip] 请将需要解析的文件放入该目录中。")
         return
         
     print(f" [Scan] 共扫描到 {len(raw_files)} 个支持的文件")
-    files_to_process = get_new_or_modified_files(raw_files)
+    files_to_process = raw_files if force else get_new_or_modified_files(raw_files)
     
     if not files_to_process and not retractions:
         print(" [Finish] 所有文件均已是最新状态，无需处理！")
@@ -226,6 +232,8 @@ def auto_process_raws(
         has_milvus = True
         print(" [Milvus] 成功连接到 Milvus 向量库")
     except Exception as e:
+        if strict:
+            raise
         print(f" [Warning] 无法连接到 Milvus 服务（{e}）。将跳过向量库写入，仅生成 JSON 元数据和 BM25 索引。")
         
     processed_count = 0
@@ -246,23 +254,32 @@ def auto_process_raws(
                 section_milvus.delete_document_chunks(retraction.document_id)
             retracted.append(retraction)
         except Exception as exc:
+            if strict:
+                raise
             print(f" [Error] 文档 {retraction.document_id} 的 Milvus 清理失败: {exc}")
     
     for i, file_path in enumerate(files_to_process, 1):
         print(f"\n [Ingest] [{i}/{len(files_to_process)}] 正在处理: {file_path}")
         try:
             docs = parse_file(file_path)
+            if strict and not docs:
+                raise RuntimeError("Parser returned no documents during strict reindex")
             print(f"  → 解析完成，共 {len(docs)} 个文档")
             for doc in docs:
-                if _index_document(
+                indexed = _index_document(
                     doc, chunk_size=chunk_size, overlap=overlap,
                     evidence_milvus=milvus, section_milvus=section_milvus,
                     has_milvus=has_milvus,
-                ):
+                )
+                if strict and not indexed:
+                    raise RuntimeError("Document produced no chunks during strict reindex")
+                if indexed:
                     processed_count += 1
                     processed_ids.append(doc.doc_id)
             
         except Exception as e:
+            if strict:
+                raise
             print(f"  [Error] 处理文件时发生错误: {file_path}，错误详情: {e}")
             
     # 6. 重建全量 BM25 关键词索引
@@ -296,6 +313,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="一键增量解析入库脚本，扫描 data-persistence/data/raws 下的新增/修改文件并处理入库。"
     )
+    parser.add_argument("--force", action="store_true", help="Reparse unchanged source files")
     parser.add_argument("--chunk-size", type=int, default=500, help="分块大小（字符数，默认 500）")
     parser.add_argument("--overlap", type=int, default=100, help="分块重叠（字符数，默认 100）")
     parser.add_argument("--milvus-host", default="localhost", help="Milvus 服务地址")
@@ -307,4 +325,5 @@ if __name__ == "__main__":
         milvus_port=args.milvus_port,
         chunk_size=args.chunk_size,
         overlap=args.overlap,
+        force=args.force,
     )

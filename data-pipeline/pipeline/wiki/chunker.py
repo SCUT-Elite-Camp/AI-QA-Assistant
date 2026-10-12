@@ -231,6 +231,10 @@ def build_wiki_chunks(
         pending_length = 0
 
     for evidence in document.chunks:
+        # Row views repeat facts from the full table and are not literal
+        # source spans. Wiki understanding consumes the original table only.
+        if evidence.chunk_type == "table_row":
+            continue
         if not evidence.text.strip():
             continue
         section = section_for_evidence(document, evidence)
@@ -324,6 +328,8 @@ def build_wiki_chunks(
             for position in range(span.evidence_start, span.evidence_end):
                 covered[span.evidence_id][position] += 1
     for evidence in document.chunks:
+        if evidence.chunk_type == "table_row":
+            continue
         if not evidence.text.strip():
             continue
         section = section_for_evidence(document, evidence)

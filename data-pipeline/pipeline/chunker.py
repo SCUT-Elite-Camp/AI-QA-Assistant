@@ -8,12 +8,52 @@
 
 import re
 
-from models.document import BlockType, Chunk, ContentBlock
+from models.document import BlockType, BoundingBox, Chunk, ContentBlock, PageRegion
 
 from .structure import select_section_heading_blocks
 
 
 _SENTENCE_END = re.compile(r"(?<=[.!?。！？；;])(?=\s|[^\w])|(?<=[。！？；])")
+
+
+def _index_text_from_markdown(value: str) -> str:
+    """Drop presentation-only Markdown syntax from retrieval text."""
+    lines: list[str] = []
+    for line in value.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            lines.append("")
+            continue
+        if re.fullmatch(r"\|?\s*:?-{3,}:?(\s*\|\s*:?-{3,}:?)*\s*\|?", stripped):
+            continue
+        stripped = re.sub(r"^#{1,6}\s+", "", stripped)
+        stripped = re.sub(r"^[-*+]\s+", "", stripped)
+        stripped = stripped.replace("**", "").replace("__", "").replace("`", "")
+        lines.append(stripped.strip("| "))
+    return "\n".join(lines).strip()
+
+
+def _page_regions(blocks: list[ContentBlock]) -> list[PageRegion]:
+    """Keep geometry separate per source page; never union cross-page boxes."""
+    grouped: dict[int, list[ContentBlock]] = {}
+    for block in blocks:
+        if block.page_number is not None and block.bbox is not None:
+            grouped.setdefault(block.page_number, []).append(block)
+    regions: list[PageRegion] = []
+    for page_number, page_blocks in sorted(grouped.items()):
+        boxes = [block.bbox for block in page_blocks if block.bbox is not None]
+        regions.append(PageRegion(
+            page_number=page_number,
+            bbox=BoundingBox(
+                x0=min(box.x0 for box in boxes), y0=min(box.y0 for box in boxes),
+                x1=max(box.x1 for box in boxes), y1=max(box.y1 for box in boxes),
+            ),
+            block_ids=[block.block_id for block in page_blocks],
+            table_ids=[block.table.table_id for block in page_blocks if block.table is not None],
+            sources=[block.source for block in page_blocks],
+            confidence=min(block.confidence for block in page_blocks),
+        ))
+    return regions
 
 
 def split_prose_at_boundaries(text: str, max_chars: int) -> list[str]:
@@ -136,11 +176,13 @@ def chunk_from_blocks(
 
     if not rendered_blocks:
         return []
+    blocks_by_index = {index: block for index, block, _ in rendered_blocks}
 
     chunks: list[Chunk] = []
     buffer: list[str] = []    # 当前累积的块文本列表
     buffer_indices: list[int] = []
     buffer_len = 0            # 当前缓冲区的总字符数
+    overlap_indices: list[int] = []
     heading_stack: list[tuple[int, str]] = []
     current_section_path: list[str] = []
 
@@ -149,7 +191,7 @@ def chunk_from_blocks(
 
     def _flush(prefix: str = "") -> str:
         """将当前缓冲 flush 为一个 chunk，返回尾部 overlap 文本"""
-        nonlocal buffer, buffer_indices, buffer_len
+        nonlocal buffer, buffer_indices, buffer_len, overlap_indices
         if not buffer:
             return prefix or ""
         if _heading_only_buffer():
@@ -159,18 +201,43 @@ def chunk_from_blocks(
             return ""
         body = "\n\n".join(buffer)
         full_text = (prefix + "\n\n" + body) if prefix else body
+        source_indices = list(dict.fromkeys([*overlap_indices, *buffer_indices]))
+        source_blocks = [blocks_by_index[index] for index in source_indices if index in blocks_by_index]
+        source_pages = sorted({block.page_number for block in source_blocks if block.page_number is not None})
+        sources = list(dict.fromkeys(block.source for block in source_blocks if block.source))
+        block_ids = [block.block_id for block in source_blocks if block.block_id]
         chunk = Chunk(
             index=len(chunks),
             text=full_text,
+            index_text=_index_text_from_markdown(full_text),
+            markdown_text=full_text,
             chunk_id=f"{doc_id}_chunk_{len(chunks)}",
             section_path=list(current_section_path),
-            block_start=min(buffer_indices) if buffer_indices else None,
-            block_end=max(buffer_indices) if buffer_indices else None,
+            block_start=min(source_indices) if source_indices else None,
+            block_end=max(source_indices) if source_indices else None,
             overlap_prefix_length=len(prefix) + 2 if prefix else 0,
+            block_id=block_ids[0] if len(block_ids) == 1 else "",
+            source=sources[0] if sources else "native",
+            source_pages=source_pages,
+            page_number=source_pages[0] if len(source_pages) == 1 else None,
+            page_regions=_page_regions(source_blocks),
+            metadata={
+                "block_ids": block_ids,
+                "sources": sources,
+                "confidence": min((block.confidence for block in source_blocks), default=1.0),
+            },
         )
         chunks.append(chunk)
         # 计算重叠尾部
-        tail = full_text[-overlap:] if len(full_text) > overlap else full_text
+        tail = full_text[-overlap:] if overlap > 0 else ""
+        overlap_indices = []
+        remaining = len(tail)
+        for index, text in reversed(list(zip(buffer_indices, buffer))):
+            if remaining <= 0:
+                break
+            overlap_indices.append(index)
+            remaining -= len(text) + 2
+        overlap_indices.reverse()
         buffer = []
         buffer_indices = []
         buffer_len = 0
@@ -184,6 +251,7 @@ def chunk_from_blocks(
             # overlap from its previous sibling into the new Evidence chunk.
             _flush(overlap_prefix)
             overlap_prefix = ""
+            overlap_indices = []
             level = (
                 max(1, min(6, int(content_block.level or 1)))
                 if content_block.block_type == BlockType.HEADING else 1
@@ -191,6 +259,63 @@ def chunk_from_blocks(
             heading_stack = [entry for entry in heading_stack if entry[0] < level]
             heading_stack.append((level, content_block.text.strip()))
             current_section_path = [title for _, title in heading_stack]
+
+        if content_block.block_type == BlockType.TABLE and content_block.table is not None:
+            # A scored table is both a source object and a set of row-level
+            # retrieval facts.  Keep uncertain review candidates out of the
+            # index: PDFParser retains their native text instead.
+            if content_block.table.acceptance != "accepted":
+                continue
+            overlap_prefix = _flush(overlap_prefix)
+            chunks.append(Chunk(
+                index=len(chunks),
+                text=bt,
+                index_text=content_block.to_index_text(),
+                markdown_text=bt,
+                chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+                section_path=list(current_section_path),
+                block_start=block_index,
+                block_end=block_index,
+                chunk_type="table",
+                table_id=content_block.table.table_id,
+                page_regions=content_block.table.page_regions,
+            ))
+            prefix = f"表格：{content_block.table.caption}\n" if content_block.table.caption else ""
+            for row_text in content_block.table.to_row_chunks():
+                chunks.append(Chunk(
+                    index=len(chunks),
+                    text=prefix + row_text,
+                    index_text=prefix + row_text,
+                    markdown_text=prefix + row_text,
+                    chunk_id=f"{doc_id}_chunk_{len(chunks)}",
+                    section_path=list(current_section_path),
+                    block_start=block_index,
+                    block_end=block_index,
+                    chunk_type="table_row",
+                    table_id=content_block.table.table_id,
+                    page_regions=content_block.table.page_regions,
+                ))
+            overlap_prefix = ""
+            continue
+
+        if content_block.block_type == BlockType.TABLE:
+            overlap_prefix = _flush(overlap_prefix)
+            legacy_regions = _page_regions([content_block])
+            chunks.append(Chunk(
+                index=len(chunks), text=bt,
+                index_text=content_block.to_index_text(), markdown_text=bt,
+                chunk_id=f"{doc_id}_chunk_{len(chunks)}", chunk_type="table",
+                section_path=list(current_section_path),
+                block_start=block_index, block_end=block_index,
+                block_id=content_block.block_id, page_number=content_block.page_number,
+                bbox=content_block.bbox, source="table",
+                source_pages=([content_block.page_number] if content_block.page_number else []),
+                page_regions=legacy_regions,
+                metadata={"block_ids": [content_block.block_id] if content_block.block_id else []},
+            ))
+            overlap_prefix = ""
+            overlap_indices = []
+            continue
 
         bt_len = len(bt)
         sep_len = 2 if buffer else 0  # "\n\n" 分隔符
@@ -210,6 +335,8 @@ def chunk_from_blocks(
                 chunks.append(Chunk(
                     index=len(chunks),
                     text=f"{heading_prefix}\n\n{bt}" if heading_prefix else bt,
+                    index_text=_index_text_from_markdown(f"{heading_prefix}\n\n{bt}" if heading_prefix else bt),
+                    markdown_text=f"{heading_prefix}\n\n{bt}" if heading_prefix else bt,
                     chunk_id=f"{doc_id}_chunk_{len(chunks)}",
                     section_path=list(current_section_path),
                     block_start=heading_start,
@@ -224,6 +351,11 @@ def chunk_from_blocks(
                         index=len(chunks),
                         text=(f"{heading_prefix}\n\n{part}"
                               if heading_prefix and part_index == 0 else part),
+                        index_text=_index_text_from_markdown(
+                            f"{heading_prefix}\n\n{part}" if heading_prefix and part_index == 0 else part
+                        ),
+                        markdown_text=(f"{heading_prefix}\n\n{part}"
+                                       if heading_prefix and part_index == 0 else part),
                         chunk_id=f"{doc_id}_chunk_{len(chunks)}",
                         section_path=list(current_section_path),
                         block_start=heading_start if heading_prefix and part_index == 0 else block_index,

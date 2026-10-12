@@ -1,0 +1,189 @@
+import sys
+from pathlib import Path
+
+
+PIPELINE_ROOT = Path(__file__).resolve().parents[1]
+if str(PIPELINE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_ROOT))
+
+from models.document import BoundingBox, BlockType, ContentBlock, TableArtifact, TableCell  # noqa: E402
+from pipeline.chunker import chunk_from_blocks  # noqa: E402
+
+
+def test_chunker_emits_table_and_header_aware_row_chunks():
+    artifact = TableArtifact(
+        table_id="sales",
+        caption="销售表",
+        cells=[
+            TableCell(row_index=0, column_index=0, text="地区", is_header=True),
+            TableCell(row_index=0, column_index=1, text="金额", is_header=True),
+            TableCell(row_index=1, column_index=0, text="华南"),
+            TableCell(row_index=1, column_index=1, text="120"),
+            TableCell(row_index=2, column_index=0, text="华东"),
+            TableCell(row_index=2, column_index=1, text="136"),
+        ],
+        row_count=3,
+        column_count=2,
+        header_row_count=1,
+        parser_name="test",
+        confidence=0.9,
+        acceptance="accepted",
+    )
+
+    chunks = chunk_from_blocks(
+        [ContentBlock(block_type=BlockType.TABLE, table=artifact)],
+        "document",
+    )
+
+    assert [chunk.chunk_type for chunk in chunks] == ["table", "table_row", "table_row"]
+    assert all(chunk.table_id == "sales" for chunk in chunks)
+    assert chunks[1].text == "表格：销售表\n地区: 华南 | 金额: 120"
+    assert chunks[2].text == "表格：销售表\n地区: 华东 | 金额: 136"
+
+
+def test_chunker_does_not_index_review_table_cells():
+    artifact = TableArtifact(
+        table_id="uncertain",
+        cells=[TableCell(row_index=0, column_index=0, text="possibly wrong")],
+        row_count=1,
+        column_count=1,
+        parser_name="ocr",
+        confidence=0.6,
+        acceptance="review",
+    )
+
+    chunks = chunk_from_blocks(
+        [ContentBlock(block_type=BlockType.TABLE, table=artifact)],
+        "document",
+    )
+
+    assert chunks == []
+
+
+def test_text_chunks_aggregate_same_page_boxes_and_cross_page_sources():
+    first = ContentBlock(block_type="paragraph", text="First source block", block_id="b1",
+                         page_number=1, bbox=BoundingBox(x0=1, y0=2, x1=10, y1=20))
+    second = ContentBlock(block_type="paragraph", text="Second source block", block_id="b2",
+                          page_number=1, bbox=BoundingBox(x0=2, y0=30, x1=11, y1=40))
+    same = chunk_from_blocks([first, second], "doc", overlap=0)[0]
+    assert same.page_number == 1 and same.source_pages == [1]
+    assert same.bbox == BoundingBox(x0=1, y0=2, x1=11, y1=40)
+    assert same.metadata["block_ids"] == ["b1", "b2"]
+    assert same.page_regions[0].page_number == 1
+    assert same.page_regions[0].bbox == BoundingBox(x0=1, y0=2, x1=11, y1=40)
+    assert same.page_regions[0].block_ids == ["b1", "b2"]
+    cross = chunk_from_blocks([first, second.model_copy(update={"page_number": 2})], "doc", overlap=0)[0]
+    assert cross.page_number is None and cross.bbox is None
+    assert cross.source_pages == [1, 2]
+    assert [region.page_number for region in cross.page_regions] == [1, 2]
+    assert cross.page_regions[1].block_ids == ["b2"]
+
+
+def test_regionless_block_keeps_page_and_block_provenance_without_fake_geometry():
+    chunk = chunk_from_blocks([
+        ContentBlock(
+            block_type="paragraph",
+            text="Located",
+            block_id="b1",
+            page_number=1,
+            bbox=BoundingBox(x0=1, y0=2, x1=10, y1=20),
+        ),
+        ContentBlock(block_type="paragraph", text="No box", block_id="b2", page_number=2),
+    ], "doc", overlap=0)[0]
+
+    assert chunk.source_pages == [1, 2]
+    assert [region.page_number for region in chunk.page_regions] == [1]
+    assert chunk.metadata["block_ids"] == ["b1", "b2"]
+
+
+def test_overlap_tracks_sources_and_zero_overlap_repeats_no_text():
+    blocks = [ContentBlock(block_type="paragraph", text="first source", block_id="b1", page_number=1),
+              ContentBlock(block_type="paragraph", text="second source", block_id="b2", page_number=2)]
+    chunks = chunk_from_blocks(blocks, "doc", chunk_size=15, overlap=0)
+    assert [c.text for c in chunks] == ["first source", "second source"]
+    assert [c.page_number for c in chunks] == [1, 2]
+    overlapping = chunk_from_blocks(blocks, "doc", chunk_size=15, overlap=6)
+    assert overlapping[1].text == "source\n\nsecond source"
+    assert overlapping[1].source_pages == [1, 2]
+    assert overlapping[1].page_number is None
+
+
+def test_overlap_provenance_includes_only_blocks_contributing_to_retained_tail():
+    blocks = [
+        ContentBlock(
+            block_type="paragraph", text="page1-aaaa", block_id="b1", page_number=1,
+            bbox=BoundingBox(x0=1, y0=1, x1=10, y1=10),
+        ),
+        ContentBlock(
+            block_type="paragraph", text="page2-bbbb", block_id="b2", page_number=2,
+            bbox=BoundingBox(x0=2, y0=2, x1=11, y1=11),
+        ),
+        ContentBlock(
+            block_type="paragraph", text="page3-cccc", block_id="b3", page_number=3,
+            bbox=BoundingBox(x0=3, y0=3, x1=12, y1=12),
+        ),
+    ]
+
+    chunks = chunk_from_blocks(blocks, "doc", chunk_size=10, overlap=4)
+
+    assert chunks[2].text == "bbbb\n\npage3-cccc"
+    assert chunks[2].source_pages == [2, 3]
+    assert chunks[2].metadata["block_ids"] == ["b2", "b3"]
+    assert [region.page_number for region in chunks[2].page_regions] == [2, 3]
+    assert [region.block_ids for region in chunks[2].page_regions] == [["b2"], ["b3"]]
+
+
+def test_mixed_extraction_sources_are_preserved_in_text_chunk_metadata():
+    chunks = chunk_from_blocks([
+        ContentBlock(block_type="paragraph", text="Native text", block_id="native", source="native"),
+        ContentBlock(block_type="paragraph", text="OCR text", block_id="ocr", source="ocr"),
+    ], "doc", overlap=0)
+
+    assert chunks[0].source == "native"
+    assert chunks[0].metadata["sources"] == ["native", "ocr"]
+
+
+def test_legacy_table_blocks_remain_first_class_tables():
+    chunks = chunk_from_blocks([ContentBlock(block_type="table", headers=["Name"], rows=[["East"]])], "doc")
+    assert chunks[0].chunk_type == "table"
+    assert "| East |" in chunks[0].text
+
+
+def test_chunk_boundaries_use_plain_text_while_markdown_is_rendered_afterward():
+    chunks = chunk_from_blocks([
+        ContentBlock(block_type="heading", level=1, text="Title"),
+        ContentBlock(block_type="paragraph", text="Body", bold=True),
+    ], "doc", chunk_size=11, overlap=0)
+
+    assert len(chunks) == 1
+    assert chunks[0].index_text == "Title\n\nBody"
+    assert chunks[0].markdown_text == "# Title\n\n**Body**"
+    assert chunks[0].text == chunks[0].markdown_text
+
+
+def test_table_chunk_has_plain_embedding_text_and_markdown_display_text():
+    artifact = TableArtifact(
+        table_id="sales",
+        caption="销售表",
+        cells=[
+            TableCell(row_index=0, column_index=0, text="地区", is_header=True),
+            TableCell(row_index=0, column_index=1, text="金额", is_header=True),
+            TableCell(row_index=1, column_index=0, text="华南"),
+            TableCell(row_index=1, column_index=1, text="120"),
+        ],
+        row_count=2,
+        column_count=2,
+        header_row_count=1,
+        parser_name="test",
+        confidence=0.9,
+        acceptance="accepted",
+    )
+
+    table_chunk = chunk_from_blocks(
+        [ContentBlock(block_type=BlockType.TABLE, table=artifact)],
+        "document",
+    )[0]
+
+    assert table_chunk.index_text == "销售表\n地区: 华南 | 金额: 120"
+    assert table_chunk.markdown_text.startswith("| 地区 | 金额 |")
+    assert table_chunk.text == table_chunk.markdown_text

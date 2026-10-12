@@ -1,0 +1,6 @@
+# Optional scanned-document OCR and table fallback (CPU runtime).
+# General page OCR uses PyMuPDF from the base requirements and additionally
+# needs a system Tesseract installation with chi_sim and eng language data.
+# Install the packages below only on workers that need table-structure recovery.
+paddleocr>=3.0,<4.0
+paddlepaddle>=3.0,<4.0
