@@ -327,10 +327,10 @@ class MilvusStore:
 
     def search_similar(self, query_vector: list, top_k: int = 5, doc_ids_filter: list = None, collection_name: str = "doc_chunks"):
         self.connect()
-  
+
         dim = len(query_vector)
         self.init_collection(collection_name, dim=dim)
-            
+
         expr = None
         if doc_ids_filter:
             ids_str = ", ".join([f"'{did}'" for did in doc_ids_filter])
