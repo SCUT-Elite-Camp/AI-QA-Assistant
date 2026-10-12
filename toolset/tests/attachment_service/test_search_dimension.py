@@ -10,8 +10,9 @@ import pytest
 
 @pytest.mark.parametrize("dimension", [384, 1024])
 def test_search_schemas_follow_configured_dimension(tmp_path, dimension):
+    repo_root = Path(__file__).resolve().parents[3]
     environment = {**os.environ, "LOCAL_EMBEDDING_MODEL_DIM": str(dimension),
-        "PYTHONPATH": str(Path(__file__).resolve().parents[2]),
+        "PYTHONPATH": f"{Path(__file__).resolve().parents[2]}{os.pathsep}{repo_root}",
         "ATTACHMENT_INTERNAL_SECRET": "test-only-secret",
         "ATTACHMENT_ENCRYPTION_KEY": base64.urlsafe_b64encode(b"d" * 32).decode(),
         "ATTACHMENT_DATA_DIR": str(tmp_path), "ATTACHMENT_VECTOR_INDEX_ENABLED": "false",

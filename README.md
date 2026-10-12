@@ -12,7 +12,7 @@ Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access
 | Agent API | `agent/` (loaded by root `app.py`) | FastAPI chat and retrieval orchestration | `http://localhost:8000` |
 | Tools and retrieval | `toolset/`, `data-pipeline/`, `shared_runtime/` | Tool implementations, ingestion, retrieval, and shared runtime code | Called by Agent |
 | Data persistence | `data-persistence/` | Topic and generated artifact storage | Used by Agent and tools |
-| Private ingestion | `attachment-service/` | Scanning, parsing, encrypted attachments, Personal Library versions and separate private vectors | `http://localhost:8200` |
+| Private ingestion | `toolset/attachment_service/` | Scanning, parsing, encrypted attachments, Personal Library versions and separate private vectors | `http://localhost:8200` |
 | Vector and cache services | `docker-compose.yml` | Milvus and its etcd/MinIO dependencies, plus Redis | `localhost:19530`, `localhost:6379` |
 
 The root `app.py` is a local development entry point that loads `agent/app.py` and adds the sibling code directories to Python's import path. Run it from the repository root so environment loading and path resolution use the expected project root.

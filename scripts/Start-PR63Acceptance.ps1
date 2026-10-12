@@ -46,7 +46,7 @@ $env:ALLOW_FAKE_ATTACHMENT_SCANNER = 'false'
 $env:PERSISTENT_MEMORY_ENABLED = 'true'
 $env:SESSION_FACT_ENABLED = 'true'
 $env:SESSION_COOKIE_SECURE = 'false'
-$env:PYTHONPATH = @($integrationRepo,(Join-Path $integrationRepo 'agent'),(Join-Path $integrationRepo 'data-pipeline'),(Join-Path $integrationRepo 'data-persistence'),(Join-Path $integrationRepo 'attachment-service'),(Join-Path $integrationRepo 'toolset')) -join ';'
+$env:PYTHONPATH = @($integrationRepo,(Join-Path $integrationRepo 'agent'),(Join-Path $integrationRepo 'data-pipeline'),(Join-Path $integrationRepo 'data-persistence'),(Join-Path $integrationRepo 'toolset')) -join ';'
 $env:AGENT_BASE_URL = 'http://127.0.0.1:8109'
 $env:ALLOW_DEV_LOGIN = 'true'
 $env:NODE_ENV = 'development'
@@ -67,7 +67,7 @@ if ($Start -or $WebOnly -or $AgentOnly -or $AttachmentOnly) {
     if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { throw "Port $port is already in use; no existing service will be stopped" }
   }
   if ($Start -or $AttachmentOnly) {
-    $attachment = Start-Process -FilePath $Python -ArgumentList @('-m','attachment_service') -WorkingDirectory (Join-Path $integrationRepo 'attachment-service') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runtimePath 'attachment.stdout.log') -RedirectStandardError (Join-Path $runtimePath 'attachment.stderr.log')
+    $attachment = Start-Process -FilePath $Python -ArgumentList @('-m','attachment_service') -WorkingDirectory (Join-Path $integrationRepo 'toolset') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runtimePath 'attachment.stdout.log') -RedirectStandardError (Join-Path $runtimePath 'attachment.stderr.log')
   }
   if ($Start -or $AgentOnly) {
     $agent = Start-Process -FilePath $Python -ArgumentList @('-m','uvicorn','app:app','--host','127.0.0.1','--port','8109') -WorkingDirectory (Join-Path $integrationRepo 'agent') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runtimePath 'agent.stdout.log') -RedirectStandardError (Join-Path $runtimePath 'agent.stderr.log')

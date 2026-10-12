@@ -134,7 +134,8 @@ def test_library_enabled_without_vector_index_fails_fast():
 
 
 def test_env_example_defines_personal_library_flag_once():
-    env_example = Path(__file__).resolve().parents[1] / ".env.example"
+    # .env.example is located at toolset root (or repository root)
+    env_example = Path(__file__).resolve().parents[2] / ".env.example"
     definitions = [
         line
         for line in env_example.read_text(encoding="utf-8").splitlines()

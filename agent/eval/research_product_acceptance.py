@@ -42,7 +42,7 @@ def runtime_code_fingerprint() -> str:
     """Include uncommitted production code; a base Git SHA alone is insufficient."""
     paths = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT)
     prefixes = ("agent/agent/", "agent/deep_research/", "frontend/server/", "frontend/src/", "frontend/shared/",
-                "toolset/tool_layer/", "toolset/retrieval/", "attachment-service/attachment_service/",
+                "toolset/tool_layer/", "toolset/retrieval/", "toolset/attachment_service/",
                 "data-persistence/data_persistence/", "data-persistence/storage/", "data-pipeline/pipeline/", "shared_runtime/")
     digest = hashlib.sha256()
     for name in sorted(set(paths.decode("utf-8").split("\0"))):
