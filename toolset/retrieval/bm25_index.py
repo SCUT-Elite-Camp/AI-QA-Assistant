@@ -9,6 +9,7 @@ from rank_bm25 import BM25Okapi
 from retrieval.english_analyzer import EnglishAnalyzer
 from data_persistence.documents import resolve_documents_dir
 from data_persistence.vector import matches_normalized_filters, normalize_filters
+from storage.document_store import load_document
 
 DOCS_DIR = str(resolve_documents_dir())
 
@@ -48,12 +49,16 @@ class BM25Index:
             if not fname.endswith(".json"):
                 continue
             doc_id = fname[:-5]
-            document_path = os.path.join(docs_dir, fname)
-            try:
-                with open(document_path, "r", encoding="utf-8") as handle:
-                    data = json.load(handle)
-            except (OSError, json.JSONDecodeError):
-                continue
+            # Prefer the store hook for compatibility with callers that supply
+            # a controlled projection; fall back to the requested directory.
+            data = load_document(doc_id)
+            if data is None:
+                document_path = os.path.join(docs_dir, fname)
+                try:
+                    with open(document_path, "r", encoding="utf-8") as handle:
+                        data = json.load(handle)
+                except (OSError, json.JSONDecodeError):
+                    continue
             if data.get("active_version", True) is not True:
                 continue
             for ch in data.get("chunks", []):

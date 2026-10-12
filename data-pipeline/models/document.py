@@ -175,7 +175,12 @@ class TableArtifact(BaseModel):
         return self.to_matrix()[self.header_row_count :]
 
     def legacy_headers(self) -> list[str]:
-        return [" / ".join(part for part in column if part) for column in zip(*self.header_rows())] if self.header_row_count else []
+        if not self.header_row_count:
+            return []
+        return [
+            " / ".join(dict.fromkeys(part for part in column if part))
+            for column in zip(*self.header_rows())
+        ]
 
     def to_markdown(self) -> str:
         return _table_to_markdown(self.body_rows(), self.legacy_headers())
@@ -290,7 +295,7 @@ class ContentBlock(BaseModel):
 
 def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
     """将表格行和可选的表头转为 GitHub 风格 Markdown 表格"""
-    if not rows:
+    if not rows and not headers:
         return ""
 
     # 确保列数一致
@@ -308,10 +313,10 @@ def _table_to_markdown(rows: list[list[str]], headers: list[str]) -> str:
         padded_headers = [""] * col_count
 
     lines: list[str] = []
-    lines.append("| " + " | ".join(str(c) for c in padded_headers) + " |")
+    lines.append("| " + " | ".join(_escape_markdown_cell(c) for c in padded_headers) + " |")
     lines.append("| " + " | ".join(["---"] * col_count) + " |")
     for row in padded_rows:
-        lines.append("| " + " | ".join(str(c) for c in row) + " |")
+        lines.append("| " + " | ".join(_escape_markdown_cell(c) for c in row) + " |")
     return "\n".join(lines)
 
 

@@ -4,8 +4,13 @@ from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# The agent component also has a ``scripts`` package.  Make the repository
+# root authoritative for these maintenance-command tests even when pytest has
+# already collected Agent/Pipeline tests in the same interpreter.
+while str(ROOT) in sys.path:
+    sys.path.remove(str(ROOT))
+sys.path.insert(0, str(ROOT))
+sys.modules.pop("scripts", None)
 
 from scripts.safe_reindex import safe_reindex  # noqa: E402
 
