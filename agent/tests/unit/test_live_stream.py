@@ -7,6 +7,7 @@ import pytest
 from agent.answer.generator import AnswerGenerator
 from agent.service.access_guard import CURRENT_ACCESS_GUARD
 from agent.streaming.live import CURRENT_STREAM_SINK, emit_model_event, threaded_events
+from agent.schemas.query_plan import QueryPlan
 
 
 pytestmark = pytest.mark.no_storage
@@ -35,7 +36,7 @@ def test_model_tokens_arrive_before_completion_and_keep_request_context(monkeypa
         guard_token = CURRENT_ACCESS_GUARD.set(guard)
         sink_token = CURRENT_STREAM_SINK.set(send)
         try:
-            result = AnswerGenerator(complex_llm=Model()).chat([], query_plan=None,
+            result = AnswerGenerator(complex_llm=Model()).chat([], query_plan=QueryPlan(original_query='Question', standalone_query='Question'),
                 retrieval_attempts=0, trace_id='stream', preference='complex')
             send('done', result)
         finally:

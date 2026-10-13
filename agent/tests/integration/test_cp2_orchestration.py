@@ -4,7 +4,6 @@ from typing import Any
 
 from agent.agent import Agent
 
-from agent.memory import InMemoryConversationMemory
 
 from agent.policy import ChatRoute
 
@@ -472,8 +471,7 @@ def test_persistent_context_is_used_without_legacy_short_window_double_write(
 ) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
     llm = PipelineLLM()
-    memory = InMemoryConversationMemory()
-    agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
+    agent = Agent(llm=llm, tools=[RecordingSearchTool()])
 
     response, decision = agent.chat_with_memory(
         _persistent_request("What did we discuss?")
@@ -488,15 +486,15 @@ def test_persistent_context_is_used_without_legacy_short_window_double_write(
         "system",
         "assistant",
     ]
-    runner_messages = next(call["messages"] for call in llm.calls if call["tools"])
+    runner_messages = next(call["messages"] for call in llm.calls if any('Original question: What did we discuss?' in message.get('content', '') for message in call['messages']))
     assert [message["role"] for message in runner_messages[:4]] == [
         "system",
         "system",
         "assistant",
         "user",
     ]
-    assert runner_messages[-1]["content"] == "What did we discuss?"
-    assert memory.get_messages("persistent-session") == []
+    assert 'Original question: What did we discuss?' in runner_messages[-1]["content"]
+    assert not hasattr(agent, 'memory')
 
 
 
@@ -506,8 +504,7 @@ def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
     monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = PipelineLLM()
-    memory = InMemoryConversationMemory()
-    agent = Agent(llm=llm, tools=[RecordingSearchTool()], memory=memory)
+    agent = Agent(llm=llm, tools=[RecordingSearchTool()])
 
     response, decision = agent.chat_with_memory(
         _persistent_request(
@@ -529,7 +526,7 @@ def test_explicit_persistent_fact_recall_bypasses_model_and_legacy_short_window(
     assert decision.recall is not None and decision.recall.handled is True
     assert decision.fact_proposals == []
     assert llm.calls == []
-    assert memory.get_messages("persistent-session") == []
+    assert not hasattr(agent, 'memory')
     assert agent.last_orchestration is not None
     assert agent.last_orchestration.chat_route.route == ChatRoute.L0_DIRECT
     assert agent.last_orchestration.chat_route.research_entry_allowed is False
@@ -544,7 +541,6 @@ def test_persistent_success_returns_one_explicit_fact_proposal_only_when_gated_o
     agent = Agent(
         llm=PipelineLLM(),
         tools=[RecordingSearchTool()],
-        memory=InMemoryConversationMemory(),
     )
 
     response, decision = agent.chat_with_memory(
@@ -578,7 +574,6 @@ def test_fact_proposal_policy_failure_is_non_blocking_and_does_not_create_a_cand
     agent = Agent(
         llm=PipelineLLM(),
         tools=[RecordingSearchTool()],
-        memory=InMemoryConversationMemory(),
         fact_proposal_policy=RaisingFactProposalPolicy(),  # type: ignore[arg-type]
     )
 

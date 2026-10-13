@@ -289,6 +289,10 @@ const statusTitle = computed(() => {
                         @revise="revise"
                       />
 
+                      <p v-else-if="job.status === 'awaiting_approval' && !plan" role="status" class="text-sm text-muted">
+                        Loading research plan…
+                      </p>
+
                       <div
                         v-else-if="['ready', 'researching', 'synthesizing'].includes(job.status) && progress"
                         class="py-2"

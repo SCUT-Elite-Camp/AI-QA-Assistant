@@ -202,7 +202,7 @@ async function handleTriggerSummarize() {
 
   // 2. Gracefully exit settings modal
   showSettingsModal.value = false
-  toast.add({ title: 'Summarization submitted', description: 'Data persistence layer is synthesizing topic cognition...', color: 'info' })
+  toast.add({ title: 'Updating topic', description: 'Generating a summary from accessible conversations.', color: 'info' })
 
   // 3. Start polling & trigger background summarizer call
   checkPolling()
@@ -213,7 +213,7 @@ async function handleTriggerSummarize() {
     })
     await fetchTopics()
   } catch (e: any) {
-    if (targetTopic) targetTopic.status = 'ready'
+    if (targetTopic) targetTopic.status = 'failed'
     toast.add({ title: 'Summarization failed', description: e.message, color: 'error' })
   }
 }
@@ -266,7 +266,7 @@ async function handleFileUpload(event: Event) {
     })
     toast.add({
       title: 'Document uploaded successfully',
-      description: `Path: data-persistence/data/topics/${selectedTopic.value.id}/documents/${file.name}`,
+      description: `${file.name} is ready to use in this topic.`,
       color: 'success'
     })
     // Refresh doc list
@@ -316,6 +316,7 @@ async function handleDeleteTopic(topic: any) {
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800/80">
       <div>
         <div class="flex items-center gap-2.5">
+          <UDashboardSidebarToggle />
           <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center font-bold">
             <UIcon name="i-heroicons-squares-2x2" class="w-5 h-5" />
           </div>
@@ -329,7 +330,7 @@ async function handleDeleteTopic(topic: any) {
           icon="i-heroicons-magnifying-glass"
           placeholder="Search..."
           size="sm"
-          class="w-56"
+          class="min-w-0 flex-1 md:w-56 md:flex-none"
         />
         <UButton
           color="neutral"
@@ -386,6 +387,7 @@ async function handleDeleteTopic(topic: any) {
             <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 transition-colors truncate">
               {{ topic.title }}
             </h3>
+            <p v-if="topic.status === 'failed'" role="status" class="mt-1 text-xs text-muted">Summary unavailable. Check source access or retry in settings.</p>
 
             <!-- Horizontal Document Pills on Topic Cards -->
             <div v-if="topic.documents && topic.documents.length" class="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -418,6 +420,7 @@ async function handleDeleteTopic(topic: any) {
               color="neutral"
               variant="ghost"
               icon="i-heroicons-folder-open"
+              :aria-label="`View documents for ${topic.title}`"
               size="sm"
               class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
               @click="openDocsModal(topic)"
@@ -429,6 +432,7 @@ async function handleDeleteTopic(topic: any) {
               color="neutral"
               variant="ghost"
               icon="i-heroicons-pencil"
+              :aria-label="`Edit ${topic.title}`"
               size="sm"
               class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
               @click="openSettingsModal(topic)"
@@ -447,6 +451,7 @@ async function handleDeleteTopic(topic: any) {
               color="neutral"
               variant="ghost"
               icon="i-heroicons-ellipsis-vertical"
+              :aria-label="`Actions for ${topic.title}`"
               size="sm"
               class="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
             />
@@ -459,10 +464,10 @@ async function handleDeleteTopic(topic: any) {
     <!-- Gemini Gems Wide 2-Column Horizontal Modal (Landscape Rectangle) -->
     <UModal
       v-model:open="showSettingsModal"
-      :ui="{ content: 'sm:max-w-6xl w-full sm:w-[1120px] rounded-3xl' }"
+      :ui="{ content: 'w-[calc(100vw-2rem)] max-w-6xl sm:max-w-6xl rounded-3xl' }"
     >
       <template #content>
-        <div v-if="selectedTopic" class="p-8 space-y-6 max-h-[720px] w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-2xl font-sans">
+        <div v-if="selectedTopic" class="p-4 sm:p-6 space-y-6 max-h-[85dvh] w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 rounded-3xl overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-2xl font-sans">
 
           <!-- Back Header & Avatar Title -->
           <div class="flex items-center justify-between pb-5 border-b border-zinc-200 dark:border-zinc-800">
@@ -471,6 +476,7 @@ async function handleDeleteTopic(topic: any) {
                 color="neutral"
                 variant="ghost"
                 icon="i-heroicons-chevron-left"
+                aria-label="Close topic settings"
                 size="sm"
                 class="rounded-full text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
                 @click="showSettingsModal = false"
@@ -484,7 +490,7 @@ async function handleDeleteTopic(topic: any) {
           </div>
 
           <!-- 2-Column Horizontal Grid Container (Strict Side-by-Side Flow) -->
-          <div class="grid grid-cols-2 gap-8 items-start">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
 
             <!-- Left Column: 基本信息 & 策略设置 -->
             <div class="space-y-6">
@@ -630,7 +636,7 @@ async function handleDeleteTopic(topic: any) {
           </div>
 
           <!-- Bottom Action Buttons -->
-          <div class="flex items-center justify-between pt-6 border-t border-zinc-200 dark:border-zinc-800">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-6 border-t border-zinc-200 dark:border-zinc-800">
             <UButton
               color="error"
               variant="ghost"
@@ -640,7 +646,7 @@ async function handleDeleteTopic(topic: any) {
               class="border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all font-medium rounded-lg px-3 py-1.5 cursor-pointer"
               @click="handleDeleteTopic(selectedTopic)"
             />
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <UButton
                 color="neutral"
                 variant="subtle"

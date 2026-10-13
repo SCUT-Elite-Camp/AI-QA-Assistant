@@ -251,7 +251,12 @@ describe('chat to Fact proposal lifecycle', () => {
     expect(mocks.appendMessage).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       parts: expect.arrayContaining([{ type: 'text', text: 'Final checked answer' }]),
     }))
-    expect(write).toHaveBeenCalledWith(expect.objectContaining({ type: 'data-answer-preview', data: { messageId: 'message-1:assistant', reset: true } }))
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({ type: 'data-answer-preview', transient: true,
+      data: { messageId: 'message-1:assistant', phase: 'complete', text: 'Final checked answer' } }))
+    const completeIndex = write.mock.calls.findIndex(([part]) => part.type === 'data-answer-preview' && part.data.phase === 'complete')
+    const finalIndex = write.mock.calls.findIndex(([part]) => part.type === 'text-delta' && part.delta === 'Final checked answer')
+    expect(completeIndex).toBeLessThan(finalIndex)
+    expect(mocks.appendMessage.mock.invocationCallOrder[0]).toBeLessThan(write.mock.invocationCallOrder[completeIndex]!)
   })
 
   it('does not preview a token after current source verification fails', async () => {
@@ -406,7 +411,7 @@ describe('chat to Fact proposal lifecycle', () => {
     const write = vi.fn()
     await executeChatTurn(false, write)
 
-    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'no-context:message-1:assistant', delta: '当前可访问的知识库没有足够证据回答该问题。请补充资料或调整问题。' })
+    expect(write).toHaveBeenCalledWith({ type: 'text-delta', id: 'no-context:message-1:assistant', delta: expect.stringContaining('does not contain enough evidence') })
     expect(write).toHaveBeenCalledWith({ type: 'data-answer-status', data: { status: 'no_relevant_context', persisted: false } })
     expect(JSON.stringify(write.mock.calls)).not.toContain('An unverified model assertion')
     expect(write).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
@@ -432,6 +437,19 @@ describe('chat to Fact proposal lifecycle', () => {
       delta: expect.stringContaining('No answer is being released')
     }))
     expect(mocks.appendMessage).not.toHaveBeenCalled()
+  })
+
+  it('explains daily model quota without releasing provider details or saving an answer', async () => {
+    mocks.agentFetch.mockImplementationOnce(async () => createSseStreamResponse([
+      { event: 'error', data: { message: 'LLM API returned status 429: free-models-per-day; secret-provider-body' } },
+    ]))
+    const write = vi.fn()
+    await executeChatTurn(false, write)
+    expect(write).toHaveBeenCalledWith({ type: 'data-answer-status', data: { status: 'model_daily_quota', persisted: false } })
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({ type: 'text-delta', delta: expect.stringContaining('daily free quota') }))
+    expect(JSON.stringify(write.mock.calls)).not.toContain('secret-provider-body')
+    expect(mocks.appendMessage).not.toHaveBeenCalled()
+    expect(mocks.compactAfterSuccessfulAssistantPersistence).not.toHaveBeenCalled()
   })
 
   it('never logs the user query or a rejected Fact value', async () => {

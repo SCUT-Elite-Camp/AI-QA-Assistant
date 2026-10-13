@@ -1,5 +1,6 @@
 import json
 import os
+import math
 
 from pymilvus import Collection, CollectionSchema, DataType, FieldSchema, connections, utility
 
@@ -10,6 +11,14 @@ from storage.filtering import (
 )
 
 class MilvusStore:
+    @staticmethod
+    def load_timeout_seconds() -> float:
+        try:
+            value = float(os.getenv('MILVUS_LOAD_TIMEOUT_SECONDS', '10'))
+        except ValueError:
+            return 10.0
+        return value if math.isfinite(value) and value > 0 else 10.0
+
     PROVENANCE_FIELDS = (
         "chunk_type",
         "block_id",
@@ -133,7 +142,7 @@ class MilvusStore:
                     pass
 
         # 将 collection 加载至内存，保证可供检索
-        self.collection.load()
+        self.collection.load(timeout=self.load_timeout_seconds())
         return self.collection
 
     def validate_chunk_schema(self, collection_name: str | None = None) -> None:
@@ -185,7 +194,7 @@ class MilvusStore:
         if not utility.has_collection(collection_name):
             return None
         self.collection = Collection(collection_name)
-        self.collection.load()
+        self.collection.load(timeout=self.load_timeout_seconds())
         return self.collection
 
     def get_existing_collection(self, collection_name: str) -> Collection | None:

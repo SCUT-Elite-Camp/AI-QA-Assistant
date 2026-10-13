@@ -4,6 +4,7 @@ import { getValidatedRouterParams } from 'nitro/h3'
 import { useUserSession } from '../../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../../utils/drizzle'
 import { requireCsrf, requireTopicRole } from '../../../../utils/attachmentAuth'
+import { authoredProvenance } from '../../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
   const session = await useUserSession(event)
@@ -20,7 +21,8 @@ export default defineHandler(async (event) => {
   }
 
   const [newChat] = await db.insert(tables.chats).values({
-    title: '新对话',
+    title: 'New chat',
+    evidenceProvenance: authoredProvenance(),
     userId: session.data.user?.id || session.id!,
     visibility: 'private',
     topicId: id,

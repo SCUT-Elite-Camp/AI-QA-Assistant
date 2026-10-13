@@ -3,7 +3,6 @@ from typing import Any
 
 from agent.agent import Agent
 from agent.llm.base import BaseLLM
-from agent.memory import InMemoryConversationMemory
 from agent.schemas.chat import ChatRequest
 from agent.schemas.query_plan import QueryIntent, QueryPlan
 from toolset.tool_layer import BaseTool
@@ -102,7 +101,6 @@ def test_model_tool_arguments_cannot_switch_chat_to_research() -> None:
     agent = Agent(
         llm=ResearchModeToolCallLLM(),
         tools=[search],
-        memory=InMemoryConversationMemory(),
         query_understanding=FixedChatUnderstanding(),  # type: ignore[arg-type]
     )
 

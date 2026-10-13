@@ -88,7 +88,7 @@ class ContextResolver:
                 snapshot = None
 
             covered_to_sequence = snapshot.covered_to_sequence if snapshot else 0
-            facts = self._visible_session_facts(context.facts)
+            facts = self._visible_session_facts(context.facts, visibility_cutoff_ms=visibility_cutoff_ms)
             memory_brief = self._build_memory_brief(facts, snapshot.summary if snapshot else "")
             tail = self._select_tail(context, covered_to_sequence)
             model_history = self._build_model_history(memory_brief, tail, context)
@@ -120,10 +120,10 @@ class ContextResolver:
             return memory_context
         return PersistentMemoryContext.from_input(memory_context)
 
-    def _visible_session_facts(self, facts: list[PersistentFact]) -> list[PersistentFact]:
+    def _visible_session_facts(self, facts: list[PersistentFact], *, visibility_cutoff_ms: int | None = None) -> list[PersistentFact]:
         if not settings.SESSION_FACT_ENABLED:
             return []
-        now = self._now_ms()
+        now = self._now_ms() if visibility_cutoff_ms is None else visibility_cutoff_ms
         return [
             fact
             for fact in facts

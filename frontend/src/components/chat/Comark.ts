@@ -1,4 +1,5 @@
 import { defineComarkComponent } from '@comark/vue'
+import { defineComponent, h } from 'vue'
 import highlight from '@comark/vue/plugins/highlight'
 import html from '@shikijs/langs/html'
 import css from '@shikijs/langs/css'
@@ -20,8 +21,10 @@ import toml from '@shikijs/langs/toml'
 import graphql from '@shikijs/langs/graphql'
 import SourceLink from './SourceLink.vue'
 import CiteMark from './CiteMark.vue'
+import StreamGlyph from './StreamGlyph'
+import { createStreamTextFade } from '../../utils/streamTextFade'
 
-export default defineComarkComponent({
+const Markdown = defineComarkComponent({
   name: 'ChatComark',
   plugins: [
     highlight({
@@ -31,7 +34,20 @@ export default defineComarkComponent({
   components: {
     'source-link': SourceLink,
     'cite-mark': CiteMark,
+    'stream-glyph': StreamGlyph,
   },
   class: 'markdown-body comark-content *:first:mt-0 *:last:mb-0'
+})
+
+export default defineComponent({
+  name: 'ChatComark',
+  props: {
+    markdown: String,
+    streaming: Boolean,
+  },
+  setup(props, { attrs, slots }) {
+    const fade = createStreamTextFade(() => props.streaming)
+    return () => h(Markdown, { ...attrs, ...props, plugins: [fade] }, slots)
+  }
 })
 

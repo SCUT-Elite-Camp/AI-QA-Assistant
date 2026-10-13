@@ -195,6 +195,7 @@ class ModelResearchPlanner:
             "Tasks must name the concrete facts, comparisons, dates, versions, or uncertainties to verify; "
             "do not use generic phrases such as locate core facts or organize conclusions. "
             "Keep technical identifiers and source-language keywords in task questions "
+            "and refer to documents by their readable titles, never internal doc_id values, "
             "so local lexical search can find the relevant sections. Separate questions "
             "about summary counts, commit details, and changed files when all are requested. "
             "Cover every requested comparison and remaining limitation explicitly. "
@@ -236,6 +237,11 @@ class ModelResearchPlanner:
                 raise PlannerError("task must be an object")
             question = str(spec.get("question", "")).strip()
             purpose = str(spec.get("purpose", "")).strip()
+            # IDs are scope bindings, not useful lexical search terms or UI copy.
+            for document in manifest.documents:
+                pattern = r'(?<![\w-])' + re.escape(document.doc_id) + r'(?![\w-])'
+                question = re.sub(pattern, lambda _: document.title, question)
+                purpose = re.sub(pattern, lambda _: document.title, purpose)
             target = (
                 "Cited original excerpts answer this task, separating confirmed facts, "
                 "planned work and unknown status; source silence is not proof of absence."

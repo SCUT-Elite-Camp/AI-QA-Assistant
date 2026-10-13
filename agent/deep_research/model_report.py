@@ -29,6 +29,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         return bool(re.search(r"\bcompare dates\b|\btimeline\b|\bchronolog\w*\b|\bdevelopment over time\b", objective, re.I)
             or (re.search(r"\b(?:reconcile|compar\w*|contradict\w*|prove)\b", objective, re.I)
                 and re.search(r"\b(?:earlier|later|July|September|dated|snapshots?)\b", objective, re.I)
+                and re.search(r"\b(?:integration|dependenc\w*|demonstrat\w*|flow|availability|deployment|enabled|disabled)\b", objective, re.I)
                 and not re.search(r"\b(?:commits?|sprints?|counts?)\b", objective, re.I)))
 
     def __init__(self, *, api_base: str, api_key: str, model: str, timeout_seconds: int = 90) -> None:
@@ -1627,7 +1628,7 @@ class EvidenceReportSynthesizer(MarkdownReportRenderer):
         from datetime import date
         title = str(getattr(item, 'title', '') or '').replace('+', ' ')
         text = str(getattr(item, 'excerpt', '') or '')
-        event = re.search(r'\b(\d{4})\D+(\d{2})\D+(\d{2})\b', title)
+        event = re.search(r'\b(\d{4})\D+(\d{1,2})\D+(\d{1,2})\b', title)
         if event:
             try:
                 return date(*map(int, event.groups())).isoformat()

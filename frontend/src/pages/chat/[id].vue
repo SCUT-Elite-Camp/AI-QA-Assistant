@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, provide } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, provide, nextTick } from 'vue'
 import { useTextareaAutosize } from '@vueuse/core'
 import { $fetch } from 'ofetch'
 import { Chat } from '@ai-sdk/vue'
@@ -33,17 +33,23 @@ import HitRateDrawer from '../../components/chat/HitRateDrawer.vue'
 import ProgressIndicator from '../../components/chat/ProgressIndicator.vue'
 import ResearchModeNotice from '../../components/research/ResearchModeNotice.vue'
 import { useResearchLaunch } from '../../composables/useResearchLaunch'
+import { useAdaptiveComposer } from '../../composables/useAdaptiveComposer'
 import type { Vote } from '../../../server/utils/drizzle'
 import type { FactCategory } from '../../types/memory'
 import { extractAttachmentSelection } from '../../../shared/utils/attachmentParts'
 import { knowledgeBaseRetrievalEnabled } from '../../../shared/utils/chatRetrieval'
 import { chatExplorationMode } from '../../../shared/utils/chatExploration'
+import { createSmoothAnswer, type SmoothAnswerView } from '../../utils/smoothAnswer'
 
 const route = useRoute<'/chat/[id]'>()
 const router = useRouter()
 const toast = useToast()
 const showHitRateDrawer = ref(false)
-const liveAnswer = ref<{ messageId: string, text: string } | null>(null)
+const liveAnswer = ref<SmoothAnswerView | null>(null)
+const smoothAnswer = createSmoothAnswer({
+  onUpdate: view => { liveAnswer.value = view },
+  instant: () => document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+})
 const isWeightModeSaving = ref(false)
 const { launchResearch, researchLaunchError } = useResearchLaunch()
 
@@ -155,7 +161,8 @@ if (isOwner.value) {
   }).catch(() => {})
 }
 
-const { textarea: textareaRef, input } = useTextareaAutosize({ input: '' })
+const { textarea: textareaRef, input, triggerResize } = useTextareaAutosize({ input: '' })
+const composerRoot = ref<HTMLElement | null>(null)
 const isComposing = ref(false)
 
 function onKeydown(e: KeyboardEvent) {
@@ -194,7 +201,7 @@ const greeting = computed(() => {
 
 const visibleMessages = computed(() => {
   return chat.messages?.filter(m => m.role === 'user' || m.role === 'assistant').map(message => {
-    if (!liveAnswer.value || message.id !== liveAnswer.value.messageId || !liveAnswer.value.text) return message
+    if (!liveAnswer.value || message.id !== liveAnswer.value.messageId) return message
     return { ...message, parts: [...message.parts.filter(part => part.type !== 'text'),
       { type: 'text' as const, text: liveAnswer.value.text, state: 'streaming' as const }] }
   }) || []
@@ -235,10 +242,11 @@ const chat = new Chat({
   }),
   onData: (dataPart) => {
     if (dataPart.type === 'data-answer-preview') {
-      const value = dataPart.data as { messageId: string, delta?: string, reset?: boolean }
-      if (value.reset) liveAnswer.value = null
-      else liveAnswer.value = { messageId: value.messageId,
-        text: (liveAnswer.value?.messageId === value.messageId ? liveAnswer.value.text : '') + (value.delta || '') }
+      const value = dataPart.data as { messageId: string, delta?: string, reset?: boolean, phase?: 'start' | 'complete', text?: string }
+      if (value.phase === 'complete') smoothAnswer.finish(value.messageId, value.text || '')
+      else if (value.phase === 'start') smoothAnswer.begin(value.messageId)
+      else if (value.reset) smoothAnswer.cancel()
+      else smoothAnswer.append(value.messageId, value.delta || '')
     }
     if (dataPart.type === 'data-chat-title') {
       fetchChats()
@@ -251,7 +259,8 @@ const chat = new Chat({
     }
   },
   onFinish: ({ message, isAbort, isDisconnect, isError }) => {
-    liveAnswer.value = null
+    if (isAbort || isDisconnect || isError) smoothAnswer.cancel()
+    else smoothAnswer.commit(message.id)
     if (hasPendingTrustedMemoryRecall.value && !isAbort && !isDisconnect && !isError && message.role === 'assistant') {
       if (!memoryRecallMessageIds.value.includes(message.id)) {
         memoryRecallMessageIds.value = [...memoryRecallMessageIds.value, message.id]
@@ -263,6 +272,7 @@ const chat = new Chat({
     }
   },
   onError(error) {
+    smoothAnswer.cancel()
     let message = error.message
     if (typeof message === 'string' && message[0] === '{') {
       try {
@@ -280,12 +290,23 @@ const chat = new Chat({
   },
 })
 
-provide('is-chat-streaming', computed(() => chat.status === 'streaming'))
+const isResponding = computed(() => chat.status === 'streaming' || chat.status === 'submitted' || !!liveAnswer.value?.pending)
+const displayStatus = computed(() => chat.status === 'ready' && liveAnswer.value?.pending ? 'streaming' : chat.status)
+provide('is-chat-streaming', isResponding)
 
-void textareaRef
+function stopResponse() {
+  if (smoothAnswer.flushFinal()) return
+  smoothAnswer.cancel()
+  chat.stop()
+}
+
+const multiline = useAdaptiveComposer(input, textareaRef, composerRoot, [deepResearchMode, currentWeightMode])
+const expandedComposer = computed(() => multiline.value || attachmentIds.value.length > 0)
+watch(expandedComposer, async () => { await nextTick(); triggerResize() }, { flush: 'post' })
 
 async function handleSubmit(e: Event) {
   e.preventDefault()
+  if (isWeightModeSaving.value || isResponding.value) return
   if (deepResearchMode.value) {
     if (input.value.trim()) {
       const launched = await launchResearch(input.value.trim())
@@ -293,7 +314,6 @@ async function handleSubmit(e: Event) {
     }
     return
   }
-  if (isWeightModeSaving.value || chat.status === 'streaming') return
   if (attachmentTray.value?.hasBlockingAttachments()) {
     toast.add({
       description: 'Please wait for attachments to finish processing; low confidence items require confirmation before sending.',
@@ -332,7 +352,7 @@ function cancelEdit() {
 }
 
 async function saveEdit(message: UIMessage, text: string) {
-  if (isWeightModeSaving.value || chat.status === 'streaming') return
+  if (isWeightModeSaving.value || isResponding.value) return
   try {
     await $fetch(`/api/chats/messages/${encodeURIComponent(message.id)}`, {
       method: 'DELETE',
@@ -365,7 +385,13 @@ async function saveEdit(message: UIMessage, text: string) {
 }
 
 async function regenerateMessage(message: UIMessage) {
-  if (isWeightModeSaving.value || chat.status === 'streaming') return
+  if (isWeightModeSaving.value || isResponding.value) return
+  if (message.parts.some(part => part.type === 'data-answer-status' && (part as any).data?.persisted === false)) {
+    // A failed attempt has no server-side assistant row to delete.
+    chat.messages = chat.messages.filter(item => item.id !== message.id)
+    chat.regenerate()
+    return
+  }
   try {
     await $fetch(`/api/chats/messages/${encodeURIComponent(message.id)}`, {
       method: 'DELETE',
@@ -479,11 +505,13 @@ function handleTextSelection() {
       selectedContextText.value = (fullMessageText || selection?.anchorNode?.parentElement?.innerText || text).trim()
 
       const range = selection?.getRangeAt(0)
-      const rect = range?.getBoundingClientRect()
+      const rects = Array.from(range?.getClientRects() || []).filter(rect => rect.width > 0 && rect.height > 0)
+      const rect = rects[rects.length - 1]
       if (rect && rect.width > 0) {
         floatAskPos.value = {
-          x: rect.left + rect.width / 2,
-          y: rect.top - 10
+          // Anchor the pill's top-left corner close to the selection's bottom-right.
+          x: Math.max(8, Math.min(window.innerWidth - 88, rect.right + 2)),
+          y: Math.max(8, Math.min(window.innerHeight - 48, rect.bottom + 2))
         }
       }
     } else {
@@ -510,7 +538,7 @@ function openSelectionDrawer() {
 
 
 async function handleUpdateWeightMode(mode: 'thinking' | 'auto' | 'fast') {
-  if (isWeightModeSaving.value || mode === currentWeightMode.value) return
+  if (isWeightModeSaving.value || isResponding.value || mode === currentWeightMode.value) return
   const previousMode = currentWeightMode.value
   currentWeightMode.value = mode
   isWeightModeSaving.value = true
@@ -553,6 +581,7 @@ async function handleFavoriteMessage(message: UIMessage, isFav: boolean) {
       headers: { [headerName]: csrf() },
       body: { isFavorite: isFav }
     })
+    chat.messages = chat.messages.map(item => item.id === message.id ? { ...item, isFavorite: isFav } : item)
     if (isFav) {
       toast.add({ title: 'Saved to Favorites', color: 'success' })
     }
@@ -560,6 +589,7 @@ async function handleFavoriteMessage(message: UIMessage, isFav: boolean) {
     notifyFavoriteChanged()
   } catch (e) {
     console.error('Favorite error:', e)
+    toast.add({ description: 'Could not update Favorites. Please try again.', color: 'error' })
   }
 }
 
@@ -602,6 +632,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  smoothAnswer.cancel()
+  chat.stop()
+  document.removeEventListener('mousedown', handleGlobalMouseDown)
   sessionFacts.clear()
 })
 </script>
@@ -639,16 +672,9 @@ onBeforeUnmount(() => {
               color="neutral"
               variant="ghost"
               :icon="showHitRateDrawer ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
-              size="sm"
               :title="showHitRateDrawer ? 'Close retrieval sidebar' : 'Open retrieval sidebar'"
               :aria-label="showHitRateDrawer ? 'Close retrieval sidebar' : 'Open retrieval sidebar'"
               :aria-expanded="showHitRateDrawer"
-              :class="[
-                'cursor-pointer transition-colors',
-                showHitRateDrawer
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted hover:text-highlighted hover:bg-elevated'
-              ]"
               @click="showHitRateDrawer = !showHitRateDrawer"
             />
           </template>
@@ -672,7 +698,9 @@ onBeforeUnmount(() => {
               <div class="w-full">
                 <div
                   v-if="isOwner"
-                  class="w-full rounded-[30px] sm:rounded-[34px] border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_6px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_6px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.5)] transition-all duration-200 px-4 py-2.5 sm:px-5 sm:py-3.5 flex flex-col gap-2.5 min-h-[58px] sm:min-h-[64px]"
+                  :class="expandedComposer ? 'rounded-[26px]' : 'rounded-[30px] sm:rounded-[34px]'"
+                  :data-composer-layout="expandedComposer ? 'expanded' : 'capsule'"
+                  class="w-full border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_6px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_6px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.5)] transition-all duration-200 px-4 py-2.5 sm:px-5 sm:py-3.5 flex flex-col gap-2.5 min-h-[58px] sm:min-h-[64px]"
                 >
                   <!-- Attachment Tray (if attachments selected) -->
                   <AttachmentTray
@@ -681,14 +709,14 @@ onBeforeUnmount(() => {
                     :chat-id="data?.id"
                     :topic-id="topic?.id"
                     hide-trigger
-                    :disabled="chat.status === 'streaming'"
+                    :disabled="isResponding"
                     @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
                   />
 
                   <!-- Input Row: [+]  [Input Area]  [🧠 Mode] [^] -->
-                  <div class="flex items-center gap-2.5 sm:gap-3 w-full">
+                  <div ref="composerRoot" data-compact-columns="5" class="grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-x-2.5 gap-y-2 w-full">
                     <!-- Left: + Menu Button (Inline with text) -->
-                    <div class="flex items-center shrink-0">
+                    <div data-composer-control :class="expandedComposer ? 'row-start-2' : 'row-start-1'" class="flex items-center shrink-0 col-start-1">
                       <UDropdownMenu
                         :items="plusMenuItems"
                         :content="{ align: 'start', sideOffset: 8 }"
@@ -715,7 +743,9 @@ onBeforeUnmount(() => {
                     <!-- Deep Research badge (only visible when active) -->
                     <span
                       v-if="deepResearchMode"
-                      class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
+                      data-composer-control
+                      :class="expandedComposer ? 'row-start-2' : 'row-start-1'"
+                      class="col-start-2 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
                     >
                       <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
                       <span>Deep Research</span>
@@ -735,7 +765,8 @@ onBeforeUnmount(() => {
                       v-model="input"
                       rows="1"
                       placeholder="Ask anything..."
-                      class="flex-1 bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1.5 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
+                      :class="expandedComposer ? 'row-start-1 col-span-5' : 'row-start-1 col-start-3'"
+                      class="w-full min-w-0 bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1.5 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
                       @keydown="onKeydown"
                       @blur="onBlur"
                       @compositionstart="isComposing = true"
@@ -743,25 +774,27 @@ onBeforeUnmount(() => {
                     />
 
                     <!-- Right: Cascading Mode Selector -->
-                    <CascadingModeSelector :model-value="currentWeightMode" :disabled="isWeightModeSaving || chat.status === 'streaming'" class="shrink-0 self-center" @change="handleUpdateWeightMode" />
+                    <CascadingModeSelector :model-value="currentWeightMode" :disabled="isWeightModeSaving || isResponding" data-composer-control :class="expandedComposer ? 'row-start-2' : 'row-start-1'" class="col-start-4 shrink-0 self-center" @change="handleUpdateWeightMode" />
 
                     <!-- Send / Stop Button -->
                     <button
                       type="button"
-                      :disabled="!input.trim() && !attachmentIds.length && chat.status !== 'streaming'"
-                      :aria-label="chat.status === 'streaming' ? 'Stop response' : 'Send message'"
-                      class="rounded-full w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center transition-all shrink-0 active:scale-95 self-center"
+                      :disabled="!input.trim() && !attachmentIds.length && !isResponding"
+                      :aria-label="isResponding ? 'Stop response' : 'Send message'"
+                      data-composer-control
+                      :style="{ gridRowStart: expandedComposer ? 2 : 1 }"
+                      class="col-start-5 rounded-full w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center transition-all shrink-0 active:scale-95 self-center"
                       :class="[
-                        chat.status === 'streaming' || chat.status === 'submitted'
+                        isResponding
                           ? 'bg-zinc-800 text-zinc-200 cursor-pointer hover:bg-zinc-700'
                           : (input.trim() || attachmentIds.length)
                             ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer hover:opacity-90 shadow-sm'
                             : 'bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
                       ]"
-                      @click="chat.status === 'streaming' ? chat.stop() : handleSubmit($event)"
+                      @click="isResponding ? stopResponse() : handleSubmit($event)"
                     >
                       <UIcon
-                        v-if="chat.status === 'streaming' || chat.status === 'submitted'"
+                        v-if="isResponding"
                         name="i-lucide-square"
                         class="w-3.5 h-3.5 fill-current"
                       />
@@ -783,7 +816,7 @@ onBeforeUnmount(() => {
             <UChatMessages
               should-auto-scroll
               :messages="visibleMessages"
-              :status="chat.status"
+              :status="displayStatus"
               :spacing-offset="isOwner ? 160 : 0"
               :user="{
                 side: 'right',
@@ -841,7 +874,7 @@ onBeforeUnmount(() => {
               >
                 <ChatMessageActions
                   :message="{ ...message, isFavorite: (message as any).isFavorite ?? false }"
-                  :streaming="chat.status === 'streaming' && message.id === chat.messages[chat.messages.length - 1]?.id"
+                  :streaming="isResponding && message.id === chat.messages[chat.messages.length - 1]?.id"
                   :editing="editingMessageId === message.id"
                   :vote="getVote(message.id)"
                   :memory-enabled="sessionFactsAllowed && sessionFactsAvailable"
@@ -876,29 +909,32 @@ onBeforeUnmount(() => {
               />
             </section>
 
-            <!-- Sleek Floating Selection Tooltip -->
+            <!-- Compact selection actions -->
             <div
               v-if="floatAskPos && selectedText"
-              class="float-selection-pill fixed z-50 -translate-x-1/2 -translate-y-full mb-2.5 flex items-center gap-1 p-1 rounded-full bg-zinc-900/90 dark:bg-zinc-800/90 text-white shadow-2xl backdrop-blur-md border border-zinc-700/60 select-none animate-in fade-in zoom-in-95 duration-150 pointer-events-auto"
+              role="toolbar"
+              aria-label="Selected text actions"
+              class="float-selection-pill fixed z-50 flex items-center gap-1 p-1 rounded-full bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 shadow-lg border border-zinc-200 dark:border-zinc-700/70 select-none pointer-events-auto"
               :style="{ left: floatAskPos.x + 'px', top: floatAskPos.y + 'px' }"
               @pointerdown.stop
             >
               <button
                 type="button"
-                class="rounded-full text-zinc-300 hover:text-white hover:bg-zinc-700/60 cursor-pointer px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 transition-colors"
-                @pointerdown.stop="copySelectedText"
+                aria-label="Copy selected text"
+                class="size-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-2"
+                @pointerdown.prevent
+                @click="copySelectedText"
               >
-                <UIcon name="i-lucide-copy" class="w-3.5 h-3.5 text-zinc-400" />
-                <span>Copy</span>
+                <UIcon name="i-lucide-copy" class="size-4" />
               </button>
-              <div class="w-px h-3.5 bg-zinc-700/60" />
               <button
                 type="button"
-                class="rounded-full text-zinc-200 hover:text-white hover:bg-zinc-700/60 cursor-pointer px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 transition-colors"
-                @pointerdown.stop="openSelectionDrawer"
+                aria-label="Ask about selected text"
+                class="size-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-2"
+                @pointerdown.prevent
+                @click="openSelectionDrawer"
               >
-                <UIcon name="i-heroicons-sparkles" class="w-3.5 h-3.5 text-amber-400" />
-                <span>Ask Selection</span>
+                <UIcon name="i-lucide-circle-help" class="size-4.5" />
               </button>
             </div>
 
@@ -909,7 +945,9 @@ onBeforeUnmount(() => {
 
             <div v-if="isOwner" class="sticky bottom-4 z-10 w-full max-w-3xl sm:max-w-4xl mx-auto px-4 sm:px-0">
               <div
-                class="w-full rounded-[28px] sm:rounded-[32px] border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-[0_6px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_6px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.5)] transition-all duration-200 px-4 py-2 sm:px-5 sm:py-2.5 flex flex-col gap-2 min-h-[56px] sm:min-h-[60px]"
+                :class="expandedComposer ? 'rounded-[26px]' : 'rounded-[28px] sm:rounded-[32px]'"
+                :data-composer-layout="expandedComposer ? 'expanded' : 'capsule'"
+                class="w-full border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-[0_6px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_6px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_10px_38px_-6px_rgba(0,0,0,0.5)] transition-all duration-200 px-4 py-2 sm:px-5 sm:py-2.5 flex flex-col gap-2 min-h-[56px] sm:min-h-[60px]"
               >
                 <!-- Attachment Tray (if attachments selected) -->
                 <AttachmentTray
@@ -918,14 +956,14 @@ onBeforeUnmount(() => {
                   :chat-id="data?.id"
                   :topic-id="topic?.id"
                   hide-trigger
-                  :disabled="chat.status === 'streaming'"
+                  :disabled="isResponding"
                   @change="(ids, reviewed) => { attachmentIds = ids; acceptedNeedsReviewIds = reviewed }"
                 />
 
                 <!-- Input Row: [+]  [Input Area]  [🧠 Mode] [^] -->
-                <div class="flex items-center gap-2.5 sm:gap-3 w-full">
+                <div ref="composerRoot" data-compact-columns="5" class="grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-x-2.5 gap-y-2 w-full">
                   <!-- Left: + Menu Button (Inline with text) -->
-                  <div class="flex items-center shrink-0">
+                  <div data-composer-control :class="expandedComposer ? 'row-start-2' : 'row-start-1'" class="flex items-center shrink-0 col-start-1">
                     <UDropdownMenu
                       :items="plusMenuItems"
                       :content="{ align: 'start', sideOffset: 8 }"
@@ -952,7 +990,9 @@ onBeforeUnmount(() => {
                   <!-- Deep Research badge (only visible when active) -->
                   <span
                     v-if="deepResearchMode"
-                    class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
+                    data-composer-control
+                      :class="expandedComposer ? 'row-start-2' : 'row-start-1'"
+                      class="col-start-2 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
                   >
                     <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
                     <span>Deep Research</span>
@@ -972,7 +1012,8 @@ onBeforeUnmount(() => {
                     v-model="input"
                     rows="1"
                     placeholder="Send a message or follow up..."
-                    class="flex-1 bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1.5 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
+                    :class="expandedComposer ? 'row-start-1 col-span-5' : 'row-start-1 col-start-3'"
+                      class="w-full min-w-0 bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1.5 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
                     @keydown="onKeydown"
                     @blur="onBlur"
                     @compositionstart="isComposing = true"
@@ -980,25 +1021,27 @@ onBeforeUnmount(() => {
                   />
 
                   <!-- Right: Cascading Mode Selector -->
-                  <CascadingModeSelector :model-value="currentWeightMode" :disabled="isWeightModeSaving || chat.status === 'streaming'" class="shrink-0 self-center" @change="handleUpdateWeightMode" />
+                  <CascadingModeSelector :model-value="currentWeightMode" :disabled="isWeightModeSaving || isResponding" data-composer-control :class="expandedComposer ? 'row-start-2' : 'row-start-1'" class="col-start-4 shrink-0 self-center" @change="handleUpdateWeightMode" />
 
                   <!-- Send / Stop Button -->
                   <button
                     type="button"
-                    :disabled="!input.trim() && !attachmentIds.length && chat.status !== 'streaming'"
-                    :aria-label="chat.status === 'streaming' ? 'Stop response' : 'Send message'"
-                    class="rounded-full w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center transition-all shrink-0 active:scale-95 self-center"
+                    :disabled="!input.trim() && !attachmentIds.length && !isResponding"
+                    :aria-label="isResponding ? 'Stop response' : 'Send message'"
+                    data-composer-control
+                      :style="{ gridRowStart: expandedComposer ? 2 : 1 }"
+                      class="col-start-5 rounded-full w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center transition-all shrink-0 active:scale-95 self-center"
                     :class="[
-                      chat.status === 'streaming' || chat.status === 'submitted'
+                      isResponding
                         ? 'bg-zinc-800 text-zinc-200 cursor-pointer hover:bg-zinc-700'
                         : (input.trim() || attachmentIds.length)
                           ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer hover:opacity-90 shadow-sm'
                           : 'bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
                     ]"
-                    @click="chat.status === 'streaming' ? chat.stop() : handleSubmit($event)"
+                    @click="isResponding ? stopResponse() : handleSubmit($event)"
                   >
                     <UIcon
-                      v-if="chat.status === 'streaming' || chat.status === 'submitted'"
+                      v-if="isResponding"
                       name="i-lucide-square"
                       class="w-3.5 h-3.5 fill-current"
                     />
@@ -1035,7 +1078,7 @@ onBeforeUnmount(() => {
         />
 
         <!-- Right Semi-Circular Quick Navigation Dial Widget (Attached to Dark Gray Chat Panel Edge, hidden when HitRate side drawer is open) -->
-        <QuickNavDial v-if="!showHitRateDrawer" :messages="chat.messages" />
+        <QuickNavDial v-if="!showHitRateDrawer && !showSelectionDrawer" :messages="chat.messages" />
       </div>
     </template>
   </UDashboardPanel>

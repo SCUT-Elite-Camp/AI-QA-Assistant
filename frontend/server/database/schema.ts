@@ -141,7 +141,7 @@ export const topics = sqliteTable('topics', {
   evidenceProvenance: text('evidence_provenance', { mode: 'json' }).$type<EvidenceProvenance>(),
   description: text('description'),
   tags: text('tags', { mode: 'json' }),
-  status: text('status', { enum: ['generating', 'ready'] }).notNull().default('ready'),
+  status: text('status', { enum: ['generating', 'ready', 'failed'] }).notNull().default('ready'),
   consecutiveNoNewDocsCount: integer('consecutive_no_new_docs_count').notNull().default(0),
   ...timestamps
 })

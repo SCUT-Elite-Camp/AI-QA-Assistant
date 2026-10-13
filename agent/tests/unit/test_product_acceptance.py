@@ -175,12 +175,14 @@ def test_research_planner_honors_configured_thinking_mode(monkeypatch):
     def chat(payload):
         calls.append(payload)
         return {"choices": [{"message": {"content": json.dumps({"tasks": [
-            {"question": "Find facts", "purpose": "Read source", "acceptance_target": "Facts supported"},
+            {"question": "Find facts in doc-123", "purpose": "Read source", "acceptance_target": "Facts supported"},
             {"question": "Check limits", "purpose": "Read limits", "acceptance_target": "Limits supported"}]})}}]}
     monkeypatch.setattr(planner, "_chat", chat)
-    manifest = SimpleNamespace(documents=[SimpleNamespace(doc_id="a", title="doc", source_type="confluence", version="1", effective_at=None)])
+    manifest = SimpleNamespace(documents=[SimpleNamespace(doc_id="doc-123", title="Readable Source", source_type="confluence", version="1", effective_at=None)])
     tasks = planner._generate_tasks(ResearchRequest(query="Explain facts", source_scope=SourceScope(document_ids=["a"])), manifest)
     assert len(tasks) == 2
+    assert tasks[0].question == 'Find facts in Readable Source'
+    assert tasks[0].source_ids == ['doc-123']
     assert calls[0]["thinking"] == {"type": "disabled"}
 
 

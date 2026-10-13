@@ -1324,7 +1324,7 @@ def test_identical_original_and_standalone_query_appears_once_in_final_messages(
     messages = AgentRunner._build_messages(plan, [])
 
     assert messages[-1] == {"role": "user", "content": "Same question"}
-    assert "检索用独立查询" not in messages[0]["content"]
+    assert "Standalone retrieval query: Same question" not in messages[0]["content"]
     assert sum(message["content"].count("Same question") for message in messages) == 1
 
 

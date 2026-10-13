@@ -358,6 +358,18 @@ class LocalResearchWorker:
                 trace_id=trace_id,
             )
             hits = [SearchHit.from_value(value) for value in raw_hits]
+            # A planner can name sources from the authorized catalog. Read those
+            # sources before broad retrieval distractors spend the task budget;
+            # titles select reads and never serve as evidence themselves.
+            named = [document.doc_id for document in context.manifest.documents
+                     if document.doc_id in requested_ids and len(document.title.strip()) >= 8
+                     and document.title.casefold() in task.question.casefold()]
+            if named and len(named) < len(requested_ids):
+                anchors = [next((hit for hit in hits if hit.doc_id == doc_id),
+                    SearchHit(doc_id=doc_id, snippet='Named source requires original read',
+                        locator_hint=f'{doc_id}_chunk_0', candidate_origin='source_scope_read'))
+                    for doc_id in named]
+                hits = anchors + [hit for hit in hits if hit.doc_id not in named]
             # Lifetime/sprint questions need the document's canonical summary,
             # not a partial historical commit list that happens to rank higher.
             needs_summary = bool(re.search(r"\b(?:lifetime|total commits|all (?:recorded )?(?:active )?sprints|sprint.by.sprint|peak|busiest)\b",

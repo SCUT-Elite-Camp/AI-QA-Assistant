@@ -2,6 +2,19 @@ from deep_research.model_report import EvidenceReportSynthesizer
 import pytest
 
 
+def test_historical_role_comparison_uses_general_grounded_synthesis():
+    assert not EvidenceReportSynthesizer.needs_dated_comparison(
+        'Compare the May and June role decisions and distinguish historical scope from later plans.')
+    assert EvidenceReportSynthesizer.needs_dated_comparison(
+        'Compare the earlier integration dependency and the later Deep Research demonstration.')
+
+
+def test_single_digit_meeting_title_date_is_not_export_date():
+    from types import SimpleNamespace
+    item = SimpleNamespace(title='Meeting Minutes of 2026/6/8', excerpt='Scope decisions', document_version='2026-09-01')
+    assert EvidenceReportSynthesizer._statement_date(item) == '2026-06-08'
+
+
 def test_refusal_cites_inspected_source_heading_not_missing_number():
     from types import SimpleNamespace
     sources = [SimpleNamespace(number=2, excerpt='# Agent Module Weekly Report\nTotal Commits: 8')]

@@ -102,7 +102,9 @@ class TargetExtractor:
             f"Sub-queries: {json.dumps(query_plan.sub_queries or [], ensure_ascii=False)}\n"
             f"Evidence:\n{self._format_evidence(evidence)}"
         )
-        response = self.llm.chat([{"role": "system", "content": prompt}], tools=None)
+        # Gemini's compatible endpoint requires conversational content in addition
+        # to any system instructions. This is a bounded task, with tools disabled.
+        response = self.llm.chat([{"role": "user", "content": prompt}], tools=None)
         payload = _parse_json_object(response)
         facts = payload.get("required_facts")
         if not isinstance(facts, list):

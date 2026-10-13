@@ -6,6 +6,7 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { logMemoryEvent } from '../../../utils/logger'
 import { agentFetch } from '../../../utils/agent-client'
+import { classifyModelFailure, publicChatFailure } from '../../../utils/chatFailure'
 import {
   recordAiCall,
   recordMemoryCompaction,
@@ -177,8 +178,8 @@ export default defineHandler(async (event) => {
   ], attachments, new Set(selection.acceptedNeedsReviewIds))
   const current = await persistCurrentUserMessage(db, { chatId: chat.id, id: last.id, parts: safeParts })
   const handoff = createCurrentMessageHandoff(actor.userId, current)
-  const assistantId = `${current.id}:assistant`
   const existing = await db.query.messages.findFirst({ where: and(eq(tables.messages.chatId, chat.id), eq(tables.messages.requestId, current.id), eq(tables.messages.role, 'assistant')) })
+  const assistantId = existing?.id || `${current.id}:assistant`
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 180000)
   event.runtime?.node?.res?.on('close', () => {
@@ -284,7 +285,7 @@ export default defineHandler(async (event) => {
               liveProvenance = proof
             } else if (eventType === 'answer-start') {
               state.assistantContent = ''
-              writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
+              writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true, phase: 'start' } } as any)
             } else if (eventType === 'answer') {
               // Quality repair may replace the streamed draft. Only this final
               // answer is persisted and released as a completed message.
@@ -321,7 +322,7 @@ export default defineHandler(async (event) => {
                 writer.write({ type: 'reasoning-delta', id: assistantId, delta })
               }
             }
-            else if (eventType === 'error') throw new Error('agent_failed')
+            else if (eventType === 'error') throw classifyModelFailure(data.message) || new Error('agent_failed')
           }
           while (true) {
             const chunk = await reader.read()
@@ -349,7 +350,7 @@ export default defineHandler(async (event) => {
           writer.write({ type: 'start', messageId: statusId })
           writer.write({ type: 'data-answer-status', data: { status: 'no_relevant_context', persisted: false } } as any)
           writer.write({ type: 'text-start', id: statusId })
-          writer.write({ type: 'text-delta', id: statusId, delta: '当前可访问的知识库没有足够证据回答该问题。请补充资料或调整问题。' })
+          writer.write({ type: 'text-delta', id: statusId, delta: 'The accessible knowledge base does not contain enough evidence to answer this question. Add more information or refine your question.' })
           writer.write({ type: 'text-end', id: statusId })
           state.assistantContent = ''
           state.streamCompleted = true
@@ -381,10 +382,10 @@ export default defineHandler(async (event) => {
         }
         writer.write({ type: 'data-evidence-provenance', data: provenance } as any)
         if (memoryRecall) writer.write({ type: 'data-memory-recall', data: { messageId: savedAssistant?.id || assistantId } } as any)
+        writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, phase: 'complete', text: state.assistantContent } } as any)
         if (!responseStarted) writer.write({ type: 'text-start', id: assistantId })
         writer.write({ type: 'text-delta', id: assistantId, delta: state.assistantContent })
         writer.write({ type: 'text-end', id: assistantId })
-        writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
         if (existing) state.agentSucceeded = true
         state.streamCompleted = true
         recordAiCall(Date.now() - startedAt, Date.now() - startedAt, Math.round(state.assistantContent.length * 0.75))
@@ -399,8 +400,10 @@ export default defineHandler(async (event) => {
         writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
         if (liveReasoning) writer.write({ type: 'reasoning-end', id: assistantId })
         if (!responseStarted) writer.write({ type: 'start', messageId: assistantId })
+        const failure = publicChatFailure(error)
+        writer.write({ type: 'data-answer-status', data: { status: failure.status, persisted: false } } as any)
         writer.write({ type: 'text-start', id: 'access-error' })
-        writer.write({ type: 'text-delta', id: 'access-error', delta: 'The answer could not pass identity, source access, version, or persistence checks. No answer is being released. Please retry.' })
+        writer.write({ type: 'text-delta', id: 'access-error', delta: failure.message })
         writer.write({ type: 'text-end', id: 'access-error' })
       } finally { clearTimeout(timeout) }
     },

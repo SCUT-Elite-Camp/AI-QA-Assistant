@@ -123,7 +123,7 @@ def summarize_topic(
     from agent.config.settings import settings
     if not settings.AGENT_INTERNAL_TOKEN or not secrets.compare_digest(internal_token or "", settings.AGENT_INTERNAL_TOKEN):
         raise HTTPException(403, "forbidden")
-    guard = AccessGuard(agent.permission_service, ChatRequest(query="", user_id=user_id, session_id=req.topic_id), "topic-summary")
+    guard = AccessGuard(agent.permission_service, ChatRequest(query="", user_id=user_id, session_id=req.topic_id, topic_id=req.topic_id), "topic-summary")
     guard.allowed_documents([])
     with agent.permission_service._connect() as connection:
         if connection.execute("SELECT 1 FROM topic_members WHERE topic_id=? AND user_id=? AND role IN ('owner','editor')", (req.topic_id, user_id)).fetchone() is None:

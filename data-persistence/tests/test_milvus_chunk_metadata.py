@@ -18,8 +18,8 @@ class FakeCollection:
     def create_index(self, field_name, params):
         self.indexes.append(SimpleNamespace(field_name=field_name))
 
-    def load(self):
-        pass
+    def load(self, *, timeout):
+        self.load_timeout = timeout
 
     def insert(self, columns):
         self.inserted_columns = columns
@@ -31,6 +31,12 @@ class FakeCollection:
     def search(self, **kwargs):
         self.search_kwargs = kwargs
         return [[]]
+
+
+@pytest.mark.parametrize('configured', ['0', '-1', 'nan', 'inf', 'invalid'])
+def test_collection_load_has_a_finite_wait_limit(monkeypatch, configured):
+    monkeypatch.setenv('MILVUS_LOAD_TIMEOUT_SECONDS', configured)
+    assert MilvusStore.load_timeout_seconds() == 10.0
 
 
 def valid_fields(dim=2):

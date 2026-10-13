@@ -19,22 +19,13 @@ export async function isAdmin(userId: string | null | undefined): Promise<boolea
  */
 export async function requireAdmin(event: HTTPEvent): Promise<{ userId: string }> {
   const session = await useUserSession(event)
-  let userId = session.data.user?.id || session.id
-
-  const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV || process.env.ALLOW_DEV_LOGIN !== 'false'
-
-  if (!userId && isDev) {
-    userId = 'dev-user'
-  }
+  const userId = session.data.user?.id
 
   if (!userId) {
     throw new HTTPError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
   if (!(await isAdmin(userId))) {
-    if (isDev) {
-      return { userId: userId || 'dev-user' }
-    }
     throw new HTTPError({ statusCode: 403, statusMessage: 'Admin access required' })
   }
 

@@ -33,6 +33,8 @@ Deep Research 网页默认覆盖当前账号可读的全部 Confluence 文档，
 | `ATTACHMENT_DATA_DIR`、`ATTACHMENT_SERVICE_URL`、`ATTACHMENT_INTERNAL_SECRET`、`ATTACHMENT_ENCRYPTION_KEY` | 私有解析服务、存储与认证/加密 |
 | `ATTACHMENTS_ENABLED`、`PERSONAL_LIBRARY_ENABLED`、`ATTACHMENT_VECTOR_INDEX_ENABLED` | 联调时均 true，私人向量集合不得与企业集合相同 |
 | `LOCAL_EMBEDDING_MODEL_DIM`、`MILVUS_COLLECTION`、`ATTACHMENT_MILVUS_COLLECTION` | 企业、私有查询向量与各自 collection schema 的维度必须一致；本轮 384 |
+| `MILVUS_HOST`、`MILVUS_PORT`、`SECTION_MILVUS_COLLECTION` | 当前向量服务与导航集合；隔离恢复应指向独立服务和新集合，保留原有 volumes |
+| `MILVUS_LOAD_TIMEOUT_SECONDS` | 集合加载等待上限，默认 10 秒；无效、非正或非有限值回退到 10 秒，避免请求无限阻塞 |
 | `AI_QA_BUILD_DIR` | Vite 输出目录覆盖，不把大型构建放进空间不足的盘 |
 | `SESSION_COOKIE_SECURE`、`ALLOW_DEV_LOGIN` | 仅回环 HTTP 联调可用 false/true；生产应 HTTPS、secure Cookie，禁用 dev-login |
 | `AI_QA_ACCEPTANCE_VOLUME_ROOT` | 独立 Compose volume 根目录；脚本不会替用户清空旧 volume |

@@ -87,3 +87,12 @@ def test_placeholder_citation_drops_unsupported_claim_without_changing_code():
     assert "Counts are 9 [1]." in result
     assert "critical" not in result
     assert "array[n]" in result
+
+
+def test_grouped_citations_preserve_source_identity_without_fallback():
+    sources = [RetrievalResult(doc_id=f'doc-{i}', chunk_id=f'chunk-{i}',
+        chunk_text=f'Evidence {i}', title=f'Source {i}', source_url='', score=0.9)
+        for i in range(1, 5)]
+    response = AnswerFormatter().format_success('grouped', 'Supported claim [2, 4].', sources)
+    assert response.answer == 'Supported claim [1][2].'
+    assert [citation.doc_id for citation in response.citations] == ['doc-2', 'doc-4']

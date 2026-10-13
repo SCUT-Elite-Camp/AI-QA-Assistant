@@ -135,7 +135,36 @@ export const authoredProvenance = (): EvidenceProvenance => ({ schema_version: '
 
 export async function readableChatMetadata<T extends { title: string, evidenceProvenance?: unknown }>(userId: string, chat: T): Promise<T> {
   try { await assertDerivedSources(userId, chat.evidenceProvenance); return chat }
-  catch { return { ...chat, title: '对话', sourceAccess: 'unavailable' } }
+  catch { return { ...chat, title: 'Unavailable chat', sourceAccess: 'unavailable' } }
+}
+
+/** One live release boundary for a chat list; no grant survives this request. */
+export async function readableChatMetadataBatch<T extends { title: string, evidenceProvenance?: unknown }>(userId: string, chats: T[]): Promise<T[]> {
+  const proofs = chats.map(chat => evidenceProvenanceSchema.safeParse(chat.evidenceProvenance))
+  const dependencies = [...new Map(proofs.flatMap(proof => proof.success && proof.data.complete
+    ? proof.data.dependencies : []).map(dependency => [JSON.stringify(dependency), dependency])).values()]
+  try {
+    await assertSourceDependencies(userId, dependencies)
+    return chats.map((chat, index) => proofs[index]?.success && proofs[index].data.complete
+      ? chat : { ...chat, title: 'Unavailable chat', sourceAccess: 'unavailable' })
+  } catch {
+    // Recheck each distinct dependency after a failed batch. One expired
+    // attachment must not make every chat repeat its complete source checks.
+    const readable = new Set<string>()
+    for (let offset = 0; offset < dependencies.length; offset += 8) {
+      const batch = dependencies.slice(offset, offset + 8)
+      const results = await Promise.allSettled(batch.map(dependency => assertSourceDependencies(userId, [dependency])))
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') readable.add(JSON.stringify(batch[index]))
+      })
+    }
+    return chats.map((chat, index) => {
+      const proof = proofs[index]
+      return proof?.success && proof.data.complete
+        && proof.data.dependencies.every(dependency => readable.has(JSON.stringify(dependency)))
+        ? chat : { ...chat, title: 'Unavailable chat', sourceAccess: 'unavailable' }
+    })
+  }
 }
 
 /** Unknown legacy provenance is not made trusted by copying or confirming it. */
@@ -146,13 +175,12 @@ export async function assertMessageSources(userId: string, message: { role: stri
 }
 
 export async function filterReadableMessages<T extends { role: string, parts: unknown }>(userId: string, messages: T[]): Promise<T[]> {
-  const visible: T[] = []
-  for (const message of messages) {
-    try { await assertMessageSources(userId, message); visible.push(message) }
-    catch { visible.push({ ...message, parts: [{ type: 'text', text: '此消息的来源权限或证据版本无法确认，正文已隐藏。' },
-      { type: 'data-source-access', data: { status: 'unavailable' } }], } as T) }
-  }
-  return visible
+  const checked = await readableChatMetadataBatch(userId, messages.map(message => ({
+    title: '', evidenceProvenance: messageProvenance(message.parts)
+  })))
+  return messages.map((message, index) => checked[index]?.title === '' ? message : { ...message,
+    parts: [{ type: 'text', text: 'This message is hidden because its source access or evidence version could not be verified.' },
+      { type: 'data-source-access', data: { status: 'unavailable' } }], } as T)
 }
 
 export function sourceDependenciesFromCitations(citations: any[]): SourceDependency[] {

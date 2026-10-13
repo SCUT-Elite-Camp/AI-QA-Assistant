@@ -227,7 +227,7 @@ def test_explicit_internal_fact_command_bypasses_llm_and_rag(monkeypatch) -> Non
 
     assert response.status == StatusCode.SUCCESS
     assert response.citations == []
-    assert response.answer == "已生成一条待确认的会话记忆，请在界面确认。"
+    assert response.answer == "A session memory suggestion is ready. Please confirm it in the interface."
     assert [(proposal.category, proposal.value, proposal.source_message_id, proposal.expires_at) for proposal in decision.fact_proposals] == [
         ("GOAL", "完成本地 Memory 演示", "message-1", None),
     ]

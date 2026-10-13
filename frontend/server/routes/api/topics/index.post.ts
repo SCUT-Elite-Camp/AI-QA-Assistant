@@ -49,7 +49,7 @@ export default defineHandler(async (event) => {
     }).where(eq(tables.topics.id, topic.id)).returning()
     syncTopicToDisk(topic.id, updated, updated.soulContent, [])
   }).catch(async () => {
-    await db.update(tables.topics).set({ status: 'ready' }).where(eq(tables.topics.id, topic.id))
+    await db.update(tables.topics).set({ status: 'failed' }).where(eq(tables.topics.id, topic.id))
   })
   return topic
 })

@@ -218,6 +218,29 @@ def test_commit_identity_reads_requested_module_before_high_ranked_distractors(t
     assert result.actions_used <= task.max_actions
 
 
+def test_named_catalog_source_is_read_before_distractors_within_budget(tmp_path):
+    from dataclasses import replace
+    context = _approved_context(tmp_path)
+    template = context.manifest.documents[0]
+    documents = [template.model_copy(update={'doc_id': identifier, 'title': title})
+        for identifier, title in [('doc-a', 'General architecture'), ('doc-b', 'May Planning Minutes'),
+            ('doc-c', 'June Minutes'), ('doc-d', 'Tools Spec'), ('doc-e', 'Agent Spec')]]
+    context = replace(context, manifest=context.manifest.model_copy(update={'documents': documents}))
+    task = context.tasks[0].model_copy(update={'question': 'Read May Planning Minutes for the Agent decisions.',
+        'source_ids': [item.doc_id for item in documents], 'max_actions': 2})
+    class DistractorTools(FixedResearchTools):
+        def read_document_range(self, **kwargs):
+            self.read_calls.append(kwargs)
+            return {'doc_id': kwargs['doc_id'], 'locator': kwargs['locator_hint'],
+                    'excerpt': 'The Agent calls the approved tool interface; this statement comes from the original read.'}
+    tools = DistractorTools()
+    ledger = InMemoryResearchLedger()
+    result = LocalResearchWorker(tools, ledger)._execute_task(context, task)
+    assert [call['doc_id'] for call in tools.read_calls] == ['doc-b']
+    assert all(item.doc_id == 'doc-b' for item in ledger.evidence.values())
+    assert result.actions_used <= task.max_actions
+
+
 def test_coverage_is_deterministic_and_requires_finding_evidence() -> None:
     criteria = [
         AcceptanceCriterion(
@@ -470,6 +493,32 @@ def test_dated_snapshots_do_not_turn_historical_counts_into_current_conflicts():
     # Genuine disagreement about one snapshot must still be surfaced.
     evidence[1] = evidence[1].model_copy(update={'document_version': evidence[0].document_version})
     assert DeterministicSemanticVerifier().verify(claim, evidence).status == ClaimVerificationStatus.CONFLICTING
+
+
+def test_meeting_dates_separate_quantities_in_historical_snapshots():
+    evidence = [VerifiedEvidence(evidence_id=f'e-{i}', research_id='r-meetings', task_id='t1',
+        doc_id=f'doc-{i}', locator='line:1', content_hash=f'hash-{i}-12345678', excerpt=text)
+        for i, text in enumerate([
+            'Meeting Minutes of 2026/5/25; Date: Monday, 25th May, 2026; Integration has 2 pending dependencies.',
+            'Meeting Minutes of 2026/6/8; Date: Monday, 8th June, 2026; Integration has 1 pending dependency.',
+        ])]
+    claim = ClaimDraft(claim_id='c', research_id='r-meetings', claim_text='Integration has 1 pending dependency.',
+        evidence_ids=['e-0', 'e-1'])
+    assert DeterministicSemanticVerifier().verify(claim, evidence).status != ClaimVerificationStatus.CONFLICTING
+
+
+def test_non_numeric_claim_is_not_a_numeric_conflict_between_contexts():
+    evidence = [VerifiedEvidence(evidence_id=f'e-{i}', research_id='r-context', task_id='t1',
+        doc_id='same-source', locator=f'line:{i+1}', excerpt=text, content_hash=f'hash-{i}-12345678')
+        for i, text in enumerate([
+            'Agent integration calls the search interface with top_k=5 and logs 3 results.',
+            'Agent integration calls the search interface and uses 2 retries for errors.',
+        ])]
+    claim = ClaimDraft(claim_id='c', research_id='r-context',
+        claim_text='Agent integration calls the search interface.', evidence_ids=['e-0', 'e-1'])
+    assert DeterministicSemanticVerifier().verify(claim, evidence).status == ClaimVerificationStatus.SUPPORTED
+    claim = claim.model_copy(update={'claim_text': evidence[0].excerpt})
+    assert DeterministicSemanticVerifier().verify(claim, evidence).status == ClaimVerificationStatus.SUPPORTED
 
 
 def test_semantic_verifier_ignores_numeric_prefixes_in_document_ids() -> None:

@@ -98,3 +98,56 @@ Research Evidence and Citation may include `anchor_excerpt`: the text of the exa
 For G1 factual/comparison requests, including selected scope comparisons, recorded status tables and capability summaries, with at most four explicitly selected documents, the policy allows bounded original reads through the existing guarded ToolExecutor. This expands evidence coverage, not authorization. Calendar comparisons use the document's recorded meeting/report date when unambiguous; the source version/export timestamp remains provenance and is not rewritten to that event date.
 
 For evidence-insufficient entity/count answers, citations support quoted headings from the inspected sources. A missing requested number is expressed as a scope limitation, without pretending an unrelated source positively proves that absent value.
+## Adaptive composer (2026-10-13)
+
+Home and chat retain their original capsule for one line. Explicit newlines or text wider than the compact input area move the text above the controls; shortening the text restores the capsule. The compact width calculation remains stable while expanded and observes control and container resizing. A Deep Research badge alone does not expand the composer. Attachments retain their existing expanded tray. Input and request behavior are unchanged. Selection actions anchor the pill's top-left corner 2 pixels right and 2 pixels below the last selected line's bottom-right corner, clamped within the viewport; composer buttons retain their original arrangement.
+
+## Selection conversation UI (2026-10-12)
+
+Selection Q&A uses a separate server-owned temporary conversation. The transport
+reuses `tempChatId` for follow-up questions. Successful `data-temp-chat` events
+carry `{chatId, messageIds}` containing the persisted user/assistant IDs; Save
+sends those IDs with `sourceChatId` to `save-standalone`. Failed requests and
+browser-supplied message contents are excluded from the saved copy. The BFF
+continues to check ownership and current source lineage before copying messages.
+
+The current JSON selection endpoint requires the Agent's
+`PERSISTENT_MEMORY_ENABLED=true`. Its coordinator and confirmed-Fact recall
+policy share the same request visibility cutoff. Session Facts remain governed
+by their separate feature flag. Selection answers are currently delivered after
+the final source checks.
+
+The drawer uses a multiline composer (Enter sends; Shift+Enter adds a line), a
+compact expandable quote, and a single short empty-state prompt. Below the desktop
+breakpoint it fills the chat panel, preserving the visible composer and close
+button. Quick navigation is hidden while this drawer is open.
+The selection toolbar appears below the selected text and stays within the
+viewport, avoiding the browser's native selection menu above the selection.
+
+## Main chat streaming presentation (2026-10-12)
+
+Transient `data-answer-preview` events carry the server-generated `messageId`.
+`phase: 'start'` opens an empty preview, `delta` queues checked provider text,
+and `phase: 'complete', text` replaces the queue with the verified final answer.
+The completion event is emitted after durable persistence and the existing
+current source checks, before the canonical SDK text. A plain `reset: true`
+clears previews on failure or insufficient evidence. These transient events
+are not persisted as chat messages.
+
+The frontend reveals buffered text on animation frames using Unicode graphemes,
+with an adaptive rate and at most four graphemes per frame. It keeps the preview
+until both presentation and the canonical message finish, avoiding a sudden
+final-answer jump. A repaired final answer removes the differing draft suffix
+and discards old queued text. Stop, failure and unmount cancel pending paints;
+Stop after verified persistence reveals the remaining saved answer immediately.
+Reduced-motion preferences and hidden tabs use instant presentation. Existing
+history renders immediately; persisted text and citation/permission checks are
+unchanged. The main chat's Fast, Auto and Thinking modes share this presentation.
+
+Recently revealed prose also gains contrast over a 420 ms opacity animation.
+Animation birth times belong to each Markdown renderer, so reparsing does not
+restart a character's fade. Only up to 96 recent graphemes have wrappers; older
+text, citation widgets and highlighted code retain their normal rendering.
+The effect inherits the current theme's text color, does not move or blur text,
+and is disabled by `prefers-reduced-motion`. Historical messages do not animate
+on load.

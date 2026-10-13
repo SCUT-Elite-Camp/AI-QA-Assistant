@@ -209,7 +209,9 @@ def test_english_answer_instruction_overrides_mixed_language_metadata_without_mu
     runner = AgentRunner.__new__(AgentRunner)
     runner.answer_llm = LLM()
     runner.fast_answer_llm = None
-    state = SimpleNamespace(query_plan=QueryPlan(original_query='Compare the dated reports', standalone_query='Compare the dated reports'))
+    from agent.answer.generator import AnswerGenerator
+    runner.answer_generator = AnswerGenerator(complex_llm=runner.answer_llm)
+    state = SimpleNamespace(query_plan=QueryPlan(original_query='Compare the dated reports', standalone_query='Compare the dated reports'), retrieval_attempts=1, trace_id='language-test', answer_model_preference='auto')
     messages = [{'role': 'system', 'content': 'Original evidence rules'}, {'role': 'user', 'content': '资料元数据'}]
     runner._chat_for_answer(state, messages)
     assert 'Write the entire answer in English' in captured[0]['content']
@@ -222,3 +224,21 @@ def test_english_repair_explicitly_retains_answer_language():
     plan = QueryPlan(original_query='Summarize the goals', standalone_query='Summarize the goals')
     prompt = AnswerCompletenessChecker(SimpleNamespace())._repair_prompt(plan, 'Existing answer', [], AnswerCompletenessResult(complete=False))
     assert 'Write the entire repaired answer in English' in prompt
+
+
+def test_english_default_overrides_history_language_without_mutating_it():
+    from agent.answer.generator import AnswerGenerator
+    captured = []
+    class LLM:
+        def chat(self, messages, **kwargs):
+            captured.extend(messages)
+            return {'content': 'English answer [1].'}
+    history = [{'role': 'system', 'content': 'Evidence rules'},
+               {'role': 'assistant', 'content': 'Earlier source metadata: 中文。'},
+               {'role': 'user', 'content': 'Explain the responsibilities.'}]
+    generator = AnswerGenerator(complex_llm=LLM())
+    generator.chat(history, query_plan=QueryPlan(original_query='Explain the responsibilities.', standalone_query='Explain the responsibilities.'),
+                   retrieval_attempts=1, trace_id='mixed-language')
+    assert 'Write the entire answer in English' in captured[0]['content']
+    assert 'unless the user explicitly requests another output language' in captured[0]['content']
+    assert history[0]['content'] == 'Evidence rules'

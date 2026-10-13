@@ -15,7 +15,15 @@ def test_health_endpoint_for_web_smoke() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_readiness_reports_retrieval_preload() -> None:
+def test_readiness_reports_retrieval_preload(monkeypatch) -> None:
+    from agent.config.settings import settings
+    # This transport fixture tests retrieval preload; real model readiness has
+    # its own acceptance runner and must not depend on a developer's .env path.
+    monkeypatch.setattr(settings, 'HYBRID_INTENT_ROUTER_ENABLED', False)
+    import app as application
+    from agent.runtime.lifecycle import ApplicationContainer
+    container = ApplicationContainer()
+    monkeypatch.setattr(application, 'get_application_container', lambda: container)
     with TestClient(app) as client:
         response = client.get("/ready")
 
@@ -93,7 +101,13 @@ def test_cors_preflight_for_web() -> None:
 
 
 @pytest.mark.parametrize("weight_mode", ["fast", "thinking", "auto"])
-def test_sse_stream_endpoint_matches_canonical_chat_response(weight_mode: str) -> None:
+def test_sse_stream_endpoint_matches_canonical_chat_response(weight_mode: str, monkeypatch) -> None:
+    from agent.agent import Agent
+    from agent.streaming.sse import chat_response_events
+    # Exercise the HTTP SSE adapter with one canonical component response.
+    # Actual model delta order, ContextVar and source-release checks are covered
+    # by test_live_stream and test_fast_stream_integration, not this fake catalog.
+    monkeypatch.setattr(Agent, 'stream_chat', lambda self, request: chat_response_events(self.chat(request)))
     client = TestClient(app)
     request = {
         "query": "项目 Q1 阶段需要完成哪些功能？",

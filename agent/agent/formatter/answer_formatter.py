@@ -3,6 +3,7 @@ import re
 from agent.schemas.chat import ChatResponse, Citation
 from agent.schemas.common import StatusCode
 from agent.schemas.retrieval import RetrievalResult
+from agent.evidence.citation import normalize_citation_markers
 
 REFERENCE_PATTERN = re.compile(r"\[(\d+)\]")
 
@@ -15,7 +16,7 @@ class AnswerFormatter:
         retrieval_results: list[RetrievalResult],
     ) -> ChatResponse:
         safe_answer = self._normalize_answer_references(
-            answer.strip(), len(retrieval_results)
+            normalize_citation_markers(answer.strip()), len(retrieval_results)
         )
         referenced_ids = sorted(
             {int(value) for value in REFERENCE_PATTERN.findall(safe_answer)}

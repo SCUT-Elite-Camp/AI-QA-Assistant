@@ -68,12 +68,16 @@ class RuntimeSupport:
             if soul_content and soul_content.strip()
             else ""
         )
+        standalone_directive = (
+            f"Standalone retrieval query: {query_plan.standalone_query}\n\n"
+            if query_plan.standalone_query != query_plan.original_query else ""
+        )
         system_content = (
             f"{SYSTEM_ROLE}\n\n"
             "你可以使用提供的工具获取回答所需的证据。"
             "工具返回后，基于观察结果给出最终答案；不要编造不存在的证据。\n\n"
             f"{soul_directive}\n"
-            f"检索用独立查询：{query_plan.standalone_query}\n\n"
+            f"{standalone_directive}"
             f"回答约束：\n{ANSWER_RULES}"
             f"{RuntimeSupport.document_tool_guidance(policy)}"
             f"{title_directive}"

@@ -14,6 +14,15 @@ PRODUCT_STREAM_CHAT = LLMClient.stream_chat
 pytestmark = pytest.mark.no_storage
 
 
+def test_gemini_payload_removes_unsupported_vendor_thinking_fields():
+    from agent.llm.provider_options import apply_provider_options
+    payload = {'model': 'gemini-3.5-flash-lite', 'messages': [{'role': 'user', 'content': 'Question'}],
+               'thinking': {'type': 'disabled'}, 'enable_thinking': False, 'thinking_budget': 0}
+    result = apply_provider_options(payload, 'https://generativelanguage.googleapis.com/v1beta/openai/')
+    assert result == {'model': payload['model'], 'messages': payload['messages']}
+    assert 'thinking' in payload
+
+
 @pytest.mark.parametrize('model', ['qwen3.5-35b-a3b', 'deepseek-v4.1-flash'])
 def test_shared_runtime_disables_thinking_by_default_but_preserves_opt_in(monkeypatch, model):
     from agent.config.settings import settings

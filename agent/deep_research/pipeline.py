@@ -269,7 +269,9 @@ class ResearchIntelligencePipeline:
         limitations: list[str] = []
         if job.task_completed < job.task_total:
             limitations.append(
-                f"仅完成 {job.task_completed}/{job.task_total} 个研究任务。"
+                f"Only {job.task_completed}/{job.task_total} research tasks were completed."
+                if plan.report_spec.language == 'en-US'
+                else f"仅完成 {job.task_completed}/{job.task_total} 个研究任务。"
             )
         return self.renderer.render(
             research_id=research_id,

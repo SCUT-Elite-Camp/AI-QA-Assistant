@@ -109,6 +109,7 @@ def test_missing_numeric_fact_is_found_without_llm_and_passed_to_one_repair() ->
     assert "40%" in repaired
     assert len(llm.calls) == 1
     repair_prompt = llm.calls[0]["messages"][0]["content"]
+    assert llm.calls[0]["messages"][0]["role"] == "user"
     assert "Preserve every correct" in repair_prompt
     assert "Do not rewrite from scratch" in repair_prompt
 
@@ -185,6 +186,7 @@ def test_llm_extract_replaces_the_judge_on_complex_queries(monkeypatch) -> None:
     assert "ToolExecutor" in result.missing_aspects
     assert len(llm.calls) == 1
     assert "required_facts" in llm.calls[0]["messages"][0]["content"]
+    assert llm.calls[0]["messages"][0]["role"] == "user"
 
 
 def test_lexical_extractor_keeps_query_grounded_percentages() -> None:

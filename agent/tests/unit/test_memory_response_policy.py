@@ -51,6 +51,15 @@ def test_exact_recall_reports_no_visible_confirmed_fact_without_model_guessing()
     assert recall.answer == "当前没有可见且未过期的已确认记忆。"
 
 
+def test_recall_uses_the_same_visibility_cutoff_as_the_request_memory_view() -> None:
+    policy = MemoryResponsePolicy(now_ms=lambda: 2000)
+    facts = [PersistentFact(id="goal", category="GOAL", value="Finish report", expires_at=1500)]
+    visible = policy.resolve("what have you remembered", facts, visibility_cutoff_ms=1000)
+    expired = policy.resolve("what have you remembered", facts, visibility_cutoff_ms=1500)
+    assert visible.handled and "Finish report" in visible.answer
+    assert expired.handled and "Finish report" not in expired.answer
+
+
 def test_non_exact_question_does_not_trigger_memory_recall() -> None:
     recall = MemoryResponsePolicy().resolve(
         "我之前确认的目标是什么？",

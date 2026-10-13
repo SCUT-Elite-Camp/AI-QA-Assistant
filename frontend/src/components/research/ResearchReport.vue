@@ -203,7 +203,7 @@ function askSelectedText() {
                   <dt class="inline">
                     Authority:
                   </dt><dd class="inline">
-                    {{ alternative.authority }}（{{ alternative.authority_rank }}）
+                    {{ alternative.authority }} ({{ alternative.authority_rank }})
                   </dd>
                 </div>
               </dl>

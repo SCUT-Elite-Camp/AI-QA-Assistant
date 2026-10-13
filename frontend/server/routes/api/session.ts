@@ -2,6 +2,7 @@ import { defineHandler } from 'nitro'
 import { isMethod } from 'nitro/h3'
 import { useUserSession } from '../../utils/session'
 import { useDrizzle, tables, eq } from '../../utils/drizzle'
+import { isLocalDevelopmentRequest } from '../../utils/developmentAccess'
 
 export default defineHandler(async (event) => {
   if (isMethod(event, 'DELETE')) {
@@ -14,7 +15,7 @@ export default defineHandler(async (event) => {
   const data = session.data
 
   // 开发模式免登录自动注入管理员用户
-  const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV || process.env.ALLOW_DEV_LOGIN !== 'false'
+  const isDev = isLocalDevelopmentRequest(event)
 
   if (!data.user && isDev) {
     try {
@@ -25,7 +26,7 @@ export default defineHandler(async (event) => {
         await db.insert(tables.users).values({
           id: devUserId,
           email: 'admin@dev.local',
-          name: '系统管理员',
+          name: 'Development User',
           avatar: 'https://github.com/nuxt.png',
           username: 'admin',
           provider: 'github',
@@ -34,9 +35,6 @@ export default defineHandler(async (event) => {
         })
         const [inserted] = await db.select().from(tables.users).where(eq(tables.users.id, devUserId))
         dbUser = inserted
-      } else if (dbUser.role !== 'admin') {
-        await db.update(tables.users).set({ role: 'admin' }).where(eq(tables.users.id, devUserId))
-        dbUser.role = 'admin'
       }
 
       const memberships = await db.select().from(tables.userDepartments).where(eq(tables.userDepartments.userId, devUserId))
@@ -44,10 +42,10 @@ export default defineHandler(async (event) => {
       const devUserSession = {
         id: devUserId,
         username: dbUser?.username || 'admin',
-        name: dbUser?.name || '系统管理员',
+        name: dbUser?.name || 'Development User',
         avatar: dbUser?.avatar || 'https://github.com/nuxt.png',
-        role: 'admin' as const,
-        disabled: false,
+        role: dbUser?.role ?? 'user',
+        disabled: dbUser?.disabled ?? false,
         departmentIds: memberships.map(m => m.departmentId),
       }
 

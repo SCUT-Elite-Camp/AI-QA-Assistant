@@ -48,7 +48,7 @@ export async function requestTopicSummarizerFromPersistence(
       }
     }
   } catch (err) {
-    logger.warn('[PersistenceSummarizer] Failed to invoke data persistence summarizer service:', err)
+    logger.warn({ event: 'TOPIC_SUMMARY_UNAVAILABLE', status: (err as any)?.statusCode }, 'Topic summary could not be completed')
   }
   return null
 }

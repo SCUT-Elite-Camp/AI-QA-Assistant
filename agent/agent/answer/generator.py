@@ -65,8 +65,8 @@ class AnswerGenerator:
             question_context += f"\nStandalone question: {query_plan.standalone_query}"
         if is_first_message:
             question_context = (
-                "【极重要指令】：请在最终回答第一行输出对话标题，格式为 "
-                "[TITLE: 3-10字精炼标题]，然后换行回答。\n" + question_context
+                "On the first line output a concise English chat title as "
+                "[TITLE: 2-6 word title], then answer on a new line.\n" + question_context
             )
         soul_directive = (
             "\n\n[VERIFIED_TOPIC_MEMORY]\n"
@@ -131,6 +131,14 @@ class AnswerGenerator:
         trace_id: str,
         preference: AnswerModelPreference = "auto",
     ) -> dict[str, Any]:
+        # English is the product default, regardless of source/history language.
+        # Copy the prompt so caller history remains immutable.
+        instruction = "Write the entire answer in English unless the user explicitly requests another output language. Preserve technical identifiers and citation markers. Do not change language because prior conversation or sources use another language."
+        messages = [dict(message) for message in messages]
+        if messages and messages[0].get('role') == 'system':
+            messages[0]['content'] = str(messages[0].get('content', '')) + '\n\n' + instruction
+        else:
+            messages.insert(0, {'role': 'system', 'content': instruction})
         complexity_reasons = answer_complexity_reasons(
             query_plan,
             retrieval_attempts=retrieval_attempts,

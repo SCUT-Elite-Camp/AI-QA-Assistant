@@ -40,11 +40,11 @@ export default defineHandler(async (event) => {
   if (selected.some(item => item.status !== 'ready' && !(item.status === 'needs_review' && acceptedReview.has(item.id)))) {
     throw new HTTPError({ statusCode: 409, statusMessage: 'attachments_not_ready' })
   }
-  const input = rawInput.trim() || (attachmentIds.length ? '请分析这些附件' : '')
+  const input = rawInput.trim() || (attachmentIds.length ? 'Analyze the uploaded files.' : '')
   if (!input) throw new HTTPError({ statusCode: 422, statusMessage: 'message_required' })
 
   const cleanInput = input.trim()
-  const initialTitle = cleanInput.length > 20 ? cleanInput.slice(0, 20) + '...' : (cleanInput || '新对话')
+  const initialTitle = cleanInput.length > 80 ? cleanInput.slice(0, 80) + '...' : (cleanInput || 'New chat')
 
   // Confirm the attachment service can bind every selected draft before
   // committing the chat. If this preflight fails, no visible chat/message is

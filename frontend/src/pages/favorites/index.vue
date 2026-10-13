@@ -22,13 +22,14 @@ onMounted(() => {
 <template>
   <UDashboardPanel id="favorites" class="min-h-0">
     <template #header>
-      <div class="flex items-center gap-3 px-4 py-3 border-b border-default/50">
+      <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-default/50">
+        <UDashboardSidebarToggle />
         <UIcon name="i-lucide-star" class="w-5 h-5 text-amber-400" />
         <h1 class="text-lg font-semibold text-highlighted">Favorites</h1>
         <span class="text-xs text-muted bg-accented/60 px-2 py-0.5 rounded-full">
           {{ favoriteChats.length }} saved
         </span>
-        <div class="ms-auto w-64">
+        <div class="w-full sm:ms-auto sm:w-64">
           <UInput
             v-model="searchQuery"
             placeholder="Search favorites..."

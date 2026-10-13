@@ -7,6 +7,7 @@ from agent.answer.schemas import AnswerCompletenessResult
 from agent.answer.target_extractor import TargetExtractor
 from agent.config.settings import settings
 from agent.llm.base import BaseLLM
+from agent.evidence.citation import normalize_citation_markers
 from agent.schemas.query_plan import QueryPlan
 from agent.schemas.tool_execution import Evidence
 
@@ -98,7 +99,7 @@ class AnswerCompletenessChecker:
 
     @staticmethod
     def _has_valid_citation(answer: str, evidence: list[Evidence]) -> bool:
-        citation_numbers = [int(value) for value in re.findall(r"\[(\d+)\]", answer)]
+        citation_numbers = [int(value) for value in re.findall(r"\[(\d+)\]", normalize_citation_markers(answer))]
         return any(1 <= value <= len(evidence) for value in citation_numbers)
 
     def _deterministic_check(
@@ -131,7 +132,7 @@ class AnswerCompletenessChecker:
         repair_evidence = self._evidence_for_repair(evidence, missing)
         response = self.llm.chat(
             [{
-                "role": "system",
+                "role": "user",
                 "content": self._repair_prompt(query_plan, answer, repair_evidence, result, evidence),
             }],
             tools=None,
@@ -160,7 +161,7 @@ class AnswerCompletenessChecker:
             if settings.ANSWER_REPAIR_APPEND_ONLY
             else "Repair the answer exactly once using only the supplied evidence."
         )
-        language = "Write the entire repaired answer in English. " if not re.search(r"[\u4e00-\u9fff]", query_plan.original_query) else ""
+        language = "Write the entire repaired answer in English unless the user explicitly requests another output language. "
         return (
             f"{language}{style} Do not mention this review and do not invent facts. "
             "Return only the repaired answer.\n\n"

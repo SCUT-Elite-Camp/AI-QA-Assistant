@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { $fetch } from 'ofetch'
 import { useToast } from '@nuxt/ui/composables'
@@ -11,13 +11,14 @@ import CascadingModeSelector from '../components/chat/CascadingModeSelector.vue'
 import AttachmentTray from '../components/chat/AttachmentTray.vue'
 import ResearchModeNotice from '../components/research/ResearchModeNotice.vue'
 import { useResearchLaunch } from '../composables/useResearchLaunch'
+import { useAdaptiveComposer } from '../composables/useAdaptiveComposer'
 
 const { fetchChats } = useChats()
 const { csrf, headerName } = useCsrf()
 const { user, fetchSession } = useUserSession()
 const input = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
-void textareaRef
+const composerRoot = ref<HTMLElement | null>(null)
 const isComposing = ref(false)
 const toast = useToast()
 const attachmentIds = ref<string[]>([])
@@ -43,6 +44,9 @@ function getStoredWeightMode(): 'thinking' | 'auto' | 'fast' {
 }
 
 const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>(getStoredWeightMode())
+const multiline = useAdaptiveComposer(input, textareaRef, composerRoot, [deepResearchMode, currentWeightMode])
+const expandedComposer = computed(() => multiline.value || hasAttachments.value)
+watch([input, expandedComposer], async () => { await nextTick(); adjustTextareaHeight() }, { flush: 'post' })
 
 watch(currentWeightMode, (newMode) => {
   if (typeof window !== 'undefined' && window.localStorage && newMode) {
@@ -64,8 +68,8 @@ const greeting = computed(() => {
 async function createChat(prompt: string) {
   if (submitting.value || (!prompt.trim() && !attachmentIds.value.length)) return
   if (deepResearchMode.value) {
-    if (attachmentIds.value.length) {
-      toast.add({ description: 'Deep Research uses selected knowledge base documents. Remove draft attachments or switch to chat.', color: 'warning' })
+    if (hasAttachments.value) {
+      toast.add({ description: 'Deep Research uses accessible knowledge base documents. Remove draft attachments or switch to chat.', color: 'warning' })
       return
     }
     if (await launchResearch(prompt)) input.value = ''
@@ -190,17 +194,16 @@ const plusMenuItems = computed(() => [
             <p v-if="researchLaunchError" role="alert" class="px-3 py-2 text-sm text-error">{{ researchLaunchError }}</p>
           </div>
 
-          <!-- Prompt Box (Capsule by default, expands to GPT Card when files are uploaded) -->
+          <!-- Keep the capsule until text wraps or attachments need more space. -->
           <div class="w-full">
             <div
-              class="w-full border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.45)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 focus-within:shadow-[0_12px_42px_-6px_rgba(0,0,0,0.12)] dark:focus-within:shadow-[0_12px_42px_-6px_rgba(0,0,0,0.55)] transition-all duration-300"
-              :class="[
-                hasAttachments
-                  ? 'rounded-[26px] px-4.5 pt-3.5 pb-3 sm:px-5 sm:pt-4 sm:pb-3.5 flex flex-col gap-2 min-h-[104px]'
-                  : 'rounded-full px-4.5 py-2 sm:px-5 sm:py-2.5 flex items-center gap-3 sm:gap-3.5 min-h-[58px] sm:min-h-[64px]'
-              ]"
+              class="w-full border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 transition-all duration-200"
+              :class="expandedComposer ? 'rounded-[26px] px-4.5 pt-3.5 pb-3 sm:px-5 sm:pt-4 sm:pb-3.5' : 'rounded-full px-4.5 py-2 sm:px-5 sm:py-2.5 min-h-[58px] sm:min-h-[64px]'"
+              :data-composer-layout="expandedComposer ? 'expanded' : 'capsule'"
             >
-              <!-- Attachment Tray (always mounted, hidden when no files) -->
+              <div ref="composerRoot" data-compact-columns="3" class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 sm:gap-x-3.5 gap-y-2">
+              <div v-show="hasAttachments" class="col-span-3" :class="hasAttachments ? 'row-start-1' : ''">
+              <!-- Always mounted so uploads can open from the capsule. -->
               <AttachmentTray
                 ref="attachmentTray"
                 scope="draft"
@@ -210,15 +213,15 @@ const plusMenuItems = computed(() => [
                 @count-change="(count) => attachmentCount = count"
               />
 
-              <!-- Case 1: Uploaded state -> Expanded GPT Card Layout -->
-              <template v-if="hasAttachments">
+              </div>
                 <!-- Middle: Full-width Textarea -->
                 <textarea
                   ref="textareaRef"
                   v-model="input"
                   rows="1"
                   placeholder="Ask anything..."
-                  class="w-full bg-transparent border-0 outline-none text-left text-base sm:text-[17px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none px-1 py-1 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block min-h-[36px] sm:min-h-[40px]"
+                  :class="expandedComposer ? (hasAttachments ? 'col-span-3 row-start-2' : 'col-span-3 row-start-1') : 'col-start-2 row-start-1'"
+                  class="w-full min-w-0 bg-transparent border-0 outline-none text-left text-base sm:text-[18px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
                   @keydown="onKeydown"
                   @blur="onBlur"
                   @input="adjustTextareaHeight"
@@ -227,9 +230,9 @@ const plusMenuItems = computed(() => [
                 />
 
                 <!-- Bottom Toolbar: [+] (Deep Research) ... [Mode] -->
-                <div class="flex items-center justify-between w-full pt-1 mt-auto">
+
                   <!-- Left: Plus Button & Badges -->
-                  <div class="flex items-center gap-2 shrink-0">
+                  <div data-composer-control class="flex items-center gap-2 shrink-0 col-start-1" :class="expandedComposer ? (hasAttachments ? 'row-start-3' : 'row-start-2') : 'row-start-1'">
                     <UDropdownMenu
                       :items="plusMenuItems"
                       :content="{ align: 'start', sideOffset: 8 }"
@@ -271,79 +274,26 @@ const plusMenuItems = computed(() => [
                   </div>
 
                   <!-- Right: Mode Selector -->
-                  <CascadingModeSelector
-                    v-model="currentWeightMode"
-                    expand-on-hover
-                    class="shrink-0"
-                  />
-                </div>
-              </template>
-
-              <!-- Case 2: Normal state -> Single-line Elongated Rounded Capsule Bubble -->
-              <template v-else>
-                <!-- Left: Plus Button -->
-                <div class="flex items-center shrink-0">
-                  <UDropdownMenu
-                    :items="plusMenuItems"
-                    :content="{ align: 'start', sideOffset: 8 }"
-                    :ui="{
-                      content: 'min-w-44 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-[0_12px_36px_-6px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.6)] ring-0',
-                      group: 'p-0 flex flex-col gap-1',
-                      item: 'rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-[0.98] select-none flex items-center gap-2.5 data-highlighted:bg-zinc-100 dark:data-highlighted:bg-zinc-800',
-                      itemLeadingIcon: 'w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors',
-                      itemTrailing: 'ml-auto flex items-center',
-                      itemTrailingIcon: 'w-4 h-4 text-emerald-500 dark:text-emerald-400'
-                    }"
-                  >
-                    <button
-                      type="button"
-                      aria-label="Add attachments & options"
-                      title="Add attachments & options"
-                      class="rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all cursor-pointer w-8.5 h-8.5 sm:w-9 sm:h-9 flex items-center justify-center p-0 shrink-0 active:scale-95"
-                    >
-                      <UIcon name="i-lucide-plus" class="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-                    </button>
-                  </UDropdownMenu>
+                  <div data-composer-control class="flex items-center gap-2 shrink-0 col-start-3" :class="expandedComposer ? (hasAttachments ? 'row-start-3' : 'row-start-2') : 'row-start-1'">
+                    <CascadingModeSelector
+                      v-model="currentWeightMode"
+                      :disabled="submitting"
+                      expand-on-hover
+                      class="shrink-0"
+                    />
+                    <UButton
+                      aria-label="Send message"
+                      icon="i-lucide-arrow-up"
+                      color="neutral"
+                      class="rounded-full size-9 justify-center"
+                      :loading="submitting"
+                      :disabled="submitting || (!input.trim() && !attachmentIds.length)"
+                      @click="onSubmit"
+                    />
+                  </div>
                 </div>
 
-                <!-- Deep Research badge (only visible when active) -->
-                <span
-                  v-if="deepResearchMode"
-                  class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full whitespace-nowrap select-none shrink-0"
-                >
-                  <UIcon name="i-lucide-telescope" class="w-3.5 h-3.5" />
-                  <span>Deep Research</span>
-                  <button
-                    type="button"
-                    class="hover:bg-emerald-500/20 rounded-full p-0.5 ml-0.5 cursor-pointer inline-flex items-center transition-colors"
-                    title="Disable Deep Research"
-                    @click.stop="deepResearchMode = false"
-                  >
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
 
-                <!-- Middle: Textarea (Single-line, flex-1) -->
-                <textarea
-                  ref="textareaRef"
-                  v-model="input"
-                  rows="1"
-                  placeholder="Ask anything..."
-                  class="flex-1 bg-transparent border-0 outline-none text-left text-base sm:text-[18px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none py-1 leading-relaxed focus:ring-0 max-h-52 overflow-y-auto block self-center"
-                  @keydown="onKeydown"
-                  @blur="onBlur"
-                  @input="adjustTextareaHeight"
-                  @compositionstart="isComposing = true"
-                  @compositionend="isComposing = false"
-                />
-
-                <!-- Right: Mode Selector -->
-                <CascadingModeSelector
-                  v-model="currentWeightMode"
-                  expand-on-hover
-                  class="shrink-0 self-center"
-                />
-              </template>
             </div>
           </div>
         </div>

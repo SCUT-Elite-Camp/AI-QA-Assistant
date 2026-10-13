@@ -27,7 +27,7 @@ export default defineHandler(async (event) => {
       copies.push(message)
     }
   }
-  const [chat] = await db.insert(tables.chats).values({ title: '独立对话', userId, evidenceProvenance: authoredProvenance(), visibility: 'private', topicId: null, isBranch: false,
+  const [chat] = await db.insert(tables.chats).values({ title: 'Selection chat', userId, evidenceProvenance: authoredProvenance(), visibility: 'private', topicId: null, isBranch: false,
     parentChatId: body.sourceChatId || null }).returning()
   if (!chat) throw new HTTPError({ statusCode: 500, statusMessage: 'chat_create_failed' })
   for (const message of copies) await appendMessage(db, { chatId: chat.id, role: message.role, parts: message.parts })

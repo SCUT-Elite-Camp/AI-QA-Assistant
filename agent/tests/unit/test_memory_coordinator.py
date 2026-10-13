@@ -21,7 +21,7 @@ def _memory_context() -> dict:
             "summary": "Earlier topic summary.",
         },
         "facts": [
-            {"id": "fact-a", "category": "GOAL", "value": "Finish the report."}
+            {"id": "fact-a", "category": "GOAL", "value": "Finish the report.", "expires_at": None}
         ],
         "tail": [
             {
@@ -37,6 +37,7 @@ def _memory_context() -> dict:
 
 def test_prepare_builds_one_view_from_persistent_snapshot_fact_and_tail(monkeypatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
+    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     memory_context = _memory_context()
     memory_context["facts"][0]["expires_at"] = 1001
     original_from_input = PersistentMemoryContext.from_input
@@ -62,7 +63,7 @@ def test_prepare_builds_one_view_from_persistent_snapshot_fact_and_tail(monkeypa
         now_ms=clock,
     )
     request = InternalChatRequest(
-        query="我之前确认的目标是什么？",
+        query="我之前确认的记忆是什么？",
         memory_context=memory_context,
     )
 

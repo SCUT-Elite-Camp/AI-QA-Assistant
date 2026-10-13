@@ -21,7 +21,10 @@ export default defineHandler(async (event) => {
   const visible = await readableTopic(userId, topic)
   // Rebuild from currently readable messages; do not silently load old disk Soul.
   const result = await requestTopicSummarizerFromPersistence(id, text, visible.title, {}, { userId, proof })
-  if (!result) throw new HTTPError({ statusCode: 503, statusMessage: 'topic_summary_unavailable' })
+  if (!result) {
+    await db.update(tables.topics).set({ status: 'failed' }).where(eq(tables.topics.id, id))
+    throw new HTTPError({ statusCode: 503, statusMessage: 'topic_summary_unavailable' })
+  }
   await requireEnabledActor(event)
   await requireTopicRole(event, id, 'editor')
   await assertDerivedSources(userId, proof)

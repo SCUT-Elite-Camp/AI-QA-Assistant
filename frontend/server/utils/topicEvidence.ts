@@ -4,7 +4,7 @@ import { accessBackend, assertDerivedSources, assertMessageSources, authoredProv
 /** No disk/cache fallback may restore text whose transitive lineage is unknown. */
 export async function readableTopic<T extends { title: string, soulContent: string, description?: unknown, tags?: unknown, evidenceProvenance?: unknown }>(userId: string, topic: T): Promise<T> {
   try { await assertDerivedSources(userId, topic.evidenceProvenance); return topic }
-  catch { return { ...topic, title: '话题项目', soulContent: '', description: '', tags: [], sourceAccess: 'unavailable' } }
+  catch { return { ...topic, title: 'Unavailable topic', soulContent: '', description: '', tags: [], sourceAccess: 'unavailable' } }
 }
 
 export async function discussionEvidence(userId: string, messages: Array<{ role: string, parts: unknown }>): Promise<{ text: string, proof: EvidenceProvenance }> {

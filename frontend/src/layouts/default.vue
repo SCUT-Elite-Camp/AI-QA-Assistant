@@ -36,6 +36,10 @@ loadTopics().catch(() => {})
 const sidebarOpen = ref(false)
 const sidebarCollapsed = ref(true)
 const searchOpen = ref(false)
+watch(() => route.path, () => {
+  sidebarOpen.value = false
+  searchOpen.value = false
+})
 // Track which topics are expanded in the sidebar
 const expandedTopics = ref<Set<string>>(new Set())
 
@@ -179,24 +183,24 @@ function getChatActions(item: { id: string, label: string, topicId?: string | nu
   const isTopicChat = !!item.topicId
   const topicMenuItem = isTopicChat
     ? {
-        label: 'Remove from Topic',
-        icon: 'i-heroicons-folder-minus',
+        label: 'Remove from topic',
+        icon: 'i-lucide-folder-minus',
         onSelect: async () => {
           await addChatToTopic(item.id, null)
           await fetchChats()
         }
       }
     : {
-        label: 'Add to Topic',
-        icon: 'i-heroicons-folder-plus',
+        label: 'Add to topic',
+        icon: 'i-lucide-folder-plus',
         onSelect: () => openSelectTopicModal(item.id)
       }
 
   return [[
     topicMenuItem,
     {
-      label: 'Topic',
-      icon: 'i-heroicons-sparkles',
+      label: 'Create topic',
+      icon: 'i-lucide-sparkles',
       onSelect: async () => {
         const topic = await createTopicForChat(item.id)
         if (topic?.id) {
@@ -221,6 +225,14 @@ function getChatActions(item: { id: string, label: string, topicId?: string | nu
   ]]
 }
 
+const chatMenuUi = {
+  content: 'min-w-44 p-1 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-lg ring-0',
+  group: 'p-0 space-y-0.5',
+  item: 'rounded-lg px-2.5 py-2 text-[13px] font-normal gap-2.5 cursor-pointer',
+  itemLeadingIcon: 'size-4 shrink-0',
+  separator: 'my-1 -mx-1 bg-zinc-200/70 dark:bg-zinc-800'
+}
+
 // Items for search and nav (all chats flat)
 const searchGroups = computed(() => groups.value)
 
@@ -240,6 +252,7 @@ defineShortcuts({
       :min-size="14"
       collapsible
       resizable
+      :menu="{ title: 'Navigation', description: 'Open chats, topics and your library.' }"
       class="border-r-0 py-4"
     >
       <template #header="{ collapsed }">
@@ -340,8 +353,8 @@ defineShortcuts({
                   color="neutral"
                   variant="ghost"
                   size="sm"
-                  class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 rounded-lg"
-                  aria-label="Create chat in this topic"
+                  class="opacity-100 sm:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shrink-0 rounded-lg"
+                  :aria-label="`Create chat in ${topic.title}`"
                   @click.stop="createChatInTopic(topic.id)"
                 />
               </div>
@@ -352,7 +365,7 @@ defineShortcuts({
                   v-for="chat in getTopicChats(topic.id)"
                   :key="chat.id"
                   draggable="true"
-                  class="group relative flex items-center ml-5 rounded-xl px-2.5 py-2 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
+                  class="group relative flex items-center ml-5 rounded-xl pl-2.5 pr-9 py-2 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
                   :class="{ 'bg-accented font-medium': route.path === `/chat/${chat.id}` }"
                   @click="router.push(`/chat/${chat.id}`)"
                   @dragstart="handleDragStart(chat.id, $event)"
@@ -362,15 +375,14 @@ defineShortcuts({
                     {{ chat.label || 'Untitled' }}
                   </span>
                   <!-- Chat actions "..." -->
-                  <div class="absolute right-1.5 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
-                    <UDropdownMenu :items="getChatActions({ id: chat.id, label: chat.label, topicId: (chat as any).topicId })" :content="{ align: 'end' }">
+                  <div class="absolute right-1.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-has-data-[state=open]:opacity-100 transition-opacity" @click.stop>
+                    <UDropdownMenu :items="getChatActions({ id: chat.id, label: chat.label, topicId: (chat as any).topicId })" :content="{ align: 'start', side: 'right', sideOffset: 8 }" :ui="chatMenuUi">
                       <UButton
-                        as="div"
                         icon="i-lucide-ellipsis"
                         color="neutral"
                         variant="ghost"
                         size="sm"
-                        class="rounded-lg"
+                        class="rounded-lg p-1.5 cursor-pointer"
                         aria-label="Chat actions"
                       />
                     </UDropdownMenu>
@@ -399,7 +411,7 @@ defineShortcuts({
               v-for="chat in standaloneChats"
               :key="chat.id"
               draggable="true"
-              class="group relative flex items-center rounded-xl px-3 py-2.5 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
+              class="group relative flex items-center rounded-xl pl-3 pr-9 py-2 hover:bg-accented/50 cursor-pointer transition-colors select-none active:opacity-60"
               :class="{ 'bg-accented font-medium text-highlighted shadow-xs': route.path === `/chat/${chat.id}` }"
               @click="router.push(`/chat/${chat.id}`)"
               @dragstart="handleDragStart(chat.id, $event)"
@@ -408,17 +420,15 @@ defineShortcuts({
                 {{ chat.label?.replace(/^🌱\s*/, '') || 'Untitled' }}
               </span>
               <!-- Chat actions "..." -->
-              <div class="absolute right-1.5 opacity-0 group-hover:opacity-100 group-has-data-[state=open]:opacity-100 transition-opacity" @click.stop>
-                <UDropdownMenu :items="getChatActions({ id: chat.id, label: chat.label, topicId: (chat as any).topicId })" :content="{ align: 'end' }">
+              <div class="absolute right-1.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-has-data-[state=open]:opacity-100 transition-opacity" @click.stop>
+                <UDropdownMenu :items="getChatActions({ id: chat.id, label: chat.label, topicId: (chat as any).topicId })" :content="{ align: 'start', side: 'right', sideOffset: 8 }" :ui="chatMenuUi">
                   <UButton
-                    as="div"
                     icon="i-lucide-ellipsis"
                     color="neutral"
-                    variant="link"
+                    variant="ghost"
                     size="sm"
-                    class="rounded-lg hover:bg-accented/50 focus-visible:bg-accented/50 data-[state=open]:bg-accented/50 cursor-pointer p-1"
+                    class="rounded-lg hover:bg-accented/50 focus-visible:bg-accented/50 data-[state=open]:bg-accented/50 cursor-pointer p-1.5"
                     aria-label="Chat actions"
-                    tabindex="-1"
                     @click.stop
                   />
                 </UDropdownMenu>
@@ -447,6 +457,9 @@ defineShortcuts({
 
     <UDashboardSearch
       v-model:open="searchOpen"
+      title="Search"
+      description="Find a chat or open a workspace."
+      :search-delay="0"
       placeholder="Search chats..."
       :groups="[{
         id: 'links',

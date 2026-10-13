@@ -220,12 +220,6 @@ class AgentRunner:
                         "id": f"source-{iteration}-{name}", "type": "function",
                         "function": {"name": name, "arguments": json.dumps({"query": query_plan.standalone_query})},
                     }]}
-                elif (
-                    navigation_enabled
-                    and exploration_mode == "force"
-                    and retrieval_route is None
-                ):
-                    response = self._forced_wiki_route_response(query_plan)
                 elif state.evidence and not next_wiki_tool:
                     # Start answer generation from a clean evidence-only prompt.
                     # Replaying the prior assistant tool call can make some

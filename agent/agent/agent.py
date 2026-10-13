@@ -350,7 +350,7 @@ class Agent:
             ))
 
         if self._propose_explicit_facts(request):
-            return ChatResponse(trace_id=trace_id, status=StatusCode.SUCCESS, answer="已生成一条待确认的会话记忆，请在界面确认。", message="", citations=[])
+            return AgentChatExecution(ChatResponse(trace_id=trace_id, status=StatusCode.SUCCESS, answer="A session memory suggestion is ready. Please confirm it in the interface.", message="", citations=[]))
 
         # Inject permission filters into request
         resolved_filters = self._resolve_filters(request)
@@ -1128,6 +1128,7 @@ class Agent:
                         "the numbered reference excerpts; do not invent citations for Topic memory."
                     )
 
+                system_prompt += " Write the entire answer in English unless the user explicitly requests another output language. Do not change language because prior conversation or sources use another language. Preserve technical identifiers and citation markers."
                 fast_messages = [{"role": "system", "content": system_prompt}]
                 for msg in (history or []):
                     if msg.get("role") in ("system", "user", "assistant") and msg.get("content"):

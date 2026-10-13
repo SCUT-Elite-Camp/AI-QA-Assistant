@@ -38,7 +38,7 @@ export default defineHandler(async (event) => {
     }
     chat = owned.chat
   } else {
-    ;[chat] = await db.insert(tables.chats).values({ title: '划词探索', userId,
+    ;[chat] = await db.insert(tables.chats).values({ title: 'Selection Q&A', userId,
       visibility: 'private', isBranch: true, evidenceProvenance: authoredProvenance() }).returning()
   }
   if (!chat) throw new HTTPError({ statusCode: 500, statusMessage: 'chat_create_failed' })
@@ -74,7 +74,7 @@ export default defineHandler(async (event) => {
     await requireOwnedChat(event, chatId)
     await assertMessageSources(userId, message)
     writer.write({ type: 'start', messageId: message.id })
-    writer.write({ type: 'data-temp-chat', data: { chatId } } as any)
+    writer.write({ type: 'data-temp-chat', data: { chatId, messageIds: [current.id, message.id] } } as any)
     for (const part of message.parts as any[]) {
       if (part.type === 'tool-rag_search' && part.output.length) {
         writer.write({ type: 'tool-input-available', toolCallId: message.id, toolName: 'rag_search', input: part.input })

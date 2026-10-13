@@ -45,7 +45,7 @@ def mock_llm_client_chat(monkeypatch):
     """Automatically mocks LLMClient.chat for all tests to keep them hermetic and mock-free in prod."""
     from agent.llm.llm_client import LLMClient
 
-    def mock_chat(self, messages, tools=None):
+    def mock_chat(self, messages, tools=None, **kwargs):
         # Simulate LLM tool calling and final response loop
         has_tool_response = any(msg.get("role") == "tool" for msg in messages)
 
@@ -169,6 +169,7 @@ _COMPONENT_SUITES = {
     "test_error_cases", "test_mock_agent_chain", "test_persistent_memory",
     "test_tool_layer_smoke", "test_week4_web_contract",
     "test_internal_memory_api", "test_internal_memory_routes",
+    "test_agent_exploration_contract",
 }
 
 
@@ -211,6 +212,9 @@ def component_authorization_double(monkeypatch, request):
     monkeypatch.setattr(module, "AccessGuard", ComponentGuard)
     monkeypatch.setattr(module, "CURRENT_ACCESS_GUARD", UnenforcedComponentContext())
     monkeypatch.setattr(module.Agent, "_resolve_filters", component_filters)
+    # Streaming transport preflight still invokes the permission resolver. This
+    # component double has no real documents or authority and returns no grants.
+    monkeypatch.setattr(PermissionService, 'get_accessible_doc_ids_strict', lambda self, user_id, doc_ids=None: [])
     # Transport fixtures remain service-token protected but now carry the
     # synthetic actor in the same header as the real BFF.
     from fastapi.testclient import TestClient

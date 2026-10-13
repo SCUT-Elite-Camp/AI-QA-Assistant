@@ -6,6 +6,15 @@ from agent.schemas.chat import Citation
 from agent.schemas.tool_execution import Evidence
 
 
+def normalize_citation_markers(answer: str) -> str:
+    """Expand grouped numeric citations without changing their source numbers."""
+    return re.sub(
+        r"\[(\d+(?:\s*,\s*\d+)+)\]",
+        lambda match: ''.join(f'[{number.strip()}]' for number in match.group(1).split(',')),
+        answer,
+    )
+
+
 class CitationCheckResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -27,7 +36,7 @@ class CitationChecker:
     ) -> CitationCheckResult:
         errors: list[str] = []
         referenced_ids = sorted(
-            {int(value) for value in self._MARKER.findall(answer)}
+            {int(value) for value in self._MARKER.findall(normalize_citation_markers(answer))}
         )
         citation_ids = [citation.citation_id for citation in citations]
 

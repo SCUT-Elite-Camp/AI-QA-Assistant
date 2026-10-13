@@ -427,10 +427,10 @@ class MarkdownReportRenderer:
                 if len(number_sets) > 1
                 else "source"
             )
-            source_names = "与".join(
-                f"《{item.source_title}》" for item in alternatives[:2]
+            source_names = " and ".join(
+                item.source_title for item in alternatives[:2]
             )
-            type_label = {"version": "版本", "numeric": "数值", "source": "表述"}[
+            type_label = {"version": "version", "numeric": "numeric", "source": "statement"}[
                 conflict_type
             ]
             ranked = sorted(
@@ -444,7 +444,7 @@ class MarkdownReportRenderer:
             resolved = len(ranked) > 1 and ranked[0][0] > ranked[1][0]
             preferred = ranked[0][2] if resolved else None
             resolution = (
-                f"按资料权威级别，优先参考《{preferred.title}》。"
+                f"Prefer {preferred.title} based on the recorded source authority."
                 if preferred is not None
                 else ""
             )
@@ -454,9 +454,9 @@ class MarkdownReportRenderer:
                         "conflict-"
                         + hashlib.sha256(claim.claim_id.encode("utf-8")).hexdigest()[:16]
                     ),
-                    subject=f"{source_names}的{type_label}差异",
+                    subject=f"{type_label.capitalize()} differences between {source_names}",
                     conflict_type=conflict_type,
-                    summary="多个来源对同一研究问题给出了不一致的信息。",
+                    summary="The selected source statements require comparison for this research question.",
                     alternatives=alternatives,
                     resolution_status=(
                         "resolved_by_authority" if resolved else "unresolved"

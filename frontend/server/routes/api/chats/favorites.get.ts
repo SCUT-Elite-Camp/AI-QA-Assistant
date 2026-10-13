@@ -1,7 +1,7 @@
 import { defineHandler } from 'nitro'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
 import { requireOwnedChat } from '../../../utils/chatAccess'
-import { assertMessageSources, requireEnabledActor } from '../../../utils/sourceAccess'
+import { assertMessageSources, requireEnabledActor, readableChatMetadata } from '../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
   const userId = await requireEnabledActor(event)
@@ -19,7 +19,10 @@ export default defineHandler(async (event) => {
     for (const message of messages) {
       try { await assertMessageSources(userId, message); visible.push(message) } catch { /* legacy/revoked bodies stay inaccessible */ }
     }
-    if (visible.length) favorites.push({ id: chat.id, title: '收藏对话', lastFavoritedAt: chat.updatedAt, favoriteMessages: visible })
+    if (visible.length) {
+      const metadata = await readableChatMetadata(userId, chat)
+      favorites.push({ id: chat.id, title: metadata.title, lastFavoritedAt: chat.updatedAt, favoriteMessages: visible })
+    }
   }
   return favorites
 })

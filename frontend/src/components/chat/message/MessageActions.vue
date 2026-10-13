@@ -28,7 +28,9 @@ const formattedDate = computed(() => {
 })
 
 // Initialize from message prop so state survives page refresh
-const isFavorite = ref(props.message.isFavorite ?? false)
+const isFavorite = computed(() => props.message.isFavorite ?? false)
+const persisted = computed(() => !props.message.parts.some((part: any) =>
+  part.type === 'data-answer-status' && part.data?.persisted === false))
 
 const emit = defineEmits<{
   edit: [message: UIMessage]
@@ -36,6 +38,7 @@ const emit = defineEmits<{
   vote: [message: UIMessage, isUpvoted: boolean]
   favorite: [message: UIMessage, isFav: boolean]
   saveMemory: [message: UIMessage, category: FactCategory]
+  suggest: [message: UIMessage]
 }>()
 
 const hasFiles = computed(() => props.message.parts.some(isFileUIPart))
@@ -56,9 +59,7 @@ function copy() {
 }
 
 function toggleFavorite() {
-  isFavorite.value = !isFavorite.value
-  // Pass the NEW state so the parent can send correct value to API
-  emit('favorite', props.message, isFavorite.value)
+  emit('favorite', props.message, !isFavorite.value)
 }
 
 const memoryCategoryItems = [
@@ -140,7 +141,7 @@ const earliestDataDate = computed<string | null>(() => {
     <div class="flex items-center justify-between w-full min-w-full">
       <!-- Left Action Buttons -->
       <div class="flex items-center gap-0.5 shrink-0">
-        <UTooltip text="Favorite">
+        <UTooltip v-if="persisted" text="Favorite">
           <UButton
             size="sm"
             :color="isFavorite ? 'warning' : 'neutral'"
@@ -162,7 +163,7 @@ const earliestDataDate = computed<string | null>(() => {
           />
         </UTooltip>
 
-        <UTooltip text="Good response">
+        <UTooltip v-if="persisted" text="Good response">
           <UButton
             size="sm"
             :color="vote === true ? 'success' : 'neutral'"
@@ -173,7 +174,7 @@ const earliestDataDate = computed<string | null>(() => {
           />
         </UTooltip>
 
-        <UTooltip text="Bad response">
+        <UTooltip v-if="persisted" text="Bad response">
           <UButton
             size="sm"
             :color="vote === false ? 'error' : 'neutral'"

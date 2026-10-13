@@ -12,7 +12,7 @@ Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access
 | Agent API | `agent/` (loaded by root `app.py`) | FastAPI chat and retrieval orchestration | `http://localhost:8000` |
 | Tools and retrieval | `toolset/`, `data-pipeline/`, `shared_runtime/` | Tool implementations, ingestion, retrieval, and shared runtime code | Called by Agent |
 | Data persistence | `data-persistence/` | Topic and generated artifact storage | Used by Agent and tools |
-| Private ingestion | `toolset/attachment_service/` | Scanning, parsing, encrypted attachments, Personal Library versions and separate private vectors | `http://localhost:8200` |
+| Private ingestion | `toolset/attachment_service/` | Parsing, encrypted attachments, Personal Library versions and separate private vectors | `http://localhost:8200` |
 | Vector and cache services | `docker-compose.yml` | Milvus and its etcd/MinIO dependencies, plus Redis | `localhost:19530`, `localhost:6379` |
 
 The root `app.py` is a local development entry point that loads `agent/app.py` and adds the sibling code directories to Python's import path. Run it from the repository root so environment loading and path resolution use the expected project root.
@@ -61,6 +61,8 @@ Source access uses `SOURCE_ACCESS_MODE=native`, `CONFLUENCE_AUTH_ENV_FILE` and `
 Apply the full Web migration journal through `0015_evidence_lineage.sql` (chat/topic/Memory provenance). Evidence reads are message-bound; stored answers/Memory are rechecked after revocation or version drift. Ordinary Chat supports enterprise, personal and attachment sources; Research remains enterprise-only. Wiki navigation is quarantined until its own derived metadata has verifiable source lineage.
 
 Structured PDF/DOCX/XLSX table parsing, optional region OCR, semantic/display text views and chunk geometry are documented in the [current pipeline contract](docs/DATA_PIPELINE.md). Existing Milvus reads remain compatible; structured ingestion requires the provenance schema before replacing vectors. Use separate collections for migration and follow the [table integration record](docs/table-processing-integration-20261012.md) for validation limits.
+
+Latest desktop refinements and verification limits are recorded in the [2026-10-13 desktop retest](docs/desktop-ui-retest-20261013.md).
 
 ## CI and dependency compatibility
 

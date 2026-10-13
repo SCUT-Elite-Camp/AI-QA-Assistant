@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { defu } from 'defu'
 import { useUserSession } from '../../../utils/session'
 import { useDrizzle, tables, eq } from '../../../utils/drizzle'
+import { isLocalDevelopmentRequest } from '../../../utils/developmentAccess'
 
 const loginSchema = z.object({
   userId: z.string().optional().default('dev-user'),
@@ -27,7 +28,7 @@ const loginSchema = z.object({
  * 之后 cookies.txt 中的 session cookie 即可用于所有需要登录的 API。
  */
 export default defineHandler(async (event) => {
-  const isDev = process.env.NODE_ENV === 'development' || process.env.ALLOW_DEV_LOGIN === 'true'
+  const isDev = isLocalDevelopmentRequest(event)
 
   if (!isDev) {
     throw new HTTPError({

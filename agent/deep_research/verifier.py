@@ -80,6 +80,8 @@ class DeterministicSemanticVerifier:
             and self._same_subject(selected)
             and self._same_fact_scope(selected)
             and self._has_conflicting_claim_values(claim_numbers, evidence_number_sets)
+            and (len({(item.doc_id, item.document_version) for item in selected}) > 1
+                 or self._has_matching_numeric_fact_conflict(selected))
         ):
             return VerificationResult(
                 claim_id=claim.claim_id,
@@ -145,6 +147,35 @@ class DeterministicSemanticVerifier:
         return len(non_empty) > 1 and len({tuple(sorted(values)) for values in non_empty}) > 1
 
     @classmethod
+    def _has_matching_numeric_fact_conflict(cls, evidence: list[VerifiedEvidence]) -> bool:
+        """Different quantities in unrelated fields are not contradictory facts.
+
+        Compare values only in matching statement contexts. A document's header,
+        pagination, retry count and top_k can all legitimately use different numbers.
+        This is a conservative lexical check, not a semantic proof of agreement.
+        """
+        facts: list[tuple[frozenset[str], int, set[str]]] = []
+        for index, item in enumerate(evidence):
+            for statement in re.split(r'[\n;；。]|(?<!\d)[.!?](?!\d)', item.excerpt):
+                values = cls._numbers(statement)
+                if not values:
+                    continue
+                context = re.sub(r'(?<![A-Za-z0-9])\d+(?:\.\d+)?%?(?![A-Za-z0-9])', ' ', statement)
+                context = re.sub(r'\bdependenc(?:ies|y)\b', 'dependency', context, flags=re.I)
+                key = frozenset(cls._tokens(context) - {'the', 'a', 'an'})
+                if not key:
+                    continue
+                for previous_key, previous_index, previous_values in facts:
+                    same_context = key == previous_key or (
+                        min(len(key), len(previous_key)) >= 4
+                        and len(key & previous_key) / len(key | previous_key) >= 0.9
+                    )
+                    if same_context and previous_index != index and previous_values != values:
+                        return True
+                facts.append((key, index, values))
+        return False
+
+    @classmethod
     def _same_subject(cls, evidence: list[VerifiedEvidence]) -> bool:
         token_sets = [cls._tokens(item.excerpt) for item in evidence]
         for index, left in enumerate(token_sets):
@@ -181,6 +212,18 @@ class DeterministicSemanticVerifier:
         if markers:
             return markers
         dates = set(re.findall(r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)", text))
+        from datetime import date
+        for year, month, day in re.findall(r'(?<!\d)(\d{4})/(\d{1,2})/(\d{1,2})(?!\d)', text):
+            try:
+                dates.add(date(int(year), int(month), int(day)).isoformat())
+            except ValueError:
+                continue
+        months = 'January February March April May June July August September October November December'.split()
+        for day, month, year in re.findall(r'\b(\d{1,2})(?:st|nd|rd|th)?\s*(' + '|'.join(months) + r')\s*,?\s*(\d{4})', text, re.I):
+            try:
+                dates.add(date(int(year), next(i + 1 for i, name in enumerate(months) if name.casefold() == month.casefold()), int(day)).isoformat())
+            except ValueError:
+                continue
         if dates:
             return dates
         # A year is a useful scope only when no more precise sprint/week marker

@@ -46,7 +46,7 @@ export default defineHandler(async (event) => {
     await db.update(tables.chats).set({ topicId }).where(eq(tables.chats.id, parentChat.id))
   }
   const [branchChat] = await db.insert(tables.chats).values({
-    title: '分支对话',
+    title: 'Branch chat',
     userId,
     visibility: 'private',
     topicId,

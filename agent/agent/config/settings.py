@@ -167,9 +167,9 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("MAX_MEMORY_MESSAGES", 10),
         ge=1,
     )
-    PERSISTENT_MEMORY_ENABLED: bool = _env_bool("PERSISTENT_MEMORY_ENABLED", False)
-    SESSION_FACT_ENABLED: bool = _env_bool("SESSION_FACT_ENABLED", False)
-    MEMORY_CACHE_ENABLED: bool = _env_bool("MEMORY_CACHE_ENABLED", False)
+    PERSISTENT_MEMORY_ENABLED: bool = Field(default_factory=lambda: _env_bool("PERSISTENT_MEMORY_ENABLED", False))
+    SESSION_FACT_ENABLED: bool = Field(default_factory=lambda: _env_bool("SESSION_FACT_ENABLED", False))
+    MEMORY_CACHE_ENABLED: bool = Field(default_factory=lambda: _env_bool("MEMORY_CACHE_ENABLED", False))
     MEMORY_TAIL_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),
         ge=1,
@@ -197,7 +197,7 @@ class Settings(BaseModel):
         ge=256,
         le=60000,
     )
-    AGENT_INTERNAL_TOKEN: str = os.getenv("AGENT_INTERNAL_TOKEN", "").strip()
+    AGENT_INTERNAL_TOKEN: str = Field(default_factory=lambda: os.getenv("AGENT_INTERNAL_TOKEN", "").strip(), repr=False)
     MAX_AGENT_ITERATIONS: int = Field(
         default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
         ge=1,
@@ -207,7 +207,7 @@ class Settings(BaseModel):
         ge=1,
     )
 
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", "")
+    LLM_API_KEY: str = Field(default_factory=lambda: os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", ""), repr=False)
     LLM_API_BASE: str = os.getenv(
         "LLM_API_BASE",
         os.getenv("OPENAI_API_BASE", "http://127.0.0.1:11434/v1"),
@@ -243,7 +243,7 @@ class Settings(BaseModel):
     # Agent 服务共享密钥：Web 可信端调用 /api/* 业务接口时携带
     # `Authorization: Bearer <AGENT_API_KEY>`。未配置时 agent 业务接口
     # 返回 503，杜绝外部直连端口伪造 user_id 绕过权限隔离。
-    AGENT_API_KEY: str = os.getenv("AGENT_API_KEY", "")
+    AGENT_API_KEY: str = Field(default_factory=lambda: os.getenv("AGENT_API_KEY", ""), repr=False)
 
     # 权限服务查询异常时的策略：
     # - False（默认，fail-closed）：返回空文档列表，拒绝全部文档访问，遵循最小权限。

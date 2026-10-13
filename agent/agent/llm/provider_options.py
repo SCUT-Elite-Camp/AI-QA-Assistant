@@ -10,6 +10,11 @@ def is_openrouter(api_base: str) -> bool:
 
 
 def apply_provider_options(payload: dict, api_base: str) -> dict:
+    if urlsplit(api_base).hostname == 'generativelanguage.googleapis.com':
+        # These vendor extensions are rejected by Gemini's OpenAI endpoint.
+        # Reasoning options, when explicitly configured, use its native schema.
+        return {key: value for key, value in payload.items()
+                if key not in {'enable_thinking', 'thinking', 'thinking_budget'}}
     if not is_openrouter(api_base):
         return payload
 

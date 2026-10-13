@@ -6,7 +6,7 @@ vi.mock('../server/utils/agent-client', () => ({ agentFetch: mocks.agent }))
 vi.mock('../server/utils/attachmentService', () => ({ attachmentServiceJson: mocks.private }))
 import { tables, useDrizzle } from '../server/utils/drizzle'
 import { assertDerivedSources, assertMessageSources, assertSourceDependencies, authoredProvenance,
-  citationsCovered, filterReadableMessages, readableChatMetadata, requireEnabledActor, type SourceDependency } from '../server/utils/sourceAccess'
+  citationsCovered, filterReadableMessages, readableChatMetadata, readableChatMetadataBatch, requireEnabledActor, type SourceDependency } from '../server/utils/sourceAccess'
 import { appendMessage } from '../server/utils/messageLifecycle'
 import { createFactProposal } from '../server/utils/memoryRepository'
 import { requireOwnedChat } from '../server/utils/chatAccess'
@@ -38,6 +38,24 @@ beforeEach(() => {
 })
 
 describe('actual BFF guard with migrated SQLite and controlled upstream transports', () => {
+  it('batches one list boundary, quarantines unknown titles and rechecks the next request', async () => {
+    const chats = [{ title: 'First', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } },
+      { title: 'Second', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } },
+      { title: 'Unknown' }]
+    expect((await readableChatMetadataBatch('alice', chats)).map(chat => chat.title)).toEqual(['First', 'Second', 'Unavailable chat'])
+    expect(mocks.agent).toHaveBeenCalledTimes(2)
+    mocks.agent.mockResolvedValue(new Response('{}', { status: 403 }))
+    expect((await readableChatMetadataBatch('alice', chats)).every(chat => chat.title === 'Unavailable chat')).toBe(true)
+  })
+  it('checks shared dependencies once on fallback while keeping unrelated authored chats readable', async () => {
+    const chats = [{ title: 'First', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } },
+      { title: 'Second', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } },
+      { title: 'Authored', evidenceProvenance: authoredProvenance() }]
+    mocks.agent.mockResolvedValue(new Response('{}', { status: 403 }))
+    expect((await readableChatMetadataBatch('alice', chats)).map(chat => chat.title))
+      .toEqual(['Unavailable chat', 'Unavailable chat', 'Authored'])
+    expect(mocks.agent).toHaveBeenCalledTimes(2)
+  })
   it('accepts Pydantic nulls without treating missing source-specific proof as valid', async () => {
     const proof = evidenceProvenanceSchema.parse({ ...authoredProvenance(), trace_id: 'python-wire', dependencies: [{
       ...enterprise, knowledge_base_id: null, document_id: null, version_id: null,
@@ -89,7 +107,7 @@ describe('actual BFF guard with migrated SQLite and controlled upstream transpor
     await expect(assertMessageSources('alice', old)).rejects.toMatchObject({ status: 409 })
     const hidden = await filterReadableMessages('alice', [old])
     expect(JSON.stringify(hidden)).not.toContain('secret legacy answer')
-    expect((await readableChatMetadata('alice', { title: 'secret old title' })).title).toBe('对话')
+    expect((await readableChatMetadata('alice', { title: 'secret old title' })).title).toBe('Unavailable chat')
     expect(mocks.agent).not.toHaveBeenCalled()
   })
   it('requires complete provenance even with an empty dependency array', async () => {
