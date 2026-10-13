@@ -1,5 +1,9 @@
 # Web / Agent / Toolset 接入契约
 
+2026-10-13：保存引用 Reader 复用 `locateEvidenceExcerpt`，兼容反引号和下划线转义等
+Markdown 表示差异，避免合法引用打不开；消息归属、当前权限、版本、正文 hash
+与释放前复核保持不变，实质正文变化仍拒绝读取。
+
 更新：2026-10-12。架构见[访问边界与证据链路](access-evidence-architecture.md)。
 
 Deep Research 默认使用当前用户可访问的全部企业 Confluence 文档，网页不再要求选源。

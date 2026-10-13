@@ -4,7 +4,7 @@ import { eq, tables, useDrizzle } from '../../../../../utils/drizzle'
 import { requireOwnedChat } from '../../../../../utils/chatAccess'
 import { accessBackend, assertMessageSources } from '../../../../../utils/sourceAccess'
 import { attachmentServiceJson } from '../../../../../utils/attachmentService'
-import { normalizedEvidenceExcerpt } from '../../../../../../shared/evidenceExcerpt'
+import { locateEvidenceExcerpt } from '../../../../../../shared/evidenceExcerpt'
 
 export default defineHandler(async (event) => {
   const id = getRouterParam(event, 'id', { decode: true }) || ''
@@ -27,7 +27,7 @@ export default defineHandler(async (event) => {
     source = await (await accessBackend(actor.userId, `documents/${encodeURIComponent(evidence.doc_id)}/source?${params}`)).json()
     const content = String(source.content || '')
     const excerpt = String(evidence.snippet || evidence.chunk_text || '')
-    if (!normalizedEvidenceExcerpt(excerpt) || !normalizedEvidenceExcerpt(content).includes(normalizedEvidenceExcerpt(excerpt))) throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+    if (!locateEvidenceExcerpt(content, excerpt)) throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
   } else {
     let storageId = evidence.attachment_id
     if (evidence.source_type === 'personal') {
