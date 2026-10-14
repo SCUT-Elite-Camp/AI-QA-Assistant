@@ -21,6 +21,17 @@ export function locateEvidenceExcerpt(source: string, excerpt: string): { start:
   let plain = ''
   let codeDelimiter = 0
   for (let index = 0; index < readable.length; index++) {
+    // Structured table rows use real newlines where authoritative Markdown
+    // renders an HTML break. Preserve its body offset and all cell contents.
+    if (!codeDelimiter && readable[index] === '<') {
+      const lineBreak = /^<br\s*\/?>/i.exec(readable.slice(index))
+      if (lineBreak) {
+        offsets.push(index)
+        plain += ' '
+        index += lineBreak[0].length - 1
+        continue
+      }
+    }
     if (readable[index] === '`') {
       let length = 1
       while (readable[index + length] === '`') length++

@@ -19,4 +19,15 @@ describe('authorized source excerpt matching', () => {
     expect(locateEvidenceExcerpt('path/[id]/source', 'path/id/source')).toBeNull()
     expect(locateEvidenceExcerpt('Use `C:\\_temp`.', 'Use C:_temp.')).toBeNull()
   })
+
+  it('locates multiline table cells without changing numbers, column order or literal code', () => {
+    const source = '| Top1:att<br>mAP: att | 46.3<BR />46.9 | 56.9<br/>58.0 |'
+    const excerpt = 'Top1:att\nmAP: att | 46.3\n46.9 | 56.9\n58.0'
+    const range = locateEvidenceExcerpt(source, excerpt)!
+    expect(source.slice(range.start, range.end)).toBe(source.slice(2, -2))
+    expect(locateEvidenceExcerpt(source, excerpt.replace('46.3', '46.4'))).toBeNull()
+    expect(locateEvidenceExcerpt(source, 'Top1:att mAP: att | 56.9 58.0 | 46.3 46.9')).toBeNull()
+    expect(locateEvidenceExcerpt('Literal `A<br>B` token', 'Literal A B token')).toBeNull()
+    expect(locateEvidenceExcerpt('A<br data-id="x">B', 'A B')).toBeNull()
+  })
 })
