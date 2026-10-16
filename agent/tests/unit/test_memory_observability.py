@@ -5,7 +5,7 @@ import pytest
 from agent.agent import Agent
 from agent.config.settings import settings
 from agent.memory.memory_observability import MemoryObservability
-from agent.orchestration import OrchestrationResult
+from agent.chat.result import OrchestrationResult
 from agent.policy import ChatRoute, ChatRouteDecision
 from agent.runtime import AgentRunResult, StopReason
 from agent.schemas.chat import (
@@ -46,6 +46,7 @@ def _trusted_request() -> InternalChatRequest:
     return InternalChatRequest.model_validate(
         {
             "query": "Use the prior context.",
+            "weight_mode": "thinking",
             "session_id": "chat-1",
             "memory_context": {
                 "actor": {"user_id": "user-1", "authenticated": True},

@@ -27,7 +27,7 @@ def answer_complexity_reasons(
     if query_plan.sub_queries:
         reasons.append("planned_sub_queries")
     if retrieval_attempts >= 2:
-        reasons.append("corrective_retrieval")
+        reasons.append("multiple_retrieval_rounds")
 
     query = f"{query_plan.original_query}\n{query_plan.standalone_query}"
     if any(re.search(pattern, query, flags=re.IGNORECASE | re.DOTALL) for pattern in _MULTI_ASPECT_PATTERNS):

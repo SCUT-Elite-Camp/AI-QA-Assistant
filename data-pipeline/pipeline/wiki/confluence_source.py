@@ -9,9 +9,9 @@ from confluence_export import ConfluencePage, ConfluenceStorageRenderer
 from models.document import Document
 from parsers.markdown_parser import MarkdownParser
 
-from ..chunker import chunk_from_blocks
-from ..confluence_snapshot import ConfluenceSnapshot
-from ..structure import build_document_sections
+from pipeline.documents.chunker import chunk_from_blocks
+from pipeline.confluence.snapshot import ConfluenceSnapshot
+from pipeline.documents.structure import build_document_sections
 
 
 def load_authoritative_confluence_document(snapshot: ConfluenceSnapshot) -> Document:

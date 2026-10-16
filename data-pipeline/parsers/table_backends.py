@@ -21,10 +21,18 @@ class PyMuPDFTableBackend:
         started = time.perf_counter()
         finder = page.find_tables()
         tables = getattr(finder, "tables", finder)
+        if not tables:
+            try:
+                fallback = page.find_tables(strategy="text", min_words_vertical=3, min_words_horizontal=2)
+                # Borderless prose is not a table: require several aligned rows
+                # and predominantly numeric body cells before accepting it.
+                tables = [t for t in fallback.tables if _aligned_numeric_table(t.extract())]
+            except (TypeError, AttributeError, RuntimeError):
+                tables = []
         artifacts: list[TableArtifact] = []
         for index, table in enumerate(tables, start=1):
             try:
-                rows = table.extract()
+                rows = _split_aligned_numeric_rows(_native_cell_order(page, table))
                 x0, y0, x1, y1 = map(float, table.bbox)
                 bbox = BoundingBox(x0=x0, y0=y0, x1=x1, y1=y1)
             except Exception:
@@ -38,9 +46,74 @@ class PyMuPDFTableBackend:
                 confidence=_heuristic_backend_confidence(rows),
             )
             if artifact is not None:
+                # Recover merged parent headers only when PyMuPDF's actual
+                # cell rectangle spans the missing columns in the next row.
+                if artifact.header_row_count > 1:
+                    _restore_spanned_headers(artifact, table)
                 artifact.elapsed_ms = (time.perf_counter() - started) * 1000
                 artifacts.append(artifact)
         return artifacts
+
+def _native_cell_order(page, table):
+    """Restore native character order only when the cell's character inventory agrees.
+
+    find_tables can sort low-baseline characters (notably underscores) onto a
+    trailing line. Native clipped text retains the source's original order.
+    Geometry extraction stays authoritative when clipping adds/removes characters.
+    """
+    rows = table.extract()
+    if not callable(getattr(page, 'get_text', None)):
+        return rows
+    try:
+        import pymupdf
+        geometry = table.rows
+        for ri, row in enumerate(rows):
+            for ci, value in enumerate(row):
+                rect = geometry[ri].cells[ci]
+                if not rect or not value:
+                    continue
+                native = page.get_text('text', clip=pymupdf.Rect(rect), sort=False).strip()
+                inventory = lambda s: sorted(c for c in s if not c.isspace())
+                if native and native.count('\n') < value.count('\n') and inventory(native) == inventory(value):
+                    rows[ri][ci] = native
+    except (AttributeError, IndexError, TypeError, RuntimeError):
+        pass
+    return rows
+
+
+def _aligned_numeric_table(rows) -> bool:
+    rows = [list(row) for row in rows if any(str(v or '').strip() for v in row)]
+    if len(rows) < 3 or min(map(len, rows)) < 2:return False
+    values = [str(v or '').strip() for row in rows[1:] for v in row[1:] if v]
+    return bool(values) and sum(bool(re.fullmatch(r'[-+]?\d[\d,.]*(?:%|[kKmMbB])?', v)) for v in values) / len(values) >= .7
+
+def _split_aligned_numeric_rows(rows):
+    expanded = []
+    for row in rows:
+        values = [str(v or '').strip() for v in row]
+        parts = [v.splitlines() for v in values]
+        counts = {len(p) for p in parts if p}
+        numeric = sum(all(_looks_numeric(s) for s in p) for p in parts[1:] if p)
+        if len(counts) == 1 and 1 < next(iter(counts)) <= 6 and numeric >= max(2, (len(row)-1)*.7) and all(parts):
+            expanded.extend([[p[n] for p in parts] for n in range(next(iter(counts)))])
+        else:expanded.append(values)
+    return expanded
+
+def _restore_spanned_headers(artifact, table):
+    try:geometry = table.rows[0].cells
+    except (AttributeError, IndexError):return
+    for cell in list(artifact.cells):
+        if cell.row_index != 0 or not cell.text or cell.column_index >= len(geometry):continue
+        rect = geometry[cell.column_index]
+        if not rect:continue
+        for column in range(cell.column_index+1, artifact.column_count):
+            if column >= len(geometry) or geometry[column] is not None:break
+            # The lower header provides its actual x position.
+            try:lower = table.rows[1].cells[column]
+            except (AttributeError, IndexError):break
+            if not lower or not (rect[0] <= lower[0] < rect[2]):break
+            for target in artifact.cells:
+                if target.row_index == 0 and target.column_index == column and not target.text:target.text = cell.text
 
 
 class CamelotTableBackend:
@@ -291,6 +364,11 @@ def _infer_header_row_count(rows: list[list[str]]) -> int:
     if not any(first):
         return 0
     first_numeric = sum(_looks_numeric(value) for value in first if value)
+    if first_numeric == 0:
+        for index, row in enumerate(rows[1:4], 1):
+            values = [value for value in row if value]
+            if values and sum(_looks_numeric(value) for value in values) >= max(1, len(values) / 2):
+                return index
     second_numeric = sum(_looks_numeric(value) for value in second if value)
     first_nonempty = sum(bool(value) for value in first)
     return 1 if first_numeric == 0 and second_numeric > 0 and first_nonempty >= max(1, len(first) // 2) else 0
@@ -298,7 +376,7 @@ def _infer_header_row_count(rows: list[list[str]]) -> int:
 
 def _looks_numeric(value: str) -> bool:
     compact = value.strip().replace(",", "").replace("%", "")
-    return bool(re.fullmatch(r"[-+]?\d+(?:\.\d+)?", compact))
+    return bool(re.fullmatch(r"[-+]?\d+(?:\.\d+)?[kKmMbB]?", compact))
 
 
 def _heuristic_backend_confidence(rows: Iterable[Iterable[Any]]) -> float:

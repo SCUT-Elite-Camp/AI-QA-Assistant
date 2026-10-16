@@ -6,7 +6,7 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams, readValidatedBody } from 'nitro/h3'
 import { logMemoryEvent } from '../../../utils/logger'
 import { agentFetch } from '../../../utils/agent-client'
-import { classifyModelFailure, publicChatFailure } from '../../../utils/chatFailure'
+import { ChatAnswerFailure, classifyAgentFailure, classifyModelFailure, publicChatFailure } from '../../../utils/chatFailure'
 import {
   recordAiCall,
   recordMemoryCompaction,
@@ -29,7 +29,7 @@ import {
   mergeSafeAttachmentParts,
 } from '../../../../shared/utils/attachmentParts'
 import { canSelectAttachmentForChat } from '../../../../shared/utils/attachmentScope'
-import { knowledgeBaseRetrievalEnabled } from '../../../../shared/utils/chatRetrieval'
+import { knowledgeBaseRetrievalEnabled, retrievalSourceSelection } from '../../../../shared/utils/chatRetrieval'
 import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
 import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import { requireCsrf, requireTopicRole } from '../../../utils/attachmentAuth'
@@ -181,7 +181,8 @@ export default defineHandler(async (event) => {
   const existing = await db.query.messages.findFirst({ where: and(eq(tables.messages.chatId, chat.id), eq(tables.messages.requestId, current.id), eq(tables.messages.role, 'assistant')) })
   const assistantId = existing?.id || `${current.id}:assistant`
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 180000)
+  let timedOut = false
+  const timeout = setTimeout(() => { timedOut = true; controller.abort() }, 180000)
   event.runtime?.node?.res?.on('close', () => {
     if (!event.runtime?.node?.res?.writableEnded) controller.abort()
     clearTimeout(timeout)
@@ -259,6 +260,7 @@ export default defineHandler(async (event) => {
               weight_mode: (chat as any).weightMode || 'thinking', topic_id: chat.topicId || undefined,
               is_first_message: handoff.currentSequence === 1,
               knowledge_base_retrieval_enabled: knowledgeBaseRetrievalEnabled(metadata, last.parts),
+              retrieval_sources: retrievalSourceSelection(metadata, last.parts),
               soul_content: topicSoul, topic_titles: topicTitles,
               memory_context: memoryContext, personal_library_context: personalContext,
               attachment_context: { selected_attachment_ids: selection.attachmentIds, allowed_attachment_ids: allowedIds },
@@ -305,6 +307,8 @@ export default defineHandler(async (event) => {
                 writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, delta } } as any)
               }
             } else if (eventType === 'done') {
+              const failure = classifyAgentFailure(data.status)
+              if (failure) throw failure
               provenance = evidenceProvenanceSchema.parse(data.evidence_provenance)
               agentStatus = data.status
               factProposals = data.memory_decision?.fact_proposals || []
@@ -400,7 +404,7 @@ export default defineHandler(async (event) => {
         writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, reset: true } } as any)
         if (liveReasoning) writer.write({ type: 'reasoning-end', id: assistantId })
         if (!responseStarted) writer.write({ type: 'start', messageId: assistantId })
-        const failure = publicChatFailure(error)
+        const failure = publicChatFailure(timedOut ? new ChatAnswerFailure('answer_timeout') : error)
         writer.write({ type: 'data-answer-status', data: { status: failure.status, persisted: false } } as any)
         writer.write({ type: 'text-start', id: 'access-error' })
         writer.write({ type: 'text-delta', id: 'access-error', delta: failure.message })
@@ -432,7 +436,7 @@ export default defineHandler(async (event) => {
       }
       try {
         const compactStarted = Date.now()
-        const outcome = await compactAfterSuccessfulAssistantPersistence(db, handoff)
+        const outcome = await compactAfterSuccessfulAssistantPersistence(db, handoff, { executionMode: chat.weightMode })
         recordMemoryDuration('compaction', Date.now() - compactStarted)
         recordMemoryCompaction(outcome === 'applied' ? 'success' : 'skipped')
       } catch {

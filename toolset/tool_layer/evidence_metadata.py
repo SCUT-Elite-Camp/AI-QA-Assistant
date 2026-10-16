@@ -65,6 +65,9 @@ def chunk_metadata(document: dict[str, Any], chunk: dict[str, Any]) -> dict[str,
     for key in ("section_path", "block_start", "block_end", "line_start", "line_end"):
         if chunk.get(key) is not None:
             locator[key] = chunk[key]
+    for key in ('previous_chunk_id', 'next_chunk_id', 'row_start', 'row_end'):
+        if key in (chunk.get('metadata') or {}):
+            locator[key] = chunk['metadata'][key]
     return {
         **provenance,
         "evidence_ref": "ev_" + hashlib.sha256(identity.encode()).hexdigest()[:32],

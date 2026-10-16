@@ -7,7 +7,7 @@ if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
 from models.document import BoundingBox, BlockType, ContentBlock, TableArtifact, TableCell  # noqa: E402
-from pipeline.chunker import chunk_from_blocks  # noqa: E402
+from pipeline.documents.chunker import chunk_from_blocks  # noqa: E402
 
 
 def test_chunker_emits_table_and_header_aware_row_chunks():
@@ -35,10 +35,13 @@ def test_chunker_emits_table_and_header_aware_row_chunks():
         "document",
     )
 
-    assert [chunk.chunk_type for chunk in chunks] == ["table", "table_row", "table_row"]
-    assert all(chunk.table_id == "sales" for chunk in chunks)
-    assert chunks[1].text == "表格：销售表\n地区: 华南 | 金额: 120"
-    assert chunks[2].text == "表格：销售表\n地区: 华东 | 金额: 136"
+    assert len(chunks) == 1
+    assert chunks[0].chunk_type == "table"
+    assert chunks[0].table_id == "sales"
+    assert "120" in chunks[0].index_text and "136" in chunks[0].index_text
+    assert chunks[0].metadata["row_start"] == 1
+    assert chunks[0].metadata["row_end"] == 2
+
 
 
 def test_chunker_does_not_index_review_table_cells():
@@ -185,5 +188,5 @@ def test_table_chunk_has_plain_embedding_text_and_markdown_display_text():
     )[0]
 
     assert table_chunk.index_text == "销售表\n地区: 华南 | 金额: 120"
-    assert table_chunk.markdown_text.startswith("| 地区 | 金额 |")
+    assert table_chunk.markdown_text.split("\n", 1)[1].startswith("| 地区 | 金额 |")
     assert table_chunk.text == table_chunk.markdown_text

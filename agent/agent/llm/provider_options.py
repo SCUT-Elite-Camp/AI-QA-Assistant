@@ -9,7 +9,28 @@ def is_openrouter(api_base: str) -> bool:
     return urlsplit(api_base).hostname == "openrouter.ai"
 
 
+def is_groq(api_base: str) -> bool:
+    return urlsplit(api_base).hostname == "api.groq.com"
+
+
 def apply_provider_options(payload: dict, api_base: str) -> dict:
+    if is_groq(api_base):
+        result = dict(payload)
+        enabled = result.pop('enable_thinking', None)
+        thinking = result.pop('thinking', None)
+        result.pop('thinking_budget', None)
+        if str(result.get('model', '')).startswith('openai/gpt-oss-'):
+            # GPT-OSS always reasons; Fast means low effort, not disabled.
+            if enabled is None and isinstance(thinking, dict):
+                enabled = thinking.get('type') == 'enabled'
+            if enabled is None and result.get('model') == settings.ANSWER_FAST_MODEL:
+                enabled = settings.ANSWER_FAST_MODEL_THINKING
+            effort = 'low' if enabled is False else (settings.LLM_REASONING_EFFORT or 'high')
+            result.setdefault('reasoning_effort', effort)
+            result.pop('reasoning_format', None)
+        if 'max_tokens' in result:
+            result.setdefault('max_completion_tokens', result.pop('max_tokens'))
+        return result
     if urlsplit(api_base).hostname == 'generativelanguage.googleapis.com':
         # These vendor extensions are rejected by Gemini's OpenAI endpoint.
         # Reasoning options, when explicitly configured, use its native schema.

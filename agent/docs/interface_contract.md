@@ -1,10 +1,59 @@
 # Web-Agent Interface Contract
 
-Current access/lineage contract (2026-10-09): [integration guide](../../docs/access-evidence-integration.md). Browsers use session-authenticated same-origin BFF routes, not a public Agent URL/token. Source permissions are rechecked for retrieval, model calls, release and stored history/Memory/Reader. `evidence.provenance.v1` is part of the response; unknown/stale lineage is not trusted.
+Independent visual-model inference is removed (2026-10-15): no local VLM loader,
+worker, `inspect_attachment` tool or private `/v1/attachments/{id}/inspect` route.
+`LOCAL_VISION_*` / `ATTACHMENT_VISION_*` settings and the dedicated vision
+requirements file are removed. OCR/text/table parsing remains available;
+Fast's authorized original images still join the user's configured multimodal
+answer request. Legacy `vision_status` database fields remain for compatibility,
+without a model execution or status-transition service.
+
+2026-10-15 implementation: [Fast / Thinking mode contract](chat_mode_contract.md)
+defines Fast as original-query retrieval plus deterministic file/source tools
+and one answer-generation call. Images requiring visual understanding join
+that same multimodal request; no separate vision-generation call is allowed.
+JSON and SSE share that pipeline in `agent/chat/fast.py`.
+Thinking retains its own planning and bounded tool loop, fixed Thinking answer
+model in `agent/chat/thinking.py`. Existing stage/Runner limits remain; a unified
+total generation budget is still pending. JSON and SSE drive the same Thinking flow;
+neither simple questions nor failures cause an implicit switch to Fast.
+
+Thinking evidence expansion (2026-10-15): after TopK results the model can select
+`find_documents` for a document catalog, then `get_document(doc_ids=[...])` for
+batch full-text reads. Empty/low-score results do not trigger a rule-based search
+retry. Evidence checks retain acceptance/coverage diagnostics without executing
+tools, widening TopK or switching to BM25. Catalog metadata is never body evidence;
+current per-document access, version/hash checks and execution budgets still apply.
+`auto` is a compatibility alias for Thinking; omission still defaults to Fast.
+Fast has one provider attempt, no model fallback/repair/title generation, and
+the BFF skips post-turn Memory compaction for Fast requests.
+
+Fast's optional internal `retrieval_sources` selects source kinds, never identity
+or grants. Explicit selections and selected files are mandatory; omitted source
+preferences search available contexts without requiring an empty optional personal
+library. Enterprise search uses `search_direct` once without scope heuristics or
+adjacent-section expansion. Fixed file tools read persisted OCR/text and original
+images, excluding independent `vision_analysis`. Images require a multimodal Fast
+model plus `FAST_MODEL_SUPPORTS_IMAGES=true` (default false); otherwise `unsupported`.
+`FAST_CONTEXT_MAX_CHARS` defaults to 12000.
+
+Original image citations add `content_kind=file`, with file SHA-256 and evidence
+version; default `excerpt` retains existing text checks. The BFF/Agent and saved
+Reader recheck current scope, version and hash. Reader content URLs carry
+`expected_hash` and `expected_version`, validated again by private storage.
+
+Private files (2026-10-15) use `AGENT_BASE_URL/private-files` and the existing
+server-side `ATTACHMENT_INTERNAL_SECRET`, replacing `ATTACHMENT_SERVICE_URL`.
+Conversation uploads also allocate an owner-private library version, reuse the
+persisted parse for ingestion, and activate asynchronously through Web's existing
+version CAS. Browser identity, CSRF, current permissions and source hashes remain
+mandatory. Temporary attachments no longer build a second vector index.
+
+Current access/lineage contract (2026-10-09): [integration guide](../../docs/access-evidence/access-evidence-integration.md). Browsers use session-authenticated same-origin BFF routes, not a public Agent URL/token. Source permissions are rechecked for retrieval, model calls, release and stored history/Memory/Reader. `evidence.provenance.v1` is part of the response; unknown/stale lineage is not trusted.
 
 ## Live Chat
 
-Fast, Auto and Thinking stream actual answer-model deltas through the Agent and
+Pure-dialogue Fast, Auto and Thinking stream actual answer-model deltas through the Agent and
 authenticated BFF. Each release boundary rechecks current source permissions,
 versions and hashes; no positive authorization result is cached between batches.
 `source` carries provenance, `answer-start` resets a draft, `token`/`reasoning`
@@ -13,9 +62,28 @@ The Web displays checked drafts using transient `data-answer-preview` events.
 Only the final verified answer is persisted. Failure clears the preview; history,
 Memory and citation Reader continue to use the saved answer and its lineage.
 Specialized quality gates may withhold text until their validation completes.
+Fast and Thinking evidence answers buffer generated text and reasoning before
+binding, citation and current-source validation. The same model call produces a
+private JSON envelope (`response_format={"type":"json_object"}`;
+`claims[].text`, `supports[].citation_id`, and verbatim `quote` or original-image
+`image_region`). Self-scores, score thresholds and the temporary year rule have
+been removed. The model returns only claims; the server joins their text in
+order to build the answer and derives visible citation markers from supports;
+missing duplicated inline markers are allowed, but missing/invalid bindings,
+forged excerpts or an extra unbound answer field reject the entire answer.
+
+The request-local report records answer/source spans and source identity.
+Its `valid` field indicates binding integrity, not factuality; it explicitly
+reports `validation_kind=binding` and `semantic_validation=not_performed`.
+No private envelope/report is sent in HTTP, SSE, diagnostics or saved messages.
+Only the accepted plain answer is released; Thinking repairs/fallbacks must also
+pass binding validation. Fast still makes at most one generation call.
+Unused references are pruned and valid markers renumbered with source identities
+preserved. Failures emit `done.status=quality_validation_failed` and empty text.
+Fast does not fetch extra table/section context to repair answers.
 When knowledge retrieval is disabled and no private attachment workflow is
 requested, all three modes stream direct model answers with the checked Memory
-view. Fast/Auto use the configured fast model; Thinking uses the reasoning model.
+view. Fast uses its configured answer model; Thinking/Auto use the Thinking model.
 The default application container preserves those configured model choices.
 
 ## Local Deep Research
@@ -109,11 +177,15 @@ Fields:
 - `stream`: whether streaming output is requested.
 - `retrieval_mode`: `vector`, `bm25`, or `hybrid`; defaults to `hybrid`.
 
-The public ChatRequest does not expose structural routing in P0. Query planning
-internally derives `navigation_mode` (`direct`, `hierarchical`, or `hybrid`) and
-passes non-direct values to `search_documents` or `search_library` only when
-`HIERARCHICAL_NAVIGATION_ENABLED=true`. This keeps retrieval backend selection
-and document/section navigation as separate contracts.
+Thinking may supplement TopK results by calling `find_documents` for an
+authorized document catalog and `get_document(doc_ids=[...])` for batch full-text
+reads. The catalog supports optional query/filter and offset pagination; batch
+reads return complete parsed content and citation chunks for up to 20 documents.
+Catalog metadata is not citable evidence. Chapter-navigation tools and private
+outline/search-scoped service routes are removed;
+legacy QueryPlan structural fields do not enable a Toolset navigation route.
+Fast remains original-query retrieval plus one generation. Current ACL, native
+permissions, source versions and hashes remain mandatory for every document.
 
 ## ChatResponse
 
@@ -214,6 +286,10 @@ reserved for an identical call repeated across model turns.
   traces stay in internal Agent run summaries and logs.
 
 ### Browser integration regression (2026-10-05)
+
+The dated regression notes below describe historical implementations. Their Fast
+planning, model routing, retry and repair behavior is superseded by the
+2026-10-15 mode contract above; historical test results are not new acceptance.
 
 The Fast streaming route calls the current `SearchTool.search(query, top_k,
 mode, filters, trace_id)` contract. It forwards the intersection of requested

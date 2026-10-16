@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from attachment_service.crypto import decrypt_file, encrypt_file
-from attachment_service.validation import AttachmentValidationError, safe_filename, validate_file
+from data_persistence.file_crypto import decrypt_file, encrypt_file
+from pipeline.files.validation import AttachmentValidationError, safe_filename, validate_file
 
 
 def _png(path: Path) -> None:

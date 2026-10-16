@@ -222,6 +222,8 @@ class Settings(BaseModel):
     ANSWER_TARGET_EXTRACT_LLM: bool = _env_bool("ANSWER_TARGET_EXTRACT_LLM", False)
     ANSWER_REPAIR_APPEND_ONLY: bool = _env_bool("ANSWER_REPAIR_APPEND_ONLY", True)
     ANSWER_FAST_MODEL: str = os.getenv("ANSWER_FAST_MODEL", "").strip()
+    FAST_MODEL_SUPPORTS_IMAGES: bool = _env_bool("FAST_MODEL_SUPPORTS_IMAGES", False)
+    FAST_CONTEXT_MAX_CHARS: int = Field(default_factory=lambda: _env_int("FAST_CONTEXT_MAX_CHARS", 12000), ge=1000, le=100000)
     ANSWER_FAST_MODEL_THINKING: bool = _env_bool(
         "ANSWER_FAST_MODEL_THINKING",
         False,

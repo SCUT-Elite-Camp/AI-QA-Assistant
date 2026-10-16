@@ -66,7 +66,7 @@ def test_find_documents_preserves_empty_allowlist(tmp_path):
 
     assert tool.execute(filters={"doc_ids": []}) == {
         "documents": [],
-        "result_count": 0,
+        "result_count": 0, "total_documents": 0, "has_more": False, "next_offset": None,
     }
 
 
@@ -202,76 +202,70 @@ def test_find_documents_rejects_boolean_and_out_of_range_top_k(tmp_path, top_k):
         tool.execute(query="benefits", top_k=top_k)
 
 
-def test_get_document_returns_ordered_pages(tmp_path):
-    _write_document(
-        tmp_path,
-        "hr-policy",
-        title="HR Handbook",
-        chunks=[
-            {"index": 2, "text": "third"},
-            {"index": 0, "text": "first"},
-            {"index": 1, "text": "second"},
-        ],
-    )
+def test_get_document_reads_multiple_complete_documents(tmp_path):
+    _write_document(tmp_path, "first", title="First", chunks=[
+        {"index": i, "text": f"chunk-{i}"} for i in reversed(range(151))])
+    _write_document(tmp_path, "second", title="Second", chunks=[{"index": 0, "text": "Other document"}])
+    result = GetDocumentTool(tmp_path).execute(doc_ids=["first", "second", "first"])
+    assert [doc["doc_id"] for doc in result["documents"]] == ["first", "second"]
+    first = result["documents"][0]
+    assert len(first["chunks"]) == 151
+    assert first["chunks"][0]["text"] == "chunk-0"
+    assert first["content"].endswith("chunk-150")
+    assert all(chunk["evidence_ref"] for chunk in first["chunks"])
+    assert result["errors"] == []
+
+
+def test_get_document_prefers_full_parsed_content(tmp_path):
+    document = {"doc_id": "full", "title": "Full", "content": "Heading and full body",
+                "chunks": [{"index": 0, "text": "body"}]}
+    (tmp_path / "full.json").write_text(json.dumps(document), encoding="utf-8")
+    assert GetDocumentTool(tmp_path).execute(doc_ids=["full"])["documents"][0]["content"] == document["content"]
+
+
+def test_get_document_reads_document_without_chunks(tmp_path):
+    (tmp_path / "full.json").write_text(json.dumps({"doc_id": "full", "content": "Full text"}), encoding="utf-8")
+    doc = GetDocumentTool(tmp_path).execute(doc_ids=["full"])["documents"][0]
+    assert doc["content"] == doc["chunks"][0]["text"] == "Full text"
+    assert doc["chunks"][0]["evidence_ref"]
+
+
+def test_get_document_reports_missing_documents_per_item(tmp_path):
+    _write_document(tmp_path, "present", title="Present")
+    result = GetDocumentTool(tmp_path).execute(doc_ids=["missing", "present"])
+    assert result["errors"] == [{"error": "document_not_found", "doc_id": "missing"}]
+    assert result["result_count"] == 1
+
+
+@pytest.mark.parametrize("doc_ids", [None, [], "doc", ["doc"] * 21])
+def test_get_document_rejects_invalid_batch(tmp_path, doc_ids):
+    with pytest.raises(ValueError, match="doc_ids must contain"):
+        GetDocumentTool(tmp_path).execute(doc_ids=doc_ids)
+
+
+@pytest.mark.parametrize("doc_id", ["", "../secret", "has space", "x" * 129, None, True])
+def test_get_document_validates_entire_batch_before_loading(tmp_path, doc_id):
     tool = GetDocumentTool(tmp_path)
-
-    first = tool.execute(doc_id="hr-policy", offset=0, limit=2)
-    second = tool.execute(doc_id="hr-policy", offset=2, limit=2)
-
-    assert [chunk["text"] for chunk in first["chunks"]] == ["first", "second"]
-    assert first["has_more"] is True
-    assert first["next_offset"] == 2
-    assert [chunk["text"] for chunk in second["chunks"]] == ["third"]
-    assert second["has_more"] is False
-    assert second["next_offset"] is None
-
-
-def test_get_document_reports_missing_document(tmp_path):
-    assert GetDocumentTool(tmp_path).execute(doc_id="missing") == {
-        "error": "document_not_found",
-        "doc_id": "missing",
-    }
-
-
-def test_get_document_schema_matches_repository_id_constraints(tmp_path):
-    schema = GetDocumentTool(tmp_path).parameters["properties"]["doc_id"]
-
-    assert schema["minLength"] == 1
-    assert schema["maxLength"] == 128
-    assert schema["pattern"] == r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
-
-
-@pytest.mark.parametrize("doc_id", ["", "../secret", "has space", "x" * 129])
-def test_get_document_rejects_malformed_document_ids(tmp_path, doc_id):
+    tool.repository.load = lambda *_: pytest.fail("invalid batch must not read any document")
     with pytest.raises(ValueError, match="invalid_doc_id"):
-        GetDocumentTool(tmp_path).execute(doc_id=doc_id)
+        tool.execute(doc_ids=["valid", doc_id])
 
 
-@pytest.mark.parametrize("offset", [True, False, -1, 1.5, "0"])
-def test_get_document_rejects_invalid_offsets(tmp_path, offset):
-    with pytest.raises(ValueError, match="offset must be"):
-        GetDocumentTool(tmp_path).execute(doc_id="hr-policy", offset=offset)
+def test_find_documents_lists_authorized_catalog_with_pagination(tmp_path):
+    for doc_id in ("a", "b", "c", "hidden"):
+        _write_document(tmp_path, doc_id, title=doc_id)
+    tool = FindDocumentsTool(FakeSearchTool(tmp_path))
+    first = tool.execute(filters={"doc_ids": ["a", "b", "c"]}, top_k=2)
+    assert [doc["doc_id"] for doc in first["documents"]] == ["a", "b"]
+    assert first["total_documents"] == 3
+    second = tool.execute(filters={"doc_ids": ["a", "b", "c"]}, top_k=2, offset=first["next_offset"])
+    assert [doc["doc_id"] for doc in second["documents"]] == ["c"]
+    assert second["next_offset"] is None
+    assert not second["has_more"]
+    assert tool.execute()["total_documents"] == 4
 
 
-@pytest.mark.parametrize("limit", [True, False, 0, 51, 1.5, "1"])
-def test_get_document_rejects_invalid_limits(tmp_path, limit):
-    with pytest.raises(ValueError, match="limit must be"):
-        GetDocumentTool(tmp_path).execute(doc_id="hr-policy", limit=limit)
-
-
-def test_get_document_accepts_pagination_boundaries(tmp_path):
-    _write_document(
-        tmp_path,
-        "hr-policy",
-        title="HR Handbook",
-        chunks=[{"index": index, "text": f"chunk-{index}"} for index in range(51)],
-    )
-    tool = GetDocumentTool(tmp_path)
-
-    first = tool.execute(doc_id="hr-policy", offset=0, limit=1)
-    last_page = tool.execute(doc_id="hr-policy", offset=1, limit=50)
-
-    assert [chunk["text"] for chunk in first["chunks"]] == ["chunk-0"]
-    assert first["has_more"] is True
-    assert len(last_page["chunks"]) == 50
-    assert last_page["has_more"] is False
+@pytest.mark.parametrize("offset", [True, -1, "0"])
+def test_find_documents_validates_offset(tmp_path, offset):
+    with pytest.raises(ValueError, match="offset"):
+        FindDocumentsTool(FakeSearchTool(tmp_path)).execute(offset=offset)

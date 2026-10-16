@@ -1,5 +1,5 @@
 from models.document import BlockType, Chunk, ContentBlock, Document
-from pipeline.structure import build_document_sections
+from pipeline.documents.structure import build_document_sections
 
 
 def test_enterprise_sections_map_to_authoritative_chunks():

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from models.document import BlockType, ContentBlock
 from parsers.markdown_parser import MarkdownParser
-from pipeline.chunker import chunk_from_blocks
-from pipeline.structure import build_document_sections
+from pipeline.documents.chunker import chunk_from_blocks
+from pipeline.documents.structure import build_document_sections
 
 
 def _block(block_type: BlockType, text: str, *, level: int = 0) -> ContentBlock:

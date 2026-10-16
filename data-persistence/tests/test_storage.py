@@ -1,7 +1,7 @@
 import os
 import random
+from uuid import uuid4
 import pytest
-from pymilvus import connections
 from storage import document_store
 from storage.document_store import save_document, load_document, delete_document
 from storage.milvus_store import MilvusStore
@@ -21,15 +21,23 @@ TEST_DOC_DATA = {
     ]
 }
 
-# 动态探测本地 Milvus 是否可用
-MILVUS_AVAILABLE = False
-try:
-    # 尝试连接，超时设为 2 秒
-    connections.connect("test_detect", host="localhost", port="19530", timeout=2.0)
-    connections.disconnect("test_detect")
-    MILVUS_AVAILABLE = True
-except Exception:
-    MILVUS_AVAILABLE = False
+# Live IO is opt-in and only uses fresh disposable collections.
+RUN_MILVUS_INTEGRATION = os.getenv("RUN_MILVUS_INTEGRATION") == "1"
+
+
+@pytest.fixture(autouse=True)
+def isolated_documents(tmp_path, monkeypatch):
+    monkeypatch.setattr(document_store, "DOCS_DIR", str(tmp_path / "documents"))
+
+
+@pytest.fixture
+def live_collection():
+    collection_name = f"test_disposable_{uuid4().hex}"
+    store = MilvusStore(collection_name=collection_name)
+    try:
+        yield store, collection_name
+    finally:
+        store.delete_collection(collection_name)
 
 
 def test_document_store():
@@ -113,94 +121,83 @@ def test_milvus_connect_timeout_is_configurable(monkeypatch, configured, expecte
         lambda *args, **kwargs: calls.append((args, kwargs)),
     )
 
-    store = MilvusStore()
+    store = MilvusStore(host="localhost", port="19530", collection_name="test_timeout")
     store.connect()
 
     assert calls == [(("default",), {"host": "localhost", "port": "19530", "timeout": expected})]
 
 
-@pytest.mark.skipif(not MILVUS_AVAILABLE, reason="本地 Milvus 服务未运行，跳过向量存储测试")
-def test_milvus_store():
+@pytest.mark.skipif(not RUN_MILVUS_INTEGRATION, reason="Set RUN_MILVUS_INTEGRATION=1 for disposable live Milvus tests")
+def test_milvus_store(live_collection):
     """
     测试 Milvus 向量存储的创建 Collection、插入、向量检索与过滤功能。
     """
-    store = MilvusStore()
-    collection_name = "test_doc_chunks"
+    store, collection_name = live_collection
     dim = 384
     
-    # 清理历史可能残留的 Collection
-    store.delete_collection(collection_name)
     
-    try:
-        # 1. 初始化 Collection
-        collection = store.init_collection(collection_name, dim=dim)
-        assert collection is not None
-        
-        # 2. 插入测试向量与文本
-        random.seed(42)
-        # 生成 2 个 384 维的随机向量（对应 2 个 chunk）
-        embeddings = [[random.uniform(-1, 1) for _ in range(dim)] for _ in range(2)]
-        chunk_texts = [TEST_DOC_DATA["chunks"][0]["text"], TEST_DOC_DATA["chunks"][1]["text"]]
-        doc_ids = [TEST_DOC_ID, TEST_DOC_ID]
-        chunk_indices = [0, 1]
-        
-        chunk_ids = [f"{TEST_DOC_ID}::chunk_{i}" for i in chunk_indices]
-        mr = store.insert_chunks(
-            embeddings=embeddings,
-            chunk_ids=chunk_ids,
-            chunk_texts=chunk_texts,
-            doc_ids=doc_ids,
-            chunk_indices=chunk_indices,
-            collection_name=collection_name
-        )
-        assert mr is not None
-        assert mr.insert_count == 2
-        
-        # 3. 向量相似度检索
-        query_vector = embeddings[0]
-        results = store.search_similar(query_vector, top_k=2, collection_name=collection_name)
-        
-        assert len(results) > 0
-        # 相似度最高的应该是第一条（对应的就是该 chunk 自己）
-        assert results[0].entity.get("doc_id") == TEST_DOC_ID
-        assert results[0].entity.get("chunk_index") == 0
-        assert results[0].entity.get("chunk_text") == chunk_texts[0]
-        
-        # 4. 按 doc_id 过滤的检索
-        results_filtered = store.search_similar(
-            query_vector=query_vector,
-            top_k=2,
-            doc_ids_filter=[TEST_DOC_ID],
-            collection_name=collection_name
-        )
-        assert len(results_filtered) > 0
-        assert results_filtered[0].entity.get("doc_id") == TEST_DOC_ID
-        
-        # 5. 过滤不存在的 doc_id，期望返回空
-        results_empty = store.search_similar(
-            query_vector=query_vector,
-            top_k=2,
-            doc_ids_filter=["non_existent_doc_id"],
-            collection_name=collection_name
-        )
-        assert len(results_empty) == 0
-        
-    finally:
-        # 清理 Collection
-        store.delete_collection(collection_name)
+    # 1. 初始化 Collection
+    collection = store.init_collection(collection_name, dim=dim)
+    assert collection is not None
+
+    # 2. 插入测试向量与文本
+    random.seed(42)
+    # 生成 2 个 384 维的随机向量（对应 2 个 chunk）
+    embeddings = [[random.uniform(-1, 1) for _ in range(dim)] for _ in range(2)]
+    chunk_texts = [TEST_DOC_DATA["chunks"][0]["text"], TEST_DOC_DATA["chunks"][1]["text"]]
+    doc_ids = [TEST_DOC_ID, TEST_DOC_ID]
+    chunk_indices = [0, 1]
+
+    chunk_ids = [f"{TEST_DOC_ID}::chunk_{i}" for i in chunk_indices]
+    mr = store.insert_chunks(
+        embeddings=embeddings,
+        chunk_ids=chunk_ids,
+        chunk_texts=chunk_texts,
+        doc_ids=doc_ids,
+        chunk_indices=chunk_indices,
+        collection_name=collection_name
+    )
+    assert mr is not None
+    assert mr.insert_count == 2
+
+    # 3. 向量相似度检索
+    query_vector = embeddings[0]
+    results = store.search_similar(query_vector, top_k=2, collection_name=collection_name)
+
+    assert len(results) > 0
+    # 相似度最高的应该是第一条（对应的就是该 chunk 自己）
+    assert results[0].entity.get("doc_id") == TEST_DOC_ID
+    assert results[0].entity.get("chunk_index") == 0
+    assert results[0].entity.get("chunk_text") == chunk_texts[0]
+
+    # 4. 按 doc_id 过滤的检索
+    results_filtered = store.search_similar(
+        query_vector=query_vector,
+        top_k=2,
+        doc_ids_filter=[TEST_DOC_ID],
+        collection_name=collection_name
+    )
+    assert len(results_filtered) > 0
+    assert results_filtered[0].entity.get("doc_id") == TEST_DOC_ID
+
+    # 5. 过滤不存在的 doc_id，期望返回空
+    results_empty = store.search_similar(
+        query_vector=query_vector,
+        top_k=2,
+        doc_ids_filter=["non_existent_doc_id"],
+        collection_name=collection_name
+    )
+    assert len(results_empty) == 0
 
 
-@pytest.mark.skipif(not MILVUS_AVAILABLE, reason="本地 Milvus 服务未运行，跳过端到端存储集成测试")
-def test_storage_integration():
+@pytest.mark.skipif(not RUN_MILVUS_INTEGRATION, reason="Set RUN_MILVUS_INTEGRATION=1 for disposable live Milvus tests")
+def test_storage_integration(live_collection):
     """
     测试端到端持久化流程：
     写入文档到 JSON 文件 -> 插入向量与分块到 Milvus -> 从 Milvus 检索拿到 doc_id -> 从 JSON 文件读取完整文档
     """
-    store = MilvusStore()
-    collection_name = "test_integration_chunks"
+    store, collection_name = live_collection
     dim = 384
-    
-    store.delete_collection(collection_name)
     
     try:
         # 1. 写入本地文档 JSON 文件
@@ -240,4 +237,3 @@ def test_storage_integration():
     finally:
         # 清除测试数据
         delete_document(TEST_DOC_ID)
-        store.delete_collection(collection_name)

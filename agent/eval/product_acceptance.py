@@ -24,7 +24,7 @@ except ImportError:  # Direct CLI entry point.
     from deep_research_benchmark import ApiClient, _run_research
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILE = Path(__file__).parent / "datasets/product_acceptance.v1.json"
+PROFILE = Path(__file__).parent / "datasets/product_acceptance.en.v2.json"
 
 
 def load(path):

@@ -7,7 +7,6 @@ on:
       - "attachment-service/**"
       - "data-pipeline/**"
       - "data-persistence/**"
-      - "shared_runtime/**"
       - "toolset/**"
       - "frontend/**"
       - "app.py"

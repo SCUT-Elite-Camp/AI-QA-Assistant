@@ -18,7 +18,7 @@ from run_agent_eval import (
     load_dataset,
 )
 
-DEFAULT_SIMPLE_DATASET = Path(__file__).parent / "datasets" / "local_kb_simple_online_cases.json"
+DEFAULT_SIMPLE_DATASET = Path(__file__).parent / "datasets" / "local_kb_simple_online_cases.en.v2.json"
 DEFAULT_COMPLEX_QUERY_DATASET = (
     Path(__file__).parent / "datasets" / "local_kb_complex_online_queries_en.json"
 )

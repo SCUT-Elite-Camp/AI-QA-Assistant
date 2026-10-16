@@ -12,18 +12,16 @@ import pytest
 def test_search_schemas_follow_configured_dimension(tmp_path, dimension):
     repo_root = Path(__file__).resolve().parents[3]
     environment = {**os.environ, "LOCAL_EMBEDDING_MODEL_DIM": str(dimension),
-        "PYTHONPATH": f"{Path(__file__).resolve().parents[2]}{os.pathsep}{repo_root}",
+        "PYTHONPATH": os.pathsep.join(str(path) for path in (repo_root / 'agent', repo_root / 'toolset', repo_root / 'data-pipeline', repo_root / 'data-persistence', repo_root)),
         "ATTACHMENT_INTERNAL_SECRET": "test-only-secret",
         "ATTACHMENT_ENCRYPTION_KEY": base64.urlsafe_b64encode(b"d" * 32).decode(),
         "ATTACHMENT_DATA_DIR": str(tmp_path), "ATTACHMENT_VECTOR_INDEX_ENABLED": "false"}
     code = """
 from pydantic import ValidationError
-from attachment_service.app import SearchRequest, LibrarySearchRequest, LibraryScopedSearchRequest, LibraryOutlineRequest
+from agent.api.private_files import SearchRequest, LibrarySearchRequest
 import os
 dim = int(os.environ['LOCAL_EMBEDDING_MODEL_DIM'])
-for cls, data in [(SearchRequest, {'attachment_ids': []}), (LibrarySearchRequest, {'owner_id':'a','knowledge_base_id':'kb'}),
-                  (LibraryScopedSearchRequest, {'owner_id':'a','knowledge_base_id':'kb','query':'q','section_ids':['section']}),
-                  (LibraryOutlineRequest, {'owner_id':'a','knowledge_base_id':'kb','query':'q'})]:
+for cls, data in [(SearchRequest, {'attachment_ids': []}), (LibrarySearchRequest, {'owner_id':'a','knowledge_base_id':'kb'})]:
     cls(**data, query_vector=[0.1] * dim)
     try:
         cls(**data, query_vector=[0.1] * (dim + 1))

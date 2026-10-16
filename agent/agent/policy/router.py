@@ -7,7 +7,10 @@ class IntentPolicyRouter:
 
     _POLICIES = {
         QueryIntent.KNOWLEDGE_QA: IntentPolicy(
-            candidate_tools=("search_documents",),
+            candidate_tools=("search_documents", "find_documents", "get_document"),
+            max_iterations=5,
+            max_tool_calls=5,
+            max_retrieval_attempts=5,
             # A factual answer may span summary, commit, and changed-file
             # sections. Keep the bounded QA window wide enough to assemble
             # those sections while the runner/evidence gate remains capped.
@@ -16,7 +19,8 @@ class IntentPolicyRouter:
         QueryIntent.DOCUMENT_SEARCH: IntentPolicy(
             candidate_tools=("find_documents",),
             retrieval_strategy="bm25",
-            evidence_policy="document_identity",
+            evidence_policy="none",
+            requires_citations=False,
             assembly_strategy="document_order",
             answer_style="document_list",
             top_k=10,
@@ -33,7 +37,10 @@ class IntentPolicyRouter:
             max_retrieval_attempts=5,
         ),
         QueryIntent.COMPARISON: IntentPolicy(
-            candidate_tools=("search_documents",),
+            candidate_tools=("search_documents", "find_documents", "get_document"),
+            max_iterations=5,
+            max_tool_calls=5,
+            max_retrieval_attempts=5,
             retrieval_strategy="hybrid",
             evidence_policy="bilateral_coverage",
             assembly_strategy="group_by_target",
@@ -76,17 +83,4 @@ class IntentPolicyRouter:
     }
     def route(self, query_plan: QueryPlan) -> IntentPolicy:
         """Return the fixed policy for the plan's validated intent."""
-        policy = self._POLICIES[query_plan.intent]
-        # A small explicit source selection needs bounded original reads for
-        # chronology/precise locators; rank-only retrieval cannot guarantee
-        # both sides of the comparison. Grants still come from AccessGuard.
-        ids = query_plan.filters.get('doc_ids', [])
-        if isinstance(ids, str):
-            ids = [ids]
-        if 0 < len(ids) <= 4 and query_plan.intent in {QueryIntent.KNOWLEDGE_QA, QueryIntent.COMPARISON}:
-            return policy.model_copy(update={
-                'candidate_tools': tuple(dict.fromkeys((*policy.candidate_tools, 'get_document'))),
-                'max_tool_calls': max(policy.max_tool_calls, len(ids) + 1),
-                'max_retrieval_attempts': max(policy.max_retrieval_attempts, len(ids) + 1),
-            })
-        return policy
+        return self._POLICIES[query_plan.intent]

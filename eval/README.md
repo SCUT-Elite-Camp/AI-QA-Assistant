@@ -2,6 +2,12 @@
 
 ## CP2 Agent evaluation
 
+All default system tests use English questions, assertions, ordinary fixtures,
+expected facts and generated answers/reports (`en-US`), as requested on 2026-10-15.
+Language and Unicode capability tests must be identified explicitly. Historical
+frozen datasets/results remain unchanged; English adaptations of seen cases are
+regression retests, not new unseen holdouts. See the repository evaluation policy.
+
 `run_agent_eval.py` tests the CP2 Agent layer separately from the existing
 retrieval benchmark:
 
@@ -15,7 +21,7 @@ Retrieval Hit Rate, Recall, MRR, MAP, and retrieval-strategy comparisons remain
 Tool Layer responsibilities and are intentionally excluded from this CP2 Agent
 report.
 
-The auditable dataset is `eval/datasets/agent_cp2_cases.json`. A required fact
+The default dataset is `eval/datasets/agent_cp2_cases.en.v2.json`. A required fact
 is a synonym group, so wording may vary without hiding missing information.
 
 All model-backed runs require explicit `--online` confirmation:
@@ -34,7 +40,8 @@ metrics. Reports are JSON plus Excel-friendly UTF-8 CSV under `eval/reports/`.
 
 `run_local_kb_online.py` runs real local-KB answer-quality tests while keeping
 single-target questions separate from multi-aspect and compound questions.
-Both groups use English questions. The legacy core-regression dataset remains
+Both groups use English questions and English expected facts. Simple cases default
+to `eval/datasets/local_kb_simple_online_cases.en.v2.json`. The legacy dataset remains
 unchanged so historical reports stay reproducible.
 
 ```powershell

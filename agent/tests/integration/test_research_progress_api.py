@@ -14,9 +14,6 @@ from deep_research.access import ResearchAccessPolicy
 from deep_research.execution import ResearchRuntimeService
 
 
-FIXTURE_DOCUMENTS = (
-    Path(__file__).resolve().parents[2] / "mock" / "research_documents"
-)
 
 
 def _application(service: ResearchRuntimeService) -> FastAPI:
@@ -36,12 +33,12 @@ def _application(service: ResearchRuntimeService) -> FastAPI:
 
 
 def test_progress_and_incremental_events_cover_full_http_flow(
-    tmp_path: Path,
+    tmp_path: Path, research_documents_dir: Path,
 ) -> None:
     service = ResearchRuntimeService.from_local_catalog(
         database_path=tmp_path / "progress-api.db",
         checkpoint_path=tmp_path / "progress-api.graph.db",
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-progress-api",
     )
 
@@ -120,10 +117,10 @@ def test_progress_and_incremental_events_cover_full_http_flow(
     service.close()
 
 
-def test_progress_api_returns_404_and_validates_event_cursor(tmp_path: Path) -> None:
+def test_progress_api_returns_404_and_validates_event_cursor(tmp_path: Path, research_documents_dir: Path) -> None:
     service = ResearchRuntimeService.from_local_catalog(
         database_path=tmp_path / "progress-errors.db",
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
     )
     with TestClient(_application(service)) as client:
         assert client.get(

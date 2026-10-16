@@ -1,0 +1,75 @@
+{
+  "schema_version": "integration-english-regression.v2",
+  "purpose": "English adaptation of previously inspected integration probes; not an unseen holdout.",
+  "cases": [
+    {
+      "case_id": "HO-001",
+      "question": "In the W28 Web report, which commit fixes citation tooltip positioning and makes the backend send full citation excerpts? Give its short hash and date, and distinguish it from the commit that adds inline citation tooltips and a deduplicated sources panel. Answer in English.",
+      "allowed_document_ids": [
+        "7404d87eea14e890308b97ccc2b9cea8"
+      ],
+      "checks": [
+        "Full excerpts and bottom-positioned tooltips: 32a1bfc45, 2026-07-10.",
+        "Inline cite-mark tooltips and deduplicated sources panel: 6be2c3d45, 2026-07-09.",
+        "Distinguish the two commits and their feature/fix roles."
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "7404d87eea14e890308b97ccc2b9cea8",
+          "chunk_id": "7404d87eea14e890308b97ccc2b9cea8_chunk_4"
+        }
+      ],
+      "language": "en-US",
+      "evaluation_cohort": "seen_source_english_regression"
+    },
+    {
+      "case_id": "HO-002",
+      "question": "Which evaluation metrics, datasets or frameworks are listed in the M6 Evaluation & Benchmarking lifecycle record? How many commits are recorded? Does the record prove that the current system achieved a specific MRR or hit rate? Answer in English.",
+      "allowed_document_ids": [
+        "e061986b933fcd9cdc24e6800b16760f"
+      ],
+      "checks": [
+        "Include test datasets, MS MARCO, RAGAS synthetic benchmarks and performance testing.",
+        "Include retrieval accuracy, MRR, hit rates and answer correctness.",
+        "The recorded total is 3 commits.",
+        "No concrete MRR or hit-rate acceptance value is established."
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "e061986b933fcd9cdc24e6800b16760f",
+          "chunk_id": "e061986b933fcd9cdc24e6800b16760f_chunk_0"
+        }
+      ],
+      "language": "en-US",
+      "evaluation_cohort": "seen_source_english_regression"
+    },
+    {
+      "case_id": "HO-003",
+      "question": "In the W33 Data Pipeline report, which commit and date delivered the Hit Rate & Similarity monitoring drawer and streaming stability improvements? Give one impacted path each for Agent, retrieval tools and Web, and explain whether the report proves that all those paths passed end-to-end acceptance. Answer in English.",
+      "allowed_document_ids": [
+        "40519d3b87b47f4aa9287552c193171c"
+      ],
+      "checks": [
+        "Commit 5cdccce39, 2026-08-11.",
+        "Name an actually listed agent/agent path.",
+        "For retrieval tools, name toolset/retrieval/reranker.py or toolset/tool_layer/search_tool.py.",
+        "Name an actually listed web/ path; do not rewrite it as current frontend/.",
+        "A changed-file list does not prove end-to-end acceptance; state the evidence limitation."
+      ],
+      "key_source_locations": [
+        {
+          "doc_id": "40519d3b87b47f4aa9287552c193171c",
+          "chunk_id": "40519d3b87b47f4aa9287552c193171c_chunk_1"
+        },
+        {
+          "doc_id": "40519d3b87b47f4aa9287552c193171c",
+          "chunk_id": "40519d3b87b47f4aa9287552c193171c_chunk_2"
+        }
+      ],
+      "language": "en-US",
+      "evaluation_cohort": "seen_source_english_regression"
+    }
+  ],
+  "language": "en-US",
+  "translation_parent": "agent/eval/datasets/integration_holdout.v1.json"
+}

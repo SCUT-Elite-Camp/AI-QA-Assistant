@@ -1,0 +1,484 @@
+"""Thinking pipeline: question planning, source policy and bounded tool execution."""
+
+import os
+from typing import Any
+
+from agent.chat.result import OrchestrationResult
+from agent.config.settings import settings
+from agent.evidence import CitationChecker, CitationCheckResult, EvidenceGate
+from agent.memory.coordinator import MemoryCoordinator
+from agent.policy import IntentPolicyRouter, ChatRoutePolicy, ChatRoute, ChatRouteDecision
+from agent.query import QueryUnderstanding, heuristic_source_intent
+from agent.query.ambiguity import ARCHITECTURE_SCOPE_QUESTION, needs_architecture_scope
+from agent.runtime import (
+    AgentRunner,
+    ExecutionProfileResolver,
+    ExecutionMode,
+)
+from agent.schemas.chat import (
+    AttachmentContext,
+    ChatRequest,
+    Citation,
+    PersonalLibraryContext,
+)
+from agent.schemas.intent_policy import IntentPolicy
+from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent, SourceKind
+from agent.schemas.tool_execution import Evidence
+from agent.tools import ToolExecutor
+
+
+def policy_requires_retrieval(plan: QueryPlan) -> bool:
+    return plan.intent in {
+        QueryIntent.KNOWLEDGE_QA,
+        QueryIntent.DOCUMENT_SEARCH,
+        QueryIntent.SUMMARIZATION,
+        QueryIntent.COMPARISON,
+    }
+
+
+class ThinkingPipeline:
+    """Coordinate memory, query understanding, policy, and runtime execution.
+
+    The orchestrator deliberately owns the order of cross-workstream calls.
+    Individual components remain injectable so unit tests and future backends
+    can replace them without changing the public Chat API.
+    """
+
+    def __init__(
+        self,
+        *,
+        memory_coordinator: MemoryCoordinator | None = None,
+        query_understanding: QueryUnderstanding,
+        policy_router: IntentPolicyRouter,
+        runner: AgentRunner,
+        tool_executor: ToolExecutor,
+        evidence_gate: EvidenceGate,
+        citation_checker: CitationChecker,
+        chat_route_policy: ChatRoutePolicy | None = None,
+        profile_resolver: ExecutionProfileResolver | None = None,
+    ) -> None:
+        self.chat_route_policy = chat_route_policy or ChatRoutePolicy()
+        self.query_understanding = query_understanding
+        self.policy_router = policy_router
+        self.runner = runner
+        self.profile_resolver = profile_resolver or ExecutionProfileResolver()
+        self.tool_executor = tool_executor
+        self.evidence_gate = evidence_gate
+        self.citation_checker = citation_checker
+        self.memory_coordinator = memory_coordinator or MemoryCoordinator()
+
+    def run(
+        self,
+        request: ChatRequest,
+        *,
+        trace_id: str,
+        query_plan: QueryPlan | None = None,
+    ) -> OrchestrationResult:
+        """Run the complete CP2 Agent pipeline for one Chat request."""
+
+        if request.weight_mode in {None, "fast"}:
+            raise ValueError("Fast requests must enter FastPipeline")
+        memory_view = self.memory_coordinator.prepare(request)
+        context_artifact = memory_view.context_artifact
+        memory_recall = memory_view.recall
+        history = memory_view.history_for_model()
+        if memory_recall is not None and memory_recall.handled:
+            plan = self._resolve_recall_query_plan(request, query_plan)
+            policy = self.policy_router.route(plan)
+            retrieval_mode, top_k = self._effective_retrieval_options(request, policy)
+            return OrchestrationResult(
+                query_plan=plan,
+                policy=policy,
+                run_result=None,
+                history=history,
+                retrieval_mode=retrieval_mode,
+                top_k=top_k,
+                chat_route=ChatRouteDecision(route=ChatRoute.L0_DIRECT, reason="persistent_memory_exact_recall"),
+                context_artifact=context_artifact,
+                memory_recall=memory_recall,
+            )
+
+        plan = self._resolve_query_plan(request, query_plan, history)
+        source_intent = (
+            plan.source_intent
+            if plan.source_intent.sources
+            else heuristic_source_intent(plan.original_query)
+        )
+        attachment_context = getattr(request, "attachment_context", None)
+        if (
+            isinstance(attachment_context, AttachmentContext)
+            and attachment_context.selected_attachment_ids
+            and SourceKind.CONVERSATION_ATTACHMENT not in source_intent.sources
+        ):
+            source_intent = source_intent.model_copy(update={
+                "sources": [
+                    SourceKind.CONVERSATION_ATTACHMENT,
+                    *source_intent.sources,
+                ]
+            })
+        plan = plan.model_copy(update={"source_intent": source_intent})
+        policy = self._apply_source_policy(
+            request,
+            self.policy_router.route(plan),
+            source_intent,
+        )
+        navigation_scopes = self._navigation_scopes(request, source_intent)
+        profile = self.profile_resolver.resolve(
+            request.weight_mode, exploration_mode=request.exploration_mode,
+        )
+        if profile.mode == ExecutionMode.THINKING:
+            policy = self._apply_exploration_policy(
+                request,
+                plan,
+                policy,
+                navigation_scopes=navigation_scopes,
+            )
+        retrieval_mode, top_k = self._effective_retrieval_options(
+            request,
+            policy,
+        )
+        is_first = (
+            request.is_first_message
+            if request.is_first_message is not None
+            else not memory_view.has_prior_messages
+        )
+        context_tools = self._configure_tool_contexts(request)
+        try:
+            run_result = self.runner.run(
+                plan,
+                policy=policy,
+                tool_executor=self.tool_executor,
+                evidence_gate=self.evidence_gate,
+                history=history,
+                trace_id=trace_id,
+                mode=retrieval_mode,
+                top_k=top_k,
+                is_first_message=is_first,
+                soul_content=request.soul_content,
+                exploration_mode=profile.exploration_mode,
+                navigation_scopes=navigation_scopes,
+            )
+        finally:
+            for tool in context_tools:
+                tool.clear_request_context()
+        return OrchestrationResult(
+            query_plan=plan,
+            policy=policy,
+            run_result=run_result,
+            history=history,
+            retrieval_mode=retrieval_mode,
+            top_k=top_k,
+            chat_route=self.chat_route_policy.route(plan),
+            context_artifact=context_artifact,
+            execution_profile=profile,
+        )
+
+    def validate_citations(
+        self,
+        answer: str,
+        citations: list[Citation],
+        evidence: list[dict[str, Any]],
+    ) -> CitationCheckResult:
+        """Validate the public citations against request-local Evidence."""
+
+        typed_evidence: list[Evidence] = []
+        for item in evidence:
+            try:
+                typed_evidence.append(Evidence.model_validate(item))
+            except (TypeError, ValueError):
+                # Legacy/direct Runner calls may return CP1-shaped evidence.
+                # The normal orchestrated path always returns typed Evidence.
+                continue
+        return self.citation_checker.validate(answer, citations, typed_evidence)
+
+    def _configure_library_context(self, request: ChatRequest) -> Any | None:
+        tool = self.tool_executor.registry.get("search_library")
+        context = getattr(request, "personal_library_context", None)
+        if (
+            tool is None
+            or not hasattr(tool, "set_request_context")
+            or not isinstance(context, PersonalLibraryContext)
+        ):
+            return None
+        tool.set_request_context(
+            context.owner_user_id,
+            context.knowledge_base_id,
+            context.access_token,
+        )
+        return tool
+
+    def _configure_tool_contexts(self, request: ChatRequest) -> list[Any]:
+        configured: list[Any] = []
+        library_tool = self._configure_library_context(request)
+        if library_tool is not None:
+            configured.append(library_tool)
+
+        personal = getattr(request, "personal_library_context", None)
+        for name in (
+            "wiki_search", "wiki_read_page", "wiki_read_sources",
+            "wiki_search_evidence",
+        ):
+            tool = self.tool_executor.registry.get(name)
+            if tool is None or not hasattr(tool, "set_personal_context"):
+                continue
+            tool.set_personal_context(
+                personal.owner_user_id if isinstance(personal, PersonalLibraryContext) else "",
+                personal.knowledge_base_id if isinstance(personal, PersonalLibraryContext) else "",
+                personal.access_token if isinstance(personal, PersonalLibraryContext) else "",
+                secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
+            )
+            configured.append(tool)
+
+        context = getattr(request, "attachment_context", None)
+        if not isinstance(context, AttachmentContext):
+            return configured
+        for name in ("search_attachments",):
+            tool = self.tool_executor.registry.get(name)
+            if tool is None or not hasattr(tool, "set_request_context"):
+                continue
+            tool.set_request_context(
+                context.allowed_attachment_ids,
+                context.selected_attachment_ids,
+            )
+            configured.append(tool)
+        return configured
+
+    @staticmethod
+    def _apply_source_policy(
+        request: ChatRequest,
+        policy: IntentPolicy,
+        source_intent: SourceIntent,
+    ) -> IntentPolicy:
+        sources = set(source_intent.sources)
+        if not request.knowledge_base_retrieval_enabled:
+            sources.difference_update({
+                SourceKind.ENTERPRISE_KB,
+                SourceKind.PERSONAL_LIBRARY,
+            })
+            knowledge_tools = {
+                "search_documents",
+                "find_documents",
+                "get_document",
+                "search_library",
+                "wiki_search",
+                "wiki_read_page",
+                "wiki_read_sources",
+                "wiki_search_evidence",
+            }
+            policy = policy.model_copy(update={
+                "candidate_tools": tuple(
+                    tool
+                    for tool in policy.candidate_tools
+                    if tool not in knowledge_tools
+                ),
+            })
+        if not sources:
+            return policy
+
+        tools: list[str] = []
+        if SourceKind.ENTERPRISE_KB in sources:
+            tools.extend(policy.candidate_tools)
+        if (
+            SourceKind.PERSONAL_LIBRARY in sources
+            and isinstance(
+                getattr(request, "personal_library_context", None),
+                PersonalLibraryContext,
+            )
+        ):
+            tools.append("search_library")
+        if (
+            SourceKind.CONVERSATION_ATTACHMENT in sources
+            and isinstance(
+                getattr(request, "attachment_context", None),
+                AttachmentContext,
+            )
+        ):
+            tools.append("search_attachments")
+        tools = list(dict.fromkeys(tools))
+
+        private_sources = {
+            SourceKind.PERSONAL_LIBRARY,
+            SourceKind.CONVERSATION_ATTACHMENT,
+        }
+        if not sources.intersection(private_sources):
+            return policy.model_copy(update={"candidate_tools": tuple(tools)})
+        return policy.model_copy(update={
+            "candidate_tools": tuple(tools),
+            "retrieval_strategy": "hybrid",
+            "evidence_policy": (
+                "single_fact" if policy.evidence_policy == "none" else policy.evidence_policy
+            ),
+            "assembly_strategy": (
+                "score_order" if policy.assembly_strategy == "none" else policy.assembly_strategy
+            ),
+            "top_k": max(5, policy.top_k),
+            "max_iterations": max(len(sources) + 1, policy.max_iterations),
+            "max_tool_calls": max(
+                len(sources),
+                policy.max_tool_calls,
+            ),
+            "max_retrieval_attempts": max(len(sources), policy.max_retrieval_attempts),
+            "requires_citations": True,
+        })
+
+    @staticmethod
+    def _apply_exploration_policy(
+        request: ChatRequest,
+        plan: QueryPlan,
+        policy: IntentPolicy,
+        *,
+        navigation_scopes: tuple[str, ...] = (),
+    ) -> IntentPolicy:
+        if (
+            not settings.AGENTIC_EXPLORATION_ENABLED
+            or request.exploration_mode == "off"
+            or not policy_requires_retrieval(plan)
+            or not navigation_scopes
+        ):
+            return policy
+        candidates = list(policy.candidate_tools)
+        if settings.KNOWLEDGE_NAVIGATION_ENABLED:
+            candidates.extend((
+                "wiki_search", "wiki_read_page", "wiki_read_sources",
+                "wiki_search_evidence",
+            ))
+        return policy.model_copy(update={
+            "candidate_tools": tuple(dict.fromkeys(candidates)),
+            "max_iterations": max(
+                policy.max_iterations, settings.EXPLORATION_MAX_ROUNDS + 2
+            ),
+            "max_tool_calls": max(
+                policy.max_tool_calls, settings.EXPLORATION_MAX_TOOL_CALLS
+            ),
+            "max_retrieval_attempts": max(
+                policy.max_retrieval_attempts,
+                min(5, settings.EXPLORATION_MAX_ROUNDS + 2),
+            ),
+        })
+
+    @staticmethod
+    def _navigation_scopes(
+        request: ChatRequest,
+        source_intent: SourceIntent,
+    ) -> tuple[str, ...]:
+        selected = set(source_intent.sources)
+        scopes: list[str] = []
+        if (
+            request.knowledge_base_retrieval_enabled
+            and SourceKind.ENTERPRISE_KB in selected
+        ):
+            scopes.append("enterprise")
+        if (
+            request.knowledge_base_retrieval_enabled
+            and getattr(request, "personal_library_context", None) is not None
+            and SourceKind.PERSONAL_LIBRARY in selected
+        ):
+            scopes.append("personal")
+        return tuple(scopes)
+
+
+    @staticmethod
+    def _resolve_recall_query_plan(
+        request: ChatRequest,
+        query_plan: QueryPlan | None,
+    ) -> QueryPlan:
+        if query_plan is not None:
+            return ThinkingPipeline._merge_request_constraints(request, query_plan)
+        return QueryPlan(
+            original_query=request.query,
+            standalone_query=request.query.strip(),
+            filters=dict(request.filters or {}),
+        )
+
+    def _resolve_query_plan(
+        self,
+        request: ChatRequest,
+        query_plan: QueryPlan | None,
+        history: list[dict[str, Any]],
+    ) -> QueryPlan:
+        if query_plan is not None:
+            return self._merge_request_constraints(request, query_plan)
+
+        if needs_architecture_scope(request.query):
+            return QueryPlan(original_query=request.query, standalone_query=request.query,
+                filters=dict(request.filters or {}), needs_clarification=True,
+                clarification_question=ARCHITECTURE_SCOPE_QUESTION,
+                ambiguity_reason="architecture_scope_unspecified")
+
+        # 如果外部注入了特定的 QueryUnderstanding（例如测试中注入的 FixedQueryUnderstanding），优先尊重注入逻辑
+        if type(self.query_understanding).__name__ != "QueryUnderstanding":
+            analyzed_plan = self.query_understanding.analyze(
+                request.query,
+                list(history),
+                filters=request.filters,
+            )
+            return self._merge_request_constraints(request, analyzed_plan)
+
+        effective_history = list(history)
+        if not history and request.soul_content:
+            # Inject short topic summary context hint into history for query rewriter / planner
+            effective_history.insert(0, {
+                "role": "user",
+                "content": f"[Topic Workspace Cognition Context]:\n{request.soul_content[:600]}"
+            })
+
+        analyzed_plan = self.query_understanding.analyze(
+            request.query,
+            effective_history,
+            filters=request.filters,
+        )
+        return self._merge_request_constraints(request, analyzed_plan)
+
+    @staticmethod
+    def _merge_request_constraints(
+        request: ChatRequest,
+        query_plan: QueryPlan,
+    ) -> QueryPlan:
+        if query_plan.original_query != request.query:
+            raise ValueError(
+                "QueryPlan.original_query must exactly match ChatRequest.query"
+            )
+
+        merged_filters = dict(query_plan.filters)
+        hard_doc_ids = (request.filters or {}).get("doc_ids")
+        if hard_doc_ids is not None:
+            # Explicit document selections already define the source scope.
+            # Guessed metadata can exclude those sources or require absent index fields.
+            for key in ("space", "doc_type"):
+                if key not in (request.filters or {}):
+                    merged_filters.pop(key, None)
+            for key in ("doc_id", "document_id"):
+                if key not in (request.filters or {}) and merged_filters.get(key) not in hard_doc_ids:
+                    # A model may mistake a document title for its ID. Explicit
+                    # caller-selected IDs remain the authoritative source scope.
+                    merged_filters.pop(key, None)
+        for key, value in (request.filters or {}).items():
+            if key in merged_filters and merged_filters[key] != value:
+                raise ValueError(f"conflicting hard filter: {key}")
+            merged_filters[key] = value
+        return query_plan.model_copy(update={"filters": merged_filters})
+
+    @staticmethod
+    def _effective_retrieval_options(
+        request: ChatRequest,
+        policy: IntentPolicy,
+    ) -> tuple[str, int]:
+        if policy.retrieval_strategy == "none":
+            return request.retrieval_mode, 0
+
+        # The request may lower top_k, while the policy remains the upper bound.
+        top_k = min(request.top_k, policy.top_k) if policy.top_k else 0
+        if top_k < 1:
+            top_k = 1
+
+        if (request.filters or {}).get("doc_ids") and policy.top_k:
+            top_k = min(policy.top_k, max(top_k, 10))
+
+        # Hybrid is the general default; specialized policies (e.g. document
+        # search) are allowed to select their own retrieval strategy.
+        mode = (
+            policy.retrieval_strategy
+            if policy.retrieval_strategy != "hybrid"
+            else request.retrieval_mode
+        )
+        return mode, top_k

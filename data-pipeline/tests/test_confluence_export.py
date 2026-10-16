@@ -18,8 +18,8 @@ from confluence_export import (
     load_confluence_config,
 )
 from parsers.markdown_parser import MarkdownParser
-from pipeline.structure import build_document_sections
-from shared_runtime.document_sections import stable_document_version_id
+from pipeline.documents.structure import build_document_sections
+from pipeline.documents.sections import stable_document_version_id
 
 
 class FakeResponse:

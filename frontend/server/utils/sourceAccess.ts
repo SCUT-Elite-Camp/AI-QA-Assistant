@@ -104,6 +104,12 @@ export async function assertSourceDependencies(userId: string, dependencies: Sou
         || (remote.topic_id && remote.topic_id !== attachment.topicId)) {
         throw new HTTPError({ statusCode: 403, statusMessage: 'source_access_revoked' })
       }
+      if (dependency.content_kind === 'file') {
+        if (!dependency.content_hash || dependency.content_hash !== attachment.sha256 || dependency.content_hash !== remote.sha256) {
+          throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+        }
+        continue
+      }
       const evidence = await attachmentServiceJson<any>(`/v1/attachments/${encodeURIComponent(id)}/evidence`)
       if (!dependency.content_hash || !evidence.items?.some((item: any) =>
         item.content_hash === dependency.content_hash || item.normalized_content_hash === dependency.content_hash)) {
@@ -186,7 +192,7 @@ export async function filterReadableMessages<T extends { role: string, parts: un
 export function sourceDependenciesFromCitations(citations: any[]): SourceDependency[] {
   return citations.map(citation => sourceDependencySchema.parse({
     source_type: citation.source_type || 'knowledge', doc_id: citation.doc_id,
-    ...Object.fromEntries(['attachment_id', 'knowledge_base_id', 'document_id', 'version_id', 'version', 'content_hash']
+    ...Object.fromEntries(['attachment_id', 'knowledge_base_id', 'document_id', 'version_id', 'version', 'content_hash', 'content_kind']
       .filter(key => citation[key] != null).map(key => [key, citation[key]])),
   }))
 }
@@ -194,6 +200,7 @@ export function sourceDependenciesFromCitations(citations: any[]): SourceDepende
 export function citationsCovered(provenance: EvidenceProvenance, citations: any[]): boolean {
   return citations.every(citation => provenance.dependencies.some(dependency =>
     dependency.source_type === (citation.source_type || 'knowledge') && dependency.doc_id === citation.doc_id
+    && (dependency.content_kind || 'excerpt') === (citation.content_kind || 'excerpt')
     && (!citation.version_id || dependency.version_id === citation.version_id)
     && (citation.source_version == null && citation.version == null || String(dependency.version) === String(citation.source_version ?? citation.version))
     && (!citation.knowledge_base_id || dependency.knowledge_base_id === citation.knowledge_base_id)

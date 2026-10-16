@@ -56,6 +56,9 @@ WHERE f.doc_id IS NOT NULL
 class PermissionResolutionError(RuntimeError):
     """Strict authorization cannot establish an active, permitted actor."""
 
+    # Toolset must preserve access failures without importing the Agent layer.
+    source_access_failure = True
+
     def __init__(self, code: str, status_code: int) -> None:
         self.code = code
         self.status_code = status_code

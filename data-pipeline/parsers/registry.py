@@ -1,13 +1,21 @@
 import os
+from importlib import import_module
 from parsers.base import BaseParser
-from parsers.pdf_parser import PDFParser
-from parsers.docx_parser import DocxParser
-from parsers.doc_parser import DocParser
-from parsers.pptx_parser import PptxParser
-from parsers.html_parser import HtmlParser
-from parsers.xlsx_parser import XlsxParser
-from parsers.markdown_parser import MarkdownParser
 from models.document import Document
+
+_DEFAULT_PARSERS = {
+    '.pdf': ('parsers.pdf_parser', 'PDFParser'),
+    '.docx': ('parsers.docx_parser', 'DocxParser'),
+    '.doc': ('parsers.doc_parser', 'DocParser'),
+    '.pptx': ('parsers.pptx_parser', 'PptxParser'),
+    '.html': ('parsers.html_parser', 'HtmlParser'),
+    '.htm': ('parsers.html_parser', 'HtmlParser'),
+    '.xlsx': ('parsers.xlsx_parser', 'XlsxParser'),
+    '.md': ('parsers.markdown_parser', 'MarkdownParser'),
+    **{extension: ('parsers.upload_formats', 'SupplementalParser') for extension in (
+        '.txt', '.csv', '.json', '.xls', '.ppt', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff',
+    )},
+}
 
 class DocumentParser:
     """
@@ -16,11 +24,11 @@ class DocumentParser:
     """
     def __init__(self, parsers: list[BaseParser] = None):
         self._parser_map: dict[str, BaseParser] = {}
+        self._defaults = parsers is None
         
         # 默认注册全部解析器
         if parsers is None:
-            parsers = [PDFParser(), DocxParser(), DocParser(), PptxParser(),
-                       HtmlParser(), XlsxParser(), MarkdownParser()]
+            parsers = []
             
         for p in parsers:
             self.register_parser(p)
@@ -32,7 +40,11 @@ class DocumentParser:
 
     def get_parser(self, extension: str) -> BaseParser | None:
         """根据文件扩展名获取解析器实例"""
-        return self._parser_map.get(extension.lower())
+        extension = extension.lower()
+        if extension not in self._parser_map and self._defaults and extension in _DEFAULT_PARSERS:
+            module, name = _DEFAULT_PARSERS[extension]
+            self.register_parser(getattr(import_module(module), name)())
+        return self._parser_map.get(extension)
 
     def parse(self, file_path: str) -> list[Document]:
         """核心解析方法：根据文件后缀自动选择对应的解析器
@@ -53,7 +65,7 @@ class DocumentParser:
     @property
     def supported_extensions(self) -> list[str]:
         """返回所有已注册的支持的文件扩展名列表"""
-        return list(self._parser_map.keys())
+        return list(dict.fromkeys([*(_DEFAULT_PARSERS if self._defaults else {}), *self._parser_map]))
 
 # 默认的全局解析器实例（保持向下兼容）
 _default_parser = DocumentParser()

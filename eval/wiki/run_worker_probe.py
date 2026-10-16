@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 for dependency in (ROOT, ROOT / "data-pipeline", ROOT / "data-persistence"):
     sys.path.insert(0, str(dependency))
 
-from pipeline.confluence_snapshot import discover_confluence_snapshots  # noqa: E402
+from pipeline.confluence.snapshot import discover_confluence_snapshots  # noqa: E402
 from pipeline.wiki.cache import CachingJsonCompletionClient  # noqa: E402
 from pipeline.wiki.confluence_source import load_authoritative_confluence_document  # noqa: E402
 from pipeline.wiki.domain import WikiScope  # noqa: E402

@@ -1,6 +1,7 @@
 import json
 import os
 import math
+import time
 
 from pymilvus import Collection, CollectionSchema, DataType, FieldSchema, connections, utility
 
@@ -11,6 +12,12 @@ from storage.filtering import (
 )
 
 class MilvusStore:
+    @staticmethod
+    def _label_text(value, max_bytes: int) -> str:
+        # Milvus VARCHAR limits bytes, not Python characters. Keep labels valid
+        # UTF-8; authoritative titles remain intact in the document projection.
+        return str(value or "").encode("utf-8")[:max_bytes].decode("utf-8", errors="ignore")
+
     @staticmethod
     def load_timeout_seconds() -> float:
         try:
@@ -57,16 +64,30 @@ class MilvusStore:
             "doc_chunks",
         )
         self._connected = False
+        self._retry_after = 0.0
 
     def connect(self) -> None:
         if not self._connected:
+            if time.monotonic() < self._retry_after:
+                raise RuntimeError("vector_index_unavailable")
             try:
                 timeout = float(os.getenv("MILVUS_CONNECT_TIMEOUT_SECONDS", "5"))
             except ValueError:
                 timeout = 5.0
             if timeout <= 0:
                 timeout = 5.0
-            connections.connect("default", host=self.host, port=self.port, timeout=timeout)
+            try:
+                connections.connect("default", host=self.host, port=self.port, timeout=timeout)
+            except Exception:
+                try:
+                    retry_seconds = float(os.getenv("MILVUS_CONNECT_RETRY_SECONDS", "30"))
+                except ValueError:
+                    retry_seconds = 30.0
+                if not math.isfinite(retry_seconds) or retry_seconds < 0:
+                    retry_seconds = 30.0
+                self._retry_after = time.monotonic() + retry_seconds
+                raise
+            self._retry_after = 0.0
             self._connected = True
 
     def delete_document_chunks(self, doc_id: str) -> None:
@@ -179,7 +200,7 @@ class MilvusStore:
                 f"{collection_name} schema is missing PDF provenance fields or has "
                 f"incompatible definitions: {', '.join(issues)}. "
                 "Plan a rebuild into separate collections with scripts/safe_reindex.py. "
-                "See docs/DATA_PIPELINE.md; scripts/reindex.py requires explicit confirmation."
+                "Use an isolated collection and follow docs/data-pipeline/DATA_PIPELINE.md."
             )
 
     @staticmethod
@@ -292,10 +313,10 @@ class MilvusStore:
             "doc_id": doc_ids,
             "chunk_index": chunk_indices,
             "source_url": [str(value or "")[:512] for value in source_urls],
-            "title": [str(value or "")[:512] for value in titles],
-            "space": [str(value or "")[:256] for value in spaces],
+            "title": [self._label_text(value, 512) for value in titles],
+            "space": [self._label_text(value, 256) for value in spaces],
             "doc_type": [
-                self._normalize_doc_type(value)[:64] for value in doc_types
+                self._label_text(self._normalize_doc_type(value), 64) for value in doc_types
             ],
         }
         provenance = {

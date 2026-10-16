@@ -8,6 +8,15 @@ export function normalizedEvidenceExcerpt(value: string): string {
   return stripConfluenceLocalIds(value).replace(/\s+/g, ' ').trim()
 }
 
+// A table slice can repeat its header or label a source row, so it need not be
+// contiguous in the full rendered body. Accept only the exact current chunk
+// returned by the already permission/version/hash-checked source backend.
+export function matchesAuthoritativeChunk(source: { chunks?: unknown }, excerpt: string, chunkId: string): boolean {
+  if (!chunkId || !excerpt.trim() || !Array.isArray(source.chunks)) return false
+  const matches = source.chunks.filter((chunk: any) => chunk && String(chunk.chunk_id || '') === chunkId)
+  return matches.length === 1 && String(matches[0].markdown_text || matches[0].text || '').trim() === excerpt.trim()
+}
+
 export function locateEvidenceExcerpt(source: string, excerpt: string): { start: number, end: number } | null {
   const readable = stripConfluenceLocalIds(source)
   const words = excerpt.trim().split(/\s+/).filter(Boolean)

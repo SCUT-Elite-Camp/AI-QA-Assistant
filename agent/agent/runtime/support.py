@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from agent.answer import AnswerCompletenessChecker, should_accept_repair
+from agent.evidence.answer_grounding import GroundedAnswer, parse_grounded_answer, validate_grounded_answer
 from agent.evidence.schemas import EvidenceGateResult
 from agent.prompt.templates import ANSWER_RULES, SYSTEM_ROLE
 from agent.runtime.state import AgentRunResult, AgentState, StopReason
@@ -58,7 +59,7 @@ class RuntimeSupport:
     ) -> list[dict[str, Any]]:
         title_directive = (
             "\n\n【极重要指令】：这是本对话的第一个提问。请务必在最终回答的第一行输出您总结的对话标题，格式必须为：[TITLE: 3-10字精炼标题]，然后再换行输出正文回答。"
-            if is_first_message
+            if is_first_message and not (policy and policy.requires_citations)
             else ""
         )
         soul_directive = (
@@ -107,10 +108,13 @@ class RuntimeSupport:
             )
         if {"find_documents", "get_document"}.issubset(tools):
             return (
-                "\n\n【文档检索与阅读规则】：\n"
-                "1. 当用户要求总结、概括、通读特定文档或会议纪要时：必须先调用 find_documents 查找定位目标文档以获取确切 doc_id，然后调用 get_document(doc_id=...) 读取文档完整内容进行总结。严禁仅调用 search_documents 检索碎片片段来代替整篇文档总结！\n"
-                "2. 若已知 doc_id，直接调用 get_document(doc_id=...)。\n"
-                "3. 仅当用户查询跨文档分散知识点或特定孤立细节时，才使用 search_documents。"
+                "\n\n文档检索与阅读规则：先用 search_documents 获取 TopK 文档块。"
+                "如果证据不足或需要更完整的上下文，调用 find_documents 获取文档目录表；"
+                "省略 query 可直接列目录，用 offset/next_offset 翻页。"
+                "从中选择相关文档，调用 get_document(doc_ids=[...]) 一次批量读取完整解析文本。"
+                "已知文档 ID 时可直接读取；总结或通读文档时必须读取全文。"
+                "目录标题和匹配摘要只用于选择文档，不得作为正文引用。"
+                "引用编号以工具观察中的 Citation evidence 表为准。"
             )
         if "find_documents" in tools:
             return (
@@ -120,8 +124,8 @@ class RuntimeSupport:
         if "search_attachments" in tools:
             return (
                 "\n\n工具选择规则：先用 search_attachments 检索当前请求已授权附件；"
-                "仅当文本/OCR 证据不足且需要理解图片或页面区域时，"
-                "才使用 inspect_attachment。不得自行构造 attachment_id。"
+                "附件工具只提供已有解析和 OCR 证据，不提供独立视觉模型。"
+                "不得自行构造 attachment_id，也不得把 OCR 文本当作完整图像理解。"
             )
         return ""
 
@@ -142,6 +146,27 @@ class RuntimeSupport:
         message: str = "",
         error_code: str = "",
     ) -> AgentRunResult:
+        if stop_reason == StopReason.FINAL_ANSWER and state.evidence:
+            try:
+                if state.answer_grounding_draft is None:
+                    draft = parse_grounded_answer(answer)
+                else:
+                    draft = GroundedAnswer.model_validate(state.answer_grounding_draft)
+                if not draft.claims:
+                    return RuntimeSupport.result(state, StopReason.NO_RELEVANT_CONTEXT,
+                        message="The available excerpts do not support an answer.", error_code="model_abstained")
+                state.answer_grounding = validate_grounded_answer(draft, state.evidence)
+                if state.answer_grounding_draft is not None and answer != state.answer_grounding["answer"]:
+                    state.answer_grounding["valid"] = False
+                    state.answer_grounding["errors"].append("answer_changed_after_binding")
+                answer = state.answer_grounding["answer"]
+            except ValueError:
+                state.answer_grounding = {"valid": False, "errors": ["invalid_grounding_format"]}
+            if not state.answer_grounding["valid"]:
+                stop_reason = StopReason.QUALITY_VALIDATION_FAILED
+                answer = ""
+                message = "The answer did not pass claim binding validation."
+                error_code = "claim_binding_validation_failed"
         state.stop_reason = stop_reason
         logger.info(
             "[AGENT_STOP] trace_id=%s stop_reason=%s iterations=%s "
@@ -180,6 +205,7 @@ class RuntimeSupport:
             answer_repair_attempted=state.answer_repair_attempted,
             answer_repair_rolled_back=state.answer_repair_rolled_back,
             answer_repair_guard_reason=state.answer_repair_guard_reason,
+            answer_grounding=state.answer_grounding,
         )
 
     def check_and_repair_answer(
@@ -220,7 +246,17 @@ class RuntimeSupport:
                 return answer
 
             state.answer_repair_attempted = True
-            repaired = checker.repair(state.query_plan, answer, typed_evidence, result)
+            grounded = state.answer_grounding_draft is not None
+            if grounded:
+                candidate = checker.repair(state.query_plan, answer, typed_evidence, result, grounded=True)
+                candidate_report = validate_grounded_answer(candidate, state.evidence)
+                if not candidate_report["valid"]:
+                    state.answer_repair_rolled_back = True
+                    state.answer_repair_guard_reason = "invalid_repair_claim_support"
+                    return answer
+                repaired = candidate_report["answer"]
+            else:
+                repaired = checker.repair(state.query_plan, answer, typed_evidence, result)
             targets = result.required_targets or [
                 *result.missing_aspects,
                 *result.missing_critical_facts,
@@ -236,8 +272,13 @@ class RuntimeSupport:
                 )
                 return answer
             state.answer_complete = True
+            if grounded:
+                state.answer_grounding_draft = candidate.model_dump()
+                state.answer_grounding = candidate_report
             return repaired
         except Exception as exc:
+            if state.answer_repair_attempted:
+                state.answer_repair_rolled_back = True
             logger.warning(
                 "[ANSWER_COMPLETENESS] trace_id=%s check_failed=%s; preserving original answer",
                 state.trace_id,

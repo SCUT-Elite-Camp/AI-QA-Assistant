@@ -11,3 +11,7 @@ class AgentError(Exception):
 class LLMError(AgentError):
     """Raised when LLM invocation fails."""
     pass
+
+
+class LLMToolCallValidationError(LLMError):
+    """The provider rejected a generated tool call before executing any tool."""

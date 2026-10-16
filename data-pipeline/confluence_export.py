@@ -17,8 +17,8 @@ import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from parsers.markdown_parser import MarkdownParser
-from pipeline.structure import build_document_sections
-from shared_runtime.document_sections import stable_document_version_id
+from pipeline.documents.structure import build_document_sections
+from pipeline.documents.sections import stable_document_version_id
 
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ class ConfluenceClient:
         self.base_url = normalize_confluence_base(base_url)
         self.origin = origin
         if session is None and os.getenv('CONFLUENCE_HTTP_TRANSPORT') == 'curl':
-            from shared_runtime.curl_transport import CurlSession
+            from pipeline.confluence.transport import CurlSession
             session = CurlSession()
         self.session = session or requests.Session()
         self.session.auth = (email, token)

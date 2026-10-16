@@ -13,7 +13,7 @@ for dependency in (ROOT, ROOT / "data-pipeline"):
     sys.path.insert(0, str(dependency))
 
 from confluence_export import ConfluenceClient, load_confluence_config  # noqa: E402
-from pipeline.rag_lifecycle import pending_confluence_retractions  # noqa: E402
+from pipeline.confluence.lifecycle import pending_confluence_retractions  # noqa: E402
 
 
 def main() -> None:

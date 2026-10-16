@@ -37,7 +37,7 @@ from agent_metrics import (
     required_term_recall,
 )
 
-DEFAULT_DATASET = Path(__file__).parent / "datasets" / "agent_cp2_cases.json"
+DEFAULT_DATASET = Path(__file__).parent / "datasets" / "agent_cp2_cases.en.v2.json"
 DEFAULT_REPORT_DIR = Path(__file__).parent / "reports"
 
 

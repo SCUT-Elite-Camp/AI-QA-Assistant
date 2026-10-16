@@ -17,6 +17,7 @@ class StopReason(StrEnum):
     REPEATED_TOOL_CALL = "repeated_tool_call"
     TOOL_ERROR = "tool_error"
     LLM_ERROR = "llm_error"
+    QUALITY_VALIDATION_FAILED = "quality_validation_failed"
 
 
 class ToolCallRecord(BaseModel):
@@ -40,7 +41,6 @@ class AgentState(BaseModel):
     messages: list[dict[str, Any]] = Field(default_factory=list)
     iteration: int = 0
     retrieval_attempts: int = 0
-    answer_model_preference: str = "auto"
     wiki_evidence_candidates: list[dict[str, Any]] = Field(default_factory=list)
     wiki_evidence_supplements: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
@@ -61,6 +61,8 @@ class AgentState(BaseModel):
     answer_repair_rolled_back: bool = False
     answer_repair_guard_reason: str = ""
     llm_metrics: dict[str, Any] = Field(default_factory=dict)
+    answer_grounding: dict[str, Any] | None = None
+    answer_grounding_draft: dict[str, Any] | None = None
 
 
 class AgentRunResult(BaseModel):
@@ -90,3 +92,4 @@ class AgentRunResult(BaseModel):
     answer_repair_rolled_back: bool = False
     answer_repair_guard_reason: str = ""
     llm_metrics: dict[str, Any] = Field(default_factory=dict)
+    answer_grounding: dict[str, Any] | None = None

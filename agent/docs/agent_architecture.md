@@ -16,58 +16,40 @@ own durable Memory storage, browser transport, or retrieval backends.
 
 ## Current execution shape
 
-`Agent.chat()` is the sole supported application execution entry. It owns the
-request boundary and delegates each turn through `AgentOrchestrator`, which
-prepares trusted Memory and selects the Fast or Thinking profile. `AgentRunner`
-is the internal implementation and focused-test seam for Thinking; callers
-must not use it as a second application entrypoint.
+`Agent.chat()` owns the request identity, trace, tool contexts and source checks.
+It dispatches directly to the independent Fast or Thinking pipeline. JSON and
+SSE use the same business flow, with request-local events for streaming.
 
 ```text
-app.py
-  -> API routes
-    -> Agent.chat()
-      -> AgentOrchestrator.run()
-        -> Memory preflight / QueryPlan / policy
-        -> ExecutionProfileResolver
-          -> FastLoop (simple chat/help or Direct enterprise QA)
-          -> AgentRunner (Thinking tool-selection/navigation loop)
-            -> ToolExecutor / EvidenceGate / retrieval correction / answer
-      -> response mapping / citation validation
+API -> Agent.chat() -> explicit mode dispatch
+  fast -> FastPipeline -> original-query direct search / fixed file preparation
+       -> one Fast generation -> deterministic citation and source checks
+  thinking / auto -> ThinkingPipeline -> query understanding / source policy
+       -> bounded AgentRunner -> model-selected tools -> Thinking answer
+  -> response mapping / current source rechecks -> JSON or SSE
 ```
 
-`ExecutionProfileResolver` now resolves `weight_mode` once after query and
-source policy. The supported modes are `auto`, `fast`, and `thinking`.
-When omitted, the mode defaults to `fast`. `thinking` selects the existing
-Thinking runner. `auto` currently selects the Fast strategy first, subject to
-the same eligibility safety check as `fast`;
-unsupported requests fall back to Thinking with an internal reason. Initial Fast
-eligibility is intentionally narrow: casual/system-help requests with no
-retrieval, or single-target enterprise `KNOWLEDGE_QA` using `search_documents`.
-Fast performs deterministic Direct retrieval, applies the shared `EvidenceGate`
-and at most one corrective retrieval, then generates one answer. It never
-selects tools, calls Wiki, or performs DeepSearch. Both paths return
-`AgentRunResult` and use the shared answer-model router; Thinking explicitly
-selects the complex answer model.
+Omitted mode defaults to Fast. Legacy `auto` aliases Thinking; question complexity
+and tool failures do not switch modes. Fast performs no query expansion, automatic
+search retry, model tool selection or answer repair. Its independent model client
+uses one provider attempt and no model fallback. Images join that same answer call;
+required image capability must be configured explicitly.
 
-Fast and Thinking share a small `RuntimeSupport` contract for initial message
-construction, run-result assembly, insufficient-evidence text, and answer
-completeness checks. `FastLoop` depends on this shared component and
-`AnswerGenerator`, not on `AgentRunner`. The Runner retains ownership of the
-Thinking tool-call state machine, Wiki sequencing, and their budgets.
+Thinking may inspect TopK chunks and decide whether more context is needed. The
+model can call `find_documents` to obtain the authorized document catalog and
+`get_document(doc_ids=[...])` to read complete parsed text from multiple documents.
+Catalog entries are selection metadata, never factual body evidence. Empty,
+low-score and partial TopK results leave these tools available while budget remains.
+The old rule-based retry planner is removed: evidence checks cannot launch a
+search, increase TopK or switch retrieval mode. Each read retains current access,
+version/hash checks, tool/iteration limits and repeated-action protection.
 
-The public and internal streaming endpoints adapt the canonical `ChatResponse`
-through the shared SSE adapter. The current SSE endpoint chunks a completed
-answer; it is not live model-token streaming.
-
-DeepSearch decisions now pass through `ExplorationController` inside Thinking.
-The model first selects Direct retrieval; only EvidenceGate-accepted results
-reach `CoverageAssessor`. `auto` starts Wiki only for a complex query with a
-coverage gap, `force` starts it after accepted Direct evidence, and `off` never
-starts it. `AgentRunner` still owns the bounded Wiki sequence, tool execution,
-and exploration budget; the controller owns only the start decision.
-`QueryPlan.navigation_mode` describes retrieval navigation;
-`ExecutionProfile.exploration_mode` controls cross-document Wiki exploration.
-Fast resolves exploration to `off`; Thinking retains the request setting.
+`EvidenceGate` retains evidence acceptance and coverage diagnostics. Where no
+further document tools are available, insufficient evidence stops the run. Before
+a factual answer completes, accepted source evidence is still required. Thinking
+keeps existing per-stage and Runner budgets; a unified counter for all generation
+calls remains future work. Wiki-derived navigation is quarantined until it proves
+its own complete lineage. Research remains a separate enterprise-only feature.
 
 `MemoryCoordinator` is the sole owner of turn-level Memory preparation. It
 accepts only the authenticated persistent-Memory DTO supplied by the Web/BFF,
@@ -155,7 +137,10 @@ context rather than shared setters where that migration is complete.
 - `RunEvent`: optional reasoning/tool/citation/token/done events projected from
   the same execution outcome; it must not define a second business loop.
 
-## Migration sequence
+## Migration sequence (historical first slice)
+
+The notes below record the earlier extraction sequence. Current mode and
+document-reading behavior is defined above and in `chat_mode_contract.md`.
 
 1. **Unify execution and transport** — completed: all JSON and
    SSE paths call `Agent.chat()`; the shared adapter emits citations, bounded

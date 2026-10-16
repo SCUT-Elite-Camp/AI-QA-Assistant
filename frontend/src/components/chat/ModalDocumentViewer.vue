@@ -11,7 +11,7 @@ const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const evidence = ref<ChunkCitation | null>(null)
-const source = ref<{ doc_id?: string, title?: string, content?: string, source_url?: string } | null>(null)
+const source = ref<{ doc_id?: string, title?: string, content?: string, source_url?: string, image_url?: string } | null>(null)
 const locatedExcerpt = ref<HTMLElement | null>(null)
 let requestRevision = 0
 const excerpt = computed(() => evidence.value?.excerpt || evidence.value?.chunk_text || evidence.value?.snippet || '')
@@ -96,6 +96,7 @@ watch(() => [props.open, props.doc, props.messageId, props.researchId], () => {
               <ChatComark :markdown="excerpt" />
             </section>
             <p v-if="evidence && !excerpt" role="status">The evidence has no excerpt. Ask again to obtain verifiable sources.</p>
+            <img v-if="source?.image_url?.startsWith('/api/attachments/')" :src="source.image_url" alt="Original source image" class="max-w-full rounded-md" />
             <section v-if="source?.content" class="space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <h3 class="text-sm font-semibold">Authorized source text</h3>

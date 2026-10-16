@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from shared_runtime.document_sections import stable_document_version_id
+from pipeline.documents.sections import stable_document_version_id
 
 
 def test_document_version_identity_is_path_independent_and_scope_bound() -> None:

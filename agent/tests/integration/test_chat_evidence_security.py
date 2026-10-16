@@ -58,15 +58,70 @@ def knowledge(documents):
     return SourceDependency(source_type='knowledge',doc_id='doc1',version='1',content_hash=source_metadata(documents['doc1'])['content_hash'])
 
 
+def test_batch_read_rejects_any_unauthorized_document_before_io(fixture):
+    guard, *_ = fixture
+    assert guard.prepare_tool('get_document', {'doc_ids': ['doc1']}) == {'doc_ids': ['doc1']}
+    with pytest.raises(PermissionResolutionError):
+        guard.prepare_tool('get_document', {'doc_ids': ['doc1', 'doc2']})
+
+
+def test_batch_read_captures_every_document_and_detects_later_revocation(fixture):
+    guard, path, docs, *_ = fixture
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE files SET user_id='alice' WHERE doc_id='doc2'")
+    guard.prepare_tool('get_document', {'doc_ids': ['doc1', 'doc2']})
+    guard.capture_tool('get_document', {'documents': [docs['doc1'], docs['doc2']]}, [])
+    assert {item.doc_id for item in guard.provenance().dependencies} == {'doc1', 'doc2'}
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE files SET user_id='bob' WHERE doc_id='doc2'")
+    with pytest.raises(PermissionResolutionError):
+        guard.check_dependencies()
+
+
+def test_catalog_selection_cannot_read_a_new_version_unnoticed(fixture):
+    guard, _, docs, *_ = fixture
+    guard.capture_tool('find_documents', {'documents': [{'doc_id': 'doc1', 'title': 'doc1'}]}, [])
+    docs['doc1']['version'] = '2'
+    with pytest.raises(PermissionResolutionError, match='document_version_changed'):
+        guard.prepare_tool('get_document', {'doc_ids': ['doc1']})
+
+
+def test_original_image_provenance_rechecks_both_file_hashes_and_version(fixture):
+    guard, path, _, remote, _ = fixture
+    with sqlite3.connect(path) as db:
+        db.execute('ALTER TABLE attachments ADD COLUMN sha256 TEXT')
+        db.execute("UPDATE attachments SET sha256='image-hash' WHERE id='att_one'")
+    remote['sha256'] = 'image-hash'
+    dependency = SourceDependency(source_type='attachment', doc_id='att_one', version=2,
+                                  content_hash='image-hash', content_kind='file')
+    guard._add(dependency)
+    assert guard.provenance().dependencies == [dependency]
+    remote['sha256'] = 'edited-image'
+    with pytest.raises(PermissionResolutionError, match='document_version_changed'):
+        guard.provenance()
+    remote['sha256'] = 'image-hash'
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE attachments SET sha256='changed-web-hash' WHERE id='att_one'")
+    with pytest.raises(PermissionResolutionError, match='document_version_changed'):
+        guard.provenance()
+
+
+def test_fast_file_tool_authorizes_selected_file_before_reading_bytes(fixture):
+    guard, *_ = fixture
+    guard.request.attachment_context.selected_attachment_ids = ['att_bob']
+    with pytest.raises(PermissionResolutionError, match='private_source_not_found'):
+        guard.prepare_tool('read_attachment_context', {'query': 'Question'})
+
+
 def test_attachment_expiry_uses_drizzle_epoch_seconds(fixture):
     guard, path, *_ = fixture
     with sqlite3.connect(path) as db:
         db.execute("UPDATE attachments SET expires_at=? WHERE id='att_one'", (int(time.time()) + 60,))
-    guard.prepare_tool('inspect_attachment', {'attachment_id': 'att_one'})
+    guard.prepare_tool('read_attachment_context', {'query': 'Question'})
     with sqlite3.connect(path) as db:
         db.execute("UPDATE attachments SET expires_at=? WHERE id='att_one'", (int(time.time()) - 1,))
     with pytest.raises(PermissionResolutionError):
-        guard.prepare_tool('inspect_attachment', {'attachment_id': 'att_one'})
+        guard.prepare_tool('read_attachment_context', {'query': 'Question'})
 
 
 def test_unknown_and_disabled_actor_never_reach_model(fixture):
@@ -126,14 +181,6 @@ def test_legacy_memory_and_soul_cannot_be_promoted_to_authorized_context(fixture
     clean = guard.sanitize_request()
     assert clean.memory_context.tail == [] and clean.soul_content is None and clean.topic_titles is None
     assert guard.provenance().dependencies == []
-
-
-def test_inspect_authorizes_before_bytes_can_reach_vision_model(fixture):
-    guard, path, *_ = fixture
-    assert guard.prepare_tool('inspect_attachment', {'attachment_id':'att_one'})['attachment_id'] == 'att_one'
-    with pytest.raises(PermissionResolutionError): guard.prepare_tool('inspect_attachment', {'attachment_id':'att_bob'})
-    with sqlite3.connect(path) as db: db.execute("UPDATE attachments SET chat_id='other-chat' WHERE id='att_one'")
-    with pytest.raises(PermissionResolutionError): guard.prepare_tool('inspect_attachment', {'attachment_id':'att_one'})
 
 
 def test_three_source_dependencies_survive_and_revoke_transitively(fixture):

@@ -6,6 +6,7 @@ import { requirePrincipal } from './attachmentAuth'
 import { attachmentServiceJson } from './attachmentService'
 import { activateDesiredVersion } from './libraryVersionService'
 import type { LibraryDatabaseExecutor } from './libraryVersionService'
+import { logger } from './logger'
 
 export type LibraryStatus = 'UPLOADED' | 'PARSING' | 'CHUNKING' | 'EMBEDDING' | 'INDEXING' | 'READY' | 'FAILED' | 'REINDEXING'
 
@@ -110,4 +111,24 @@ export async function syncLibraryVersion(
     }
   }
   return { ...version, status, errorCode: String(remote.error_code || ''), updatedAt: now, remote }
+}
+
+export async function syncPendingLibraryVersions() {
+  const db = useDrizzle()
+  const pending = await db.select({ version: tables.documentVersions, document: tables.libraryDocuments })
+    .from(tables.documentVersions)
+    .innerJoin(tables.libraryDocuments, eq(tables.libraryDocuments.desiredVersionId, tables.documentVersions.id))
+    .where(and(
+      eq(tables.libraryDocuments.sourceScope, 'personal'),
+      sql`${tables.libraryDocuments.deletedAt} IS NULL`,
+      sql`${tables.documentVersions.status} != 'FAILED'`,
+      sql`(${tables.documentVersions.status} != 'READY' OR ${tables.libraryDocuments.activeVersionId} IS NULL OR ${tables.libraryDocuments.activeVersionId} != ${tables.documentVersions.id})`,
+    )).limit(20)
+  for (const { version, document } of pending) {
+    try {
+      await syncLibraryVersion(version, document)
+    } catch (error) {
+      logger.warn({ event: 'LIBRARY_INGEST_SYNC_RETRY', versionId: version.id, err: error }, 'library ingestion status sync deferred')
+    }
+  }
 }

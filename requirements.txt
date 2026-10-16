@@ -27,9 +27,22 @@ python-pptx>=1,<2
 beautifulsoup4>=4.12,<5
 markdown-it-py>=3,<5
 openpyxl>=3.1,<4
-sentence-transformers>=2.7,<7
+sentence-transformers>=6.1,<7
+tokenizers>=0.21,<1
 modelscope>=1.20,<2
 python-dotenv>=1.0,<2
+
+# PDF Table Extraction
+camelot-py>=1.0,<2.0
+opencv-python-headless>=4.8
+torch>=2.5,<2.13
+torchvision>=0.20,<0.28
+gmft>=0.3,<0.5
+
+# Scanned-document OCR and Table Structure (CPU runtime)
+# Page OCR additionally requires system Tesseract and its language data.
+paddleocr>=3.0,<4.0
+paddlepaddle>=3.0,<4.0
 
 # Testing
 pytest>=8,<10

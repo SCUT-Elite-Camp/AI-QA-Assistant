@@ -1,3 +1,4 @@
+from tests.grounding_helpers import grounded_model
 import json
 from typing import Any
 
@@ -29,6 +30,7 @@ class InspectingLLM:
     def generate(self, prompt: str) -> str:
         return prompt
 
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         system_prompt = messages[0].get("content", "") if messages else ""
         if "classify user requests" in system_prompt:
@@ -80,6 +82,7 @@ class NoModelCallLLM:
     def generate(self, prompt: str) -> str:
         return prompt
 
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         self.calls += 1
         raise AssertionError("explicit memory recall must not call an LLM")
@@ -107,6 +110,9 @@ class MemorySearchTool(BaseTool):
         }
 
     def execute(self, **kwargs: Any) -> list[dict[str, Any]]:
+        return self.search(**kwargs)
+
+    def search_direct(self, **kwargs: Any) -> list[dict[str, Any]]:
         return self.search(**kwargs)
 
     def search(self, **kwargs: Any) -> list[dict[str, Any]]:
@@ -195,7 +201,7 @@ def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
     assert agent.last_orchestration.execution_profile.mode.value == "thinking"
 
 
-def test_persistent_context_reaches_fast_loop_once(monkeypatch) -> None:
+def test_persistent_context_reaches_fast_pipeline_once(monkeypatch) -> None:
     from unittest.mock import Mock
 
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
@@ -227,7 +233,7 @@ def test_persistent_context_reaches_fast_loop_once(monkeypatch) -> None:
     fast_messages = llm.messages_seen[-1]
     assert "Memory Context follows" in fast_messages[1]["content"]
     assert fast_messages[2]["content"] == "Earlier assistant answer."
-    assert "Original question: Current persistent question" in fast_messages[-1]["content"]
+    assert "Original question:\nCurrent persistent question" in fast_messages[-1]["content"]
 
 
 def test_explicit_persistent_fact_recall_bypasses_models_and_tools(
@@ -270,9 +276,9 @@ def test_repeated_requests_do_not_share_implicit_session_history() -> None:
     llm = InspectingLLM(["第一次回答", "第二次回答", "新会话回答"])
     agent = Agent(llm=llm, tools=[])
 
-    first = agent.chat(ChatRequest(query="第一个问题", session_id="session-a"))
-    second = agent.chat(ChatRequest(query="接着说", session_id="session-a"))
-    third = agent.chat(ChatRequest(query="另一个问题", session_id="session-b"))
+    first = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="第一个问题", session_id="session-a"))
+    second = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="接着说", session_id="session-a"))
+    third = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="另一个问题", session_id="session-b"))
 
     assert first.status == second.status == third.status == StatusCode.SUCCESS
     second_messages = llm.messages_seen[1]
@@ -287,8 +293,8 @@ def test_missing_memory_context_is_stateless_even_with_session_id() -> None:
     llm = InspectingLLM(["第一次回答", "第二次回答"])
     agent = Agent(llm=llm, tools=[])
 
-    agent.chat(ChatRequest(query="无会话问题"))
-    agent.chat(ChatRequest(query="第二个无会话问题"))
+    agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="无会话问题"))
+    agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="第二个无会话问题"))
 
     assert all(
         message.get("content") != "无会话问题"
@@ -309,7 +315,7 @@ def test_clarification_question_is_not_saved_to_agent_memory() -> None:
     )
 
     response = agent.chat(
-        ChatRequest(query=query, session_id="session-clarify"),
+        ChatRequest(query=query, session_id="session-clarify", weight_mode="thinking"),
         query_plan=plan,
     )
 

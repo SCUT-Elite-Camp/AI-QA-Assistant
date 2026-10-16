@@ -18,8 +18,8 @@ def service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("ATTACHMENT_ENCRYPTION_KEY", base64.urlsafe_b64encode(b"k" * 32).decode())
     monkeypatch.setenv("ATTACHMENT_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "false")
-    sys.modules.pop("attachment_service.app", None)
-    module = importlib.import_module("attachment_service.app")
+    sys.modules.pop("agent.api.private_files", None)
+    module = importlib.import_module("agent.api.private_files")
     with TestClient(module.app) as client:
         yield module, client
 
@@ -35,16 +35,68 @@ def _headers(filename: str = "企业制度.txt") -> dict[str, str]:
     }
 
 
+def test_private_api_has_no_independent_visual_model(service):
+    _, client = service
+    headers = {"Authorization": "Bearer test-internal-secret"}
+    assert client.get("/health/ready", headers=headers).json() == {"status": "ready"}
+    response = client.post("/v1/attachments/att_image/inspect",
+        headers=headers, json={"question": "Describe the image"})
+    assert response.status_code == 404
+
+
 def _wait_status(client: TestClient, attachment_id: str, expected: set[str]) -> dict:
-    for _ in range(40):
+    for _ in range(100):
         response = client.get(f"/v1/attachments/{attachment_id}", headers={"Authorization": "Bearer test-internal-secret"})
         if response.status_code == 404 and "deleted" in expected:
             return {"status": "deleted"}
         payload = response.json()
         if payload.get("status") in expected:
             return payload
+        if payload.get("status") == "failed":
+            raise AssertionError(f"attachment failed: {payload.get('error_code')}")
         time.sleep(0.05)
     raise AssertionError(f"attachment did not reach {expected}")
+
+
+def test_upload_reuses_parse_for_an_independent_personal_library_version(service, monkeypatch):
+    module, client = service
+    calls, indexed = [], []
+    parse = module.parse_attachment_context
+
+    def tracked_parse(*args, **kwargs):
+        calls.append(args[1])
+        return parse(*args, **kwargs)
+
+    class VectorIndex:
+        def delete_document_chunks(self, ref):
+            pass
+
+    monkeypatch.setattr(module, "parse_attachment_context", tracked_parse)
+    monkeypatch.setattr(module, "VECTOR_STORE", VectorIndex())
+    monkeypatch.setattr("pipeline.ingestion.uploads.index_document_vectors", lambda doc, store: indexed.append(doc))
+    headers = {**_headers("notes.txt"), "X-Library-KB-ID": "kb_owner", "X-Library-Document-ID": "doc_notes", "X-Library-Version-ID": "ver_notes"}
+    response = client.post("/v1/attachments/att_notes", headers=headers, content=b"Immediate context and future library evidence.")
+    assert response.status_code == 201
+    _wait_status(client, "att_notes", {"ready"})
+    _wait_status(client, "ver_notes", {"ready"})
+    assert calls == ["att_notes"]
+    assert len(indexed) == 1
+    assert indexed[0].doc_id.startswith("ver_notes__")
+    assert "future library evidence" in indexed[0].chunks[0].text
+    version = module.STORE.get_attachment("ver_notes")
+    assert version["owner_id"] == "user-1" and version["knowledge_base_id"] == "kb_owner"
+    assert version["expires_at"] is None and version["scope"] == "library"
+    assert version["active"] == 0
+    auth = {"Authorization": "Bearer test-internal-secret"}
+    assert client.delete("/v1/attachments/att_notes", headers=auth).status_code == 204
+    assert client.get("/v1/attachments/ver_notes/content", headers=auth).content == b"Immediate context and future library evidence."
+    assert module.STORE.get_attachment("ver_notes")["status"] == "ready"
+
+
+def test_partial_personal_library_identity_is_rejected_before_upload(service):
+    _, client = service
+    response = client.post("/v1/attachments/att_partial", headers={**_headers(), "X-Library-Version-ID": "ver_orphan"}, content=b"context")
+    assert response.status_code == 400
 
 
 def test_upload_parse_download_and_async_physical_delete(service) -> None:

@@ -21,7 +21,7 @@ def test_small_explicit_scope_allows_guarded_original_reads_with_bounded_budget(
     plan = _plan(QueryIntent.COMPARISON).model_copy(update={'filters': {'doc_ids': ['earlier', 'later']}})
     policy = IntentPolicyRouter().route(plan)
     assert 'get_document' in policy.candidate_tools
-    assert policy.max_tool_calls == 3 and policy.max_retrieval_attempts == 3
+    assert policy.max_tool_calls == 5 and policy.max_retrieval_attempts == 5
     assert IntentPolicyRouter().route(_plan(QueryIntent.UNSUPPORTED)).max_tool_calls == 0
 
 

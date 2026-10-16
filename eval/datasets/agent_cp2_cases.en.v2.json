@@ -1,0 +1,711 @@
+{
+  "metadata": {
+    "name": "CP2 Agent Local Knowledge Base Core Regression",
+    "version": "2.2-en",
+    "language": "en-US",
+    "scope": "Agent layer behavior and answer quality against the default local project knowledge base",
+    "case_count": 27,
+    "source_documents": [
+      "agent/docs/API_CONTRACT.md",
+      "agent/docs/cp2/query_plan_contract.md",
+      "agent/docs/cp2/conversation_memory_contract.md",
+      "agent/docs/cp2/clarification.md",
+      "agent/docs/cp2/query_rewriter.md",
+      "agent/docs/cp2/intent_policy.md",
+      "agent/docs/cp2/tool_registry.md",
+      "agent/docs/cp2/tool_executor.md",
+      "agent/docs/cp2/evidence_gate.md",
+      "agent/docs/cp2/corrective_retrieval.md",
+      "agent/docs/cp2/citation_check.md"
+    ],
+    "translation_parent": "eval/datasets/agent_cp2_cases.json",
+    "disclosure": "English adaptation retaining historical contract expectations; not new implementation or quality acceptance."
+  },
+  "component_cases": [
+    {
+      "id": "local_intent_knowledge_qa",
+      "query": "What core fields are in the QueryPlan public contract?",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "QueryPlan",
+        "public contract"
+      ],
+      "expected_stages": [
+        "intent_classifier",
+        "clarifier",
+        "query_rewriter",
+        "policy_routing"
+      ]
+    },
+    {
+      "id": "local_intent_document_search",
+      "query": "List knowledge-base contract documents related to ConversationMemory.",
+      "expected_intent": "document_search",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "ConversationMemory",
+        "contract documents"
+      ],
+      "expected_stages": [
+        "intent_classifier",
+        "tool_execution",
+        "citation_check"
+      ]
+    },
+    {
+      "id": "local_intent_summarization",
+      "query": "Summarize the complete CP2 Agent question-answering workflow.",
+      "expected_intent": "summarization",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "CP2",
+        "Agent",
+        "workflow"
+      ],
+      "expected_stages": [
+        "intent_classifier",
+        "query_planner",
+        "answer_generation"
+      ]
+    },
+    {
+      "id": "local_intent_comparison",
+      "query": "Compare the responsibilities of ToolExecutor and Evidence Gate.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "ToolExecutor",
+        "Evidence Gate"
+      ],
+      "expected_stages": [
+        "intent_classifier",
+        "query_planner",
+        "bilateral_evidence",
+        "answer_completeness"
+      ]
+    },
+    {
+      "id": "local_intent_casual_chat",
+      "query": "Hello, nice to meet you.",
+      "expected_intent": "casual_chat",
+      "should_clarify": false,
+      "required_rewrite_terms": [],
+      "expected_stages": [
+        "intent_classifier",
+        "policy_routing"
+      ],
+      "expected_tool_calls": 0
+    },
+    {
+      "id": "local_intent_system_help",
+      "query": "What capabilities does this question-answering system currently support?",
+      "expected_intent": "system_help",
+      "should_clarify": false,
+      "required_rewrite_terms": [],
+      "expected_stages": [
+        "intent_classifier",
+        "policy_routing"
+      ],
+      "expected_tool_calls": 0
+    },
+    {
+      "id": "local_intent_unsupported",
+      "query": "Directly change my bank account balance.",
+      "expected_intent": "unsupported",
+      "should_clarify": false,
+      "required_rewrite_terms": [],
+      "expected_stages": [
+        "intent_classifier",
+        "policy_routing"
+      ],
+      "expected_stop_reason": "unsupported",
+      "expected_tool_calls": 0
+    },
+    {
+      "id": "local_clarification_required",
+      "query": "How does it handle that?",
+      "history": [],
+      "expected_intent": "knowledge_qa",
+      "should_clarify": true,
+      "required_rewrite_terms": [],
+      "expected_stages": [
+        "intent_classifier",
+        "clarifier"
+      ],
+      "expected_stop_reason": "clarification_required"
+    },
+    {
+      "id": "local_followup_resolution",
+      "query": "What role does it play in the complete workflow?",
+      "history": [
+        {
+          "role": "user",
+          "content": "Please introduce ToolRegistry."
+        },
+        {
+          "role": "assistant",
+          "content": "ToolRegistry is the tool registry owned by the tool layer."
+        }
+      ],
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "expected_follow_up": true,
+      "required_rewrite_terms": [
+        "ToolRegistry",
+        "role"
+      ],
+      "expected_stages": [
+        "conversation_memory",
+        "reference_resolution",
+        "query_rewriter"
+      ]
+    },
+    {
+      "id": "local_query_rewrite_cleanup",
+      "query": "Search the knowledge base and explain the role of the CP2 Evidence Gate.",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "CP2",
+        "Evidence Gate",
+        "role"
+      ],
+      "expected_stages": [
+        "query_rewriter",
+        "tool_execution",
+        "evidence_gate"
+      ]
+    },
+    {
+      "id": "local_simple_plan",
+      "query": "According to the knowledge base, what is the core objective of the CP2 Agent layer?",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "CP2",
+        "Agent",
+        "core objective"
+      ],
+      "expected_stages": [
+        "query_planner"
+      ],
+      "expected_sub_query_count_max": 1
+    },
+    {
+      "id": "local_comparison_plan",
+      "query": "Describe the inputs, outputs and responsibilities of ToolExecutor and Evidence Gate separately.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "ToolExecutor",
+        "Evidence Gate",
+        "inputs",
+        "outputs"
+      ],
+      "expected_stages": [
+        "query_planner",
+        "bilateral_evidence"
+      ],
+      "expected_sub_query_count_min": 2
+    },
+    {
+      "id": "local_clarification_reply",
+      "query": "I mean Evidence Gate.",
+      "history": [
+        {
+          "role": "user",
+          "content": "What role does it play?"
+        },
+        {
+          "role": "assistant",
+          "content": "Which CP2 component do you mean?"
+        }
+      ],
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "expected_follow_up": true,
+      "required_rewrite_terms": [
+        "Evidence Gate"
+      ],
+      "expected_stages": [
+        "conversation_memory",
+        "clarifier",
+        "query_rewriter"
+      ],
+      "expected_clarification_reply": true
+    },
+    {
+      "id": "local_no_relevant_context",
+      "query": "According to the knowledge base, explain how the CP2 quantum trading prediction module is implemented.",
+      "expected_intent": "knowledge_qa",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "CP2",
+        "quantum trading prediction module"
+      ],
+      "expected_stages": [
+        "tool_execution",
+        "evidence_gate",
+        "corrective_retrieval"
+      ],
+      "expected_stop_reason": "no_relevant_context"
+    },
+    {
+      "id": "local_compound_cp1_cp2_summary_comparison",
+      "online_query": "Summarize the core CP1 and CP2 workflows separately, then compare the main changes.",
+      "online_required_rewrite_terms": [
+        "CP1",
+        "CP2"
+      ],
+      "query": "Summarize the core CP1 and CP2 workflows separately, then compare the main changes.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "CP1",
+        "CP2",
+        "workflows",
+        "compare"
+      ],
+      "expected_stages": [
+        "intent_classifier",
+        "query_planner",
+        "parallel_retrieval",
+        "bilateral_evidence",
+        "answer_generation"
+      ],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    },
+    {
+      "id": "local_compound_executor_gate_dimensions",
+      "online_query": "Summarize the inputs, outputs and responsibilities of ToolExecutor and Evidence Gate separately, then compare them across these three dimensions.",
+      "online_required_rewrite_terms": [
+        "ToolExecutor",
+        "Evidence Gate"
+      ],
+      "query": "Summarize the inputs, outputs and responsibilities of ToolExecutor and Evidence Gate separately, then compare them across these three dimensions.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "ToolExecutor",
+        "Evidence Gate",
+        "inputs",
+        "outputs",
+        "responsibilities"
+      ],
+      "expected_stages": [
+        "query_planner",
+        "parallel_retrieval",
+        "bilateral_evidence",
+        "answer_completeness"
+      ],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    },
+    {
+      "id": "local_compound_three_component_summary",
+      "online_query": "Summarize ToolRegistry, ToolExecutor and Evidence Gate separately, then explain how the three connect in the execution workflow.",
+      "online_required_rewrite_terms": [
+        "ToolRegistry",
+        "ToolExecutor",
+        "Evidence Gate"
+      ],
+      "query": "Summarize ToolRegistry, ToolExecutor and Evidence Gate separately, then explain how the three connect in the execution workflow.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "ToolRegistry",
+        "ToolExecutor",
+        "Evidence Gate",
+        "connect"
+      ],
+      "expected_stages": [
+        "query_planner",
+        "parallel_retrieval",
+        "evidence_gate",
+        "answer_generation"
+      ],
+      "expected_sub_query_count_min": 3,
+      "expected_parallel_target_count": 3
+    },
+    {
+      "id": "local_compound_contract_comparison",
+      "online_query": "Compare the ConversationMemory and QueryPlan public contracts: summarize their fields, then explain how they work together.",
+      "online_required_rewrite_terms": [
+        "ConversationMemory",
+        "QueryPlan"
+      ],
+      "query": "Compare the ConversationMemory and QueryPlan public contracts: summarize their fields, then explain how they work together.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "ConversationMemory",
+        "QueryPlan",
+        "public contract",
+        "fields"
+      ],
+      "expected_stages": [
+        "query_planner",
+        "parallel_retrieval",
+        "bilateral_evidence",
+        "citation_check"
+      ],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    },
+    {
+      "id": "local_compound_gate_citation_handoff",
+      "online_query": "Summarize Evidence Gate and Citation Check separately, then compare their quality-control boundaries and ordering dependencies.",
+      "online_required_rewrite_terms": [
+        "Evidence Gate",
+        "Citation Check"
+      ],
+      "query": "Summarize Evidence Gate and Citation Check separately, then compare their quality-control boundaries and ordering dependencies.",
+      "expected_intent": "comparison",
+      "should_clarify": false,
+      "required_rewrite_terms": [
+        "Evidence Gate",
+        "Citation Check",
+        "quality-control",
+        "dependencies"
+      ],
+      "expected_stages": [
+        "query_planner",
+        "parallel_retrieval",
+        "bilateral_evidence",
+        "answer_completeness"
+      ],
+      "expected_sub_query_count_min": 2,
+      "expected_parallel_target_count": 2
+    }
+  ],
+  "quality_cases": [
+    {
+      "id": "local_quality_api_flow",
+      "online_query": "According to the knowledge base, which core steps does a CP2 API question-answering request pass through from entry to answer?",
+      "query": "According to the knowledge base, which core steps does a CP2 API question-answering request pass through from entry to answer?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "ConversationMemory",
+          "Conversation Memory",
+          "conversation memory"
+        ],
+        [
+          "QueryUnderstanding",
+          "Query Understanding",
+          "query understanding"
+        ],
+        [
+          "IntentPolicyRouter",
+          "Policy Routing",
+          "intent policy routing"
+        ],
+        [
+          "ToolExecutor",
+          "Tool Executor",
+          "tool execution"
+        ],
+        [
+          "EvidenceGate",
+          "Evidence Gate",
+          "evidence gate"
+        ],
+        [
+          "CitationChecker",
+          "Citation Check",
+          "citation check"
+        ]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "API_CONTRACT"
+      ],
+      "target_stages": [
+        "query_understanding",
+        "tool_execution",
+        "evidence_gate",
+        "answer_generation",
+        "citation_check"
+      ]
+    },
+    {
+      "id": "local_quality_query_plan",
+      "online_query": "What core information does the QueryPlan public contract contain, and why does AgentRunner consume it directly?",
+      "query": "What core information does the QueryPlan public contract contain, and why does AgentRunner consume it directly?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "original_query"
+        ],
+        [
+          "standalone_query"
+        ],
+        [
+          "intent"
+        ],
+        [
+          "needs_clarification",
+          "clarification_question"
+        ],
+        [
+          "sub_queries"
+        ],
+        [
+          "filters"
+        ]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "query_plan_contract"
+      ],
+      "target_stages": [
+        "query_rewriter",
+        "query_planner",
+        "answer_completeness",
+        "citation_check"
+      ]
+    },
+    {
+      "id": "local_quality_tool_registry",
+      "online_query": "Which layer owns ToolRegistry, and how does Agent discover tools and parameter schemas through it?",
+      "query": "Which layer owns ToolRegistry, and how does Agent discover tools and parameter schemas through it?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "Toolset",
+          "tool layer"
+        ],
+        [
+          "ToolRegistryAdapter"
+        ],
+        [
+          "Schema",
+          "parameters"
+        ],
+        [
+          "get_tool",
+          "get_all_tools"
+        ],
+        [
+          "does not maintain a second copy",
+          "second tool dictionary"
+        ]
+      ],
+      "min_fact_groups": 4,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "tool_registry"
+      ],
+      "target_stages": [
+        "tool_registry_adapter",
+        "tool_execution",
+        "citation_check"
+      ]
+    },
+    {
+      "id": "local_quality_tool_executor",
+      "online_query": "What input does ToolExecutor receive, how does it validate it, and what structured execution result does it return?",
+      "query": "What input does ToolExecutor receive, how does it validate it, and what structured execution result does it return?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "tool_call_id"
+        ],
+        [
+          "tool_name"
+        ],
+        [
+          "arguments",
+          "parameters"
+        ],
+        [
+          "JSON Schema",
+          "Schema"
+        ],
+        [
+          "ToolExecutionResult"
+        ],
+        [
+          "Evidence"
+        ]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "tool_executor"
+      ],
+      "target_stages": [
+        "tool_execution",
+        "evidence_normalization",
+        "citation_check"
+      ]
+    },
+    {
+      "id": "local_quality_evidence_gate",
+      "online_query": "How does Evidence Gate filter and deduplicate evidence and decide whether it supports an answer for different intents?",
+      "query": "How does Evidence Gate filter and deduplicate evidence and decide whether it supports an answer for different intents?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "MIN_RETRIEVAL_SCORE",
+          "score"
+        ],
+        [
+          "doc_id",
+          "chunk_id"
+        ],
+        [
+          "deduplicate",
+          "deduplication"
+        ],
+        [
+          "single_fact"
+        ],
+        [
+          "topic_coverage"
+        ],
+        [
+          "bilateral_coverage"
+        ]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "evidence_gate"
+      ],
+      "target_stages": [
+        "evidence_gate",
+        "corrective_retrieval",
+        "answer_completeness"
+      ]
+    },
+    {
+      "id": "local_quality_corrective_retrieval",
+      "online_query": "After the first Evidence Gate finds insufficient evidence, how does the historical CorrectiveRetrievalPlanner limit and adjust the second retrieval?",
+      "query": "After the first Evidence Gate finds insufficient evidence, how does the historical CorrectiveRetrievalPlanner limit and adjust the second retrieval?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "second retrieval",
+          "second retrieval"
+        ],
+        [
+          "at most once",
+          "at most once",
+          "only once"
+        ],
+        [
+          "standalone_query",
+          "standalone query",
+          "independent query"
+        ],
+        [
+          "missing_targets",
+          "missing targets",
+          "missing targets"
+        ],
+        [
+          "filters",
+          "filter constraints",
+          "filters"
+        ],
+        [
+          "no_relevant_context",
+          "no relevant context",
+          "no relevant context"
+        ]
+      ],
+      "min_fact_groups": 4,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "corrective_retrieval",
+        "evidence_gate"
+      ],
+      "target_stages": [
+        "evidence_gate",
+        "corrective_retrieval",
+        "stop_reason"
+      ]
+    },
+    {
+      "id": "local_quality_citation_check",
+      "online_query": "Which citation consistency rules does CitationChecker verify, and which conditions make citations invalid?",
+      "query": "Which citation consistency rules does CitationChecker verify, and which conditions make citations invalid?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "[n]",
+          "marker"
+        ],
+        [
+          "citation_id"
+        ],
+        [
+          "contiguous",
+          "consecutive"
+        ],
+        [
+          "doc_id"
+        ],
+        [
+          "chunk_id"
+        ],
+        [
+          "accepted Evidence",
+          "accepted Evidence"
+        ]
+      ],
+      "min_fact_groups": 5,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "citation_check"
+      ],
+      "target_stages": [
+        "answer_formatter",
+        "citation_check"
+      ]
+    },
+    {
+      "id": "local_quality_memory_clarification",
+      "online_query": "What conversation information does ConversationMemory retain, and how does it support multi-turn follow-ups and pending clarification?",
+      "query": "What conversation information does ConversationMemory retain, and how does it support multi-turn follow-ups and pending clarification?",
+      "expected_intent": "knowledge_qa",
+      "required_facts": [
+        [
+          "session_id"
+        ],
+        [
+          "messages",
+          "message history"
+        ],
+        [
+          "summary",
+          "summary"
+        ],
+        [
+          "pending clarification",
+          "pending clarification"
+        ],
+        [
+          "is_follow_up",
+          "multi-turn follow-ups"
+        ]
+      ],
+      "min_fact_groups": 4,
+      "min_citations": 1,
+      "expected_doc_names": [
+        "conversation_memory_contract"
+      ],
+      "target_stages": [
+        "conversation_memory",
+        "reference_resolution",
+        "clarifier",
+        "query_rewriter"
+      ]
+    }
+  ]
+}

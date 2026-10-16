@@ -4,7 +4,7 @@ import { eq, tables, useDrizzle } from '../../../../../utils/drizzle'
 import { requireOwnedChat } from '../../../../../utils/chatAccess'
 import { accessBackend, assertMessageSources } from '../../../../../utils/sourceAccess'
 import { attachmentServiceJson } from '../../../../../utils/attachmentService'
-import { locateEvidenceExcerpt } from '../../../../../../shared/evidenceExcerpt'
+import { locateEvidenceExcerpt, matchesAuthoritativeChunk } from '../../../../../../shared/evidenceExcerpt'
 
 export default defineHandler(async (event) => {
   const id = getRouterParam(event, 'id', { decode: true }) || ''
@@ -27,7 +27,11 @@ export default defineHandler(async (event) => {
     source = await (await accessBackend(actor.userId, `documents/${encodeURIComponent(evidence.doc_id)}/source?${params}`)).json()
     const content = String(source.content || '')
     const excerpt = String(evidence.snippet || evidence.chunk_text || '')
-    if (!locateEvidenceExcerpt(content, excerpt)) throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+    const chunkId = String(evidence.locator?.chunk_id || evidence.chunk_id || '')
+    const consistentId = !evidence.chunk_id || !evidence.locator?.chunk_id || evidence.chunk_id === evidence.locator.chunk_id
+    if (!locateEvidenceExcerpt(content, excerpt) && !(consistentId && matchesAuthoritativeChunk(source, excerpt, chunkId))) {
+      throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+    }
   } else {
     let storageId = evidence.attachment_id
     if (evidence.source_type === 'personal') {
@@ -35,13 +39,22 @@ export default defineHandler(async (event) => {
       storageId = version?.storageRef
     }
     if (!storageId) throw new HTTPError({ statusCode: 409, statusMessage: 'source_provenance_incomplete' })
-    const data = await attachmentServiceJson<any>(`/v1/attachments/${encodeURIComponent(storageId)}/evidence`)
-    const item = data.items?.find((candidate: any) => candidate.evidence_id === evidence.evidence_id)
-    if (!item || (evidence.source_version != null && String(item.source_version) !== String(evidence.source_version))
-      || String(item.content).trim() !== String(evidence.snippet || evidence.chunk_text).trim()) {
-      throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+    if (evidence.content_kind === 'file' && evidence.source_type === 'attachment') {
+      const metadata = await attachmentServiceJson<any>(`/v1/attachments/${encodeURIComponent(storageId)}`)
+      if (metadata.sha256 !== evidence.content_hash || String(metadata.evidence_version) !== String(evidence.source_version)) {
+        throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+      }
+      source = { content: evidence.snippet, read_status: 'original_file', locator: evidence.locator,
+        image_url: `/api/attachments/${encodeURIComponent(storageId)}/content?expected_hash=${encodeURIComponent(evidence.content_hash)}&expected_version=${encodeURIComponent(evidence.source_version)}` }
+    } else {
+      const data = await attachmentServiceJson<any>(`/v1/attachments/${encodeURIComponent(storageId)}/evidence`)
+      const item = data.items?.find((candidate: any) => candidate.evidence_id === evidence.evidence_id)
+      if (!item || (evidence.source_version != null && String(item.source_version) !== String(evidence.source_version))
+        || String(item.content).trim() !== String(evidence.snippet || evidence.chunk_text).trim()) {
+        throw new HTTPError({ statusCode: 409, statusMessage: 'source_evidence_changed' })
+      }
+      source = { content: item.content, read_status: 'evidence_only', locator: item.locator }
     }
-    source = { content: item.content, read_status: 'evidence_only', locator: item.locator }
   }
   await assertMessageSources(actor.userId, message)
   return Response.json({ evidence, source, access: 'allowed' }, { headers: { 'Cache-Control': 'private, no-store' } })

@@ -13,7 +13,7 @@ for dependency in (ROOT, ROOT / "data-pipeline", ROOT / "data-persistence"):
     if str(dependency) not in sys.path:
         sys.path.insert(0, str(dependency))
 
-from pipeline.confluence_snapshot import discover_confluence_snapshots  # noqa: E402
+from pipeline.confluence.snapshot import discover_confluence_snapshots  # noqa: E402
 from pipeline.wiki.llm import DeepSeekJsonLLM, deepseek_api_key_from_environment  # noqa: E402
 from pipeline.wiki.confluence_source import load_authoritative_confluence_document  # noqa: E402
 from pipeline.wiki.domain import WikiScope  # noqa: E402

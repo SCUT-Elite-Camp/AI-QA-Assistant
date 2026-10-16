@@ -1,6 +1,6 @@
 import { HTTPError } from 'nitro'
 
-const BASE_URL = (process.env.ATTACHMENT_SERVICE_URL || 'http://127.0.0.1:8200').replace(/\/$/, '')
+const BASE_URL = `${(process.env.AGENT_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')}/private-files`
 
 export async function attachmentServiceFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const secret = process.env.ATTACHMENT_INTERNAL_SECRET || ''

@@ -3,12 +3,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-from shared_runtime.wiki_paths import resolve_wiki_db_path
+from data_persistence.wiki import resolve_wiki_db_path
 
 from .base_tool import BaseTool
-from .attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
+from .attachment_tools import ReadAttachmentContextTool, SearchAttachmentsTool
 from .document_tools import FindDocumentsTool, GetDocumentTool
-from .navigation_tools import BrowseDocumentOutlineTool, SearchEvidenceInScopeTool
 from .wiki_tool import (
     WikiReadPageTool,
     WikiReadSourcesTool,
@@ -46,14 +45,7 @@ def _build_default_tools() -> List[BaseTool]:
     if library_tool is not None:
         tools.append(library_tool)
     if _env_bool("ATTACHMENTS_ENABLED"):
-        tools.extend([SearchAttachmentsTool(), InspectAttachmentTool()])
-    if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool(
-        "HIERARCHICAL_NAVIGATION_ENABLED"
-    ):
-        tools.extend([
-            BrowseDocumentOutlineTool(search_tool, library_tool),
-            SearchEvidenceInScopeTool(search_tool, library_tool),
-        ])
+        tools.extend([SearchAttachmentsTool(), ReadAttachmentContextTool()])
     if _env_bool("AGENTIC_EXPLORATION_ENABLED") and _env_bool(
         "KNOWLEDGE_NAVIGATION_ENABLED"
     ):

@@ -1,6 +1,7 @@
 # app.py
 import sys
 import asyncio
+import os
 from pathlib import Path
 
 agent_dir = Path(__file__).resolve().parent
@@ -86,7 +87,11 @@ async def lifespan(app: FastAPI):
     app.state.research_dispatcher_task = research_dispatcher_task
     logger.info("Durable Deep Research dispatcher initialized")
 
-    yield
+    if private_files_app is not None:
+        async with private_files_app.router.lifespan_context(private_files_app):
+            yield
+    else:
+        yield
 
     research_stop_event.set()
     await research_dispatcher_task
@@ -102,6 +107,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
+
+# Upload/storage APIs share the Agent process; parsing and ingestion belong to Pipeline.
+private_files_app = None
+if any(os.getenv(name, "false").lower() in {"true", "1", "yes"}
+       for name in ("ATTACHMENTS_ENABLED", "PERSONAL_LIBRARY_ENABLED")):
+    from agent.api.private_files import app as private_files_app
+    app.mount("/private-files", private_files_app)
 
 
 @app.exception_handler(RequestValidationError)

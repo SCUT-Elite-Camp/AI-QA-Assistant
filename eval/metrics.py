@@ -145,11 +145,11 @@ def calculate_bleu(candidate: str, reference: str, max_n: int = 4) -> float:
 
 
 def calculate_semantic_similarity(candidate: str, reference: str) -> float:
-    """Calculates semantic similarity using SentenceTransformers (BGE model via pipeline.embedder)"""
+    """Calculates semantic similarity using SentenceTransformers (BGE model via pipeline.indexing.embedder)"""
     if not candidate or not reference:
         return 0.0
 
-    from pipeline.embedder import embed_texts
+    from pipeline.indexing.embedder import embed_texts
     try:
         embeddings = embed_texts([candidate, reference])
         if len(embeddings) < 2:

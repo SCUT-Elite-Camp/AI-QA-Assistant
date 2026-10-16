@@ -1,5 +1,7 @@
+from tests.grounding_helpers import grounded_model
 import json
 from typing import Any
+from tests.grounding_helpers import grounded_model
 
 from agent.agent import Agent
 from agent.config.settings import settings
@@ -36,6 +38,8 @@ class ExplorationLLM:
     def generate(self, prompt: str) -> str:
         return prompt
 
+    @grounded_model
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         return self.responses.pop(0)
 

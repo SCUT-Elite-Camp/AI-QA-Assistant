@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import base64
+from pathlib import Path
 
 import pytest
 
-from attachment_service.config import AttachmentSettings
+from data_persistence.file_settings import AttachmentSettings
 
 
 def _required_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -22,9 +23,8 @@ def test_production_parser_needs_no_scanner_configuration(monkeypatch: pytest.Mo
     assert settings.internal_secret == "test-secret"
 
 
-def test_hierarchical_navigation_is_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_relocated_settings_keep_the_existing_attachment_directory(monkeypatch):
     _required_environment(monkeypatch)
-    monkeypatch.delenv("HIERARCHICAL_NAVIGATION_ENABLED", raising=False)
-    assert AttachmentSettings.from_env().hierarchical_navigation_enabled is False
-    monkeypatch.setenv("HIERARCHICAL_NAVIGATION_ENABLED", "true")
-    assert AttachmentSettings.from_env().hierarchical_navigation_enabled is True
+    monkeypatch.delenv("ATTACHMENT_DATA_DIR", raising=False)
+    repository = Path(__file__).resolve().parents[3]
+    assert AttachmentSettings.from_env().data_dir == repository / "data-persistence" / "data" / "attachments"

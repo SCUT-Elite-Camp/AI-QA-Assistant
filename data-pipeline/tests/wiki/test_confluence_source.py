@@ -6,7 +6,7 @@ import json
 import pytest
 
 from confluence_export import ConfluencePage, ConfluenceStorageRenderer
-from pipeline.confluence_snapshot import ConfluenceSnapshot
+from pipeline.confluence.snapshot import ConfluenceSnapshot
 from pipeline.wiki.confluence_source import load_authoritative_confluence_document
 
 

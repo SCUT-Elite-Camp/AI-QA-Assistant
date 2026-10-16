@@ -442,14 +442,21 @@ class EnterpriseResearchToolAdapter(LocalResearchToolAdapter):
                 short_note = len(chunks) <= 12 and len(str(payload.get('content') or '')) <= 6000
                 offset = 0 if short_note else max(0, position - 2)
                 limit = max(1, len(chunks)) if short_note else 5
-                page = self.read_tool.execute(doc_id=doc_id, offset=offset, limit=limit,
-                                              expected_hash=item.content_hash, expected_version=item.version)
+                result = self.read_tool.execute(doc_ids=[doc_id])
+                documents = result.get("documents", [])
+                if len(documents) != 1:
+                    raise ManifestAccessError("document_not_found")
+                document = documents[0]
+                if (document.get("content_hash") != item.content_hash
+                        or str(document.get("source_version")) != str(item.version)):
+                    raise ManifestAccessError("document_version_changed")
+                page = document.get("chunks", [])[offset:offset + limit]
                 # Reader adds provenance fields; compare authoritative chunk identity/text,
                 # not dictionaries whose projection metadata deliberately differs.
                 identity = lambda rows: [(c.get("chunk_id"), c.get("text", c.get("chunk_text", ""))) for c in rows]
-                if page.get("error") or identity(page.get("chunks", [])) != identity(chunks[offset:offset + limit]):
+                if identity(page) != identity(chunks[offset:offset + limit]):
                     raise ManifestAccessError("document_version_changed")
-                excerpt = self._chunk_context(page["chunks"], position - offset, radius=len(chunks) if short_note else 2)
+                excerpt = self._chunk_context(page, position - offset, radius=len(chunks) if short_note else 2)
                 location = target
             else:
                 body = str(payload.get("content") or "") or "\n\n".join(str(c.get("text") or c.get("chunk_text") or "") for c in chunks)

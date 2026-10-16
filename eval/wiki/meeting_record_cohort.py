@@ -11,7 +11,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "data-pipeline"))
-from pipeline.confluence_snapshot import ConfluenceSnapshot, discover_confluence_snapshots  # noqa: E402
+from pipeline.confluence.snapshot import ConfluenceSnapshot, discover_confluence_snapshots  # noqa: E402
 
 
 def freeze_meeting_record_cohort(

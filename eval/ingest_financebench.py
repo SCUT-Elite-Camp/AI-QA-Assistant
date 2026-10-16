@@ -18,8 +18,8 @@ for path in (ROOT, ROOT / "data-pipeline", ROOT / "data-persistence", ROOT / "to
         sys.path.insert(0, str(path))
 
 from parsers.registry import parse_file
-from pipeline.chunker import chunk_from_blocks, chunk_text
-from pipeline.embedder import embed_texts
+from pipeline.documents.chunker import chunk_from_blocks, chunk_text
+from pipeline.indexing.embedder import embed_texts
 from retrieval.bm25_index import BM25Index
 from data_persistence.vector import MilvusStore
 

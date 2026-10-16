@@ -26,7 +26,7 @@ from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILE = Path(__file__).parent / "datasets/product_acceptance.v1.json"
+PROFILE = Path(__file__).parent / "datasets/product_acceptance.en.v2.json"
 TERMINAL = {"completed", "failed", "cancelled"}
 
 
@@ -42,8 +42,8 @@ def runtime_code_fingerprint() -> str:
     """Include uncommitted production code; a base Git SHA alone is insufficient."""
     paths = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT)
     prefixes = ("agent/agent/", "agent/deep_research/", "frontend/server/", "frontend/src/", "frontend/shared/",
-                "toolset/tool_layer/", "toolset/retrieval/", "toolset/attachment_service/",
-                "data-persistence/data_persistence/", "data-persistence/storage/", "data-pipeline/pipeline/", "shared_runtime/")
+                "toolset/tool_layer/", "toolset/retrieval/", "data-pipeline/parsers/",
+                "data-persistence/data_persistence/", "data-persistence/storage/", "data-pipeline/pipeline/")
     digest = hashlib.sha256()
     for name in sorted(set(paths.decode("utf-8").split("\0"))):
         path = ROOT / name
@@ -168,7 +168,7 @@ def run_research(client: ApiClient, case: dict, mode: str, timeout: float) -> di
         job = client.request("POST", "/api/research/jobs", {
             "query": case["question"], "source_scope": case["source_scope"],
             "retrieval_mode": mode,
-            "report_spec": {"format": "markdown", "language": case.get("language", "zh-CN"),
+            "report_spec": {"format": "markdown", "language": case.get("language", "en-US"),
                             "include_citations": True, "include_limitations": True},
         })
         result.update(research_id=job["research_id"], job=job)

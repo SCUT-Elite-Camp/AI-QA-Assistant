@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 import pytest
 from pydantic import ValidationError
 
@@ -13,30 +10,29 @@ from agent.schemas.research import (
 from deep_research.planner import ModelResearchPlanner, PlannerError
 
 
-FIXTURE_PATH = Path(__file__).resolve().parents[2] / "mock" / "research_contract_fixtures.json"
+@pytest.fixture
+def plan_payload() -> dict:
+    return {
+        "research_id": "plan-validation",
+        "objective": "核验部署状态",
+        "source_scope": {"document_ids": ["doc-1"]},
+        "tasks": [{
+            "task_id": "task-1", "question": "部署状态是什么？",
+            "purpose": "核验部署记录", "source_ids": ["doc-1"],
+            "acceptance_criteria": [{"criterion_id": "status", "description": "找到部署状态原文"}],
+        }],
+    }
 
 
-@pytest.fixture(scope="module")
-def fixtures() -> dict:
-    return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
-
-
-def test_research_request_and_three_plans_use_frozen_v1_contract(fixtures: dict) -> None:
-    request = ResearchRequest.model_validate(fixtures["request"])
-    assert request.schema_version == "research.v1"
-    assert request.profile.value == "standard"
-    assert request.source_scope.document_ids == ["cp2-goals", "cp2-plan"]
-
-    plans = fixtures["valid_plans"]
-    assert len(plans) >= 3
-    for payload in plans.values():
-        plan = ResearchPlan.model_validate(payload)
-        ResearchPlanValidator.validate_or_raise(plan)
-        assert plan.schema_version == "research.v1"
+def test_valid_plan_preserves_explicit_source_scope(plan_payload: dict) -> None:
+    plan = ResearchPlan.model_validate(plan_payload)
+    ResearchPlanValidator.validate_or_raise(plan)
+    assert plan.source_scope.document_ids == ["doc-1"]
+    assert plan.tasks[0].source_ids == ["doc-1"]
 
 
 @pytest.mark.parametrize(
-    ("fixture_name", "error_code"),
+    ("case", "error_code"),
     [
         ("empty_tasks", "research_plan_empty_tasks"),
         ("duplicate_task_id", "research_plan_duplicate_task_id"),
@@ -48,16 +44,32 @@ def test_research_request_and_three_plans_use_frozen_v1_contract(fixtures: dict)
         ("missing_acceptance_criteria", "research_task_acceptance_criteria_missing"),
     ],
 )
-def test_invalid_planner_fixture_returns_stable_error_code(
-    fixtures: dict,
-    fixture_name: str,
-    error_code: str,
-) -> None:
-    plan = ResearchPlan.model_validate(fixtures["invalid_plans"][fixture_name])
+def test_invalid_plan_returns_stable_error_code(plan_payload: dict, case: str, error_code: str) -> None:
+    task = plan_payload["tasks"][0]
+    if case == "empty_tasks":
+        plan_payload["tasks"] = []
+    elif case in {"duplicate_task_id", "duplicate_task_question", "dependency_cycle", "over_budget"}:
+        other = {**task, "task_id": "task-2", "question": "有哪些发布风险？"}
+        plan_payload["tasks"].append(other)
+        if case == "duplicate_task_id":
+            other["task_id"] = task["task_id"]
+        elif case == "duplicate_task_question":
+            other["question"] = task["question"]
+        elif case == "dependency_cycle":
+            task["dependencies"] = ["task-2"]
+            other["dependencies"] = ["task-1"]
+        else:
+            plan_payload["budget"] = {"max_tasks": 1}
+    elif case == "unauthorized_tool":
+        task["allowed_tools"] = ["write_document"]
+    elif case == "out_of_scope_source":
+        task["source_ids"] = ["forbidden"]
+    elif case == "missing_acceptance_criteria":
+        task["acceptance_criteria"] = []
 
+    plan = ResearchPlan.model_validate(plan_payload)
     with pytest.raises(ResearchPlanValidationError) as exc_info:
         ResearchPlanValidator.validate_or_raise(plan)
-
     assert exc_info.value.code == error_code
     assert exc_info.value.issue.code == error_code
 
@@ -115,8 +127,8 @@ def test_empty_source_scope_has_a_deterministic_plan_error() -> None:
     assert exc_info.value.code == "research_source_scope_required"
 
 
-def test_model_plan_must_cover_the_user_objective(fixtures: dict) -> None:
-    plan = ResearchPlan.model_validate(next(iter(fixtures["valid_plans"].values())))
+def test_model_plan_must_cover_the_user_objective(plan_payload: dict) -> None:
+    plan = ResearchPlan.model_validate(plan_payload)
 
     with pytest.raises(PlannerError, match="does not cover"):
         ModelResearchPlanner._validate_task_coverage(

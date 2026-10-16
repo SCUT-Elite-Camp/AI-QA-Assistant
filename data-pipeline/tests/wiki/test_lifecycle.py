@@ -5,13 +5,13 @@ import json
 import pytest
 
 from parsers.markdown_parser import MarkdownParser
-from pipeline.chunker import chunk_from_blocks
-from pipeline.structure import build_document_sections
+from pipeline.documents.chunker import chunk_from_blocks
+from pipeline.documents.structure import build_document_sections
 from pipeline.wiki.lifecycle import WikiDocumentLifecycle, WikiDocumentProjection
 from pipeline.wiki.source import document_to_wiki_source
 from pipeline.wiki.domain import WikiScope
 from data_persistence.wiki import WikiStore
-from shared_runtime.wiki_paths import resolve_wiki_db_path
+from data_persistence.wiki import resolve_wiki_db_path
 
 
 def _document(number: int):
@@ -187,16 +187,16 @@ def test_reconcile_coalesces_updates_and_detects_document_deletion(tmp_path) -> 
 
 
 def test_ingest_entrypoint_enqueues_after_authoritative_save(tmp_path, monkeypatch) -> None:
-    from pipeline import auto_process
+    from pipeline.ingestion import publication as document_indexer
 
     doc = _document(1)
     saved = []
-    monkeypatch.setattr(auto_process, "save_document", lambda doc_id, data: saved.append(doc_id))
-    monkeypatch.setattr(auto_process, "embed_texts", lambda texts: [[1.0] for _ in texts])
+    monkeypatch.setattr(document_indexer, "save_document", lambda doc_id, data: saved.append(doc_id))
+    monkeypatch.setattr(document_indexer, "embed_texts", lambda texts: [[1.0] for _ in texts])
     monkeypatch.setenv("WIKI_INGEST_ENABLED", "true")
     monkeypatch.setenv("ENTERPRISE_KNOWLEDGE_BASE_ID", "kb")
     monkeypatch.setenv("WIKI_DB_PATH", str(tmp_path / "wiki.sqlite3"))
-    assert auto_process._index_document(
+    assert document_indexer.index_document(
         doc, chunk_size=500, overlap=100, evidence_milvus=None, has_milvus=False,
     )
     assert saved == [doc.doc_id]

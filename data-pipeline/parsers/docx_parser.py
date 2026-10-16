@@ -33,7 +33,10 @@ class DocxParser(BaseParser):
         # iter_inner_content() 按文档顺序产出 Paragraph 和 Table
         # 优点：保持正文中段落与表格的交错顺序
         table_index = 0
-        for item in doc.iter_inner_content():
+        page = 1
+        embedded_image = 0
+        for block_index, item in enumerate(doc.iter_inner_content()):
+            before = len(all_blocks)
             # 判断是 Paragraph 还是 Table
             if hasattr(item, "style") and hasattr(item, "text"):
                 # → Paragraph
@@ -47,6 +50,27 @@ class DocxParser(BaseParser):
                 cb = self._table_to_block(item, table_index)
                 if cb is not None:
                     all_blocks.append(cb)
+            for block in all_blocks[before:]:
+                block.page_number = page
+                block.locator = {**block.locator, "page": page, "block": block_index}
+            element = getattr(item, '_p', None)
+            if element is None:
+                element = getattr(item, '_tbl', None)
+            if element is not None:
+                for descendant in element.iter():
+                    if descendant.tag == qn('w:br') and descendant.get(qn('w:type')) == 'page':
+                        page += 1
+                    if descendant.tag != qn('a:blip'):
+                        continue
+                    relationship_id = descendant.get(qn('r:embed'))
+                    related_part = doc.part.related_parts.get(relationship_id)
+                    blob = getattr(related_part, 'blob', None)
+                    if blob:
+                        from parsers.upload_formats import image_blocks
+                        embedded_image += 1
+                        all_blocks.extend(image_blocks(blob, {
+                            "page": page, "block": block_index, "embedded_image": embedded_image,
+                        }))
 
         # ── 渲染为 Markdown ──
         content = "\n\n".join(

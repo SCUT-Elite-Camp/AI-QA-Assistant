@@ -7,7 +7,7 @@ from deep_research.evaluation import evaluate_research_run
 from deep_research.execution import ResearchRuntimeService
 
 
-DOCUMENTS = Path(__file__).resolve().parents[3] / "data-persistence" / "data" / "documents"
+DOCUMENTS = Path(__file__).resolve().parents[1] / "fixtures" / "travel-policy"
 
 
 def test_policy_demo_meets_structural_quality_baseline(tmp_path: Path) -> None:

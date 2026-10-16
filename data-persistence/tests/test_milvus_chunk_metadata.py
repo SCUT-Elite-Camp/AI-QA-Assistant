@@ -73,7 +73,7 @@ def fake_collection_factory(monkeypatch):
 
 
 def test_chunk_schema_contains_provenance_fields(fake_collection_factory):
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     collection = store.init_collection(dim=2)
 
@@ -83,6 +83,23 @@ def test_chunk_schema_contains_provenance_fields(fake_collection_factory):
     } <= fields.keys()
     assert fields["page_number"].dtype == DataType.INT64
     assert fields["metadata_json"].params["max_length"] >= 4096
+
+
+def test_multibyte_labels_fit_vector_schema_without_changing_evidence(fake_collection_factory):
+    store = MilvusStore(collection_name='unicode-labels')
+    original = '原始证据正文不能截断。'
+    store.insert_chunks(
+        embeddings=[[1.0, 0.0]], chunk_ids=['chunk'], chunk_texts=[original],
+        doc_ids=['document'], chunk_indices=[0], titles=['知识处理🔎' * 150],
+        spaces=['研发空间' * 100], doc_types=['md'],
+    )
+    collection = fake_collection_factory['unicode-labels']
+    names = [f.name for f in collection.schema.fields if not f.auto_id]
+    written = dict(zip(names, collection.inserted_columns))
+    assert len(written['title'][0].encode('utf-8')) <= 512
+    assert len(written['space'][0].encode('utf-8')) <= 256
+    assert '\ufffd' not in written['title'][0]
+    assert written['chunk_text'] == [original]
 
 
 def test_existing_collection_without_provenance_fails_with_migration_action(
@@ -95,7 +112,7 @@ def test_existing_collection_without_provenance_fails_with_migration_action(
     fake_collection_factory["doc_chunks"] = FakeCollection(
         "doc_chunks", SimpleNamespace(fields=old_fields),
     )
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     with pytest.raises(ValueError) as error:
         store.init_collection(dim=2)
@@ -104,7 +121,7 @@ def test_existing_collection_without_provenance_fails_with_migration_action(
     message = str(error.value)
     assert "doc_chunks schema is missing PDF provenance fields" in message
     assert "bbox_json" in message and "metadata_json" in message
-    assert "scripts/reindex.py" in message
+    assert "docs/data-pipeline/DATA_PIPELINE.md" in message
 
 
 @pytest.mark.parametrize(
@@ -126,18 +143,18 @@ def test_existing_collection_with_unsafe_field_definition_requires_reindex(
     )
 
     with pytest.raises(ValueError) as error:
-        store = MilvusStore()
+        store = MilvusStore(collection_name="doc_chunks")
         store.init_collection(dim=2)
         store.validate_chunk_schema()
 
     message = str(error.value)
     assert "doc_chunks schema is missing PDF provenance fields" in message
     assert field_name in message
-    assert "scripts/reindex.py" in message
+    assert "docs/data-pipeline/DATA_PIPELINE.md" in message
 
 
 def test_insert_chunks_writes_metadata_columns(fake_collection_factory):
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     store.insert_chunks(
         embeddings=[[0.1, 0.2]],
@@ -161,7 +178,7 @@ def test_insert_chunks_writes_metadata_columns(fake_collection_factory):
 
 
 def test_legacy_insert_call_gets_safe_provenance_defaults(fake_collection_factory):
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     store.insert_chunks(
         [[0.1, 0.2]], ["c1"], ["text"], ["d1"], [0], ["url"],
@@ -175,7 +192,7 @@ def test_legacy_insert_call_gets_safe_provenance_defaults(fake_collection_factor
 
 
 def test_insert_rejects_any_column_length_mismatch(fake_collection_factory):
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     with pytest.raises(ValueError, match="metadata_json length 0 does not match embeddings length 1"):
         store.insert_chunks(
@@ -185,7 +202,7 @@ def test_insert_rejects_any_column_length_mismatch(fake_collection_factory):
 
 
 def test_insert_normalizes_explicit_none_provenance_values(fake_collection_factory):
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     store.insert_chunks(
         embeddings=[[0.1, 0.2]], chunk_ids=["c1"], chunk_texts=["text"],
@@ -199,7 +216,7 @@ def test_insert_normalizes_explicit_none_provenance_values(fake_collection_facto
 
 
 def test_search_requests_provenance_fields(fake_collection_factory):
-    store = MilvusStore()
+    store = MilvusStore(collection_name="doc_chunks")
 
     store.search_similar([0.1, 0.2])
 

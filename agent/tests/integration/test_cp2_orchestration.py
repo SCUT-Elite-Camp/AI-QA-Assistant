@@ -1,3 +1,4 @@
+from tests.grounding_helpers import grounded_model
 import json
 
 from typing import Any
@@ -47,6 +48,7 @@ class PipelineLLM:
     def generate(self, prompt: str) -> str:
         return prompt
 
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         system = messages[0].get("content", "") if messages else ""
         self.calls.append({"messages": list(messages), "tools": tools})
@@ -102,6 +104,7 @@ class PipelineLLM:
 class MultiSearchPipelineLLM(PipelineLLM):
     """Simulate a provider returning redundant searches in one response."""
 
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         if tools and not any(message.get("role") == "tool" for message in messages):
             call = {
@@ -125,6 +128,7 @@ class MultiSearchPipelineLLM(PipelineLLM):
 class PostEvidenceToolCallLLM(PipelineLLM):
     """Simulate a provider emitting a stale tool call during answer generation."""
 
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         has_evidence = any(message.get("role") == "tool" for message in messages)
         has_final_only_instruction = any(
@@ -187,6 +191,9 @@ class RecordingSearchTool(BaseTool):
         }
 
     def execute(self, **kwargs: Any) -> Any:
+        return self.search(**kwargs)
+
+    def search_direct(self, **kwargs: Any) -> list[dict[str, Any]]:
         return self.search(**kwargs)
 
     def search(self, **kwargs: Any) -> list[dict[str, Any]]:
@@ -258,7 +265,7 @@ def test_default_chat_uses_query_plan_policy_executor_gate_and_citation_check() 
     assert agent.last_orchestration.query_plan.standalone_query == (
         "rewritten standalone query"
     )
-    assert agent.last_orchestration.policy.candidate_tools == ("search_documents",)
+    assert agent.last_orchestration.policy.candidate_tools == ("search_documents", "find_documents", "get_document")
     assert agent.last_citation_check is not None
     assert agent.last_citation_check.valid is True
 
@@ -318,7 +325,7 @@ def test_explicit_fast_dispatches_without_entering_runner() -> None:
     assert agent.last_orchestration.execution_profile.mode.value == "fast"
 
 
-def test_comparison_parallel_retrieval_isolates_failure_and_corrects_missing_side() -> None:
+def test_comparison_parallel_retrieval_stops_without_automatic_missing_side_search() -> None:
     plan = QueryPlan(
         original_query="compare A and B",
         standalone_query="A and B",
@@ -337,28 +344,20 @@ def test_comparison_parallel_retrieval_isolates_failure_and_corrects_missing_sid
     )
 
     response = agent.chat(
-        ChatRequest(query="compare A and B", session_id="partial-failure", top_k=3)
+        ChatRequest(weight_mode="thinking", query="compare A and B", session_id="partial-failure", top_k=3)
     )
 
-    assert response.status == "success"
+    assert response.status == "no_relevant_context"
     assert agent.last_orchestration is not None
     result = agent.last_orchestration.run_result
-    assert result.retrieval_attempts == 2
-    assert result.missing_evidence_targets == []
-    assert sorted(call["query"] for call in search.calls) == ["A", "B", "B"]
-    corrective_calls = [
-        call for call in result.tool_calls
-        if call.tool_call_id.startswith("corrective-")
-    ]
-    assert len(corrective_calls) == 1
-    assert corrective_calls[0].tool_name == "search_documents"
-    assert corrective_calls[0].arguments["query"] == "B"
-    assert corrective_calls[0].success is True
-    assert len(result.tool_calls) == 2
+    assert result.retrieval_attempts == 1
+    assert result.missing_evidence_targets == ["B"]
+    assert sorted(call["query"] for call in search.calls) == ["A", "B"]
+    assert len(result.tool_calls) == 1
     assert search.max_active_calls == 2
 
 
-def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None:
+def test_comparison_flow_uses_only_its_initial_parallel_retrieval_before_answer() -> None:
     plan = QueryPlan(
         original_query="比较 A 和 B",
         standalone_query="A 和 B",
@@ -375,7 +374,7 @@ def test_comparison_flow_runs_corrective_retrieval_before_final_answer() -> None
     )
 
     response = agent.chat(
-        ChatRequest(query="比较 A 和 B", session_id="comparison-session", top_k=3)
+        ChatRequest(weight_mode="thinking", query="比较 A 和 B", session_id="comparison-session", top_k=3)
     )
 
     assert response.status == "success"
@@ -402,7 +401,7 @@ def test_comparison_parallel_retrieval_supports_three_bounded_targets() -> None:
     )
 
     response = agent.chat(
-        ChatRequest(query=plan.original_query, session_id="three-targets", top_k=3)
+        ChatRequest(weight_mode="thinking", query=plan.original_query, session_id="three-targets", top_k=3)
     )
 
     assert response.status == "success"
@@ -428,7 +427,7 @@ def test_comparison_ignores_redundant_searches_after_batch_evidence_is_accepted(
     )
 
     response = agent.chat(
-        ChatRequest(query=plan.original_query, session_id="redundant-searches")
+        ChatRequest(weight_mode="thinking", query=plan.original_query, session_id="redundant-searches")
     )
 
     assert response.status == "success"
@@ -454,7 +453,7 @@ def test_comparison_reprompts_instead_of_executing_post_evidence_tool_call() -> 
     )
 
     response = agent.chat(
-        ChatRequest(query=plan.original_query, session_id="post-evidence-tool")
+        ChatRequest(weight_mode="thinking", query=plan.original_query, session_id="post-evidence-tool")
     )
 
     assert response.status == "success"
@@ -590,7 +589,7 @@ def _persistent_request(
     *,
     facts: list[MemoryFactInput] | None = None,
 ) -> InternalChatRequest:
-    return InternalChatRequest(
+    return InternalChatRequest(weight_mode="thinking",
         query=query,
         session_id="persistent-session",
         memory_context=MemoryContextInput(

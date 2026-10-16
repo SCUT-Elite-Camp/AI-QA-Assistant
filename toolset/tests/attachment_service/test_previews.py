@@ -3,9 +3,9 @@ from subprocess import CompletedProcess
 
 from PIL import Image
 
-from attachment_service.crypto import decrypt_file
-from attachment_service.previews import build_encrypted_previews
-from attachment_service.office import remove_office_tree
+from data_persistence.file_crypto import decrypt_file
+from pipeline.files.previews import build_encrypted_previews
+from parsers.office_runtime import remove_office_tree
 
 
 def test_image_thumbnail_is_encrypted_and_decryptable(tmp_path: Path) -> None:
@@ -41,7 +41,7 @@ def test_pptx_uses_isolated_office_conversion_and_slide_locators(
     tmp_path: Path, monkeypatch,
 ) -> None:
     import fitz
-    from attachment_service import previews
+    from pipeline.files import previews
 
     source = tmp_path / "slides.pptx"
     source.write_bytes(b"test fixture placeholder")

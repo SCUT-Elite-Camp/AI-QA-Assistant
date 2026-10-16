@@ -24,7 +24,7 @@ async function createPersistedTurnFixture (firstMessageText = 'turn-1') {
     providerId: userId,
     username: `compaction-user-${suffix}`
   })
-  await db.insert(tables.chats).values({ id: chatId, title: 'Compaction chat', userId })
+  await db.insert(tables.chats).values({ id: chatId, title: 'Compaction chat', userId, weightMode: 'thinking' })
 
   const messages = []
   for (let sequence = 1; sequence <= 20; sequence += 1) {
@@ -83,6 +83,20 @@ function conflictingPlanResponse (request: {
 }
 
 describe('post-turn compaction', () => {
+  it('never starts an additional summary generation after a Fast turn', async () => {
+    const fixture = await createPersistedTurnFixture()
+    await fixture.db.update(fixture.tables.chats).set({ weightMode: 'fast' }).where(eq(fixture.tables.chats.id, fixture.handoff.chatId))
+    const { compactAfterSuccessfulAssistantPersistence } = await import('../../server/utils/postTurnCompaction')
+    const fetchFn = vi.fn()
+    await expect(compactAfterSuccessfulAssistantPersistence(fixture.db, fixture.handoff, { environment, fetchFn }))
+      .resolves.toBe('not_needed')
+    expect(fetchFn).not.toHaveBeenCalled()
+    // The turn's selected mode still wins if the chat mode changes meanwhile.
+    await fixture.db.update(fixture.tables.chats).set({ weightMode: 'thinking' }).where(eq(fixture.tables.chats.id, fixture.handoff.chatId))
+    await expect(compactAfterSuccessfulAssistantPersistence(fixture.db, fixture.handoff, { environment, fetchFn, executionMode: 'fast' }))
+      .resolves.toBe('not_needed')
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
   it('does not read or call Agent compaction when persistent Memory is disabled', async () => {
     const fixture = await createPersistedTurnFixture()
     const { compactAfterSuccessfulAssistantPersistence } = await import('../../server/utils/postTurnCompaction')

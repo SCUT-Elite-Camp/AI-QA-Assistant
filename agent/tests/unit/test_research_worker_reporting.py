@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 import pytest
@@ -30,23 +29,6 @@ def test_worker_expands_search_hit_to_a_substantive_context_window() -> None:
     assert LocalResearchWorker._expand_locator("line:20-20") == "line:4-36"
 
 
-def test_day3_day4_fixture_contains_the_four_required_quality_cases() -> None:
-    fixture_path = Path(__file__).resolve().parents[2] / "mock" / "research_day3_day4_cases.json"
-    payload = json.loads(fixture_path.read_text(encoding="utf-8"))
-
-    assert payload["schema_version"] == "research.v2"
-    assert set(payload["cases"]) == {
-        "single_document_fact",
-        "two_document_comparison",
-        "insufficient_material",
-        "conflicting_evidence",
-    }
-    for case in payload["cases"].values():
-        assert case["request"]["source_scope"]["document_ids"]
-        assert case["manifest_documents"]
-        assert case["plan_tasks"]
-        assert "expected_coverage" in case
-        assert "expected_claim_status" in case
 
 
 class FixedResearchTools:

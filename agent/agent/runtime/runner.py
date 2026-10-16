@@ -6,12 +6,13 @@ from contextvars import copy_context
 from typing import Any
 
 from agent.answer import AnswerCompletenessChecker
-from agent.answer.generator import AnswerGenerator, AnswerModelPreference
+from agent.answer.generator import AnswerGenerator
 from agent.config.settings import settings
 from agent.evidence import EvidenceGate, WikiEvidenceSupplementer
+from agent.evidence.answer_grounding import GROUNDING_INSTRUCTION, parse_grounded_answer, validate_grounded_answer
 from agent.exploration.controller import ExplorationController
 from agent.llm.base import BaseLLM
-from agent.retrieval.corrective import CorrectiveRetrievalPlanner
+from agent.errors.exceptions import LLMToolCallValidationError
 from agent.runtime.support import RuntimeSupport
 from agent.runtime.state import (
     AgentRunResult,
@@ -39,7 +40,7 @@ class ToolExecutionFailure(RuntimeError):
 
 
 class NoRelevantContext(RuntimeError):
-    """Internal signal used when EvidenceGate rejects all retrieval attempts."""
+    """Internal signal used when the current evidence fails acceptance checks."""
 
 
 class AgentRunner:
@@ -58,7 +59,6 @@ class AgentRunner:
         "get_document",
         "search_library",
         "search_attachments",
-        "inspect_attachment",
     }
 
     def __init__(
@@ -70,7 +70,6 @@ class AgentRunner:
         max_repeated_tool_calls: int | None = None,
         answer_completeness_checker: AnswerCompletenessChecker | None = None,
         answer_llm: BaseLLM | None = None,
-        fast_answer_llm: BaseLLM | None = None,
         answer_generator: AnswerGenerator | None = None,
         exploration_controller: ExplorationController | None = None,
     ) -> None:
@@ -80,10 +79,8 @@ class AgentRunner:
         self.answer_completeness_checker = answer_completeness_checker
         self.runtime_support = RuntimeSupport(answer_completeness_checker)
         self.answer_llm = answer_llm or llm
-        self.fast_answer_llm = fast_answer_llm
         self.answer_generator = answer_generator or AnswerGenerator(
-            complex_llm=self.answer_llm,
-            fast_llm=self.fast_answer_llm,
+            llm=self.answer_llm,
         )
         self.exploration_controller = exploration_controller or ExplorationController()
         self.max_iterations = (
@@ -109,7 +106,6 @@ class AgentRunner:
         policy: IntentPolicy | None = None,
         tool_executor: ToolExecutor | None = None,
         evidence_gate: EvidenceGate | None = None,
-        corrective_retrieval: CorrectiveRetrievalPlanner | None = None,
         history: list[dict[str, Any]] | None = None,
         trace_id: str,
         mode: str = "hybrid",
@@ -119,7 +115,6 @@ class AgentRunner:
         soul_content: str | None = None,
         exploration_mode: str = "auto",
         navigation_scopes: tuple[str, ...] = (),
-        answer_model_preference: AnswerModelPreference = "auto",
     ) -> AgentRunResult:
         """Execute a bounded Agent run.
 
@@ -155,7 +150,6 @@ class AgentRunner:
         state = AgentState(
             trace_id=trace_id,
             query_plan=query_plan,
-            answer_model_preference=answer_model_preference,
             messages=self._build_messages(
                 query_plan,
                 history or [],
@@ -165,6 +159,11 @@ class AgentRunner:
             ),
         )
         schemas = self._tool_schemas(policy)
+        if policy is not None and policy.requires_citations:
+            state.messages[0]["content"] += "\n\n" + GROUNDING_INSTRUCTION
+        document_exploration = tool_executor is not None and {
+            "find_documents", "get_document"
+        }.issubset({schema.get("function", {}).get("name") for schema in schemas})
         source_tools = self._required_source_tools(query_plan, policy)
         navigation_enabled = (
             settings.AGENTIC_EXPLORATION_ENABLED
@@ -197,11 +196,19 @@ class AgentRunner:
                         return self._result(state, StopReason.NO_RELEVANT_CONTEXT,
                             message="未能从每个请求的来源读取有效证据，不能用其他资料替代。",
                             error_code="requested_source_evidence_missing")
-                # Once retrieval evidence has passed the evidence policy, the
-                # next model turn is answer generation. Hiding tool schemas at
-                # that point prevents providers from requesting the identical
-                # search again instead of consuming the observation.
-                available_tools = schemas if not state.evidence else None
+                # Keep catalog/read tools available after TopK retrieval so the
+                # model can choose whether it needs complete source documents.
+                can_explore_documents = (document_exploration and policy is not None
+                    and len(state.tool_calls) < policy.max_tool_calls
+                    and state.retrieval_attempts < policy.max_retrieval_attempts
+                    and iteration < limit)
+                available_tools = schemas if (not state.evidence or can_explore_documents) else None
+                if document_exploration and policy is not None and (
+                    len(state.tool_calls) >= policy.max_tool_calls
+                    or state.retrieval_attempts >= policy.max_retrieval_attempts
+                    or iteration == limit
+                ):
+                    available_tools = None
                 if available_tools and retrieval_route is None:
                     available_tools = self._route_entry_schemas(
                         available_tools,
@@ -220,7 +227,7 @@ class AgentRunner:
                         "id": f"source-{iteration}-{name}", "type": "function",
                         "function": {"name": name, "arguments": json.dumps({"query": query_plan.standalone_query})},
                     }]}
-                elif state.evidence and not next_wiki_tool:
+                elif state.evidence and not next_wiki_tool and not can_explore_documents:
                     # Start answer generation from a clean evidence-only prompt.
                     # Replaying the prior assistant tool call can make some
                     # providers request the same tool again even when schemas
@@ -233,13 +240,13 @@ class AgentRunner:
                     # Force only the existing scoped search tool, never a grant.
                     structured = self._needs_scoped_original(query_plan.original_query)
                     names = {s.get('function', {}).get('name') for s in available_tools}
-                    if structured and 'doc_ids' in query_plan.filters and retrieval_route is None and 'search_documents' in names:
+                    if structured and 'doc_ids' in query_plan.filters and not state.tool_calls and retrieval_route is None and 'search_documents' in names:
                         response = {'role': 'assistant', 'content': None, 'tool_calls': [{
                             'id': f'scoped-search-{iteration}', 'type': 'function',
                             'function': {'name': 'search_documents', 'arguments': json.dumps({'query': query_plan.standalone_query})},
                         }]}
                     else:
-                        response = self.llm.chat(state.messages, tools=available_tools)
+                        response = self._plan_or_answer(state, available_tools)
                 else:
                     response = self._chat_for_answer(state, state.messages)
             except Exception as exc:
@@ -274,7 +281,7 @@ class AgentRunner:
                     error_code="invalid_tool_calls",
                 )
 
-            if state.evidence and tool_calls and not next_wiki_tool and not pending_source_tools:
+            if state.evidence and tool_calls and not next_wiki_tool and not pending_source_tools and not can_explore_documents:
                 logger.warning(
                     "[POST_EVIDENCE_TOOL_CALL_IGNORED] trace_id=%s iteration=%s calls=%s",
                     trace_id,
@@ -346,6 +353,30 @@ class AgentRunner:
                         message="Agent 未完成必需的检索路由选择。",
                         error_code="retrieval_route_required",
                     )
+                if document_exploration and policy is not None and policy.requires_citations and evidence_gate is not None:
+                    gate_result = evidence_gate.evaluate(query_plan, policy,
+                        self._typed_evidence(state.evidence),
+                        retrieval_attempt=max(1, state.retrieval_attempts))
+                    self.runtime_support.record_evidence_gate(state, gate_result)
+                    if not gate_result.accepted:
+                        return self._result(state, StopReason.NO_RELEVANT_CONTEXT,
+                            message=self._insufficient_evidence_message(gate_result),
+                            error_code="evidence_insufficient_after_document_read")
+                if state.evidence:
+                    try:
+                        draft = parse_grounded_answer(answer)
+                        if not draft.claims:
+                            return self._result(state, StopReason.NO_RELEVANT_CONTEXT,
+                                message="The available excerpts do not support an answer.", error_code="model_abstained")
+                        state.answer_grounding_draft = draft.model_dump()
+                        state.answer_grounding = validate_grounded_answer(draft, state.evidence)
+                    except ValueError:
+                        state.answer_grounding = {"valid": False, "errors": ["invalid_grounding_format"]}
+                    if not state.answer_grounding["valid"]:
+                        return self._result(state, StopReason.QUALITY_VALIDATION_FAILED,
+                            message="The answer did not pass claim binding validation.",
+                            error_code="claim_binding_validation_failed")
+                    answer = state.answer_grounding["answer"]
                 answer = self._check_and_repair_answer(
                     state=state,
                     policy=policy,
@@ -536,7 +567,6 @@ class AgentRunner:
                     "get_document",
                     "search_library",
                     "search_attachments",
-                    "inspect_attachment",
                     "wiki_search_evidence",
                 }
                 if (
@@ -600,29 +630,6 @@ class AgentRunner:
                             tool_executor=tool_executor,
                             retrieval_attempt=state.retrieval_attempts + 1,
                         )
-                        if (
-                            tool_name == "search_documents"
-                            and query_plan.intent.value == "summarization"
-                            and tool_executor is not None
-                            and evidence
-                            and policy is not None
-                            and "get_document" in policy.candidate_tools
-                        ):
-                            target_doc_id = evidence[0].get("doc_id") or evidence[0].get("document_id")
-                            if target_doc_id:
-                                try:
-                                    doc_result = tool_executor.execute(
-                                        tool_call_id=f"{call_id}-full-doc",
-                                        tool_name="get_document",
-                                        arguments={"doc_id": target_doc_id},
-                                        trace_id=trace_id,
-                                        retrieval_attempt=state.retrieval_attempts + 1,
-                                    )
-                                    if doc_result.success and doc_result.evidence:
-                                        evidence = [item.model_dump() for item in doc_result.evidence]
-                                        observation = self._format_search_observation(evidence)
-                                except Exception as doc_exc:
-                                    logger.warning("[Runner] Auto full-document retrieval failed: %s", doc_exc)
                 except Exception as exc:
                     logger.exception(
                         "[AGENT_TOOL_ERROR] trace_id=%s iteration=%s tool=%s error=%s",
@@ -676,7 +683,6 @@ class AgentRunner:
                 if tool_name in exploration_tools:
                     state.exploration_rounds += 1
                     next_wiki_tool = self._next_wiki_tool(tool_name, observation)
-                corrective_observations: list[dict[str, Any]] = []
                 if is_retrieval:
                     state.retrieval_attempts += 1
                     if tool_name == "wiki_search_evidence":
@@ -700,56 +706,28 @@ class AgentRunner:
                     # as a complete answer, nor correct it with another source.
                     remaining_sources = [name for name in source_tools
                         if name not in {record.tool_name for record in state.tool_calls if record.success}]
+                    if document_exploration and evidence_gate is not None:
+                        eligible = {evidence_gate.evidence_key(item) for item in
+                            evidence_gate.select_eligible(self._typed_evidence(state.evidence))}
+                        state.evidence = [item for item in state.evidence if
+                            evidence_gate.evidence_key(Evidence.model_validate(item)) in eligible]
                     try:
-                        if remaining_sources:
+                        if remaining_sources or document_exploration:
                             evidence = list(state.evidence)
-                            corrective_observations = []
-                            tool_budget_exhausted = False
                         else:
-                            (
-                                evidence,
-                                corrective_observations,
-                                tool_budget_exhausted,
-                            ) = self._apply_evidence_policy(
-                                query_plan=query_plan,
-                                policy=policy,
-                                evidence_gate=evidence_gate,
-                                corrective_retrieval=corrective_retrieval,
-                                tool_executor=tool_executor,
-                                trace_id=trace_id,
-                                state=state,
-                                previous_mode=mode,
-                                previous_top_k=top_k,
+                            evidence = self._checked_evidence(
+                                query_plan=query_plan, policy=policy,
+                                evidence_gate=evidence_gate, state=state,
                                 preserve_evidence_order=(
                                     tool_name == "wiki_search_evidence"
                                     and settings.WIKI_CONTEXT_TOP_K > 0
                                 ),
                             )
-                        if tool_budget_exhausted:
-                            return self._result(
-                                state,
-                                StopReason.POLICY_LIMIT,
-                                message="Agent 已达到当前意图的工具调用预算。",
-                                error_code="max_tool_calls",
-                            )
-                    except ToolExecutionFailure as exc:
-                        return self._result(
-                            state,
-                            StopReason.TOOL_ERROR,
-                            message=(
-                                "检索服务暂时不可用。"
-                                if tool_name == "search_documents"
-                                else "工具执行失败，请稍后重试。"
-                            ),
-                            error_code=exc.error_code,
-                        )
                     except NoRelevantContext as exc:
                         state.evidence = []
                         return self._result(
-                            state,
-                            StopReason.NO_RELEVANT_CONTEXT,
-                            message=str(exc),
-                            error_code="evidence_insufficient_after_correction",
+                            state, StopReason.NO_RELEVANT_CONTEXT,
+                            message=str(exc), error_code="evidence_insufficient",
                         )
 
                     state.evidence = list(evidence)
@@ -791,48 +769,25 @@ class AgentRunner:
                         )
                     if tool_name == "wiki_search_evidence":
                         observation = self._format_search_observation(state.evidence)
+                    if document_exploration:
+                        citations = self._format_search_observation(state.evidence)
+                        observation = (f"{observation}\n\nCitation evidence:\n{citations}"
+                            if tool_name == "get_document" else citations)
                 elif tool_name in exploration_tools and next_wiki_tool is None:
                     # Wiki navigation can legitimately find no page/source. In
                     # that case the Direct prefetch remains usable, but it must
                     # pass the same EvidenceGate before answer generation.
                     try:
-                        (
-                            evidence,
-                            corrective_observations,
-                            tool_budget_exhausted,
-                        ) = self._apply_evidence_policy(
-                            query_plan=query_plan,
-                            policy=policy,
-                            evidence_gate=evidence_gate,
-                            corrective_retrieval=corrective_retrieval,
-                            tool_executor=tool_executor,
-                            trace_id=trace_id,
-                            state=state,
-                            previous_mode=mode,
-                            previous_top_k=top_k,
+                        evidence = self._checked_evidence(
+                            query_plan=query_plan, policy=policy,
+                            evidence_gate=evidence_gate, state=state,
                             preserve_evidence_order=False,
-                        )
-                        if tool_budget_exhausted:
-                            return self._result(
-                                state,
-                                StopReason.POLICY_LIMIT,
-                                message="Agent 已达到当前意图的工具调用预算。",
-                                error_code="max_tool_calls",
-                            )
-                    except ToolExecutionFailure as exc:
-                        return self._result(
-                            state,
-                            StopReason.TOOL_ERROR,
-                            message="检索服务暂时不可用。",
-                            error_code=exc.error_code,
                         )
                     except NoRelevantContext as exc:
                         state.evidence = []
                         return self._result(
-                            state,
-                            StopReason.NO_RELEVANT_CONTEXT,
-                            message=str(exc),
-                            error_code="evidence_insufficient_after_correction",
+                            state, StopReason.NO_RELEVANT_CONTEXT,
+                            message=str(exc), error_code="evidence_insufficient",
                         )
                     state.evidence = list(evidence)
 
@@ -845,8 +800,6 @@ class AgentRunner:
                     }
                 )
                 if (is_retrieval or tool_name in exploration_tools) and not next_wiki_tool:
-                    for correction in corrective_observations:
-                        state.messages.append(correction)
                     # One retrieval batch may already cover every planned
                     # comparison target. Ignore additional search calls from
                     # the same model response and move to answer generation.
@@ -1002,9 +955,10 @@ class AgentRunner:
             fallback_messages = list(state.messages)
             fallback_messages.append({
                 "role": "user",
-                "content": "请结合已掌握的核心专业知识与背景信息，对用户提出的问题直接给出清晰、全面、有条理的回答，不要再调用任何工具。"
+                "content": "不要再调用工具。仅依据已有编号原文证据回答；存在原文证据时，严格按系统 JSON 协议生成答案及断言支持数据。"
             })
-            fallback_resp = self.llm.chat(fallback_messages, temperature=0.3)
+            fallback_resp = self.llm.chat(fallback_messages, temperature=0.3,
+                **({"response_format": {"type": "json_object"}} if state.evidence else {}))
             answer = fallback_resp.get("content", "").strip() if isinstance(fallback_resp, dict) else str(fallback_resp).strip()
             if answer:
                 state.messages.append({"role": "assistant", "content": answer})
@@ -1049,24 +1003,18 @@ class AgentRunner:
         elif tool_name == "search_attachments":
             constrained["query"] = query_plan.standalone_query
             constrained["top_k"] = top_k
-        elif tool_name == "inspect_attachment":
-            constrained["question"] = str(
-                constrained.get("question") or query_plan.standalone_query
-            )
         elif tool_name == "find_documents":
             # Metadata selectors belong under filters. The server-owned plan
             # already supplies the authoritative filters, including access scope.
             for field in ("doc_id", "doc_ids", "title", "space", "doc_type"):
                 constrained.pop(field, None)
-            if not constrained.get("query") and not constrained.get("filters"):
-                constrained["query"] = query_plan.standalone_query
-            constrained["top_k"] = top_k
+            constrained.setdefault("top_k", top_k)
             constrained["filters"] = dict(query_plan.filters)
         elif tool_name == "get_document":
-            doc_id = str(constrained.get("doc_id") or "")
-            if doc_id and not AgentRunner._document_is_allowed(
-                doc_id,
-                query_plan.filters,
+            doc_ids = constrained.get("doc_ids")
+            if not isinstance(doc_ids, list) or not 1 <= len(doc_ids) <= 20 or any(
+                not isinstance(doc_id, str) or not doc_id or not AgentRunner._document_is_allowed(doc_id, query_plan.filters)
+                for doc_id in doc_ids
             ):
                 raise ValueError("document_not_allowed")
         elif tool_name in {
@@ -1136,18 +1084,16 @@ class AgentRunner:
                 "search_documents",
                 "search_library",
                 "search_attachments",
-                "inspect_attachment",
                 "wiki_search_evidence",
             }:
                 return self._format_search_observation(evidence), evidence, True
-            if tool_name == "find_documents" and query_plan.intent.value != "document_search":
+            if tool_name == "find_documents":
                 return self._stringify_result(result.data or {}), [], False
             is_retrieval = tool_name in {
                 "find_documents",
                 "get_document",
                 "search_library",
                 "search_attachments",
-                "inspect_attachment",
                 "wiki_search_evidence",
             }
             return self._stringify_result(result.data or {}), evidence, is_retrieval
@@ -1175,7 +1121,6 @@ class AgentRunner:
                 "get_document",
                 "search_library",
                 "search_attachments",
-                "inspect_attachment",
                 "wiki_search_evidence",
             },
         )
@@ -1192,8 +1137,8 @@ class AgentRunner:
     ) -> tuple[str, list[dict[str, Any]], bool]:
         """Retrieve independent comparison targets in one bounded round.
 
-        A partial failure is represented as missing evidence for that target so
-        the deterministic EvidenceGate can request one targeted corrective pass.
+        A partial failure is represented as missing evidence for that target.
+        Further document discovery/reads remain model-selected within the budget.
         The whole round fails only when every target execution fails.
         """
 
@@ -1279,20 +1224,19 @@ class AgentRunner:
             ids = [ids]
         if not needs_read or not 0 < len(ids) <= 4 or executor is None or policy is None or 'get_document' not in policy.candidate_tools:
             return
-        for doc_id in ids:
-            call_id = f'selected-original-{doc_id}'
-            if any(record.tool_call_id == call_id for record in state.tool_calls):
-                continue
-            if len(state.tool_calls) >= policy.max_tool_calls or state.retrieval_attempts >= policy.max_retrieval_attempts:
-                break
-            arguments = {'doc_id': doc_id, 'offset': 0, 'limit': 8}
-            result = executor.execute(tool_call_id=call_id, tool_name='get_document', arguments=arguments,
-                                      trace_id=state.trace_id, retrieval_attempt=min(5, state.retrieval_attempts + 1))
-            state.tool_calls.append(ToolCallRecord(iteration=state.iteration, tool_call_id=call_id,
-                tool_name='get_document', arguments=arguments, success=result.success, error_code=result.error_code))
-            state.retrieval_attempts += 1
-            if result.success:
-                state.evidence = self._merge_evidence(state.evidence, [e.model_dump() for e in result.evidence])
+        call_id = 'selected-original-batch'
+        if any(record.tool_call_id == call_id for record in state.tool_calls):
+            return
+        if len(state.tool_calls) >= policy.max_tool_calls or state.retrieval_attempts >= policy.max_retrieval_attempts:
+            return
+        arguments = {'doc_ids': list(ids)}
+        result = executor.execute(tool_call_id=call_id, tool_name='get_document', arguments=arguments,
+                                  trace_id=state.trace_id, retrieval_attempt=min(5, state.retrieval_attempts + 1))
+        state.tool_calls.append(ToolCallRecord(iteration=state.iteration, tool_call_id=call_id,
+            tool_name='get_document', arguments=arguments, success=result.success, error_code=result.error_code))
+        state.retrieval_attempts += 1
+        if result.success:
+            state.evidence = self._merge_evidence(state.evidence, [e.model_dump() for e in result.evidence])
 
     @staticmethod
     def _verified_structured_answer(state) -> str | None:
@@ -1341,9 +1285,6 @@ class AgentRunner:
     ) -> dict[str, Any]:
         """Generate an answer without carrying tool-call history forward."""
 
-        grounded = self._verified_structured_answer(state)
-        if grounded:
-            return {"role": "assistant", "content": grounded}
         context_history = self._history_before_current_query(state)
         clean_messages, ordered_evidence = self.answer_generator.build_evidence_messages(
             state.query_plan,
@@ -1352,6 +1293,9 @@ class AgentRunner:
             preserve_evidence_order=bool(state.wiki_evidence_supplements),
         )
         state.evidence = ordered_evidence
+        verified = self._verified_structured_answer(state)
+        if verified:
+            clean_messages[-1]["content"] += "\n\nSource-verified extraction to preserve in your answer:\n" + verified
         stop_msgs = [m for m in state.messages if m.get("role") == "system" and "禁止继续调用任何工具" in str(m.get("content"))]
         if stop_msgs and len(clean_messages) >= 1:
             clean_messages = clean_messages[:-1] + stop_msgs + clean_messages[-1:]
@@ -1398,6 +1342,16 @@ class AgentRunner:
 
         return AnswerGenerator._prioritize_evidence(query, evidence)
 
+    def _plan_or_answer(self, state: AgentState, tools: list[dict]) -> dict[str, Any]:
+        try:
+            return self.llm.chat(state.messages, tools=tools)
+        except LLMToolCallValidationError:
+            if not state.evidence:
+                raise
+            # A rejected provider call executes nothing. With accepted evidence,
+            # end exploration and use the normal checked answer path once.
+            return self._generate_from_clean_evidence_context(state)
+
     def _chat_for_answer(
         self,
         state: AgentState,
@@ -1414,173 +1368,31 @@ class AgentRunner:
                 messages[0]["content"] = str(messages[0].get("content", "")) + "\n\n" + instruction
             else:
                 messages.insert(0, {"role": "system", "content": instruction})
-        return self.answer_generator.chat(
-            messages,
-            query_plan=state.query_plan,
-            retrieval_attempts=state.retrieval_attempts,
-            trace_id=state.trace_id,
-            preference=state.answer_model_preference,  # type: ignore[arg-type]
-        )
+        return self.answer_generator.chat(messages, grounded=bool(state.evidence))
 
-    def _select_answer_llm(self, state: AgentState) -> BaseLLM:
-        from agent.answer.complexity import answer_complexity_reasons
-
-        if self.fast_answer_llm is None or answer_complexity_reasons(
-            state.query_plan,
-            retrieval_attempts=state.retrieval_attempts,
-        ):
-            return self.answer_llm
-        return self.fast_answer_llm
-
-    def _apply_evidence_policy(
+    def _checked_evidence(
         self,
         *,
         query_plan: QueryPlan,
         policy: IntentPolicy | None,
         evidence_gate: EvidenceGate | None,
-        corrective_retrieval: CorrectiveRetrievalPlanner | None,
-        tool_executor: ToolExecutor | None,
-        trace_id: str,
         state: AgentState,
-        previous_mode: str,
-        previous_top_k: int,
         preserve_evidence_order: bool,
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
-        """Gate retrieval evidence and perform at most one corrective pass."""
-
+    ) -> list[dict[str, Any]]:
+        """Validate existing evidence without executing additional tools."""
         current = self._typed_evidence(state.evidence)
         if policy is None or evidence_gate is None:
             if not state.evidence:
                 raise NoRelevantContext("No relevant context passed the Agent evidence threshold.")
-            return state.evidence or [], [], False
-
+            return list(state.evidence)
         gate_result = evidence_gate.evaluate(
-            query_plan,
-            policy,
-            current,
-            retrieval_attempt=state.retrieval_attempts,
+            query_plan, policy, current, retrieval_attempt=state.retrieval_attempts,
         )
         self.runtime_support.record_evidence_gate(state, gate_result)
-        if gate_result.accepted:
-            return self._accepted_evidence(
-                current,
-                gate_result.evidence,
-                preserve_order=preserve_evidence_order,
-            ), [], False
-
-        if (
-            "search_documents" not in policy.candidate_tools
-            or
-            not gate_result.should_retry
-            or gate_result.retrieval_attempt != 1
-            or corrective_retrieval is None
-            or tool_executor is None
-        ):
+        if not gate_result.accepted:
             raise NoRelevantContext(self._insufficient_evidence_message(gate_result))
-
-        requests = corrective_retrieval.plan(
-            query_plan,
-            policy,
-            gate_result,
-            previous_mode=previous_mode,
-            previous_top_k=previous_top_k,
-        )
-        if not requests:
-            return [], [], False
-
-        correction_messages: list[dict[str, Any]] = []
-        corrected = list(current)
-        base_call_id = state.tool_calls[-1].tool_call_id
-        direct_corrected: list[Evidence] = []
-        if preserve_evidence_order:
-            supplement_keys = {
-                evidence_gate.evidence_key(item)
-                for item in self._typed_evidence(state.wiki_evidence_supplements)
-            }
-            direct_corrected = [
-                item for item in current
-                if evidence_gate.evidence_key(item) not in supplement_keys
-            ]
-        for index, request in enumerate(requests, start=1):
-            if len(state.tool_calls) >= policy.max_tool_calls:
-                return [], [], True
-            call_id = f"corrective-{base_call_id}-{index}"
-            arguments = {
-                "query": request.query,
-                "top_k": request.top_k,
-                "mode": request.mode,
-                "filters": request.filters,
-            }
-            result = tool_executor.execute(
-                tool_call_id=call_id,
-                tool_name="search_documents",
-                arguments=arguments,
-                trace_id=trace_id,
-                retrieval_attempt=request.retrieval_attempt,
-            )
-            state.tool_calls.append(
-                ToolCallRecord(
-                    iteration=state.iteration,
-                    tool_call_id=call_id,
-                    tool_name="search_documents",
-                    arguments=arguments,
-                    success=result.success,
-                    error_code=result.error_code,
-                )
-            )
-            if not result.success:
-                raise ToolExecutionFailure(
-                    result.error_code or "tool_execution_failed",
-                    result.error_message or "纠偏检索失败。",
-                )
-            state.retrieval_attempts = max(
-                state.retrieval_attempts,
-                request.retrieval_attempt,
-            )
-            if preserve_evidence_order:
-                direct_by_key = {
-                    evidence_gate.evidence_key(item): item
-                    for item in direct_corrected
-                }
-                for item in result.evidence:
-                    direct_by_key[evidence_gate.evidence_key(item)] = item
-                direct_corrected = list(direct_by_key.values())
-                state.evidence = [
-                    item.model_dump() for item in direct_corrected
-                ]
-                self._supplement_wiki_evidence(
-                    state,
-                    evidence=[],
-                    evidence_gate=evidence_gate,
-                )
-                corrected = self._typed_evidence(state.evidence)
-            else:
-                corrected.extend(result.evidence)
-            correction_messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": call_id,
-                    "name": "search_documents",
-                    "content": self._format_search_observation(
-                        [item.model_dump() for item in result.evidence]
-                    ),
-                }
-            )
-
-        second_gate = evidence_gate.evaluate(
-            query_plan,
-            policy,
-            corrected,
-            retrieval_attempt=state.retrieval_attempts,
-        )
-        self.runtime_support.record_evidence_gate(state, second_gate)
-        if not second_gate.accepted:
-            raise NoRelevantContext(self._insufficient_evidence_message(second_gate))
-        return self._accepted_evidence(
-            corrected,
-            second_gate.evidence,
-            preserve_order=preserve_evidence_order,
-        ), correction_messages, False
+        return self._accepted_evidence(current, gate_result.evidence,
+                                       preserve_order=preserve_evidence_order)
 
     @staticmethod
     def _accepted_evidence(
@@ -1804,9 +1616,6 @@ class AgentRunner:
         policy: IntentPolicy | None,
         answer: str,
     ) -> str:
-        structured = self._verified_structured_answer(state)
-        if structured:
-            return structured
         return self.runtime_support.check_and_repair_answer(
             state=state,
             policy=policy,

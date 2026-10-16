@@ -82,7 +82,7 @@ def _queries(db: sqlite3.Connection, revision: str, evidence_keys: set[str]) -> 
         result.append({
             "query_id": f"reviewed-{row['page_id']}", "seed_page_id": row["page_id"],
             "page_type": row["page_type"], "query":
-                f"{row['title']}在这些会议记录中有哪些相关事实、计划或待办？",
+                f"What facts, plans or action items related to {row['title']} appear in these meeting records? Answer in English.",
             "reference_answer": "\n".join(claims),
             "weak_reference_evidence_ids": sorted(refs),
         })
@@ -125,11 +125,11 @@ def _answer(client: Any, model: str, query: str, contexts: list[dict]) -> str:
         model=model, temperature=0, max_tokens=900,
         messages=[
             {"role": "system", "content": (
-                "你是会议记录问答助手。只依据提供的原始 Evidence 回答。"
-                "严格区分已完成、计划、要求和待办；不能确定时说明缺少证据。"
-                "用简洁中文回答，并在事实后标注 [E编号]。"
+                "Answer meeting-record questions using only the supplied original Evidence. "
+                "Distinguish completed work, plans, requirements and action items; state when evidence is insufficient. "
+                "Answer concisely in English and cite factual statements with [E<number>]."
             )},
-            {"role": "user", "content": f"问题：{query}\n\n原始 Evidence：\n{source_text}"},
+            {"role": "user", "content": f"Question: {query}\n\nOriginal Evidence:\n{source_text}"},
         ],
     )
     return (response.choices[0].message.content or "").strip()

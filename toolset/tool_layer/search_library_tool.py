@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import os
+import logging
 from contextvars import ContextVar
 from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.request import Request
-from .http_security import urlopen_no_redirect as urlopen
 
 from .base_tool import BaseTool
 
@@ -17,7 +14,6 @@ class SearchLibraryTool(BaseTool):
     """Search a server-authenticated user's active personal library versions."""
 
     MAX_DOCUMENT_IDS = 100
-    MAX_SECTION_IDS = 20
     MAX_IDENTIFIER_LENGTH = 128
     MAX_QUERY_LENGTH = 4000
     VALID_MODES = frozenset({"hybrid", "vector", "bm25"})
@@ -93,7 +89,6 @@ class SearchLibraryTool(BaseTool):
             "query": query,
             "top_k": top_k,
             "mode": mode,
-            "navigation_mode": "direct",
         }
         doc_ids = kwargs.get("doc_ids")
         if doc_ids is not None:
@@ -109,89 +104,12 @@ class SearchLibraryTool(BaseTool):
             "ATTACHMENT_VECTOR_INDEX_ENABLED", "false"
         ).lower() in {"1", "true", "yes"}:
             try:
-                from pipeline.embedder import embed_texts
+                from pipeline.indexing.embedder import embed_texts
                 payload["query_vector"] = embed_texts([query])[0]
             except (ImportError, RuntimeError, OSError, ValueError):
                 if mode == "vector":
                     return {"error": "library_vector_unavailable", "items": []}
-        return self._post("/v1/library/search", payload)
-
-    def browse_outline(self, **kwargs: Any) -> dict[str, Any]:
-        payload = self._navigation_payload(
-            kwargs,
-            include_sections=False,
-            top_k_default=8,
-            top_k_maximum=12,
-        )
-        if "error" in payload:
-            return payload
-        return self._post("/v1/library/outline", payload)
-
-    def search_evidence_in_scope(self, **kwargs: Any) -> dict[str, Any]:
-        mode = kwargs.get("mode", "hybrid")
-        if type(mode) is not str or mode not in self.VALID_MODES:
-            return {"error": "invalid_library_query", "items": []}
-        payload = self._navigation_payload(
-            kwargs,
-            include_sections=True,
-            top_k_default=10,
-            top_k_maximum=20,
-        )
-        if "error" in payload:
-            return payload
-        payload["mode"] = mode
-        return self._post("/v1/library/search-scoped", payload)
-
-    def _navigation_payload(
-        self,
-        kwargs: dict[str, Any],
-        *,
-        include_sections: bool,
-        top_k_default: int,
-        top_k_maximum: int,
-    ) -> dict[str, Any]:
-        context = self._request_context.get()
-        if not os.getenv("ATTACHMENT_INTERNAL_SECRET", "") or context is None:
-            return {"error": "library_context_unavailable", "items": [], "sections": []}
-        owner_id, knowledge_base_id = context
-        query_value = kwargs.get("query")
-        if type(query_value) is not str:
-            return {"error": "invalid_library_query", "items": [], "sections": []}
-        query = query_value.strip()
-        if not query or len(query) > self.MAX_QUERY_LENGTH:
-            return {"error": "invalid_library_query", "items": [], "sections": []}
-        top_k = self._validated_top_k(
-            kwargs.get("top_k", top_k_default),
-            maximum=top_k_maximum,
-        )
-        if top_k is None:
-            return {"error": "invalid_library_query", "items": [], "sections": []}
-        payload: dict[str, Any] = {
-            "owner_id": owner_id,
-            "knowledge_base_id": knowledge_base_id,
-            "query": query,
-            "top_k": top_k,
-        }
-        doc_ids = kwargs.get("doc_ids")
-        if doc_ids is not None:
-            normalized_doc_ids = self._normalize_identifier_list(
-                doc_ids,
-                minimum_items=0,
-                maximum_items=self.MAX_DOCUMENT_IDS,
-            )
-            if normalized_doc_ids is None:
-                return {"error": "invalid_library_query", "items": [], "sections": []}
-            payload["doc_ids"] = normalized_doc_ids
-        if include_sections:
-            section_ids = self._normalize_identifier_list(
-                kwargs.get("section_ids"),
-                minimum_items=1,
-                maximum_items=self.MAX_SECTION_IDS,
-            )
-            if section_ids is None:
-                return {"error": "invalid_library_query", "items": []}
-            payload["section_ids"] = section_ids
-        return payload
+        return self._post(payload)
 
     @classmethod
     def _normalize_identifier_list(
@@ -217,16 +135,133 @@ class SearchLibraryTool(BaseTool):
         return value
 
     @staticmethod
-    def _post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
-        secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "")
-        request = Request(
-            f"{os.getenv('ATTACHMENT_SERVICE_URL', 'http://127.0.0.1:8200').rstrip('/')}{path}",
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
-            method="POST",
-        )
+    def _post(payload: dict[str, Any]) -> dict[str, Any]:
         try:
-            with urlopen(request, timeout=float(os.getenv("ATTACHMENT_SEARCH_TIMEOUT_SECONDS", "8"))) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, ConnectionError, OSError, ValueError, json.JSONDecodeError):
+            return search_library_evidence(payload)
+        except (RuntimeError, OSError, ValueError) as exc:
+            if getattr(exc, "source_access_failure", False):
+                raise
             return {"error": "library_tool_unavailable", "items": []}
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+def search_library_evidence(body, store=None, vector_store=None):
+    from data_persistence.file_contracts import LibrarySearchRequest
+    from data_persistence.private_files import get_private_file_store
+    from data_persistence.vector import get_file_vector_store
+
+    body = LibrarySearchRequest.model_validate(body)
+    if store is None:
+        store = get_private_file_store()
+    # owner/source/library/active are resolved before either FTS5 or Milvus
+    # search. Unauthorized rows never enter a retrieval candidate set.
+    versions = store.list_library_versions(
+        body.owner_id,
+        body.knowledge_base_id,
+        document_ids=body.doc_ids,
+        active_only=True,
+    )
+    attachment_ids = [str(item["id"]) for item in versions]
+    vector_refs = [str(item.get("vector_ref") or item["id"]) for item in versions]
+    vector_to_attachment = {
+        str(item.get("vector_ref") or item["id"]): str(item["id"])
+        for item in versions
+    }
+    from retrieval.reranker import candidate_count, enabled, rerank
+    candidate_k = candidate_count(body.top_k) if enabled() else max(body.top_k * 4, 20)
+    direct_lexical = (
+        store.search_evidence(attachment_ids, body.query, candidate_k)
+        if body.mode in {"bm25", "hybrid"} else []
+    )
+    direct_vector: list[dict[str, Any]] = []
+    vector_degraded = False
+    if body.mode in {"vector", "hybrid"} and body.query_vector is not None:
+        try:
+            backend = vector_store if vector_store is not None else get_file_vector_store()
+            if backend is None:
+                raise RuntimeError("attachment_vector_index_disabled")
+            hits = backend.search_similar(
+                body.query_vector, top_k=candidate_k, doc_ids_filter=vector_refs,
+                collection_name=backend.collection_name,
+            )
+            direct_vector = [{
+                "attachment_id": hit.entity.get("doc_id"),
+                "evidence_id": hit.entity.get("chunk_id"),
+                "content": hit.entity.get("chunk_text"), "score": float(hit.score),
+            } for hit in hits]
+            for row in direct_vector:
+                row["attachment_id"] = vector_to_attachment.get(str(row.get("attachment_id")), str(row.get("attachment_id")))
+        except Exception as exc:
+            vector_degraded = True
+            LOGGER.warning(
+                "LIBRARY_SEARCH vector degraded knowledge_base_id=%s error=%s",
+                body.knowledge_base_id, exc.__class__.__name__,
+            )
+    evidence = {item["evidence_id"]: item for item in store.list_evidence(attachment_ids)}
+    direct = fuse_library_candidates(
+        evidence, direct_lexical, direct_vector, mode=body.mode, top_k=candidate_k,
+    )
+    metadata = {str(item['id']): item for item in versions}
+    for item in direct:
+        version = metadata.get(str(item.get('attachment_id')), {})
+        item.update({key: version.get(key) for key in ('knowledge_base_id', 'document_id', 'version_id')})
+        item['source_scope'] = 'personal'
+        item['filename'] = version.get('filename', item.get('filename'))
+    result = {
+        "items": rerank(body.query, direct, body.top_k, text_key="content"),
+    }
+    if vector_degraded:
+        result["degraded"] = ["vector"]
+        if body.mode == "vector":
+            result["error"] = "library_vector_unavailable"
+    from retrieval.context import attach_context
+    def lookup_neighbor(parent, neighbor_id):
+        neighbor = evidence.get(neighbor_id)
+        if not neighbor or neighbor.get('attachment_id') != parent.get('attachment_id'):
+            return None
+        return {**neighbor, **{key: parent.get(key) for key in (
+            'knowledge_base_id', 'document_id', 'version_id', 'source_scope', 'filename')}}
+    result['items'] = attach_context(result['items'], lookup_neighbor)
+    LOGGER.info(
+        "LIBRARY_SEARCH owner_hash=%s knowledge_base_id=%s mode=%s candidates=%s results=%s",
+        hashlib.sha256(body.owner_id.encode()).hexdigest()[:12],
+        body.knowledge_base_id,
+        body.mode,
+        len(set(item.get("evidence_id") for item in (*direct_lexical, *direct_vector))),
+        len(result["items"]),
+    )
+    return result
+
+
+def fuse_library_candidates(
+    evidence: dict[str, dict[str, Any]],
+    lexical: list[dict[str, Any]],
+    vector: list[dict[str, Any]],
+    *,
+    mode: str,
+    top_k: int,
+) -> list[dict[str, Any]]:
+    """Rank-calibrate lexical/vector candidates to a stable 0..1 score."""
+    ranks: dict[str, list[float]] = {}
+
+    def add(rows: list[dict[str, Any]]) -> None:
+        for rank, row in enumerate(rows, 1):
+            evidence_id = str(row.get("evidence_id") or "")
+            if evidence_id in evidence:
+                ranks.setdefault(evidence_id, []).append(1.0 / (1.0 + 0.12 * (rank - 1)))
+
+    if mode in {"bm25", "hybrid"}:
+        add(lexical)
+    if mode in {"vector", "hybrid"}:
+        add(vector)
+    items: list[dict[str, Any]] = []
+    for evidence_id, source_scores in ranks.items():
+        score = sum(source_scores) / len(source_scores)
+        if len(source_scores) > 1:
+            score = min(1.0, score + 0.05)
+        item = dict(evidence[evidence_id])
+        item["score"] = round(min(1.0, max(0.0, score)), 6)
+        items.append(item)
+    return sorted(items, key=lambda item: (-float(item["score"]), str(item["evidence_id"])))[:top_k]

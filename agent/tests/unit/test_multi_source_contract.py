@@ -1,5 +1,7 @@
+from tests.grounding_helpers import grounded_model
 """Regression tests for private/mixed scope coverage (not answer benchmarks)."""
 from concurrent.futures import ThreadPoolExecutor
+from tests.grounding_helpers import grounded_model
 from contextvars import ContextVar
 from threading import Barrier
 from types import SimpleNamespace
@@ -22,6 +24,8 @@ class AnswerOnlyLLM:
     def __init__(self):
         self.calls = 0
 
+    @grounded_model
+    @grounded_model
     def chat(self, messages, tools=None):
         assert tools is None
         self.calls += 1

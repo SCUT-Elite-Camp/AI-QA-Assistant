@@ -95,7 +95,7 @@ Git 对比确认以下路径无远程差异：
 
 ## 6. 远程测试声明与质量边界
 
-以下来自远程 `docs/pr63-integration-acceptance.md`，本次没有在本机复跑，也未取得它引用的外部机器原始产物，因此是远程报告声明：
+以下来自远程当时的 `docs/pr63-integration-acceptance.md`（现归档于[整合验收](integration/pr63-integration-acceptance.md)），本次没有在本机复跑，也未取得它引用的外部机器原始产物，因此是远程报告声明：
 
 | 项目 | 远程报告结果 |
 | --- | --- |

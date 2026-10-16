@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from datetime import timedelta
 from pathlib import Path
-import json
 
 from agent.schemas.research import (
     ResearchEventType,
-    ResearchEventsResponse,
     ResearchJob,
     ResearchJobStatus,
     ResearchProgress,
@@ -69,13 +67,6 @@ def test_stage_contract_is_frozen() -> None:
     assert STAGE_LABELS["semantic_verification"] == "Verifying findings"
 
 
-def test_shared_web_fixtures_match_python_contract() -> None:
-    fixture_dir = Path(__file__).resolve().parents[2] / "mock" / "research_web_contract"
-    for path in fixture_dir.glob("progress_*.json"):
-        ResearchProgress.model_validate(json.loads(path.read_text(encoding="utf-8")))
-    ResearchEventsResponse.model_validate(
-        json.loads((fixture_dir / "events.json").read_text(encoding="utf-8"))
-    )
 
 
 def test_event_repository_is_idempotent_and_cursor_based(tmp_path: Path) -> None:

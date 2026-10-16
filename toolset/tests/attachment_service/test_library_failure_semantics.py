@@ -2,8 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from attachment_service.library_service import rebuild_library_projection, validate_library_configuration
-from attachment_service.store import AttachmentStore
+from data_persistence.private_files import publish_file_projection
+from data_persistence.file_settings import validate_library_configuration
+from data_persistence.private_files import AttachmentStore
 
 
 def _record(identifier: str = "ver_a"):
@@ -60,9 +61,11 @@ def test_reindex_failure_keeps_old_active_projection(tmp_path):
     store.replace_evidence("ver_a", _evidence("ver_a_chunk_0", "old searchable content"))
 
     with pytest.raises(RuntimeError, match="milvus_insert_failure"):
-        rebuild_library_projection(
-            store, _FailingVector(), store.get_attachment("ver_a"),
+        publish_file_projection(
+            store, store.get_attachment("ver_a"),
             _evidence("ver_a_chunk_0", "new content"), "job_new",
+            write_vectors=lambda ref: _FailingVector().replace(ref, []),
+            delete_vectors=lambda ref: pytest.fail("no completed generation to delete"),
         )
 
     record = store.get_attachment("ver_a")
@@ -78,9 +81,11 @@ def test_successful_reindex_switches_generation_after_vector_build(tmp_path):
     store.replace_evidence("ver_a", _evidence("ver_a_chunk_0", "old"))
     vector = _SuccessfulVector()
 
-    previous, current = rebuild_library_projection(
-        store, vector, store.get_attachment("ver_a"),
+    previous, current = publish_file_projection(
+        store, store.get_attachment("ver_a"),
         _evidence("ver_a_chunk_0", "new"), "job_new",
+        write_vectors=lambda ref: vector.replace(ref, _evidence("ver_a_chunk_0", "new")),
+        delete_vectors=lambda ref: pytest.fail("successful publish must not delete its generation"),
     )
 
     assert previous == "ver_a__old"

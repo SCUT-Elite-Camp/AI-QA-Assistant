@@ -1,27 +1,16 @@
-"""Shared answer-model routing for the Fast and Thinking execution strategies."""
+"""Evidence prompt construction and fixed-model Thinking answer invocation."""
 
-import logging
 import re
-from typing import Any, Literal
+from typing import Any
 
-from agent.answer.complexity import answer_complexity_reasons
 from agent.llm.base import BaseLLM
 from agent.prompt.templates import ANSWER_RULES, SYSTEM_ROLE
 from agent.schemas.query_plan import QueryPlan
-
-logger = logging.getLogger("agent-layer")
-AnswerModelPreference = Literal["auto", "fast", "complex"]
-
+from agent.evidence.answer_grounding import GROUNDING_INSTRUCTION
 
 class AnswerGenerator:
-    def __init__(
-        self,
-        *,
-        complex_llm: BaseLLM,
-        fast_llm: BaseLLM | None = None,
-    ) -> None:
-        self.complex_llm = complex_llm
-        self.fast_llm = fast_llm
+    def __init__(self, *, llm: BaseLLM) -> None:
+        self.llm = llm
 
     @staticmethod
     def build_evidence_messages(
@@ -33,7 +22,7 @@ class AnswerGenerator:
         soul_content: str | None = None,
         preserve_evidence_order: bool = False,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """Build the one authoritative-evidence prompt shared by both loops."""
+        """Build the authoritative-evidence prompt for Thinking answers."""
         ordered_evidence = list(evidence)
         if not preserve_evidence_order:
             ordered_evidence = AnswerGenerator._prioritize_evidence(
@@ -126,57 +115,29 @@ class AnswerGenerator:
         self,
         messages: list[dict[str, Any]],
         *,
-        query_plan: QueryPlan,
-        retrieval_attempts: int,
-        trace_id: str,
-        preference: AnswerModelPreference = "auto",
+        grounded: bool = False,
     ) -> dict[str, Any]:
         # English is the product default, regardless of source/history language.
         # Copy the prompt so caller history remains immutable.
         instruction = "Write the entire answer in English unless the user explicitly requests another output language. Preserve technical identifiers and citation markers. Do not change language because prior conversation or sources use another language."
+        if grounded:
+            instruction += "\n\n" + GROUNDING_INSTRUCTION
         messages = [dict(message) for message in messages]
         if messages and messages[0].get('role') == 'system':
             messages[0]['content'] = str(messages[0].get('content', '')) + '\n\n' + instruction
         else:
             messages.insert(0, {'role': 'system', 'content': instruction})
-        complexity_reasons = answer_complexity_reasons(
-            query_plan,
-            retrieval_attempts=retrieval_attempts,
-        )
-        use_fast = self.fast_llm is not None and (
-            preference == "fast"
-            or (preference == "auto" and not complexity_reasons)
-        )
-        selected = self.fast_llm if use_fast else self.complex_llm
-        logger.info(
-            "[ANSWER_MODEL_ROUTE] trace_id=%s route=%s reasons=%s",
-            trace_id,
-            "fast" if use_fast else "complex",
-            complexity_reasons or (["explicit_complex"] if preference == "complex" else ["single_target"]),
-        )
-        try:
-            from agent.streaming.live import CURRENT_STREAM_SINK, emit_model_event
-            if CURRENT_STREAM_SINK.get() is not None:
-                emit_model_event("answer-start", {})
-                content = []
-                for delta in selected.stream_chat(messages, tools=None):
-                    if delta.get("reasoning_content"):
-                        emit_model_event("reasoning", {"content": delta["reasoning_content"]})
-                    if delta.get("content"):
-                        content.append(delta["content"])
+        output_options = {"response_format": {"type": "json_object"}} if grounded else {}
+        from agent.streaming.live import CURRENT_STREAM_SINK, emit_model_event
+        if CURRENT_STREAM_SINK.get() is not None:
+            emit_model_event("answer-start", {})
+            content = []
+            for delta in self.llm.stream_chat(messages, tools=None, **output_options):
+                if delta.get("reasoning_content") and not grounded:
+                    emit_model_event("reasoning", {"content": delta["reasoning_content"]})
+                if delta.get("content"):
+                    content.append(delta["content"])
+                    if not grounded:
                         emit_model_event("token", {"content": delta["content"]})
-                return {"role": "assistant", "content": "".join(content)}
-            return selected.chat(messages, tools=None)
-        except Exception as exc:
-            # A second model must never splice its answer into a partial stream.
-            from agent.streaming.live import CURRENT_STREAM_SINK
-            if CURRENT_STREAM_SINK.get() is not None:
-                raise
-            if not use_fast:
-                raise
-            logger.warning(
-                "[ANSWER_MODEL_FALLBACK] trace_id=%s error=%s",
-                trace_id,
-                exc.__class__.__name__,
-            )
-            return self.complex_llm.chat(messages, tools=None)
+            return {"role": "assistant", "content": "".join(content)}
+        return self.llm.chat(messages, tools=None, **output_options)

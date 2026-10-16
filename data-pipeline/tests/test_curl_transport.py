@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from shared_runtime.curl_transport import CurlSession
+from pipeline.confluence.transport import CurlSession
 
 
 def test_curl_transport_keeps_credentials_off_process_arguments(monkeypatch):
@@ -12,7 +12,7 @@ def test_curl_transport_keeps_credentials_off_process_arguments(monkeypatch):
         observed.update(args=args, **kwargs)
         return SimpleNamespace(returncode=0, stdout='{"ok":true}\n200')
 
-    monkeypatch.setattr('shared_runtime.curl_transport.subprocess.run', run)
+    monkeypatch.setattr('pipeline.confluence.transport.subprocess.run', run)
     session = CurlSession()
     session.auth = ('user@example.com', 'secret-token')
     response = session.get('https://example.atlassian.net/wiki/api/v2/spaces',

@@ -142,23 +142,21 @@ class GetDocumentToolStub(BaseTool):
     def parameters(self) -> dict[str, Any]:
         return {
             "type": "object",
-            "properties": {"doc_id": {"type": "string"}},
-            "required": ["doc_id"],
+            "properties": {"doc_ids": {"type": "array", "items": {"type": "string"}}},
+            "required": ["doc_ids"],
             "additionalProperties": False,
         }
 
     def execute(self, **kwargs: Any) -> Any:
         return {
-            "document": {
-                "doc_id": kwargs["doc_id"],
+            "documents": [{
+                "doc_id": kwargs["doc_ids"][0],
                 "title": "Policy",
                 "source_url": "https://example.test/doc-1",
-            },
             "chunks": [
                 {"chunk_id": "chunk-2", "index": 2, "text": "Second page."}
             ],
-            "has_more": False,
-            "next_offset": None,
+            }],
         }
 
 
@@ -337,7 +335,7 @@ def test_invalid_search_row_returns_invalid_tool_result() -> None:
     assert result.evidence == []
 
 
-def test_find_documents_is_converted_to_identity_evidence() -> None:
+def test_find_documents_returns_catalog_without_citation_evidence() -> None:
     result = _executor(FindDocumentsToolStub()).execute(
         tool_call_id="call-find",
         tool_name="find_documents",
@@ -348,17 +346,14 @@ def test_find_documents_is_converted_to_identity_evidence() -> None:
 
     assert result.success is True
     assert result.data["result_count"] == 1
-    assert result.evidence[0].doc_id == "doc-1"
-    assert result.evidence[0].chunk_id == "doc-1::document"
-    assert result.evidence[0].retrieval_mode == "document"
-    assert result.evidence[0].retrieval_attempt == 2
+    assert result.evidence == []
 
 
 def test_get_document_chunks_are_converted_to_evidence() -> None:
     result = _executor(GetDocumentToolStub()).execute(
         tool_call_id="call-get",
         tool_name="get_document",
-        arguments={"doc_id": "doc-1"},
+        arguments={"doc_ids": ["doc-1"]},
         trace_id="trace-get",
     )
 

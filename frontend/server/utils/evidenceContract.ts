@@ -10,6 +10,7 @@ export const sourceDependencySchema = z.object({
   version_id: z.string().nullish().transform(value => value ?? undefined),
   version: z.union([z.string(), z.number()]).nullish().transform(value => value ?? undefined),
   content_hash: z.string().nullish().transform(value => value ?? undefined),
+  content_kind: z.enum(['excerpt', 'file']).optional(),
 }).passthrough()
 export type SourceDependency = z.infer<typeof sourceDependencySchema>
 export const evidenceProvenanceSchema = z.object({

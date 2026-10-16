@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 
 from models.document import BlockType, Chunk, ContentBlock, Document, DocumentSection
-from pipeline.chunker import chunk_from_blocks, split_prose_at_boundaries
-from pipeline.structure import build_document_sections
+from pipeline.documents.chunker import chunk_from_blocks, split_prose_at_boundaries
+from pipeline.documents.structure import build_document_sections
 from pipeline.wiki.chunker import build_wiki_chunks
 
 

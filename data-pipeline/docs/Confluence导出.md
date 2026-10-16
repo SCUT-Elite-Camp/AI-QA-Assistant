@@ -9,7 +9,7 @@
 
 站点根、`/wiki` 和页面地址均正规化到同一 Cloud `/wiki` 根。携凭据请求只允许
 同源 URL 且禁止跳转；分页 next 链接不能引导到外站。导出账号不会自动授权所有
-问答用户，在线授权见[跨层契约](../../docs/access-evidence-architecture.md)。
+问答用户，在线授权见[跨层契约](../../docs/access-evidence/access-evidence-architecture.md)。
 若 Windows 本机 Python HTTPS 传输无法完成 Cloud TLS，可设置 `CONFLUENCE_HTTP_TRANSPORT=curl` 使用系统 `curl.exe`；凭据通过标准输入传递，仍限制 HTTPS 且不跟随跳转。
 
 ## 导出空间

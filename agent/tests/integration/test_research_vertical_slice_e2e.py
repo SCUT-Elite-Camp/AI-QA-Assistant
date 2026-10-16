@@ -37,9 +37,6 @@ from deep_research.tools import SearchHit as AdapterSearchHit
 from deep_research.verifier import MockSemanticVerifier
 
 
-FIXTURE_DOCUMENTS = (
-    Path(__file__).resolve().parents[2] / "mock" / "research_documents"
-)
 
 
 class SingleCriterionPlanner(ResearchPlanner):
@@ -164,10 +161,10 @@ def _approve(control: ResearchControlPlane, request: ResearchRequest):
     )
 
 
-def test_manual_api_entry_dispatches_to_traceable_report(tmp_path: Path) -> None:
+def test_manual_api_entry_dispatches_to_traceable_report(tmp_path: Path, research_documents_dir: Path) -> None:
     service = ResearchRuntimeService.from_local_catalog(
         database_path=tmp_path / "api-full.db",
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-api-full",
     )
     application = FastAPI()
@@ -223,10 +220,10 @@ def test_manual_api_entry_dispatches_to_traceable_report(tmp_path: Path) -> None
     service.close()
 
 
-def test_cancelled_job_is_terminal_and_not_dispatched(tmp_path: Path) -> None:
+def test_cancelled_job_is_terminal_and_not_dispatched(tmp_path: Path, research_documents_dir: Path) -> None:
     service = ResearchRuntimeService.from_local_catalog(
         database_path=tmp_path / "cancel.db",
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-cancelled",
     )
     application = FastAPI()
@@ -307,13 +304,13 @@ def test_mock_full_vertical_slice_reaches_complete_report(tmp_path: Path) -> Non
     service.close()
 
 
-def test_fixed_local_fixture_e2e_is_repeatable_and_traceable(tmp_path: Path) -> None:
+def test_fixed_local_fixture_e2e_is_repeatable_and_traceable(tmp_path: Path, research_documents_dir: Path) -> None:
     reports: list[str] = []
     for run in (1, 2):
         service = ResearchRuntimeService.from_local_catalog(
             database_path=tmp_path / f"fixed-{run}.db",
             checkpoint_path=tmp_path / f"fixed-{run}.graph.db",
-            documents_dir=FIXTURE_DOCUMENTS,
+            documents_dir=research_documents_dir,
             id_factory=lambda: "research-fixed-local",
         )
         control = service.control_plane
@@ -345,10 +342,10 @@ def test_fixed_local_fixture_e2e_is_repeatable_and_traceable(tmp_path: Path) -> 
     assert reports[0] == reports[1]
 
 
-def test_insufficient_material_completes_as_degraded(tmp_path: Path) -> None:
+def test_insufficient_material_completes_as_degraded(tmp_path: Path, research_documents_dir: Path) -> None:
     service = ResearchRuntimeService.from_local_catalog(
         database_path=tmp_path / "insufficient.db",
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-insufficient",
         planner=SingleCriterionPlanner(dimension="metric", target="利润"),
     )
@@ -370,10 +367,10 @@ def test_insufficient_material_completes_as_degraded(tmp_path: Path) -> None:
     service.close()
 
 
-def test_conflicting_evidence_is_disclosed_not_selected(tmp_path: Path) -> None:
+def test_conflicting_evidence_is_disclosed_not_selected(tmp_path: Path, research_documents_dir: Path) -> None:
     service = ResearchRuntimeService.from_local_catalog(
         database_path=tmp_path / "conflict.db",
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-conflict",
         planner=SingleCriterionPlanner(dimension="evidence", target="预算"),
     )
@@ -396,11 +393,11 @@ def test_conflicting_evidence_is_disclosed_not_selected(tmp_path: Path) -> None:
     service.close()
 
 
-def test_restart_recovers_created_job_and_reuses_frozen_manifest(tmp_path: Path) -> None:
+def test_restart_recovers_created_job_and_reuses_frozen_manifest(tmp_path: Path, research_documents_dir: Path) -> None:
     database = tmp_path / "planning.db"
     service = ResearchRuntimeService.from_local_catalog(
         database_path=database,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-planning-restart",
     )
     created = service.control_plane.enqueue_job(
@@ -412,7 +409,7 @@ def test_restart_recovers_created_job_and_reuses_frozen_manifest(tmp_path: Path)
 
     restarted = ResearchRuntimeService.from_local_catalog(
         database_path=database,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
     )
     assert restarted.scan_once() == ["research-planning-restart"]
     recovered = restarted.control_plane.get_job("research-planning-restart")
@@ -421,11 +418,11 @@ def test_restart_recovers_created_job_and_reuses_frozen_manifest(tmp_path: Path)
     restarted.close()
 
 
-def test_restart_after_manifest_checkpoint_reuses_same_snapshot(tmp_path: Path) -> None:
+def test_restart_after_manifest_checkpoint_reuses_same_snapshot(tmp_path: Path, research_documents_dir: Path) -> None:
     database = tmp_path / "manifest-restart.db"
     first = ResearchRuntimeService.from_local_catalog(
         database_path=database,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-manifest-restart",
     )
     request = _request("核验 Alpha 部署状态", "project-alpha")
@@ -452,7 +449,7 @@ def test_restart_after_manifest_checkpoint_reuses_same_snapshot(tmp_path: Path) 
 
     restarted = ResearchRuntimeService.from_local_catalog(
         database_path=database,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
     )
     assert restarted.scan_once() == ["research-manifest-restart"]
     recovered = restarted.control_plane.get_manifest("research-manifest-restart")
@@ -463,11 +460,11 @@ def test_restart_after_manifest_checkpoint_reuses_same_snapshot(tmp_path: Path) 
     restarted.close()
 
 
-def test_restart_without_safe_checkpoint_fails_explicitly(tmp_path: Path) -> None:
+def test_restart_without_safe_checkpoint_fails_explicitly(tmp_path: Path, research_documents_dir: Path) -> None:
     database = tmp_path / "unsafe-restart.db"
     first = ResearchRuntimeService.from_local_catalog(
         database_path=database,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-unsafe-restart",
     )
     _approve(
@@ -479,7 +476,7 @@ def test_restart_without_safe_checkpoint_fails_explicitly(tmp_path: Path) -> Non
 
     restarted = ResearchRuntimeService.from_local_catalog(
         database_path=database,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
     )
     assert restarted.scan_once() == []
     failed = restarted.control_plane.get_job("research-unsafe-restart")
@@ -488,13 +485,13 @@ def test_restart_without_safe_checkpoint_fails_explicitly(tmp_path: Path) -> Non
     restarted.close()
 
 
-def test_restart_after_evidence_does_not_duplicate_evidence(tmp_path: Path) -> None:
+def test_restart_after_evidence_does_not_duplicate_evidence(tmp_path: Path, research_documents_dir: Path) -> None:
     database = tmp_path / "evidence-restart.db"
     checkpoint = tmp_path / "evidence-restart.graph.db"
     first = ResearchRuntimeService.from_local_catalog(
         database_path=database,
         checkpoint_path=checkpoint,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-evidence-restart",
     )
     _approve(
@@ -521,7 +518,7 @@ def test_restart_after_evidence_does_not_duplicate_evidence(tmp_path: Path) -> N
     restarted = ResearchRuntimeService.from_local_catalog(
         database_path=database,
         checkpoint_path=checkpoint,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
     )
     assert restarted.scan_once() == ["research-evidence-restart"]
     evidence = restarted.control_plane.repository.list_evidence(
@@ -550,7 +547,7 @@ def test_restart_after_evidence_does_not_duplicate_evidence(tmp_path: Path) -> N
     restarted.close()
 
 
-def test_restart_after_report_persistence_finishes_finalize(tmp_path: Path) -> None:
+def test_restart_after_report_persistence_finishes_finalize(tmp_path: Path, research_documents_dir: Path) -> None:
     database = tmp_path / "report-restart.db"
     checkpoint = tmp_path / "report-restart.graph.db"
     crashed = False
@@ -564,7 +561,7 @@ def test_restart_after_report_persistence_finishes_finalize(tmp_path: Path) -> N
     first = ResearchRuntimeService.from_local_catalog(
         database_path=database,
         checkpoint_path=checkpoint,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
         id_factory=lambda: "research-report-restart",
         stage_hook=crash_before_finalize,
     )
@@ -583,7 +580,7 @@ def test_restart_after_report_persistence_finishes_finalize(tmp_path: Path) -> N
     restarted = ResearchRuntimeService.from_local_catalog(
         database_path=database,
         checkpoint_path=checkpoint,
-        documents_dir=FIXTURE_DOCUMENTS,
+        documents_dir=research_documents_dir,
     )
     assert restarted.scan_once() == ["research-report-restart"]
     assert restarted.control_plane.get_job(

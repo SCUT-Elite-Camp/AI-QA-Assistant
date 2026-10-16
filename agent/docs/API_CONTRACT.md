@@ -1,6 +1,69 @@
 # API Contract
 
-Current cross-layer contract (2026-10-09): [integration](../../docs/access-evidence-integration.md), [architecture](../../docs/access-evidence-architecture.md). Responses add verifiable `evidence_provenance` without removing existing fields. Knowledge use requires current enabled identity, local/native ACL and original version/hash checks. July Q1 anonymous/Mock specifications do not govern this build.
+Independent visual-model inference is removed (2026-10-15): no local VLM loader,
+worker, `inspect_attachment` tool or private `/v1/attachments/{id}/inspect` route.
+`LOCAL_VISION_*` / `ATTACHMENT_VISION_*` settings and the dedicated vision
+requirements file are removed. OCR/text/table parsing remains available;
+Fast's authorized original images still join the user's configured multimodal
+answer request. Legacy `vision_status` database fields remain for compatibility,
+without a model execution or status-transition service.
+
+2026-10-15 implementation: [Fast / Thinking mode contract](chat_mode_contract.md).
+Fast uses the original query, deterministic source/file tools and at most
+one generation call, with visual understanding included in that same call.
+No rewriting, expansion, model tool selection, generation repair or implicit
+Thinking fallback is allowed. `agent/chat/fast.py` and `agent/chat/thinking.py`
+own independent pipelines, shared by their JSON and SSE entry points.
+Thinking owns planning, bounded tool selection, evidence collection and final
+generation with its configured Thinking model. It may make multiple calls within
+existing stage/Runner limits, and never implicitly switches to Fast or creates Research.
+`auto` aliases Thinking; a unified total generation budget is still pending.
+
+Fast-only internal `retrieval_sources` may select `enterprise_kb`, `personal_library`
+and/or `conversation_attachment` (max 3, explicit `[]` disables optional sources).
+Omission searches available contexts; selected files always remain mandatory.
+These source preferences never grant permissions. Thinking retains SourceIntent.
+Image citations/dependencies add `content_kind: "file"` (default `"excerpt"`),
+binding the original SHA-256 and evidence version. The Reader validates both
+and fetches the original through a hash/version-bound attachment content URL.
+Fast image generation requires a multimodal model and `FAST_MODEL_SUPPORTS_IMAGES=true`;
+otherwise it returns `unsupported` before generation. `FAST_CONTEXT_MAX_CHARS`
+defaults to 12000. Fast has no provider retry, model fallback or post-turn compaction.
+
+Uploaded files (2026-10-15): the Agent hosts `/private-files/v1/**` in the same
+process when attachments or Personal Library are enabled. These server-only
+storage routes use `ATTACHMENT_INTERNAL_SECRET`; browsers continue to use the
+session/CSRF-protected BFF. There is no separate attachment service. Toolset
+delegates parsing to Pipeline and saves parsed context through Data Persistence;
+durable Pipeline jobs index an independent owner-private Personal Library version.
+
+Current cross-layer contract (2026-10-09): [integration](../../docs/access-evidence/access-evidence-integration.md), [architecture](../../docs/access-evidence/access-evidence-architecture.md). Responses add verifiable `evidence_provenance` without removing existing fields. Knowledge use requires current enabled identity, local/native ACL and original version/hash checks. July Q1 anonymous/Mock specifications do not govern this build.
+
+Fast and Thinking evidence answers use a private same-generation JSON envelope
+containing only `claims[].{text,supports[]}`. The server joins claim paragraphs
+in order to build the public answer; no duplicate model-generated answer field
+is accepted. Final/repair requests pass
+`response_format={"type":"json_object"}`; unsupported formats fail without a
+Fast retry or plaintext downgrade. Each support supplies `citation_id` and a
+verbatim `quote` (or normalized `image_region` for original images). There are
+no self-assessment scores or acceptance-score configuration.
+
+Every visible paragraph comes from a bound claim by construction. The server
+checks real excerpts and source identities, then
+renders citation markers from supports. Missing duplicated inline markers alone
+do not fail an otherwise valid binding. Existing valid markers are not duplicated.
+Malformed bindings, forged excerpts or a separate unbound answer field reject the entire
+answer with `quality_validation_failed`, empty answer and no citations.
+The internal report records spans in the assembled pre-citation answer and original-excerpt offsets;
+`valid` means binding integrity only, with `validation_kind=binding` and
+`semantic_validation=not_performed`. Semantic entailment is not yet verified.
+No private report is sent in responses, SSE, diagnostics or persisted messages.
+Thinking repair/fallback follows the same binding checks; plain chat is unchanged.
+
+Evidence streaming buffers answer and reasoning until binding, citation and
+current-source validation succeed. Only the visible answer is released, with
+unused references removed and markers renumbered; Fast adds no model repair or
+independent judge call. See the [verification proposal](../../docs/testing/quality/claim-binding-verification-plan-20261015.md).
 
 ## Authentication (shared secret)
 
@@ -26,11 +89,12 @@ Endpoint requires header: `Authorization: Bearer <AGENT_API_KEY>`.
 The endpoint runs the CP2 orchestration flow:
 
 ```text
-request validation -> MemoryCoordinator -> QueryUnderstanding -> QueryPlan
--> IntentPolicyRouter -> ExecutionProfileResolver -> FastLoop or AgentRunner
--> ToolExecutor -> EvidenceGate
--> corrective retrieval (at most once) -> AnswerFormatter/CitationChecker
--> JSON response
+request validation / current identity -> explicit mode dispatch
+  fast -> FastPipeline -> original-query search_direct / fixed file tools
+       -> one answer call -> deterministic citation/source checks
+  thinking / auto -> ThinkingPipeline -> QueryUnderstanding / IntentPolicy
+       -> bounded AgentRunner / model-selected catalog and batch reads -> Thinking answer
+  -> common response or SSE delivery, current source rechecks
 ```
 
 The Chat path is strictly Chat-only. Its internal `ChatRoutePolicy` exposes
@@ -148,11 +212,9 @@ Fields:
 - `stream`: Optional streaming flag. Default is `false`; current version returns JSON.
 - `retrieval_mode`: Optional retrieval mode. Supported values are `vector`, `bm25`, and `hybrid`; default is `hybrid`.
 - `weight_mode`: Optional execution preference; defaults to `fast` when omitted.
-  `fast` uses the deterministic
-  FastLoop for no-retrieval chat/help and simple enterprise knowledge Q&A;
-  unsupported requests safely fall back to Thinking. `thinking` uses the
-  bounded tool-selection runner. `auto` currently defaults to Fast and uses the
-  same eligibility checks and safe Thinking fallback. Only `auto`, `fast`, and
+  `fast` uses the independent original-query, fixed-tool, single-generation pipeline.
+  Unsupported requests end explicitly. `thinking` uses planning and the bounded
+  tool-selection runner; `auto` is a compatibility alias for Thinking. Only `auto`, `fast`, and
   `thinking` are accepted. The JSON response shape is unchanged.
 - `exploration_mode`: Optional cross-document Wiki exploration policy. Fast
   execution resolves exploration to `off`; Thinking honors `auto`, `off`, or
@@ -314,16 +376,19 @@ been removed. Public `/api/chat` and its response remain unchanged.
 ## Week 3 Quality Rules
 
 - Empty or whitespace-only `query` returns `invalid_query` before retrieval or LLM calls.
-- Empty retrieval results return `no_relevant_context` before LLM calls.
-- Retrieval results below `MIN_RETRIEVAL_SCORE` are filtered out; if none remain, Agent returns `no_relevant_context`.
-- Intent policies constrain candidate tools, iteration/tool/retrieval budgets,
-  and retrieval strategy in both Fast and Thinking execution. Fast enforces
-  `max_tool_calls` before its initial Direct search and any corrective search.
-- Evidence is accepted by `EvidenceGate` before final answer generation; a
-  failed first attempt may trigger bounded corrective retrieval. Every
-  executed search is recorded and consumes one `max_tool_calls` slot. The
-  corrective retrieval batch is bounded by `max_retrieval_attempts`; multiple
-  missing-target searches in that batch share one retrieval attempt.
+- Fast returns `no_relevant_context` before generation when no usable evidence
+  remains after `MIN_RETRIEVAL_SCORE`. Thinking may let the model obtain a catalog
+  and full documents within budget; factual completion still requires valid evidence.
+- Fast executes each predetermined source operation once and never adds a search
+  after insufficient results. Thinking policies constrain candidate tools and
+  iteration/tool/retrieval budgets. Every executed tool call is recorded.
+- Thinking keeps catalog and batch-read tools available after empty, low-score
+  or partial TopK results while budget remains. The model selects whether to call
+  `find_documents` and `get_document(doc_ids=[...])`; the catalog is metadata,
+  while full reads provide source-bound text. Evidence checks do not generate
+  additional searches, increase TopK or switch retrieval modes.
+- `EvidenceGateResult` reports acceptance, source coverage and evidence counts;
+  the obsolete `should_retry` directive and automatic retry planner are removed.
 - Semantically identical tool calls emitted in parallel in one model turn are
   executed once and replayed with one matching tool response. An identical
   call repeated in a later model turn still triggers the loop safety limit.
@@ -376,15 +441,16 @@ SearchTool().search(
     filters=filters,
     min_score=min_score,
     trace_id=trace_id,
-    navigation_mode=navigation_mode,
 )
 ```
 
-`navigation_mode` is independent from `retrieval_mode` and accepts `direct`,
-`hierarchical`, or `hybrid`. The Agent planner may select it internally. The
-runtime keeps the legacy call shape when the value is `direct`, and the feature
-gate `HIERARCHICAL_NAVIGATION_ENABLED` defaults to disabled. Section metadata
-only guides retrieval; returned chunk Evidence remains the citation authority.
+Enterprise Chat navigation uses document discovery and batch full-text reads.
+No chapter-navigation tool or automatic hierarchical retrieval mode is exposed.
+Private `/v1/library/outline` and `/v1/library/search-scoped` routes, their request
+schemas, section-only vector index and rollout settings are removed. Existing
+structured source locators and persisted section data remain; no stored
+collection is deleted by this migration.
+Legacy QueryPlan structural fields do not enable a Toolset navigation route.
 
 The Agent trust boundary converts Tool Layer `dict` results into
 `RetrievalResult` with:
@@ -402,14 +468,24 @@ At this boundary, parseable legacy chunk IDs are normalized to
 rather than guessed.
 For document-level intents, Toolset also exposes:
 
-- `find_documents`: returns document identity and bounded match summaries;
-- `get_document`: returns ordered, paginated chunks for one known `doc_id`.
+- `find_documents(query?, filters?, offset=0, top_k=5)`: an authorized document
+  catalog with optional keyword matching, `total_documents`, `has_more` and
+  `next_offset`; entries are selection metadata, never citation Evidence.
+- `get_document(doc_ids=[...])`: batch read of 1–20 IDs, returning
+  `documents/errors/result_count`. Each document contains complete parsed
+  `content` and source-bound `chunks`. IDs are deduplicated, missing documents
+  are explicit per-item errors, and text is not silently truncated. The former
+  single-ID and chunk-pagination arguments are removed.
 
-`DOCUMENT_SEARCH` may call only `find_documents`. `SUMMARIZATION` may use
-`find_documents`, `get_document`, and `search_documents`. Agent re-applies the
-request-level `doc_ids` permission allowlist before `get_document`, converts
-document results into request-local Evidence, and keeps citation validation in
-the existing Evidence Gate path.
+Thinking QA, comparison and summarization can search TopK chunks, assess gaps,
+list documents, select IDs and batch-read originals within the bounded tool
+budget. Receiving a search hit no longer disables these tools. The evidence
+gate still runs before a factual answer. `DOCUMENT_SEARCH` lists metadata without
+fabricating content citations. Fast retains its one-search/one-generation flow.
+Every batch ID is checked against the hard source scope and live permissions
+before reads; all catalog/read sources retain version/hash dependencies.
+Research's internal range reader consumes the same batch tool while preserving
+its frozen manifest, precise anchors and current-access checks.
 
 `search_library` is opt-in (`PERSONAL_LIBRARY_ENABLED=true`). Source selection
 comes from the query, while owner ID, knowledge-base ID, and the signed scope

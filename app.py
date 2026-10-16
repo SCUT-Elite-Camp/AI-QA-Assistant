@@ -13,7 +13,6 @@ for folder in [
     root_dir / "data-pipeline",
     root_dir / "data-persistence",
     root_dir / "toolset",
-    root_dir / "shared_runtime",
 ]:
     folder_str = str(folder)
     if folder_str not in sys.path:

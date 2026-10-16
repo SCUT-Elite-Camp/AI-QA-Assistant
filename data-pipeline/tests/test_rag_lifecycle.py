@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 
 from models.document import Document
-from pipeline import auto_process
-from pipeline.rag_lifecycle import (
+from pipeline.entrypoints import auto_process
+from pipeline.confluence.lifecycle import (
     finish_retraction, mark_retraction_pending, pending_confluence_retractions,
     withdrawn_confluence_documents,
 )
@@ -82,10 +82,8 @@ def test_stale_raw_file_cannot_reactivate_completed_tombstone(tmp_path, monkeypa
         "doc_id": document_id, "active_version": False,
         "metadata": {"space_id": "space-1", "page_id": "page-1"}, "chunks": [],
     }), encoding="utf-8")
-    monkeypatch.setattr(auto_process, "RAWS_DIR", raws)
-    monkeypatch.setattr(auto_process, "DOCS_DIR", documents)
-    monkeypatch.setattr(auto_process, "_scan_folder", lambda _: [str(raw.resolve())])
-    monkeypatch.setattr(auto_process, "get_new_or_modified_files", lambda _: (_ for _ in ()).throw(
+    monkeypatch.setattr(auto_process, "scan_folder", lambda _: [str(raw.resolve())])
+    monkeypatch.setattr(auto_process, "get_new_or_modified_files", lambda *_: (_ for _ in ()).throw(
         AssertionError("withdrawn raw document was submitted for reingestion")
     ))
-    auto_process.auto_process_raws()
+    auto_process.auto_process_raws(raws_dir=raws, documents_dir=documents)

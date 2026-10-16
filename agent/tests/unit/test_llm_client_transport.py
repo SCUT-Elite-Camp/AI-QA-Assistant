@@ -9,9 +9,118 @@ from agent.llm.llm_client import LLMClient
 
 # Capture before the shared autouse fixture replaces product streaming.
 PRODUCT_STREAM_CHAT = LLMClient.stream_chat
+PRODUCT_CHAT = LLMClient.chat
+
+
+def test_groq_rejected_tool_is_typed_without_releasing_failed_generation(monkeypatch):
+    from types import SimpleNamespace
+    from agent.config.settings import settings
+    from agent.errors.exceptions import LLMToolCallValidationError
+    monkeypatch.setattr(settings, 'LLM_API_BASE', 'https://api.groq.com/openai/v1')
+    client = LLMClient(fallback_models=(), attempts_per_model=1)
+    response = SimpleNamespace(status_code=400,
+        json=lambda: {'error': {'code': 'tool_use_failed', 'failed_generation': 'private draft'}},
+        text='private draft')
+    monkeypatch.setattr(client._session, 'post', lambda *args, **kwargs: response)
+    with pytest.raises(LLMToolCallValidationError) as error:
+        PRODUCT_CHAT(client, [{'role': 'user', 'content': 'q'}], tools=[{'type': 'function'}])
+    assert 'private draft' not in str(error.value)
+
+
+@pytest.mark.parametrize('stream', [False, True])
+@pytest.mark.parametrize('response_format', [None, {'type': 'json_object'}])
+def test_structured_format_reaches_provider_in_one_request(monkeypatch, stream, response_format):
+    from types import SimpleNamespace
+    calls = []
+    content = '{"answer":"ok","claims":[]}'
+    def post(*args, **kwargs):
+        calls.append(kwargs['json'])
+        return SimpleNamespace(status_code=200, encoding='utf-8',
+            json=lambda: {'choices': [{'message': {'content': content}}]},
+            iter_lines=lambda **kwargs: iter(['data: ' + json.dumps({'choices': [{'delta': {'content': content}}]}), 'data: [DONE]']),
+            close=lambda: None)
+    client = LLMClient(model='fixed-fast', fallback_models=(), attempts_per_model=1)
+    monkeypatch.setattr(client._session, 'post', post)
+    kwargs = {'response_format': response_format} if response_format else {}
+    if stream:
+        assert ''.join(item['content'] for item in PRODUCT_STREAM_CHAT(client, [{'role': 'user', 'content': 'JSON please'}], **kwargs)) == content
+    else:
+        assert PRODUCT_CHAT(client, [{'role': 'user', 'content': 'JSON please'}], **kwargs)['content'] == content
+    assert len(calls) == 1
+    assert calls[0].get('response_format') == response_format
+
+
+def test_fast_transport_does_not_retry_or_fall_back_after_failure(monkeypatch):
+    import requests
+    client = LLMClient(model='fixed-fast', fallback_models=(), attempts_per_model=1, retry_delay_seconds=0)
+    calls = []
+    def fail(*args, **kwargs):
+        calls.append(kwargs['json']['model'])
+        raise requests.ConnectionError('provider unavailable')
+    monkeypatch.setattr(client._session, 'post', fail)
+    with pytest.raises(LLMError):
+        PRODUCT_CHAT(client, [{'role': 'user', 'content': 'Question'}])
+    assert calls == ['fixed-fast']
+    calls.clear()
+    with pytest.raises(LLMError):
+        list(PRODUCT_STREAM_CHAT(client, [{'role': 'user', 'content': 'Question'}]))
+    assert calls == ['fixed-fast']
+
+
+def test_empty_fast_stream_does_not_start_nonstream_generation(monkeypatch):
+    client = LLMClient(model='fixed-fast', fallback_models=(), attempts_per_model=1, retry_delay_seconds=0)
+    calls = []
+    def empty(*args, **kwargs):
+        calls.append(kwargs)
+        return type('Response', (), {'status_code': 200, 'iter_lines': lambda *args, **kwargs: iter(['data: [DONE]']), 'close': lambda *args: None})()
+    monkeypatch.setattr(client._session, 'post', empty)
+    monkeypatch.setattr(client, 'chat', lambda *args, **kwargs: pytest.fail('Second generation'))
+    with pytest.raises(LLMError):
+        list(PRODUCT_STREAM_CHAT(client, [{'role': 'user', 'content': 'Question'}]))
+    assert len(calls) == 1
 
 
 pytestmark = pytest.mark.no_storage
+
+
+@pytest.mark.parametrize('enabled,effort', [(False, 'low'), (True, 'high')])
+def test_groq_gpt_oss_translates_mode_without_vendor_thinking_fields(monkeypatch, enabled, effort):
+    from agent.config.settings import settings
+    from agent.llm.provider_options import apply_provider_options
+    monkeypatch.setattr(settings, 'LLM_REASONING_EFFORT', 'high')
+    payload = {'model': 'openai/gpt-oss-20b', 'enable_thinking': enabled,
+               'thinking_budget': 2048, 'reasoning_format': 'hidden', 'max_tokens': 3000}
+    result = apply_provider_options(payload, 'https://api.groq.com/openai/v1')
+    assert result == {'model': payload['model'], 'reasoning_effort': effort, 'max_completion_tokens': 3000}
+    assert payload['max_tokens'] == 3000
+
+
+def test_groq_fast_and_thinking_clients_select_their_configured_effort(monkeypatch):
+    from agent.config.settings import settings
+    monkeypatch.setattr(settings, 'LLM_API_BASE', 'https://api.groq.com/openai/v1')
+    monkeypatch.setattr(settings, 'ANSWER_FAST_MODEL', 'openai/gpt-oss-20b')
+    monkeypatch.setattr(settings, 'ANSWER_FAST_MODEL_THINKING', False)
+    monkeypatch.setattr(settings, 'LLM_THINKING_MODE', 'enabled')
+    assert LLMClient(model='openai/gpt-oss-20b').enable_thinking is False
+    assert LLMClient(model='openai/gpt-oss-120b').enable_thinking is True
+    from agent.llm.provider_options import apply_provider_options
+    # The dated-answer validator calls the shared boundary without a mode flag.
+    assert apply_provider_options({'model': settings.ANSWER_FAST_MODEL}, settings.LLM_API_BASE)['reasoning_effort'] == 'low'
+
+
+def test_groq_failure_does_not_route_to_unrequested_fallback_models(monkeypatch):
+    from types import SimpleNamespace
+    from agent.config.settings import settings
+    monkeypatch.setattr(settings, 'LLM_API_BASE', 'https://api.groq.com/openai/v1')
+    calls = []
+    client = LLMClient(model='openai/gpt-oss-20b', attempts_per_model=1, retry_delay_seconds=0)
+    def post(*args, **kwargs):
+        calls.append(kwargs['json']['model'])
+        return SimpleNamespace(status_code=503, text='unavailable')
+    monkeypatch.setattr(client._session, 'post', post)
+    with pytest.raises(LLMError):
+        PRODUCT_CHAT(client, [{'role': 'user', 'content': 'Question'}])
+    assert calls == ['openai/gpt-oss-20b']
 
 
 def test_gemini_payload_removes_unsupported_vendor_thinking_fields():
@@ -24,7 +133,7 @@ def test_gemini_payload_removes_unsupported_vendor_thinking_fields():
 
 
 @pytest.mark.parametrize('model', ['qwen3.5-35b-a3b', 'deepseek-v4.1-flash'])
-def test_shared_runtime_disables_thinking_by_default_but_preserves_opt_in(monkeypatch, model):
+def test_llm_client_disables_thinking_by_default_but_preserves_opt_in(monkeypatch, model):
     from agent.config.settings import settings
     monkeypatch.setattr(settings, 'LLM_THINKING_MODE', '')
     assert LLMClient(model=model).enable_thinking is False

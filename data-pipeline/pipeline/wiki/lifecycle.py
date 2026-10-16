@@ -8,7 +8,7 @@ from typing import Any
 
 from data_persistence.documents import resolve_documents_dir
 from models.document import Document
-from pipeline.confluence_snapshot import complete_confluence_export_pages
+from pipeline.confluence.snapshot import complete_confluence_export_pages
 
 from .domain import WikiScope, WikiSourceDocument
 from .queue import WikiLifecycleCoordinator

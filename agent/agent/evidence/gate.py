@@ -44,7 +44,6 @@ class EvidenceGate:
                 accepted=True,
                 evidence=[],
                 reason="evidence_not_required",
-                policy=policy,
                 retrieval_attempt=retrieval_attempt,
                 **counts,
             )
@@ -58,7 +57,6 @@ class EvidenceGate:
                 reason="evidence_accepted" if accepted else "no_valid_evidence",
                 covered_targets=covered,
                 missing_targets=missing,
-                policy=policy,
                 retrieval_attempt=retrieval_attempt,
                 **counts,
             )
@@ -80,7 +78,6 @@ class EvidenceGate:
                 ),
                 covered_targets=covered,
                 missing_targets=missing,
-                policy=policy,
                 retrieval_attempt=retrieval_attempt,
                 **counts,
             )
@@ -112,7 +109,6 @@ class EvidenceGate:
                 reason=reason,
                 covered_targets=covered,
                 missing_targets=missing,
-                policy=policy,
                 retrieval_attempt=retrieval_attempt,
                 **counts,
             )
@@ -207,7 +203,6 @@ class EvidenceGate:
         accepted: bool,
         evidence: list[Evidence],
         reason: str,
-        policy: IntentPolicy,
         retrieval_attempt: int,
         covered_targets: list[str] | None = None,
         missing_targets: list[str] | None = None,
@@ -224,9 +219,5 @@ class EvidenceGate:
             candidate_evidence_count=candidate_evidence_count,
             eligible_evidence_count=eligible_evidence_count,
             rejected_evidence_count=rejected_evidence_count,
-            should_retry=(
-                not accepted
-                and retrieval_attempt < policy.max_retrieval_attempts
-            ),
             retrieval_attempt=retrieval_attempt,
         )

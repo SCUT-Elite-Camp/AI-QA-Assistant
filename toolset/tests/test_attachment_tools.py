@@ -3,7 +3,7 @@ from types import ModuleType
 
 import pytest
 
-from tool_layer.attachment_tools import InspectAttachmentTool, SearchAttachmentsTool
+from tool_layer.attachment_tools import SearchAttachmentsTool
 from tool_layer.registry import ToolRegistry
 
 
@@ -18,7 +18,7 @@ def test_attachment_tools_require_explicit_enable(monkeypatch):
     monkeypatch.setenv("ATTACHMENTS_ENABLED", "true")
     registry = ToolRegistry()
     assert registry.get_tool("search_attachments") is not None
-    assert registry.get_tool("inspect_attachment") is not None
+    assert registry.get_tool("inspect_attachment") is None
 
 
 def test_search_attachment_schema_caps_query_length():
@@ -33,9 +33,9 @@ def test_oversized_attachment_query_fails_before_embedding_or_request(monkeypatc
     tool = SearchAttachmentsTool()
     tool.set_request_context(["att_allowed"], [])
     embeddings = []
-    embedder = ModuleType("pipeline.embedder")
+    embedder = ModuleType("pipeline.indexing.embedder")
     embedder.embed_texts = lambda texts: embeddings.append(list(texts))
-    monkeypatch.setitem(sys.modules, "pipeline.embedder", embedder)
+    monkeypatch.setitem(sys.modules, "pipeline.indexing.embedder", embedder)
     requests = []
     monkeypatch.setattr(tool, "_request", lambda *args, **kwargs: requests.append((args, kwargs)))
 
@@ -53,9 +53,9 @@ def test_invalid_top_k_fails_before_embedding_or_request(monkeypatch, top_k):
     tool = SearchAttachmentsTool()
     tool.set_request_context(["att_allowed"], [])
     embeddings = []
-    embedder = ModuleType("pipeline.embedder")
+    embedder = ModuleType("pipeline.indexing.embedder")
     embedder.embed_texts = lambda texts: embeddings.append(list(texts))
-    monkeypatch.setitem(sys.modules, "pipeline.embedder", embedder)
+    monkeypatch.setitem(sys.modules, "pipeline.indexing.embedder", embedder)
     requests = []
     monkeypatch.setattr(
         tool, "_request", lambda *args, **kwargs: requests.append((args, kwargs))
@@ -77,9 +77,9 @@ def test_invalid_query_fails_before_authorization_embedding_or_request(
     tool = SearchAttachmentsTool()
     tool.set_request_context(["att_allowed"], [])
     embeddings = []
-    embedder = ModuleType("pipeline.embedder")
+    embedder = ModuleType("pipeline.indexing.embedder")
     embedder.embed_texts = lambda texts: embeddings.append(list(texts))
-    monkeypatch.setitem(sys.modules, "pipeline.embedder", embedder)
+    monkeypatch.setitem(sys.modules, "pipeline.indexing.embedder", embedder)
     requests = []
     monkeypatch.setattr(
         tool, "_request", lambda *args, **kwargs: requests.append((args, kwargs))
@@ -187,9 +187,9 @@ def test_unavailable_attachment_search_skips_embedding_and_request(
         monkeypatch.delenv("ATTACHMENT_INTERNAL_SECRET")
 
     embeddings = []
-    embedder = ModuleType("pipeline.embedder")
+    embedder = ModuleType("pipeline.indexing.embedder")
     embedder.embed_texts = lambda texts: embeddings.append(list(texts))
-    monkeypatch.setitem(sys.modules, "pipeline.embedder", embedder)
+    monkeypatch.setitem(sys.modules, "pipeline.indexing.embedder", embedder)
     requests = []
     monkeypatch.setattr(
         tool,
@@ -204,15 +204,15 @@ def test_unavailable_attachment_search_skips_embedding_and_request(
     assert requests == []
 
 
-def test_authorized_vector_search_embeds_and_forwards_vector(monkeypatch):
+def test_attachment_context_search_does_not_embed_a_second_private_index(monkeypatch):
     monkeypatch.setenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "true")
     monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", "test-secret")
     tool = SearchAttachmentsTool()
     tool.set_request_context(["att_allowed"], [])
     embeddings = []
-    embedder = ModuleType("pipeline.embedder")
+    embedder = ModuleType("pipeline.indexing.embedder")
     embedder.embed_texts = lambda texts: embeddings.append(list(texts)) or [[0.1, 0.2]]
-    monkeypatch.setitem(sys.modules, "pipeline.embedder", embedder)
+    monkeypatch.setitem(sys.modules, "pipeline.indexing.embedder", embedder)
     requests = []
 
     def fake_request(path, payload, **_kwargs):
@@ -223,122 +223,6 @@ def test_authorized_vector_search_embeds_and_forwards_vector(monkeypatch):
 
     result = tool.execute(query="find risk", top_k=4)
 
-    assert embeddings == [["find risk"]]
-    assert requests[0][1]["query_vector"] == [0.1, 0.2]
+    assert embeddings == []
+    assert "query_vector" not in requests[0][1]
     assert result["items"][0]["attachment_id"] == "att_allowed"
-
-
-def test_inspection_rejects_non_allowlisted_attachment(monkeypatch):
-    tool = InspectAttachmentTool()
-    tool.set_request_context(["att_allowed"], [])
-    monkeypatch.setattr(tool, "_request", lambda *_args, **_kwargs: {"content": "leak"})
-
-    assert tool.execute(attachment_id="att_other", question="read") == {
-        "error": "attachment_forbidden",
-        "items": [],
-    }
-
-
-def test_inspection_schema_documents_service_constraints():
-    properties = InspectAttachmentTool().parameters["properties"]
-
-    assert properties["attachment_id"]["minLength"] == 1
-    assert properties["question"]["minLength"] == 1
-    assert properties["question"]["maxLength"] == 4000
-    assert properties["page"]["minimum"] == 1
-    assert properties["page"]["maximum"] == 200
-    assert properties["bbox"]["minItems"] == 4
-    assert properties["bbox"]["maxItems"] == 4
-    assert properties["bbox"]["items"]["minimum"] == 0
-    assert properties["bbox"]["items"]["maximum"] == 1
-
-
-@pytest.mark.parametrize(
-    "overrides",
-    [
-        {"question": ""},
-        {"question": "x" * 4001},
-        {"question": 123},
-        {"page": 0},
-        {"page": 201},
-        {"page": True},
-        {"page": 1.5},
-        {"bbox": []},
-        {"bbox": [0, 0, 1]},
-        {"bbox": [0, 0, 1, 1, 0]},
-        {"bbox": [False, 0, 1, 1]},
-        {"bbox": [0, "0", 1, 1]},
-        {"bbox": [-0.1, 0, 1, 1]},
-        {"bbox": [0, 0, 1.1, 1]},
-        {"bbox": [0.5, 0, 0.4, 1]},
-        {"bbox": [0, 0.5, 1, 0.4]},
-        {"bbox": [0, 0, float("nan"), 1]},
-    ],
-)
-def test_inspection_rejects_invalid_arguments_before_request(monkeypatch, overrides):
-    tool = InspectAttachmentTool()
-    tool.set_request_context(["att_allowed"], [])
-    requests = []
-    monkeypatch.setattr(
-        tool,
-        "_request",
-        lambda *args, **kwargs: requests.append((args, kwargs)),
-    )
-    arguments = {
-        "attachment_id": "att_allowed",
-        "question": "Read the page.",
-        "page": 2,
-        "bbox": [0.1, 0.2, 0.8, 0.9],
-    }
-    arguments.update(overrides)
-
-    result = tool.execute(**arguments)
-
-    assert result == {"error": "invalid_attachment_query", "items": []}
-    assert requests == []
-
-
-@pytest.mark.parametrize("attachment_id", [None, 123, True, [], "", "   "])
-def test_inspection_rejects_malformed_attachment_id_before_authorization_request(
-    monkeypatch, attachment_id
-):
-    tool = InspectAttachmentTool()
-    tool.set_request_context(["att_allowed"], [])
-    requests = []
-    monkeypatch.setattr(
-        tool, "_request", lambda *args, **kwargs: requests.append((args, kwargs))
-    )
-
-    result = tool.execute(attachment_id=attachment_id, question="Read the page.")
-
-    assert result == {"error": "invalid_attachment_query", "items": []}
-    assert requests == []
-
-
-def test_inspection_forwards_valid_page_and_bbox_unchanged(monkeypatch):
-    tool = InspectAttachmentTool()
-    tool.set_request_context(["att_allowed"], [])
-    captured = {}
-
-    def fake_request(path, payload, *, timeout_seconds):
-        captured["path"] = path
-        captured["payload"] = payload
-        captured["timeout_seconds"] = timeout_seconds
-        return {"content": "Recognized text."}
-
-    monkeypatch.setattr(tool, "_request", fake_request)
-
-    result = tool.execute(
-        attachment_id="att_allowed",
-        question="Read the highlighted text.",
-        page=2,
-        bbox=[0.1, 0.2, 0.8, 0.9],
-    )
-
-    assert result == {"items": [{"content": "Recognized text."}]}
-    assert captured["path"] == "/v1/attachments/att_allowed/inspect"
-    assert captured["payload"] == {
-        "question": "Read the highlighted text.",
-        "page": 2,
-        "bbox": [0.1, 0.2, 0.8, 0.9],
-    }

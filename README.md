@@ -2,7 +2,9 @@
 
 AI-QA-Assistant is a multi-service question-answering application. The web UI, Agent API, retrieval/tooling code, and data services run as separate components.
 
-Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access/evidence hardening on `integration/agent-demo-access-evidence`. Start with the [acceptance and handoff](docs/pr63-integration-acceptance.md), [security architecture](docs/access-evidence-architecture.md), [API integration contract](docs/access-evidence-integration.md), and [isolated runtime runbook](docs/access-evidence-runbook.md). These distinguish inherited features, new changes and unresolved quality gates; this is not a production-readiness claim.
+Browse the [documentation index](docs/README.md) for module guides, current contracts, test reports and archived Q1 specifications.
+
+Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access/evidence hardening on `integration/agent-demo-access-evidence`. Start with the [acceptance and handoff](docs/testing/integration/pr63-integration-acceptance.md), [security architecture](docs/access-evidence/access-evidence-architecture.md), [API integration contract](docs/access-evidence/access-evidence-integration.md), and [isolated runtime runbook](docs/access-evidence/access-evidence-runbook.md). These distinguish inherited features, new changes and unresolved quality gates; this is not a production-readiness claim.
 
 ## Architecture
 
@@ -10,9 +12,9 @@ Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access
 | --- | --- | --- | --- |
 | Web application | `frontend/` | Vue/Vite UI and Nitro server routes, sessions, and persistence | `http://localhost:3000` |
 | Agent API | `agent/` (loaded by root `app.py`) | FastAPI chat and retrieval orchestration | `http://localhost:8000` |
-| Tools and retrieval | `toolset/`, `data-pipeline/`, `shared_runtime/` | Tool implementations, ingestion, retrieval, and shared runtime code | Called by Agent |
+| Tools and retrieval | `toolset/`, `data-pipeline/` | Tool implementations, ingestion and retrieval | Called by Agent |
 | Data persistence | `data-persistence/` | Topic and generated artifact storage | Used by Agent and tools |
-| Private ingestion | `toolset/attachment_service/` | Parsing, encrypted attachments, Personal Library versions and separate private vectors | `http://localhost:8200` |
+| Uploaded files | `toolset/tool_layer/parse_attachment_tool.py`, `data-pipeline/`, `data-persistence/` | Shared parsing, durable parsed context and automatic Personal Library ingestion | Agent `/private-files` |
 | Vector and cache services | `docker-compose.yml` | Milvus and its etcd/MinIO dependencies, plus Redis | `localhost:19530`, `localhost:6379` |
 
 The root `app.py` is a local development entry point that loads `agent/app.py` and adds the sibling code directories to Python's import path. Run it from the repository root so environment loading and path resolution use the expected project root.
@@ -56,13 +58,22 @@ Keep secrets in local, untracked environment files. Use `agent/.env.example` and
 
 Other settings, including model credentials and database/session configuration, are documented in the component-level READMEs and environment examples. Never commit populated `.env` files.
 
-Source access uses `SOURCE_ACCESS_MODE=native`, `CONFLUENCE_AUTH_ENV_FILE` and `CONFLUENCE_BASE/EMAIL/TOKEN/ACCOUNT_BINDINGS`. Web's `TURSO_DATABASE_URL` must point to the same database as Agent's `WEB_SQLITE_PATH`. Isolate acceptance with `RESEARCH_DOCUMENTS_DIR`, `AI_QA_DATA_DIR`, `BM25_INDEX_PATH`, `TOPICS_DATA_DIR`, `RESEARCH_DATABASE_PATH`, `RESEARCH_CHECKPOINT_PATH` and `ATTACHMENT_DATA_DIR`. Private transports require `ATTACHMENT_SERVICE_URL`, `ATTACHMENT_INTERNAL_SECRET`, `ATTACHMENT_ENCRYPTION_KEY`; actual embedding dimensions and separate enterprise/private collections use `LOCAL_EMBEDDING_MODEL_DIM`, `MILVUS_COLLECTION`, `ATTACHMENT_MILVUS_COLLECTION`. `AI_QA_BUILD_DIR` and `AI_QA_ACCEPTANCE_VOLUME_ROOT` can move build/Compose output to a disk with space. See the runbook for values and safe startup.
+Source access uses `SOURCE_ACCESS_MODE=native`, `CONFLUENCE_AUTH_ENV_FILE` and `CONFLUENCE_BASE/EMAIL/TOKEN/ACCOUNT_BINDINGS`. Web's `TURSO_DATABASE_URL` must point to the same database as Agent's `WEB_SQLITE_PATH`. Isolate acceptance with `RESEARCH_DOCUMENTS_DIR`, `AI_QA_DATA_DIR`, `BM25_INDEX_PATH`, `TOPICS_DATA_DIR`, `RESEARCH_DATABASE_PATH`, `RESEARCH_CHECKPOINT_PATH` and `ATTACHMENT_DATA_DIR`. Private file APIs share the Agent process at `AGENT_BASE_URL/private-files`, using `ATTACHMENT_INTERNAL_SECRET`; only the Agent needs `ATTACHMENT_ENCRYPTION_KEY`. Actual embedding dimensions and separate enterprise/private collections use `LOCAL_EMBEDDING_MODEL_DIM`, `MILVUS_COLLECTION`, `ATTACHMENT_MILVUS_COLLECTION`. `AI_QA_BUILD_DIR` and `AI_QA_ACCEPTANCE_VOLUME_ROOT` can move build/Compose output to a disk with space. See the runbook for values and safe startup.
 
-Apply the full Web migration journal through `0015_evidence_lineage.sql` (chat/topic/Memory provenance). Evidence reads are message-bound; stored answers/Memory are rechecked after revocation or version drift. Ordinary Chat supports enterprise, personal and attachment sources; Research remains enterprise-only. Wiki navigation is quarantined until its own derived metadata has verifiable source lineage.
+Apply the full Web migration journal through `0015_evidence_lineage.sql` (chat/topic/Memory provenance). Per the user's 2026-10-15 policy, ordinary chat/topic browsing reads saved snapshots after local identity/ownership/membership checks and does not revalidate their sources. Generation, Memory reuse and message-bound citation Reader retain current source checks. Ordinary Chat supports enterprise, personal and attachment sources; Research remains enterprise-only. Wiki navigation is quarantined until its own derived metadata has verifiable source lineage.
 
-Structured PDF/DOCX/XLSX table parsing, optional region OCR, semantic/display text views and chunk geometry are documented in the [current pipeline contract](docs/DATA_PIPELINE.md). Existing Milvus reads remain compatible; structured ingestion requires the provenance schema before replacing vectors. Use separate collections for migration and follow the [table integration record](docs/table-processing-integration-20261012.md) for validation limits.
+Pipeline modules are organized into `entrypoints/`, `documents/`, `files/`, `confluence/`, `ingestion/` and `indexing/`. The three file-selection entrypoints share `pipeline.ingestion.batch.run_batch`; document preparation, upload job state and the vector worker have separate modules. Use `python -m pipeline.entrypoints.process`, `pipeline.entrypoints.auto_process` or `pipeline.entrypoints.process_specific_files` from `data-pipeline/`.
 
-Latest desktop refinements and verification limits are recorded in the [2026-10-13 desktop retest](docs/desktop-ui-retest-20261013.md).
+Structured PDF/DOCX/XLSX table parsing, optional region OCR, semantic/display text views and chunk geometry are documented in the [current pipeline contract](docs/data-pipeline/DATA_PIPELINE.md). Existing Milvus reads remain compatible; structured ingestion requires the provenance schema before replacing vectors. Use separate collections for migration and follow the [table integration record](docs/data-pipeline/table-processing-integration-20261012.md) for validation limits.
+
+2026-10-16: retrieval now supports a shared local English cross-encoder with a 20-candidate pool
+and TopK output (default five). New ingestion uses token-bounded prose and table row groups,
+preserves XLSX formulas/cached values and supplies separately identified neighboring context.
+Install the pinned reranker weights before startup; see [Toolset configuration](toolset/README.md).
+Existing data needs a separate index rebuild before switching; a code update alone does not
+change old chunks. Source permission, version/hash and Reader checks remain required.
+
+Latest desktop refinements and verification limits are recorded in the [2026-10-13 desktop retest](docs/testing/ui/desktop-ui-retest-20261013.md).
 
 ## CI and dependency compatibility
 
@@ -72,5 +83,7 @@ The Personal Library pull request workflow uses Python 3.11, Node.js 22, and pnp
 python -m pip install -r requirements.txt
 cd frontend && pnpm install --frozen-lockfile
 ```
+
+Root `requirements.txt` also includes PDF table extraction and CPU OCR dependencies; no separate table requirements files are needed. Tesseract and its language data remain system dependencies.
 
 The frontend lockfile is committed at `frontend/pnpm-lock.yaml`. Root Python requirements use conservative major-version bounds for direct dependencies; exact transitive versions are not locked, so this is a compatibility policy rather than a fully locked Python environment.

@@ -26,7 +26,7 @@ from pipeline.wiki.taxonomy import TaxonomyPlanner  # noqa: E402
 from pipeline.wiki.worker import WikiStageWorker  # noqa: E402
 from data_persistence.documents import resolve_documents_dir  # noqa: E402
 from data_persistence.wiki import WikiStore  # noqa: E402
-from shared_runtime.wiki_paths import resolve_wiki_db_path  # noqa: E402
+from data_persistence.wiki import resolve_wiki_db_path  # noqa: E402
 
 
 def _enabled(name: str) -> bool:

@@ -102,6 +102,8 @@ class TableCell(BaseModel):
     row_index: int = Field(ge=0)
     column_index: int = Field(ge=0)
     text: str = ""
+    formula: str | None = None
+    cached_value: str | None = None
     row_span: int = Field(default=1, ge=1)
     column_span: int = Field(default=1, ge=1)
     is_header: bool = False
@@ -214,7 +216,7 @@ class TableArtifact(BaseModel):
 
     def to_row_chunks(self) -> list[str]:
         headers = self.legacy_headers()
-        return [" | ".join(f"{headers[index]}: {value.strip()}" if index < len(headers) and headers[index] else value.strip() for index, value in enumerate(row) if value.strip()) for row in self.body_rows()]
+        return [" | ".join(f"{headers[index]}: {value.strip()}" if index < len(headers) and headers[index] else value.strip() for index, value in enumerate(row) if value.strip()) for row in self.body_rows() if any(value.strip() for value in row)]
 
 
 class ContentBlock(BaseModel):
@@ -478,6 +480,18 @@ class Document(BaseModel):
         """根据文件路径生成幂等 doc_id（MD5 哈希）"""
         return hashlib.md5(file_path.encode("utf-8")).hexdigest()
 
+    @classmethod
+    def generate_source_doc_id(cls, file_path: str, metadata: dict) -> str:
+        """Use verified connector IDs; ordinary local files retain path identity."""
+        space = str(metadata.get("space_id") or metadata.get("space_key") or "")
+        attachment = str(metadata.get("attachment_id") or "")
+        page = str(metadata.get("page_id") or "")
+        if attachment:
+            return cls.generate_doc_id(f"confluence:{space}:attachment:{attachment}")
+        if page:
+            return cls.generate_doc_id(f"confluence:{space}:{page}")
+        return cls.generate_doc_id(file_path)
+
     @staticmethod
     def generate_last_updated(file_path: str) -> str:
         """读取文件修改时间，返回 ISO 格式字符串"""
@@ -528,8 +542,9 @@ class Document(BaseModel):
             except Exception as _e:  # noqa: BLE001
                 print(f"  ⚠ 读取侧车元数据失败: {meta_path}，错误: {_e}")
 
+        document_id = cls.generate_source_doc_id(abs_path, metadata)
         return cls(
-            doc_id=cls.generate_doc_id(abs_path),
+            doc_id=document_id,
             title=title,
             content=content,
             space=space,

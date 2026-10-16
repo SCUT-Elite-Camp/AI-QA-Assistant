@@ -1,3 +1,5 @@
+from tests.grounding_helpers import grounded_content
+import json
 from agent.config.settings import settings
 from agent.schemas.chat import ChatRequest
 from agent.schemas.common import StatusCode
@@ -5,6 +7,11 @@ from agent.agent import Agent
 
 
 def test_real_tool_layer_smoke_path(monkeypatch) -> None:
+    from agent.llm.llm_client import LLMClient
+    monkeypatch.setattr(LLMClient, "chat", lambda *args, **kwargs: {"content": json.dumps({
+        "claims": [{"text": "Q1 focuses on a single-turn RAG Agent flow.",
+                    "supports": [{"citation_id": 1, "quote": "Q1 focuses on a single-turn RAG Agent flow."}]}],
+    })})
     monkeypatch.setattr(settings, "MIN_RETRIEVAL_SCORE", 0.0)
 
     from toolset.tool_layer import SearchTool

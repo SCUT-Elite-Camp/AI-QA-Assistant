@@ -1,5 +1,7 @@
+from tests.grounding_helpers import grounded_model
 import json
 from typing import Any
+from tests.grounding_helpers import grounded_model
 
 from agent.agent import Agent
 from agent.llm.base import BaseLLM
@@ -28,6 +30,8 @@ class ResearchModeToolCallLLM(BaseLLM):
     def generate(self, prompt: str) -> str:
         return ""
 
+    @grounded_model
+    @grounded_model
     def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
         if tools and not any(message.get("role") == "tool" for message in messages):
             return {
@@ -104,7 +108,7 @@ def test_model_tool_arguments_cannot_switch_chat_to_research() -> None:
         query_understanding=FixedChatUnderstanding(),  # type: ignore[arg-type]
     )
 
-    response = agent.chat(ChatRequest(query="本地文档有什么证据？", top_k=3))
+    response = agent.chat(ChatRequest(query="本地文档有什么证据？", top_k=3, weight_mode="thinking"))
 
     assert response.status == "success"
     assert len(search.calls) == 1

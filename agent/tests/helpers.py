@@ -1,3 +1,4 @@
+from tests.grounding_helpers import grounded_model
 # agent/tests/helpers.py
 """Shared test helpers and mocks for Agent test suite."""
 import json
@@ -27,6 +28,7 @@ class FakeLLM(BaseLLM):
     def generate(self, prompt: str) -> str:
         return ""
 
+    @grounded_model
     def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
         self.calls += 1
         self.messages = messages

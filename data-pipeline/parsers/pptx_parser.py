@@ -68,9 +68,8 @@ class PptxParser(BaseParser):
 
                 # 图片：以占位标记保留结构位置
                 if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-                    slide_blocks.append(
-                        ContentBlock(block_type=BlockType.PARAGRAPH, text="[图片]")
-                    )
+                    from parsers.upload_formats import image_blocks
+                    slide_blocks.extend(image_blocks(shape.image.blob, {"slide": idx}))
                     continue
 
                 # 文本形状

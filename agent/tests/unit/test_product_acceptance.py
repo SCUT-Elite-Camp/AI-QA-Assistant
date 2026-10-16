@@ -12,7 +12,7 @@ from deep_research.tools import LocalJsonSearchBackend
 from deep_research.planner import ModelResearchPlanner
 from agent.config.settings import settings
 from agent.schemas.research import ResearchRequest, SourceScope, ResearchPlanValidator, ResearchReport, ResearchCitation, ResearchResultStatus
-from agent.orchestration.orchestrator import AgentOrchestrator
+from agent.chat.thinking import ThinkingPipeline
 from agent.schemas.chat import ChatRequest
 from agent.schemas.intent_policy import IntentPolicy
 from agent.policy import IntentPolicyRouter
@@ -218,7 +218,7 @@ def test_acceptance_summary_does_not_hide_failures_or_conflate_runtime_and_quali
 
 def test_hard_document_scope_widens_section_retrieval_within_policy_cap():
     policy = IntentPolicy(top_k=10)
-    mode, top_k = AgentOrchestrator._effective_retrieval_options(
+    mode, top_k = ThinkingPipeline._effective_retrieval_options(
         ChatRequest(query="q", top_k=5, filters={"doc_ids": ["doc-a"]}), policy
     )
     assert mode == "hybrid"

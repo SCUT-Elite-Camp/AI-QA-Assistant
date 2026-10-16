@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from attachment_service.store import AttachmentStore
+from data_persistence.private_files import AttachmentStore
 
 
 def _record(identifier: str = "ver_1", owner_id: str = "user-a") -> dict:

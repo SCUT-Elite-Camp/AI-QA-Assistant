@@ -3,8 +3,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from attachment_service.store import AttachmentStore
-from shared_runtime.document_sections import build_navigation_text, normalize_section
+from data_persistence.private_files import AttachmentStore
+from pipeline.documents.sections import build_navigation_text, normalize_section
 
 
 def _attachment() -> dict:

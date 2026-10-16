@@ -15,6 +15,7 @@ import {
 } from './memoryContract'
 import { getMemoryFeatureFlags } from './memoryFeatureFlags'
 import type { useDrizzle } from './drizzle'
+import { eq, tables } from './drizzle'
 import type { CurrentMessageHandoff } from './messageLifecycle'
 import { assertSourceDependencies, messageProvenance } from './sourceAccess'
 
@@ -93,11 +94,14 @@ export type PostTurnCompactionResult = 'applied' | 'conflict_exhausted' | 'not_n
 export async function compactAfterSuccessfulAssistantPersistence (
   db: Database,
   handoff: CurrentMessageHandoff,
-  options?: AgentInternalClientOptions
+  options?: AgentInternalClientOptions & { executionMode?: 'fast' | 'thinking' | 'auto' }
 ): Promise<PostTurnCompactionResult> {
   if (!getMemoryFeatureFlags(options?.environment).persistentMemoryEnabled) {
     return 'not_needed'
   }
+  const mode = options?.executionMode ?? (await db.query.chats.findFirst({ where: eq(tables.chats.id, handoff.chatId) }))?.weightMode
+  // Fast owns a one-generation budget including work caused by this turn.
+  if (mode === 'fast') return 'not_needed'
 
   for (let attempt = 0; attempt < MAX_COMPACTION_ATTEMPTS; attempt += 1) {
     const request = await buildCompactionPlanRequest(db, handoff)

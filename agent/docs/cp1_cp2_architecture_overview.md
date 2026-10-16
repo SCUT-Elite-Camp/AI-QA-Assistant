@@ -1,5 +1,7 @@
 # CP1–CP2 Agent 层核心流程、技术架构与优化计划
 
+2026-10-15 当前行为见 [Fast / Thinking 契约](chat_mode_contract.md)：规则式自动补检索已移除，Thinking 由模型选择文档目录及批量全文读取。下文对应早期 CP1/CP2 设计记录，不能作为当前自动补检索行为的说明。
+
 ## 1. 文档说明
 
 本文档用于统一整理 Agent 层从 CP1 到当前 CP2 的演进情况，内容包括：
@@ -12,7 +14,7 @@
 本文档关注整体流程和架构，不详细展开每个模块的内部实现。各契约与模块细节仍以 `agent/docs/cp1` 和 `agent/docs/cp2` 下的专项文档为准。
 
 2026-10-09 运行时已在 #63 基线上接入有界比较子查询并行、BFF 持久 Snapshot/Fact、
-真实来源访问与衍生证据依赖。完整跨层架构见[访问与证据](../../docs/access-evidence-architecture.md)。
+真实来源访问与衍生证据依赖。完整跨层架构见[访问与证据](../../docs/access-evidence/access-evidence-architecture.md)。
 下文 CP1 是历史范围；CP2 优化项应按实际验收缺口排序，不以已实现模块当新待办。
 
 ---

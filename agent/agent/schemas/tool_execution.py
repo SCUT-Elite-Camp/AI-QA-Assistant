@@ -35,6 +35,7 @@ class Evidence(BaseModel):
     source_content_hash: str | None = None
     source_version: int | str | None = None
     read_status: str | None = None
+    content_kind: str = "excerpt"
 
     @field_validator(
         "doc_id",

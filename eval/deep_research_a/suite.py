@@ -16,7 +16,7 @@ from typing import Any, Iterable
 
 SUITE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = SUITE_ROOT.parents[1]
-DATASET_PATH = Path(os.getenv("DR_EVAL_DATASET_PATH", SUITE_ROOT / "datasets" / "cases.v1.json")).resolve()
+DATASET_PATH = Path(os.getenv("DR_EVAL_DATASET_PATH", SUITE_ROOT / "datasets" / "cases.en.v1.json")).resolve()
 MANIFEST_PATH = Path(os.getenv("DR_EVAL_MANIFEST_PATH", SUITE_ROOT / "manifests" / "source_manifests.v1.json")).resolve()
 BASELINE_PATH = Path(os.getenv("DR_EVAL_BASELINE_PATH", SUITE_ROOT / "config" / "frozen_baseline.json")).resolve()
 TAXONOMY_PATH = SUITE_ROOT / "failure_taxonomy.json"

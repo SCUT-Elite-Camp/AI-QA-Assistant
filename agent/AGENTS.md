@@ -12,8 +12,10 @@
 
 ## 开发边界
 
+- 2026-10-15 用户选型：断言语义核验仅保留 `lytang/MiniCheck-DeBERTa-v3-Large`。当前实现是离线评测，在线接入单独实施；不保留其他核验模型的执行分支或隐式回退。
+
 - Agent 层开发以 `docs/development_guide.md` 为流程准则。
 - 默认只修改 Agent 团队负责范围；用户明确授权全系统整合时，可修复必要跨层契约，并同步上下游文档与测试。
 - Mock 仅用于隔离单元/契约测试；真实验收使用实际模型、检索及原生权限，不允许自动退回 Mock 冒充成功。不连接未经授权的 HSBC 客户系统，不提交真实密钥。
-- 当前访问与证据契约以根 `AGENTS.md`、`../docs/access-evidence-architecture.md` 和 `../docs/access-evidence-integration.md` 为准；历史 Q1 无鉴权描述不适用。
+- 当前访问与证据契约以根 `AGENTS.md`、`../docs/access-evidence/access-evidence-architecture.md` 和 `../docs/access-evidence/access-evidence-integration.md` 为准；历史 Q1 无鉴权描述不适用。
 - 涉及接口、测试用例或联调记录的改动，需要同步更新 `docs/` 下对应文档。

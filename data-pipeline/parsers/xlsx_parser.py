@@ -11,20 +11,22 @@ from parsers.base import BaseParser
 class XlsxParser(BaseParser):
     def parse(self, file_path: str) -> Document:
         workbook = load_workbook(file_path, data_only=False, read_only=False)
+        cached = load_workbook(file_path, data_only=True, read_only=False)
         blocks: list[ContentBlock] = []
         try:
             for sheet_index, sheet in enumerate(workbook.worksheets, start=1):
-                block = self._sheet_to_block(sheet, sheet_index)
+                block = self._sheet_to_block(sheet, sheet_index, cached[sheet.title])
                 if block is not None:
                     blocks.append(block)
         finally:
             workbook.close()
+            cached.close()
 
         content = "\n\n".join(block.to_markdown() for block in blocks if not block.is_empty)
         return Document.from_file_path(file_path, content, content_blocks=blocks)
 
     @staticmethod
-    def _sheet_to_block(sheet, sheet_index: int) -> ContentBlock | None:
+    def _sheet_to_block(sheet, sheet_index: int, cached_sheet=None) -> ContentBlock | None:
         nonempty = [
             cell
             for row in sheet.iter_rows()
@@ -39,13 +41,22 @@ class XlsxParser(BaseParser):
         min_column = min(cell.column for cell in nonempty)
         max_column = max(cell.column for cell in nonempty)
 
+        # Merged placeholders have no value. A populated merged heading can
+        # extend beyond the last nonempty cell, so include its full geometry.
+        retained_merges = [
+            merged for merged in sheet.merged_cells.ranges
+            if not (merged.max_row < min_row or merged.min_row > max_row
+                    or merged.max_col < min_column or merged.min_col > max_column)
+        ]
+        for merged in retained_merges:
+            min_row = min(min_row, merged.min_row)
+            max_row = max(max_row, merged.max_row)
+            min_column = min(min_column, merged.min_col)
+            max_column = max(max_column, merged.max_col)
+
         merged_starts: dict[tuple[int, int], tuple[int, int]] = {}
         merged_covered: set[tuple[int, int]] = set()
-        for merged in sheet.merged_cells.ranges:
-            if merged.max_row < min_row or merged.min_row > max_row:
-                continue
-            if merged.max_col < min_column or merged.min_col > max_column:
-                continue
+        for merged in retained_merges:
             start = (merged.min_row, merged.min_col)
             merged_starts[start] = (
                 merged.max_row - merged.min_row + 1,
@@ -66,6 +77,11 @@ class XlsxParser(BaseParser):
                     continue
                 source = sheet.cell(source_row, source_column)
                 value = "" if source.value is None else str(source.value).strip()
+                formula = value if source.data_type == 'f' else None
+                cached_value = None
+                if formula:
+                    cached_value = cached_sheet.cell(source_row, source_column).value if cached_sheet is not None else None
+                    value = str(cached_value) if cached_value is not None else f'{formula} [result unavailable]'
                 row_span, column_span = merged_starts.get(
                     (source_row, source_column),
                     (1, 1),
@@ -74,6 +90,8 @@ class XlsxParser(BaseParser):
                     row_index=source_row - min_row,
                     column_index=source_column - min_column,
                     text=value,
+                    formula=formula,
+                    cached_value=str(cached_value) if cached_value is not None else None,
                     row_span=row_span,
                     column_span=column_span,
                 ))
@@ -101,7 +119,12 @@ class XlsxParser(BaseParser):
             quality_evidence={"native_structure": 1.0},
             acceptance="accepted",
         )
-        return ContentBlock(block_type=BlockType.TABLE, table=artifact)
+        from openpyxl.utils import get_column_letter
+        return ContentBlock(
+            block_type=BlockType.TABLE, table=artifact,
+            confidence=0.7 if any(cell.data_type == 'f' for cell in nonempty) else 1.0,
+            locator={"sheet": sheet.title, "cell_range": f"{get_column_letter(min_column)}{min_row}:{get_column_letter(max_column)}{max_row}"},
+        )
 
     @staticmethod
     def supported_extensions() -> list[str]:

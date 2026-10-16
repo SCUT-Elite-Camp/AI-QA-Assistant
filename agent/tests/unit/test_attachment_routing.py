@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from agent.orchestration.orchestrator import AgentOrchestrator
+from agent.chat.thinking import ThinkingPipeline
 from agent.query.source_intent import heuristic_source_intent
 from agent.runtime.runner import AgentRunner
 from agent.schemas.chat import AttachmentContext, ChatRequest, InternalChatRequest
@@ -61,15 +61,15 @@ def test_attachment_source_policy_uses_only_trusted_context() -> None:
     intent = heuristic_source_intent("总结这份附件")
     assert intent.sources == [SourceKind.CONVERSATION_ATTACHMENT]
 
-    enabled = AgentOrchestrator._apply_source_policy(
+    enabled = ThinkingPipeline._apply_source_policy(
         _internal_request("总结这份附件"),
         IntentPolicy(candidate_tools=("search_documents",)),
         SourceIntent(sources=[SourceKind.CONVERSATION_ATTACHMENT]),
     )
-    assert enabled.candidate_tools == ("search_attachments", "inspect_attachment")
+    assert enabled.candidate_tools == ("search_attachments",)
     assert enabled.max_tool_calls >= 2
 
-    disabled = AgentOrchestrator._apply_source_policy(
+    disabled = ThinkingPipeline._apply_source_policy(
         ChatRequest(query="总结这份附件"),
         IntentPolicy(candidate_tools=("search_documents",)),
         SourceIntent(sources=[SourceKind.CONVERSATION_ATTACHMENT]),

@@ -7,7 +7,7 @@ from agent.query.clarifier import Clarifier
 from agent.runtime.runner import AgentRunner
 from agent.answer.target_extractor import _grounded_in_query
 from agent.answer.fact_coverage import identifier_tokens, normalized_fact_text
-from agent.orchestration.orchestrator import AgentOrchestrator
+from agent.chat.thinking import ThinkingPipeline
 from agent.schemas.chat import ChatRequest
 from agent.schemas.query_plan import QueryPlan
 from eval.deep_research_benchmark import BenchmarkRunError, _run_fast_chat
@@ -58,7 +58,7 @@ def test_inferred_document_title_cannot_override_explicit_source_ids():
     query = "Using the W34 Master report, confirm the production SLA."
     request = ChatRequest(query=query, filters={"doc_ids": ["authorized-id"]})
     plan = QueryPlan(original_query=query, standalone_query=query, filters={"doc_id": "W34 Master report"})
-    result = AgentOrchestrator._merge_request_constraints(request, plan)
+    result = ThinkingPipeline._merge_request_constraints(request, plan)
     assert result.filters == {"doc_ids": ["authorized-id"]}
 
 
@@ -154,11 +154,11 @@ def test_selected_documents_do_not_inherit_guessed_metadata_filters():
     query = 'Compare deliveries in the selected documents'
     request = ChatRequest(query=query, filters={'doc_ids': ['a', 'b']})
     plan = QueryPlan(original_query=query, standalone_query=query, filters={'space': 'guessed', 'doc_type': 'sprint'})
-    merged = AgentOrchestrator._merge_request_constraints(request, plan)
+    merged = ThinkingPipeline._merge_request_constraints(request, plan)
     assert merged.filters == {'doc_ids': ['a', 'b']}
     request = ChatRequest(query=query, filters={'doc_ids': ['a', 'b'], 'space': 'explicit'})
     plan = plan.model_copy(update={'filters': {'space': 'explicit', 'doc_type': 'sprint'}})
-    assert AgentOrchestrator._merge_request_constraints(request, plan).filters == {'doc_ids': ['a', 'b'], 'space': 'explicit'}
+    assert ThinkingPipeline._merge_request_constraints(request, plan).filters == {'doc_ids': ['a', 'b'], 'space': 'explicit'}
 
 
 @pytest.mark.parametrize('query', ['Retrieve details from the September 8 meeting notes', 'Read the meeting on September 8, 2026', 'Read the 2026-09-08 meeting'])
@@ -208,10 +208,9 @@ def test_english_answer_instruction_overrides_mixed_language_metadata_without_mu
             return {'content': 'English answer [1].'}
     runner = AgentRunner.__new__(AgentRunner)
     runner.answer_llm = LLM()
-    runner.fast_answer_llm = None
     from agent.answer.generator import AnswerGenerator
-    runner.answer_generator = AnswerGenerator(complex_llm=runner.answer_llm)
-    state = SimpleNamespace(query_plan=QueryPlan(original_query='Compare the dated reports', standalone_query='Compare the dated reports'), retrieval_attempts=1, trace_id='language-test', answer_model_preference='auto')
+    runner.answer_generator = AnswerGenerator(llm=runner.answer_llm)
+    state = SimpleNamespace(query_plan=QueryPlan(original_query='Compare the dated reports', standalone_query='Compare the dated reports'), retrieval_attempts=1, trace_id='language-test', evidence=[])
     messages = [{'role': 'system', 'content': 'Original evidence rules'}, {'role': 'user', 'content': '资料元数据'}]
     runner._chat_for_answer(state, messages)
     assert 'Write the entire answer in English' in captured[0]['content']
@@ -236,9 +235,8 @@ def test_english_default_overrides_history_language_without_mutating_it():
     history = [{'role': 'system', 'content': 'Evidence rules'},
                {'role': 'assistant', 'content': 'Earlier source metadata: 中文。'},
                {'role': 'user', 'content': 'Explain the responsibilities.'}]
-    generator = AnswerGenerator(complex_llm=LLM())
-    generator.chat(history, query_plan=QueryPlan(original_query='Explain the responsibilities.', standalone_query='Explain the responsibilities.'),
-                   retrieval_attempts=1, trace_id='mixed-language')
+    generator = AnswerGenerator(llm=LLM())
+    generator.chat(history)
     assert 'Write the entire answer in English' in captured[0]['content']
     assert 'unless the user explicitly requests another output language' in captured[0]['content']
     assert history[0]['content'] == 'Evidence rules'

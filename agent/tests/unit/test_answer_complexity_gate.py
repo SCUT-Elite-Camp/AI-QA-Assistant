@@ -69,10 +69,10 @@ def test_planned_sub_queries_are_complex() -> None:
     assert answer_complexity_reasons(plan) == ["planned_sub_queries"]
 
 
-def test_corrective_retrieval_is_complex() -> None:
+def test_multiple_retrieval_rounds_request_a_completeness_check() -> None:
     plan = _plan("What is the ToolRegistry?")
 
-    assert answer_complexity_reasons(plan, retrieval_attempts=2) == ["corrective_retrieval"]
+    assert answer_complexity_reasons(plan, retrieval_attempts=2) == ["multiple_retrieval_rounds"]
 
 
 def test_a_single_retrieval_attempt_is_not_complex() -> None:
@@ -113,7 +113,7 @@ def test_reasons_are_composed_in_stable_order_without_duplicates() -> None:
     assert answer_complexity_reasons(plan, retrieval_attempts=2) == [
         "intent:comparison",
         "planned_sub_queries",
-        "corrective_retrieval",
+        "multiple_retrieval_rounds",
         "multi_aspect_scope",
     ]
 

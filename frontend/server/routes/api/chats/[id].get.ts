@@ -2,9 +2,8 @@ import { defineHandler, HTTPError } from 'nitro'
 import { getValidatedRouterParams } from 'nitro/h3'
 import { useDrizzle } from '../../../utils/drizzle'
 import { z } from 'zod'
-import { assertResearchChatAccess, getOptionalChatActor, isChatOwnedByActor } from '../../../utils/chatAccess'
-import { requirePrincipal, requireTopicRole } from '../../../utils/attachmentAuth'
-import { filterReadableMessages, readableChatMetadata, requireEnabledActor } from '../../../utils/sourceAccess'
+import { requireTopicRole } from '../../../utils/attachmentAuth'
+import { requireEnabledActor } from '../../../utils/sourceAccess'
 
 export default defineHandler(async (event) => {
   const userId = await requireEnabledActor(event)
@@ -25,9 +24,7 @@ export default defineHandler(async (event) => {
     throw new HTTPError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
-  const actor = await getOptionalChatActor(event)
-  await assertResearchChatAccess(event, id)
-  const isOwner = actor ? isChatOwnedByActor(chat.userId, actor) : false
+  const isOwner = chat.userId === userId
   let topicRole: 'owner' | 'editor' | 'viewer' | null = null
   if (chat.topicId) {
     topicRole = (await requireTopicRole(event, chat.topicId, 'viewer')).role
@@ -37,5 +34,6 @@ export default defineHandler(async (event) => {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { userId: _, ...rest } = chat
-  return { ...await readableChatMetadata(userId, rest), messages: await filterReadableMessages(userId, chat.messages), isOwner, topicRole }
+  // Browsing reads the saved transcript; generation/Reader have their own live checks.
+  return { ...rest, isOwner, topicRole }
 })

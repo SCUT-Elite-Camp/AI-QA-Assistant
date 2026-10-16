@@ -75,7 +75,7 @@ class AccessGuard:
         return True
 
     def _add(self, dependency: SourceDependency):
-        key = (dependency.source_type, dependency.doc_id, dependency.knowledge_base_id, dependency.version_id, dependency.version, dependency.content_hash)
+        key = (dependency.source_type, dependency.doc_id, dependency.knowledge_base_id, dependency.version_id, dependency.version, dependency.content_hash, dependency.content_kind)
         with self._lock:
             self._dependencies[key] = dependency
 
@@ -91,24 +91,31 @@ class AccessGuard:
             filters["doc_ids"] = self.allowed_documents(candidates)
             arguments["filters"] = filters
         elif name == "get_document":
-            doc_id = str(arguments.get("doc_id") or "")
-            if doc_id not in self.allowed_documents([doc_id]):
+            doc_ids = arguments.get("doc_ids")
+            if (not isinstance(doc_ids, list) or not 1 <= len(doc_ids) <= 20
+                    or any(not isinstance(value, str) or not value for value in doc_ids)):
+                raise ValueError("doc_ids must contain 1 to 20 document IDs")
+            if set(doc_ids) - set(self.allowed_documents(doc_ids)):
                 raise PermissionResolutionError("source_not_found", 404)
-        elif name in {"browse_document_outline", "search_evidence_in_scope"} and arguments.get("source_scope", "enterprise") == "enterprise":
-            arguments["doc_ids"] = self.allowed_documents(arguments.get("doc_ids"))
-        elif name == "inspect_attachment":
+        elif name == "read_attachment_context":
             context = getattr(self.request, "attachment_context", None)
-            if context is None or arguments.get("attachment_id") not in context.allowed_attachment_ids:
+            if context is None or not context.allowed_attachment_ids:
                 raise PermissionResolutionError("private_source_not_found", 404)
-            # This tool can send bytes to a vision model. An allowlist alone is
-            # not a current grant: check ownership/scope/version before I/O.
+            selected = context.selected_attachment_ids or context.allowed_attachment_ids
             with self.permissions._connect() as connection:
-                self._authorize_attachment(connection, str(arguments["attachment_id"]))
+                for attachment_id in selected:
+                    self._authorize_attachment(connection, attachment_id)
         elif name.startswith("wiki_"):
             # Derived Wiki pages have no complete transitive lineage contract yet.
             # Never pass their titles/summaries to the model as authorized context.
             raise PermissionResolutionError("wiki_provenance_unavailable", 503)
         return arguments
+
+    def validate_rerank_candidates(self, name: str, rows: list):
+        # Validate every model input against current permissions and versions.
+        # Unselected ranking candidates are not answer evidence dependencies.
+        validation = AccessGuard(self.permissions, self.request, self.trace_id)
+        validation.capture_tool(name, {'items': rows}, [])
 
     def capture_tool(self, name: str, data: dict | None, evidence: list):
         records = [item.model_dump() for item in evidence]
@@ -123,9 +130,10 @@ class AccessGuard:
                 if any(record.get(key) for key in ("content", "text", "summary", "title")):
                     raise PermissionResolutionError("source_provenance_unavailable", 503)
                 continue
-            source_type = "personal" if record.get("source_scope") == "personal" or record.get("source_type") == "personal" or name == "search_library" else "attachment" if record.get("attachment_id") or name in {"search_attachments", "inspect_attachment"} else "knowledge"
+            source_type = "personal" if record.get("source_scope") == "personal" or record.get("source_type") == "personal" or name == "search_library" else "attachment" if record.get("attachment_id") or name in {"search_attachments", "read_attachment_context"} else "knowledge"
             values = {key: record.get(key) for key in ("knowledge_base_id", "document_id", "version_id", "content_hash")}
             values["version"] = record.get("source_version") or record.get("version")
+            values["content_kind"] = record.get("content_kind", "excerpt")
             if source_type == "knowledge":
                 actual = self._knowledge_snapshot(doc_id)
                 document = self.permissions.source_provider._load(doc_id)
@@ -164,6 +172,10 @@ class AccessGuard:
         # current version. Compare against the actual source projection first.
         body = str(document.get("content") or "")
         if text.strip() and text.strip() in body:
+            return True
+        chunks = sorted((c for c in document.get("chunks", []) if isinstance(c, dict)),
+                        key=lambda c: int(c.get("index", 0)))
+        if not body and text == "\n\n".join(str(c.get("text") or c.get("chunk_text") or "") for c in chunks):
             return True
         return any(bool(text.strip()) and text.strip() in str(c.get("text") or c.get("chunk_text") or "").strip()
                    for c in document.get("chunks", []) if isinstance(c, dict))
@@ -211,9 +223,14 @@ class AccessGuard:
                         raise PermissionResolutionError("document_version_changed", 409)
                     if str(remote.get("evidence_version")) != str(dependency.version):
                         raise PermissionResolutionError("document_version_changed", 409)
-                    evidence = self._private_source(attachment_id, evidence=True)
-                    if not any(item.get("content_hash") == dependency.content_hash for item in evidence.get("items", [])):
-                        raise PermissionResolutionError("document_version_changed", 409)
+                    if dependency.content_kind == "file":
+                        original = connection.execute("SELECT sha256 FROM attachments WHERE id=?", (attachment_id,)).fetchone()
+                        if original is None or not dependency.content_hash or original[0] != dependency.content_hash or remote.get("sha256") != dependency.content_hash:
+                            raise PermissionResolutionError("document_version_changed", 409)
+                    else:
+                        evidence = self._private_source(attachment_id, evidence=True)
+                        if not any(item.get("content_hash") == dependency.content_hash for item in evidence.get("items", [])):
+                            raise PermissionResolutionError("document_version_changed", 409)
         except PermissionResolutionError:
             raise
         except Exception as exc:
@@ -238,23 +255,20 @@ class AccessGuard:
 
     @staticmethod
     def _private_source(storage_id: str, *, evidence: bool = False) -> dict:
-        import os
-        import json
-        from urllib.parse import quote
-        import requests
-        secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "")
-        if not secret:
-            raise PermissionResolutionError("private_source_permission_unavailable", 503)
-        endpoint = os.getenv("ATTACHMENT_SERVICE_URL", "http://127.0.0.1:8200").rstrip("/") + "/v1/attachments/" + quote(storage_id, safe="") + ("/evidence" if evidence else "")
+        # This check also runs on the Agent event loop immediately before a
+        # model call. Synchronous HTTP to the same process would deadlock it.
         try:
-            response = requests.get(endpoint, headers={"Authorization": "Bearer " + secret}, timeout=8, allow_redirects=False)
-            response.raise_for_status()
-            if response.status_code != 200:
-                raise ValueError("private_source_redirect_or_invalid_response")
-            result = response.json()
-            if not isinstance(result, dict):
-                raise ValueError("private_source_response_invalid")
-            return result
+            from data_persistence.private_files import get_private_file_store
+            store = get_private_file_store()
+            record = store.get_attachment(storage_id)
+            if not record:
+                raise PermissionResolutionError("private_source_not_found", 404)
+            if evidence:
+                return {"items": store.list_evidence([storage_id])}
+            excluded = {"blob_path", "key_id", "dedupe_domain", "deleted_at"}
+            return {key: value for key, value in record.items() if key not in excluded}
+        except PermissionResolutionError:
+            raise
         except Exception as exc:
             raise PermissionResolutionError("private_source_permission_unavailable", 503) from exc
 

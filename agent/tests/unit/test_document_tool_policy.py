@@ -50,16 +50,16 @@ def test_get_document_enforces_permission_allowlist():
 
     assert AgentRunner._apply_execution_constraints(
         tool_name="get_document",
-        arguments={"doc_id": "doc-1", "offset": 0},
+        arguments={"doc_ids": ["doc-1"]},
         query_plan=plan,
         mode="hybrid",
         top_k=5,
-    )["doc_id"] == "doc-1"
+    )["doc_ids"] == ["doc-1"]
 
     with pytest.raises(ValueError, match="document_not_allowed"):
         AgentRunner._apply_execution_constraints(
             tool_name="get_document",
-            arguments={"doc_id": "doc-2"},
+            arguments={"doc_ids": ["doc-1", "doc-2"]},
             query_plan=plan,
             mode="hybrid",
             top_k=5,
@@ -70,7 +70,7 @@ def test_get_document_fails_closed_for_empty_allowlist():
     with pytest.raises(ValueError, match="document_not_allowed"):
         AgentRunner._apply_execution_constraints(
             tool_name="get_document",
-            arguments={"doc_id": "doc-1"},
+            arguments={"doc_ids": ["doc-1"]},
             query_plan=_plan(filters={"doc_ids": []}),
             mode="hybrid",
             top_k=5,
@@ -112,7 +112,7 @@ def test_find_documents_is_intermediate_in_summarization():
     assert "doc-1" in observation
 
 
-def test_find_documents_is_retrieval_in_document_search():
+def test_find_documents_is_metadata_in_document_search():
     class FakeDocTool:
         name = "find_documents"
         parameters = {"type": "object", "properties": {}}
@@ -141,6 +141,6 @@ def test_find_documents_is_retrieval_in_document_search():
         tool_executor=executor,
     )
 
-    assert is_retrieval is True
-    assert len(evidence) == 1
-    assert evidence[0]["doc_id"] == "doc-1"
+    assert is_retrieval is False
+    assert evidence == []
+    assert "doc-1" in observation

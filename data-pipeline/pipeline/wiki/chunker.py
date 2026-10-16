@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from models.document import BlockType, Chunk, Document
 
-from ..chunker import split_prose_at_boundaries
+from pipeline.documents.chunker import split_prose_at_boundaries
 
 
 WIKI_CHUNKER_VERSION = "wiki-structure-v2-block-spans"

@@ -6,18 +6,25 @@
 
 ## CP2 已实现范围
 
+2026-10-15 已拆分为独立的 [FastPipeline](agent/chat/fast.py) 与
+[ThinkingPipeline](agent/chat/thinking.py)，详见[模式契约](docs/chat_mode_contract.md)。
+Fast 用原问题直接检索、程序固定调用工具，再进行一次生成；不改写、不扩展、不修复，
+图片放入最终同一次模型请求。Thinking 负责规划、有界工具循环、证据整理和固定 Thinking
+模型生成。`auto` 兼容到 Thinking；两条链路不隐式互转，JSON/SSE 共用业务流程。
+
 - `MemoryCoordinator` 在请求边界解析 Web/BFF 显式提供的受信任记忆上下文。
 - Agent 不按 `session_id` 缓存、恢复或写回对话历史。
 - `QueryIntent` / `QueryPlan` 严格 Pydantic 契约。
-- `SourceIntent` 使用结构化计划提供的来源意图；计划未提供时，由确定性启发式规则
-  推断来源。授权身份仍只来自可信请求上下文。
+- Thinking 的 `SourceIntent` 使用结构化计划，未提供时可启发式推断来源。
+  Fast 仅根据请求来源、文件及可用上下文确定工具。授权身份仍只来自可信请求上下文。
 - Agent Runner 动态读取工具 schema，支持连续多轮工具调用。
 - 同一模型轮次的等价并行工具调用只执行一次，跨轮重复调用仍由安全阈值熔断。
 - 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
-- 检索统一使用 `standalone_query`，保留 `original_query` 用于对话、记忆和审计。
+- Fast 检索直接使用原问题；Thinking 检索可使用 `standalone_query`。
 - `trace_id` 贯穿 Chat、Runner 与检索工具。
-- `AgentOrchestrator` 编排 Memory、Query Understanding、IntentPolicy、工具
-  执行、Evidence Gate、纠偏检索和 Citation 校验。
+- `ThinkingPipeline` 编排 Memory、Query Understanding、IntentPolicy、工具
+  执行、Evidence Gate 和 Citation 校验。证据不足时模型可查看文档目录并批量读取全文；
+  不再自动扩大 TopK 或切换检索方式。
 - CP1 Web `ChatResponse` 字段保持不变。
 - 手动启动、与 Chat 隔离的 Local Deep Research API。
 - SQLite 持久化 Job／Manifest／Plan／Approval／Evidence／Claim／Report，
@@ -31,7 +38,22 @@
 - Research 创建者身份、原生 Confluence 权限、共享企业 hybrid 检索及逐模型调用授权复核。
 - 请求级 ContextVar 状态与并行检索授权传播，避免诊断/Memory 决策跨用户串用。
 
-跨层契约见[架构](../docs/access-evidence-architecture.md)与[接入说明](../docs/access-evidence-integration.md)，真实结果见[整合报告](../docs/pr63-integration-acceptance.md)。Research 当前只支持企业来源；Wiki 导航因自身 lineage 不完备暂被隔离。
+跨层契约见[架构](../docs/access-evidence/access-evidence-architecture.md)与[接入说明](../docs/access-evidence/access-evidence-integration.md)，真实结果见[整合报告](../docs/testing/integration/pr63-integration-acceptance.md)。Research 当前只支持企业来源；Wiki 导航因自身 lineage 不完备暂被隔离。
+
+Fast 标题使用问题截取，且 BFF 不为 Fast 本轮追加后台 Memory 压缩。
+Thinking 的新聊天标题复用配置的 Fast 答案模型；未配置独立 Fast 模型或注入自定义
+LLM 时沿用注入的客户端。标题完成预算为256 tokens，包含推理模型消耗的推理
+tokens，避免高强度主模型在旧30-token预算内截断而无标题。标题调用仍经过
+请求级访问复核和 `title_generation` 观测。
+
+Fast 有证据问答的正文经过确定性引用校验后释放，不追加生成修复；失败状态为
+`QUALITY_VALIDATION_FAILED`。展示引用仍指向当前原文，表格列名和值的语义对应
+只从同一原表取得。详见[流式接入契约](../docs/access-evidence/access-evidence-integration.md)。
+
+Fast 图片输入要求配置具有多模态能力的 `ANSWER_FAST_MODEL` 并显式开启
+`FAST_MODEL_SUPPORTS_IMAGES=true`（默认 false）；不支持时返回 `unsupported`。
+`FAST_CONTEXT_MAX_CHARS` 默认 12000。图片工具只读取已有解析/OCR及原图，
+不调用独立视觉模型。Thinking 仍沿用分阶段及 Runner 的限制，统一总调用预算待后续实现。
 
 共享契约：
 
@@ -96,10 +118,9 @@ agent-layer/
 │   ├── config/
 │   ├── errors/
 │   └── streaming/
-├── mock/
 ├── tests/
 ├── docs/
-└── scripts/
+└── eval/
 ```
 
 ## 运行方式
@@ -112,16 +133,17 @@ uvicorn app:app --reload --port 8000
 ## 测试方式
 
 ```bash
-pytest
-python scripts/check_contract.py
-python scripts/run_week4_acceptance.py
+python -m pytest
 ```
 
-CP2 Local Deep Research Week 1 的固定环境、单命令测试、Chat 基线和
-LangGraph Spike 说明见
-[`docs/cp2/week1_member_b_delivery.md`](docs/cp2/week1_member_b_delivery.md)。
-Deep Research Core Vertical Slice 的链路、恢复策略和场景验收见
-[`docs/cp2/day5_vertical_slice_delivery.md`](docs/cp2/day5_vertical_slice_delivery.md)。
+真实边界和 Research 产品验收入口分别为 `python -m eval.integration_boundary_acceptance`
+与 `python -m eval.research_product_acceptance`；先按[运行手册](../docs/access-evidence/access-evidence-runbook.md)
+配置隔离数据路径、认证、模型与检索依赖。
+
+2026-10-15 已删除旧 `mock/` 与 `scripts/` 目录，包括 CP1 样例、分层联调与阶段演示脚本、
+重复测试包装和旧 G1/G2 评测包装。当前业务回归测试自行创建最小临时资料，覆盖计划来源限制、
+资料冲突、报告与崩溃恢复；仅验证历史样例文件完整性的测试已删除。
+历史交付文档中的旧目录和命令只供追溯，不再作为当前执行入口。
 
 ## API 示例
 
@@ -150,7 +172,7 @@ curl -X POST "http://localhost:8000/api/chat" \
 
 - pytest 会替换 LLM 与 SearchTool，测试不依赖外部模型、Milvus 或 embedding 包。
 - 运行服务时默认使用 Tool Layer 的 `SearchTool` 和 OpenAI-compatible `LLMClient`。
-- `mock/` 目录仍保留 CP1 请求与答案样例。
+- 测试数据由测试代码在临时目录创建，旧 CP1 请求与答案样例已删除。
 
 ## 运行配置
 
@@ -298,5 +320,4 @@ CP2 意图分类与 QueryPlan 映射见 [`intent_classifier.py`](agent/query/int
 - 普通问答接口：`POST /api/chat`。
 - SSE 演示接口：`POST /api/chat/stream`。
 - Web 联调说明见 `docs/cp1/web_integration_guide.md`。
-- Demo 问题集见 `mock/demo_questions.json`。
 - 最终交接说明见 `docs/cp1/final_handoff.md`。

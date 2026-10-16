@@ -9,7 +9,7 @@ from markdown_it import MarkdownIt
 
 from models.document import BlockType, ContentBlock, Document
 from parsers.base import BaseParser
-from shared_runtime.document_sections import stable_document_version_id
+from pipeline.documents.sections import stable_document_version_id
 
 
 class MarkdownParser(BaseParser):
@@ -44,19 +44,24 @@ class MarkdownParser(BaseParser):
         meta = dict(metadata or {})
         content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
         page_id = str(meta.get("page_id") or "")
+        attachment_id = str(meta.get("attachment_id") or "")
         space_id = str(meta.get("space_id") or meta.get("space_key") or "")
         page_version = str(meta.get("version") or "")
-        doc_key = f"confluence:{space_id}:{page_id}" if page_id else source
+        source_id = attachment_id or page_id
+        doc_key = (
+            f"confluence:{space_id}:attachment:{attachment_id}" if attachment_id
+            else f"confluence:{space_id}:{page_id}" if page_id else source
+        )
         title = str(meta.get("title") or Path(source).stem)
         version_id = (
             stable_document_version_id(
                 source_scope="enterprise",
                 knowledge_base_id=space_id or "confluence",
-                document_id=page_id,
+                document_id=source_id,
                 version=page_version or "0",
                 content_sha256=content_hash,
             )
-            if page_id
+            if source_id
             else "ver_" + hashlib.sha256(content_hash.encode("utf-8")).hexdigest()
         )
         blocks = self._parse_blocks(text, doc_key)

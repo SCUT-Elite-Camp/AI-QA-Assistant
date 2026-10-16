@@ -1,3 +1,5 @@
+from tests.grounding_helpers import grounded_content
+import json
 from contextvars import Context
 from unittest.mock import MagicMock
 
@@ -80,10 +82,14 @@ def test_llm_error_returns_llm_error(monkeypatch) -> None:
     response = Agent().chat(ChatRequest(query="触发模型异常"))
 
     assert response.status == StatusCode.LLM_ERROR
-    assert response.message == "服务异常，请稍后重试。"
+    assert response.message == "The Fast model request failed."
 
 
 def test_chat_service_passes_week2_retrieval_parameters(monkeypatch) -> None:
+    monkeypatch.setattr(LLMClient, "chat", lambda *args, **kwargs: {"content": json.dumps({
+        "claims": [{"text": "测试上下文",
+            "supports": [{"citation_id": 1, "quote": "测试上下文"}]}],
+    }, ensure_ascii=False)})
     called_params = {}
 
     def mock_search(self, query, top_k=5, mode="hybrid", filters=None, min_score=0.0, trace_id=None):
@@ -113,7 +119,7 @@ def test_chat_service_passes_week2_retrieval_parameters(monkeypatch) -> None:
     )
 
     assert response.status == StatusCode.SUCCESS
-    assert called_params["query"] == "第二周做什么？"
+    assert called_params["query"] == "  第二周做什么？ "
 
 
 def test_low_score_retrieval_returns_no_relevant_context(monkeypatch) -> None:
@@ -162,6 +168,7 @@ def test_agent_routes_only_query_preparation_to_configured_model(monkeypatch) ->
 
     assert agent.llm.model == "main-answer-model"
     assert analyzer.llm.llm.model == "fast-preparation-model"
+    assert agent.query_understanding.query_planner.llm.llm.model == "fast-preparation-model"
     assert analyzer.fallback_llm.llm.model == "main-answer-model"
     assert agent.runtime_llm.llm.model == "main-answer-model"
 
@@ -176,7 +183,28 @@ def test_agent_configures_non_thinking_fast_answer_model(monkeypatch) -> None:
     assert agent.answer_llm.llm.model == "main-answer-model"
     assert agent.fast_answer_llm.llm.model == "qwen-flash"
     assert agent.fast_answer_llm.llm.enable_thinking is False
-    assert agent.runner.fast_answer_llm is agent.fast_answer_llm
+    assert agent.runner.answer_generator.llm is agent.answer_llm
+    assert agent.title_llm.llm is agent.fast_answer_llm.llm
+
+
+def test_fallback_title_uses_fast_model_with_room_for_reasoning(monkeypatch) -> None:
+    monkeypatch.setattr("agent.agent.settings.LLM_MODEL", "openai/gpt-oss-120b")
+    monkeypatch.setattr("agent.agent.settings.ANSWER_FAST_MODEL", "openai/gpt-oss-20b")
+    monkeypatch.setattr("agent.agent.settings.ANSWER_FAST_MODEL_THINKING", False)
+    agent = Agent()
+    calls = []
+
+    def title_response(messages, **kwargs):
+        calls.append(kwargs)
+        # Reasoning-capable models consume completion budget before title text.
+        return {"content": "财务资产" if kwargs["max_tokens"] >= 128 else ""}
+
+    monkeypatch.setattr(agent.title_llm.llm, "chat", title_response)
+    monkeypatch.setattr(agent.llm, "chat", lambda *a, **kw: pytest.fail("title must not call the complex model"))
+    assert agent._generate_fallback_title("摩根大通的资产是多少？") == "财务资产"
+    assert agent.title_llm.llm.model == "openai/gpt-oss-20b"
+    assert agent.title_llm.llm.enable_thinking is False
+    assert len(calls) == 1
 
 
 def test_agent_routes_complex_completeness_check_to_configured_model(monkeypatch) -> None:

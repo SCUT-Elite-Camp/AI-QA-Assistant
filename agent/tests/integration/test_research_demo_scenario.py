@@ -7,10 +7,9 @@ from deep_research.execution import ResearchRuntimeService
 
 
 DEMO_DOCUMENTS = (
-    Path(__file__).resolve().parents[3]
-    / "data-persistence"
-    / "data"
-    / "documents"
+    Path(__file__).resolve().parents[1]
+    / "fixtures"
+    / "travel-policy"
 )
 DEMO_IDS = [
     "demo-travel-policy-v1",

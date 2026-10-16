@@ -1,4 +1,4 @@
-"""Agent-facing document discovery and paginated document reading tools."""
+"""Agent-facing document catalog and batch full-text reading tools."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Any, Dict
 from data_persistence.vector import matches_filters, normalize_filters
 
 from .base_tool import BaseTool
-from .evidence_metadata import check_expected_source, chunk_metadata, source_metadata
+from .evidence_metadata import chunk_metadata, source_metadata
 
 
 _DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -93,7 +93,8 @@ class FindDocumentsTool(BaseTool):
     def description(self) -> str:
         return (
             "Find or list documents by title, identifier, space, type, or content "
-            "keywords. Returns document metadata, not full document text."
+            "keywords. Omit query to browse the document catalog. Returns metadata "
+            "for selecting documents, never citable evidence; use get_document to read them."
         )
 
     @property
@@ -107,6 +108,7 @@ class FindDocumentsTool(BaseTool):
                     "maxLength": 512,
                 },
                 "filters": _filter_schema(),
+                "offset": {"type": "integer", "minimum": 0, "default": 0},
                 "top_k": {
                     "type": "integer",
                     "minimum": 1,
@@ -124,8 +126,9 @@ class FindDocumentsTool(BaseTool):
         query = query_value.strip()
         filters = _normalize_public_filters(kwargs.get("filters"))
         top_k = kwargs.get("top_k", 5)
-        if not query and not filters:
-            raise ValueError("query or filters is required")
+        offset = kwargs.get("offset", 0)
+        if type(offset) is not int or offset < 0:
+            raise ValueError("offset must be a non-negative integer")
         if type(top_k) is not int or not 1 <= top_k <= 20:
             raise ValueError("top_k must be an integer from 1 to 20")
         if len(query) > 512:
@@ -186,12 +189,17 @@ class FindDocumentsTool(BaseTool):
             row["title"].casefold(),
             row["doc_id"],
         ))
-        selected = rows[:top_k]
-        return {"documents": selected, "result_count": len(selected)}
+        selected = rows[offset:offset + top_k]
+        next_offset = offset + len(selected)
+        return {
+            "documents": selected, "result_count": len(selected),
+            "total_documents": len(rows), "has_more": next_offset < len(rows),
+            "next_offset": next_offset if next_offset < len(rows) else None,
+        }
 
 
 class GetDocumentTool(BaseTool):
-    """Return a safe, ordered page of chunks from one document."""
+    """Read the full parsed text and citation chunks of selected documents."""
 
     def __init__(self, documents_dir: Path) -> None:
         self.repository = DocumentRepository(documents_dir)
@@ -203,8 +211,9 @@ class GetDocumentTool(BaseTool):
     @property
     def description(self) -> str:
         return (
-            "Read an identified document by doc_id in ordered, paginated chunks. "
-            "Use has_more and next_offset to continue reading long documents."
+            "Read the complete parsed text of one or more documents in a single call. "
+            "Choose doc_ids from search results or find_documents. Returns full content "
+            "and source-bound chunks for citations, without pagination or silent truncation."
         )
 
     @property
@@ -212,60 +221,58 @@ class GetDocumentTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "doc_id": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 128,
-                    "pattern": r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
-                },
-                "offset": {"type": "integer", "minimum": 0, "default": 0},
-                "expected_version": {"type": "string"},
-                "expected_hash": {"type": "string"},
-                "limit": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 50,
-                    "default": 20,
+                "doc_ids": {
+                    "type": "array", "minItems": 1, "maxItems": 20,
+                    "items": {
+                        "type": "string", "minLength": 1, "maxLength": 128,
+                        "pattern": _DOC_ID_PATTERN.pattern,
+                    },
                 },
             },
-            "required": ["doc_id"],
+            "required": ["doc_ids"],
             "additionalProperties": False,
         }
 
     def execute(self, **kwargs: Any) -> Any:
-        doc_id = kwargs.get("doc_id")
-        offset = kwargs.get("offset", 0)
-        limit = kwargs.get("limit", 20)
-        if type(offset) is not int or offset < 0:
-            raise ValueError("offset must be a non-negative integer")
-        if type(limit) is not int or not 1 <= limit <= 50:
-            raise ValueError("limit must be an integer from 1 to 50")
+        doc_ids = kwargs.get("doc_ids")
+        if not isinstance(doc_ids, list) or not 1 <= len(doc_ids) <= 20:
+            raise ValueError("doc_ids must contain 1 to 20 document IDs")
+        if any(not isinstance(value, str) or not _DOC_ID_PATTERN.fullmatch(value) for value in doc_ids):
+            raise ValueError("invalid_doc_id")
+        documents, errors = [], []
+        for doc_id in dict.fromkeys(doc_ids):
+            document = self._read(doc_id)
+            if document is None:
+                errors.append({"doc_id": doc_id, "error": "document_not_found"})
+            else:
+                documents.append(document)
+        return {"documents": documents, "errors": errors, "result_count": len(documents)}
+
+    def _read(self, doc_id: str) -> dict | None:
         document = self.repository.load(doc_id)
         if document is None:
-            return {"error": "document_not_found", "doc_id": doc_id}
-        check_expected_source(document, expected_version=kwargs.get("expected_version"), expected_hash=kwargs.get("expected_hash"))
+            return None
+        document.setdefault("doc_id", doc_id)
 
         chunks = sorted(
             (chunk for chunk in document.get("chunks", []) if isinstance(chunk, dict)),
             key=lambda chunk: int(chunk.get("index", 0)),
         )
-        page = [{**chunk, **chunk_metadata(document, chunk)} for chunk in chunks[offset : offset + limit]]
-        next_offset = offset + len(page)
-        total = len(chunks)
+        content = document.get("content")
+        if not isinstance(content, str) or not content:
+            content = "\n\n".join(str(chunk.get("text") or chunk.get("chunk_text") or "") for chunk in chunks)
+        if not chunks and content:
+            chunks = [{"index": 0, "text": content}]
         return {
-            "document": {
-                **source_metadata(document),
-                "doc_id": str(document.get("doc_id", doc_id)),
-                "title": str(document.get("title", "")),
-                "space": str(document.get("space", "")),
-                "doc_type": _document_type(document),
-                "last_updated": str(document.get("last_updated", "")),
-                "source_url": str(document.get("source_url", "")),
-            },
-            "chunks": page,
-            "total_chunks": total,
-            "next_offset": next_offset if next_offset < total else None,
-            "has_more": next_offset < total,
+            **source_metadata(document),
+            "doc_id": str(document.get("doc_id", doc_id)),
+            "title": str(document.get("title", "")),
+            "space": str(document.get("space", "")),
+            "doc_type": _document_type(document),
+            "last_updated": str(document.get("last_updated", "")),
+            "source_url": str(document.get("source_url", "")),
+            "content": content,
+            "chunks": [{**chunk, **chunk_metadata(document, chunk)} for chunk in chunks],
         }
 
 

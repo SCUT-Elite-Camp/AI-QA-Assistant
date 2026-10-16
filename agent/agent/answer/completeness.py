@@ -127,19 +127,29 @@ class AnswerCompletenessChecker:
         answer: str,
         evidence: list[Evidence],
         result: AnswerCompletenessResult,
-    ) -> str:
+        *,
+        grounded: bool = False,
+    ):
+        from agent.evidence.answer_grounding import GROUNDING_INSTRUCTION, parse_grounded_answer
         missing = list(dict.fromkeys([*result.missing_aspects, *result.missing_critical_facts]))
         repair_evidence = self._evidence_for_repair(evidence, missing)
+        prompt = self._repair_prompt(query_plan, answer, repair_evidence, result, evidence)
+        if grounded:
+            prompt = prompt.replace("Return only the repaired answer.", "Return the repaired answer and its private support data using the JSON contract below.")
+            prompt += "\n\n" + GROUNDING_INSTRUCTION
         response = self.llm.chat(
             [{
                 "role": "user",
-                "content": self._repair_prompt(query_plan, answer, repair_evidence, result, evidence),
+                "content": prompt,
             }],
             tools=None,
+            **({"response_format": {"type": "json_object"}} if grounded else {}),
         )
         content = response.get("content", "") if isinstance(response, dict) else ""
         if not isinstance(content, str):
             return ""
+        if grounded:
+            return parse_grounded_answer(content)
         # Reject a copied review prompt; stripping labels could still publish
         # the source dump or unsupported original claim as a repaired answer.
         if re.search(r"(?im)^\s*(?:Missing aspects|Missing critical facts|Original answer|Question|Evidence)\s*:", content):

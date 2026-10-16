@@ -5,3 +5,7 @@ from pathlib import Path
 data_persistence_dir = Path(__file__).resolve().parent.parent
 if str(data_persistence_dir) not in sys.path:
     sys.path.insert(0, str(data_persistence_dir))
+
+for dependency in (data_persistence_dir.parent / "data-pipeline", data_persistence_dir.parent / "toolset"):
+    if str(dependency) not in sys.path:
+        sys.path.insert(0, str(dependency))

@@ -32,7 +32,7 @@ import tempfile
 from typing import Any
 
 import requests
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 
 from models.document import Document, ContentBlock, BlockType
 from parsers.base import BaseParser
@@ -251,7 +251,7 @@ class HtmlParser(BaseParser):
         soup = BeautifulSoup(html_string, "html.parser")
 
         # 移除 script/style 等不可见元素
-        for tag in soup(["script", "style", "noscript"]):
+        for tag in soup(["script", "style", "noscript", "iframe", "object", "embed"]):
             tag.decompose()
 
         # 提取所有可见文本
@@ -265,7 +265,7 @@ class HtmlParser(BaseParser):
             re.search(r"ri:attachment|ac:link.*attachment", html_string)
         )
 
-        has_visible_content = len(visible_text) > 20  # 阈值：超过 20 字符视为有正文
+        has_visible_content = bool(visible_text)
 
         if has_visible_content and has_attachment_refs:
             return "hybrid"
@@ -290,7 +290,7 @@ class HtmlParser(BaseParser):
         soup = BeautifulSoup(html_string, "html.parser")
 
         # 移除不可见元素
-        for tag in soup(["script", "style", "noscript"]):
+        for tag in soup(["script", "style", "noscript", "iframe", "object", "embed"]):
             tag.decompose()
 
         # 只处理 <body> 内容，如果没有 body 则用整个文档
@@ -304,6 +304,11 @@ class HtmlParser(BaseParser):
         """递归遍历 DOM 节点，按阅读顺序提取内容块"""
         for child in node.children:
             if not isinstance(child, Tag):
+                if isinstance(child, Comment):
+                    continue
+                text = str(child).strip()
+                if text:
+                    blocks.append(ContentBlock(block_type=BlockType.PARAGRAPH, text=text))
                 continue
 
             name = child.name
@@ -356,7 +361,8 @@ class HtmlParser(BaseParser):
             # ── 容器标签：递归进入 ──
             elif name in ("ul", "ol", "div", "section", "article",
                           "main", "aside", "header", "footer", "blockquote",
-                          "td", "th", "tr", "tbody", "thead"):
+                          "td", "th", "tr", "tbody", "thead", "span", "a",
+                          "strong", "b", "em", "i", "label", "code", "pre"):
                 self._walk_node(child, blocks)
 
             # ── 其他标签：忽略（如 <br>, <hr>, <span> 等）

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-DATASET = Path(__file__).parent / "datasets" / "agent_cp2_cases.json"
+DATASET = Path(__file__).parent / "datasets" / "agent_cp2_cases.en.v2.json"
 
 
 def _load() -> dict:

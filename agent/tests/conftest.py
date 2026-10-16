@@ -8,6 +8,11 @@ from pathlib import Path
 agent_dir = Path(__file__).resolve().parent.parent
 project_root = agent_dir.parent
 
+
+@pytest.fixture(autouse=True)
+def isolated_semantic_reranker(monkeypatch):
+    monkeypatch.setenv('RERANK_ENABLED', 'false')
+
 dependency_dirs = [
     agent_dir,
     project_root,
@@ -44,7 +49,9 @@ except ModuleNotFoundError:
 def mock_llm_client_chat(monkeypatch):
     """Automatically mocks LLMClient.chat for all tests to keep them hermetic and mock-free in prod."""
     from agent.llm.llm_client import LLMClient
+    from tests.grounding_helpers import grounded_model, grounded_content
 
+    @grounded_model
     def mock_chat(self, messages, tools=None, **kwargs):
         # Simulate LLM tool calling and final response loop
         has_tool_response = any(msg.get("role") == "tool" for msg in messages)
@@ -73,16 +80,16 @@ def mock_llm_client_chat(monkeypatch):
         return {
             "role": "assistant",
             "content": (
-                "根据检索到的文档，我们发现以下规则：\n"
-                "[1] 这是第一个文档段落。\n"
-                "[2] 这是第二个测试说明段落。\n"
-                "这些文档非常清晰地展示了项目要求。"
+                "The retrieved documents describe these requirements:\n"
+                "[1] This is the first document passage.\n"
+                "[2] This is the second test explanation passage.\n"
+                "These passages describe the project requirements."
             )
         }
 
     def mock_stream_chat(self, messages, tools=None, **kwargs):
-        yield {"reasoning_content": "正在思考知识库检索到的内容..."}
-        yield {"content": "根据检索到的文档，我们发现以下规则：\n[1] 这是第一个文档段落。\n[2] 这是第二个测试说明段落。\n这些文档非常清晰地展示了项目要求。"}
+        yield {"reasoning_content": "Reviewing the retrieved knowledge-base evidence..."}
+        yield {"content": grounded_content("The retrieved documents describe these requirements:\n[1] This is the first document passage.\n[2] This is the second test explanation passage.\nThese passages describe the project requirements.", messages)}
 
     monkeypatch.setattr(LLMClient, "chat", mock_chat)
     monkeypatch.setattr(LLMClient, "stream_chat", mock_stream_chat)
@@ -107,8 +114,8 @@ def mock_search_tool(monkeypatch):
                 "doc_id": "doc-001",
                 "chunk_id": "doc-001::chunk_0",
                 "chunk_index": 0,
-                "chunk_text": "这是第一个文档段落。",
-                "title": "测试文档一",
+                "chunk_text": "This is the first document passage.",
+                "title": "Test Document One",
                 "source_url": "https://example.com/doc-001",
                 "score": 0.92,
             },
@@ -116,14 +123,17 @@ def mock_search_tool(monkeypatch):
                 "doc_id": "doc-002",
                 "chunk_id": "doc-002::chunk_0",
                 "chunk_index": 0,
-                "chunk_text": "这是第二个测试说明段落。",
-                "title": "测试文档二",
+                "chunk_text": "This is the second test explanation passage.",
+                "title": "Test Document Two",
                 "source_url": "https://example.com/doc-002",
                 "score": 0.88,
             },
         ][:top_k]
 
     monkeypatch.setattr(SearchTool, "search", mock_search)
+    # Most Agent tests replace the retrieval boundary; Toolset tests exercise
+    # the real direct primitive separately. Respect per-test search transports.
+    monkeypatch.setattr(SearchTool, "search_direct", lambda self, **kwargs: self.search(**kwargs))
 
 
 @pytest.fixture(autouse=True)
@@ -235,3 +245,29 @@ def component_authorization_double(monkeypatch, request):
         from agent.api import internal_memory_routes
         monkeypatch.setattr(internal_memory_routes, "resolve_access", lambda *args, **kwargs: [])
         monkeypatch.setattr(internal_memory_routes, "AccessGuard", ComponentGuard)
+
+
+@pytest.fixture
+def research_documents_dir(tmp_path: Path) -> Path:
+    """Minimal local sources for report, conflict and crash-recovery regressions."""
+    directory = tmp_path / "research-documents"
+    directory.mkdir()
+    documents = [{'doc_id': 'budget-a', 'title': '预算版本 A', 'version': 'v1', 'content': '2026 年度预算为 100 万元。'},
+     {'doc_id': 'budget-b', 'title': '预算版本 B', 'version': 'v1', 'content': '2026 年度预算为 120 万元。'},
+     {'doc_id': 'incomplete-metrics',
+      'title': '经营指标摘录',
+      'version': 'v1',
+      'content': '资料仅记录收入为 100 万元。\n其他指标未收录。'},
+     {'doc_id': 'project-alpha',
+      'title': '项目 Alpha 状态',
+      'version': 'v1',
+      'content': '项目 Alpha 的部署状态为已完成。\n部署验收记录已归档。'},
+     {'doc_id': 'project-beta',
+      'title': '项目 Beta 状态',
+      'version': 'v1',
+      'content': '项目 Beta 的部署状态为已完成。\n部署验收记录已归档。'}]
+    for document in documents:
+        (directory / f"{document['doc_id']}.json").write_text(
+            json.dumps(document, ensure_ascii=False), encoding="utf-8",
+        )
+    return directory

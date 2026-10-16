@@ -8,6 +8,7 @@ from agent.schemas.tool_execution import Evidence
 
 def normalize_citation_markers(answer: str) -> str:
     """Expand grouped numeric citations without changing their source numbers."""
+    answer = re.sub(r"【(\d+(?:\s*[,，]\s*\d+)*)】", lambda m: '[' + m[1].replace('，', ',') + ']', answer)
     return re.sub(
         r"\[(\d+(?:\s*,\s*\d+)+)\]",
         lambda match: ''.join(f'[{number.strip()}]' for number in match.group(1).split(',')),

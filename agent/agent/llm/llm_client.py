@@ -7,9 +7,9 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from agent.config.settings import settings
-from agent.errors.exceptions import LLMError
+from agent.errors.exceptions import LLMError, LLMToolCallValidationError
 from agent.llm.base import BaseLLM
-from agent.llm.provider_options import apply_provider_options, is_openrouter
+from agent.llm.provider_options import apply_provider_options, is_groq, is_openrouter
 
 
 class LLMClient(BaseLLM):
@@ -29,7 +29,7 @@ class LLMClient(BaseLLM):
 
         self.model = model.strip() if isinstance(model, str) and model.strip() else settings.LLM_MODEL
         self.enable_thinking = enable_thinking
-        if enable_thinking is None and is_openrouter(settings.LLM_API_BASE):
+        if enable_thinking is None and (is_openrouter(settings.LLM_API_BASE) or is_groq(settings.LLM_API_BASE)):
             self.enable_thinking = (
                 settings.ANSWER_FAST_MODEL_THINKING
                 if self.model == settings.ANSWER_FAST_MODEL
@@ -76,6 +76,8 @@ class LLMClient(BaseLLM):
         }
         if tools:
             payload["tools"] = tools
+        if kwargs.get("response_format") is not None:
+            payload["response_format"] = kwargs["response_format"]
         if self.enable_thinking is not None:
             payload["enable_thinking"] = self.enable_thinking
         payload = apply_provider_options(payload, settings.LLM_API_BASE)
@@ -89,7 +91,7 @@ class LLMClient(BaseLLM):
         candidate_models = [self.model]
         fallback_models = self.fallback_models
         if fallback_models is None:
-            fallback_models = () if is_openrouter(settings.LLM_API_BASE) else (
+            fallback_models = () if (is_openrouter(settings.LLM_API_BASE) or is_groq(settings.LLM_API_BASE)) else (
                 "gemini-3.6-flash",
                 "gemini-3.5-flash-lite",
                 "gemini-3.1-flash-lite-preview",
@@ -117,6 +119,14 @@ class LLMClient(BaseLLM):
                             return message
                         except (KeyError, IndexError, TypeError) as exc:
                             raise LLMError("LLM response format is invalid.") from exc
+
+                    if resp.status_code == 400 and tools and is_groq(settings.LLM_API_BASE):
+                        try:
+                            error = resp.json().get("error", {})
+                        except (ValueError, AttributeError):
+                            error = {}
+                        if isinstance(error, dict) and error.get("code") == "tool_use_failed":
+                            raise LLMToolCallValidationError("Provider rejected the generated tool call.")
 
                     # If 429 / 503 / 404, retry or try next model
                     if resp.status_code in (429, 503, 500, 502, 404):
@@ -148,6 +158,8 @@ class LLMClient(BaseLLM):
         }
         if tools:
             payload["tools"] = tools
+        if kwargs.get("response_format") is not None:
+            payload["response_format"] = kwargs["response_format"]
         if self.enable_thinking is not None:
             payload["enable_thinking"] = self.enable_thinking
         payload = apply_provider_options(payload, settings.LLM_API_BASE)
@@ -159,7 +171,7 @@ class LLMClient(BaseLLM):
             headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
 
         answer_emitted = False
-        for attempt in range(2):
+        for attempt in range(self.attempts_per_model):
             try:
                 yield from self._coalesce_deltas(self._stream_response(endpoint, payload, headers))
                 return
@@ -167,13 +179,13 @@ class LLMClient(BaseLLM):
                 # Retrying after answer tokens were delivered would duplicate
                 # or splice two independently generated answers.
                 answer_emitted = getattr(exc, 'answer_emitted', False)
-                if attempt == 0 and not answer_emitted:
+                if attempt + 1 < self.attempts_per_model and not answer_emitted:
                     continue
-                if not answer_emitted and str(exc) == 'LLM stream produced no answer content':
+                if self.attempts_per_model > 1 and not answer_emitted and str(exc) == 'LLM stream produced no answer content':
                     # Some compatible providers finish a stream without any
                     # content deltas. A non-stream response is safe here because
                     # no answer body has been exposed or stored yet.
-                    message = self.chat(messages, tools=tools, temperature=temperature, max_tokens=max_tokens)
+                    message = self.chat(messages, tools=tools, temperature=temperature, max_tokens=max_tokens, **kwargs)
                     content = message.get('content') or ''
                     if isinstance(content, str) and content.strip():
                         yield {'content':content,'reasoning_content':''}
@@ -234,6 +246,8 @@ class LLMClient(BaseLLM):
                     choices = chunk.get("choices") or []
                     if choices:
                         delta = choices[0].get("delta") or {}
+                        if delta.get("tool_calls"):
+                            raise LLMError("Unexpected tool calls in answer stream.")
                         content = delta.get("content") or ""
                         reasoning = delta.get("reasoning_content") or delta.get("reasoning") or ""
                         if content or reasoning:

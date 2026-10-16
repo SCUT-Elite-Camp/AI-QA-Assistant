@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 for dependency in (ROOT, ROOT / "data-pipeline", ROOT / "data-persistence", ROOT / "toolset"):
     sys.path.insert(0, str(dependency))
 
-from pipeline.embedder import embed_texts  # noqa: E402
-from pipeline.rag_lifecycle import (  # noqa: E402
+from pipeline.indexing.embedder import embed_texts  # noqa: E402
+from pipeline.confluence.lifecycle import (  # noqa: E402
     finish_retraction, mark_retraction_pending, pending_confluence_retractions,
 )
 from retrieval.bm25_index import BM25Index  # noqa: E402

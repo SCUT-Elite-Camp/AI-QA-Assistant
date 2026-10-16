@@ -19,54 +19,40 @@ def test_explicit_thinking_resolves_to_thinking() -> None:
     resolver = ExecutionProfileResolver()
     policy = IntentPolicy()
     profile = resolver.resolve(
-        "thinking", _plan(), policy, exploration_mode="auto",
-        fast_retrieval_available=True,
+        "thinking", exploration_mode="auto",
     )
     assert profile.mode is ExecutionMode.THINKING
-    assert profile.answer_model_preference == "complex"
 
 
-def test_auto_uses_fast_only_for_supported_simple_qa() -> None:
+def test_auto_is_a_thinking_alias_even_for_simple_qa() -> None:
     profile = ExecutionProfileResolver().resolve(
-        "auto", _plan(), IntentPolicy(candidate_tools=("search_documents",)),
-        exploration_mode="auto", fast_retrieval_available=True,
+        "auto", exploration_mode="auto",
     )
-    assert profile.mode is ExecutionMode.FAST
-    assert profile.reason == "auto_default_fast"
+    assert profile.mode is ExecutionMode.THINKING
+    assert profile.reason == "auto_alias_thinking"
 
 
 def test_omitted_mode_defaults_to_fast_for_supported_simple_qa() -> None:
     assert ChatRequest(query="question").weight_mode == "fast"
     profile = ExecutionProfileResolver().resolve(
-        None, _plan(), IntentPolicy(candidate_tools=("search_documents",)),
-        exploration_mode="auto", fast_retrieval_available=True,
+        None, exploration_mode="auto",
     )
     assert profile.requested_mode == "fast"
     assert profile.mode is ExecutionMode.FAST
 
 
-def test_auto_and_explicit_fast_fall_back_for_complex_or_unsupported_plans() -> None:
-    resolver = ExecutionProfileResolver()
-    policy = IntentPolicy(candidate_tools=("search_documents",))
-    cases = [
-        (_plan(QueryIntent.COMPARISON, sub_queries=["A", "B"]), "auto", "planned_subqueries"),
-        (_plan(), "fast", "fast_fallback:forced_exploration"),
-        (_plan(source_intent=SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY])), "fast", "fast_fallback:private_source_unsupported"),
-        (_plan(), "fast", "fast_fallback:unsupported_intent_or_policy"),
-    ]
-    for plan, mode, reason in cases:
-        profile = resolver.resolve(
-            mode, plan, policy,
-            exploration_mode="force" if reason.endswith("forced_exploration") else "auto",
-            fast_retrieval_available=(reason != "fast_fallback:unsupported_intent_or_policy"),
-        )
-        assert profile.mode is ExecutionMode.THINKING
-        expected_reason = (
-            "auto_fallback:planned_subqueries"
-            if mode == "auto"
-            else reason
-        )
-        assert profile.reason == expected_reason
+@pytest.mark.parametrize("plan", [
+    _plan(QueryIntent.COMPARISON, sub_queries=["A", "B"]),
+    _plan(source_intent=SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY])),
+    _plan(needs_structure=True),
+])
+def test_explicit_fast_never_changes_mode_based_on_plan_or_tool_availability(plan) -> None:
+    profile = ExecutionProfileResolver().resolve(
+        "fast", exploration_mode="force",
+    )
+    assert profile.mode is ExecutionMode.FAST
+    assert profile.reason == "explicit_fast"
+    assert profile.exploration_mode == "off"
 
 
 @pytest.mark.parametrize("legacy_mode", ["deeper", "wider"])

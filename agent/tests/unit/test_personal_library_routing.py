@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from agent.orchestration.orchestrator import AgentOrchestrator
+from agent.chat.thinking import ThinkingPipeline
 from agent.query.source_intent import heuristic_source_intent
 from agent.schemas.chat import ChatRequest, InternalChatRequest, PersonalLibraryContext
 from agent.schemas.intent_policy import IntentPolicy
@@ -72,7 +72,7 @@ def test_public_request_rejects_server_library_context() -> None:
 
 
 def test_source_policy_preserves_mixed_sources_and_fails_closed_without_context() -> None:
-    mixed = AgentOrchestrator._apply_source_policy(
+    mixed = ThinkingPipeline._apply_source_policy(
         _internal_request("比较我劳动合同与公司休假政策"),
         IntentPolicy(candidate_tools=("search_documents",)),
         SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY, SourceKind.ENTERPRISE_KB]),
@@ -80,7 +80,7 @@ def test_source_policy_preserves_mixed_sources_and_fails_closed_without_context(
     assert mixed.candidate_tools == ("search_documents", "search_library")
     assert mixed.max_retrieval_attempts == 2
 
-    unavailable = AgentOrchestrator._apply_source_policy(
+    unavailable = ThinkingPipeline._apply_source_policy(
         ChatRequest(query="我的资料库有哪些风险"),
         IntentPolicy(candidate_tools=("search_documents",)),
         SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY]),
@@ -112,7 +112,7 @@ class _Response:
 def test_executor_propagates_request_context_and_preserves_evidence(monkeypatch) -> None:
     secret = "test-secret"
     monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", secret)
-    monkeypatch.setattr("toolset.tool_layer.search_library_tool.urlopen", lambda *_args, **_kwargs: _Response())
+    monkeypatch.setattr("toolset.tool_layer.search_library_tool.search_library_evidence", lambda *_args, **_kwargs: json.loads(_Response().read()))
     tool = SearchLibraryTool()
     token = hmac.new(secret.encode(), b"user-a:kb-a", hashlib.sha256).hexdigest()
     tool.set_request_context("user-a", "kb-a", token)

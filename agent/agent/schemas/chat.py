@@ -22,6 +22,7 @@ class SourceDependency(_InternalMemoryContractModel):
     version_id: Optional[str] = None
     version: Optional[int | str] = None
     content_hash: Optional[str] = None
+    content_kind: Literal["excerpt", "file"] = "excerpt"
 
 
 class EvidenceProvenance(_InternalMemoryContractModel):
@@ -93,6 +94,7 @@ class Citation(BaseModel):
     source_content_hash: Optional[str] = None
     source_version: Optional[int | str] = None
     read_status: Optional[str] = None
+    content_kind: Literal["excerpt", "file"] = "excerpt"
 
 
 class ChatResponse(BaseModel):
@@ -221,6 +223,8 @@ class InternalChatRequest(ChatRequest):
     memory_context: MemoryContextInput
     personal_library_context: PersonalLibraryContext | None = None
     attachment_context: AttachmentContext | None = None
+    # Explicit source selection; an available library context is not a selection.
+    retrieval_sources: list[Literal["enterprise_kb", "personal_library", "conversation_attachment"]] | None = Field(default=None, max_length=3)
 
 
 class ContextArtifact(_InternalMemoryContractModel):

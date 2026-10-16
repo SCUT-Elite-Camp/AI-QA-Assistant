@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-import json
-import math
 import os
 from contextvars import ContextVar
 from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.request import Request
-from .http_security import urlopen_no_redirect as urlopen
 
 from .base_tool import BaseTool
 
@@ -30,35 +25,27 @@ class _AttachmentTool(BaseTool):
         self,
         path: str,
         payload: dict[str, Any],
-        *,
-        timeout_seconds: float | None = None,
     ) -> dict[str, Any]:
         secret = os.getenv("ATTACHMENT_INTERNAL_SECRET", "")
         context = self._context.get()
         if not secret or context is None or not context[0]:
             return {"error": "attachments_unavailable", "items": []}
-        request = Request(
-            f"{os.getenv('ATTACHMENT_SERVICE_URL', 'http://127.0.0.1:8200').rstrip('/')}{path}",
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
-            method="POST",
-        )
         try:
-            timeout = timeout_seconds or float(
-                os.getenv("ATTACHMENT_SEARCH_TIMEOUT_SECONDS", "8")
-            )
-            with urlopen(request, timeout=timeout) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except (
-            HTTPError,
-            URLError,
-            TimeoutError,
-            ConnectionError,
-            OSError,
-            ValueError,
-            json.JSONDecodeError,
-        ):
+            from data_persistence.private_files import get_private_file_store
+            from data_persistence.file_contracts import SearchRequest
+
+            body = SearchRequest.model_validate(payload)
+            store = get_private_file_store()
+            if path == "/v1/search":
+                return search_attachment_evidence(body, store)
+            if path == "/v1/fast-context":
+                from pipeline.files.fast_context import fast_file_context
+                from data_persistence.file_settings import AttachmentSettings
+                return fast_file_context(body, store, AttachmentSettings.from_env())
+            raise ValueError("unsupported_attachment_tool")
+        except (RuntimeError, OSError, ValueError):
             return {"error": "attachment_tool_unavailable", "items": []}
+
 
 
 class SearchAttachmentsTool(_AttachmentTool):
@@ -99,23 +86,10 @@ class SearchAttachmentsTool(_AttachmentTool):
             return {"error": "invalid_attachment_query", "items": []}
         allowed_ids, selected_ids = context
 
-        query_vector: list[float] | None = None
-        vector_enabled = os.getenv("ATTACHMENT_VECTOR_INDEX_ENABLED", "false").lower() in {
-            "1", "true", "yes",
-        }
-        if query.strip() and vector_enabled:
-            try:
-                from pipeline.embedder import embed_texts
-
-                query_vector = embed_texts([query])[0]
-            except (ImportError, RuntimeError, OSError, ValueError):
-                query_vector = None
         ordered = list(dict.fromkeys((*selected_ids, *sorted(allowed_ids))))
         global_payload: dict[str, Any] = {
             "attachment_ids": ordered, "query": query, "top_k": top_k,
         }
-        if query_vector is not None:
-            global_payload["query_vector"] = query_vector
         global_result = self._request("/v1/search", global_payload)
         if not selected_ids:
             return global_result
@@ -130,8 +104,6 @@ class SearchAttachmentsTool(_AttachmentTool):
             "query": query,
             "top_k": selected_limit,
         }
-        if query_vector is not None:
-            selected_payload["query_vector"] = query_vector
         selected_result = self._request("/v1/search", selected_payload)
         if not selected_result.get("items") and not selected_result.get("error"):
             # UI selection resolves deictic references such as "这份报告".
@@ -163,71 +135,42 @@ class SearchAttachmentsTool(_AttachmentTool):
         return global_result if global_result.get("error") else selected_result
 
 
-class InspectAttachmentTool(_AttachmentTool):
+class ReadAttachmentContextTool(_AttachmentTool):
+    """Fixed Fast input preparation, never invokes a generative vision backend."""
+
     @property
     def name(self) -> str:
-        return "inspect_attachment"
+        return "read_attachment_context"
 
     @property
     def description(self) -> str:
-        return "仅在OCR或基础解析不足时，对已授权的指定图片或PDF页面/区域进行本地深度视觉分析。"
+        return "Read authorized parsed file context and original image inputs without model inference."
 
     @property
     def parameters(self) -> dict[str, Any]:
         return {"type": "object", "properties": {
-            "attachment_id": {"type": "string", "minLength": 1},
-            "question": {"type": "string", "minLength": 1, "maxLength": 4000},
-            "page": {"type": "integer", "minimum": 1, "maximum": 200},
-            "bbox": {
-                "type": "array",
-                "items": {"type": "number", "minimum": 0, "maximum": 1},
-                "minItems": 4,
-                "maxItems": 4,
-            },
-        }, "required": ["attachment_id", "question"], "additionalProperties": False}
+            "query": {"type": "string"},
+            "top_k": {"type": "integer", "minimum": 1, "maximum": 20},
+        }, "required": ["query"], "additionalProperties": False}
 
     def execute(self, **kwargs: Any) -> dict[str, Any]:
-        attachment_id = kwargs.get("attachment_id")
-        if type(attachment_id) is not str or not attachment_id.strip():
-            return {"error": "invalid_attachment_query", "items": []}
         context = self._context.get()
-        allowed_ids = context[0] if context is not None else frozenset()
-        if attachment_id not in allowed_ids:
-            return {"error": "attachment_forbidden", "items": []}
-        question = kwargs.get("question")
-        if not isinstance(question, str) or not 1 <= len(question) <= 4000:
-            return {"error": "invalid_attachment_query", "items": []}
-        page = kwargs.get("page")
-        if page is not None and (
-            isinstance(page, bool)
-            or not isinstance(page, int)
-            or not 1 <= page <= 200
-        ):
-            return {"error": "invalid_attachment_query", "items": []}
-        bbox = kwargs.get("bbox")
-        if bbox is not None:
-            if not isinstance(bbox, list) or len(bbox) != 4:
-                return {"error": "invalid_attachment_query", "items": []}
-            if any(
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(value)
-                or not 0 <= value <= 1
-                for value in bbox
-            ):
-                return {"error": "invalid_attachment_query", "items": []}
-            if bbox[0] >= bbox[2] or bbox[1] >= bbox[3]:
-                return {"error": "invalid_attachment_query", "items": []}
+        if context is None or not context[0]:
+            return {"error": "attachments_unavailable", "items": []}
+        allowed, selected = context
+        return self._request("/v1/fast-context", {
+            "attachment_ids": list(selected or sorted(allowed)),
+            "query": kwargs["query"], "top_k": kwargs.get("top_k", 5),
+        })
 
-        payload: dict[str, Any] = {"question": question}
-        if page is not None:
-            payload["page"] = page
-        if bbox is not None:
-            payload["bbox"] = bbox
-        # Leave enough room for first-load model initialization plus inference.
-        result = self._request(
-            f"/v1/attachments/{attachment_id}/inspect",
-            payload,
-            timeout_seconds=float(os.getenv("ATTACHMENT_VISION_TIMEOUT_SECONDS", "90")),
-        )
-        return {"items": [result]} if "content" in result else result
+
+def search_attachment_evidence(body, store):
+    ready_ids = [attachment_id for attachment_id in body.attachment_ids if (record := store.get_attachment(attachment_id)) and record["status"] in {"ready", "needs_review"}]
+    if not body.query.strip():
+        items = store.list_evidence(ready_ids)[:body.top_k]
+        for rank, item in enumerate(items, 1):
+            item["score"] = max(0.01, 1.0 - (rank - 1) * 0.01)
+        return {"items": items}
+    lexical = store.search_evidence(ready_ids, body.query, body.top_k)
+    return {"items": [{**item, "score": min(1.0, 30 / (60 + rank))}
+                      for rank, item in enumerate(lexical, 1)]}

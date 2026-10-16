@@ -37,6 +37,19 @@ class FakeBackend:
 
 
 class SearchToolTest(unittest.TestCase):
+    def test_direct_search_preserves_query_scope_and_does_not_expand_sections(self):
+        backend = FakeBackend()
+        tool = SearchTool(backend=backend)
+        question = "  Compare all tasks in Meeting 2026/05/18 and last week  "
+        filters = {"doc_ids": ["doc_001", "doc_002"]}
+        with patch.object(tool, "_narrow_week_scope", side_effect=AssertionError("scope changed")), \
+             patch.object(tool, "_narrow_dated_scope", side_effect=AssertionError("scope changed")), \
+             patch.object(tool, "_narrow_named_scope", side_effect=AssertionError("scope changed")), \
+             patch.object(tool, "_focus_scoped_section", side_effect=AssertionError("extra context")):
+            rows = tool.search_direct(question, top_k=2, filters=filters)
+        self.assertEqual(backend.calls, [{"query": question, "top_k": 2, "mode": "hybrid", "filters": filters}])
+        self.assertEqual([row["chunk_index"] for row in rows], [0, 2])
+
     def test_named_authorized_page_expands_relevant_section(self):
         class OpeningOnlyBackend:
             def search(self, query, top_k, mode, filters=None):
@@ -88,42 +101,6 @@ class SearchToolTest(unittest.TestCase):
         self.assertEqual([row["chunk_index"] for row in actions[:2]], [3, 4])
         self.assertEqual(allowed, {"doc_ids": ["meeting", "other"]})
 
-    def test_legacy_navigation_mode_does_not_auto_search_sections(self):
-        class NavigationBackend:
-            def search(self, query, top_k, mode, filters=None):
-                return [
-                    {"doc_id": "doc_1", "chunk_id": "c_direct", "chunk_index": 0,
-                     "text": "general risk", "score": 1.0},
-                ]
-
-        with tempfile.TemporaryDirectory() as tmp:
-            docs = Path(tmp)
-            (docs / "doc_1.json").write_text(json.dumps({
-                "doc_id": "doc_1", "active_version": True,
-                "title": "Policy", "version_id": "ver-1",
-                "chunks": [
-                    {"chunk_id": "c_direct", "index": 0, "text": "general risk"},
-                    {"chunk_id": "c_scoped", "index": 1, "text": "special control"},
-                ],
-                "sections": [{
-                    "id": "s1", "title": "Special controls",
-                    "section_path": ["Policy", "Special controls"],
-                    "summary": "special control", "evidence_ids": ["c_scoped"],
-                    "quality": "high", "level": 1,
-                }],
-            }), encoding="utf-8")
-            tool = SearchTool(backend=NavigationBackend(), documents_dir=str(docs))
-            with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "true"}):
-                rows = tool.search(
-                    "special control", top_k=2, navigation_mode="hybrid",
-                )
-        self.assertEqual([row["chunk_id"] for row in rows], ["c_direct"])
-
-    def test_navigation_is_direct_when_feature_flag_is_disabled(self):
-        tool = SearchTool(backend=FakeBackend())
-        with patch.dict("os.environ", {"HIERARCHICAL_NAVIGATION_ENABLED": "false"}):
-            rows = tool.search("query", top_k=2, navigation_mode="hierarchical")
-        self.assertEqual(rows[0]["doc_id"], "doc_001")
 
     def test_search_schema_does_not_advertise_automatic_navigation(self):
         self.assertNotIn("navigation_mode", SearchTool(backend=FakeBackend()).parameters["properties"])
@@ -190,16 +167,6 @@ class SearchToolTest(unittest.TestCase):
 
         self.assertEqual(backend.calls, [])
 
-    def test_invalid_navigation_modes_raise_stable_parameter_error(self):
-        backend = FakeBackend()
-        tool = SearchTool(backend=backend)
-
-        for navigation_mode in ("invalid", True, 1, [], {}):
-            with self.subTest(navigation_mode=navigation_mode):
-                with self.assertRaises(RetrievalParameterError):
-                    tool.search("query", navigation_mode=navigation_mode)
-
-        self.assertEqual(backend.calls, [])
 
     def test_returns_agent_contract_fields(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -314,7 +281,7 @@ class SearchToolTest(unittest.TestCase):
 
         from unittest.mock import patch
 
-        with patch("pipeline.embedder.embed_texts", return_value=[[0.1, 0.2]]):
+        with patch("pipeline.indexing.embedder.embed_texts", return_value=[[0.1, 0.2]]):
             tool.search("query", mode="vector", filters={"space": "HR"})
 
         self.assertEqual(milvus.filters, {"space": "HR"})

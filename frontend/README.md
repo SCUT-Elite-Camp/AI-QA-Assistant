@@ -1,5 +1,7 @@
 # AI 智能问答助手 · Web/BFF
 
+2026-10-15：按用户要求，普通聊天和主题浏览直接读取已保存的快照，不再同步回源验证。列表、详情、收藏、主题摘要/文档列表/对话树继续检查本地账号、聊天归属和主题成员。来源更新或撤权不自动隐藏这些历史快照；再次问答、Memory 复用及引用原文 Reader 的实时校验保留。
+
 基于 **Vue 3 + TypeScript + Nuxt UI + AI SDK + Nitro** 的全栈智能问答应用。
 
 Deep Research searches all knowledge base documents the signed-in user can
@@ -9,7 +11,7 @@ the generated plan. No document selection is required. The BFF requests
 document IDs and source versions before execution. Research prompts, controls,
 activity messages and the source Reader are English.
 
-2026-10-09 的服务端接入以[访问/证据契约](../docs/access-evidence-integration.md)为准。浏览器只调用同源 BFF，Python Agent 负责模型与检索；模型密钥不进入前端。完整联调见[运行手册](../docs/access-evidence-runbook.md)。
+2026-10-09 的服务端接入以[访问/证据契约](../docs/access-evidence/access-evidence-integration.md)为准。浏览器只调用同源 BFF，Python Agent 负责模型与检索；模型密钥不进入前端。完整联调见[运行手册](../docs/access-evidence/access-evidence-runbook.md)。
 
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 [![Nitro](https://img.shields.io/badge/Built%20with-Nitro-ff637e?logo=nitro&labelColor=18181B)](https://nitro.build)
@@ -18,6 +20,14 @@ Chat streams the model's actual answer fragments into a transient preview after
 current source checks. The final verified answer replaces the preview and is
 saved for reloads; failed previews are cleared. The rightmost header control uses
 panel-open/panel-close icons to toggle the retrieval monitor.
+
+2026-10-15 Chat has independent Fast and Thinking pipelines; legacy `auto`
+aliases Thinking. Fast performs original-query retrieval/fixed file preparation
+and one generation, buffering evidence answers until citation checks pass.
+The BFF skips post-turn Memory compaction for Fast, preserving its one-call budget.
+Original image citations carry `content_kind=file` and file hash/version through
+saved history and Reader; all existing source checks remain required. See the
+[mode contract](../agent/docs/chat_mode_contract.md) for image configuration and limits.
 
 ## 功能
 
@@ -122,14 +132,14 @@ pnpm preview
 | `AGENT_BASE_URL` | Agent 层服务地址 | `http://127.0.0.1:8000` |
 | `AGENT_API_KEY` | 调用 Agent 层业务接口的共享密钥（需与 Agent 层一致） | 必填 |
 | `AGENT_INTERNAL_TOKEN` | 可信内部 Chat/Memory 请求 | 必填且与 Agent 一致 |
-| `ATTACHMENT_SERVICE_URL/INTERNAL_SECRET/ENCRYPTION_KEY` | 私有服务地址与密钥 | 启用附件/个人库时必填 |
+| `ATTACHMENT_INTERNAL_SECRET` | Agent `/private-files` 的内部凭据，地址复用 `AGENT_BASE_URL` | 启用附件/个人库时必填；加密 key 只由 Agent 使用 |
 | `PERSISTENT_MEMORY_ENABLED/SESSION_FACT_ENABLED` | 持久记忆与 Fact 功能 | 显式配置 |
 | `AI_QA_BUILD_DIR/TOPICS_DATA_DIR` | 构建与 Topic 文件目录 | 可独立覆盖 |
 | `SESSION_COOKIE_SECURE` | HTTPS secure Cookie；false 仅本机 HTTP 联调 | 生产 true |
 
 - 不再以缺少 Gateway key 作为自动 Mock 开关；真实 Chat 使用 Agent 侧模型配置。
 - Research UI mock 不验收原生权限、模型、检索或来源 Reader。真实联调必须关闭。
-- 数据库执行完整 migration journal（包含 0015 lineage）。历史和衍生记忆缺证明时隔离。
+- 数据库执行完整 migration journal（包含 0015 lineage）。浏览读取历史快照；历史内容进入新模型上下文或衍生记忆时仍须验证来源。
 
 > **Web → Agent 调用认证**：Web 调用 Agent 层 `/api/*` 业务接口时会自动附带
 > `Authorization: Bearer <AGENT_API_KEY>` 请求头。该密钥必须与
@@ -140,7 +150,7 @@ pnpm preview
 
 执行 `pnpm test`、`pnpm exec vue-tsc -p tsconfig.app.json --noEmit` 和 `pnpm build`。
 组件/路由测试不代替真实模型与浏览器人工验收。三类来源、撤权、Reader 和 Topic
-角色的实际 BFF HTTP 探针见根运行手册，结果见[整合报告](../docs/pr63-integration-acceptance.md)。
+角色的实际 BFF HTTP 探针见根运行手册，结果见[整合报告](../docs/testing/integration/pr63-integration-acceptance.md)。
 
 ## 接入真实 AI
 
@@ -156,7 +166,7 @@ pnpm preview
 - [ ] 消息操作：复制 / 赞 / 踩 / 重新生成 / 编辑
 - [ ] 侧边栏对话历史按时间分组（今天/昨天/上周/上个月）
 - [ ] 重命名 / 删除对话
-- [ ] 同角色可读，Topic viewer 不可写；撤权后历史/收藏/引用不泄露
+- [ ] 同角色可读，Topic viewer 不可写；本地账号/Topic 撤权阻断历史浏览，来源撤权阻断生成复用和引用原文读取
 - [ ] 引用定位当前有权访问且版本匹配的实际原文
 - [ ] 暗色/亮色主题切换
 - [ ] 主色/中性色自定义

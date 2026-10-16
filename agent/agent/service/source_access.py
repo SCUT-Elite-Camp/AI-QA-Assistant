@@ -69,7 +69,7 @@ class SourceAccessProvider:
         self.email = email or os.getenv("CONFLUENCE_EMAIL") or credentials.get("CONFLUENCE_EMAIL") or ""
         self.token = token or os.getenv("CONFLUENCE_TOKEN") or credentials.get("CONFLUENCE_TOKEN") or ""
         if transport is None and os.getenv('CONFLUENCE_HTTP_TRANSPORT') == 'curl':
-            from shared_runtime.curl_transport import CurlSession
+            from pipeline.confluence.transport import CurlSession
             transport = CurlSession()
         self.transport = transport or requests.Session()
         self.document_loader = document_loader

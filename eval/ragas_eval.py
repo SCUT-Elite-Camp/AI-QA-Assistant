@@ -134,7 +134,7 @@ def compute_semantic_similarity(candidate: str, reference: str) -> float:
     if not candidate.strip() or not reference.strip():
         return 0.0
     try:
-        from pipeline.embedder import embed_texts
+        from pipeline.indexing.embedder import embed_texts
         vecs = embed_texts([candidate, reference])
         if len(vecs) >= 2:
             v1, v2 = vecs[0], vecs[1]

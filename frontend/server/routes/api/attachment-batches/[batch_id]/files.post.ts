@@ -5,6 +5,8 @@ import { and, eq, sql, tables, useDrizzle } from '../../../../utils/drizzle'
 import { requireCsrf, requirePrincipal, requireTopicRole } from '../../../../utils/attachmentAuth'
 import { attachmentServiceFetch, attachmentServiceJson } from '../../../../utils/attachmentService'
 import { attachmentBatchExpired, isAnonymousAttachmentPrincipal } from '../../../../../shared/utils/attachmentScope'
+import { getOrCreateDefaultLibrary } from '../../../../utils/library'
+import { insertInitialLibraryDocument, insertInitialLibraryVersion, updateInitialLibraryPointers } from '../../../../utils/libraryVersionService'
 
 const BATCH_MAX_FILES = 10
 const BATCH_MAX_BYTES = 100 * 1024 * 1024
@@ -40,6 +42,9 @@ export default defineHandler(async (event) => {
   const expiresAt = batch.scope === 'topic' ? null : Math.floor(Date.now() / 1000) + 24 * 60 * 60
   const dedupeDomain = batch.topicId ? `topic:${batch.topicId}` : `user:${userId}`
   const filenameB64 = Buffer.from(filename, 'utf8').toString('base64url')
+  const library = await getOrCreateDefaultLibrary(userId)
+  const documentId = `doc_${randomUUID().replace(/-/g, '')}`
+  const versionId = `ver_${randomUUID().replace(/-/g, '')}`
   try {
     const result = await attachmentServiceJson<any>(`/v1/attachments/${attachmentId}`, {
       method: 'POST',
@@ -50,6 +55,9 @@ export default defineHandler(async (event) => {
         'X-Owner-ID': userId,
         'X-Dedupe-Domain': dedupeDomain,
         'X-Scope': batch.scope,
+        'X-Library-KB-ID': library.id,
+        'X-Library-Document-ID': documentId,
+        'X-Library-Version-ID': versionId,
         ...(batch.chatId ? { 'X-Chat-ID': batch.chatId } : {}),
         ...(batch.topicId ? { 'X-Topic-ID': batch.topicId } : {}),
         ...(expiresAt ? { 'X-Expires-At': String(expiresAt) } : {})
@@ -74,11 +82,24 @@ export default defineHandler(async (event) => {
         evidenceVersion: result.evidence_version || 1,
         expiresAt: expiresAt ? new Date(expiresAt * 1000) : null,
       })
+      const now = new Date()
+      await insertInitialLibraryDocument(tx, {
+        id: documentId, knowledgeBaseId: library.id, ownerUserId: userId,
+        sourceScope: 'personal', sourceType: 'upload', filename: result.filename,
+        displayName: result.filename, mimeType, docType: filename.split('.').pop()?.toLowerCase() || '',
+        createdAt: now, updatedAt: now,
+      })
+      await insertInitialLibraryVersion(tx, {
+        id: versionId, documentId, storageRef: versionId, contentHash: result.sha256,
+        fileSize: result.size_bytes, status: 'PARSING', createdAt: now, updatedAt: now,
+      })
+      await updateInitialLibraryPointers(tx, documentId, versionId)
       await tx.update(tables.attachmentBatches).set({ fileCount: sql`${tables.attachmentBatches.fileCount} + 1`, totalBytes: sql`${tables.attachmentBatches.totalBytes} + ${sizeBytes}` }).where(eq(tables.attachmentBatches.id, batch.id))
     })
-    return result
+    return { ...result, document_id: documentId, version_id: versionId }
   } catch (error) {
     await attachmentServiceFetch(`/v1/attachments/${attachmentId}`, { method: 'DELETE', signal: AbortSignal.timeout(5000) }).catch(() => undefined)
+    await attachmentServiceFetch(`/v1/attachments/${versionId}`, { method: 'DELETE', signal: AbortSignal.timeout(5000) }).catch(() => undefined)
     throw error
   }
 })

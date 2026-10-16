@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.confluence_snapshot import (
+from pipeline.confluence.snapshot import (
     ConfluenceSnapshotConflict,
     discover_confluence_snapshots,
 )

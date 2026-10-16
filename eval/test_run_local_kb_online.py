@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import re
 
 from run_local_kb_online import (
     DEFAULT_COMPLEX_QUERY_DATASET,
@@ -34,6 +36,12 @@ def test_default_dataset_paths_exist() -> None:
     assert Path(DEFAULT_DATASET).is_file()
     assert Path(DEFAULT_SIMPLE_DATASET).is_file()
     assert Path(DEFAULT_COMPLEX_QUERY_DATASET).is_file()
+
+
+def test_default_questions_and_expected_facts_are_english() -> None:
+    for path in (DEFAULT_DATASET, DEFAULT_SIMPLE_DATASET, DEFAULT_COMPLEX_QUERY_DATASET):
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        assert not re.search(r"[\u4e00-\u9fff]", json.dumps(payload, ensure_ascii=False))
 
 
 def test_simple_corrective_retrieval_accepts_common_english_wording() -> None:

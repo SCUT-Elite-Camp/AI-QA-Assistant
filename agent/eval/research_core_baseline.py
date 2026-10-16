@@ -24,8 +24,9 @@ DOCUMENT_IDS = [
     "demo-travel-faq-legacy",
 ]
 QUERY = (
-    "核验上海酒店650元/晚能否报销，比较正式办法和财务FAQ的500元、700元"
-    "住宿限额。员工出差日期为2026年9月10日，已取得直属经理审批。"
+    "Check whether a Shanghai hotel costing 650 yuan per night is reimbursable. "
+    "Compare the formal policy and Finance FAQ limits of 500 and 700 yuan. "
+    "The employee travels on September 10, 2026 and has their direct manager's approval. Answer in English."
 )
 
 

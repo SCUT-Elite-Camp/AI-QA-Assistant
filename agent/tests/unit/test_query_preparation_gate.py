@@ -25,7 +25,7 @@ def _intent(
     [
         "Which system layer owns the ToolRegistry?",
         "Which identifiers does Evidence Gate use to deduplicate evidence?",
-        "How many Corrective Retrieval attempts are allowed per request?",
+        "How many retrieval tool calls are allowed per request?",
     ],
 )
 def test_gate_bypasses_clear_single_target_knowledge_questions(query: str) -> None:

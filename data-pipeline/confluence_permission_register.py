@@ -2,15 +2,16 @@
 Confluence 文档权限登记器。
 
 用途：
-  在 confluence_pull.py 把某个页面/附件写入 Milvus 之后，将同一文档登记到
+  在原有数据处理管线把某个页面/附件写入 Milvus 之后，将同一文档登记到
   Web 层 SQLite（frontend/.data/sqlite.db）的 files / file_permissions 表，从而使
   Agent 层的 doc_id 白名单权限过滤（permission_service.get_accessible_doc_ids）
   对 Confluence 来源文档生效，实现「空间级权限隔离」。
 
 空间级隔离原理：
-  Confluence 页面没有独立权限，权限完全继承其所属空间（Space）的权限方案。
-  因此我们只需把「空间 → 系统可见范围」的映射写成配置文件
-  （confluence_space_permissions.json），入库时按空间登记即可。
+  配置只定义本地 ACL，不代表 Confluence 原生权限。页面可以具有独立读取限制，
+  运行时仍须对显式绑定的源站账号检查原生 read 权限。
+  「空间 → 本地可见范围」的映射写成配置文件
+  （confluence_space_permissions.json），入库后按空间登记；它不能替代原生检查。
 
 映射配置支持三种可见范围：
   - visibility = "shared"              → 全员共享（等价空间对所有人公开）

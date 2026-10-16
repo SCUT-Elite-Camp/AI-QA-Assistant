@@ -41,3 +41,25 @@ def test_default_registry_supports_xlsx():
 
     assert ".xlsx" in parser.supported_extensions
     assert isinstance(parser.get_parser(".xlsx"), XlsxParser)
+
+
+def test_merged_heading_extends_past_last_populated_row_and_column(tmp_path):
+    source = tmp_path / "merged-edge.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet['B2'] = 'wide heading'
+    sheet.merge_cells('B2:F2')
+    sheet['B3'] = 'tall note'
+    sheet.merge_cells('B3:B7')
+    sheet['C3'] = 20
+    workbook.save(source)
+    workbook.close()
+
+    table = XlsxParser().parse(str(source)).content_blocks[0].table
+
+    assert (table.row_count, table.column_count) == (6, 5)
+    heading = next(cell for cell in table.cells if cell.text == 'wide heading')
+    note = next(cell for cell in table.cells if cell.text == 'tall note')
+    assert heading.column_span == 5
+    assert note.row_span == 5
+    assert table.body_rows()  # Rendering also respects the retained bounds.

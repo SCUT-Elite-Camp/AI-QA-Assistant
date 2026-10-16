@@ -19,7 +19,6 @@ COPY agent/ ./agent/
 COPY toolset/ ./toolset/
 COPY data-pipeline/ ./data-pipeline/
 COPY data-persistence/ ./data-persistence/
-COPY shared_runtime/ ./shared_runtime/
 COPY scripts/ ./scripts/
 COPY docker/entrypoint-agent.sh /app/entrypoint.sh
 

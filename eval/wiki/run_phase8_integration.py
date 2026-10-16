@@ -28,8 +28,8 @@ from agent.schemas.intent_policy import IntentPolicy  # noqa: E402
 from agent.schemas.query_plan import QueryIntent, QueryPlan  # noqa: E402
 from agent.service.audit_service import AuditService  # noqa: E402
 from agent.tools import ToolExecutor, ToolRegistryAdapter  # noqa: E402
-from pipeline.confluence_snapshot import discover_confluence_snapshots  # noqa: E402
-from pipeline.embedder import embed_texts  # noqa: E402
+from pipeline.confluence.snapshot import discover_confluence_snapshots  # noqa: E402
+from pipeline.indexing.embedder import embed_texts  # noqa: E402
 from pipeline.wiki.confluence_source import load_authoritative_confluence_document  # noqa: E402
 from pipeline.wiki.search import BgeM3WikiVectorSearch, SQLiteFTSWikiSearch, WikiSearchBackend  # noqa: E402
 from retrieval.bm25_index import BM25Index  # noqa: E402

@@ -78,6 +78,7 @@ class PDFParser(BaseParser):
         page_heights: dict[int, float] = {}
         source_tables: dict[str, TableArtifact] = {}
         page_count = len(pdf_doc)
+        page_sizes = {str(index): [float(page.rect.width), float(page.rect.height)] for index, page in enumerate(pdf_doc, 1)}
         table_messages_by_page: dict[int, list[str]] = {}
         try:
             # Pass one gathers native text without deleting edge content so
@@ -240,12 +241,14 @@ class PDFParser(BaseParser):
             accepted_tables=sum(table.acceptance == "accepted" for table in final_tables),
             review_tables=sum(table.acceptance == "review" for table in final_tables),
         )
-        return Document.from_file_path(
+        document = Document.from_file_path(
             file_path,
             content,
             content_blocks=all_blocks,
             parse_diagnostics=parse_diagnostics,
         )
+        document.metadata["page_sizes"] = page_sizes
+        return document
 
     # ── 区域与重叠判断 ──
 

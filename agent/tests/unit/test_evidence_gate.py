@@ -73,7 +73,6 @@ def test_knowledge_qa_accepts_one_valid_evidence() -> None:
 
     assert result.accepted is True
     assert len(result.evidence) == 1
-    assert result.should_retry is False
 
 
 def test_comparison_preserves_query_provenance_across_chunk_deduplication():
@@ -100,7 +99,6 @@ def test_low_score_evidence_is_rejected() -> None:
     assert result.accepted is False
     assert result.evidence == []
     assert result.reason == "no_valid_evidence"
-    assert result.should_retry is True
     assert result.candidate_evidence_count == 1
     assert result.eligible_evidence_count == 0
     assert result.rejected_evidence_count == 1
@@ -197,7 +195,6 @@ def test_comparison_requires_evidence_for_each_sub_query() -> None:
 
     assert result.accepted is False
     assert result.missing_targets == ["Agent CP2"]
-    assert result.should_retry is True
 
 
 def test_comparison_accepts_bilateral_coverage() -> None:
@@ -244,18 +241,16 @@ def test_non_retrieval_intents_do_not_require_evidence(
 
     assert result.accepted is True
     assert result.reason == "evidence_not_required"
-    assert result.should_retry is False
 
 
-def test_second_failed_attempt_does_not_retry_again() -> None:
+def test_exhausted_retrieval_budget_does_not_retry_again() -> None:
     result = _evaluate(
         QueryIntent.KNOWLEDGE_QA,
         [],
-        attempt=2,
+        attempt=5,
     )
 
     assert result.accepted is False
-    assert result.should_retry is False
 
 
 @pytest.mark.parametrize("attempt", [0, 6])

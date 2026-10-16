@@ -2,23 +2,7 @@
 
 import re
 
-try:
-    from nltk.stem.snowball import SnowballStemmer
-except ImportError:
-    class SnowballStemmer:  # type: ignore[no-redef]
-        def __init__(self, lang: str) -> None:
-            pass
-        def stem(self, word: str) -> str:
-            return word
-
-try:
-    from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-except ImportError:
-    ENGLISH_STOP_WORDS = frozenset({"a", "an", "the", "and", "or", "in", "on", "at", "to", "for", "of", "with", "is", "it", "this", "that"})
-
-
-
-DEFAULT_ENGLISH_ANALYZER_ID = "english_regex_snowball_sklearn_stopwords_v1"
+DEFAULT_ENGLISH_ANALYZER_ID = "english_regex_snowball_sklearn_stopwords_v2"
 TOKEN_PATTERN = re.compile(r"[a-z]+(?:'[a-z]+)?|\d+(?:\.\d+)?")
 THOUSANDS_SEPARATOR = re.compile(r"(?<=\d),(?=\d)")
 
@@ -29,6 +13,21 @@ class EnglishAnalyzer:
     analyzer_id = DEFAULT_ENGLISH_ANALYZER_ID
 
     def __init__(self) -> None:
+        # Load only when BM25 is used, but never substitute different rules.
+        try:
+            from nltk.stem.snowball import SnowballStemmer
+        except ImportError as exc:
+            raise RuntimeError(
+                "BM25 English analyzer requires nltk for Snowball stemming. "
+                "Install the project dependencies: python -m pip install -r requirements.txt"
+            ) from exc
+        try:
+            from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+        except ImportError as exc:
+            raise RuntimeError(
+                "BM25 English analyzer requires scikit-learn for English stop words. "
+                "Install the project dependencies: python -m pip install -r requirements.txt"
+            ) from exc
         self._stemmer = SnowballStemmer("english")
         self._stop_words = frozenset(ENGLISH_STOP_WORDS)
 

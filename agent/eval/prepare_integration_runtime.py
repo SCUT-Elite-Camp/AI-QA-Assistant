@@ -38,7 +38,7 @@ def main():
     if not db_path.is_file():
         raise ValueError('migrate_empty_web_database_first')
     cases = load_cases(source, args.metadata)
-    holdouts = load(Path(__file__).parent / 'datasets/integration_holdout.v1.json')['cases']
+    holdouts = load(Path(__file__).parent / 'datasets/integration_holdout.en.v2.json')['cases']
     versions = {p['doc_id']: p['version'] for p in load(args.metadata)['pages'] if p.get('doc_id')}
     frozen = {d['doc_id']: d for c in cases for d in c['frozen_manifest']['documents']}
     allowed = set(frozen) | {d for c in holdouts for d in c['allowed_document_ids']}
@@ -90,7 +90,7 @@ def main():
     bm25 = BM25Index()
     bm25.build_from_documents(str(docs))
     bm25.save(str(runtime / 'bm25.pkl'))
-    from pipeline.embedder import embed_texts
+    from pipeline.indexing.embedder import embed_texts
     from storage.milvus_store import MilvusStore
     from pymilvus import utility
     store = MilvusStore(collection_name=args.collection)

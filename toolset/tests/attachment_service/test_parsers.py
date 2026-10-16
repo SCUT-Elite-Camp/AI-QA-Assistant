@@ -6,13 +6,14 @@ from types import SimpleNamespace
 
 from PIL import Image
 
-from attachment_service import parsers
+from parsers import upload_formats as parsers
+from pipeline.files.parsing import parse_context
 
 
 def test_csv_detects_non_utf8_encoding_and_exact_range(tmp_path: Path) -> None:
     path = tmp_path / "销售.csv"
     path.write_bytes("名称,金额\n华南,100\n".encode("gb18030"))
-    items = parsers.parse_attachment(path, "att_csv", ".csv")
+    items = parse_context(path, "att_csv")["items"]
     assert "华南" in items[0]["content"]
     assert items[0]["locator"] == {"sheet": "CSV", "cell_range": "A1:B2"}
 
@@ -26,14 +27,15 @@ def test_html_extracts_only_static_visible_text_without_active_or_remote_content
         <h1>内部通知</h1><img src="https://outside.invalid/tracker.png" alt="远程图片">
         <iframe src="https://outside.invalid/frame">外部框架</iframe>
         <object data="https://outside.invalid/object">对象内容</object>
-        <embed src="https://outside.invalid/embed">正文内容</body></html>""",
+        <embed src="https://outside.invalid/embed">正文内容<!-- hidden-comment --></body></html>""",
         encoding="utf-8",
     )
-    items = parsers.parse_attachment(path, "att_html", ".html")
-    content = items[0]["content"]
+    items = parse_context(path, "att_html")["items"]
+    content = "\n".join(item["content"] for item in items)
     assert "内部通知" in content and "正文内容" in content
     assert "fetch(" not in content
     assert "outside.invalid" not in content
+    assert "hidden-comment" not in content
     assert "外部框架" not in content and "对象内容" not in content
 
 
@@ -46,7 +48,7 @@ def test_xlsx_preserves_sheet_range_and_marks_uncached_formula(tmp_path: Path) -
     sheet.append(["项目", "金额"])
     sheet.append(["总计", "=1+2"])
     workbook.save(path)
-    items = parsers.parse_attachment(path, "att_xlsx", ".xlsx")
+    items = parse_context(path, "att_xlsx")["items"]
     assert items[0]["locator"] == {"sheet": "汇总", "cell_range": "A1:B2"}
     assert items[0]["confidence"] == 0.7
 
@@ -62,7 +64,7 @@ def test_docx_keeps_block_and_page_locators(tmp_path: Path) -> None:
     table.cell(0, 0).text = "字段"
     table.cell(1, 0).text = "值"
     document.save(path)
-    items = parsers.parse_attachment(path, "att_docx", ".docx")
+    items = parse_context(path, "att_docx")["items"]
     assert any(item["content"] == "第一页制度" and item["locator"]["page"] == 1 for item in items)
     assert any(item["content"] == "第二页流程" and item["locator"]["page"] == 2 for item in items)
     assert any(item["source_type"] == "table" for item in items)
@@ -84,7 +86,7 @@ def test_docx_embedded_image_ocr_inherits_body_page_locator(tmp_path: Path, monk
         parsers._item(attachment_id, "ocr_text", "DB-1042", "fake-ocr", locator, 0.95)
     ])
 
-    items = parsers.parse_attachment(path, "att_docx_image", ".docx")
+    items = parse_context(path, "att_docx_image")["items"]
     embedded = next(item for item in items if item["content"] == "DB-1042")
     assert embedded["locator"]["page"] == 2
     assert embedded["locator"]["embedded_image"] == 1
@@ -106,7 +108,7 @@ def test_pptx_preserves_slide_and_ocr_locator(tmp_path: Path, monkeypatch) -> No
     monkeypatch.setattr(parsers, "_ocr", lambda _image, attachment_id, locator: [
         parsers._item(attachment_id, "ocr_text", "DB-1042", "fake-ocr", locator, 0.9)
     ])
-    items = parsers.parse_attachment(path, "att_pptx", ".pptx")
+    items = parse_context(path, "att_pptx")["items"]
     assert any(item["content"] == "故障处理" and item["locator"]["slide"] == 1 for item in items)
     assert any(item["content"] == "DB-1042" and item["locator"]["slide"] == 1 for item in items)
 
@@ -119,10 +121,20 @@ def test_low_text_pdf_enters_ocr_with_page_locator(tmp_path: Path, monkeypatch) 
     page.insert_text((72, 72), "少")
     pdf.save(path)
     pdf.close()
-    monkeypatch.setattr(parsers, "_ocr", lambda _image, attachment_id, locator: [
-        parsers._item(attachment_id, "ocr_text", "扫描结果", "fake-ocr", locator, 0.95)
-    ])
-    items = parsers.parse_attachment(path, "att_pdf", ".pdf")
+    from models.document import ContentBlock, BlockType, BoundingBox
+    from parsers.pdf_parser import PDFParser
+    from parsers import registry
+
+    class OCRBackend:
+        name = "test-ocr"
+        def available(self):
+            return True
+        def extract(self, page, page_number):
+            return [ContentBlock(block_type=BlockType.PARAGRAPH, text="扫描结果", source="ocr",
+                                 page_number=page_number, bbox=BoundingBox(x0=1, y0=1, x1=100, y1=20))]
+
+    monkeypatch.setattr(registry, "_default_parser", registry.DocumentParser([PDFParser(ocr_backend=OCRBackend())]))
+    items = parse_context(path, "att_pdf")["items"]
     assert any(item["content"] == "扫描结果" and item["locator"]["page"] == 1 for item in items)
 
 

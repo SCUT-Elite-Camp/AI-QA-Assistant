@@ -32,10 +32,10 @@ feat(agent): integrate CP2 research, native source access and verified evidence 
 
 ## Review references
 
-- [剩余修复及最终复测](docs/testing/remaining_repairs_20261010.md)
-- [结果摘要与逐坐标索引](docs/testing/evidence/remaining-20261010/summary.json)
-- [前一轮高风险修复](docs/testing/high_risk_repairs_retest_20261009.md)
-- [测试条件核对](docs/testing/high_risk_conditions_repeat_20261009.md)
-- [访问与证据架构](docs/access-evidence-architecture.md)、[接入契约](docs/access-evidence-integration.md)、[运行手册](docs/access-evidence-runbook.md)
+- [剩余修复及最终复测](remaining_repairs_20261010.md)
+- [结果摘要与逐坐标索引](evidence/remaining-20261010/summary.json)
+- [前一轮高风险修复](high_risk_repairs_retest_20261009.md)
+- [测试条件核对](high_risk_conditions_repeat_20261009.md)
+- [访问与证据架构](../access-evidence/access-evidence-architecture.md)、[接入契约](../access-evidence/access-evidence-integration.md)、[运行手册](../access-evidence/access-evidence-runbook.md)
 
 凭据、运行数据库、源站导出、完整私有正文和原始回答轨迹不包含在本次提交中。复现真实验收需要运行手册所列的私有配置与授权来源。

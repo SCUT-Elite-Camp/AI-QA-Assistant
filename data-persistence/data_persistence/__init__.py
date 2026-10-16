@@ -12,7 +12,7 @@ deferred; consumers should depend on ``data_persistence.*`` domain modules.
 from importlib import import_module
 from typing import Any
 
-__all__ = ["documents", "chat", "vector", "wiki", "topics"]
+__all__ = ["documents", "chat", "vector", "wiki", "topics", "private_files", "file_crypto", "file_settings", "file_contracts"]
 
 
 def __getattr__(name: str) -> Any:

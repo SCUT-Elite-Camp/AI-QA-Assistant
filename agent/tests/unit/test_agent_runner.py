@@ -1,3 +1,4 @@
+from tests.grounding_helpers import grounded_model
 import json
 
 from typing import Any
@@ -53,7 +54,6 @@ import pytest
 
 from agent.config.settings import settings
 from agent.evidence import EvidenceGate
-from agent.retrieval import CorrectiveRetrievalPlanner
 from agent.runtime import AgentRunner, StopReason
 from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryIntent, QueryPlan
@@ -70,12 +70,36 @@ class ScriptedLLM:
     def generate(self, prompt: str) -> str:
         return prompt
 
+    @grounded_model
     def chat(self, messages: list[dict], tools=None) -> dict:
         self.calls.append({"messages": list(messages), "tools": tools})
         response = self.responses.pop(0)
         if isinstance(response, Exception):
             raise response
         return response
+
+
+@pytest.mark.parametrize('has_evidence', [False, True])
+def test_rejected_thinking_tool_call_only_falls_back_with_accepted_evidence(monkeypatch, has_evidence):
+    from agent.errors.exceptions import LLMToolCallValidationError
+    from agent.runtime.state import AgentState
+    llm = ScriptedLLM([LLMToolCallValidationError('rejected')])
+    runner = make_runner(llm, [])
+    state = AgentState(trace_id='rejected-call', query_plan=make_plan(),
+                       evidence=[{'content': 'verified excerpt'}] if has_evidence else [])
+    fallbacks = []
+    def answer(current):
+        fallbacks.append(current)
+        return {'content': '{"claims":[]}'}
+    monkeypatch.setattr(runner, '_generate_from_clean_evidence_context', answer)
+    if has_evidence:
+        assert runner._plan_or_answer(state, []) == {'content': '{"claims":[]}'}
+        assert fallbacks == [state]
+    else:
+        with pytest.raises(LLMToolCallValidationError):
+            runner._plan_or_answer(state, [])
+        assert not fallbacks
+    assert len(llm.calls) == 1
 
 
 class RecordingTool(BaseTool):
@@ -122,19 +146,10 @@ class RecordingSearchTool(RecordingTool):
         ]
 
 
-class CorrectiveSearchTool(RecordingSearchTool):
-    def __init__(self, *, fail_corrective: bool = False) -> None:
-        super().__init__()
-        self.fail_corrective = fail_corrective
-
+class LowScoreSearchTool(RecordingSearchTool):
     def search(self, **kwargs: Any) -> list[dict[str, Any]]:
-        call_number = len(self.calls) + 1
-        if self.fail_corrective and call_number == 2:
-            self.calls.append(kwargs)
-            raise RuntimeError("corrective retrieval failed")
         evidence = super().search(**kwargs)
-        if call_number == 1:
-            evidence[0]["score"] = 0.1
+        evidence[0]["score"] = 0.1
         return evidence
 
 
@@ -208,149 +223,26 @@ def make_plan(**updates: Any) -> QueryPlan:
     return QueryPlan(**values)
 
 
-def run_with_corrective_search(
-    search: CorrectiveSearchTool,
-    *,
-    max_tool_calls: int = 3,
-):
-    runner = make_runner(
-        ScriptedLLM([
-            {"tool_calls": [tool_call(
-                "search_documents",
-                {"query": "ignored"},
-                "initial-search",
-            )]},
-            {"role": "assistant", "content": "答案 [1]"},
-        ]),
-        [search],
-    )
+@pytest.mark.parametrize("mode", ["hybrid", "vector", "bm25"])
+def test_insufficient_evidence_never_changes_search_mode_or_adds_a_search(mode) -> None:
+    search = LowScoreSearchTool()
+    runner = make_runner(ScriptedLLM([{
+        "tool_calls": [tool_call("search_documents", {"query": "ignored"}, "initial-search")],
+    }]), [search])
     result = runner.run(
         make_plan(),
-        policy=IntentPolicy(
-            candidate_tools=("search_documents",),
-            max_iterations=3,
-            max_tool_calls=max_tool_calls,
-            max_retrieval_attempts=2,
-        ),
-        tool_executor=ToolExecutor(
-            ToolRegistryAdapter(ToolRegistry(tools=[search]))
-        ),
+        policy=IntentPolicy(candidate_tools=("search_documents",),
+            max_iterations=3, max_tool_calls=3, max_retrieval_attempts=2),
+        tool_executor=ToolExecutor(ToolRegistryAdapter(ToolRegistry(tools=[search]))),
         evidence_gate=EvidenceGate(min_score=0.5),
-        corrective_retrieval=CorrectiveRetrievalPlanner(),
-        trace_id="trace-corrective-accounting",
+        trace_id="trace-evidence-insufficient", mode=mode, top_k=3,
     )
-    return result, search
-
-
-def test_corrective_retrieval_is_recorded_as_a_tool_call() -> None:
-    result, search = run_with_corrective_search(CorrectiveSearchTool())
-
-    assert result.stop_reason == StopReason.FINAL_ANSWER
-    assert result.retrieval_attempts == 2
-    assert [call.tool_name for call in result.tool_calls] == [
-        "search_documents",
-        "search_documents",
-    ]
-    corrective_call = result.tool_calls[1]
-    assert corrective_call.tool_call_id == "corrective-initial-search-1"
-    assert corrective_call.arguments["query"] == "CP2 分工文档内容"
-    assert corrective_call.success is True
-    assert len(search.calls) == 2
-    assert result.evidence_gate_reason == "evidence_accepted"
-    assert result.covered_evidence_targets == ["CP2 分工文档内容"]
-    assert result.missing_evidence_targets == []
-    assert result.eligible_evidence_count == 1
-    assert result.rejected_evidence_count == 1
-
-
-def test_corrective_retrieval_respects_tool_call_budget() -> None:
-    result, search = run_with_corrective_search(
-        CorrectiveSearchTool(),
-        max_tool_calls=1,
-    )
-
-    assert result.stop_reason == StopReason.POLICY_LIMIT
-    assert result.error_code == "max_tool_calls"
-    assert result.retrieval_attempts == 1
-    assert len(result.tool_calls) == 1
-    assert len(search.calls) == 1
-
-
-def test_failed_corrective_retrieval_is_recorded_before_returning_error() -> None:
-    result, search = run_with_corrective_search(
-        CorrectiveSearchTool(fail_corrective=True),
-    )
-
-    assert result.stop_reason == StopReason.TOOL_ERROR
-    assert result.tool_calls[-1].tool_name == "search_documents"
-    assert result.tool_calls[-1].tool_call_id == "corrective-initial-search-1"
-    assert result.tool_calls[-1].success is False
-    assert result.tool_calls[-1].error_code == "retrieval_error"
-    assert len(search.calls) == 2
-
-
-def test_multi_target_corrective_searches_share_one_retrieval_attempt() -> None:
-    class PartialComparisonSearch(RecordingSearchTool):
-        initial_targets: set[str]
-
-        def __init__(self) -> None:
-            super().__init__()
-            self.initial_targets = set()
-
-        def search(self, **kwargs: Any) -> list[dict[str, Any]]:
-            query = kwargs["query"]
-            if query in {"A", "B"} and query not in self.initial_targets:
-                self.initial_targets.add(query)
-                self.calls.append(kwargs)
-                return []
-            return super().search(**kwargs)
-
-    search = PartialComparisonSearch()
-    runner = make_runner(
-        ScriptedLLM([{
-            "tool_calls": [tool_call(
-                "search_documents",
-                {"query": "ignored"},
-                "comparison-search",
-            )],
-        }]),
-        [search],
-    )
-    result = runner.run(
-        make_plan(
-            original_query="compare A and B",
-            standalone_query="A and B",
-            intent=QueryIntent.COMPARISON,
-            sub_queries=["A", "B"],
-        ),
-        policy=IntentPolicy(
-            candidate_tools=("search_documents",),
-            evidence_policy="bilateral_coverage",
-            max_iterations=3,
-            max_tool_calls=2,
-            max_retrieval_attempts=2,
-        ),
-        tool_executor=ToolExecutor(
-            ToolRegistryAdapter(ToolRegistry(tools=[search]))
-        ),
-        evidence_gate=EvidenceGate(min_score=0.5),
-        corrective_retrieval=CorrectiveRetrievalPlanner(),
-        trace_id="trace-multi-target-budget",
-    )
-
-    corrective_calls = [
-        call for call in result.tool_calls
-        if call.tool_call_id.startswith("corrective-")
-    ]
-    assert result.stop_reason == StopReason.POLICY_LIMIT
-    assert result.error_code == "max_tool_calls"
-    assert result.retrieval_attempts == 2
-    assert len(search.calls) == 3
-    assert sorted(call["query"] for call in search.calls) == ["A", "A", "B"]
-    assert len(corrective_calls) == 1
-    assert corrective_calls[0].arguments["query"] == "A"
-    assert corrective_calls[0].success is True
-    assert len(result.tool_calls) == 2
+    assert result.stop_reason == StopReason.NO_RELEVANT_CONTEXT
+    assert result.error_code == "evidence_insufficient"
+    assert result.retrieval_attempts == len(result.tool_calls) == len(search.calls) == 1
+    assert search.calls[0]["mode"] == mode and search.calls[0]["top_k"] == 3
+    assert result.evidence == []
+    assert result.eligible_evidence_count == 0 and result.rejected_evidence_count == 1
 
 
 @pytest.mark.parametrize("wiki_top_k", [3, 0])
@@ -1148,27 +1040,26 @@ def test_unknown_tool_and_invalid_json_are_controlled_errors(
     assert expected_error in result.error_code
 
 
-def test_simple_knowledge_answer_uses_fast_model_after_retrieval() -> None:
+def test_thinking_uses_its_model_even_for_simple_questions() -> None:
     search = RecordingSearchTool()
     planner = ScriptedLLM(
         [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
     )
-    complex_answer = ScriptedLLM([{"content": "complex answer"}])
+    complex_answer = ScriptedLLM([{"content": "complex answer [1]"}])
     fast_answer = ScriptedLLM([{"content": "fast answer [1]"}])
     runner = make_runner(
         planner,
         [search],
         answer_llm=complex_answer,
-        fast_answer_llm=fast_answer,
     )
 
     result = runner.run(make_plan(), trace_id="trace-fast-answer")
 
     assert result.stop_reason == StopReason.FINAL_ANSWER
-    assert result.answer == "fast answer [1]"
-    assert len(fast_answer.calls) == 1
-    assert complex_answer.calls == []
-    answer_messages = fast_answer.calls[0]["messages"]
+    assert result.answer == "complex answer [1]"
+    assert len(complex_answer.calls) == 1
+    assert fast_answer.calls == []
+    answer_messages = complex_answer.calls[0]["messages"]
     assert "Accepted evidence:" in answer_messages[1]["content"]
     assert all("tool_calls" not in message for message in answer_messages)
 
@@ -1200,7 +1091,6 @@ def test_comparison_answer_stays_on_complex_model() -> None:
         planner,
         [search],
         answer_llm=complex_answer,
-        fast_answer_llm=fast_answer,
     )
 
     result = runner.run(
@@ -1225,7 +1115,6 @@ def test_single_planned_sub_query_stays_on_complex_model() -> None:
         planner,
         [search],
         answer_llm=complex_answer,
-        fast_answer_llm=fast_answer,
     )
 
     result = runner.run(
@@ -1250,7 +1139,6 @@ def test_multi_aspect_flow_question_stays_on_complex_model_without_sub_queries()
         planner,
         [search],
         answer_llm=complex_answer,
-        fast_answer_llm=fast_answer,
     )
     plan = make_plan()
     plan.original_query = "问答请求从进入系统到返回答案会经过哪些核心步骤？"
@@ -1264,7 +1152,7 @@ def test_multi_aspect_flow_question_stays_on_complex_model_without_sub_queries()
     assert fast_answer.calls == []
 
 
-def test_fast_answer_failure_falls_back_to_complex_model() -> None:
+def test_thinking_never_calls_an_unrelated_fast_model() -> None:
     search = RecordingSearchTool()
     planner = ScriptedLLM(
         [{"tool_calls": [tool_call("search_documents", {"query": "ignored"})]}]
@@ -1275,14 +1163,13 @@ def test_fast_answer_failure_falls_back_to_complex_model() -> None:
         planner,
         [search],
         answer_llm=complex_answer,
-        fast_answer_llm=fast_answer,
     )
 
     result = runner.run(make_plan(), trace_id="trace-answer-fallback")
 
     assert result.stop_reason == StopReason.FINAL_ANSWER
     assert result.answer == "fallback answer [1]"
-    assert len(fast_answer.calls) == 1
+    assert fast_answer.calls == []
     assert len(complex_answer.calls) == 1
 
 

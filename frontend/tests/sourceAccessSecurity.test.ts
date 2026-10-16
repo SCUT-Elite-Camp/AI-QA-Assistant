@@ -27,6 +27,10 @@ beforeAll(async () => {
     sourceScope: 'personal', filename: 'policy.txt', displayName: 'policy.txt', mimeType: 'text/plain', docType: 'txt', activeVersionId: 'ver-a' })
   await db.insert(tables.documentVersions).values({ id: 'ver-a', documentId: 'personal-a', contentHash: 'file-hash',
     storageRef: 'storage-a', fileSize: 50, versionNumber: 1, status: 'READY' })
+  await db.insert(tables.chats).values({ id: 'image-chat', title: 'Image', userId: 'alice' })
+  await db.insert(tables.attachmentBatches).values({ id: 'image-batch', ownerId: 'alice', scope: 'chat', chatId: 'image-chat' })
+  await db.insert(tables.attachments).values({ id: 'att_image', batchId: 'image-batch', ownerId: 'alice', scope: 'chat',
+    chatId: 'image-chat', filename: 'image.png', mimeType: 'image/png', sizeBytes: 100, sha256: 'original-hash', status: 'ready', evidenceVersion: 2 })
 })
 beforeEach(() => {
   mocks.userId = 'alice'
@@ -38,6 +42,27 @@ beforeEach(() => {
 })
 
 describe('actual BFF guard with migrated SQLite and controlled upstream transports', () => {
+  const image = { source_type: 'attachment' as const, doc_id: 'att_image', content_kind: 'file' as const,
+    content_hash: 'original-hash', version: 2 }
+  const remoteImage = { owner_id: 'alice', scope: 'chat', chat_id: 'image-chat', status: 'ready', evidence_version: 2, sha256: 'original-hash' }
+  it('requires a current original-file hash and preserves file lineage', async () => {
+    mocks.private.mockResolvedValue(remoteImage)
+    await assertSourceDependencies('alice', [image])
+    expect(mocks.private).toHaveBeenCalledTimes(1)
+    await expect(assertSourceDependencies('bob', [image])).rejects.toMatchObject({ status: 403 })
+    expect(citationsCovered({ ...authoredProvenance(), dependencies: [image] }, [image])).toBe(true)
+    expect(citationsCovered({ ...authoredProvenance(), dependencies: [image] }, [{ ...image, content_kind: 'excerpt' }])).toBe(false)
+  })
+  it('rejects image bytes changing without silently accepting the old answer', async () => {
+    mocks.private.mockResolvedValue({ ...remoteImage, sha256: 'changed' })
+    await expect(assertSourceDependencies('alice', [image])).rejects.toMatchObject({ status: 409 })
+    mocks.private.mockResolvedValue({ ...remoteImage, evidence_version: 3 })
+    await expect(assertSourceDependencies('alice', [image])).rejects.toMatchObject({ status: 403 })
+  })
+  it('does not accept a file hash as if it proved an OCR excerpt', async () => {
+    mocks.private.mockImplementation(async (path: string) => path.endsWith('/evidence') ? { items: [] } : remoteImage)
+    await expect(assertSourceDependencies('alice', [{ ...image, content_kind: 'excerpt' }])).rejects.toMatchObject({ status: 409 })
+  })
   it('batches one list boundary, quarantines unknown titles and rechecks the next request', async () => {
     const chats = [{ title: 'First', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } },
       { title: 'Second', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } },
