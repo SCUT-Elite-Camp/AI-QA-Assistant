@@ -76,6 +76,8 @@ class LLMClient(BaseLLM):
         }
         if tools:
             payload["tools"] = tools
+            if kwargs.get("tool_choice") is not None:
+                payload["tool_choice"] = kwargs["tool_choice"]
         if kwargs.get("response_format") is not None:
             payload["response_format"] = kwargs["response_format"]
         if self.enable_thinking is not None:
@@ -110,7 +112,7 @@ class LLMClient(BaseLLM):
                         endpoint,
                         json=payload,
                         headers=headers,
-                        timeout=settings.LLM_TIMEOUT,
+                        timeout=kwargs.get("timeout_seconds", settings.LLM_TIMEOUT),
                     )
                     if resp.status_code == 200:
                         data = resp.json()

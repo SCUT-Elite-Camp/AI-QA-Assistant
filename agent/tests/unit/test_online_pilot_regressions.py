@@ -2,11 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent.query.ambiguity import needs_architecture_scope
-from agent.query.clarifier import Clarifier
 from agent.runtime.runner import AgentRunner
-from agent.answer.target_extractor import _grounded_in_query
-from agent.answer.fact_coverage import identifier_tokens, normalized_fact_text
 from agent.chat.thinking import ThinkingPipeline
 from agent.schemas.chat import ChatRequest
 from agent.schemas.query_plan import QueryPlan
@@ -14,28 +10,10 @@ from eval.deep_research_benchmark import BenchmarkRunError, _run_fast_chat
 from toolset.tool_layer.search_tool import SearchTool
 
 
-def test_comparison_keeps_each_queries_provenance_but_deduplicates_repeats():
-    evidence = {"doc_id": "doc-a", "chunk_id": "doc-a_chunk_1", "retrieval_query": "Compare W30"}
-    second = {**evidence, "retrieval_query": "Compare W34"}
-    assert AgentRunner._merge_evidence([], [evidence, evidence, second]) == [evidence, second]
-
-
 def test_test_index_can_be_selected_without_overwriting_the_repository_index(monkeypatch, tmp_path):
     path = tmp_path / "test-bm25.pkl"
     monkeypatch.setenv("BM25_INDEX_PATH", str(path))
     assert SearchTool().bm25_path == path
-
-
-def test_ambiguous_latest_architecture_requires_scope_before_model_invocation():
-    class UnexpectedLLM:
-        def chat(self, *args, **kwargs):
-            raise AssertionError("The deterministic scope check must run first")
-    result = Clarifier(llm=UnexpectedLLM(), enabled=True).evaluate("What is the latest Agent architecture?", [])
-    assert result.needs_clarification
-    assert "current code implementation" in result.question
-    assert not needs_architecture_scope("What is the Agent architecture as of 2026-09-08?")
-    assert not needs_architecture_scope("Explain the latest architecture in branch optimization.")
-    assert not needs_architecture_scope("Compare the current and planned target architectures.")
 
 
 @pytest.mark.parametrize("status", ["success", "clarification_required", "no_relevant_context"])
@@ -73,13 +51,6 @@ def test_sprint_subquery_narrows_only_inside_the_authorized_scope(tmp_path):
     assert tool._narrow_week_scope("Agent deliveries in W35", scope) == scope
 
 
-def test_shared_entity_word_does_not_make_unrequested_fields_mandatory():
-    query = "Compare Agent delivery counts and bug fixes."
-    assert not _grounded_in_query("agentContributors", normalized_fact_text(query), identifier_tokens(query))
-    query = "List agent contributors."
-    assert _grounded_in_query("agentContributors", normalized_fact_text(query), identifier_tokens(query))
-
-
 def test_parallel_groups_keep_every_run_and_do_not_overlap_chat_requests(monkeypatch, tmp_path):
     import json
     import threading
@@ -106,48 +77,11 @@ def test_parallel_groups_keep_every_run_and_do_not_overlap_chat_requests(monkeyp
     assert len(records) == 4 and all(record["success"] for record in records)
     assert len(set(chat_threads)) == 1
 
-def test_repair_subset_keeps_original_citation_numbers_and_table_tail():
-    from agent.answer.completeness import AnswerCompletenessChecker
-    from agent.schemas.tool_execution import Evidence
-    evidence = [Evidence(doc_id='doc', chunk_id=f'chunk-{i}', title='Goals', content=('x' * 2000 + 'M10 Not started') if i == 5 else 'other', score=1, retrieval_query='Goals', retrieval_mode='bm25') for i in range(6)]
-    checker = AnswerCompletenessChecker(SimpleNamespace())
-    formatted = checker._format_evidence([evidence[5]], evidence)
-    assert formatted.startswith('[6]')
-    assert 'M10 Not started' in formatted
-
-@pytest.mark.parametrize('policy_name', ['single_fact', 'topic_coverage', 'bilateral_coverage'])
-def test_document_discovery_summary_does_not_support_factual_answers(policy_name):
-    from agent.evidence import EvidenceGate
-    from agent.schemas.intent_policy import IntentPolicy
-    from agent.schemas.tool_execution import Evidence
-    summary = Evidence(doc_id='doc', chunk_id='doc::document', title='Deliverables', content='Truncated file table', score=1, retrieval_query='test', retrieval_mode='document')
-    plan = QueryPlan(original_query='test', standalone_query='test', sub_queries=['test', 'test2'])
-    result = EvidenceGate().evaluate(plan, IntentPolicy(evidence_policy=policy_name), [summary], retrieval_attempt=1)
-    assert not result.accepted
-    assert result.eligible_evidence_count == 0
-    identity = EvidenceGate().evaluate(plan, IntentPolicy(evidence_policy='document_identity'), [summary], retrieval_attempt=1)
-    assert identity.accepted
 
 def test_document_metadata_argument_cannot_break_or_replace_server_filters():
     plan = QueryPlan(original_query='Summarize goals', standalone_query='Summarize goals', filters={'doc_ids': ['allowed']})
-    args = AgentRunner._apply_execution_constraints(tool_name='find_documents', arguments={'query': 'goals', 'doc_type': 'meeting', 'doc_ids': ['forbidden'], 'filters': {'doc_ids': ['forbidden']}}, query_plan=plan, mode='bm25', top_k=5)
-    assert args == {'query': 'goals', 'filters': {'doc_ids': ['allowed']}, 'top_k': 5}
-
-@pytest.mark.parametrize('query', ['Which commits implement the authentication handler?', 'Which Python files were added in the release?', 'What files changed in the patch?'])
-def test_change_facts_require_contents_even_if_model_selects_document_search(query):
-    from agent.query.intent_classifier import IntentClassifier
-    from agent.query.intent_classifier import IntentResult
-    from agent.schemas.query_plan import QueryIntent
-    result = IntentClassifier._enforce_explicit_intent(query, [], IntentResult(intent=QueryIntent.DOCUMENT_SEARCH, confidence=0.9))
-    assert result.intent == QueryIntent.KNOWLEDGE_QA
-
-
-def test_locating_documents_about_changes_remains_document_search():
-    from agent.query.intent_classifier import IntentClassifier
-    from agent.query.intent_classifier import IntentResult
-    from agent.schemas.query_plan import QueryIntent
-    result = IntentClassifier._enforce_explicit_intent('Find documents about files added in the release', [], IntentResult(intent=QueryIntent.DOCUMENT_SEARCH, confidence=0.9))
-    assert result.intent == QueryIntent.DOCUMENT_SEARCH
+    args = AgentRunner._scope_arguments('find_documents', {'query': 'goals', 'filters': {'doc_ids': ['forbidden']}}, plan.filters, 'bm25', 5)
+    assert args == {'query': 'goals', 'filters': {'doc_ids': []}}
 
 
 def test_selected_documents_do_not_inherit_guessed_metadata_filters():
@@ -180,63 +114,3 @@ def test_missing_or_multiple_dates_do_not_narrow_comparison_scope(tmp_path):
     for query in ['Compare September 8 and September 9', 'Read the September 9 meeting', 'Read the 2025-09-08 meeting', 'Compare these plans']:
         assert tool._narrow_dated_scope(query, scope) == scope
     assert tool._narrow_dated_scope('Read September 8 meeting', {'doc_ids': []}) == {'doc_ids': []}
-
-
-def test_comparison_executor_receives_dated_child_scope(tmp_path):
-    import json
-    (tmp_path / 'meeting.json').write_text(json.dumps({'title': 'Meeting+Minutes+of+2026+09+08'}), encoding='utf-8')
-    tool = SearchTool(documents_dir=str(tmp_path))
-    calls = []
-    class Executor:
-        registry = SimpleNamespace(get=lambda name: tool)
-        def execute(self, **kwargs):
-            calls.append(kwargs['arguments'])
-            return SimpleNamespace(success=True, evidence=[])
-    plan = QueryPlan(original_query='Compare plan and meeting', standalone_query='Compare plan and meeting', sub_queries=['Retrieve plan details', 'Retrieve the September 8 meeting'])
-    runner = AgentRunner.__new__(AgentRunner)
-    runner._execute_parallel_comparison_retrieval(query_plan=plan, arguments={'filters': {'doc_ids': ['plan', 'meeting']}, 'top_k': 5, 'mode': 'bm25'}, trace_id='test', tool_call_id='call', tool_executor=Executor(), retrieval_attempt=1)
-    by_query = {c['query']:c['filters'] for c in calls}
-    assert by_query['Retrieve plan details'] == {'doc_ids': ['plan', 'meeting']}
-    assert by_query['Retrieve the September 8 meeting'] == {'doc_ids': ['meeting']}
-
-
-def test_english_answer_instruction_overrides_mixed_language_metadata_without_mutating_history():
-    captured = []
-    class LLM:
-        def chat(self, messages, **kwargs):
-            captured.extend(messages)
-            return {'content': 'English answer [1].'}
-    runner = AgentRunner.__new__(AgentRunner)
-    runner.answer_llm = LLM()
-    from agent.answer.generator import AnswerGenerator
-    runner.answer_generator = AnswerGenerator(llm=runner.answer_llm)
-    state = SimpleNamespace(query_plan=QueryPlan(original_query='Compare the dated reports', standalone_query='Compare the dated reports'), retrieval_attempts=1, trace_id='language-test', evidence=[])
-    messages = [{'role': 'system', 'content': 'Original evidence rules'}, {'role': 'user', 'content': '资料元数据'}]
-    runner._chat_for_answer(state, messages)
-    assert 'Write the entire answer in English' in captured[0]['content']
-    assert messages[0]['content'] == 'Original evidence rules'
-
-
-def test_english_repair_explicitly_retains_answer_language():
-    from agent.answer.completeness import AnswerCompletenessChecker
-    from agent.answer.schemas import AnswerCompletenessResult
-    plan = QueryPlan(original_query='Summarize the goals', standalone_query='Summarize the goals')
-    prompt = AnswerCompletenessChecker(SimpleNamespace())._repair_prompt(plan, 'Existing answer', [], AnswerCompletenessResult(complete=False))
-    assert 'Write the entire repaired answer in English' in prompt
-
-
-def test_english_default_overrides_history_language_without_mutating_it():
-    from agent.answer.generator import AnswerGenerator
-    captured = []
-    class LLM:
-        def chat(self, messages, **kwargs):
-            captured.extend(messages)
-            return {'content': 'English answer [1].'}
-    history = [{'role': 'system', 'content': 'Evidence rules'},
-               {'role': 'assistant', 'content': 'Earlier source metadata: 中文。'},
-               {'role': 'user', 'content': 'Explain the responsibilities.'}]
-    generator = AnswerGenerator(llm=LLM())
-    generator.chat(history)
-    assert 'Write the entire answer in English' in captured[0]['content']
-    assert 'unless the user explicitly requests another output language' in captured[0]['content']
-    assert history[0]['content'] == 'Evidence rules'

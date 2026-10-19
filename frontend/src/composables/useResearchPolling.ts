@@ -1,5 +1,5 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { ResearchEvent, ResearchJob, ResearchProgress, ResearchSnapshot } from '../types/research'
+import type { ResearchEvent, ResearchJob, ResearchProgress, ResearchSnapshot, ResearchTeamSummary } from '../types/research'
 import { isResearchTerminal } from '../utils/research'
 
 export function useResearchPolling(
@@ -9,6 +9,7 @@ export function useResearchPolling(
   const job = ref<ResearchJob | null>(null)
   const progress = ref<ResearchProgress | null>(null)
   const events = ref<ResearchEvent[]>([])
+  const team = ref<ResearchTeamSummary | null>(null)
   const loading = ref(true)
   const error = ref<unknown>(null)
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -27,10 +28,11 @@ export function useResearchPolling(
     if (stopped) return
     const activeGeneration = generation
     try {
-      const { job: nextJob, progress: nextProgress, events: nextEvents } = await fetchSnapshot(eventCursor)
+      const { job: nextJob, progress: nextProgress, events: nextEvents, team: nextTeam } = await fetchSnapshot(eventCursor)
       if (stopped || activeGeneration !== generation) return
       job.value = nextJob
       progress.value = nextProgress
+      team.value = nextTeam ?? null
       if (nextEvents.events.length) {
         const known = new Set(events.value.map(item => item.event_id))
         events.value = [...events.value, ...nextEvents.events.filter(item => !known.has(item.event_id))].slice(-50)
@@ -58,5 +60,5 @@ export function useResearchPolling(
   onMounted(refresh)
   onBeforeUnmount(stop)
 
-  return { job, progress, events, loading, error, refresh, restart, stop }
+  return { job, progress, events, team, loading, error, refresh, restart, stop }
 }

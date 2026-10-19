@@ -129,6 +129,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="ordinary is an alias of simple",
     )
     parser.add_argument("--online", action="store_true", help="confirm real model/API usage")
+    parser.add_argument("--user-id", default=os.getenv("EVAL_USER_ID", ""))
+    parser.add_argument("--weight-mode", choices=("fast", "thinking"), default="thinking")
     parser.add_argument("--list", action="store_true", help="list selected cases without calling APIs")
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--simple-dataset", type=Path, default=DEFAULT_SIMPLE_DATASET)
@@ -145,9 +147,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--retrieval-mode",
         choices=("hybrid", "vector", "bm25"),
         default="hybrid",
-        help="retrieval strategy for measured Agent requests and warmup",
+        help="retrieval strategy for measured Agent requests",
     )
-    parser.add_argument("--no-retrieval-warmup", action="store_true")
     parser.add_argument("--retrieval-namespace")
     parser.add_argument("--output", type=Path)
     return parser
@@ -188,6 +189,8 @@ def main() -> int:
         raise SystemExit(
             "This test calls configured online models. Re-run with --online to confirm API usage."
         )
+    if not args.user_id:
+        raise SystemExit("--user-id or EVAL_USER_ID must identify an enabled user with current source bindings.")
 
     try:
         namespace = configure_retrieval_namespace(args.retrieval_namespace)
@@ -202,8 +205,7 @@ def main() -> int:
             "simple_dataset": str(args.simple_dataset),
             "complex_query_dataset": str(args.complex_query_dataset),
             "model": os.getenv("LLM_MODEL") or os.getenv("MODEL_NAME") or "configured-default",
-            "fast_answer_model": os.getenv("FAST_ANSWER_MODEL") or "configured-default",
-            "query_preparation_model": os.getenv("QUERY_PREPARATION_MODEL") or "configured-default",
+            "fast_answer_model": os.getenv("ANSWER_FAST_MODEL") or "configured-default",
             "judge_enabled": args.judge,
             "repeats": args.repeats,
             "retrieval_namespace": namespace,
@@ -215,8 +217,8 @@ def main() -> int:
             cases,
             repeats=args.repeats,
             use_judge=args.judge,
-            warmup_retrieval=not args.no_retrieval_warmup,
             retrieval_mode=args.retrieval_mode,
+            user_id=args.user_id, weight_mode=args.weight_mode,
         )
 
     output = args.output or DEFAULT_REPORT_DIR / (

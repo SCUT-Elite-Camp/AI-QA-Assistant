@@ -2,12 +2,7 @@ from typing import Any
 
 import pytest
 
-from agent.chat.thinking import ThinkingPipeline
-from agent.query.source_intent import heuristic_source_intent
-from agent.runtime.runner import AgentRunner
 from agent.schemas.chat import AttachmentContext, ChatRequest, InternalChatRequest
-from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan, SourceIntent, SourceKind
 from agent.tools.executor import ToolExecutor
 from agent.tools.registry import ToolRegistryAdapter
 from toolset.tool_layer.attachment_tools import SearchAttachmentsTool
@@ -57,26 +52,6 @@ def test_attachment_context_requires_prefixed_allowlisted_selection() -> None:
         )
 
 
-def test_attachment_source_policy_uses_only_trusted_context() -> None:
-    intent = heuristic_source_intent("总结这份附件")
-    assert intent.sources == [SourceKind.CONVERSATION_ATTACHMENT]
-
-    enabled = ThinkingPipeline._apply_source_policy(
-        _internal_request("总结这份附件"),
-        IntentPolicy(candidate_tools=("search_documents",)),
-        SourceIntent(sources=[SourceKind.CONVERSATION_ATTACHMENT]),
-    )
-    assert enabled.candidate_tools == ("search_attachments",)
-    assert enabled.max_tool_calls >= 2
-
-    disabled = ThinkingPipeline._apply_source_policy(
-        ChatRequest(query="总结这份附件"),
-        IntentPolicy(candidate_tools=("search_documents",)),
-        SourceIntent(sources=[SourceKind.CONVERSATION_ATTACHMENT]),
-    )
-    assert disabled.candidate_tools == ()
-
-
 def test_attachment_executor_preserves_citation_identity(monkeypatch) -> None:
     monkeypatch.setenv("ATTACHMENT_INTERNAL_SECRET", "secret")
     tool = SearchAttachmentsTool()
@@ -109,15 +84,3 @@ def test_attachment_executor_preserves_citation_identity(monkeypatch) -> None:
     assert evidence.locator == {"page": 2}
     assert evidence.version == 3
     assert evidence.source_type == "attachment"
-
-
-def test_runner_overrides_attachment_search_query_and_budget() -> None:
-    plan = QueryPlan(original_query="risk", standalone_query="resolved risk")
-    constrained = AgentRunner._apply_execution_constraints(
-        tool_name="search_attachments",
-        arguments={"query": "model supplied", "top_k": 99},
-        query_plan=plan,
-        mode="hybrid",
-        top_k=6,
-    )
-    assert constrained == {"query": "resolved risk", "top_k": 6}

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 
 # Load environment variables from .env file
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -14,13 +14,6 @@ def _env_bool(name: str, default: bool) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _env_bool_with_legacy(name: str, legacy_name: str, default: bool) -> bool:
-    """Read a new boolean setting while honoring the legacy name for one release."""
-    if os.getenv(name) is not None:
-        return _env_bool(name, default)
-    return _env_bool(legacy_name, default)
 
 
 def _env_int(name: str, default: int) -> int:
@@ -52,6 +45,7 @@ class Settings(BaseModel):
     DEBUG: bool = _env_bool("DEBUG", True)
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = _env_int("PORT", 8000)
+    RESEARCH_DEVELOPMENT_MODE: bool = _env_bool("RESEARCH_DEVELOPMENT_MODE", False)
 
     DEFAULT_RETRIEVAL_MODE: str = os.getenv("DEFAULT_RETRIEVAL_MODE", "hybrid")
 
@@ -60,42 +54,6 @@ class Settings(BaseModel):
         ge=0.0,
         le=1.0,
     )
-    QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
-        "QUERY_UNDERSTANDING_ENABLED",
-        True,
-    )
-    UNIFIED_QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
-        "UNIFIED_QUERY_UNDERSTANDING_ENABLED",
-        False,
-    )
-    CASCADED_QUERY_UNDERSTANDING_ENABLED: bool = _env_bool(
-        "CASCADED_QUERY_UNDERSTANDING_ENABLED",
-        False,
-    )
-    HYBRID_INTENT_ROUTER_ENABLED: bool = _env_bool(
-        "HYBRID_INTENT_ROUTER_ENABLED",
-        False,
-    )
-    INTENT_EMBEDDING_MODEL_PATH: str = os.getenv(
-        "INTENT_EMBEDDING_MODEL_PATH",
-        "",
-    )
-    INTENT_EMBEDDING_THRESHOLD: float = Field(
-        default_factory=lambda: _env_float("INTENT_EMBEDDING_THRESHOLD", 0.72),
-        ge=-1.0,
-        le=1.0,
-    )
-    INTENT_EMBEDDING_MARGIN: float = Field(
-        default_factory=lambda: _env_float("INTENT_EMBEDDING_MARGIN", 0.08),
-        ge=0.0,
-        le=2.0,
-    )
-    CONVERSATION_REWRITE_ENABLED: bool = _env_bool_with_legacy(
-        "CONVERSATION_REWRITE_ENABLED",
-        "QUERY_REWRITE_ENABLED",
-        True,
-    )
-    CLARIFICATION_ENABLED: bool = _env_bool("CLARIFICATION_ENABLED", True)
     TOOL_TIMEOUT_MS: int = Field(
         default_factory=lambda: _env_int("TOOL_TIMEOUT_MS", 60000),
         gt=0,
@@ -108,25 +66,6 @@ class Settings(BaseModel):
         default_factory=lambda: _env_int("TOOL_EXECUTOR_MAX_PENDING", 16),
         ge=0,
     )
-    AGENTIC_EXPLORATION_ENABLED: bool = _env_bool(
-        "AGENTIC_EXPLORATION_ENABLED", False,
-    )
-    KNOWLEDGE_NAVIGATION_ENABLED: bool = _env_bool(
-        "KNOWLEDGE_NAVIGATION_ENABLED", False,
-    )
-    EXPLORATION_MAX_ROUNDS: int = Field(
-        default_factory=lambda: _env_int("EXPLORATION_MAX_ROUNDS", 4), ge=1, le=5,
-    )
-    EXPLORATION_MAX_TOOL_CALLS: int = Field(
-        default_factory=lambda: _env_int("EXPLORATION_MAX_TOOL_CALLS", 8), ge=1, le=10,
-    )
-    EXPLORATION_MAX_EVIDENCE: int = Field(
-        default_factory=lambda: _env_int("EXPLORATION_MAX_EVIDENCE", 20), ge=5, le=50,
-    )
-    WIKI_CONTEXT_TOP_K: int = Field(
-        default_factory=lambda: _env_int("WIKI_CONTEXT_TOP_K", 3), ge=0, le=10,
-    )
-
     RESEARCH_DATABASE_PATH: str = os.getenv(
         "RESEARCH_DATABASE_PATH",
         str(
@@ -198,14 +137,19 @@ class Settings(BaseModel):
         le=60000,
     )
     AGENT_INTERNAL_TOKEN: str = Field(default_factory=lambda: os.getenv("AGENT_INTERNAL_TOKEN", "").strip(), repr=False)
-    MAX_AGENT_ITERATIONS: int = Field(
-        default_factory=lambda: _env_int("MAX_AGENT_ITERATIONS", 5),
-        ge=1,
-    )
     MAX_REPEATED_TOOL_CALLS: int = Field(
         default_factory=lambda: _env_int("MAX_REPEATED_TOOL_CALLS", 2),
         ge=1,
     )
+
+    THINKING_MAX_MODEL_CALLS: int = Field(default_factory=lambda: _env_int("THINKING_MAX_MODEL_CALLS", 10), ge=2, le=40)
+    THINKING_MAX_TOOL_CALLS: int = Field(default_factory=lambda: _env_int("THINKING_MAX_TOOL_CALLS", 8), ge=1, le=30)
+    THINKING_CONTEXT_MAX_CHARS: int = Field(default_factory=lambda: _env_int("THINKING_CONTEXT_MAX_CHARS", 30000), ge=6000, le=200000)
+    THINKING_MAX_RESERVED_TOKENS: int = Field(default_factory=lambda: _env_int("THINKING_MAX_RESERVED_TOKENS", 150000), ge=1000)
+    THINKING_MAX_VERIFICATIONS: int = Field(default_factory=lambda: _env_int("THINKING_MAX_VERIFICATIONS", 48), ge=1, le=300)
+    THINKING_TIMEOUT_SECONDS: float = Field(default_factory=lambda: _env_float("THINKING_TIMEOUT_SECONDS", 180), gt=0, le=600)
+    MINICHECK_MODEL_PATH: str = Field(default_factory=lambda: os.getenv("MINICHECK_MODEL_PATH", "data-persistence/models/minicheck"), validate_default=True)
+    MINICHECK_CPU_THREADS: int = Field(default_factory=lambda: _env_int("MINICHECK_CPU_THREADS", 4), ge=1, le=32)
 
     LLM_API_KEY: str = Field(default_factory=lambda: os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY", ""), repr=False)
     LLM_API_BASE: str = os.getenv(
@@ -213,14 +157,6 @@ class Settings(BaseModel):
         os.getenv("OPENAI_API_BASE", "http://127.0.0.1:11434/v1"),
     )
     LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.1")
-    QUERY_PREPARATION_MODEL: str = os.getenv("QUERY_PREPARATION_MODEL", "").strip()
-    ANSWER_COMPLETENESS_MODEL: str = os.getenv("ANSWER_COMPLETENESS_MODEL", "").strip()
-    ANSWER_COMPLETENESS_MODEL_THINKING: bool = _env_bool(
-        "ANSWER_COMPLETENESS_MODEL_THINKING",
-        False,
-    )
-    ANSWER_TARGET_EXTRACT_LLM: bool = _env_bool("ANSWER_TARGET_EXTRACT_LLM", False)
-    ANSWER_REPAIR_APPEND_ONLY: bool = _env_bool("ANSWER_REPAIR_APPEND_ONLY", True)
     ANSWER_FAST_MODEL: str = os.getenv("ANSWER_FAST_MODEL", "").strip()
     FAST_MODEL_SUPPORTS_IMAGES: bool = _env_bool("FAST_MODEL_SUPPORTS_IMAGES", False)
     FAST_CONTEXT_MAX_CHARS: int = Field(default_factory=lambda: _env_int("FAST_CONTEXT_MAX_CHARS", 12000), ge=1000, le=100000)
@@ -233,9 +169,19 @@ class Settings(BaseModel):
     LLM_TIMEOUT: int = _env_int("LLM_TIMEOUT", 60)
     LLM_THINKING_MODE: str = os.getenv("LLM_THINKING_MODE", "").strip().lower()
     LLM_REASONING_EFFORT: str = os.getenv("LLM_REASONING_EFFORT", "").strip().lower()
+    RESEARCH_MODEL_REASONING_TOKENS: int = Field(default_factory=lambda: _env_int("RESEARCH_MODEL_REASONING_TOKENS", 3072), ge=0, le=32768)
+    RESEARCH_MODEL_OUTPUT_TOKENS: int = Field(default_factory=lambda: _env_int("RESEARCH_MODEL_OUTPUT_TOKENS", 2048), ge=256, le=16384)
+    RESEARCH_MODEL_TOTAL_TOKENS: int = Field(default_factory=lambda: _env_int("RESEARCH_MODEL_TOTAL_TOKENS", 64000), ge=1000, le=100000)
+    RESEARCH_MODEL_MAX_RETRY_WAIT_SECONDS: float = Field(default_factory=lambda: _env_float("RESEARCH_MODEL_MAX_RETRY_WAIT_SECONDS", 60), ge=0, le=60)
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: Optional[str] = os.getenv("LOG_FILE")
+
+    @field_validator("MINICHECK_MODEL_PATH", mode="before")
+    @classmethod
+    def resolve_minicheck_path(cls, value):
+        path = Path(value or "data-persistence/models/minicheck").expanduser()
+        return str(path if path.is_absolute() else _find_project_root() / path)
 
     @model_validator(mode="after")
     def reject_unsupported_memory_cache(self) -> "Settings":

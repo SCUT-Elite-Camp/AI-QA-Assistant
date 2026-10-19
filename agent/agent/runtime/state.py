@@ -1,10 +1,7 @@
+"""Private request results shared by the Fast and Thinking pipelines."""
 from enum import StrEnum
 from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
-
-from agent.exploration.schemas import CoverageAssessment
-from agent.schemas.query_plan import QueryPlan
 
 
 class StopReason(StrEnum):
@@ -22,7 +19,6 @@ class StopReason(StrEnum):
 
 class ToolCallRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     iteration: int
     tool_call_id: str
     tool_name: str
@@ -31,43 +27,7 @@ class ToolCallRecord(BaseModel):
     error_code: str = ""
 
 
-class AgentState(BaseModel):
-    """Request-scoped mutable state owned by one Agent Runner invocation."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    trace_id: str
-    query_plan: QueryPlan
-    messages: list[dict[str, Any]] = Field(default_factory=list)
-    iteration: int = 0
-    retrieval_attempts: int = 0
-    wiki_evidence_candidates: list[dict[str, Any]] = Field(default_factory=list)
-    wiki_evidence_supplements: list[dict[str, Any]] = Field(default_factory=list)
-    evidence: list[dict[str, Any]] = Field(default_factory=list)
-    coverage_assessments: list[CoverageAssessment] = Field(default_factory=list)
-    exploration_rounds: int = 0
-    tool_calls: list[ToolCallRecord] = Field(default_factory=list)
-    stop_reason: StopReason | None = None
-    evidence_gate_reason: str = ""
-    covered_evidence_targets: list[str] = Field(default_factory=list)
-    missing_evidence_targets: list[str] = Field(default_factory=list)
-    eligible_evidence_count: int = 0
-    rejected_evidence_count: int = 0
-    answer_completeness_checked: bool = False
-    answer_complete: bool | None = None
-    missing_answer_aspects: list[str] = Field(default_factory=list)
-    missing_critical_facts: list[str] = Field(default_factory=list)
-    answer_repair_attempted: bool = False
-    answer_repair_rolled_back: bool = False
-    answer_repair_guard_reason: str = ""
-    llm_metrics: dict[str, Any] = Field(default_factory=dict)
-    answer_grounding: dict[str, Any] | None = None
-    answer_grounding_draft: dict[str, Any] | None = None
-
-
 class AgentRunResult(BaseModel):
-    """Structured Agent Runner output used by Chat orchestration and logs."""
-
     stop_reason: StopReason
     answer: str = ""
     message: str = ""
@@ -75,21 +35,9 @@ class AgentRunResult(BaseModel):
     retrieval_attempts: int = 0
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
-    coverage_assessments: list[dict[str, Any]] = Field(default_factory=list)
-    exploration_rounds: int = 0
     messages: list[dict[str, Any]] = Field(default_factory=list)
     error_code: str = ""
-    evidence_gate_reason: str = ""
-    covered_evidence_targets: list[str] = Field(default_factory=list)
-    missing_evidence_targets: list[str] = Field(default_factory=list)
-    eligible_evidence_count: int = 0
-    rejected_evidence_count: int = 0
-    answer_completeness_checked: bool = False
-    answer_complete: bool | None = None
-    missing_answer_aspects: list[str] = Field(default_factory=list)
-    missing_critical_facts: list[str] = Field(default_factory=list)
-    answer_repair_attempted: bool = False
-    answer_repair_rolled_back: bool = False
-    answer_repair_guard_reason: str = ""
     llm_metrics: dict[str, Any] = Field(default_factory=dict)
     answer_grounding: dict[str, Any] | None = None
+    verification: dict[str, Any] | None = None
+    budget: dict[str, Any] = Field(default_factory=dict)

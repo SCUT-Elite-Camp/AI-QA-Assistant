@@ -19,8 +19,6 @@ class LifecycleSnapshot:
     initialization_ms: int
     retrieval_ready: bool
     retrieval_error: str
-    intent_ready: bool = True
-    intent_error: str = ""
 
 
 class ApplicationContainer:
@@ -41,8 +39,6 @@ class ApplicationContainer:
         self._initialization_ms = 0
         self._retrieval_ready = False
         self._retrieval_error = ""
-        self._intent_ready = not settings.HYBRID_INTENT_ROUTER_ENABLED
-        self._intent_error = ""
 
     def startup(self) -> Agent:
         """Initialize shared resources exactly once and return the shared Agent."""
@@ -94,14 +90,6 @@ class ApplicationContainer:
                 self._retrieval_error = str(exc) or exc.__class__.__name__
             return
 
-        if settings.HYBRID_INTENT_ROUTER_ENABLED:
-            try:
-                agent.query_understanding.intent_classifier.warmup()
-                self._intent_ready = True
-            except Exception as exc:
-                self._intent_ready = False
-                self._intent_error = str(exc) or exc.__class__.__name__
-
         with self._lock:
             self._retrieval_ready = True
             self._retrieval_error = ""
@@ -114,8 +102,6 @@ class ApplicationContainer:
                 initialization_ms=self._initialization_ms,
                 retrieval_ready=self._retrieval_ready,
                 retrieval_error=self._retrieval_error,
-                intent_ready=self._intent_ready,
-                intent_error=self._intent_error,
             )
 
     def shutdown(self) -> None:

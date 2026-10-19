@@ -123,7 +123,6 @@ pnpm preview
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
-| `VITE_RESEARCH_USE_MOCK` | 仅显式独立 Research UI 演示 | `false` |
 | `GITHUB_OAUTH_CLIENT_ID` | GitHub OAuth App ID | - |
 | `GITHUB_OAUTH_CLIENT_SECRET` | GitHub OAuth App Secret | - |
 | `SESSION_SECRET` | 会话加密密钥 | 必填 |
@@ -200,10 +199,12 @@ Web 环境变量：
 AGENT_BASE_URL=http://127.0.0.1:8000
 AGENT_API_KEY=<server-only-shared-key>
 AGENT_INTERNAL_TOKEN=<server-only-internal-token>
-VITE_RESEARCH_USE_MOCK=false
 ```
 
-前端独立开发时可以设置 `VITE_RESEARCH_USE_MOCK=true`，在不启动 Agent 的情况下验收创建、审批、执行进度和报告页面。正式联调必须切回 `false`。
+Research 已移除前端可执行 Mock，统一调用真实 BFF/Agent harness。计划审批后并行探索，
+Reviewer 不通过时由独立 Agent 修订并复审，主 Agent 确认后才发布。
+本地 Agent 可设置 `RESEARCH_DEVELOPMENT_MODE=true`、`HOST=127.0.0.1`，
+使已登录且启用的用户拥有整个 Research 文件目录的访问权。此开关不由浏览器传入。
 
 浏览器真实请求固定同源 `/api/research`，不使用 `VITE_RESEARCH_API_BASE` 直连 Agent。
 源站撤权或版本漂移时，已保存研究报告与来源 Reader 也会被阻断。

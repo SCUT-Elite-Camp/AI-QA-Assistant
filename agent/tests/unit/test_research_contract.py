@@ -125,13 +125,3 @@ def test_empty_source_scope_has_a_deterministic_plan_error() -> None:
         ResearchPlanValidator.validate_or_raise(plan)
 
     assert exc_info.value.code == "research_source_scope_required"
-
-
-def test_model_plan_must_cover_the_user_objective(plan_payload: dict) -> None:
-    plan = ResearchPlan.model_validate(plan_payload)
-
-    with pytest.raises(PlannerError, match="does not cover"):
-        ModelResearchPlanner._validate_task_coverage(
-            "compare W30 and W34 delivery metrics",
-            plan.tasks,
-        )

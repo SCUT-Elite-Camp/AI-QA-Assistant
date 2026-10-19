@@ -29,6 +29,7 @@ from agent.schemas.research import (
     SourceManifestDocument, SourceScope,
 )
 from agent.service.permission_service import PermissionResolutionError, PermissionService
+from agent.config.settings import settings
 from deep_research.manifest import SourceResolver
 
 
@@ -44,9 +45,15 @@ class ResearchAccessPolicy:
 
     def __init__(self, permission_service: PermissionService | None = None) -> None:
         self.permission_service = permission_service or PermissionService()
+        self.development_mode = settings.RESEARCH_DEVELOPMENT_MODE
+        if self.development_mode and settings.HOST not in {"127.0.0.1", "localhost", "::1"}:
+            raise ValueError("research_development_requires_loopback_host")
 
     def accessible_doc_ids(self, user_id: str, doc_ids: list[str] | None = None) -> set[str] | None:
         try:
+            if self.development_mode:
+                self.permission_service.require_active_actor(user_id)
+                return set(self.permission_service.source_provider.list_document_ids())
             values = self.permission_service.get_accessible_doc_ids_strict(user_id, doc_ids=doc_ids)
         except PermissionResolutionError as exc:
             raise ResearchAccessError(exc.code, exc.status_code) from exc
@@ -115,6 +122,9 @@ class ResearchAccessPolicy:
             raise ResearchAccessError("research_document_not_found", 404)
 
     def validate_report(self, report: ResearchReport, job: ResearchJob, manifest: SourceManifest) -> None:
+        if report.review_id is not None and (job.status.value != "completed" or report.review_status != "passed"
+                                             or not report.coordinator_approved):
+            raise ResearchAccessError("research_report_not_released", 404)
         frozen = self.authorize_job(job, manifest)
         if report.research_id != job.research_id or any(item.doc_id not in frozen for item in report.citations):
             raise ResearchAccessError("research_report_source_forbidden")

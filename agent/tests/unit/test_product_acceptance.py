@@ -6,17 +6,9 @@ import pytest
 from eval import product_acceptance as acceptance
 from eval.summarize_product_acceptance import failure_hint, summarize
 from eval.deep_research_benchmark import _case_scope
-from deep_research.model_report import EvidenceReportSynthesizer
-from deep_research.renderer import MarkdownReportRenderer
+from deep_research.model_client import ResearchModelClient
 from deep_research.tools import LocalJsonSearchBackend
-from deep_research.planner import ModelResearchPlanner
-from agent.config.settings import settings
-from agent.schemas.research import ResearchRequest, SourceScope, ResearchPlanValidator, ResearchReport, ResearchCitation, ResearchResultStatus
-from agent.chat.thinking import ThinkingPipeline
-from agent.schemas.chat import ChatRequest
-from agent.schemas.intent_policy import IntentPolicy
-from agent.policy import IntentPolicyRouter
-from agent.schemas.query_plan import QueryIntent, QueryPlan
+from agent.schemas.research import ResearchPlanValidator, ResearchReport, ResearchCitation, ResearchResultStatus
 
 
 def test_profile_is_representative_and_checks_are_pointwise():
@@ -115,87 +107,18 @@ def source_report():
 
 @pytest.mark.parametrize("body,reason", [("[0]", "stop"), ("[2]", "stop"), ("[1]", "length")])
 def test_report_guard_rejects_invalid_citations_and_truncation(body, reason):
-    assert EvidenceReportSynthesizer._structural_issues(valid_report().replace("[1]", body), 1, reason)
+    assert ResearchModelClient._structural_issues(valid_report().replace("[1]", body), 1, reason)
 
 
-def test_report_normalizes_known_markdown_headings():
+def test_chinese_report_heading_language_capability():
     content = "### 1. 结论摘要\n正文 [1]\n**关键发现**\n正文 [1]"
-    normalized = EvidenceReportSynthesizer._normalize_section_headings(content, "zh-CN")
+    normalized = ResearchModelClient._normalize_section_headings(content, "zh-CN")
     assert "## 结论摘要\n" in normalized
     assert "## 关键发现\n" in normalized
 
 
-def test_report_repair_is_bounded_and_preserves_fallback(monkeypatch):
-    base = source_report()
-    monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
-    synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
-    calls = []
-    def chat(payload):
-        calls.append(json.loads(json.dumps(payload)))
-        return {"choices": [{"message": {"content": "incomplete [0]"}, "finish_reason": "length"}]}
-    monkeypatch.setattr(synth, "_chat", chat)
-    result = synth.render(objective="question")
-    assert result.result_status == ResearchResultStatus.DEGRADED
-    assert "incomplete" not in result.markdown
-    assert len(calls) == 4
-    assert "same evidence" in calls[1]["messages"][-1]["content"]
-    assert "compact final answer" in calls[2]["messages"][0]["content"]
-    assert "Fix only the structural defects" in calls[3]["messages"][-1]["content"]
-
-
-def test_report_accepts_complete_repair(monkeypatch):
-    base = source_report()
-    monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
-    synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
-    replies = iter(["incomplete", valid_report(), '{"issues": []}'])
-    monkeypatch.setattr(synth, "_chat", lambda payload: {"choices": [{"message": {"content": next(replies)}, "finish_reason": "stop"}]})
-    assert "## Sources" in synth.render(objective="question").markdown
-
-
-def test_report_uses_compact_rescue_after_primary_transport_failure(monkeypatch):
-    base = source_report()
-    monkeypatch.setattr(MarkdownReportRenderer, "render", lambda *args, **kwargs: base)
-    synth = EvidenceReportSynthesizer(api_base="https://example.invalid", api_key="test", model="test")
-    calls = []
-    def chat(payload):
-        calls.append(payload)
-        if len(calls) == 1:
-            raise OSError("transport failed")
-        return {"choices": [{"message": {"content": valid_report() if len(calls) == 2 else '{"issues": []}'}, "finish_reason": "stop"}]}
-    monkeypatch.setattr(synth, "_chat", chat)
-    assert "## Sources" in synth.render(objective="question").markdown
-    assert len(calls) == 3
-    assert "compact final answer" in calls[1]["messages"][0]["content"]
-
-
-def test_research_planner_honors_configured_thinking_mode(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_THINKING_MODE", "disabled")
-    planner = ModelResearchPlanner(api_base="https://example.invalid", api_key="test", model="test")
-    calls = []
-    def chat(payload):
-        calls.append(payload)
-        return {"choices": [{"message": {"content": json.dumps({"tasks": [
-            {"question": "Find facts in doc-123", "purpose": "Read source", "acceptance_target": "Facts supported"},
-            {"question": "Check limits", "purpose": "Read limits", "acceptance_target": "Limits supported"}]})}}]}
-    monkeypatch.setattr(planner, "_chat", chat)
-    manifest = SimpleNamespace(documents=[SimpleNamespace(doc_id="doc-123", title="Readable Source", source_type="confluence", version="1", effective_at=None)])
-    tasks = planner._generate_tasks(ResearchRequest(query="Explain facts", source_scope=SourceScope(document_ids=["a"])), manifest)
-    assert len(tasks) == 2
-    assert tasks[0].question == 'Find facts in Readable Source'
-    assert tasks[0].source_ids == ['doc-123']
-    assert calls[0]["thinking"] == {"type": "disabled"}
-
-
-def test_long_conflict_summary_is_bounded_without_modifying_evidence():
-    original = "long source statement " * 300
-    summary = MarkdownReportRenderer._bounded_summary(original)
-    assert len(summary) == 2000
-    assert summary.endswith("…")
-    assert len(original) > 2000
-
-
 def test_comparison_periods_are_not_duplicate_tasks():
-    left = "核对2026-W30的Agent模块总提交新功能Bug修复其他改进数量"
+    left = "Check 2026-W30 Agent total commits, new features, bug fixes and other improvements"
     right = left.replace("W30", "W34")
     assert not ResearchPlanValidator._questions_duplicate(left, right)
     assert ResearchPlanValidator._questions_duplicate(left, left)
@@ -214,15 +137,3 @@ def test_acceptance_summary_does_not_hide_failures_or_conflate_runtime_and_quali
     assert result["G1"]["runtime_ok"] == 2
     assert result["G1"]["median_response_seconds"] == 3
     assert failure_hint(rows[2]) == "evaluation_or_transport_error"
-
-
-def test_hard_document_scope_widens_section_retrieval_within_policy_cap():
-    policy = IntentPolicy(top_k=10)
-    mode, top_k = ThinkingPipeline._effective_retrieval_options(
-        ChatRequest(query="q", top_k=5, filters={"doc_ids": ["doc-a"]}), policy
-    )
-    assert mode == "hybrid"
-    assert top_k == 10
-    assert IntentPolicyRouter().route(QueryPlan(
-        original_query="q", standalone_query="q", intent=QueryIntent.KNOWLEDGE_QA
-    )).top_k == 10

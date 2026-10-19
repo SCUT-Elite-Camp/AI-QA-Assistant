@@ -5,11 +5,7 @@ from typing import Any
 
 import pytest
 
-from agent.chat.thinking import ThinkingPipeline
-from agent.query.source_intent import heuristic_source_intent
 from agent.schemas.chat import ChatRequest, InternalChatRequest, PersonalLibraryContext
-from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import SourceIntent, SourceKind
 from agent.tools.executor import ToolExecutor
 from agent.tools.registry import ToolRegistryAdapter
 from toolset.tool_layer.registry import ToolRegistry
@@ -39,26 +35,6 @@ def _internal_request(query: str) -> InternalChatRequest:
     )
 
 
-@pytest.mark.parametrize(
-    ("query", "expected"),
-    [
-        ("在我的资料库找项目风险", {SourceKind.PERSONAL_LIBRARY}),
-        ("根据我的个人库中的策略，允许重试几次？", {SourceKind.PERSONAL_LIBRARY}),
-        ("分别汇总 Confluence 周报、我的个人库策略与当前附件手册", {
-            SourceKind.ENTERPRISE_KB, SourceKind.PERSONAL_LIBRARY, SourceKind.CONVERSATION_ATTACHMENT}),
-        ("我上周上传的合同付款周期是多少", {SourceKind.PERSONAL_LIBRARY}),
-        ("公司的请假制度是什么", {SourceKind.ENTERPRISE_KB}),
-        (
-            "比较我劳动合同与公司休假政策",
-            {SourceKind.PERSONAL_LIBRARY, SourceKind.ENTERPRISE_KB},
-        ),
-        ("如何设计一个‘我的文件’页面", set()),
-    ],
-)
-def test_source_intent_is_deterministic(query: str, expected: set[SourceKind]) -> None:
-    assert set(heuristic_source_intent(query).sources) == expected
-
-
 def test_public_request_rejects_server_library_context() -> None:
     with pytest.raises(ValueError, match="trusted context"):
         ChatRequest.model_validate({
@@ -69,23 +45,6 @@ def test_public_request_rejects_server_library_context() -> None:
                 "access_token": "0" * 64,
             },
         })
-
-
-def test_source_policy_preserves_mixed_sources_and_fails_closed_without_context() -> None:
-    mixed = ThinkingPipeline._apply_source_policy(
-        _internal_request("比较我劳动合同与公司休假政策"),
-        IntentPolicy(candidate_tools=("search_documents",)),
-        SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY, SourceKind.ENTERPRISE_KB]),
-    )
-    assert mixed.candidate_tools == ("search_documents", "search_library")
-    assert mixed.max_retrieval_attempts == 2
-
-    unavailable = ThinkingPipeline._apply_source_policy(
-        ChatRequest(query="我的资料库有哪些风险"),
-        IntentPolicy(candidate_tools=("search_documents",)),
-        SourceIntent(sources=[SourceKind.PERSONAL_LIBRARY]),
-    )
-    assert unavailable.candidate_tools == ()
 
 
 class _Response:

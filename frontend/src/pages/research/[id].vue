@@ -6,6 +6,7 @@ import Navbar from '../../components/Navbar.vue'
 import ResearchPlanReview from '../../components/research/ResearchPlanReview.vue'
 import ResearchReportView from '../../components/research/ResearchReport.vue'
 import ResearchStatusCard from '../../components/research/ResearchStatusCard.vue'
+import ResearchTeamStatus from '../../components/research/ResearchTeamStatus.vue'
 import ChatComark from '../../components/chat/Comark'
 import ResearchMessageActions from '../../components/research/ResearchMessageActions.vue'
 import type { ChunkCitation } from '../../components/chat/tool/Sources.vue'
@@ -33,7 +34,7 @@ let planLoadInFlight = false
 let reportLoadInFlight = false
 let chatRegistrationInFlight = false
 
-const { job, progress, events, loading, error: pollingError, restart, stop } = useResearchPolling(
+const { job, progress, events, team, loading, error: pollingError, restart, stop } = useResearchPolling(
   afterEventId => api.getSnapshot(researchId.value, afterEventId),
 )
 
@@ -306,7 +307,7 @@ const statusTitle = computed(() => {
                           <span>Research is in progress. Follow updates in the activity panel.</span>
                         </div>
                         <UButton
-                          v-if="job.status === 'ready'"
+                          v-if="job.status === 'ready' || plan?.execution_mode === 'coordinator'"
                           class="mt-3"
                           color="neutral"
                           variant="ghost"
@@ -381,6 +382,8 @@ const statusTitle = computed(() => {
                           label="Start new research"
                         />
                       </div>
+
+                      <ResearchTeamStatus v-if="team" :team="team" />
 
                       <div
                         v-if="conversationEvents.length"

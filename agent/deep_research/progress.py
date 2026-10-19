@@ -22,52 +22,27 @@ from agent.schemas.research import (
 from .repository import ResearchNotFoundError, SQLiteResearchRepository
 
 
-STAGE_ORDER = (
-    "created",
-    "planning",
-    "awaiting_approval",
-    "ready",
-    "execute_tasks",
-    "coverage",
-    "generate_claims",
-    "structural_verification",
-    "semantic_verification",
-    "render_report",
-    "finalize",
-    "completed",
-)
-
+STAGE_ORDER = ("created", "planning", "awaiting_approval", "ready", "parallel_exploration",
+               "coordinator_synthesis", "review_report", "repair_report", "coordinator_check",
+               "publish_report", "completed")
 STAGE_LABELS = {
-    "created": "Research created",
-    "planning": "Creating research plan",
-    "awaiting_approval": "Awaiting plan approval",
-    "ready": "Research queued",
-    "execute_tasks": "Executing research tasks",
-    "coverage": "Checking evidence coverage",
-    "generate_claims": "Organizing findings",
-    "structural_verification": "Checking citation integrity",
-    "semantic_verification": "Verifying findings",
-    "render_report": "Writing research report",
-    "finalize": "Finalizing research",
-    "completed": "Research complete",
+    "created": "Research created", "planning": "Creating research plan",
+    "awaiting_approval": "Awaiting plan approval", "ready": "Research queued",
+    "parallel_exploration": "Explorers researching in parallel",
+    "coordinator_synthesis": "Coordinator assembling report", "review_report": "Reviewer checking evidence",
+    "repair_report": "Independent agent correcting rejected draft", "coordinator_check": "Coordinator final check",
+    "publish_report": "Releasing approved report", "completed": "Research complete",
 }
-
-STAGE_PROGRESS = {
-    "created": 2,
-    "planning": 10,
-    "awaiting_approval": 15,
-    "ready": 20,
-    "execute_tasks": 48,
-    "coverage": 58,
-    "generate_claims": 68,
-    "structural_verification": 76,
-    "semantic_verification": 86,
-    "render_report": 95,
-    "finalize": 98,
-    "completed": 100,
-}
+STAGE_PROGRESS = {"created": 2, "planning": 10, "awaiting_approval": 15, "ready": 20,
+    "parallel_exploration": 45, "coordinator_synthesis": 65, "review_report": 78,
+    "repair_report": 82, "coordinator_check": 94, "publish_report": 98, "completed": 100}
 
 _SAFE_ERROR_MESSAGES = {
+    "ResearchReviewRejected": "Research could not produce an independently approved report. See exploration and review details; no final report was released.",
+    "ResearchTeamProtocolError": "A research agent could not return a valid, evidence-bound result.",
+    "ResearchTokenBudgetExceeded": "Research stopped at its approved model token budget. No unreviewed report was released.",
+    "research_legacy_restart_required": "This saved plan uses the retired workflow. Start a new research job and approve its new plan.",
+    "ResearchRecoveryError": "The saved execution cannot be resumed. Start a new research job and approve its plan.",
     "planning_failed": "Research planning failed. Check source availability and try again.",
     "research_checkpoint_missing": "No checkpoint is available to resume this research.",
     "research_checkpoint_unsafe": "Research stopped because the checkpoint could not be safely resumed.",
@@ -83,6 +58,26 @@ class ResearchProgressService:
     def __init__(self, repository: SQLiteResearchRepository) -> None:
         self.repository = repository
 
+    def team_summary(self, research_id):
+        job = self.repository.get_job(research_id)
+        if job.plan_version is None or self.repository.get_plan(research_id, job.plan_version).execution_mode != "coordinator":
+            return None
+        reviews = self.repository.list_team_entities("report_review", research_id)
+        statuses = {r.draft_id: r.status for r in reviews}
+        agents = [r.model_dump(mode="json") for r in self.repository.list_team_entities("agent_result", research_id)]
+        completed = {a["agent_id"] for a in agents}
+        for step in self.repository.list_team_entities("agent_step", research_id):
+            if step.action == "started" and step.agent_id not in completed:
+                agents.append({"agent_id": step.agent_id, "role": step.role, "task_id": step.task_id,
+                    "status": "running" if job.status in {ResearchJobStatus.RESEARCHING, ResearchJobStatus.SYNTHESIZING} else "interrupted",
+                    "missing": []})
+        return {"agents": agents,
+            "drafts": [{"draft_id": d.draft_id, "revision": d.revision, "report_hash": d.report_hash,
+                        "author_agent_id": d.author_agent_id, "review_status": statuses.get(d.draft_id, "not_reviewed")}
+                       for d in self.repository.list_team_entities("report_draft", research_id)],
+            "reviews": [r.model_dump(mode="json") for r in reviews],
+            "completion_tokens_used": self.repository.model_tokens_used(research_id)}
+
     def get_progress(self, research_id: str) -> ResearchProgress:
         job = self.repository.get_job(research_id)
         events = self.repository.list_events(research_id, limit=100)
@@ -94,6 +89,10 @@ class ResearchProgressService:
         completed = min(completed, job.task_total)
         current_stage = self._current_stage(job, events)
         evidence = self.repository.list_evidence(research_id)
+        metrics = self._metrics(job, events, evidence)
+        if job.plan_version and self.repository.get_plan(research_id, job.plan_version).execution_mode == "coordinator":
+            actions = sum(s.action in {"read", "search"} for s in self.repository.list_team_entities("agent_step", research_id))
+            metrics = metrics.model_copy(update={"actions_used": actions, "tool_calls": actions})
         return ResearchProgress(
             research_id=research_id,
             status=job.status,
@@ -104,11 +103,12 @@ class ResearchProgressService:
             task_completed=completed,
             evidence_count=len(evidence),
             claim_count=self.repository.count_entities("claim", research_id),
+            finding_count=self.repository.count_entities("finding", research_id),
             started_at=job.created_at,
             updated_at=job.updated_at,
             stages=self._stage_progress(job, current_stage, events),
             tasks=tasks,
-            metrics=self._metrics(job, events, evidence),
+            metrics=metrics,
             error=self._safe_error(job),
         )
 
@@ -218,10 +218,10 @@ class ResearchProgressService:
         if job.status == ResearchJobStatus.COMPLETED:
             return "completed"
         candidate = job.failure_stage or job.current_stage
-        if candidate in STAGE_ORDER:
+        if candidate in STAGE_LABELS:
             return candidate
         for event in reversed(events):
-            if event.stage in STAGE_ORDER:
+            if event.stage in STAGE_LABELS:
                 return event.stage
         if job.status.value in STAGE_ORDER:
             return job.status.value
@@ -235,31 +235,35 @@ class ResearchProgressService:
     ) -> int:
         if job.status == ResearchJobStatus.COMPLETED:
             return 100
-        if current_stage == "execute_tasks" and job.task_total:
+        if current_stage == "parallel_exploration" and job.task_total:
             ratio = min(task_completed / job.task_total, 1.0)
             return round(20 + ratio * 28)
         return STAGE_PROGRESS[current_stage]
 
-    @staticmethod
-    def _stage_progress(job: ResearchJob, current_stage: str, events):
+    def _stage_progress(self, job: ResearchJob, current_stage: str, events):
+        order = STAGE_ORDER
+        if not any(event.stage == "repair_report" for event in events):
+            order = tuple(stage for stage in order if stage != "repair_report")
         started = {}
         completed = {}
         for event in events:
-            if event.stage not in STAGE_ORDER:
+            if event.stage not in order:
                 continue
             if event.event_type == ResearchEventType.STAGE_STARTED:
                 started.setdefault(event.stage, event.created_at)
             elif event.event_type == ResearchEventType.STAGE_COMPLETED:
                 completed.setdefault(event.stage, event.created_at)
-        current_index = STAGE_ORDER.index(current_stage)
+        current_index = order.index(current_stage)
         output = []
-        for index, key in enumerate(STAGE_ORDER):
-            if job.status == ResearchJobStatus.COMPLETED or index < current_index:
+        for index, key in enumerate(order):
+            if job.status == ResearchJobStatus.COMPLETED:
                 status = ResearchStageStatus.COMPLETED
             elif index == current_index and job.status == ResearchJobStatus.FAILED:
                 status = ResearchStageStatus.FAILED
             elif index == current_index and job.status != ResearchJobStatus.CANCELLED:
                 status = ResearchStageStatus.RUNNING
+            elif key in completed or index < current_index:
+                status = ResearchStageStatus.COMPLETED
             else:
                 status = ResearchStageStatus.PENDING
             output.append(

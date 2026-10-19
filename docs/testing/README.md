@@ -12,12 +12,17 @@
 | 文档 | 日期与范围 |
 | --- | --- |
 | [PR63 整合验收](integration/pr63-integration-acceptance.md) | 2026-10-09 基线、真实权限链路、G1/G2 质量与未完成门槛 |
+| [Optimization 整合检查](integration/optimization-consolidation-20261019.md) | Thinking 与 Research harness 整合、依赖阻断/完整审稿/权重绑定修复、639 项 Agent 和 318 项前端回归 |
 | [Fast 基线](quality/fast-evaluation-20261014.md) | 2026-10-14 当前镜像、冻结问题、原始失败及修复复测 |
 | [Fast 优化与英文复测](quality/fast-optimization-20261014.md) | 通用修复、阶段结果；完整英文回答等待Groq配额恢复 |
 | [Codex逐题重评](quality/codex-answer-scoring-20261014.md) | 原问答四维评分、项目/样例分组、无外部Judge调用 |
 | [Confluence 英文化](quality/confluence-english-20261014.md) | 74 页面全量核对、17 页面及 21 附件翻译、原管线同步；旧评测冻结需另建新轮次 |
 | [断言核验英文复测](quality/claim-verification-english-20261015.md) | 126 对全英文断言、NLI/MiniCheck 结果及全系统测试默认语言 |
 | [MiniCheck 误判分析](quality/minicheck-error-analysis-20261015.md) | 当前选型、3 条误放行/3 条误拒、原文与 35 项英文输入诊断 |
+| [断言核验输入构造](quality/verification-context-20261019.md) | 第一步独立组件，126 对英文构造检查及明确的超长输入限制 |
+| [MiniCheck 实际核验](quality/minicheck-structured-verification-20261019.md) | 真实分类推断、114 对共同样本对照与 12 对未核验；效果和耗时限制 |
+| [Thinking 与单次生成](quality/thinking-single-generation-20261019.md) | 同模型 21 题真实尝试、9 题共同答案比较、格式/上下文失败及每日额度阻断 |
+| [Thinking 预算循环与 MiniCheck 接入](quality/thinking-agent-loop-20261019.md) | 统一 Agent 循环、核验失败续答、632 项回归；真实 MiniCheck 正反例，完整真实问答受 Groq 日额度限制 |
 | [Confluence 与网页复测](ui/ui-retest-20261012.md) | 2026-10-12 来源更新、真实问答和网页复测 |
 | [选区问答 UI](ui/selection-ui-retest-20261012.md) | 2026-10-12 选区工具栏、抽屉与保存交互 |
 | [流式展示复测](ui/stream-presentation-retest-20261012.md) | 2026-10-12 正文渐进展示和动画 |

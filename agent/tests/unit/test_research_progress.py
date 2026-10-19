@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.research_fixtures import FixtureResearchPlanner
 
 from datetime import timedelta
 from pathlib import Path
@@ -37,7 +38,7 @@ def _control(tmp_path: Path, research_id: str = "research-progress"):
             }
         ),
         id_factory=lambda: research_id,
-    )
+     planner=FixtureResearchPlanner())
     return repository, control
 
 
@@ -50,21 +51,12 @@ def _request() -> ResearchRequest:
 
 def test_stage_contract_is_frozen() -> None:
     assert STAGE_ORDER == (
-        "created",
-        "planning",
-        "awaiting_approval",
-        "ready",
-        "execute_tasks",
-        "coverage",
-        "generate_claims",
-        "structural_verification",
-        "semantic_verification",
-        "render_report",
-        "finalize",
-        "completed",
+        "created", "planning", "awaiting_approval", "ready", "parallel_exploration",
+        "coordinator_synthesis", "review_report", "repair_report", "coordinator_check",
+        "publish_report", "completed",
     )
     assert tuple(STAGE_LABELS) == STAGE_ORDER
-    assert STAGE_LABELS["semantic_verification"] == "Verifying findings"
+    assert STAGE_LABELS["review_report"] == "Reviewer checking evidence"
 
 
 
@@ -111,7 +103,7 @@ def test_progress_aggregates_tasks_counts_and_safe_error(tmp_path: Path) -> None
     progress = ResearchProgressService(repository).get_progress(ready.research_id)
     assert ResearchProgress.model_validate(progress.model_dump()) == progress
     assert progress.schema_version == "research.progress.v1"
-    assert progress.current_stage == "execute_tasks"
+    assert progress.current_stage == "parallel_exploration"
     assert progress.task_total == 3
     assert progress.task_completed == 1
     assert progress.tasks[0].status == ResearchTaskStatus.SUCCEEDED
@@ -123,7 +115,7 @@ def test_progress_aggregates_tasks_counts_and_safe_error(tmp_path: Path) -> None
             {
                 **current.model_dump(),
                 "status": ResearchJobStatus.FAILED,
-                "failure_stage": "execute_tasks",
+                "failure_stage": "parallel_exploration",
                 "error_code": r"C:\\private\\secrets\\token.txt",
             }
         )

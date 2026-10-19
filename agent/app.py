@@ -140,13 +140,12 @@ def health() -> dict[str, str]:
 def readiness() -> dict[str, str | bool | int]:
     snapshot = get_application_container().snapshot()
     return {
-        "status": "ready" if snapshot.retrieval_ready and snapshot.intent_ready else "degraded",
+        "status": "ready" if snapshot.retrieval_ready else "degraded",
         "initialized": snapshot.initialized,
         "initialization_count": snapshot.initialization_count,
         "initialization_ms": snapshot.initialization_ms,
         "retrieval_ready": snapshot.retrieval_ready,
-        "intent_ready": snapshot.intent_ready,
-        "detail": "; ".join(value for value in (snapshot.retrieval_error, snapshot.intent_error) if value),
+        "detail": snapshot.retrieval_error,
     }
 
 

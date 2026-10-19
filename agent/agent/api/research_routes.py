@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Annotated
 import re
-from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
@@ -13,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from deep_research.manifest import ManifestResolutionError
 from deep_research.access import ResearchAccessError, ResearchAccessPolicy
-from deep_research.model_report import EvidenceReportSynthesizer
+from deep_research.model_client import ResearchModelClient
 from deep_research.repository import (
     ResearchConflictError,
     ResearchNotFoundError,
@@ -29,7 +28,6 @@ from agent.schemas.research import (
     ResearchProgress,
     ResearchReport,
     ResearchRequest,
-    ResearchResultStatus,
     ResearchSnapshot,
     SourceManifestDocument,
     SourceScope,
@@ -82,55 +80,12 @@ class ResearchEvaluationTrace(BaseModel):
     findings: list[dict]
     claims: list[dict]
     verifications: list[dict]
+    agents: list[dict] = Field(default_factory=list)
+    agent_steps: list[dict] = Field(default_factory=list)
+    drafts: list[dict] = Field(default_factory=list)
+    reviews: list[dict] = Field(default_factory=list)
 
 
-def _resolve_report_conflict(
-    report: ResearchReport,
-    *,
-    conflict_id: str,
-    source_number: int,
-    reason: str,
-) -> ResearchReport:
-    conflict = next(item for item in report.conflicts if item.conflict_id == conflict_id)
-    chosen = next(
-        item for item in conflict.alternatives if item.citation_number == source_number
-    )
-
-    resolution = f"User selected source {source_number}: {reason}"
-    conflicts = [
-        item.model_copy(
-            update={"resolution_status": "resolved_by_user", "resolution": resolution}
-        )
-        if item.conflict_id == conflict_id
-        else item
-        for item in report.conflicts
-    ]
-    resolved_section = (
-        "## User-confirmed conflict resolution\n\n"
-        f'- **{conflict.subject}**: Selected source [{source_number}] "{chosen.source_title}".\n'
-        f"  Source excerpt: {chosen.value_summary}\n"
-        f"  Reason: {reason}\n\n"
-    )
-    markdown = report.markdown
-    heading = re.match(r"^(#\s+[^\n]+\n+)", markdown)
-    if heading:
-        markdown = heading.group(1) + resolved_section + markdown[heading.end():]
-    else:
-        markdown = resolved_section + markdown
-    unresolved = any(item.resolution_status == "unresolved" for item in conflicts)
-    return report.model_copy(
-        update={
-            "report_id": f"report-revision-{uuid4().hex}",
-            "markdown": markdown,
-            "conflicts": conflicts,
-            "result_status": (
-                ResearchResultStatus.DEGRADED
-                if unresolved or report.limitations
-                else report.result_status
-            ),
-            "generated_at": datetime.now(timezone.utc),
-        }
-    )
 
 
 def _answer_report_followup(report: ResearchReport, message: str, language: str = "en-US", *, objective: str = "") -> str:
@@ -152,7 +107,7 @@ def _answer_report_followup(report: ResearchReport, message: str, language: str 
         "If the evidence cannot answer it, clearly say what is missing.\n\n"
         f"Original research question: {objective}\n\nFollow-up: {message}\n\nExisting report:\n{report.markdown}\n\nEvidence:\n{evidence}"
     )
-    client = EvidenceReportSynthesizer(
+    client = ResearchModelClient(
         api_base=settings.LLM_API_BASE,
         api_key=settings.LLM_API_KEY,
         model=settings.LLM_MODEL,
@@ -308,6 +263,7 @@ def get_research_snapshot(
             job=job,
             progress=progress_service.get_progress(research_id),
             events=progress_service.get_events(research_id, after_event_id=after_event_id, limit=limit),
+            team=progress_service.team_summary(research_id),
         )
     except Exception as exc:
         _raise_http_error(exc)
@@ -444,6 +400,10 @@ def get_research_evaluation_trace(
             findings=[item.model_dump(mode="json") for item in repository.list_findings(research_id)],
             claims=[item.model_dump(mode="json") for item in repository.list_claims(research_id)],
             verifications=[item.model_dump(mode="json") for item in repository.list_verifications(research_id)],
+            agents=[item.model_dump(mode="json") for item in repository.list_team_entities("agent_result", research_id)],
+            agent_steps=[item.model_dump(mode="json") for item in repository.list_team_entities("agent_step", research_id)],
+            drafts=[item.model_dump(mode="json") for item in repository.list_team_entities("report_draft", research_id)],
+            reviews=[item.model_dump(mode="json") for item in repository.list_team_entities("report_review", research_id)],
         )
     except Exception as exc:
         _raise_http_error(exc)
@@ -563,42 +523,8 @@ def send_research_message(
             source_match = re.search(r"(?:采用|选择|以)\s*来源\s*(\d+)", message)
             if not source_match:
                 source_match = re.search(r"(?:use|select|choose)\s+source\s+(\d+)", message, re.I)
-            if source_match and report.conflicts:
-                source_number = int(source_match.group(1))
-                conflict = next(
-                    (
-                        item for item in report.conflicts
-                        if any(alt.citation_number == source_number for alt in item.alternatives)
-                    ),
-                    None,
-                )
-                if conflict is not None:
-                    report = _resolve_report_conflict(
-                        report,
-                        conflict_id=conflict.conflict_id,
-                        source_number=source_number,
-                        reason=message,
-                    )
-                    repository.save_report(report)
-                    repository.append_event(
-                        research_id=research_id,
-                        event_key=f"conversation:{interaction_id}:conflict",
-                        event_type=ResearchEventType.CONFLICT_RESOLVED,
-                        stage="completed",
-                        message=f"Selected source {source_number}",
-                        payload={
-                            "conflict_id": conflict.conflict_id,
-                            "citation_number": source_number,
-                            "reason": message,
-                        },
-                    )
-                    action = "conflict_resolved"
-                    response_text = (
-                        f"Source {source_number} selected to resolve the conflict. "
-                        "The resolution and source citation have been saved."
-                    )
-                else:
-                    response_text = f"Source {source_number} is not part of this conflict. Review the citations and choose another source."
+            if source_match:
+                response_text = "Changing a reviewed report requires a new research plan and independent review. Start a new research job with the requested correction."
             else:
                 action = "followup_answered"
                 from deep_research.access import model_access_scope

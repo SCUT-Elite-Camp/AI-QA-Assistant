@@ -14,15 +14,16 @@ one generation call, with visual understanding included in that same call.
 No rewriting, expansion, model tool selection, generation repair or implicit
 Thinking fallback is allowed. `agent/chat/fast.py` and `agent/chat/thinking.py`
 own independent pipelines, shared by their JSON and SSE entry points.
-Thinking owns planning, bounded tool selection, evidence collection and final
-generation with its configured Thinking model. It may make multiple calls within
-existing stage/Runner limits, and never implicitly switches to Fast or creates Research.
-`auto` aliases Thinking; a unified total generation budget is still pending.
+Thinking starts with the original question and permitted tools in one bounded
+Agent loop. The Prompt owns clarification, query rewriting and strategy choice;
+there is no separate intent classifier, router, planner or completeness model.
+Every control/answer request and failed provider attempt consumes one shared
+budget. A provider call has one HTTP attempt and no model fallback.
+`auto` aliases Thinking. Both modes use structural internal `retrieval_sources`
+preferences (enterprise_kb/personal_library/conversation_attachment); these
+preferences never grant permissions. Selected files and explicit sources remain
+mandatory; an optional empty default library does not block enterprise answers.
 
-Fast-only internal `retrieval_sources` may select `enterprise_kb`, `personal_library`
-and/or `conversation_attachment` (max 3, explicit `[]` disables optional sources).
-Omission searches available contexts; selected files always remain mandatory.
-These source preferences never grant permissions. Thinking retains SourceIntent.
 Image citations/dependencies add `content_kind: "file"` (default `"excerpt"`),
 binding the original SHA-256 and evidence version. The Reader validates both
 and fetches the original through a hash/version-bound attachment content URL.
@@ -58,7 +59,12 @@ The internal report records spans in the assembled pre-citation answer and origi
 `valid` means binding integrity only, with `validation_kind=binding` and
 `semantic_validation=not_performed`. Semantic entailment is not yet verified.
 No private report is sent in responses, SSE, diagnostics or persisted messages.
-Thinking repair/fallback follows the same binding checks; plain chat is unchanged.
+Thinking additionally runs local MiniCheck after binding. Unconfirmed claims return privately to the same Agent loop for more evidence or regeneration; no rejected draft is released. Fast retains one-call binding validation.
+
+2026-10-19: a private [verification context constructor](verification_context.md)
+consumes valid bindings plus the same Evidence. It preserves structural context,
+source identities and offsets, and marks oversized/unusable inputs for review.
+It has no HTTP/SSE fields, model calls or effect on answer release in this step.
 
 Evidence streaming buffers answer and reasoning until binding, citation and
 current-source validation succeed. Only the visible answer is released, with
@@ -92,16 +98,15 @@ The endpoint runs the CP2 orchestration flow:
 request validation / current identity -> explicit mode dispatch
   fast -> FastPipeline -> original-query search_direct / fixed file tools
        -> one answer call -> deterministic citation/source checks
-  thinking / auto -> ThinkingPipeline -> QueryUnderstanding / IntentPolicy
-       -> bounded AgentRunner / model-selected catalog and batch reads -> Thinking answer
+  thinking / auto -> ThinkingPipeline -> original question + permitted tools
+       -> budgeted AgentRunner -> tool observations / catalog / batch full reads
+       -> tool-free grounded answer -> binding -> MiniCheck
+          -> supported: release; unconfirmed: feedback into the same Agent loop
   -> common response or SSE delivery, current source rechecks
 ```
 
-The Chat path is strictly Chat-only. Its internal `ChatRoutePolicy` exposes
-only bounded `chat_l0_direct`, `chat_l1_retrieval`, and
-`chat_l2_bounded_multi_step` routes. `/api/chat` never creates a Research Job;
-Local Deep Research uses the separate manual `/api/research/jobs` entry and an
-explicit Plan + SourceManifest approval flow. See `docs/cp2/chat_route_policy.md`.
+Chat never creates a Research Job. Research remains the separate manual
+`/api/research/jobs` entry with its approval flow. No question-intent route exists.
 
 The Agent does not cache or restore conversation history by `session_id`. The
 Web/BFF must explicitly include a trusted `memory_context` on the internal
@@ -217,8 +222,8 @@ Fields:
   tool-selection runner; `auto` is a compatibility alias for Thinking. Only `auto`, `fast`, and
   `thinking` are accepted. The JSON response shape is unchanged.
 - `exploration_mode`: Optional cross-document Wiki exploration policy. Fast
-  execution resolves exploration to `off`; Thinking honors `auto`, `off`, or
-  `force` subject to configured policy and source scope.
+  execution resolves exploration to `off`; Thinking accepts the legacy field but
+  does not enable Wiki or a separate exploration controller.
 
 ## Success Response
 
@@ -380,34 +385,27 @@ been removed. Public `/api/chat` and its response remain unchanged.
   remains after `MIN_RETRIEVAL_SCORE`. Thinking may let the model obtain a catalog
   and full documents within budget; factual completion still requires valid evidence.
 - Fast executes each predetermined source operation once and never adds a search
-  after insufficient results. Thinking policies constrain candidate tools and
-  iteration/tool/retrieval budgets. Every executed tool call is recorded.
-- Thinking keeps catalog and batch-read tools available after empty, low-score
-  or partial TopK results while budget remains. The model selects whether to call
-  `find_documents` and `get_document(doc_ids=[...])`; the catalog is metadata,
-  while full reads provide source-bound text. Evidence checks do not generate
-  additional searches, increase TopK or switch retrieval modes.
-- `EvidenceGateResult` reports acceptance, source coverage and evidence counts;
-  the obsolete `should_retry` directive and automatic retry planner are removed.
-- Semantically identical tool calls emitted in parallel in one model turn are
-  executed once and replayed with one matching tool response. An identical
-  call repeated in a later model turn still triggers the loop safety limit.
-- Thinking performs Direct retrieval first and applies `EvidenceGate` before
-  `CoverageAssessor` / `ExplorationController` can decide whether Wiki starts.
-  `exploration_mode=auto` starts the bounded Wiki sequence only for an accepted
-  Direct-evidence coverage gap; `force` remains Direct-first and starts Wiki
-  after accepted Direct evidence; `off` never starts Wiki. Fast remains
-  Direct-only. Runner iteration, tool-call, exploration-round, evidence, and
-  retrieval budgets continue to bound execution.
-- `WIKI_CONTEXT_TOP_K` (default `3`, range `0-10`) appends that many eligible,
-  versioned, unique `wiki_search_evidence` items after Direct Evidence without
-  reranking or displacing it. `EXPLORATION_MAX_EVIDENCE` remains the Direct
-  branch limit, so Direct 20 plus Wiki 3 produces 23 final Evidence items.
-  Setting `WIKI_CONTEXT_TOP_K=0` restores the legacy merge behavior.
-- Wiki pages, summaries, and relationship metadata never enter the Evidence
-  pool. The final prompt contains one versioned `[AUTHORITATIVE_EVIDENCE]`
-  block, and that ordered list is also used by run results, answer formatting,
-  citation output, and citation validation.
+  after insufficient results. Thinking charges every model request, actual tool
+  execution and claim verification to one request-local budget.
+- The first Thinking request contains the original question, permitted native
+  tools and verified history/scope. The controller chooses native tool calls or
+  a registered native control action: prepare_answer, ask_clarification or
+  report_insufficient. tool_choice=required; no control JSON or final prose.
+- After answer, the same model receives a tool-free claims/supports request.
+  Exact source binding precedes local MiniCheck; argmax label 1 means supported.
+  No self-score, confidence threshold, heuristic evidence-count acceptance,
+  complexity classifier or external judge participates in online release.
+- Unconfirmed claims go back privately to the Agent for retrieval or a new
+  answer within the same budget. Too-long (>512 tokenizer tokens) or incomplete
+  classifier inputs are unverified, never truncated to obtain a verdict.
+- Exhaustion after a rejected draft returns quality_validation_failed with empty
+  answer/citations. Other budget exhaustion returns agent_limit_reached.
+  MiniCheck infrastructure failure returns tool_error, without unchecked output.
+- Wiki tools remain quarantined. Catalog metadata is navigation only; batch
+  get_document reads complete bodies. Model projections include each body once
+  and exact reference locators/quote scopes; raw chunks/metadata are not repeated.
+- Thinking buffers all candidate output. Only the verified final text is emitted
+  through JSON/SSE. Private claims, MiniCheck verdicts and feedback are not public.
 - `CitationChecker` validates that exposed citations are backed by accepted
   request-local Evidence.
 - Retrieval exceptions return `retrieval_error` with an empty answer and empty citations.
@@ -480,15 +478,15 @@ For document-level intents, Toolset also exposes:
 Thinking QA, comparison and summarization can search TopK chunks, assess gaps,
 list documents, select IDs and batch-read originals within the bounded tool
 budget. Receiving a search hit no longer disables these tools. The evidence
-gate still runs before a factual answer. `DOCUMENT_SEARCH` lists metadata without
-fabricating content citations. Fast retains its one-search/one-generation flow.
+gate verifies bound assertions after generation, before release. Metadata
+listings do not constitute factual evidence. Fast retains its one-search/one-generation flow.
 Every batch ID is checked against the hard source scope and live permissions
 before reads; all catalog/read sources retain version/hash dependencies.
 Research's internal range reader consumes the same batch tool while preserving
 its frozen manifest, precise anchors and current-access checks.
 
 `search_library` is opt-in (`PERSONAL_LIBRARY_ENABLED=true`). Source selection
-comes from the query, while owner ID, knowledge-base ID, and the signed scope
+comes from trusted structural source preferences, while owner ID, knowledge-base ID, and the signed scope
 token are accepted only by the token-protected internal Chat contract. Public
 Chat requests reject those trusted fields. Library results become request-local
 Evidence with document/version/scope/locator metadata; missing or invalid
@@ -496,12 +494,54 @@ trusted context fails closed.
 
 Full Tool Layer contract is in `docs/cp1/tool_layer_interface.md`.
 
-The retrieval call always receives `standalone_query`, `top_k`,
-`retrieval_mode`, hard `filters`, `MIN_RETRIEVAL_SCORE`, and the request
-`trace_id`. Non-direct calls additionally receive `navigation_mode`. Tests replace the LLM and search method with deterministic fakes;
+Fast retrieval receives the original question; Thinking uses the model-selected
+search query within trusted filters, valid retrieval mode and capped TopK. Both
+retain the request trace and current-source checks. Tests replace the LLM and search method with deterministic fakes;
 production code contains no test-mode switch.
 
 ## Local Deep Research API
+
+The only executable Research harness uses `execution_mode=coordinator`; older saved
+Plans default to `legacy` for reading, cannot be approved/resumed, and require a
+new job with explicit approval. The coordinator receives the question and complete
+authorized file catalogue, creates a human-editable Plan, then coordinates
+parallel explorers after explicit approval. Independent Reviewer failure marks
+the immutable draft `not_passed` and sends corrections to a fresh repair agent.
+Each new revision requires another review and the coordinator's final approval.
+See [team architecture](research_team_architecture.md) for the full state machine.
+
+Additive Plan fields: `source_files: [{doc_id,title,version}]`, `execution_mode`,
+and budget `max_parallel_agents` (default 3), `max_review_rounds` (2 repairs),
+`max_agent_iterations` (8). Existing `/plan` revision requests edit tasks,
+dependencies, source IDs and criteria and always require approval of the new
+version. Production defaults also allow 64 shared tools and 900 seconds.
+Coordinator `max_tokens` is a durable completion quota across every execution
+role and recovery; preapproval planning is separate.
+
+Snapshot adds `team` (null for legacy) with `agents`, draft metadata (`revision`,
+`report_hash`, `review_status`), `reviews` with correction issues and
+`completion_tokens_used`. Draft bodies are not final report responses. Protected
+evaluation trace adds `agents`, `agent_steps`, `drafts` and `reviews`.
+The progress timeline includes `parallel_exploration`, `coordinator_synthesis`,
+`review_report`, optional `repair_report`, `coordinator_check`, `publish_report`;
+events add `report_reviewed` and `report_revised`. Rendering must use the supplied
+timeline rather than assuming every job uses the legacy fixed sequence.
+
+Final coordinator reports require `review_status=passed`, `review_id`,
+`coordinator_approved=true` and an exact persisted draft hash/revision binding.
+They are readable only when the Job is completed. A completed report can still
+have `result_status=degraded` for explicitly disclosed gaps. Cancelling during
+exploration/synthesis stops release; it does not revoke an already sent provider
+request. Released reviewed reports cannot be rewritten by conflict-choice chat
+commands; a correction requires a new approved research job.
+
+`RESEARCH_DEVELOPMENT_MODE=true` with a loopback `HOST` grants every Research
+catalog file to enabled signed-in users without file/native ACL filtering.
+This is server configuration, not a request field. Ownership, session/CSRF,
+manifest scope, current version/hash and review/release binding still apply.
+Production keeps it false and checks native permissions. Progress adds
+`finding_count`; the retired claim/rule pipeline no longer runs. Saved historical
+claim/verification fields remain readable, not newly generated by the harness.
 
 Deep Research is local-source-only and must be started explicitly. Creating a
 Job only persists `status=created`; the application-scoped durable dispatcher
@@ -545,7 +585,7 @@ The manifest and task source lists support catalogs larger than 100 documents;
 the existing action, time and token budgets still bound execution.
 Research interface labels, plan instructions, status events and command
 responses are English. Report content follows the requested report language.
-The browser polls `snapshot` for `{job, progress, events}` in one authorized,
+The browser polls `snapshot` for `{job, progress, events, team}` in one authorized,
 non-cached response, with a five-second delay after each completed request.
 
 Approval is an immutable snapshot of exactly the Plan and sources the user
@@ -624,8 +664,9 @@ Agent 层通过 `PermissionService` 根据 Web 层数据库计算当前 `user_id
 ## Live Chat SSE Endpoint
 
 `POST /api/chat/stream` is available for the Web demo UI. It returns
-`text/event-stream`. Fast uses a streaming final-answer model; Auto and Thinking
-retain their retrieval/tool workflow and stream the answer model's actual deltas.
+`text/event-stream`. Fast evidence answers and all Thinking/Auto candidates are
+buffered; only accepted visible text is released. Pure-dialogue Fast can stream
+actual provider deltas. Thinking retains one shared budgeted tool/answer loop.
 A bounded worker queue preserves request ContextVars and applies backpressure.
 No artificial typing delay or completed-answer splitting is used for live models.
 Event names are:
@@ -714,3 +755,9 @@ existing public response contract.
 If local embedding, BM25, or Milvus initialization fails, the service remains
 available for diagnostics and returns `status="degraded"`,
 `retrieval_ready=false`, and a non-secret error summary in `detail`.
+
+Research model completion caps, durable coordinator budgets, rate-limit retry and staged report
+generation are documented in [Research generation budgets](research_generation_budget.md).
+New Plans use the configured `RESEARCH_MODEL_TOTAL_TOKENS` for `budget.max_tokens`;
+existing approved Plans retain their saved mode/cap. Coordinator API additions
+are specified in the Local Deep Research section above.

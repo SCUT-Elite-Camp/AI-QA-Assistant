@@ -24,6 +24,8 @@ export type ResearchEventType =
   | 'task_failed'
   | 'task_blocked'
   | 'report_ready'
+  | 'report_reviewed'
+  | 'report_revised'
   | 'job_completed'
   | 'job_failed'
   | 'job_cancelled'
@@ -83,6 +85,9 @@ export interface ResearchBudget {
   max_tool_calls: number
   max_tokens: number
   max_runtime_seconds: number
+  max_parallel_agents?: number
+  max_review_rounds?: number
+  max_agent_iterations?: number
 }
 
 export interface ResearchPlan {
@@ -97,6 +102,8 @@ export interface ResearchPlan {
   tasks: ResearchTask[]
   budget: ResearchBudget
   status: 'draft' | 'awaiting_approval' | 'approved' | 'superseded'
+  execution_mode?: 'legacy' | 'coordinator'
+  source_files?: { doc_id: string, title: string, version: string | null }[]
 }
 
 export interface ResearchPlanRevisionRequest {
@@ -146,6 +153,10 @@ export interface ResearchReport {
   conflicts: ResearchConflict[]
   limitations: ResearchLimitation[]
   generated_at: string
+  review_status?: 'not_reviewed' | 'not_passed' | 'passed'
+  review_id?: string | null
+  revision?: number
+  coordinator_approved?: boolean
 }
 
 export interface ResearchCitation {
@@ -232,6 +243,7 @@ export interface ResearchProgress {
   task_completed: number
   evidence_count: number
   claim_count: number
+  finding_count?: number
   started_at: string
   updated_at: string
   stages: ResearchStageProgress[]
@@ -274,6 +286,15 @@ export interface ResearchSnapshot {
   job: ResearchJob
   progress: ResearchProgress
   events: ResearchEventsResponse
+  team?: ResearchTeamSummary | null
+}
+
+export interface ResearchTeamSummary {
+  agents: { agent_id: string, role: string, task_id: string, status: string, missing: string[] }[]
+  drafts: { draft_id: string, revision: number, author_agent_id: string, report_hash: string, review_status: string }[]
+  reviews: { review_id: string, revision: number, reviewer_agent_id: string, status: string,
+    issues: { issue_id: string, description: string, suggestion: string }[] }[]
+  completion_tokens_used: number
 }
 
 export interface ResearchApiError {

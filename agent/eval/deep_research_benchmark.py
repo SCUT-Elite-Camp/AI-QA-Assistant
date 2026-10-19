@@ -159,7 +159,10 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
             "dispatcher_interval_seconds": float(
                 _safe_setting("RESEARCH_DISPATCH_INTERVAL_SECONDS", 2.0)
             ),
-            "max_agent_iterations": int(_safe_setting("MAX_AGENT_ITERATIONS", 5)),
+        },
+        "chat": {
+            "thinking_max_model_calls": int(_safe_setting("THINKING_MAX_MODEL_CALLS", 10)),
+            "thinking_max_tool_calls": int(_safe_setting("THINKING_MAX_TOOL_CALLS", 8)),
             "max_repeated_tool_calls": int(
                 _safe_setting("MAX_REPEATED_TOOL_CALLS", 2)
             ),
@@ -168,7 +171,10 @@ def freeze_environment(output_dir: Path) -> dict[str, Any]:
         "documents_count": manifest["document_count"],
         "prompt_hashes": {name: _sha256_bytes((PROJECT_ROOT / path).read_bytes()) for name, path in {
             "g1_answer": "agent/agent/prompt/templates.py", "g1_assembly": "agent/agent/runtime/runner.py",
-            "planner": "agent/deep_research/planner.py", "report": "agent/deep_research/model_report.py",
+            "planner": "agent/deep_research/planner.py", "research_team": "agent/deep_research/team.py",
+            "research_runtime": "agent/deep_research/team_runtime.py", "research_model": "agent/deep_research/model_client.py",
+            "thinking_prompt": "agent/agent/chat/thinking_prompt.py", "fast_prompt": "agent/agent/chat/fast.py",
+            "verification_context": "agent/agent/evidence/verification_context.py",
         }.items()},
     }
     config["config_hash"] = _sha256_json(config)

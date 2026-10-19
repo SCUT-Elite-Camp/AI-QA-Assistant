@@ -26,7 +26,8 @@ Fast 不进入此补读循环。
 `agent/chat/thinking.py` 执行。Fast 原问题单次直接检索、程序固定调用工具、一次生成，
 不规划、不扩展、不生成修复、不追加标题或本轮 Memory 压缩；HTTP 也只尝试一次。
 `auto` 已兼容到 Thinking，不再根据复杂度切线。JSON/SSE 共用各自业务流程。
-Thinking 保留原有有界规划/工具能力及固定答案模型，统一总调用预算仍待实现。
+2026-10-19 Thinking 收敛为首轮原问题+工具的统一预算 Agent 循环；Prompt 负责澄清/改写/策略。
+绑定后本地 MiniCheck 核验，不通过则在同一循环继续，预算耗尽不释放候选答案。
 完整当前契约见 [Fast / Thinking](../../agent/docs/chat_mode_contract.md)。
 
 Fast 图片工具读取已有解析/OCR和授权原图，排除独立视觉模型结果。原图随最终答案请求
@@ -42,7 +43,7 @@ Groq GPT-OSS 配置：Fast 使用 `openai/gpt-oss-20b`、`reasoning_effort=low`�
 Thinking 使用 `openai/gpt-oss-120b`、`reasoning_effort=high`。
 共享客户端将模式转换为 Groq 参数并使用 `max_completion_tokens`，不发送
 `enable_thinking`/`thinking_budget`，失败不切换到其他供应商模型。
-查询规划使用配置的 `QUERY_PREPARATION_MODEL`；Fast 的特殊答案校验跟随 Fast 模型。
+Thinking 不再使用独立查询规划、意图分类或完整性模型；Fast 维持单次生成与绑定校验。
 实际密钥只存放于忽略的环境文件；权限及来源复核边界保持适用。
 
 2026-10-13：保存引用 Reader 复用 `locateEvidenceExcerpt`，兼容反引号和下划线转义等
@@ -67,6 +68,20 @@ Fast 保留原问题及最多三个规划子查询，候选数为 10–20；读�
 更新：2026-10-12。架构见[访问边界与证据链路](access-evidence-architecture.md)。
 
 Deep Research 默认使用当前用户可访问的全部企业 Confluence 文档，网页不再要求选源。
+
+新建 Research Plan 使用 `execution_mode=coordinator`，并返回 `source_files` 供人工审阅
+文件目录及修改任务分工、依赖和验收目标；任何修改产生新 version，必须重新批准。
+批准后并行探索，主 Agent 只协调/汇总，独立 Reviewer 核实证据。未通过稿连同建议交给
+新修订 Agent，复审通过且主 Agent 最后确认后才释放报告。Snapshot 新增 nullable
+`team`，展示 Agent、各稿审阅状态和修改建议；报告新增 `revision/review_status/review_id/
+coordinator_approved`。执行期间支持取消。已发布报告不能用旧冲突选择命令绕过复审改写。
+阶段、预算、恢复兼容性见 [team architecture](../../agent/docs/research_team_architecture.md)。
+
+用户 2026-10-19 指定的本地开发例外：Agent 设置 `RESEARCH_DEVELOPMENT_MODE=true`
+且 `HOST` 为 loopback 时，启用的已登录用户拥有完整 Research 目录文件的访问权，不做
+逐文件本地/原生 ACL 筛选。生产保持 false。身份/归属、BFF 会话/CSRF、来源版本/hash
+和复审放行仍校验。旧顺序执行、规则核验、兜底报告及前端可执行 Mock 已删除，
+`VITE_RESEARCH_USE_MOCK` 不再生效。旧任务数据保留，执行须新建并批准 harness 计划。
 `source_scope.all_documents=true`（省略/空范围同义）由认证服务端转换为显式授权文档列表；
 后续 Plan/Manifest/Approval 仍绑定版本/hash，并继续逐次复核原生权限。
 Research 提示、计划说明、状态事件、操作确认及引用 Reader 统一为英文；回答正文遵循请求语言。

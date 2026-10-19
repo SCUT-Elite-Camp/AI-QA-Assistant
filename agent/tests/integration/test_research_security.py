@@ -1,6 +1,7 @@
 """Research authorization against real SQLite ACLs and actual HTTP credentials."""
 
 from __future__ import annotations
+from tests.research_fixtures import FixtureResearchPlanner, save_historical_report
 
 import sqlite3
 from pathlib import Path
@@ -46,7 +47,7 @@ def environment(tmp_path: Path, monkeypatch):
     })
     control = ResearchControlPlane(
         SQLiteResearchRepository(tmp_path / "research.db"), source_resolver=resolver,
-    )
+     planner=FixtureResearchPlanner())
     application = FastAPI()
     application.include_router(router, prefix="/api")
     provider = SourceAccessProvider(mode="approved_snapshot",
@@ -245,7 +246,7 @@ def test_admin_catalog_is_unrestricted_but_job_ownership_still_applies(environme
 def test_permission_revocation_blocks_saved_job_report_source_events_and_approval(environment):
     client, control, acl_path, _ = environment
     job = _create(client, control)
-    control.repository.save_report(ResearchReport(
+    save_historical_report(control.repository, ResearchReport(
         report_id="saved-report", research_id=job["research_id"], markdown="# Revenue\n\n10 [1]",
         result_status="complete", citations=[ResearchCitation(
             number=1, evidence_id="e-1", doc_id="doc-public", title="Public document",
@@ -281,7 +282,7 @@ def test_source_requires_frozen_manifest_membership_even_if_user_can_access_docu
 def test_report_cannot_expose_a_document_outside_approved_manifest(environment):
     client, control, _, _ = environment
     job = _create(client, control)
-    control.repository.save_report(ResearchReport(
+    save_historical_report(control.repository, ResearchReport(
         report_id="untrusted-report", research_id=job["research_id"], markdown="# Secret\n\nSecret [1]",
         result_status="complete", citations=[ResearchCitation(
             number=1, evidence_id="rogue-evidence", doc_id="doc-bob", title="Bob secret title",

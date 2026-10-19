@@ -12,6 +12,7 @@ from agent.api.research_routes import (
 )
 from deep_research.access import ResearchAccessPolicy
 from deep_research.execution import ResearchRuntimeService
+from tests.integration.test_research_team import service as team_service, TeamModel
 
 
 
@@ -35,27 +36,24 @@ def _application(service: ResearchRuntimeService) -> FastAPI:
 def test_progress_and_incremental_events_cover_full_http_flow(
     tmp_path: Path, research_documents_dir: Path,
 ) -> None:
-    service = ResearchRuntimeService.from_local_catalog(
-        database_path=tmp_path / "progress-api.db",
-        checkpoint_path=tmp_path / "progress-api.graph.db",
-        documents_dir=research_documents_dir,
-        id_factory=lambda: "research-progress-api",
-    )
+    service, fixture_job = team_service(tmp_path, TeamModel())
+    service.control_plane.cancel_job(fixture_job.research_id)
 
     with TestClient(_application(service)) as client:
         created = client.post(
             "/api/research/jobs",
             headers={"X-User-ID": "alice"},
             json={
-                "query": "比较 Alpha 与 Beta 的部署状态",
+                "query": "Explain the documented native access procedures.",
                 "source_scope": {
-                    "document_ids": ["project-alpha", "project-beta"]
+                    "document_ids": ["alpha", "beta"]
                 },
             },
         )
         assert created.status_code == 201
+        rid = created.json()["research_id"]
         initial = client.get(
-            "/api/research/jobs/research-progress-api/progress"
+            f"/api/research/jobs/{rid}/progress"
         ).json()
         assert initial["status"] == "created"
         assert initial["current_stage"] == "created"
@@ -63,15 +61,15 @@ def test_progress_and_incremental_events_cover_full_http_flow(
 
         service.scan_once()
         awaiting = client.get(
-            "/api/research/jobs/research-progress-api/progress"
+            f"/api/research/jobs/{rid}/progress"
         ).json()
         assert awaiting["status"] == "awaiting_approval"
-        assert awaiting["task_total"] == len(awaiting["tasks"]) == 3
+        assert awaiting["task_total"] == len(awaiting["tasks"]) == 2
         plan = client.get(
-            "/api/research/jobs/research-progress-api/plan"
+            f"/api/research/jobs/{rid}/plan"
         ).json()
         approved = client.post(
-            "/api/research/jobs/research-progress-api/approve",
+            f"/api/research/jobs/{rid}/approve",
             headers={"X-User-ID": "alice"},
             json={
                 "plan_version": plan["version"],
@@ -81,35 +79,35 @@ def test_progress_and_incremental_events_cover_full_http_flow(
         assert approved.status_code == 200
 
         first_page = client.get(
-            "/api/research/jobs/research-progress-api/events?limit=4"
+            f"/api/research/jobs/{rid}/events?limit=4"
         ).json()
         assert first_page["schema_version"] == "research.events.v1"
         assert len(first_page["events"]) == 4
         cursor = first_page["next_after_event_id"]
         second_page = client.get(
-            f"/api/research/jobs/research-progress-api/events?after_event_id={cursor}&limit=100"
+            f"/api/research/jobs/{rid}/events?after_event_id={cursor}&limit=100"
         ).json()
         assert all(event["event_id"] > cursor for event in second_page["events"])
 
         service.scan_once()
         completed = client.get(
-            "/api/research/jobs/research-progress-api/progress"
+            f"/api/research/jobs/{rid}/progress"
         ).json()
         assert completed["status"] == "completed"
         assert completed["result_status"] == "complete"
         assert completed["current_stage"] == "completed"
         assert completed["progress_percent"] == 100
-        assert completed["task_completed"] == completed["task_total"] == 3
+        assert completed["task_completed"] == completed["task_total"] == 2
         assert completed["evidence_count"] >= 2
-        assert completed["claim_count"] >= 1
+        assert completed["finding_count"] >= 1
         assert all(task["status"] == "succeeded" for task in completed["tasks"])
         assert all(stage["status"] == "completed" for stage in completed["stages"])
         assert client.get(
-            "/api/research/jobs/research-progress-api/report"
+            f"/api/research/jobs/{rid}/report"
         ).status_code == 200
 
         all_events = client.get(
-            "/api/research/jobs/research-progress-api/events?limit=100"
+            f"/api/research/jobs/{rid}/events?limit=100"
         ).json()["events"]
         event_types = {event["event_type"] for event in all_events}
         assert {"task_started", "task_completed", "report_ready", "job_completed"} <= event_types
@@ -118,10 +116,8 @@ def test_progress_and_incremental_events_cover_full_http_flow(
 
 
 def test_progress_api_returns_404_and_validates_event_cursor(tmp_path: Path, research_documents_dir: Path) -> None:
-    service = ResearchRuntimeService.from_local_catalog(
-        database_path=tmp_path / "progress-errors.db",
-        documents_dir=research_documents_dir,
-    )
+    service, fixture_job = team_service(tmp_path, TeamModel())
+    service.control_plane.cancel_job(fixture_job.research_id)
     with TestClient(_application(service)) as client:
         assert client.get(
             "/api/research/jobs/missing/progress"
@@ -133,7 +129,7 @@ def test_progress_api_returns_404_and_validates_event_cursor(tmp_path: Path, res
             "/api/research/jobs/missing/events?limit=101"
         ).status_code == 404
         job = service.control_plane.create_job(ResearchRequest(
-            query="Compare", source_scope=SourceScope(document_ids=["project-alpha"])), user_id="alice")
+            query="Compare", source_scope=SourceScope(document_ids=["alpha"])), user_id="alice")
         assert client.get(f"/api/research/jobs/{job.research_id}/events?after_event_id=-1").status_code == 422
         assert client.get(f"/api/research/jobs/{job.research_id}/events?limit=101").status_code == 422
     service.close()

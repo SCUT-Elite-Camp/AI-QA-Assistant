@@ -113,6 +113,8 @@ class ResearchEventType(StrEnum):
     TASK_FAILED = "task_failed"
     TASK_BLOCKED = "task_blocked"
     REPORT_READY = "report_ready"
+    REPORT_REVIEWED = "report_reviewed"
+    REPORT_REVISED = "report_revised"
     JOB_COMPLETED = "job_completed"
     JOB_FAILED = "job_failed"
     JOB_CANCELLED = "job_cancelled"
@@ -245,6 +247,9 @@ class ResearchBudget(ResearchContractModel):
     max_tool_calls: int = Field(default=32, ge=1, le=100)
     max_tokens: int = Field(default=20_000, ge=1_000, le=100_000)
     max_runtime_seconds: int = Field(default=300, ge=10, le=1_800)
+    max_parallel_agents: int = Field(default=3, ge=1, le=5)
+    max_review_rounds: int = Field(default=2, ge=0, le=3)
+    max_agent_iterations: int = Field(default=8, ge=2, le=16)
 
 
 class AcceptanceCriterion(ResearchContractModel):
@@ -312,6 +317,12 @@ class ResearchTask(ResearchContractModel):
         return _normalize_unique_strings(values, info.field_name)
 
 
+class ResearchSourceFile(ResearchContractModel):
+    doc_id: str
+    title: str
+    version: str | None = None
+
+
 class ResearchPlan(ResearchContractModel):
     """Versioned Planner output consumed by the future Research runtime."""
 
@@ -328,6 +339,8 @@ class ResearchPlan(ResearchContractModel):
     tasks: list[ResearchTask] = Field(default_factory=list, max_length=20)
     budget: ResearchBudget = Field(default_factory=ResearchBudget)
     status: ResearchPlanStatus = ResearchPlanStatus.DRAFT
+    execution_mode: Literal["legacy", "coordinator"] = "legacy"
+    source_files: list[ResearchSourceFile] = Field(default_factory=list)
 
     @field_validator("research_id", "objective")
     @classmethod
@@ -520,6 +533,7 @@ class Finding(ResearchContractModel):
     statement: str = Field(min_length=1, max_length=4_000)
     evidence_ids: list[str] = Field(default_factory=list, max_length=20)
     covers: list[str] = Field(default_factory=list, max_length=20)
+    supporting_quotes: dict[str, str] = Field(default_factory=dict, max_length=20)
 
     @field_validator("evidence_ids", "covers")
     @classmethod
@@ -689,6 +703,10 @@ class ResearchReport(ResearchContractModel):
     conflicts: list[ResearchConflict] = Field(default_factory=list, max_length=100)
     limitations: list[ResearchLimitation] = Field(default_factory=list, max_length=100)
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    review_status: Literal["not_reviewed", "not_passed", "passed"] = "not_reviewed"
+    review_id: str | None = None
+    revision: int = Field(default=1, ge=1)
+    coordinator_approved: bool = False
 
     @field_validator("claim_ids", "evidence_ids")
     @classmethod
@@ -714,6 +732,7 @@ class ResearchJob(ResearchContractModel):
     schema_version: Literal[RESEARCH_RUNTIME_SCHEMA_VERSION] = (
         RESEARCH_RUNTIME_SCHEMA_VERSION
     )
+    execution_started_at: datetime | None = None
     research_id: str = Field(min_length=1, max_length=100)
     user_id: str = Field(min_length=1, max_length=200)
     request: ResearchRequest
@@ -817,6 +836,7 @@ class ResearchProgress(ResearchContractModel):
     task_completed: int = Field(ge=0)
     evidence_count: int = Field(ge=0)
     claim_count: int = Field(ge=0)
+    finding_count: int = Field(default=0, ge=0)
     started_at: datetime
     updated_at: datetime
     stages: list[ResearchStageProgress]
@@ -831,6 +851,7 @@ class ResearchSnapshot(ResearchContractModel):
     job: ResearchJob
     progress: ResearchProgress
     events: ResearchEventsResponse
+    team: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

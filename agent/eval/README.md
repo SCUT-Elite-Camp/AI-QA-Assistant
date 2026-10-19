@@ -50,6 +50,13 @@ python -m eval.claim_verification_acceptance `
 runner 会重新验证本地权重，不下载或执行远程自定义代码。MiniCheck 使用官方 EOS 拼接输入，
 使用固定训练分类决策，不根据已见病例调阈值。
 
+2026-10-19：在上述命令添加 `--prepare-only`，并指定新的 `--output`，可仅检查
+[核验输入构造](../docs/verification_context.md)。该模式保留原文结构、来源版本及精确位置，
+用本地 MiniCheck 分词器检查完整输入的 512 token 限制，不运行分类器。
+`--max-context-chars`（默认 6000）只控制此准备模式的字符预算；超限返回需复核，不截断。
+输出 `verification-inputs.jsonl` 和 `preparation-summary.json`，保留 ready/needs_review 原因。
+不带 `--prepare-only` 的原分类评测流程与历史输入保持原样。
+
 每个模型 forward 前及结果结束时重新核对当前本地/native 权限与冻结原文。
 `--forbidden-doc-id` 指向真实存在的文档；runner 先确认原来源授权，然后仅在
 带标记的可丢弃 SQLite 副本中撤去本地授权并检查 ACL 拒绝，finally 恢复副本。

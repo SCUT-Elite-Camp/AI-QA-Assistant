@@ -1,6 +1,6 @@
 from agent.runtime.runner import AgentRunner
 from agent.runtime.profile import ExecutionMode, ExecutionProfile, ExecutionProfileResolver
-from agent.runtime.state import AgentRunResult, AgentState, StopReason, ToolCallRecord
+from agent.runtime.state import AgentRunResult, StopReason, ToolCallRecord
 
 __all__ = [
     "AgentRunner",
@@ -8,7 +8,6 @@ __all__ = [
     "ExecutionProfile",
     "ExecutionProfileResolver",
     "AgentRunResult",
-    "AgentState",
     "StopReason",
     "ToolCallRecord",
 ]

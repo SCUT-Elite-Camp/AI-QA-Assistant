@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from agent.config.settings import settings
+from agent.chat.sources import selected_sources
 from agent.evidence.citation import CitationChecker, normalize_citation_markers
 from agent.evidence.answer_grounding import GROUNDING_INSTRUCTION, parse_grounded_answer, validate_grounded_answer
 from agent.llm.base import BaseLLM
@@ -37,7 +38,7 @@ class FastPipeline:
 
     def run(self, request: ChatRequest, *, trace_id: str,
             query_plan: QueryPlan | None = None) -> FastTurn:
-        sources = self._sources(request, query_plan)
+        sources = selected_sources(request, query_plan)
         explicit = getattr(request, "retrieval_sources", None)
         required = set(sources) if explicit is not None or (query_plan is not None and query_plan.source_intent.sources) else set()
         attachment_context = getattr(request, "attachment_context", None)
@@ -206,27 +207,6 @@ class FastPipeline:
             emit_model_event("citations", [item.model_dump() for item in citations])
             emit_model_event("token", {"content": answer})
         return finish(StatusCode.SUCCESS, answer=answer, citations=citations)
-
-    @staticmethod
-    def _sources(request, plan):
-        explicit = getattr(request, "retrieval_sources", None)
-        if explicit is not None:
-            sources = list(dict.fromkeys(SourceKind(value) for value in explicit))
-        elif plan is not None and plan.source_intent.sources:
-            sources = list(dict.fromkeys(plan.source_intent.sources))
-        else:
-            sources = [SourceKind.ENTERPRISE_KB] if request.knowledge_base_retrieval_enabled else []
-            if request.knowledge_base_retrieval_enabled and getattr(request, "personal_library_context", None) is not None:
-                sources.append(SourceKind.PERSONAL_LIBRARY)
-            context = getattr(request, "attachment_context", None)
-            if context is not None and context.allowed_attachment_ids:
-                sources.append(SourceKind.CONVERSATION_ATTACHMENT)
-        context = getattr(request, "attachment_context", None)
-        if context is not None and context.selected_attachment_ids and SourceKind.CONVERSATION_ATTACHMENT not in sources:
-            sources.append(SourceKind.CONVERSATION_ATTACHMENT)
-        if not request.knowledge_base_retrieval_enabled:
-            sources = [source for source in sources if source == SourceKind.CONVERSATION_ATTACHMENT]
-        return sources
 
     @staticmethod
     def _bound_evidence(evidence):

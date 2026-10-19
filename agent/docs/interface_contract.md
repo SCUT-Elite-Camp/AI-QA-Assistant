@@ -1,5 +1,9 @@
 # Web-Agent Interface Contract
 
+2026-10-19: the internal [verification context constructor](verification_context.md)
+prepares bound claim/source inputs for online Thinking MiniCheck. Its output
+and verdicts remain private; only an accepted answer is released.
+
 Independent visual-model inference is removed (2026-10-15): no local VLM loader,
 worker, `inspect_attachment` tool or private `/v1/attachments/{id}/inspect` route.
 `LOCAL_VISION_*` / `ATTACHMENT_VISION_*` settings and the dedicated vision
@@ -13,16 +17,17 @@ defines Fast as original-query retrieval plus deterministic file/source tools
 and one answer-generation call. Images requiring visual understanding join
 that same multimodal request; no separate vision-generation call is allowed.
 JSON and SSE share that pipeline in `agent/chat/fast.py`.
-Thinking retains its own planning and bounded tool loop, fixed Thinking answer
-model in `agent/chat/thinking.py`. Existing stage/Runner limits remain; a unified
-total generation budget is still pending. JSON and SSE drive the same Thinking flow;
-neither simple questions nor failures cause an implicit switch to Fast.
+Thinking starts with the original question and permitted native tools in one
+budgeted Agent loop. Clarification, rewriting and strategy live in the Prompt;
+no separate intent/preparation/route/completeness model runs. Every failed or
+successful model/tool attempt shares request limits. `auto` aliases Thinking.
+JSON and SSE use this same loop; no implicit switch to Fast occurs.
 
 Thinking evidence expansion (2026-10-15): after TopK results the model can select
 `find_documents` for a document catalog, then `get_document(doc_ids=[...])` for
 batch full-text reads. Empty/low-score results do not trigger a rule-based search
-retry. Evidence checks retain acceptance/coverage diagnostics without executing
-tools, widening TopK or switching to BM25. Catalog metadata is never body evidence;
+retry. MiniCheck runs after exact claim/source binding. Unconfirmed assertions return
+privately to the Agent, which may obtain evidence or regenerate within budget. Catalog metadata is never body evidence;
 current per-document access, version/hash checks and execution budgets still apply.
 `auto` is a compatibility alias for Thinking; omission still defaults to Fast.
 Fast has one provider attempt, no model fallback/repair/title generation, and
@@ -53,8 +58,8 @@ Current access/lineage contract (2026-10-09): [integration guide](../../docs/acc
 
 ## Live Chat
 
-Pure-dialogue Fast, Auto and Thinking stream actual answer-model deltas through the Agent and
-authenticated BFF. Each release boundary rechecks current source permissions,
+Pure-dialogue Fast streams actual answer-model deltas through the Agent and
+authenticated BFF. Thinking/Auto buffer candidates and release only final accepted text. Each release boundary rechecks current source permissions,
 versions and hashes; no positive authorization result is cached between batches.
 `source` carries provenance, `answer-start` resets a draft, `token`/`reasoning`
 carry model output, and optional `answer` replaces a draft after quality repair.
@@ -76,17 +81,45 @@ The request-local report records answer/source spans and source identity.
 Its `valid` field indicates binding integrity, not factuality; it explicitly
 reports `validation_kind=binding` and `semantic_validation=not_performed`.
 No private envelope/report is sent in HTTP, SSE, diagnostics or saved messages.
-Only the accepted plain answer is released; Thinking repairs/fallbacks must also
-pass binding validation. Fast still makes at most one generation call.
+Only the accepted plain answer is released. Thinking candidates must pass both
+binding and MiniCheck. Rejection feeds the same bounded Agent loop; exhaustion
+after rejection returns quality_validation_failed. Unavailable local weights
+return tool_error, without an unverified fallback. Fast still makes at most one generation call.
 Unused references are pruned and valid markers renumbered with source identities
 preserved. Failures emit `done.status=quality_validation_failed` and empty text.
 Fast does not fetch extra table/section context to repair answers.
 When knowledge retrieval is disabled and no private attachment workflow is
-requested, all three modes stream direct model answers with the checked Memory
-view. Fast uses its configured answer model; Thinking/Auto use the Thinking model.
+requested, models use the checked Memory view. Thinking/Auto still use the
+same bounded controller and tool-free final-answer phase. Fast uses its configured answer model; Thinking/Auto use the Thinking model.
 The default application container preserves those configured model choices.
 
 ## Local Deep Research
+
+Local Research development explicitly uses `RESEARCH_DEVELOPMENT_MODE=true` and
+loopback `HOST`: all catalog files are authorized to enabled signed-in users.
+Production leaves the flag false and retains native ACL checks. The browser
+cannot choose this policy. Ownership, source version/hash and reviewer release
+gates apply in both modes. `finding_count` replaces new claim-generation counts;
+historical claim fields remain readable. The old sequential runtime and
+frontend executable Mock are removed; all execution uses the harness below.
+
+Production enterprise jobs now use `execution_mode=coordinator`: question plus
+complete authorized file catalogue → plan → human edits/approval → parallel
+explorers → coordinator draft → independent Reviewer → fresh repair agent on
+rejection → fresh review → coordinator release check. The main agent cannot call
+exploration tools. Existing saved plans without the field parse as `legacy` for
+historical reads only; their runtime is removed. New execution requires a new
+approved harness job, never a silent conversion of old approval.
+
+Plans add `source_files` and budgets `max_parallel_agents`, `max_review_rounds`
+and `max_agent_iterations`. Snapshot adds nullable `team` with role outcomes,
+draft metadata/review status, review corrections and durable token consumption.
+Final reports add `revision`, `review_status`, `review_id` and
+`coordinator_approved`. Only a completed Job with a passed exact draft hash and
+main approval exposes the final coordinator report. New progress stages and
+review/revision events are detailed in the
+[team architecture](research_team_architecture.md). Active coordinator jobs can
+be cancelled; shared execution token/tool/time caps survive restarts.
 
 Local Deep Research is separate from Chat and must be manually started.
 
@@ -143,15 +176,15 @@ Polling stops when `status` is `completed`, `failed`, or `cancelled`.
 ### Research conversation commands
 
 `POST /api/research/jobs/{id}/messages` accepts `{ "message": "采用来源 2" }`
-for a completed report with a matching conflict alternative. It persists a new
-report revision, marks the selected conflict `resolved_by_user`, and retains
-the original evidence and citations. A user choice records a decision; it does
-not reverify claims or clear existing quality limitations. Unknown source
-numbers return `action=clarify` without revising the report. Clients should
-reload the report after `action=conflict_resolved`.
+for an existing report returns `action=clarify` and explains that a report
+correction requires a new approved research job. The old direct conflict-choice
+rewrite path is removed; saved historical reports retain their original content.
 
-The conflict-choice persistence, invalid-source behavior, and preservation of
-quality gaps are covered by `test_research_control_plane_api.py`.
+Coordinator-reviewed reports reject direct conflict-choice rewrites; request a
+new approved job so the changed artifact receives independent review.
+
+Conflict-choice immutability and preservation of saved quality limitations are
+covered by `test_research_control_plane_api.py`.
 
 ## POST `/api/chat`
 
@@ -205,10 +238,10 @@ The public response schema has six fields: `trace_id`, `status`, `answer`,
 exploration coverage, and tool traces remain internal and do not enter JSON or
 SSE payloads.
 
-The Agent's Direct-only versus Direct+Wiki route and `WIKI_CONTEXT_TOP_K` are
-internal runtime details. They do not add fields to `ChatRequest`,
-`ChatResponse`, or citations. Wiki navigation metadata cannot populate citation
-fields; only accepted original Evidence can do so.
+Wiki navigation remains quarantined. No runtime intent classifier/router exists.
+The legacy QueryPlan DTO remains accepted, but intent, rewrite and strategy
+hints do not dispatch execution. Server source constraints still bind all tools.
+See [mode contract](chat_mode_contract.md) for budgets and release conditions.
 
 ## Citation Fields
 
@@ -528,3 +561,7 @@ identify the actual model per run; a cross-model continuation is not labelled
 as a same-model repeat benchmark. Only failed or repair-affected coordinates
 require targeted reruns. Missing quality judgments can be completed against
 saved real answers without repeating product calls.
+
+Research model budgets and staged report generation: see
+[Research generation budgets](research_generation_budget.md). Partial sections still
+require complete report structure, citation and source-grounding validation before release.

@@ -70,7 +70,7 @@ def run(request=None, *, model=None, executor=None, plan=None):
     return result, model, executor
 
 
-@pytest.mark.parametrize("query", ["Compare A and B", "Explain the complete end-to-end flow", "  原问题不改写  "])
+@pytest.mark.parametrize("query", ["Compare A and B", "Explain the complete end-to-end flow", "  Preserve the original question  "])
 def test_uses_original_query_once_and_never_exposes_tools(query):
     turn, model, executor = run(ChatRequest(query=query))
     assert turn.response.status == "success"
@@ -79,7 +79,7 @@ def test_uses_original_query_once_and_never_exposes_tools(query):
     assert executor.calls[0]["direct_retrieval"] is True
     assert "Original question:\n" + query in model.calls[0][0][-1]["content"]
     assert "knowledge source text" in model.calls[0][0][-1]["content"]
-    assert not turn.result.answer_repair_attempted
+    assert not hasattr(turn.result, "answer_repair_attempted")
 
 
 def test_ignores_rewrite_and_subqueries_in_injected_plan():

@@ -69,6 +69,19 @@ Citation 除标题、片段、编号外携带 `evidence_ref`、来源类型、lo
 
 ## Research
 
+2026-10-19：新建企业任务切换为主 Agent 规划、人工批准、并行探索子 Agent、主 Agent
+汇总、独立 Reviewer、独立修订 Agent、复审、主 Agent 最后放行。主 Agent 执行时不调用
+探索工具。目录是规划元数据；原文读取才产生证据。每份审阅绑定不可变 revision/hash，
+未通过稿不作为最终报告发布，修订必须重新审阅。所有执行角色共享持久化 Token/工具
+及从启动起计算的时间预算。旧顺序 Worker、规则核验及兜底生成流程已删除；历史数据保留，
+未完成旧任务须新建 harness 计划并重新批准。角色协议、失败边界与测试限制见
+[Research team architecture](../../agent/docs/research_team_architecture.md)。
+
+本地开发按用户明确策略使用 `RESEARCH_DEVELOPMENT_MODE=true`、loopback `HOST`：
+启用用户对完整 Research 目录拥有访问权，不筛选逐文件/原生 ACL。此例外只影响
+Research 开发模式，不影响普通 Chat；生产仍使用 local/native 交集。任何模式均保留
+身份、归属、来源版本/hash、任务范围和报告复审放行检查。
+
 Job 绑定创建者；目录、创建、规划、批准、执行、进度、事件、Trace、报告、下载、原文都检查当前身份和来源。批准绑定 Plan version 与 manifest hash，Worker 经共享企业 Toolset 检索/读取冻结来源，而非另建一套近似检索。
 
 每个 Planner/Synthesizer 模型请求和重试边界都有 job-local 权限检查。报告区分 `model` 与 `verified_fallback`，`completed` 与内容 `complete/degraded` 分开。完整原文记录和正确 Citation 不保证问题覆盖或回答质量，仍须单独评测。
@@ -85,3 +98,16 @@ Wiki 页面的标题、摘要及关系元数据目前缺完整访问依赖证明
 ## 不在本轮结论中
 
 这不是完整生产安全审计，也不代表所有角色、所有文件格式、浏览器布局与重复稳定性都已验收。冻结 Confluence 正文可以复现质量结果，但源站权限校验不等于已同步源站最新正文。运行与验收边界见[运行手册](access-evidence-runbook.md)和[交接报告](../testing/integration/pr63-integration-acceptance.md)。
+
+## Thinking Agent loop update (2026-10-19)
+
+Thinking/auto now send the original question and permitted tools directly to one
+budgeted Agent loop. Prompt-based clarification, rewriting and strategy replace
+separate intent/router/preparation/completeness calls. Grounded answers pass exact
+binding and local MiniCheck before release; rejection feeds the same loop.
+Install local lytang/MiniCheck-DeBERTa-v3-Large weights and configure
+MINICHECK_MODEL_PATH (never commit weights). Missing verification infrastructure
+returns tool_error; rejected drafts never reach JSON/SSE. /ready reports retrieval
+preload only, not successful model/verification acceptance. See the current
+[mode contract](../../agent/docs/chat_mode_contract.md) for all budget settings.
+Historical acceptance reports and scores are unchanged.

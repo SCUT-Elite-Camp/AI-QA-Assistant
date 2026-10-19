@@ -1,4 +1,4 @@
-from tests.grounding_helpers import grounded_model
+from tests.grounding_helpers import grounded_model, control_response
 """Real Chat dispatcher, tools and source guard with controlled model/native IO."""
 
 import pytest
@@ -40,8 +40,11 @@ class CountingModel:
         self.calls, self.answer, self.after_call = [], answer, after_call
 
     @grounded_model
-    def chat(self, messages, tools=None):
-        assert tools is None
+    def chat(self, messages, tools=None, **kwargs):
+        if tools:
+            import json
+            self.calls.append(messages)
+            return control_response(**json.loads(self.answer))
         self.calls.append(messages)
         if self.after_call:
             self.after_call()
@@ -57,8 +60,8 @@ def test_fast_enters_same_pipeline_once_with_real_source_guard(fixture, monkeypa
     model, tool = CountingModel(), SourceTool(documents)
     agent = Agent(llm=model, tools=[tool], permission_service=guard.permissions)
     monkeypatch.setattr(agent.runner, "run", lambda *args, **kwargs: pytest.fail("Entered Thinking"))
-    monkeypatch.setattr(agent.query_understanding, "analyze", lambda *args, **kwargs: pytest.fail("Rewrote question"))
-    monkeypatch.setattr(agent.title_llm, "chat", lambda *args, **kwargs: pytest.fail("Extra title call"))
+    assert not hasattr(agent, "query_understanding")
+    assert not hasattr(agent, "title_llm")
     request = ChatRequest(query="Compare the complete end-to-end flow", user_id="alice", weight_mode="fast", is_first_message=True)
     if stream:
         events = list(agent.stream_chat(request))
@@ -86,9 +89,9 @@ def test_fast_invalid_citation_never_releases_a_streamed_draft(fixture):
 
 @pytest.mark.parametrize("mode", ["thinking", "auto"])
 @pytest.mark.parametrize("stream", [False, True])
-def test_thinking_scope_clarification_uses_same_flow_without_model(fixture, mode, stream):
+def test_thinking_scope_clarification_is_an_agent_decision(fixture, mode, stream):
     guard, *_ = fixture
-    model = CountingModel()
+    model = CountingModel('{"action":"clarify","question":"Please specify which architecture."}')
     agent = Agent(llm=model, tools=[], permission_service=guard.permissions)
     request = ChatRequest(query="Explain the latest architecture", user_id="alice", weight_mode=mode)
     if stream:
@@ -98,7 +101,7 @@ def test_thinking_scope_clarification_uses_same_flow_without_model(fixture, mode
     else:
         response = agent.chat(request)
         assert response.status == "clarification_required" and "which architecture" in response.message
-    assert not model.calls
+    assert len(model.calls) == 1
 
 
 def test_fast_rechecks_source_version_after_its_only_generation(fixture):
@@ -116,12 +119,81 @@ def test_fast_rechecks_source_version_after_its_only_generation(fixture):
 def test_thinking_and_auto_never_enter_fast_even_for_a_simple_question(fixture, monkeypatch, mode):
     guard, *_ = fixture
     model = CountingModel("Hello")
-    class Understanding:
-        def analyze(self, query, *args, **kwargs):
-            return QueryPlan(original_query=query, standalone_query=query, intent=QueryIntent.CASUAL_CHAT)
-    agent = Agent(llm=model, tools=[], permission_service=guard.permissions, query_understanding=Understanding())
+    class DirectModel(CountingModel):
+        def chat(self, messages, tools=None, **kwargs):
+            self.calls.append(messages)
+            return control_response("answer") if len(self.calls) == 1 else {"content":"Hello"}
+    model = DirectModel()
+    agent = Agent(llm=model, tools=[], permission_service=guard.permissions)
     monkeypatch.setattr(agent.fast_pipeline, "run", lambda *args, **kwargs: pytest.fail("Entered Fast"))
-    response = agent.chat(ChatRequest(query="Hello", user_id="alice", weight_mode=mode, is_first_message=False))
+    response = agent.chat(ChatRequest(query="Hello", user_id="alice", weight_mode=mode, is_first_message=False, knowledge_base_retrieval_enabled=False))
     assert response.status == "success" and response.answer == "Hello"
     assert agent.last_orchestration.execution_profile.mode.value == "thinking"
-    assert len(model.calls) == 1
+    assert len(model.calls) == 2
+
+
+@pytest.mark.parametrize('stream',[False,True])
+def test_thinking_rejection_retries_privately_before_verified_release(fixture,stream):
+    import json
+    from agent.evidence.gate import EvidenceGate
+    guard, _, documents, *_=fixture
+    class ThinkingTool(SourceTool):
+        def search(self,**arguments):
+            return self.search_direct(**arguments)
+    class Model:
+        def __init__(self):self.calls=[]
+        def chat(self,messages,tools=None,**kwargs):
+            self.calls.append((messages,tools))
+            count=len(self.calls)
+            if count==1:
+                return {'tool_calls':[{'id':'search','function':{'name':'search_documents','arguments':'{"query":"evidence"}'}}]}
+            if tools:return control_response("answer")
+            return {'content':json.dumps({'claims':[{'text':'Rejected candidate' if count==3 else 'Verified candidate',
+                'supports':[{'citation_id':1,'quote':'Authorized original evidence.'}]}]})}
+    class Verifier:
+        def __init__(self):self.calls=0
+        def check(self,binding,evidence,budget):
+            self.calls+=1;budget.verify()
+            return [{'claim_id':'claim_1','verdict':'not_supported' if self.calls==1 else 'supported','reason':'test boundary'}]
+    model,verifier=Model(),Verifier()
+    agent=Agent(llm=model,tools=[ThinkingTool(documents)],permission_service=guard.permissions,
+                evidence_gate=EvidenceGate(verifier))
+    request=ChatRequest(query='Describe the evidence.',user_id='alice',weight_mode='thinking')
+    if stream:
+        events=list(agent.stream_chat(request))
+        response={**events[-1][1], 'answer':''.join(v['content'] for n,v in events if n=='token')}
+        assert [v['content'] for name,v in events if name=='token']==['Verified candidate[1]']
+        assert 'Rejected candidate' not in json.dumps(events) and 'claim_id' not in json.dumps(events)
+    else:
+        response=agent.chat(request).model_dump()
+    assert response['status']=='success' and response['answer']=='Verified candidate[1]'
+    assert response['evidence_provenance']['complete']
+    assert len(model.calls)==5 and verifier.calls==2
+
+
+def test_thinking_source_change_during_verification_prevents_release(fixture):
+    import json
+    from agent.evidence.gate import EvidenceGate
+    guard, _, documents, *_=fixture
+    class ThinkingTool(SourceTool):
+        def search(self,**arguments):return self.search_direct(**arguments)
+    class Model:
+        calls=0
+        def chat(self,messages,tools=None,**kwargs):
+            self.calls+=1
+            if self.calls==1:
+                return {'tool_calls':[{'id':'s','function':{'name':'search_documents','arguments':'{"query":"evidence"}'}}]}
+            if tools:return control_response('answer')
+            return {'content':json.dumps({'claims':[{'text':'Evidence exists.',
+                'supports':[{'citation_id':1,'quote':'Authorized original evidence.'}]}]})}
+    class Verifier:
+        def check(self,binding,evidence,budget):
+            documents['doc1']['content']='Changed body during verification.'
+            return [{'claim_id':'claim_1','verdict':'supported'}]
+    agent=Agent(llm=Model(),tools=[ThinkingTool(documents)],permission_service=guard.permissions,
+        evidence_gate=EvidenceGate(Verifier()))
+    events=agent.stream_chat(ChatRequest(query='Describe the evidence.',user_id='alice',weight_mode='thinking'))
+    released=[]
+    with pytest.raises(PermissionResolutionError,match='document_version_changed'):
+        for event in events:released.append(event)
+    assert not any(name=='token' for name,_ in released)

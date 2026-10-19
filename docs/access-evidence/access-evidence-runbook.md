@@ -120,3 +120,58 @@ G1 为普通 Chat；G2 为创建、规划、批准、执行、读取报告的完
 依据新源文本，在生成任何模型答案前创建独立版本的问题、检查项与 source hash/version。保留旧题、旧 manifest 和旧成绩；有重复 Goal ID 时同时以能力名称区分，空状态不从相邻行推断。仓库中的 `eval/deep_research_a/datasets/cases.en.current-20261009.v2.json` 是三个当前版本回归用例，不是未见留出集；正文和运行数据库仍位于 ignored/outside-checkout 路径。
 
 结构化机器裁判对 Qwen 使用显式 `enable_thinking=false`，独立于业务回答的思考设置。保存实际请求选项、每次原始输出与验证结果；非法格式或明确理由/布尔矛盾仅重试一次，有效失败评分不重试、不翻转，异常仍作为未评分。重评现成答案必须记录原始记录路径和答案 hash，不覆盖原评分或重新生成回答来消除评分异常。
+
+## Research completion budgets (2026-10-19)
+
+The old sequential runtime, rule verification/fallback renderer and frontend
+executable Mock are removed. Local Research development sets
+`RESEARCH_DEVELOPMENT_MODE=true` and `HOST=127.0.0.1`: every catalog file is
+available to enabled signed-in users. Keep the flag false for production/native
+permission acceptance. Session/CSRF, ownership, manifest scope, current source
+version/hash and independent review still apply in development. Historical
+legacy outputs remain saved, but old plans cannot resume or be approved for
+the new workflow; create and approve a new harness job.
+
+New enterprise jobs create coordinator Plans. Review the authorized file list,
+task scopes, dependencies and criteria before approving the exact current
+version/hash. Independent tasks should have empty dependencies. Default limits:
+three parallel explorers, two repair rounds, eight decisions per worker, 64 shared
+tools, 900 seconds and the configured 64,000 completion tokens for all approved
+execution roles. A new repair revision must receive a new review; no unreviewed
+draft may be exported as the final report.
+
+Back up Research DB/checkpoint together before upgrade. The repository adds
+`research_model_usage` automatically and retains old jobs as `legacy`; no Web
+migration or index replacement is required for this change. Run one application
+dispatcher per Research database. Inspect protected evaluation trace
+`agents/agent_steps/drafts/reviews` and snapshot `team` when diagnosing failures.
+Tokens/actions/time are retained across recovery. Cancellation stops future
+model/tool/release boundaries but cannot unsend a provider request.
+
+The new orchestration has deterministic integration coverage; earlier real Groq
+traces used the old architecture. Re-run isolated actual-model/native-permission
+acceptance before claiming new runtime quality or stability. Review each case
+with Codex, retaining rejected revisions and repair history; do not call an
+external grading model. Details: [team architecture](../../agent/docs/research_team_architecture.md).
+
+Research separates reasoning reserve from visible output, switches exhausted whole-report
+generation to bounded sections, and honors bounded provider rate-limit delays. Configure
+`RESEARCH_MODEL_REASONING_TOKENS`, `RESEARCH_MODEL_OUTPUT_TOKENS`,
+`RESEARCH_MODEL_TOTAL_TOKENS` and `RESEARCH_MODEL_MAX_RETRY_WAIT_SECONDS` in the ignored
+Agent environment; defaults and scope are in
+[Research generation budgets](../../agent/docs/research_generation_budget.md).
+Create a new Job to use the new Plan cap; existing approval snapshots are not rewritten.
+Every section/retry retains current native permission and version/hash checks.
+
+## Thinking Agent loop update (2026-10-19)
+
+Thinking/auto now send the original question and permitted tools directly to one
+budgeted Agent loop. Prompt-based clarification, rewriting and strategy replace
+separate intent/router/preparation/completeness calls. Grounded answers pass exact
+binding and local MiniCheck before release; rejection feeds the same loop.
+Install local lytang/MiniCheck-DeBERTa-v3-Large weights and configure
+MINICHECK_MODEL_PATH (never commit weights). Missing verification infrastructure
+returns tool_error; rejected drafts never reach JSON/SSE. /ready reports retrieval
+preload only, not successful model/verification acceptance. See the current
+[mode contract](../../agent/docs/chat_mode_contract.md) for all budget settings.
+Historical acceptance reports and scores are unchanged.

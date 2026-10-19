@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from contextvars import copy_context
 from dataclasses import dataclass, field
 import hashlib
 import json
@@ -23,13 +24,7 @@ class SearchBackend(Protocol):
 
 
 class LocalJsonSearchBackend:
-    """Deterministic local fallback used by the fixed-fixture vertical slice.
-
-    It deliberately implements only bounded lexical discovery over the JSON
-    document catalog.  It does not replace the Tool Layer search backend in
-    production, but gives Local Research a repeatable, network-free adapter
-    for demos and recovery tests.
-    """
+    """Explicit local fixture search backend for isolated harness tests."""
 
     def __init__(self, documents_dir: str | Path) -> None:
         self.documents_dir = Path(documents_dir).resolve()
@@ -72,10 +67,11 @@ class LocalJsonSearchBackend:
         has_section_terms = bool(query_tokens - title_tokens)
         weights = {token: math.log(1 + len(rows) / (1 + frequencies[token]))
                    * (0.1 if has_section_terms and token in title_tokens else 1.0)
-                   for token in query_tokens}
+                   for token in sorted(query_tokens)}
         denominator = sum(weights.values()) or 1.0
         for row, tokens in zip(rows, token_sets):
-            row["score"] = sum(weights[t] for t in query_tokens & tokens) / denominator
+            # Stable accumulation keeps equal-score candidates independent of hash seed.
+            row["score"] = sum(weights[t] for t in sorted(query_tokens & tokens)) / denominator
         rows.sort(key=lambda item: (-item["score"], item["doc_id"], item["chunk_index"]))
         # Round-robin ranked documents preserves comparisons while allowing
         # multiple distinct sections from the same document into the budget.
@@ -193,7 +189,7 @@ class LocalResearchToolAdapter:
         return {item.doc_id: item for item in context.source_manifest.documents}
 
     def _run(self, callback, timeout: float):
-        future = self._executor.submit(callback)
+        future = self._executor.submit(copy_context().run, callback)
         try:
             return future.result(timeout=timeout)
         except FutureTimeout as exc:

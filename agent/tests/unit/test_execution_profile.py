@@ -1,5 +1,4 @@
 from agent.runtime.profile import ExecutionMode, ExecutionProfileResolver
-from agent.schemas.intent_policy import IntentPolicy
 from agent.schemas.query_plan import QueryIntent, QueryPlan, SourceIntent, SourceKind
 from agent.schemas.chat import ChatRequest
 from pydantic import ValidationError
@@ -17,7 +16,6 @@ def _plan(intent: QueryIntent = QueryIntent.KNOWLEDGE_QA, **updates) -> QueryPla
 
 def test_explicit_thinking_resolves_to_thinking() -> None:
     resolver = ExecutionProfileResolver()
-    policy = IntentPolicy()
     profile = resolver.resolve(
         "thinking", exploration_mode="auto",
     )

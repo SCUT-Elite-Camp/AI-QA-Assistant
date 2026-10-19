@@ -8,6 +8,9 @@ from pathlib import Path
 import sqlite3
 from threading import RLock
 from typing import Iterable
+from uuid import uuid4
+
+from .team_contracts import AgentResult, AgentStep, ReportDraft, ReportReview, CoordinatorApproval
 
 from agent.schemas.research import (
     ResearchApproval,
@@ -68,6 +71,11 @@ class SQLiteResearchRepository:
         if self.database_path != ":memory:":
             self._connection.execute("PRAGMA journal_mode = WAL")
         self._create_tables()
+        with self._lock, self._connection:
+            self._connection.execute("""CREATE TABLE IF NOT EXISTS research_model_usage (
+                request_id TEXT PRIMARY KEY, research_id TEXT NOT NULL,
+                reserved_tokens INTEGER NOT NULL, charged_tokens INTEGER NOT NULL,
+                FOREIGN KEY(research_id) REFERENCES research_jobs(research_id))""")
 
     def _create_tables(self) -> None:
         with self._lock, self._connection:
@@ -796,6 +804,11 @@ class SQLiteResearchRepository:
         "claim": ClaimDraft,
         "verification": VerificationResult,
         "report": ResearchReport,
+        "agent_result": AgentResult,
+        "agent_step": AgentStep,
+        "report_draft": ReportDraft,
+        "report_review": ReportReview,
+        "coordinator_approval": CoordinatorApproval,
     }
 
     def _save_entity(self, kind: str, entity_id: str, research_id: str, payload_json: str, task_id: str | None = None):
@@ -858,12 +871,49 @@ class SQLiteResearchRepository:
         return self._list_entities("observation", research_id, task_id)
 
     def save_evidence(self, item: VerifiedEvidence) -> VerifiedEvidence:
-        saved = self._save_entity("evidence", item.evidence_id, item.research_id, item.model_dump_json(), item.task_id)
-        job = self.get_job(item.research_id)
-        evidence_count = len(self.list_evidence(item.research_id))
-        if job.evidence_count != evidence_count:
-            self.update_job(ResearchJob.model_validate({**job.model_dump(), "evidence_count": evidence_count}))
-        return saved
+        with self._lock:
+            saved = self._save_entity("evidence", item.evidence_id, item.research_id, item.model_dump_json(), item.task_id)
+            job = self.get_job(item.research_id)
+            evidence_count = len(self.list_evidence(item.research_id))
+            if job.evidence_count != evidence_count:
+                self.update_job(ResearchJob.model_validate({**job.model_dump(), "evidence_count": evidence_count}))
+            return saved
+
+    def save_team_entity(self, kind: str, entity_id: str, item):
+        if kind not in {"agent_result", "agent_step", "report_draft", "report_review", "coordinator_approval"}:
+            raise ValueError("invalid_team_entity")
+        return self._save_entity(kind, entity_id, item.research_id, item.model_dump_json(), getattr(item, "task_id", None))
+
+    def list_team_entities(self, kind: str, research_id: str):
+        return self._list_entities(kind, research_id)
+
+    def reserve_model_tokens(self, research_id: str, tokens: int, limit: int) -> str:
+        from .model_budget import ResearchTokenBudgetExceeded
+        with self._lock, self._connection:
+            spent = self._connection.execute("SELECT COALESCE(SUM(charged_tokens),0) FROM research_model_usage WHERE research_id=?", (research_id,)).fetchone()[0]
+            if spent + tokens > limit:
+                raise ResearchTokenBudgetExceeded("research_completion_budget_exceeded")
+            request_id = uuid4().hex
+            self._connection.execute("INSERT INTO research_model_usage VALUES (?,?,?,?)", (request_id, research_id, tokens, tokens))
+            return request_id
+
+    def settle_model_tokens(self, request_id: str, tokens: int) -> None:
+        if tokens < 0:
+            raise ValueError("invalid_model_usage")
+        with self._lock, self._connection:
+            self._connection.execute("UPDATE research_model_usage SET charged_tokens=? WHERE request_id=?", (tokens, request_id))
+
+    def model_tokens_used(self, research_id: str) -> int:
+        with self._lock:
+            return int(self._connection.execute("SELECT COALESCE(SUM(charged_tokens),0) FROM research_model_usage WHERE research_id=?", (research_id,)).fetchone()[0])
+
+    def reserve_team_action(self, step: AgentStep, total_limit: int, agent_limit: int) -> None:
+        with self._lock:
+            steps = self.list_team_entities("agent_step", step.research_id)
+            actions = [s for s in steps if s.action in {"search", "read"}]
+            if len(actions) >= total_limit or sum(s.agent_id == step.agent_id for s in actions) >= agent_limit:
+                raise RuntimeError("research_tool_budget_exceeded")
+            self.save_team_entity("agent_step", step.step_id, step)
 
     def list_evidence(self, research_id: str, task_id: str | None = None) -> list[VerifiedEvidence]:
         return self._list_entities("evidence", research_id, task_id)
@@ -884,40 +934,32 @@ class SQLiteResearchRepository:
     def list_findings(self, research_id: str) -> list[Finding]:
         return self._list_entities("finding", research_id)
 
-    def save_coverage(self, item: CoverageResult) -> CoverageResult:
-        return self._save_entity("coverage", f"coverage-{item.research_id}", item.research_id, item.model_dump_json())
 
-    def get_coverage(self, research_id: str) -> CoverageResult:
-        items = self._list_entities("coverage", research_id)
-        if not items:
-            raise ResearchNotFoundError(f"coverage for '{research_id}' not found")
-        return items[-1]
 
-    def save_claim(self, item: ClaimDraft) -> ClaimDraft:
-        return self._save_entity("claim", item.claim_id, item.research_id, item.model_dump_json())
 
     def list_claims(self, research_id: str) -> list[ClaimDraft]:
         return self._list_entities("claim", research_id)
 
-    def save_verification(self, item: VerificationResult, *, phase: str = "semantic") -> VerificationResult:
-        if phase not in {"structural", "semantic"}:
-            raise ValueError("verification phase must be structural or semantic")
-        key = f"{phase}-{item.claim_id}"
-        return self._save_entity("verification", key, self.get_job_for_claim(item.claim_id).research_id, item.model_dump_json())
 
-    def get_job_for_claim(self, claim_id: str) -> ResearchJob:
-        with self._lock:
-            row = self._connection.execute(
-                "SELECT research_id FROM research_entities WHERE kind='claim' AND entity_id=?", (claim_id,)
-            ).fetchone()
-        if row is None:
-            raise ResearchNotFoundError(f"claim '{claim_id}' not found")
-        return self.get_job(row["research_id"])
 
     def list_verifications(self, research_id: str) -> list[VerificationResult]:
         return self._list_entities("verification", research_id)
 
     def save_report(self, item: ResearchReport) -> ResearchReport:
+        job = self.get_job(item.research_id)
+        if job.plan_version and self.get_plan(item.research_id, job.plan_version).execution_mode == "coordinator":
+            from .team_contracts import report_digest
+            digest = report_digest(item)
+            drafts = self.list_team_entities("report_draft", item.research_id)
+            reviews = self.list_team_entities("report_review", item.research_id)
+            approvals = self.list_team_entities("coordinator_approval", item.research_id)
+            review = next((r for r in reviews if r.review_id == item.review_id), None)
+            if (item.review_status != "passed" or not item.coordinator_approved or review is None
+                    or review.status != "passed" or review.report_hash != digest
+                    or not any(d.draft_id == review.draft_id and d.report_hash == digest for d in drafts)
+                    or not any(a.approved and not a.issues and a.review_id == review.review_id
+                               and a.draft_id == review.draft_id and a.report_hash == digest for a in approvals)):
+                raise ResearchConflictError("research_report_requires_bound_review_and_release")
         return self._save_entity("report", item.report_id, item.research_id, item.model_dump_json())
 
     def get_report(self, research_id: str) -> ResearchReport:

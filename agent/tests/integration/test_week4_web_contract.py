@@ -19,7 +19,6 @@ def test_readiness_reports_retrieval_preload(monkeypatch) -> None:
     from agent.config.settings import settings
     # This transport fixture tests retrieval preload; real model readiness has
     # its own acceptance runner and must not depend on a developer's .env path.
-    monkeypatch.setattr(settings, 'HYBRID_INTENT_ROUTER_ENABLED', False)
     import app as application
     from agent.runtime.lifecycle import ApplicationContainer
     container = ApplicationContainer()
@@ -29,10 +28,9 @@ def test_readiness_reports_retrieval_preload(monkeypatch) -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert {key: body[key] for key in ("status", "retrieval_ready", "intent_ready", "detail")} == {
+    assert {key: body[key] for key in ("status", "retrieval_ready", "detail")} == {
         "status": "ready",
         "retrieval_ready": True,
-        "intent_ready": True,
         "detail": "",
     }
 

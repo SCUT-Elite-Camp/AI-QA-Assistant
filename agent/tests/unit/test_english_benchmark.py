@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.research_fixtures import FixtureResearchPlanner
 
 import json
 from pathlib import Path
@@ -11,7 +12,6 @@ from agent.schemas.research import CoverageResult, ReportSpec, ResearchRequest, 
 from deep_research.manifest import InMemoryDocumentResolver
 from deep_research.repository import SQLiteResearchRepository
 from deep_research.service import ResearchControlPlane
-from deep_research.renderer import MarkdownReportRenderer
 
 
 def test_english_round_preserves_source_scope_and_uses_english_rubrics():
@@ -28,24 +28,13 @@ def test_english_round_preserves_source_scope_and_uses_english_rubrics():
         assert new["report_language"] == "en-US"
 
 
-def test_english_report_fallback_keeps_language_when_evidence_is_missing():
-    assert ReportSpec().language == "en-US"
-    report = MarkdownReportRenderer().render(
-        research_id="english-empty", objective="What is the production SLA?", claims=[], evidence=[],
-        coverage=CoverageResult(research_id="english-empty", covered=[], missing=["sla"], sufficient=False),
-        language="en-US",
-    )
-    assert "insufficient" in report.markdown
-    assert "## Sources" in report.markdown
-    assert not re.search(r"[\u4e00-\u9fff]", report.markdown)
-    assert all(not re.search(r"[\u4e00-\u9fff]", item.message) for item in report.limitations)
 
 
 def test_deterministic_planner_uses_english_for_english_research(tmp_path):
     repository = SQLiteResearchRepository(tmp_path / "english-plan.db")
     control = ResearchControlPlane(repository, source_resolver=InMemoryDocumentResolver({
         "doc-a": {"doc_id": "doc-a", "title": "Agent delivery", "content": "Total Commits: 9"},
-    }))
+    }), planner=FixtureResearchPlanner())
     job = control.create_job(ResearchRequest(query="Summarize Agent delivery.",
                                            source_scope=SourceScope(document_ids=["doc-a"])), user_id="english-test")
     plan = control.get_plan(job.research_id)

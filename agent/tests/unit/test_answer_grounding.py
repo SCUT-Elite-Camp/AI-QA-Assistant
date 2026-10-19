@@ -5,13 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent.answer.generator import AnswerGenerator
-from agent.answer.schemas import AnswerCompletenessResult
 from agent.evidence.answer_grounding import parse_grounded_answer, validate_grounded_answer
-from agent.runtime.state import AgentState, StopReason
-from agent.runtime.support import RuntimeSupport
-from agent.schemas.query_plan import QueryPlan
-from agent.schemas.intent_policy import IntentPolicy
+from agent.runtime.state import StopReason
 from agent.service.access_guard import CURRENT_ACCESS_GUARD
 from agent.streaming.live import CURRENT_STREAM_SINK
 from tests.unit.test_fast_pipeline import Model, run
@@ -71,10 +66,6 @@ def test_explicit_abstention_does_not_become_an_access_or_quality_error():
     assert turn.response.status == "no_relevant_context"
     assert not turn.response.answer and not turn.response.citations
     assert len(model.calls) == 1
-    state = AgentState(trace_id="abstain", query_plan=QueryPlan(original_query="q", standalone_query="q"),
-                       evidence=[{"content": "Introduction"}])
-    result = RuntimeSupport.result(state, StopReason.FINAL_ANSWER, answer='{"claims":[]}')
-    assert result.stop_reason == StopReason.NO_RELEVANT_CONTEXT and not result.answer
 
 
 def test_missing_claims_or_a_second_unbound_answer_is_rejected():
@@ -144,17 +135,6 @@ def test_fast_private_binding_without_inline_citations_is_accepted_and_not_publi
     assert len(model.calls) == 1
 
 
-def test_thinking_final_fallback_cannot_skip_private_validation():
-    state = AgentState(trace_id="test", query_plan=QueryPlan(original_query="q", standalone_query="q"), evidence=[{"content": "Fusion completed July 30"}])
-    result = RuntimeSupport.result(state, StopReason.FINAL_ANSWER, answer="Unvalidated fallback [1]")
-    assert result.stop_reason == StopReason.QUALITY_VALIDATION_FAILED and not result.answer
-    result = RuntimeSupport.result(state, StopReason.FINAL_ANSWER, answer=json.dumps(envelope()))
-    assert result.stop_reason == StopReason.FINAL_ANSWER and result.answer_grounding["valid"]
-    state.answer_grounding_draft = envelope()
-    result = RuntimeSupport.result(state, StopReason.FINAL_ANSWER, answer="Changed after validation [1]")
-    assert result.stop_reason == StopReason.QUALITY_VALIDATION_FAILED and not result.answer
-
-
 @pytest.mark.parametrize("valid_quote", [True, False])
 def test_fast_sse_only_releases_accepted_visible_text(valid_quote):
     released = []
@@ -171,43 +151,3 @@ def test_fast_sse_only_releases_accepted_visible_text(valid_quote):
     tokens = [data["content"] for name, data in released if name == "token"]
     assert tokens == (["Answer[1]"] if valid_quote else [])
     assert '"claims"' not in json.dumps(released) and len(model.calls) == 1
-
-
-def test_thinking_generator_never_streams_private_json_or_reasoning():
-    released = []
-    raw = json.dumps(envelope())
-    class StreamingModel:
-        def stream_chat(self, *args, **kwargs):
-            yield {"reasoning_content": "private claim evaluation"}
-            yield {"content": raw[:20]}
-            yield {"content": raw[20:]}
-    guard_token = CURRENT_ACCESS_GUARD.set(SimpleNamespace(provenance=lambda: SimpleNamespace(model_dump=lambda: {})))
-    stream_token = CURRENT_STREAM_SINK.set(lambda name, payload: released.append((name, payload)))
-    try:
-        result = AnswerGenerator(llm=StreamingModel()).chat([], grounded=True)
-    finally:
-        CURRENT_STREAM_SINK.reset(stream_token)
-        CURRENT_ACCESS_GUARD.reset(guard_token)
-    assert result["content"] == raw
-    assert not any(name in {"token", "reasoning"} for name, _ in released)
-
-
-@pytest.mark.parametrize("accept_repair", [True, False])
-def test_thinking_repair_replaces_support_data_only_when_valid(accept_repair):
-    original = envelope()
-    candidate = envelope(answer=original["claims"][0]["text"] + " Extra [1]", quote="Fusion completed July 30" if accept_repair else "fabricated")
-    class Checker:
-        def check(self, *args):
-            return AnswerCompletenessResult(complete=False, check_performed=True, missing_aspects=["Extra"])
-        def repair(self, *args, grounded=False):
-            assert grounded
-            return parse_grounded_answer(json.dumps(candidate))
-    state = AgentState(trace_id="test", query_plan=QueryPlan(original_query="q", standalone_query="q"),
-        evidence=[{"doc_id": "doc", "chunk_id": "chunk", "title": "title", "content": "Fusion completed July 30", "score": 1.0,
-                   "retrieval_query": "q", "retrieval_mode": "hybrid"}],
-        answer_grounding_draft=original)
-    support = RuntimeSupport(Checker())
-    answer = support.check_and_repair_answer(state=state, policy=IntentPolicy(requires_citations=True), answer=original["claims"][0]["text"])
-    assert answer == (candidate["claims"][0]["text"] if accept_repair else original["claims"][0]["text"])
-    result = support.result(state, StopReason.FINAL_ANSWER, answer=answer)
-    assert result.stop_reason == StopReason.FINAL_ANSWER and result.answer_grounding["valid"]

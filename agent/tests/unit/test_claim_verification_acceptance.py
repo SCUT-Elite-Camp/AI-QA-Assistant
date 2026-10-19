@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from eval.claim_verification_acceptance import check_acl_denial, load_cases, summarize, verify_sources
+from eval.claim_verification_acceptance import check_acl_denial, load_cases, prepare_reviewed_case, summarize, verify_sources
 
 pytestmark = pytest.mark.no_storage
 
@@ -110,3 +110,32 @@ def test_current_authority_hash_and_original_fragment_must_match(tmp_path, chang
     permissions = SimpleNamespace(get_accessible_doc_ids_strict=lambda *args, **kwargs: [] if change == "denied" else ["doc"])
     with pytest.raises(ValueError, match=error):
         verify_sources([{"evidence":[evidence]}], tmp_path, permissions, "actor")
+
+
+@pytest.mark.parametrize("missing_version", [False, True])
+def test_reviewed_context_adapter_preserves_later_anchor_and_does_not_invent_lineage(tmp_path, missing_version):
+    body = "# Older scope\n\nApproved.\n\n# Current scope\n\nApproved."
+    document = {"doc_id":"policy", "content":body, "metadata":{} if missing_version else {"version":7}}
+    raw = json.dumps(document).encode()
+    (tmp_path/"policy.json").write_bytes(raw)
+    case = {"case_id":"reviewed-case", "claim":"The current scope is approved.", "evidence":[{
+        "doc_id":"policy", "document_file_sha256":hashlib.sha256(raw).hexdigest(),
+        "quote":"Approved.", "source_start":body.rindex("Approved."), "source_end":len(body),
+    }]}
+    prepared = prepare_reviewed_case(case, tmp_path)
+    if missing_version:
+        assert prepared.reason == "source_lineage_missing" and not prepared.premise
+    else:
+        assert prepared.status == "ready" and "# Current scope" in prepared.premise
+        assert "# Older scope" not in prepared.premise
+        assert prepared.sources[0].anchors[0].start == body.rindex("Approved.")
+        assert prepared.sources[0].provenance["source_version"] == "7"
+
+
+def test_reviewed_context_adapter_rejects_changed_frozen_body_before_constructing_context(tmp_path):
+    (tmp_path/"policy.json").write_text(json.dumps({"doc_id":"policy", "content":"Changed policy."}))
+    with pytest.raises(ValueError, match="frozen_source_changed"):
+        prepare_reviewed_case({"case_id":"changed", "claim":"A claim.", "evidence":[{
+            "doc_id":"policy", "document_file_sha256":"0"*64,
+            "quote":"policy", "source_start":0,"source_end":6,
+        }]}, tmp_path)

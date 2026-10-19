@@ -15,22 +15,22 @@ Fast 用原问题直接检索、程序固定调用工具，再进行一次生成
 - `MemoryCoordinator` 在请求边界解析 Web/BFF 显式提供的受信任记忆上下文。
 - Agent 不按 `session_id` 缓存、恢复或写回对话历史。
 - `QueryIntent` / `QueryPlan` 严格 Pydantic 契约。
-- Thinking 的 `SourceIntent` 使用结构化计划，未提供时可启发式推断来源。
-  Fast 仅根据请求来源、文件及可用上下文确定工具。授权身份仍只来自可信请求上下文。
+- 两种模式都仅根据可信请求来源、文件及可用上下文确定来源范围；不从问句猜授权。
 - Agent Runner 动态读取工具 schema，支持连续多轮工具调用。
-- 同一模型轮次的等价并行工具调用只执行一次，跨轮重复调用仍由安全阈值熔断。
+- 每次实际工具执行均计入请求预算；重复动作达到阈值后终止。
 - 最终回答、主动澄清、无上下文、最大迭代、重复调用、工具错误和 LLM 错误终止。
-- Fast 检索直接使用原问题；Thinking 检索可使用 `standalone_query`。
+- Fast 检索直接使用原问题；Thinking 首次发送原问题和工具列表，模型自行选择检索词。
 - `trace_id` 贯穿 Chat、Runner 与检索工具。
-- `ThinkingPipeline` 编排 Memory、Query Understanding、IntentPolicy、工具
-  执行、Evidence Gate 和 Citation 校验。证据不足时模型可查看文档目录并批量读取全文；
-  不再自动扩大 TopK 或切换检索方式。
+- `ThinkingPipeline` 准备可信 Memory 与来源范围，进入唯一有预算的 Agent 循环。
+  澄清、改写和策略选择均由 Prompt 驱动；独立意图分类器、路由器与完整性生成调用已删除。
+  答案通过片段绑定后由本地 MiniCheck 核验；未通过则在同一预算内继续取证或重新生成。
 - CP1 Web `ChatResponse` 字段保持不变。
 - 手动启动、与 Chat 隔离的 Local Deep Research API。
 - SQLite 持久化 Job／Manifest／Plan／Approval／Evidence／Claim／Report，
   由低频 Durable Dispatcher 调度和恢复。
-- 单 Worker 顺序完成 Search → Observation → Original Read → Evidence →
-  Finding → Coverage → Claim Verification → Markdown Report。
+- Research 仅使用主 Agent 规划、人工修改/批准、并行子 Agent 探索、独立 Reviewer 和新修订 Agent 的 harness；主 Agent 执行时只协调、汇总及最终放行，不调用探索工具。旧运行图及兜底已删除。
+- 证据链仍为 Search → Observation → Original Read → Evidence →
+  Finding → Draft → Review/Repair → 主 Agent 放行；不再复制生成 Claims 或运行旧规则核验。
 - Chat 与 Local Deep Research 统一输出 `{doc_id}_chunk_{index}` 稳定定位符；
   结构化文档按命中 chunk 精确读取原文，无 chunks 时才回退到行号定位。
 - 支持资料充分的 `complete` 与资料不足或冲突的 `degraded` 结果。
@@ -40,11 +40,8 @@ Fast 用原问题直接检索、程序固定调用工具，再进行一次生成
 
 跨层契约见[架构](../docs/access-evidence/access-evidence-architecture.md)与[接入说明](../docs/access-evidence/access-evidence-integration.md)，真实结果见[整合报告](../docs/testing/integration/pr63-integration-acceptance.md)。Research 当前只支持企业来源；Wiki 导航因自身 lineage 不完备暂被隔离。
 
-Fast 标题使用问题截取，且 BFF 不为 Fast 本轮追加后台 Memory 压缩。
-Thinking 的新聊天标题复用配置的 Fast 答案模型；未配置独立 Fast 模型或注入自定义
-LLM 时沿用注入的客户端。标题完成预算为256 tokens，包含推理模型消耗的推理
-tokens，避免高强度主模型在旧30-token预算内截断而无标题。标题调用仍经过
-请求级访问复核和 `title_generation` 观测。
+两种模式的标题都使用问题截取，不产生额外模型调用。Fast 本轮不追加后台 Memory 压缩。
+Thinking 的所有控制、答案生成、失败尝试共用一个模型调用/工具/上下文/时间预算。
 
 Fast 有证据问答的正文经过确定性引用校验后释放，不追加生成修复；失败状态为
 `QUALITY_VALIDATION_FAILED`。展示引用仍指向当前原文，表格列名和值的语义对应
@@ -53,12 +50,15 @@ Fast 有证据问答的正文经过确定性引用校验后释放，不追加生
 Fast 图片输入要求配置具有多模态能力的 `ANSWER_FAST_MODEL` 并显式开启
 `FAST_MODEL_SUPPORTS_IMAGES=true`（默认 false）；不支持时返回 `unsupported`。
 `FAST_CONTEXT_MAX_CHARS` 默认 12000。图片工具只读取已有解析/OCR及原图，
-不调用独立视觉模型。Thinking 仍沿用分阶段及 Runner 的限制，统一总调用预算待后续实现。
+不调用独立视觉模型。Thinking 的统一预算及 MiniCheck 失败续答详见[模式契约](docs/chat_mode_contract.md)。
 
 共享契约：
 
 - [`QueryPlan / SourceIntent`](agent/schemas/query_plan.py)
-- [`docs/cp2/query_plan_contract.md`](docs/cp2/query_plan_contract.md)
+
+2026-10-19 新增独立的[断言核验输入构造](docs/verification_context.md)：
+从有效绑定和同一批 Evidence 构造保留结构、原文位置及 lineage 的输入，超预算明确标记需复核。
+离线入口可用 `--prepare-only` 检查；Thinking 已将该构造器接入在线 MiniCheck，Fast 仍仅校验绑定。
 
 
 ## 开发准则
@@ -180,33 +180,17 @@ curl -X POST "http://localhost:8000/api/chat" \
 LLM_API_KEY=
 LLM_API_BASE=http://127.0.0.1:11434/v1
 LLM_MODEL=llama3.1
-# Optional: use a faster model only for rewrite + retrieval planning.
-# Empty or omitted keeps the existing single-model behavior.
-QUERY_PREPARATION_MODEL=
 ANSWER_FAST_MODEL=
 ANSWER_FAST_MODEL_THINKING=false
-QUERY_UNDERSTANDING_ENABLED=true
-UNIFIED_QUERY_UNDERSTANDING_ENABLED=false
-CASCADED_QUERY_UNDERSTANDING_ENABLED=false
-HYBRID_INTENT_ROUTER_ENABLED=false
-INTENT_EMBEDDING_MODEL_PATH=
-INTENT_EMBEDDING_THRESHOLD=0.72
-INTENT_EMBEDDING_MARGIN=0.08
-CONVERSATION_REWRITE_ENABLED=true
-CLARIFICATION_ENABLED=true
-MAX_AGENT_ITERATIONS=5
+THINKING_MAX_MODEL_CALLS=10
+THINKING_MAX_TOOL_CALLS=8
+THINKING_CONTEXT_MAX_CHARS=30000
+THINKING_MAX_RESERVED_TOKENS=150000
+THINKING_MAX_VERIFICATIONS=48
+THINKING_TIMEOUT_SECONDS=180
 MAX_REPEATED_TOOL_CALLS=2
-
-# When the Agent selects Wiki, append this many unique original Evidence items
-# after Direct Evidence. 0 restores legacy merge behavior; valid range: 0-10.
-WIKI_CONTEXT_TOP_K=3
-# This limit applies to the Direct branch before Wiki Evidence is appended.
-EXPLORATION_MAX_EVIDENCE=20
-
-# For Thinking requests, Direct evidence is retrieved and gated first.
-# exploration_mode=auto starts Wiki only for a complex coverage gap; force
-# starts after accepted Direct evidence; off never starts Wiki. Fast stays
-# Direct-only. Wiki steps remain bounded and are validated by the Runner.
+MINICHECK_MODEL_PATH=data-persistence/models/minicheck
+MINICHECK_CPU_THREADS=4
 
 # 接口共享密钥（必配）：Web 可信端调用 /api/* 业务接口时携带
 # `Authorization: Bearer <AGENT_API_KEY>`。未配置时业务接口返回 503，
@@ -218,7 +202,7 @@ PERMISSION_FAIL_OPEN=false
 ```
 
 `top_k=5` 和 `retrieval_mode=hybrid` 是 ChatRequest 的请求模型默认值，不是环境变量。
-旧的 `QUERY_REWRITE_ENABLED` 环境变量仍会作为 `CONVERSATION_REWRITE_ENABLED` 的兼容别名读取。
+独立分类、改写、澄清及完整性模块的旧配置已移除，不再影响 Thinking。
 
 ### 接口认证说明
 
@@ -247,9 +231,9 @@ curl -X POST "http://localhost:8000/api/chat" \
 
 CP2 工具注册表实现见 [`registry.py`](agent/tools/registry.py)，当前接口见 `docs/API_CONTRACT.md`。
 
-CP2 查询重写和失败回退见 [`rewriter.py`](agent/query/rewriter.py)。
+Thinking 当前实现与预算见 [`runner.py`](agent/runtime/runner.py) 和[模式契约](docs/chat_mode_contract.md)。
 
-CP2 澄清判断和失败降级见 [`clarifier.py`](agent/query/clarifier.py)。
+Thinking 的澄清与策略由 [`thinking_prompt.py`](agent/chat/thinking_prompt.py) 定义。
 
 CP2 `QueryIntent`、`QueryPlan` 字段契约见 [`query_plan.py`](agent/schemas/query_plan.py)。
 
@@ -262,7 +246,7 @@ CP2 Chat-only L0/L1/L2 路由边界见
 CP2 Research Progress/Event 后端与前后端正式接入交付见
 [`docs/cp2/week_research_progress_member_a_delivery.md`](docs/cp2/week_research_progress_member_a_delivery.md)。
 
-CP2 意图分类与 QueryPlan 映射见 [`intent_classifier.py`](agent/query/intent_classifier.py)。
+QueryPlan 只保留公共 DTO；不再执行独立意图分类或按意图选择链路。
 
 ## 分工建议
 
@@ -321,3 +305,18 @@ CP2 意图分类与 QueryPlan 映射见 [`intent_classifier.py`](agent/query/int
 - SSE 演示接口：`POST /api/chat/stream`。
 - Web 联调说明见 `docs/cp1/web_integration_guide.md`。
 - 最终交接说明见 `docs/cp1/final_handoff.md`。
+
+Research now reserves reasoning and visible-output tokens separately, and stages truncated
+reports into sections before the existing evidence gates. Configuration and limitations:
+[Research generation budgets](docs/research_generation_budget.md).
+
+生产企业任务默认使用 [Research coordinator architecture](docs/research_team_architecture.md)：
+计划公开文件目录、任务分工和验收目标，人工修改后须重新批准；默认 3 个并发探索 Agent、
+最多 2 轮独立修订。Reviewer 按报告 revision/hash 核实引用原文，主 Agent 最后确认后才发布。
+所有执行角色共享持久化 Token/工具预算，恢复不会重置预算。此链路的确定性回归通过
+不代表已经完成真实 Groq、Milvus 与 Confluence 权限验收。
+
+本地开发 Research 设置 `RESEARCH_DEVELOPMENT_MODE=true`、`HOST=127.0.0.1`：
+已登录且启用的用户可访问完整 Research 文件目录，无需逐文件或原生授权；任务归属、
+来源版本/hash 和复审放行仍检查。生产配置保持该开关为 false。
+旧 legacy 任务保留已保存结果，但不再执行或恢复；需要新建并批准 harness 计划。

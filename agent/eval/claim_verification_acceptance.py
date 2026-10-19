@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from dataclasses import asdict
 import ctypes
 import hashlib
 import json
@@ -77,6 +78,44 @@ def verify_sources(cases: list[dict], documents: Path, permissions, user_id: str
             start, end = evidence["source_start"], evidence["source_end"]
             if not 0 <= start < end <= len(body) or body[start:end] != evidence["quote"]:
                 raise ValueError("original_excerpt_changed")
+
+
+def prepare_reviewed_case(case: dict, documents: Path, *, token_counter=None, max_context_chars=6000):
+    """Adapt a frozen, manually reviewed binding, never a fabricated model run.
+
+    The real acceptance caller checks current permissions before construction
+    and before release. Original file hashes/offsets remain authoritative here.
+    The local body projection has a separately derived, explicitly named locator.
+    """
+    from agent.evidence.verification_context import IDENTITY_FIELDS, build_verification_inputs
+    from toolset.tool_layer.evidence_metadata import chunk_metadata
+    sources, supports, citations = [], [], {}
+    for fragment in case["evidence"]:
+        doc_id = fragment["doc_id"]
+        if doc_id not in citations:
+            path = (documents/(doc_id + ".json")).resolve()
+            if path.parent != documents.resolve():
+                raise ValueError("invalid_document_identity")
+            raw = path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != fragment["document_file_sha256"]:
+                raise ValueError("frozen_source_changed")
+            document = json.loads(raw)
+            if document.get("doc_id") != doc_id:
+                raise ValueError("source_identity_changed")
+            body = document["content"]
+            chunk_id = doc_id + "::reviewed-frozen-body"
+            sources.append({**chunk_metadata(document, {"chunk_id":chunk_id, "text":body}),
+                            "doc_id":doc_id, "chunk_id":chunk_id, "content":body, "source_type":"knowledge"})
+            citations[doc_id] = len(sources)
+        citation = citations[doc_id]
+        source = sources[citation - 1]
+        supports.append({**{key:source.get(key) for key in IDENTITY_FIELDS}, "citation_id":citation,
+                         **{key:fragment[key] for key in ("quote", "source_start", "source_end")}})
+    report = {"valid":True, "validation_kind":"binding", "claims":[{
+        "claim_id":case["case_id"], "text":case["claim"], "supports":supports,
+    }]}
+    return build_verification_inputs(report, sources, token_counter=token_counter,
+                                     max_context_chars=max_context_chars)[0]
 
 
 def check_acl_denial(permissions, user_id: str, doc_id: str, output: Path) -> dict:
@@ -180,12 +219,16 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--single-benchmark", action="store_true")
+    parser.add_argument("--prepare-only", action="store_true",
+                        help="Export source-bound structured inputs with tokenizer budgets; no classifier forward.")
+    parser.add_argument("--max-context-chars", type=int, default=6000,
+                        help="Preparation-only character budget; oversized context is not truncated.")
     parser.add_argument("--allow-non-english", action="store_true",
                         help="Explicit language capability test; default datasets must declare English claims and sources.")
     args = parser.parse_args()
     if ROOT == args.output.resolve() or ROOT in args.output.resolve().parents:
         raise ValueError("acceptance_output_must_be_outside_checkout")
-    if args.output.exists() or args.batch_size < 1 or args.threads < 1:
+    if args.output.exists() or args.batch_size < 1 or args.threads < 1 or args.max_context_chars < 1:
         raise ValueError("new_output_and_positive_budgets_required")
     if os.getenv("SOURCE_ACCESS_MODE", "native") != "native":
         raise ValueError("native_source_access_required")
@@ -200,12 +243,27 @@ def main() -> None:
     verify_sources(cases, args.documents, permissions, args.user_id)
     args.output.mkdir(parents=True)
     save(args.output/"acl-negative.json", check_acl_denial(permissions, args.user_id, args.forbidden_doc_id, args.output))
-    identity = json.loads((args.model_dir/"verified.json").read_text(encoding="utf-8"))
-    if identity["repo"] != MODEL_REPOSITORY:
-        raise ValueError("model_repository_mismatch")
-    with (args.model_dir/identity["weight_file"]).open("rb") as weights:
-        if hashlib.file_digest(weights, "sha256").hexdigest() != identity["sha256"]:
-            raise ValueError("model_weights_changed")
+    from agent.evidence.minicheck_identity import verified_minicheck_weights
+    identity, use_safetensors = verified_minicheck_weights(args.model_dir)
+    if args.prepare_only:
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(args.model_dir, local_files_only=True, trust_remote_code=False)
+        def count_input(premise, claim):
+            return len(tokenizer(premise + tokenizer.eos_token + claim, truncation=False)["input_ids"])
+        prepared = [prepare_reviewed_case(case, args.documents, token_counter=count_input,
+                                         max_context_chars=args.max_context_chars) for case in cases]
+        verify_sources(cases, args.documents, permissions, args.user_id)
+        with (args.output/"verification-inputs.jsonl").open("x", encoding="utf-8") as output:
+            for item in prepared:
+                output.write(json.dumps(asdict(item), ensure_ascii=False) + "\n")
+        summary = {"cases":len(prepared), "ready":sum(p.status == "ready" for p in prepared),
+                   "needs_review":dict(Counter(p.reason for p in prepared if p.status != "ready")),
+                   "dataset_sha256":args.dataset_sha256, "context_policy":"bound-structure.v1",
+                   "annotation_kind":"reviewed_frozen_binding", "classifier_calls":0,
+                   "model_identity":identity, "max_context_chars":args.max_context_chars, "max_input_tokens":512}
+        save(args.output/"preparation-summary.json", summary)
+        print(json.dumps(summary), flush=True)
+        return
     import torch
     import transformers
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -215,7 +273,8 @@ def main() -> None:
     loaded = time.perf_counter()
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir, local_files_only=True, trust_remote_code=False)
     model, loading = AutoModelForSequenceClassification.from_pretrained(args.model_dir,
-        local_files_only=True, trust_remote_code=False, dtype=torch.float32, output_loading_info=True)
+        local_files_only=True, trust_remote_code=False, dtype=torch.float32, output_loading_info=True,
+        use_safetensors=use_safetensors)
     if loading.get("missing_keys") or loading.get("mismatched_keys") or loading.get("error_msgs"):
         raise ValueError("classifier_weights_not_fully_loaded")
     loading = {key:sorted(value) if isinstance(value, set) else value for key, value in loading.items()}

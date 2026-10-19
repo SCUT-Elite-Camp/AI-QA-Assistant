@@ -12,6 +12,9 @@ project_root = agent_dir.parent
 @pytest.fixture(autouse=True)
 def isolated_semantic_reranker(monkeypatch):
     monkeypatch.setenv('RERANK_ENABLED', 'false')
+    from agent.config.settings import settings
+    # Ordinary tests exercise production permissions even on a developer's machine.
+    monkeypatch.setattr(settings, 'RESEARCH_DEVELOPMENT_MODE', False)
 
 dependency_dirs = [
     agent_dir,
@@ -49,12 +52,14 @@ except ModuleNotFoundError:
 def mock_llm_client_chat(monkeypatch):
     """Automatically mocks LLMClient.chat for all tests to keep them hermetic and mock-free in prod."""
     from agent.llm.llm_client import LLMClient
-    from tests.grounding_helpers import grounded_model, grounded_content
+    from tests.grounding_helpers import grounded_model, grounded_content, control_response
 
     @grounded_model
     def mock_chat(self, messages, tools=None, **kwargs):
         # Simulate LLM tool calling and final response loop
-        has_tool_response = any(msg.get("role") == "tool" for msg in messages)
+        has_tool_response = any(msg.get("role") == "tool" or "[TOOL_OBSERVATIONS]" in str(msg.get("content", "")) for msg in messages)
+        if tools and has_tool_response:
+            return control_response("answer")
 
         if tools and not has_tool_response:
             user_query = ""
@@ -219,6 +224,10 @@ def component_authorization_double(monkeypatch, request):
         filters["doc_ids"] = sorted(ids)
         return filters
 
+    from agent.evidence.gate import EvidenceGate, SupportCheck
+    # These component fixtures exercise transport and Memory, not the classifier.
+    monkeypatch.setattr(EvidenceGate, "evaluate", lambda self, binding, evidence, **kwargs:
+        SupportCheck(True, [{"claim_id": c["claim_id"], "verdict": "supported"} for c in binding["claims"]]))
     monkeypatch.setattr(module, "AccessGuard", ComponentGuard)
     monkeypatch.setattr(module, "CURRENT_ACCESS_GUARD", UnenforcedComponentContext())
     monkeypatch.setattr(module.Agent, "_resolve_filters", component_filters)

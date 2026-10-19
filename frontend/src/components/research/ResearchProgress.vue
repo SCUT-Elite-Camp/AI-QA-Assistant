@@ -120,9 +120,9 @@ const elapsedLabel = computed(() => {
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">
               <p class="text-xl font-bold text-highlighted">
-                {{ progress.claim_count }}
+                {{ progress.finding_count ?? progress.claim_count }}
               </p><p class="mt-1 text-xs text-muted">
-                Claims
+                Findings
               </p>
             </div>
             <div class="rounded-lg bg-elevated p-3 text-center">

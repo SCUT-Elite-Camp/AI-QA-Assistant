@@ -24,7 +24,8 @@ from agent.schemas.research import (
 from .manifest import LocalDocumentResolver, ManifestResolutionError, SourceResolver
 from .access import ResearchAccessPolicy
 from .events import ResearchEventRecorder
-from .planner import MockResearchPlanner, ResearchPlanner
+from .planner import ModelResearchPlanner, ResearchPlanner
+from agent.config.settings import settings
 from .repository import (
     ResearchConflictError,
     ResearchNotFoundError,
@@ -78,7 +79,8 @@ class ResearchControlPlane:
             )
         self.repository = repository
         self.source_resolver = source_resolver or LocalDocumentResolver()
-        self.planner = planner or MockResearchPlanner()
+        self.planner = planner or ModelResearchPlanner(api_base=settings.LLM_API_BASE,
+            api_key=settings.LLM_API_KEY, model=settings.LLM_MODEL)
         self.id_factory = id_factory or self._new_research_id
         self.events = event_recorder or ResearchEventRecorder(repository)
         self.access_policy = access_policy
@@ -339,6 +341,9 @@ class ResearchControlPlane:
                 "SourceManifest has changed since the Job was created",
             )
         plan = self.get_plan(research_id, plan_version)
+        if plan.execution_mode != "coordinator":
+            raise ResearchControlPlaneError("research_legacy_restart_required",
+                "This saved plan uses the retired workflow. Start a new research job and approve its new plan.")
         if plan.manifest_hash != manifest_hash:
             raise ResearchControlPlaneError(
                 "research_plan_manifest_mismatch",
@@ -387,6 +392,7 @@ class ResearchControlPlane:
 
     def cancel_job(self, research_id: str) -> ResearchJob:
         job = self.get_job(research_id)
+        active_team = bool(job.plan_version and self.get_plan(research_id).execution_mode == "coordinator")
         cancelled = self.repository.transition_job(
             research_id,
             expected_statuses=[
@@ -394,6 +400,7 @@ class ResearchControlPlane:
                 ResearchJobStatus.PLANNING,
                 ResearchJobStatus.AWAITING_APPROVAL,
                 ResearchJobStatus.READY,
+                *([ResearchJobStatus.RESEARCHING, ResearchJobStatus.SYNTHESIZING] if active_team else []),
             ],
             status=ResearchJobStatus.CANCELLED,
             current_stage="cancelled",
@@ -471,6 +478,7 @@ class ResearchControlPlane:
             expected_statuses=[ResearchJobStatus.READY],
             status=ResearchJobStatus.RESEARCHING,
             current_stage="researching",
+            execution_started_at=datetime.now(timezone.utc),
         )
         if claimed is None:
             raise ResearchControlPlaneError(
@@ -478,7 +486,7 @@ class ResearchControlPlane:
                 "another dispatcher already claimed this Job",
             )
         self.events.stage_completed(research_id, "ready")
-        self.events.stage_started(research_id, "execute_tasks")
+        self.events.stage_started(research_id, "parallel_exploration")
         return ApprovedResearchContext(
             job=claimed,
             plan=context.plan,

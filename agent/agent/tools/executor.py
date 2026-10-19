@@ -45,6 +45,7 @@ class ToolExecutor:
         trace_id: str,
         retrieval_attempt: int = 1,
         direct_retrieval: bool = False,
+        timeout_ms: int | None = None,
     ) -> ToolExecutionResult:
         """Return a structured result for every execution outcome."""
         started = time.perf_counter()
@@ -81,7 +82,7 @@ class ToolExecutor:
                 direct_retrieval=direct_retrieval,
             )
 
-            timeout_ms = self.timeout_ms
+            timeout_ms = min(self.timeout_ms, timeout_ms) if timeout_ms is not None else self.timeout_ms
             from retrieval.reranker import BEFORE_RERANK
             checker = (lambda rows: guard.validate_rerank_candidates(tool.name, rows)) if guard is not None else None
             ranking_token = BEFORE_RERANK.set(checker)

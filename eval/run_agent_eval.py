@@ -1,4 +1,4 @@
-"""CP2 Agent component, real-answer-quality and latency evaluation."""
+"""Bounded Agent answer-quality and latency evaluation."""
 
 from __future__ import annotations
 
@@ -25,7 +25,6 @@ except ImportError:
     pass
 
 from agent_metrics import (
-    binary_scores,
     expected_document_hit,
     latency_summary,
     reference_answer_match,
@@ -34,7 +33,6 @@ from agent_metrics import (
     reference_token_recall,
     required_fact_coverage,
     required_fact_match_details,
-    required_term_recall,
 )
 
 DEFAULT_DATASET = Path(__file__).parent / "datasets" / "agent_cp2_cases.en.v2.json"
@@ -50,102 +48,6 @@ def load_dataset(path: Path) -> dict[str, list[dict[str, Any]]]:
     if any(not value for value in ids) or len(ids) != len(set(ids)):
         raise ValueError("every case must have a unique non-empty id")
     return payload
-
-
-def evaluate_components(cases: list[dict[str, Any]], *, agent: Any | None = None) -> dict[str, Any]:
-    from agent.agent import Agent
-    from agent.llm.observability import (
-        clear_llm_metrics,
-        snapshot_llm_metrics,
-        start_llm_metrics,
-    )
-    from agent.policy import IntentPolicyRouter
-
-    # Reuse production Agent wiring so stage-specific model routing and
-    # preparation fallback behavior are included in component A/B tests.
-    understanding, router = (agent or Agent()).query_understanding, IntentPolicyRouter()
-    rows: list[dict[str, Any]] = []
-    stage_samples = {"query_understanding": [], "policy_routing": []}
-    for case in cases:
-        query = case.get("online_query", case["query"])
-        required_terms = case.get(
-            "online_required_rewrite_terms",
-            case.get("required_rewrite_terms", []),
-        )
-        fallback_before = understanding.query_preparation.fallback_attempts
-        metrics_token = start_llm_metrics()
-        try:
-            started = time.perf_counter()
-            plan = understanding.analyze(query, case.get("history", []))
-            understanding_ms = (time.perf_counter() - started) * 1000
-            llm_metrics = snapshot_llm_metrics()
-        finally:
-            clear_llm_metrics(metrics_token)
-        started = time.perf_counter()
-        policy = router.route(plan)
-        policy_ms = (time.perf_counter() - started) * 1000
-        stage_samples["query_understanding"].append(understanding_ms)
-        stage_samples["policy_routing"].append(policy_ms)
-        actual_intent = str(plan.intent)
-        expected_sub_query_min = case.get("expected_sub_query_count_min")
-        expected_sub_query_max = case.get("expected_sub_query_count_max")
-        sub_query_count = len(plan.sub_queries)
-        sub_query_count_correct = (
-            (expected_sub_query_min is None or sub_query_count >= expected_sub_query_min)
-            and (expected_sub_query_max is None or sub_query_count <= expected_sub_query_max)
-        )
-        rows.append({
-            "id": case["id"], "query": query,
-            "expected_intent": case["expected_intent"], "actual_intent": actual_intent,
-            "intent_correct": actual_intent == case["expected_intent"],
-            "intent_confidence": plan.intent_confidence,
-            "expected_clarification": case["should_clarify"],
-            "actual_clarification": plan.needs_clarification,
-            "clarification_correct": plan.needs_clarification == case["should_clarify"],
-            "clarification_question": plan.clarification_question,
-            "ambiguity_reason": plan.ambiguity_reason,
-            "expected_follow_up": case.get("expected_follow_up"), "actual_follow_up": plan.is_follow_up,
-            "expected_clarification_reply": case.get("expected_clarification_reply"),
-            "actual_clarification_reply": plan.is_clarification_reply,
-            "rewrite_term_recall": required_term_recall(plan.standalone_query, required_terms),
-            "standalone_query": plan.standalone_query,
-            "sub_queries": plan.sub_queries,
-            "filters": plan.filters,
-            "expected_stages": case.get("expected_stages", []),
-            "expected_stop_reason": case.get("expected_stop_reason"),
-            "expected_tool_calls": case.get("expected_tool_calls"),
-            "expected_sub_query_count_min": expected_sub_query_min,
-            "expected_sub_query_count_max": expected_sub_query_max,
-            "expected_parallel_target_count": case.get("expected_parallel_target_count"),
-            "sub_query_count": sub_query_count,
-            "sub_query_count_correct": sub_query_count_correct,
-            "query_preparation_fallback": (
-                understanding.query_preparation.fallback_attempts > fallback_before
-            ),
-            "policy": policy.model_dump(mode="json"),
-            "query_understanding_ms": round(understanding_ms, 2), "policy_routing_ms": round(policy_ms, 2),
-            "llm_metrics": llm_metrics,
-        })
-    return {"summary": {
-        "case_count": len(rows),
-        "intent_accuracy": sum(row["intent_correct"] for row in rows) / len(rows) if rows else 0.0,
-        "clarification": binary_scores([r["expected_clarification"] for r in rows], [r["actual_clarification"] for r in rows]),
-        "mean_rewrite_term_recall": sum(r["rewrite_term_recall"] for r in rows) / len(rows) if rows else 0.0,
-        "compound_plan_accuracy": (
-            sum(r["sub_query_count_correct"] for r in rows if r["expected_parallel_target_count"] is not None)
-            / sum(r["expected_parallel_target_count"] is not None for r in rows)
-            if any(r["expected_parallel_target_count"] is not None for r in rows)
-            else 0.0
-        ),
-        "query_preparation_fallback_rate": (
-            sum(r["query_preparation_fallback"] for r in rows) / len(rows)
-            if rows
-            else 0.0
-        ),
-        "predicted_intents": dict(Counter(r["actual_intent"] for r in rows)),
-        "llm": _aggregate_llm_metrics(rows),
-        "latency": {name: latency_summary(values) for name, values in stage_samples.items()},
-    }, "cases": rows}
 
 
 def _evidence_text(agent: Any) -> str:
@@ -182,10 +84,11 @@ def evaluate_quality(
     cases: list[dict[str, Any]],
     repeats: int,
     use_judge: bool,
-    warmup_retrieval: bool = True,
     *,
     retrieval_mode: str = "hybrid",
     agent: Any | None = None,
+    user_id: str | None = None,
+    weight_mode: str = "thinking",
 ) -> dict[str, Any]:
     from agent.agent import Agent
     from agent.schemas.chat import ChatRequest
@@ -196,15 +99,12 @@ def evaluate_quality(
         raise ValueError("retrieval_mode must be hybrid, vector, or bm25")
 
     agent, rows, all_latencies = agent or Agent(), [], []
-    if warmup_retrieval:
-        search_tool = agent.registry.get_tool("search_documents")
-        if search_tool is not None and hasattr(search_tool, "search"):
-            search_tool.search("financial report", top_k=1, mode=retrieval_mode)
     for repeat in range(repeats):
         for case in cases:
             query = case.get("online_query", case["query"])
             request = ChatRequest(
-                query=query,
+                query=query, user_id=user_id or os.getenv("EVAL_USER_ID", ""), weight_mode=weight_mode,
+                filters=case.get("filters"),
                 session_id=f"eval-{case['id']}-{repeat}-{uuid.uuid4().hex[:8]}",
                 is_first_message=False,
                 retrieval_mode=retrieval_mode,
@@ -227,17 +127,7 @@ def evaluate_quality(
             row = {
                 "id": case["id"], "repeat": repeat + 1, "query": query, "status": str(response.status),
                 "answer": response.answer, "answer_length": len(response.answer), "expected_intent": case.get("expected_intent"),
-                "actual_intent": str(orchestration.query_plan.intent) if orchestration else None,
-                "intent_confidence": orchestration.query_plan.intent_confidence if orchestration else None,
-                "standalone_query": orchestration.query_plan.standalone_query if orchestration else None,
-                "needs_clarification": orchestration.query_plan.needs_clarification if orchestration else None,
-                "clarification_question": orchestration.query_plan.clarification_question if orchestration else "",
-                "ambiguity_reason": orchestration.query_plan.ambiguity_reason if orchestration else "",
-                "is_follow_up": orchestration.query_plan.is_follow_up if orchestration else None,
-                "is_clarification_reply": orchestration.query_plan.is_clarification_reply if orchestration else None,
-                "sub_queries": orchestration.query_plan.sub_queries if orchestration else [],
                 "query_filters": orchestration.query_plan.filters if orchestration else {},
-                "intent_policy": orchestration.policy.model_dump(mode="json") if orchestration else {},
                 "target_stages": case.get("target_stages", []),
                 "fact_coverage": coverage, "fact_hits": fact_hits,
                 "fact_match_details": fact_match_details,
@@ -258,16 +148,8 @@ def evaluate_quality(
                 "error_code": result.error_code if result else None,
                 "retrieval_attempts": result.retrieval_attempts if result else 0, "tool_call_count": len(result.tool_calls) if result else 0,
                 "tool_calls": [record.model_dump(mode="json") for record in result.tool_calls] if result else [],
-                "evidence_gate_reason": result.evidence_gate_reason if result else "",
-                "covered_evidence_targets": result.covered_evidence_targets if result else [],
-                "missing_evidence_targets": result.missing_evidence_targets if result else [],
-                "eligible_evidence_count": result.eligible_evidence_count if result else 0,
-                "rejected_evidence_count": result.rejected_evidence_count if result else 0,
-                "answer_completeness_checked": result.answer_completeness_checked if result else False,
-                "answer_complete_before_repair": result.answer_complete if result else None,
-                "missing_answer_aspects": result.missing_answer_aspects if result else [],
-                "missing_critical_facts": result.missing_critical_facts if result else [],
-                "answer_repair_attempted": result.answer_repair_attempted if result else False,
+                "budget": result.budget if result else {},
+                "claim_verification": result.verification if result else None,
                 "llm_metrics": result.llm_metrics if result else {},
                 "evidence_items": [
                     {
@@ -287,7 +169,6 @@ def evaluate_quality(
             rows.append(row)
     return {"summary": {
         "run_count": len(rows), "success_rate": sum(bool(r["answer"]) for r in rows) / len(rows) if rows else 0.0,
-        "intent_accuracy": sum(r["actual_intent"] == r["expected_intent"] for r in rows) / len(rows) if rows else 0.0,
         "fact_threshold_pass_rate": sum(r["fact_threshold_pass"] for r in rows) / len(rows) if rows else 0.0,
         "citation_threshold_pass_rate": sum(r["citation_threshold_pass"] for r in rows) / len(rows) if rows else 0.0,
         "citation_valid_rate": sum(r["citation_valid"] for r in rows) / len(rows) if rows else 0.0,
@@ -298,8 +179,6 @@ def evaluate_quality(
         "expected_document_retrieved_rate": sum(r["expected_document_retrieved"] for r in rows) / len(rows) if rows else 0.0,
         "repeated_tool_call_rate": sum(r["stop_reason"] == "repeated_tool_call" for r in rows) / len(rows) if rows else 0.0,
         "policy_limit_rate": sum(r["stop_reason"] == "policy_limit" for r in rows) / len(rows) if rows else 0.0,
-        "answer_completeness_check_rate": sum(r["answer_completeness_checked"] for r in rows) / len(rows) if rows else 0.0,
-        "answer_repair_rate": sum(r["answer_repair_attempted"] for r in rows) / len(rows) if rows else 0.0,
         "llm": _aggregate_llm_metrics(rows),
         "stop_reasons": dict(Counter(r["stop_reason"] for r in rows)),
         "latency": latency_summary(all_latencies),
@@ -309,7 +188,7 @@ def evaluate_quality(
 def save_report(report: dict[str, Any], output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    for suite_name in ("components", "quality", "compound"):
+    for suite_name in ("quality", "compound"):
         cases = report.get(suite_name, {}).get("cases", [])
         if cases:
             csv_path = output.with_name(f"{output.stem}_{suite_name}.csv")
@@ -321,20 +200,20 @@ def save_report(report: dict[str, Any], output: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CP2 Agent evaluation")
-    parser.add_argument("--suite", choices=("components", "quality", "compound", "all"), default="components")
+    parser.add_argument("--suite", choices=("quality", "compound", "all"), default="quality")
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    parser.add_argument("--user-id", required=True, help="Enabled local user with current native source bindings")
+    parser.add_argument("--weight-mode", choices=("fast", "thinking"), default="thinking")
     parser.add_argument("--online", action="store_true", help="confirm real model/API usage")
     parser.add_argument("--judge", action="store_true", help="two extra judge calls per quality run")
     parser.add_argument("--retrieval-namespace", help="isolated index name, e.g. financebench_eval")
     parser.add_argument("--retrieval-mode", choices=("hybrid", "vector", "bm25"), default="hybrid")
     parser.add_argument("--limit", type=int, help="run only the first N cases for a low-cost smoke baseline")
     parser.add_argument("--case-id", action="append", help="run only the named case id; may be repeated")
-    parser.add_argument("--no-retrieval-warmup", action="store_true", help="include retrieval cold start in measured requests")
     parser.add_argument("--repeats", type=int, default=1); parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if not args.online:
         raise SystemExit("This evaluation invokes the configured model. Re-run with --online to confirm API usage.")
-    if args.judge and args.suite == "components": raise SystemExit("--judge requires quality, compound, or all")
     if args.repeats < 1: raise SystemExit("--repeats must be at least 1")
     if args.limit is not None and args.limit < 1:
         raise SystemExit("--limit must be at least 1")
@@ -362,16 +241,14 @@ def main() -> int:
     if args.limit:
         component_cases = component_cases[:args.limit]
         quality_cases = quality_cases[:args.limit]
-    if args.suite in ("components", "all"): report["components"] = evaluate_components(component_cases)
     if args.suite in ("quality", "all"):
         report["quality"] = evaluate_quality(
             quality_cases,
             args.repeats,
             args.judge,
-            not args.no_retrieval_warmup,
-            retrieval_mode=args.retrieval_mode,
+            retrieval_mode=args.retrieval_mode, user_id=args.user_id, weight_mode=args.weight_mode,
         )
-    if args.suite == "compound":
+    if args.suite in ("compound", "all"):
         compound_cases = [
             {
                 **case,
@@ -384,8 +261,7 @@ def main() -> int:
             compound_cases,
             args.repeats,
             args.judge,
-            not args.no_retrieval_warmup,
-            retrieval_mode=args.retrieval_mode,
+            retrieval_mode=args.retrieval_mode, user_id=args.user_id, weight_mode=args.weight_mode,
         )
     output = args.output or DEFAULT_REPORT_DIR / f"agent_cp2_{datetime.now():%Y%m%d_%H%M%S}.json"
     save_report(report, output)

@@ -9,6 +9,7 @@ export function researchEventLabel(event: ResearchEvent): string {
     task_failed: 'Research task did not obtain verifiable evidence',
     task_blocked: 'Research task skipped because a dependency did not complete',
     report_ready: 'Research report ready', job_completed: 'Research complete',
+    report_reviewed: 'Report review completed', report_revised: 'Report revised; independent review required',
     job_failed: 'Research failed', job_cancelled: 'Research cancelled',
     user_message: 'User message', assistant_message: 'Assistant response',
     conflict_resolved: 'Conflict resolution saved',

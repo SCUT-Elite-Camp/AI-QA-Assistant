@@ -1,4 +1,4 @@
-from tests.grounding_helpers import grounded_model
+from tests.grounding_helpers import grounded_model, control_response
 import json
 from typing import Any
 
@@ -13,64 +13,25 @@ from agent.schemas.query_plan import QueryIntent, QueryPlan
 from toolset.tool_layer import BaseTool
 
 
-@pytest.fixture(autouse=True)
-def isolate_query_understanding_mode_from_local_env(monkeypatch) -> None:
-    """Keep scripted integration tests independent of a developer's .env."""
-
-    monkeypatch.setattr(settings, "UNIFIED_QUERY_UNDERSTANDING_ENABLED", False)
-    monkeypatch.setattr(settings, "CASCADED_QUERY_UNDERSTANDING_ENABLED", False)
-    monkeypatch.setattr(settings, "HYBRID_INTENT_ROUTER_ENABLED", False)
-
-
 class InspectingLLM:
     def __init__(self, answers: list[str]) -> None:
         self.answers = list(answers)
         self.messages_seen: list[list[dict[str, Any]]] = []
+        self.control_messages = []
 
     def generate(self, prompt: str) -> str:
         return prompt
 
     @grounded_model
-    def chat(self, messages: list[dict], tools=None) -> dict:
+    def chat(self, messages: list[dict], tools=None, **kwargs) -> dict:
         system_prompt = messages[0].get("content", "") if messages else ""
-        if "classify user requests" in system_prompt:
-            return {
-                "role": "assistant",
-                "content": json.dumps(
-                    {
-                        "intent": "knowledge_qa",
-                        "confidence": 1.0,
-                        "is_follow_up": False,
-                        "is_clarification_reply": False,
-                        "reason": "test",
-                    }
-                ),
-            }
-        if "澄清判断器" in system_prompt:
-            return {
-                "role": "assistant",
-                "content": json.dumps(
-                    {
-                        "needs_clarification": False,
-                        "question": "",
-                        "reason": "test",
-                    }
-                ),
-            }
-        if "Rewrite the current question" in system_prompt:
-            return {
-                "role": "assistant",
-                "content": json.dumps(
-                    {"rewritten_query": "测试独立查询", "reason": "test"}
-                ),
-            }
-        if "Plan retrieval" in system_prompt:
-            return {
-                "role": "assistant",
-                "content": json.dumps(
-                    {"sub_queries": [], "filters": {}, "reason": "test"}
-                ),
-            }
+        if 'Thinking question-answering Agent' in system_prompt:
+            self.control_messages.append(list(messages))
+            if self.answers and self.answers[0].startswith('{'):
+                return control_response(**json.loads(self.answers.pop(0)))
+            if not any('[TOOL_OBSERVATIONS]' in str(msg.get('content','')) for msg in messages):
+                return {"tool_calls": [{"id":"search", "function":{"name":"search_documents", "arguments":json.dumps({"query":"delivery requirements"})}}]}
+            return control_response("answer")
         self.messages_seen.append(list(messages))
         return {"role": "assistant", "content": self.answers.pop(0)}
 
@@ -83,7 +44,7 @@ class NoModelCallLLM:
         return prompt
 
     @grounded_model
-    def chat(self, messages: list[dict], tools=None) -> dict:
+    def chat(self, messages: list[dict], tools=None, **kwargs) -> dict:
         self.calls += 1
         raise AssertionError("explicit memory recall must not call an LLM")
 
@@ -159,7 +120,7 @@ def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
     monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = InspectingLLM(["Persistent answer [1]"])
-    agent = Agent(llm=llm, tools=[])
+    agent = Agent(llm=llm, tools=[MemorySearchTool()])
     request = InternalChatRequest(
         query="Current persistent question",
         session_id="persistent-chat",
@@ -170,7 +131,7 @@ def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
                 {
                     "id": "fact-1",
                     "category": "PREFERENCE",
-                    "value": "Use concise Chinese.",
+                    "value": "Use concise English.",
                     "expires_at": None,
                 }
             ]
@@ -182,17 +143,18 @@ def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
     assert response.status == StatusCode.SUCCESS
     assert agent.last_orchestration is not None
     assert agent.last_orchestration.context_artifact is not None
-    runner_messages = llm.messages_seen[-1]
+    runner_messages = llm.control_messages[0]
     assert [message["role"] for message in runner_messages] == [
         "system",
         "system",
         "assistant",
         "user",
+        "user",
     ]
     assert "Memory Context follows" in runner_messages[1]["content"]
-    assert "Use concise Chinese." in runner_messages[1]["content"]
+    assert "Use concise English." in runner_messages[1]["content"]
     assert runner_messages[2]["content"] == "Earlier assistant answer."
-    assert runner_messages[-1]["content"] == "Current persistent question"
+    assert runner_messages[-2]["content"] == "Current persistent question"
     assert sum(
         message["content"] == "Current persistent question"
         for message in runner_messages
@@ -236,7 +198,7 @@ def test_persistent_context_reaches_fast_pipeline_once(monkeypatch) -> None:
     assert "Original question:\nCurrent persistent question" in fast_messages[-1]["content"]
 
 
-def test_explicit_persistent_fact_recall_bypasses_models_and_tools(
+def test_chinese_memory_recall_language_capability(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
@@ -273,45 +235,45 @@ def test_explicit_persistent_fact_recall_bypasses_models_and_tools(
 
 
 def test_repeated_requests_do_not_share_implicit_session_history() -> None:
-    llm = InspectingLLM(["第一次回答", "第二次回答", "新会话回答"])
+    llm = InspectingLLM(["First answer", "Second answer", "New chat answer"])
     agent = Agent(llm=llm, tools=[])
 
-    first = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="第一个问题", session_id="session-a"))
-    second = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="接着说", session_id="session-a"))
-    third = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="另一个问题", session_id="session-b"))
+    first = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="First question", session_id="session-a"))
+    second = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="Continue the explanation", session_id="session-a"))
+    third = agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="Another question", session_id="session-b"))
 
     assert first.status == second.status == third.status == StatusCode.SUCCESS
     second_messages = llm.messages_seen[1]
-    assert "第一个问题" not in {message.get("content") for message in second_messages}
-    assert "第一次回答" not in {message.get("content") for message in second_messages}
-    assert "第一个问题" not in {
+    assert "First question" not in {message.get("content") for message in second_messages}
+    assert "First answer" not in {message.get("content") for message in second_messages}
+    assert "First question" not in {
         message.get("content") for message in llm.messages_seen[2]
     }
 
 
 def test_missing_memory_context_is_stateless_even_with_session_id() -> None:
-    llm = InspectingLLM(["第一次回答", "第二次回答"])
+    llm = InspectingLLM(["First answer", "Second answer"])
     agent = Agent(llm=llm, tools=[])
 
-    agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="无会话问题"))
-    agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="第二个无会话问题"))
+    agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="Stateless question"))
+    agent.chat(ChatRequest(knowledge_base_retrieval_enabled=False, query="Second stateless question"))
 
     assert all(
-        message.get("content") != "无会话问题"
+        message.get("content") != "Stateless question"
         for message in llm.messages_seen[1]
     )
 
 
 def test_clarification_question_is_not_saved_to_agent_memory() -> None:
-    llm = InspectingLLM([])
+    llm = InspectingLLM(['{"action":"clarify","question":"Which document do you mean?"}'])
     agent = Agent(llm=llm, tools=[])
-    query = "它什么时候更新？"
+    query = "When was it updated?"
     plan = QueryPlan(
         original_query=query,
         standalone_query=query,
         needs_clarification=True,
-        clarification_question="你指的是哪个文档？",
-        ambiguity_reason="缺少指代对象",
+        clarification_question="Legacy hint is ignored.",
+        ambiguity_reason="Missing referent",
     )
 
     response = agent.chat(
@@ -321,15 +283,16 @@ def test_clarification_question_is_not_saved_to_agent_memory() -> None:
 
     assert response.status == StatusCode.CLARIFICATION_REQUIRED
     assert response.answer == ""
-    assert response.message == "你指的是哪个文档？"
+    assert response.message == "Which document do you mean?"
+    assert len(llm.control_messages) == 1
     assert llm.messages_seen == []
 
 
 def test_query_plan_filters_merge_through_chat_orchestration() -> None:
-    query = "总结文档"
+    query = "Summarize the document"
     plan = QueryPlan(
         original_query=query,
-        standalone_query="总结 doc-1",
+        standalone_query="Summarize doc-1",
         intent=QueryIntent.CASUAL_CHAT,
         filters={"space_key": "RAG", "doc_id": "doc-1"},
     )
@@ -339,14 +302,14 @@ def test_query_plan_filters_merge_through_chat_orchestration() -> None:
         weight_mode="thinking",
         is_first_message=False,
     )
-    agent = Agent(llm=InspectingLLM(["已收到请求。"]), tools=[])
+    agent = Agent(llm=InspectingLLM(["Summary [1]."]), tools=[MemorySearchTool()])
 
     response = agent.chat(request, query_plan=plan)
 
     assert response.status == StatusCode.SUCCESS
     assert agent.last_orchestration is not None
     resolved = agent.last_orchestration.query_plan
-    assert resolved.standalone_query == "总结 doc-1"
+    assert resolved.standalone_query == query
     assert resolved.filters == {
         "space_key": "RAG",
         "doc_id": "doc-1",
@@ -355,7 +318,7 @@ def test_query_plan_filters_merge_through_chat_orchestration() -> None:
 
 
 def test_conflicting_hard_filters_are_rejected() -> None:
-    query = "总结文档"
+    query = "Summarize the document"
     plan = QueryPlan(
         original_query=query,
         standalone_query=query,
@@ -368,4 +331,4 @@ def test_conflicting_hard_filters_are_rejected() -> None:
     )
 
     assert response.status == StatusCode.INVALID_QUERY
-    assert response.message == "查询计划与当前请求不一致。"
+    assert response.message and not response.answer

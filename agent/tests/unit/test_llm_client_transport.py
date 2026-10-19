@@ -12,6 +12,20 @@ PRODUCT_STREAM_CHAT = LLMClient.stream_chat
 PRODUCT_CHAT = LLMClient.chat
 
 
+def test_native_control_choice_and_remaining_deadline_reach_transport(monkeypatch):
+    from types import SimpleNamespace
+    calls=[]
+    def post(url,**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(status_code=200,json=lambda:{'choices':[{'message':{
+            'tool_calls':[{'function':{'name':'prepare_answer','arguments':'{}'}}]}}]})
+    client=LLMClient(fallback_models=(),attempts_per_model=1,retry_delay_seconds=0)
+    monkeypatch.setattr(client._session,'post',post)
+    PRODUCT_CHAT(client,[{'role':'user','content':'What is the release status?'}],
+        tools=[{'type':'function','function':{'name':'prepare_answer'}}],tool_choice='required',timeout_seconds=1.25)
+    assert len(calls)==1 and calls[0]['json']['tool_choice']=='required' and calls[0]['timeout']==1.25
+
+
 def test_groq_rejected_tool_is_typed_without_releasing_failed_generation(monkeypatch):
     from types import SimpleNamespace
     from agent.config.settings import settings

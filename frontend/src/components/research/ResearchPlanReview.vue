@@ -39,11 +39,8 @@ function cancelEditing() {
 }
 
 function normalizeDependencies() {
-  tasks.value = tasks.value.map((task, index) => ({
-    ...task,
-    dependencies: index === 0 ? [] : [tasks.value[index - 1]!.task_id],
-    status: 'pending',
-  }))
+  const ids = new Set(tasks.value.map(task => task.task_id))
+  tasks.value = tasks.value.map(task => ({ ...task, dependencies: task.dependencies.filter(id => ids.has(id) && id !== task.task_id), status: 'pending' }))
 }
 
 function moveTask(index: number, offset: number) {
@@ -72,7 +69,7 @@ function addTask() {
     task_id: taskId,
     question: '',
     purpose: '',
-    dependencies: tasks.value.length ? [tasks.value[tasks.value.length - 1]!.task_id] : [],
+    dependencies: [],
     allowed_tools: ['keyword_search', 'read_document_range'],
     source_ids: sourceIds,
     acceptance_criteria: [{
@@ -93,12 +90,15 @@ function saveRevision() {
   validationError.value = ''
   if (!objective.value.trim()) validationError.value = 'Enter a research objective.'
   else if (tasks.value.some(task => !task.question.trim() || !task.purpose.trim())) validationError.value = 'Every task needs a question and a purpose.'
+  else if (props.plan.execution_mode === 'coordinator' && tasks.value.some(task => !task.source_ids.length || task.acceptance_criteria.some(c => !c.target.trim()))) validationError.value = 'Every explorer needs assigned files and a non-empty evidence target.'
   else if (totalActions.value > props.plan.budget.max_actions) validationError.value = `Total task actions must not exceed ${props.plan.budget.max_actions}.`
   if (validationError.value) return
   emit('revise', {
     base_version: props.plan.version,
     objective: objective.value,
-    tasks: clonePlainValue(tasks.value),
+    tasks: clonePlainValue(tasks.value).map(task => props.plan.execution_mode === 'coordinator'
+      ? { ...task, acceptance_criteria: task.acceptance_criteria.map(c => ({ ...c, target: c.target.trim(), description: `${c.dimension}: ${c.target.trim()}` })) }
+      : task),
     report_spec: clonePlainValue(props.plan.report_spec),
     revision_note: revisionNote.value,
   })
@@ -140,6 +140,15 @@ function saveRevision() {
           class="w-full rounded-lg border border-default bg-default px-3 py-2 text-sm leading-6 text-highlighted outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
         />
       </label>
+      <div v-if="plan.execution_mode === 'coordinator'" class="mt-4 space-y-2 text-sm text-muted">
+        <p>Up to {{ plan.budget.max_parallel_agents ?? 3 }} explorers work in parallel. An independent reviewer must approve the report before release.</p>
+        <details v-if="plan.source_files?.length">
+          <summary class="cursor-pointer">{{ plan.source_files.length }} authorized files available to this plan</summary>
+          <ul class="mt-2 max-h-48 overflow-y-auto space-y-1">
+            <li v-for="file in plan.source_files" :key="file.doc_id">{{ file.title }} <span v-if="file.version">· version {{ file.version }}</span></li>
+          </ul>
+        </details>
+      </div>
     </div>
 
     <div class="space-y-3">
@@ -209,6 +218,24 @@ function saveRevision() {
                   class="h-10 w-full rounded-lg border border-default bg-default px-3 text-sm text-highlighted outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
               </label>
+              <template v-if="plan.execution_mode === 'coordinator'">
+                <label class="mt-3 block">
+                  <span class="mb-1.5 block text-xs font-medium text-muted">Prerequisite tasks (leave empty for parallel exploration)</span>
+                  <select v-model="task.dependencies" multiple class="w-full rounded border border-default bg-default p-2 text-sm">
+                    <option v-for="other in tasks.filter(t => t.task_id !== task.task_id)" :key="other.task_id" :value="other.task_id">{{ other.task_id }} · {{ other.question }}</option>
+                  </select>
+                </label>
+                <label class="mt-3 block">
+                  <span class="mb-1.5 block text-xs font-medium text-muted">Files assigned to this explorer</span>
+                  <select v-model="task.source_ids" multiple class="w-full rounded border border-default bg-default p-2 text-sm">
+                    <option v-for="file in plan.source_files ?? []" :key="file.doc_id" :value="file.doc_id">{{ file.title }}</option>
+                  </select>
+                </label>
+                <label v-for="criterion in task.acceptance_criteria" :key="criterion.criterion_id" class="mt-3 block">
+                  <span class="mb-1.5 block text-xs font-medium text-muted">Evidence required to answer this task</span>
+                  <textarea v-model="criterion.target" rows="2" maxlength="200" class="w-full rounded border border-default bg-default p-2 text-sm" />
+                </label>
+              </template>
             </template>
             <template v-else>
               <div class="flex flex-wrap items-center gap-2">
@@ -225,6 +252,9 @@ function saveRevision() {
               </div>
               <p class="mt-1 text-sm text-muted">
                 {{ task.purpose }}
+              </p>
+              <p v-if="plan.execution_mode === 'coordinator'" class="mt-2 text-xs text-muted">
+                Assigned files: {{ plan.source_files?.filter(file => task.source_ids.includes(file.doc_id)).map(file => file.title).join(', ') }}
               </p>
               <div class="mt-3 flex flex-wrap gap-2 text-xs text-muted">
                 <span class="rounded-md bg-elevated px-2 py-1">{{ task.task_id }}</span>
@@ -308,6 +338,10 @@ function saveRevision() {
         </p><p class="mt-1 font-medium">
           {{ plan.tasks.reduce((sum, task) => sum + task.max_actions, 0) }} / {{ plan.budget.max_actions }}
         </p>
+      </div>
+      <div v-if="plan.execution_mode === 'coordinator'">
+        <p class="text-xs text-muted">Shared completion token budget</p>
+        <p class="mt-1 font-medium">{{ plan.budget.max_tokens.toLocaleString() }} · includes reasoning and review</p>
       </div>
     </div>
 

@@ -11,7 +11,6 @@ import { researchSourceHref } from '../../utils/research'
 
 const props = defineProps<{ job: ResearchJob, report: ResearchReport, plan?: ResearchPlan | null, progress?: ResearchProgress | null, events?: ResearchEvent[] }>()
 const emit = defineEmits<{ restart: [], askSelectedText: [text: string], regenerate: [] }>()
-const useMock = import.meta.env.VITE_RESEARCH_USE_MOCK === 'true'
 const downloadHref = computed(() => `/api/research/download?researchId=${encodeURIComponent(props.job.research_id)}`)
 const sourceOpen = ref(false)
 const selectedSource = ref<ChunkCitation | null>(null)
@@ -41,21 +40,6 @@ provide('openCitation', (index: number) => {
   const citation = citationMap.value.get(index)
   if (citation) { selectedSource.value = citation; sourceOpen.value = true }
 })
-
-function downloadMarkdown() {
-  const blob = new Blob([props.report.markdown], { type: 'text/markdown;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${props.report.report_id}.md`
-  link.hidden = true
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  // Keep the blob alive until the browser has consumed the download request.
-  // Immediate revocation can cancel an asynchronous download.
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
 
 function handleTextSelection() {
   window.setTimeout(() => {
@@ -296,18 +280,9 @@ function askSelectedText() {
           :created-at="report.generated_at"
           @regenerate="emit('regenerate')"
         />
-        <a v-if="!useMock" :href="downloadHref" :download="`${report.report_id}.md`" class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-elevated hover:text-highlighted">
+        <a :href="downloadHref" :download="`${report.report_id}.md`" class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-elevated hover:text-highlighted">
           <UIcon name="i-lucide-download" class="size-4" />Download
         </a>
-        <UButton
-          v-else
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          icon="i-lucide-download"
-          label="Download"
-          @click="downloadMarkdown"
-        />
       </div>
       <div class="ml-auto flex items-center gap-1 text-xs text-muted">
         <span>{{ report.result_status === 'complete' ? 'Research complete' : 'Needs review' }}</span>

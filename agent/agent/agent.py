@@ -1,13 +1,11 @@
 import logging
-import os
 import re
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from agent.chat.fast import FastPipeline
 from agent.chat.thinking import ThinkingPipeline
-from agent.answer import AnswerCompletenessChecker
 from agent.config.settings import settings
 from agent.evidence import CitationChecker, EvidenceGate
 from agent.evidence.locator import canonical_chunk_id
@@ -24,30 +22,11 @@ from agent.memory.coordinator import MemoryCoordinator
 from agent.memory.fact_proposal_policy import FactProposalPolicy
 from agent.memory.memory_observability import MemoryObservability
 from agent.chat.result import OrchestrationResult
-from agent.policy import IntentPolicyRouter, ChatRoutePolicy
-from agent.query import (
-    Clarifier,
-    IntentClassifier,
-    HybridIntentRouter,
-    QueryPlanner,
-    QueryPreparationAnalyzer,
-    QueryRewriter,
-    QueryUnderstanding,
-    UnifiedQueryAnalyzer,
-)
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
 from agent.runtime.profile import ExecutionMode, ExecutionProfile
-from agent.schemas.chat import (
-    ChatRequest,
-    ChatResponse,
-    Citation,
-    FactProposal,
-    InternalChatRequest,
-    MemoryDecision,
-)
+from agent.schemas.chat import ChatRequest, ChatResponse, FactProposal, InternalChatRequest, MemoryDecision
 from agent.schemas.common import StatusCode
-from agent.schemas.intent_policy import IntentPolicy
-from agent.schemas.query_plan import QueryPlan, QueryIntent
+from agent.schemas.query_plan import QueryPlan
 from agent.schemas.retrieval import RetrievalResult
 from agent.service import AuditService, PermissionService, TraceService
 from agent.service.access_guard import AccessGuard, CURRENT_ACCESS_GUARD, check_model_access
@@ -78,13 +57,10 @@ class Agent:
         answer_formatter: AnswerFormatter | None = None,
         memory_coordinator: MemoryCoordinator | None = None,
         runner: AgentRunner | None = None,
-        query_understanding: QueryUnderstanding | None = None,
-        policy_router: IntentPolicyRouter | None = None,
         tool_executor: ToolExecutor | None = None,
         evidence_gate: EvidenceGate | None = None,
         citation_checker: CitationChecker | None = None,
         orchestrator: ThinkingPipeline | None = None,
-        answer_completeness_checker: AnswerCompletenessChecker | None = None,
         permission_service: PermissionService | None = None,
         toolset_registry: ToolsetRegistry | None = None,
         audit_service: AuditService | None = None,
@@ -92,9 +68,8 @@ class Agent:
         memory_observability: MemoryObservability | None = None,
     ) -> None:
         custom_llm_supplied = llm is not None
-        self.llm = llm or LLMClient(fallback_models=())
+        self.llm = llm or LLMClient(fallback_models=(), attempts_per_model=1, retry_delay_seconds=0)
         self.runtime_llm = ObservedLLM(self.llm, "agent_runtime")
-        self.answer_llm = ObservedLLM(self.llm, "answer_generation_complex")
         # A Fast client has exactly one provider attempt and no fallback models,
         # even when both modes use the same model ID. Injected clients stay injectable.
         fast_model = self.llm if custom_llm_supplied else LLMClient(
@@ -103,22 +78,6 @@ class Agent:
             fallback_models=(), attempts_per_model=1, retry_delay_seconds=0,
         )
         self.fast_answer_llm = ObservedLLM(fast_model, "answer_generation_fast")
-        title_model = self.fast_answer_llm.llm if self.fast_answer_llm is not None else self.llm
-        self.title_llm = ObservedLLM(title_model, "title_generation")
-        completeness_llm: BaseLLM = self.llm
-        if (
-            not custom_llm_supplied
-            and settings.ANSWER_COMPLETENESS_MODEL
-            and settings.ANSWER_COMPLETENESS_MODEL != settings.LLM_MODEL
-        ):
-            completeness_llm = LLMClient(
-                model=settings.ANSWER_COMPLETENESS_MODEL,
-                enable_thinking=settings.ANSWER_COMPLETENESS_MODEL_THINKING,
-            )
-        self.completeness_llm = ObservedLLM(
-            completeness_llm,
-            "answer_completeness",
-        )
         self.answer_formatter = answer_formatter or AnswerFormatter()
         self.trace_service = TraceService()
         self.audit_service = audit_service or AuditService()
@@ -142,58 +101,13 @@ class Agent:
         if isinstance(search_tool, SearchTool):
             search_tool.min_score = settings.MIN_RETRIEVAL_SCORE
 
-        self.runner = runner or AgentRunner(
-            llm=self.runtime_llm,
-            registry=self.registry,
-            audit_service=self.audit_service,
-            answer_completeness_checker=(
-                answer_completeness_checker or AnswerCompletenessChecker(self.completeness_llm)
-            ),
-            answer_llm=self.answer_llm,
-        )
-        preparation_llm: BaseLLM = self.llm
-        preparation_fallback_llm: BaseLLM | None = None
-        if (
-            not custom_llm_supplied
-            and settings.QUERY_PREPARATION_MODEL
-            and settings.QUERY_PREPARATION_MODEL != settings.LLM_MODEL
-        ):
-            preparation_llm = LLMClient(model=settings.QUERY_PREPARATION_MODEL)
-            preparation_fallback_llm = self.llm
-
-        self.query_understanding = query_understanding or QueryUnderstanding(
-            intent_classifier=HybridIntentRouter(
-                fallback=IntentClassifier(
-                    llm=ObservedLLM(self.llm, "intent_classifier")
-                )
-            ),
-            clarifier=Clarifier(llm=ObservedLLM(self.llm, "clarifier")),
-            query_rewriter=QueryRewriter(llm=ObservedLLM(self.llm, "query_rewriter")),
-            query_planner=QueryPlanner(llm=ObservedLLM(preparation_llm, "query_planner")),
-            unified_analyzer=UnifiedQueryAnalyzer(
-                llm=ObservedLLM(self.llm, "unified_query_understanding")
-            ),
-            query_preparation=QueryPreparationAnalyzer(
-                llm=ObservedLLM(preparation_llm, "query_preparation"),
-                fallback_llm=(
-                    ObservedLLM(
-                        preparation_fallback_llm,
-                        "query_preparation_fallback",
-                    )
-                    if preparation_fallback_llm is not None
-                    else None
-                ),
-            ),
-        )
-        self.policy_router = policy_router or IntentPolicyRouter()
+        self.runner = runner or AgentRunner(llm=self.runtime_llm, registry=self.registry)
         self.tool_executor = tool_executor or ToolExecutor(self.registry)
         self.evidence_gate = evidence_gate or EvidenceGate()
         self.citation_checker = citation_checker or CitationChecker()
         self.memory_coordinator = memory_coordinator or MemoryCoordinator()
         self.orchestrator = orchestrator or ThinkingPipeline(
             memory_coordinator=self.memory_coordinator,
-            query_understanding=self.query_understanding,
-            policy_router=self.policy_router,
             runner=self.runner,
             tool_executor=self.tool_executor,
             evidence_gate=self.evidence_gate,
@@ -284,18 +198,6 @@ class Agent:
                     library_context.knowledge_base_id if library_context else "",
                     library_context.access_token if library_context else "",
                 )
-            for tool_name in (
-                "wiki_search", "wiki_read_page", "wiki_read_sources",
-                "wiki_search_evidence",
-            ):
-                wiki_tool = self.registry.get_tool(tool_name)
-                if wiki_tool is not None and hasattr(wiki_tool, "set_personal_context"):
-                    wiki_tool.set_personal_context(
-                        library_context.owner_user_id if library_context else "",
-                        library_context.knowledge_base_id if library_context else "",
-                        library_context.access_token if library_context else "",
-                        secret=os.getenv("ATTACHMENT_INTERNAL_SECRET", ""),
-                    )
             execution = self._chat_internal(request, trace_id, query_plan=query_plan)
             response = execution.response
             response.evidence_provenance = guard.provenance()
@@ -308,7 +210,7 @@ class Agent:
             raise exc
         finally:
             for name in ("search_library", "search_attachments", "read_attachment_context",
-                         "wiki_search", "wiki_read_page", "wiki_read_sources", "wiki_search_evidence"):
+                         ):
                 tool = self.registry.get_tool(name)
                 if tool is not None and hasattr(tool, "clear_request_context"):
                     tool.clear_request_context()
@@ -361,11 +263,9 @@ class Agent:
             turn.result.llm_metrics = snapshot_llm_metrics()
             orchestration = OrchestrationResult(
                 query_plan=turn.plan,
-                policy=IntentPolicy(candidate_tools=tuple(call.tool_name for call in turn.result.tool_calls)),
                 run_result=self.last_run_result, history=turn.memory.history_for_model(),
                 retrieval_mode=request.retrieval_mode, top_k=request.top_k,
                 context_artifact=turn.memory.context_artifact, memory_recall=turn.memory.recall if recalled else None,
-                chat_route=ChatRoutePolicy().route(turn.plan),
                 execution_profile=ExecutionProfile("fast", ExecutionMode.FAST, "off", "explicit_fast"),
             )
             self.last_orchestration = orchestration
@@ -432,12 +332,8 @@ class Agent:
                 for message in orchestration.history
             )
 
-        extracted_title, clean_answer = self._separate_title_and_answer(response.answer)
-        if extracted_title:
-            response.chat_title = extracted_title
-            response.answer = clean_answer
-        elif is_first:
-            response.chat_title = self._generate_fallback_title(request.query)
+        if is_first:
+            response.chat_title = " ".join(request.query.split())[:80]
 
         citation_check = self.orchestrator.validate_citations(
             response.answer,
@@ -445,12 +341,15 @@ class Agent:
             run_result.evidence,
         )
         self.last_citation_check = citation_check
-        if not citation_check.valid:
-            logger.warning(
-                "[CITATION_CHECK] trace_id=%s errors=%s",
-                trace_id,
-                citation_check.errors,
-            )
+        if response.status == StatusCode.SUCCESS:
+            if not citation_check.valid:
+                response.status = StatusCode.QUALITY_VALIDATION_FAILED
+                response.answer, response.citations = "", []
+                response.message = "The answer failed citation validation."
+            else:
+                check_model_access()
+                from agent.streaming.live import emit_model_event
+                emit_model_event("token", {"content": response.answer})
         run_result.llm_metrics = snapshot_llm_metrics()
         logger.info(
             "[LLM_METRICS] trace_id=%s metrics=%s",
@@ -458,148 +357,6 @@ class Agent:
             run_result.llm_metrics,
         )
         return AgentChatExecution(response, orchestration)
-
-    @staticmethod
-    def _separate_title_and_answer(answer_text: str) -> tuple[Optional[str], str]:
-        """
-        Extracts title if present in [TITLE: ...] format at the beginning of LLM response,
-        and returns (extracted_title, clean_answer_text).
-        """
-        if not answer_text:
-            return None, answer_text
-
-        match = re.search(r"^\s*\[TITLE:\s*(.*?)\]\s*\n?", answer_text, re.IGNORECASE)
-        if match:
-            raw_title = match.group(1).strip()
-            clean_title = raw_title.replace("'", "").replace('"', "").replace("`", "").replace("。", "").replace("！", "").replace("？", "").strip()
-            clean_title = clean_title.replace("标题：", "").replace("Title:", "").replace("我想知道", "").strip()
-            clean_answer = answer_text[match.end():].strip()
-            if clean_title and 2 <= len(clean_title) <= 25:
-                return clean_title, clean_answer
-
-        return None, answer_text
-
-    def _generate_fallback_title(self, query: str) -> str:
-        """Fallback smart title generation via fast LLM call or clean query slice."""
-        # A second model call must not delay completion of an English answer,
-        # or turn its conversation title into Chinese.
-        if not re.search(r"[\u3400-\u9fff]", query):
-            return " ".join(query.split())[:80]
-        try:
-            prompt = f"请根据用户第一次提问，总结提取一个极简对话标题（3-10字，绝对不要聊天标点或无用词如'我想知道'）：\n问题：{query}"
-            raw_res = self.title_llm.chat([{"role": "user", "content": prompt}], max_tokens=256, temperature=0.2)
-            raw = raw_res.get("content", "") if isinstance(raw_res, dict) else str(raw_res)
-            clean = raw.strip().replace("'", "").replace('"', "").replace("`", "").replace("。", "").replace("！", "").replace("？", "").strip()
-            clean = clean.replace("标题：", "").replace("Title:", "").replace("我想知道", "").strip()
-            if clean and 2 <= len(clean) <= 20:
-                return clean
-        except Exception as e:
-            logger.warning(f"[AgentTitle] Fallback title generation error: {e}")
-        clean_query = query.replace("我想知道", "").replace("请问", "").strip()
-        return clean_query[:15] if len(clean_query) > 15 else clean_query
-
-    def run_plan(
-        self,
-        query_plan: QueryPlan,
-        *,
-        history: list[dict[str, Any]] | None = None,
-        trace_id: str,
-        mode: str = "hybrid",
-        top_k: int = 5,
-        max_iterations: int | None = None,
-        policy: IntentPolicy | None = None,
-    ) -> AgentRunResult:
-        """Public CP2 Runner boundary consumed after Query Understanding."""
-        runner_kwargs: dict[str, Any] = {
-            "history": history,
-            "trace_id": trace_id,
-            "mode": mode,
-            "top_k": top_k,
-            "max_iterations": max_iterations,
-        }
-        if policy is not None:
-            runner_kwargs["policy"] = policy
-        return self.runner.run(query_plan, **runner_kwargs)
-
-    def run(
-        self,
-        query: str,
-        max_iterations: int = 5,
-        mode: str = "hybrid",
-        top_k: int = 5,
-        filters: Optional[dict[str, Any]] = None,
-    ) -> str:
-        """Executes the core RAG pipeline directly for direct callers."""
-        tool = self.registry.get_tool("search_documents")
-        self.audit_service.log_step(0, query)
-        if tool:
-            self.audit_service.log_tool_call(tool.name, {"query": query, "mode": mode, "top_k": top_k})
-            context_text = tool.execute(query=query, mode=mode, top_k=top_k, filters=filters)
-        else:
-            context_text = ""
-
-        from agent.prompt.prompt_builder import PromptBuilder
-        prompt = PromptBuilder().build(query=query, context=context_text)
-        messages = [{"role": "user", "content": prompt}]
-        self.audit_service.log_step(1, query)
-        response = self.llm.chat(messages)
-        return (response.get("content") or "").strip()
-
-    def _merge_explicit_filters(
-        self,
-        request: ChatRequest,
-        query_plan: QueryPlan,
-    ) -> QueryPlan:
-        if not request.filters:
-            return query_plan
-        merged_filters = dict(query_plan.filters or {})
-        for key, value in (request.filters or {}).items():
-            # Request filters are explicit caller constraints and therefore
-            # take precedence over filters inferred by QueryPlanner.
-            merged_filters[key] = value
-        return query_plan.model_copy(update={"filters": merged_filters})
-
-    def _get_conversation_history(
-        self,
-        session_id: str | None,
-    ) -> list[dict[str, Any]]:
-        if not settings.MEMORY_ENABLED or not session_id:
-            return []
-        return self.memory.get_messages(session_id)
-
-    def _save_conversation_turn(
-        self,
-        *,
-        session_id: str | None,
-        query: str,
-        response: ChatResponse,
-        persistent_memory: bool = False,
-    ) -> None:
-        if (
-            CURRENT_ACCESS_GUARD.get() is not None
-            or
-            not settings.MEMORY_ENABLED
-            or not session_id
-            or persistent_memory
-            or response.status
-            not in {StatusCode.SUCCESS, StatusCode.CLARIFICATION_REQUIRED}
-        ):
-            return
-
-        assistant_content = response.answer or response.message
-        if not assistant_content:
-            return
-        self.memory.add_message(session_id, "user", query)
-        self.memory.add_message(session_id, "assistant", assistant_content)
-
-    @staticmethod
-    def _resolve_query_plan(request: ChatRequest, plan: QueryPlan) -> QueryPlan:
-        merged_filters = dict(plan.filters or {})
-        for key, value in (request.filters or {}).items():
-            if key in merged_filters and merged_filters[key] != value:
-                raise ValueError(f"conflicting hard filter: {key}")
-            merged_filters[key] = value
-        return plan.model_copy(update={"filters": merged_filters})
 
     @staticmethod
     def _is_persistent_memory_request(request: ChatRequest) -> bool:
@@ -701,7 +458,7 @@ class Agent:
         run_result: AgentRunResult,
     ) -> tuple[StatusCode, str, str]:
         if run_result.stop_reason == StopReason.QUALITY_VALIDATION_FAILED:
-            return StatusCode.QUALITY_VALIDATION_FAILED, "The answer did not pass claim binding validation.", "answer_grounding"
+            return StatusCode.QUALITY_VALIDATION_FAILED, "The answer did not pass source binding or MiniCheck verification within the execution budget.", "answer_grounding"
         if run_result.stop_reason == StopReason.NO_RELEVANT_CONTEXT:
             return (
                 StatusCode.NO_RELEVANT_CONTEXT,
@@ -725,7 +482,7 @@ class Agent:
         if run_result.stop_reason == StopReason.POLICY_LIMIT:
             return (
                 StatusCode.AGENT_LIMIT_REACHED,
-                run_result.message or "Agent 已达到当前意图的执行预算。",
+                run_result.message or "The request reached its execution budget.",
                 "policy",
             )
         return (

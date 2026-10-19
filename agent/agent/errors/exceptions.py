@@ -15,3 +15,7 @@ class LLMError(AgentError):
 
 class LLMToolCallValidationError(LLMError):
     """The provider rejected a generated tool call before executing any tool."""
+
+
+class BudgetExceeded(RuntimeError):
+    """The request has no allowance for another operation or release."""

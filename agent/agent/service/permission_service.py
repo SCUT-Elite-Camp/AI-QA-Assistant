@@ -115,6 +115,20 @@ class PermissionService:
             logger.warning("[PERMISSION] strict Research ACL lookup failed: %s", type(exc).__name__)
             raise PermissionResolutionError("research_permission_unavailable", 503) from exc
 
+    def require_active_actor(self, user_id: str) -> None:
+        """Local development Research grants files, never an anonymous identity."""
+        if not user_id or not user_id.strip():
+            raise PermissionResolutionError("research_identity_required", 401)
+        try:
+            with self._connect() as conn:
+                row = conn.execute("SELECT disabled FROM users WHERE id = ?", (user_id,)).fetchone()
+            if row is None or bool(row[0]):
+                raise PermissionResolutionError("research_actor_forbidden", 403)
+        except PermissionResolutionError:
+            raise
+        except Exception as exc:
+            raise PermissionResolutionError("research_permission_unavailable", 503) from exc
+
     def is_admin(self, user_id: str) -> bool:
         """判断用户是否为管理员。查询失败时保守返回 False。"""
         try:

@@ -1,267 +1,127 @@
+"""MiniCheck-only gate: exact inputs, fail-closed infrastructure and no scores."""
+from types import SimpleNamespace
 import pytest
+import torch
 
-from agent.evidence import EvidenceGate
-from agent.policy import IntentPolicyRouter
-from agent.schemas.query_plan import QueryIntent, QueryPlan
-from agent.schemas.tool_execution import Evidence
-
+from agent.evidence.gate import EvidenceGate, MiniCheck, VerificationUnavailable
+from agent.runtime.budget import RunBudget
+from agent.evidence.answer_grounding import parse_grounded_answer, validate_grounded_answer
+from tests.unit.test_agent_runner import evidence, draft
 
 pytestmark = pytest.mark.no_storage
 
 
-def test_dated_meeting_original_read_covers_source_without_fabricating_search_hit():
-    item = Evidence(doc_id='meeting', chunk_id='meeting_chunk_0', title='Meeting+Minutes+of+2030+09+08',
-        content='A recorded meeting observation.', score=1, retrieval_query='meeting', retrieval_mode='document',
-        read_status='original_excerpt_loaded')
-    assert EvidenceGate._has_retrieval_for('September 8 meeting observed a workflow', [item])
-    assert not EvidenceGate._has_retrieval_for('September 9 meeting observed a workflow', [item])
-    assert not EvidenceGate._has_retrieval_for('September 8 2031 meeting observed a workflow', [item])
-    assert not EvidenceGate._has_retrieval_for('September 8 meeting observed a workflow', [item.model_copy(update={'read_status': 'retrieval_hit'})])
+class Tokenizer:
+    eos_token='</s>'
+    def __init__(self, length=40):
+        self.calls=[]
+        self.length=length
+    def __call__(self,text,**kwargs):
+        assert kwargs=={'truncation':False}
+        self.calls.append(text)
+        return {'input_ids':[1]*self.length,'attention_mask':[1]*self.length}
+    def pad(self,encoded,return_tensors):
+        assert return_tensors=='pt'
+        return {'input_ids':torch.tensor([encoded[0]['input_ids']])}
 
 
-def _plan(
-    intent: QueryIntent,
-    *,
-    sub_queries: list[str] | None = None,
-) -> QueryPlan:
-    return QueryPlan(
-        original_query="test",
-        standalone_query="test",
-        intent=intent,
-        sub_queries=sub_queries or [],
-    )
+def evaluate(label=1, length=40, binding=None):
+    verifier=MiniCheck('unused')
+    verifier.tokenizer=Tokenizer(length)
+    calls=[]
+    def forward(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(logits=torch.tensor([[0.,1.]] if label else [[1.,0.]]))
+    verifier.model=forward
+    sources=[evidence().model_dump()]
+    binding=binding or validate_grounded_answer(parse_grounded_answer(draft()),sources)
+    budget=RunBudget(10,8,30000,150000,10,60)
+    result=EvidenceGate(verifier).evaluate(binding,sources,budget=budget)
+    return result,verifier,calls,budget
 
 
-def _evidence(
-    *,
-    doc_id: str = "doc-1",
-    chunk_id: str = "chunk-1",
-    score: float = 0.8,
-    retrieval_query: str = "test",
-) -> Evidence:
-    return Evidence(
-        doc_id=doc_id,
-        chunk_id=chunk_id,
-        title="Title",
-        content="Evidence content",
-        score=score,
-        retrieval_query=retrieval_query,
-        retrieval_mode="hybrid",
-    )
+@pytest.mark.parametrize('label,accepted',[(0,False),(1,True)])
+def test_gate_uses_argmax_without_model_self_scores_or_evidence_count_rules(label,accepted):
+    result,verifier,calls,budget=evaluate(label)
+    assert result.accepted is accepted and len(calls)==1 and budget.verifications==1
+    assert '</s>The release is planned.' in verifier.tokenizer.calls[-1]
+    assert 'scores' not in result.claims[0] and 'confidence' not in result.claims[0]
 
 
-def _evaluate(
-    intent: QueryIntent,
-    evidence: list[Evidence],
-    *,
-    attempt: int = 1,
-    sub_queries: list[str] | None = None,
-    min_score: float = 0.5,
-):
-    plan = _plan(intent, sub_queries=sub_queries)
-    policy = IntentPolicyRouter().route(plan)
-    return EvidenceGate(min_score=min_score).evaluate(
-        plan,
-        policy,
-        evidence,
-        retrieval_attempt=attempt,
-    )
+def test_overlong_context_is_unverified_without_truncating_or_forwarding():
+    result,_,calls,_=evaluate(length=513)
+    assert not result.accepted and not calls
+    assert result.claims[0]['verdict']=='unverified'
+    assert 'token' in result.claims[0]['reason']
 
 
-def test_knowledge_qa_accepts_one_valid_evidence() -> None:
-    result = _evaluate(QueryIntent.KNOWLEDGE_QA, [_evidence()])
-
-    assert result.accepted is True
-    assert len(result.evidence) == 1
+def test_binding_is_required_before_any_semantic_model():
+    with pytest.raises(ValueError,match='valid_binding_required'):
+        EvidenceGate().evaluate({'valid':False},[],budget=RunBudget(2,1,8000,10000,1,10))
 
 
-def test_comparison_preserves_query_provenance_across_chunk_deduplication():
-    result = _evaluate(QueryIntent.COMPARISON,
-        [_evidence(retrieval_query="period A"), _evidence(retrieval_query="period B")],
-        sub_queries=["period A", "period B"], attempt=2)
-    assert result.accepted
-    assert len(result.evidence) == 1
+def test_missing_model_is_unavailable_and_never_falls_back(tmp_path):
+    with pytest.raises(VerificationUnavailable,match='minicheck_load_failed'):
+        MiniCheck(str(tmp_path/'missing'))._load()
 
 
-def test_comparison_does_not_count_low_score_query_provenance():
-    result = _evaluate(QueryIntent.COMPARISON,
-        [_evidence(retrieval_query="period A"), _evidence(retrieval_query="period B", score=0.1)],
-        sub_queries=["period A", "period B"], attempt=2)
-    assert not result.accepted
+def test_missing_claim_verdict_fails_closed():
+    binding=validate_grounded_answer(parse_grounded_answer(draft()),[evidence().model_dump()])
+    with pytest.raises(VerificationUnavailable,match='incomplete_minicheck_result'):
+        EvidenceGate(SimpleNamespace(check=lambda *args:[])).evaluate(binding,[evidence().model_dump()],
+            budget=RunBudget(2,1,8000,10000,1,10))
 
 
-def test_low_score_evidence_is_rejected() -> None:
-    result = _evaluate(
-        QueryIntent.KNOWLEDGE_QA,
-        [_evidence(score=0.49)],
-    )
-
-    assert result.accepted is False
-    assert result.evidence == []
-    assert result.reason == "no_valid_evidence"
-    assert result.candidate_evidence_count == 1
-    assert result.eligible_evidence_count == 0
-    assert result.rejected_evidence_count == 1
-    assert result.covered_targets == []
-    assert result.missing_targets == ["test"]
+def test_classifier_forward_failure_is_infrastructure_failure():
+    verifier=MiniCheck('unused')
+    verifier.tokenizer=Tokenizer()
+    def broken(**kwargs):
+        raise RuntimeError('inference unavailable')
+    verifier.model=broken
+    sources=[evidence().model_dump()]
+    binding=validate_grounded_answer(parse_grounded_answer(draft()),sources)
+    with pytest.raises(VerificationUnavailable,match='minicheck_inference_failed'):
+        EvidenceGate(verifier).evaluate(binding,sources,budget=RunBudget(2,1,8000,10000,1,10))
 
 
-def test_missing_knowledge_evidence_targets_planned_sub_queries() -> None:
-    result = _evaluate(
-        QueryIntent.KNOWLEDGE_QA,
-        [],
-        sub_queries=["Boeing commercial airline customers", "Boeing US government revenue share"],
-    )
-
-    assert result.accepted is False
-    assert result.missing_targets == [
-        "Boeing commercial airline customers",
-        "Boeing US government revenue share",
-    ]
-
-
-def test_duplicate_chunks_keep_the_highest_score() -> None:
-    result = _evaluate(
-        QueryIntent.KNOWLEDGE_QA,
-        [_evidence(score=0.7), _evidence(score=0.9)],
-    )
-
-    assert result.accepted is True
-    assert [item.score for item in result.evidence] == [0.9]
-
-
-def test_public_eligibility_filter_uses_composite_identity() -> None:
-    gate = EvidenceGate(min_score=0.5)
-    evidence = [
-        _evidence(score=0.6).model_copy(update={
-            "source_scope": "enterprise",
-            "document_id": "doc-1",
-            "version_id": "v1",
-        }),
-        _evidence(score=0.9).model_copy(update={
-            "source_scope": "enterprise",
-            "document_id": "doc-1",
-            "version_id": "v1",
-        }),
-        _evidence(score=0.8).model_copy(update={
-            "source_scope": "enterprise",
-            "document_id": "doc-1",
-            "version_id": "v2",
-        }),
-    ]
-
-    selected = gate.select_eligible(evidence)
-
-    assert [item.score for item in selected] == [0.9, 0.8]
+@pytest.mark.parametrize('defect', ['missing_manifest', 'wrong_model', 'changed_weights', 'outside_path'])
+def test_unverified_local_checkpoint_is_rejected_before_loading(tmp_path, monkeypatch, defect):
+    import hashlib
+    import json
+    import transformers
+    from unittest.mock import Mock
+    weight = tmp_path / 'pytorch_model.bin'
+    weight.write_bytes(b'reviewed checkpoint fixture')
+    identity = {'repo': 'lytang/MiniCheck-DeBERTa-v3-Large', 'weight_file': weight.name,
+                'sha256': hashlib.sha256(weight.read_bytes()).hexdigest()}
+    if defect == 'wrong_model':
+        identity['repo'] = 'another/classifier'
+    elif defect == 'changed_weights':
+        weight.write_bytes(b'unreviewed replacement')
+    elif defect == 'outside_path':
+        identity['weight_file'] = '../pytorch_model.bin'
+    if defect != 'missing_manifest':
+        (tmp_path / 'verified.json').write_text(json.dumps(identity), encoding='utf-8')
+    load = Mock()
+    monkeypatch.setattr(transformers.AutoModelForSequenceClassification, 'from_pretrained', load)
+    with pytest.raises(VerificationUnavailable, match='minicheck_load_failed'):
+        MiniCheck(str(tmp_path))._load()
+    load.assert_not_called()
 
 
-def test_summarization_requires_multiple_valid_chunks() -> None:
-    insufficient = _evaluate(
-        QueryIntent.SUMMARIZATION,
-        [_evidence()],
-    )
-    sufficient = _evaluate(
-        QueryIntent.SUMMARIZATION,
-        [
-            _evidence(chunk_id="chunk-1"),
-            _evidence(chunk_id="chunk-2", score=0.7),
-        ],
-    )
-
-    assert insufficient.accepted is False
-    assert insufficient.reason == "topic_coverage_insufficient"
-    assert sufficient.accepted is True
-
-
-def test_summarization_rejects_document_identity_evidence_alone() -> None:
-    result = _evaluate(
-        QueryIntent.SUMMARIZATION,
-        [
-            _evidence(chunk_id="doc-1::document"),
-            _evidence(chunk_id="doc-2::document"),
-        ],
-    )
-    assert result.accepted is False
-    assert result.reason == "topic_coverage_insufficient"
-
-
-def test_comparison_requires_evidence_for_each_sub_query() -> None:
-    sub_queries = ["Agent CP1", "Agent CP2"]
-    result = _evaluate(
-        QueryIntent.COMPARISON,
-        [_evidence(retrieval_query="Agent CP1")],
-        sub_queries=sub_queries,
-    )
-
-    assert result.accepted is False
-    assert result.missing_targets == ["Agent CP2"]
-
-
-def test_comparison_accepts_bilateral_coverage() -> None:
-    sub_queries = ["Agent CP1", "Agent CP2"]
-    result = _evaluate(
-        QueryIntent.COMPARISON,
-        [
-            _evidence(chunk_id="cp1", retrieval_query="agent cp1"),
-            _evidence(chunk_id="cp2", retrieval_query="Agent CP2"),
-        ],
-        sub_queries=sub_queries,
-    )
-
-    assert result.accepted is True
-    assert result.missing_targets == []
-    assert len(result.evidence) == 2
-    assert result.covered_targets == ["agent cp1", "Agent CP2"]
-    assert result.candidate_evidence_count == 2
-    assert result.eligible_evidence_count == 2
-
-
-def test_comparison_without_sub_queries_is_rejected() -> None:
-    result = _evaluate(
-        QueryIntent.COMPARISON,
-        [_evidence()],
-    )
-
-    assert result.accepted is False
-    assert result.reason == "comparison_sub_queries_missing"
-
-
-@pytest.mark.parametrize(
-    "intent",
-    [
-        QueryIntent.CASUAL_CHAT,
-        QueryIntent.SYSTEM_HELP,
-        QueryIntent.UNSUPPORTED,
-    ],
-)
-def test_non_retrieval_intents_do_not_require_evidence(
-    intent: QueryIntent,
-) -> None:
-    result = _evaluate(intent, [])
-
-    assert result.accepted is True
-    assert result.reason == "evidence_not_required"
-
-
-def test_exhausted_retrieval_budget_does_not_retry_again() -> None:
-    result = _evaluate(
-        QueryIntent.KNOWLEDGE_QA,
-        [],
-        attempt=5,
-    )
-
-    assert result.accepted is False
-
-
-@pytest.mark.parametrize("attempt", [0, 6])
-def test_invalid_retrieval_attempt_is_rejected(attempt: int) -> None:
-    plan = _plan(QueryIntent.KNOWLEDGE_QA)
-    policy = IntentPolicyRouter().route(plan)
-
-    with pytest.raises(ValueError, match="between one and five"):
-        EvidenceGate().evaluate(
-            plan,
-            policy,
-            [],
-            retrieval_attempt=attempt,
-        )
+@pytest.mark.parametrize('filename,safetensors', [('pytorch_model.bin', False), ('model.safetensors', True)])
+def test_loader_uses_the_hashed_weight_format_when_both_files_exist(tmp_path, monkeypatch, filename, safetensors):
+    import hashlib
+    import json
+    import transformers
+    from unittest.mock import Mock
+    for name in ['pytorch_model.bin', 'model.safetensors']:
+        (tmp_path / name).write_bytes(name.encode())
+    identity = {'repo': 'lytang/MiniCheck-DeBERTa-v3-Large', 'weight_file': filename,
+                'sha256': hashlib.sha256((tmp_path / filename).read_bytes()).hexdigest()}
+    (tmp_path / 'verified.json').write_text(json.dumps(identity), encoding='utf-8')
+    load = Mock(return_value=(SimpleNamespace(config=SimpleNamespace(num_labels=2), eval=lambda: None), {}))
+    monkeypatch.setattr(transformers.AutoTokenizer, 'from_pretrained', lambda *a, **kw: Tokenizer())
+    monkeypatch.setattr(transformers.AutoModelForSequenceClassification, 'from_pretrained', load)
+    MiniCheck(str(tmp_path))._load()
+    assert load.call_args.kwargs['use_safetensors'] is safetensors

@@ -155,3 +155,22 @@ $env:PYTHONUTF8=1; .\.venv\Scripts\python.exe eval/run_eval.py --mode generation
 ## 4. Benchmark Dataset
 
 The questions used for evaluation are located in [eval_questions.json](file:///c:/Users/Hola/Desktop/Q&A/AI-QA-Assistant/eval/eval_questions.json). This file contains standard test questions, correct document identifiers, and ground truth answers mapped from the actual files in `测试数据` (测试空间).
+# Thinking loop update (2026-10-19)
+
+The intent/rewrite/policy component evaluator, cascaded latency A/B runner and
+quarantined Wiki Chat controller probe are removed with their runtime components.
+Historical datasets/reports/scores remain unchanged. The current
+`run_agent_eval.py` offers quality/compound/all, defaults to Thinking, and requires
+`--user-id` with current source bindings. `--weight-mode fast` selects Fast.
+Reports record the budget and private claim verification instead of obsolete
+intent/completeness fields. No unguarded retrieval warmup runs before authorization.
+Default grading remains Codex per-case review; no judge API was called for this change.
+
+```powershell
+.\.venv\Scripts\python.exe eval/run_agent_eval.py --suite quality --online --user-id <enabled-bound-user>
+```
+
+Use isolated source/index configuration and a new external output directory.
+Frozen historical datasets are seen development cases, not unseen holdouts.
+See the [current mode contract](../agent/docs/chat_mode_contract.md). Older
+commands and component descriptions below are historical and superseded.

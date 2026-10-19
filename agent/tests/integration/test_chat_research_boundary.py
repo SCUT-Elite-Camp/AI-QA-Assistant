@@ -1,4 +1,4 @@
-from tests.grounding_helpers import grounded_model
+from tests.grounding_helpers import grounded_model, control_response
 import json
 from typing import Any
 from tests.grounding_helpers import grounded_model
@@ -6,24 +6,7 @@ from tests.grounding_helpers import grounded_model
 from agent.agent import Agent
 from agent.llm.base import BaseLLM
 from agent.schemas.chat import ChatRequest
-from agent.schemas.query_plan import QueryIntent, QueryPlan
 from toolset.tool_layer import BaseTool
-
-
-class FixedChatUnderstanding:
-    def analyze(
-        self,
-        query: str,
-        history: list[dict[str, Any]] | None = None,
-        *,
-        filters: dict[str, Any] | None = None,
-    ) -> QueryPlan:
-        return QueryPlan(
-            original_query=query,
-            standalone_query=query.strip(),
-            intent=QueryIntent.KNOWLEDGE_QA,
-            filters=dict(filters or {}),
-        )
 
 
 class ResearchModeToolCallLLM(BaseLLM):
@@ -33,7 +16,7 @@ class ResearchModeToolCallLLM(BaseLLM):
     @grounded_model
     @grounded_model
     def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
-        if tools and not any(message.get("role") == "tool" for message in messages):
+        if tools and not any("[TOOL_OBSERVATIONS]" in str(message.get("content", "")) for message in messages):
             return {
                 "role": "assistant",
                 "content": None,
@@ -54,7 +37,7 @@ class ResearchModeToolCallLLM(BaseLLM):
                     }
                 ],
             }
-        return {"role": "assistant", "content": "基于本地证据的答案 [1]"}
+        return control_response("answer") if tools else {"content":"Answer from local evidence [1]."}
 
 
 class RecordingSearchTool(BaseTool):
@@ -92,8 +75,8 @@ class RecordingSearchTool(BaseTool):
                 "doc_id": "local-doc",
                 "chunk_id": "local-doc::chunk-0",
                 "chunk_index": 0,
-                "chunk_text": "本地文档证据。",
-                "title": "本地测试文档",
+                "chunk_text": "Local document evidence.",
+                "title": "Local test document",
                 "source_url": "",
                 "score": 0.95,
             }
@@ -105,14 +88,14 @@ def test_model_tool_arguments_cannot_switch_chat_to_research() -> None:
     agent = Agent(
         llm=ResearchModeToolCallLLM(),
         tools=[search],
-        query_understanding=FixedChatUnderstanding(),  # type: ignore[arg-type]
     )
 
-    response = agent.chat(ChatRequest(query="本地文档有什么证据？", top_k=3, weight_mode="thinking"))
+    response = agent.chat(ChatRequest(query="What evidence is in the local document?", top_k=3, weight_mode="thinking"))
 
     assert response.status == "success"
     assert len(search.calls) == 1
     assert search.calls[0]["mode"] == "hybrid"
     assert search.calls[0]["top_k"] == 3
     assert agent.last_orchestration is not None
-    assert agent.last_orchestration.chat_route.research_entry_allowed is False
+    assert agent.last_run_result.budget["model_calls"] == 3
+    assert not hasattr(agent.last_orchestration, "chat_route")

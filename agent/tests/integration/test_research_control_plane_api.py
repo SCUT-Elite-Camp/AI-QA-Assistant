@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.research_fixtures import FixtureResearchPlanner, save_historical_report
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -32,7 +33,7 @@ def _client(tmp_path: Path) -> tuple[TestClient, ResearchControlPlane]:
                 },
             }
         ),
-    )
+     planner=FixtureResearchPlanner())
     application = FastAPI()
     application.include_router(router, prefix="/api")
     application.dependency_overrides[get_research_control_plane] = lambda: control_plane
@@ -99,6 +100,7 @@ def test_api_create_view_and_approve_real_control_plane_entities(tmp_path: Path)
     assert trace.json() == {
         "observations": [], "verified_evidence": [], "findings": [],
         "claims": [], "verifications": [],
+        "agents": [], "agent_steps": [], "drafts": [], "reviews": [],
     }
 
 
@@ -182,7 +184,7 @@ def test_api_revision_creates_v2_and_rejects_old_approval(tmp_path: Path) -> Non
     assert approved.json()["status"] == "ready"
 
 
-def test_conflict_choice_persists_report_without_clearing_quality_gaps(tmp_path: Path) -> None:
+def test_conflict_choice_requires_new_review_and_cannot_rewrite_saved_report(tmp_path: Path) -> None:
     from agent.schemas.research import (
         ResearchCitation, ResearchConflict, ResearchConflictAlternative,
         ResearchJobStatus, ResearchLimitation, ResearchReport, ResearchResultStatus,
@@ -222,7 +224,7 @@ def test_conflict_choice_persists_report_without_clearing_quality_gaps(tmp_path:
         )],
         limitations=[ResearchLimitation(code='required_coverage_missing', message='缺少日期')],
     )
-    repository.save_report(report)
+    save_historical_report(repository, report)
     try:
         invalid = client.post(f'/api/research/jobs/{research_id}/messages', json={'message': '采用来源 9'})
         assert invalid.status_code == 200
@@ -231,17 +233,18 @@ def test_conflict_choice_persists_report_without_clearing_quality_gaps(tmp_path:
 
         response = client.post(f'/api/research/jobs/{research_id}/messages', json={'message': 'use source 2'})
         assert response.status_code == 200
-        assert response.json()['action'] == 'conflict_resolved'
+        assert response.json()['action'] == 'clarify'
+        assert 'independent review' in response.json()['message']
         persisted = client.get(f'/api/research/jobs/{research_id}/report').json()
-        assert persisted['report_id'] != 'report-original'
-        assert persisted['conflicts'][0]['resolution_status'] == 'resolved_by_user'
-        assert 'Selected source [2]' in persisted['markdown']
+        assert persisted['report_id'] == 'report-original'
+        assert persisted['conflicts'][0]['resolution_status'] == 'unresolved'
+        assert persisted['markdown'] == report.markdown
         assert persisted['result_status'] == 'degraded'
         assert persisted['limitations'][0]['code'] == 'required_coverage_missing'
         assert persisted['citations'] == report.model_dump(mode='json')['citations']
         assert repository.get_report(research_id).evidence_ids == report.evidence_ids
         events = repository.list_events(research_id)
-        assert any(event.event_type.value == 'conflict_resolved' for event in events)
+        assert not any(event.event_type.value == 'conflict_resolved' for event in events)
     finally:
         repository.close()
 
@@ -266,7 +269,7 @@ def test_english_research_conversation_approve_and_cancel(tmp_path: Path) -> Non
 
 
 def test_english_followup_distinguishes_provider_failure_from_missing_evidence(monkeypatch):
-    from agent.api.research_routes import _answer_report_followup, EvidenceReportSynthesizer, settings
+    from agent.api.research_routes import _answer_report_followup, ResearchModelClient, settings
     from agent.schemas.research import ResearchCitation, ResearchReport, ResearchResultStatus
     report = ResearchReport(
         report_id='report-test', research_id='research-test', markdown='Count: 9 [1]',
@@ -278,7 +281,7 @@ def test_english_followup_distinguishes_provider_failure_from_missing_evidence(m
     def unavailable(self, payload):
         prompts.append(payload['messages'][0]['content'])
         raise RuntimeError('provider quota exhausted')
-    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', unavailable)
+    monkeypatch.setattr(ResearchModelClient, '_chat', unavailable)
     answer = _answer_report_followup(report, 'What is the count?', 'en-US')
     assert 'quota' in answer
     assert 'English' in prompts[0]
@@ -287,7 +290,7 @@ def test_english_followup_distinguishes_provider_failure_from_missing_evidence(m
 
 
 def test_followup_receives_report_context_and_rejects_unknown_citation(monkeypatch):
-    from agent.api.research_routes import _answer_report_followup, EvidenceReportSynthesizer, settings
+    from agent.api.research_routes import _answer_report_followup, ResearchModelClient, settings
     from agent.schemas.research import ResearchCitation, ResearchReport, ResearchResultStatus
     report = ResearchReport(report_id='report-test', research_id='research-test', markdown='Release B minus A: -2 [3]', result_status=ResearchResultStatus.COMPLETE, evidence_ids=['ev1'], citations=[ResearchCitation(number=3, evidence_id='ev1', doc_id='doc-a', title='Counts', locator='line:1', excerpt='A: 7; B: 5', content_hash='12345678')])
     monkeypatch.setattr(settings, 'LLM_API_KEY', 'test-only')
@@ -295,12 +298,12 @@ def test_followup_receives_report_context_and_rejects_unknown_citation(monkeypat
     def answer(self, payload):
         prompts.append(payload['messages'][0]['content'])
         return {'choices': [{'message': {'content': 'B minus A is -2 [3].'}}]}
-    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', answer)
+    monkeypatch.setattr(ResearchModelClient, '_chat', answer)
     assert _answer_report_followup(report, 'Repeat the change in this report.', objective='Compare releases A and B.') == 'B minus A is -2 [3].'
     assert report.markdown in prompts[0]
     assert 'Compare releases A and B.' in prompts[0]
     assert 'direction of subtraction' in prompts[0]
-    monkeypatch.setattr(EvidenceReportSynthesizer, '_chat', lambda *args: {'choices': [{'message': {'content': 'A false claim [1].'}}]})
+    monkeypatch.setattr(ResearchModelClient, '_chat', lambda *args: {'choices': [{'message': {'content': 'A false claim [1].'}}]})
     assert 'does not reliably answer' in _answer_report_followup(report, 'Repeat the change.')
 
 
@@ -318,7 +321,7 @@ def test_long_research_conversation_keeps_complete_bodies_and_bounded_progress(t
         control_plane.resume_planning_job(rid)
         job = repository.get_job(rid)
         repository.update_job(job.model_copy(update={'status': ResearchJobStatus.COMPLETED, 'current_stage': 'completed'}))
-        repository.save_report(ResearchReport(report_id='r', research_id=rid, markdown='Report', result_status=ResearchResultStatus.COMPLETE))
+        save_historical_report(repository, ResearchReport(report_id='r', research_id=rid, markdown='Report', result_status=ResearchResultStatus.COMPLETE))
         response = client.post(f'/api/research/jobs/{rid}/messages', json={'message': question})
         assert response.status_code == 200
         assert response.json()['message'] == answer

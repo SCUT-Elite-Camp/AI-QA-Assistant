@@ -19,6 +19,18 @@ Current common-integration baseline (2026-10-09): PR #63 (`cdbe02b`) plus access
 
 The root `app.py` is a local development entry point that loads `agent/app.py` and adds the sibling code directories to Python's import path. Run it from the repository root so environment loading and path resolution use the expected project root.
 
+Deep Research uses a human-approved plan over the authorized enterprise file catalogue,
+parallel explorers, coordinator synthesis, independent review and bounded repair.
+Only an exact reviewed revision approved by the coordinator is released. See the
+[Research team architecture](agent/docs/research_team_architecture.md) for roles,
+budgets, recovery and validation limits.
+
+Local Research development can grant the complete file catalogue with
+`RESEARCH_DEVELOPMENT_MODE=true` and a loopback `HOST`; production leaves the
+flag false. The sequential Research runtime and executable UI Mock have been
+removed; saved historical outputs remain readable, while execution uses a new
+approved harness plan.
+
 ## Local development
 
 On macOS/Linux, run the combined launcher from the repository root:
