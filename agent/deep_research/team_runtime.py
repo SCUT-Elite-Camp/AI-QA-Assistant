@@ -4,6 +4,7 @@ from langgraph.graph import START, END, StateGraph
 from agent.schemas.research import ResearchJobStatus, ResearchJob
 from .access import model_access_scope
 from .model_budget import completion_budget_scope
+from .team_contracts import research_error_code
 from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import TypedDict
@@ -218,17 +219,18 @@ class ResearchTeamRuntime:
             )
         except Exception as exc:
             current = self.repository.get_job(research_id)
+            code = research_error_code(exc)
             if current.status in {ResearchJobStatus.RESEARCHING, ResearchJobStatus.SYNTHESIZING}:
                 failed = self.repository.transition_job(
                     research_id, expected_statuses=[current.status], status=ResearchJobStatus.FAILED,
                     current_stage=current.current_stage, failure_stage=current.current_stage,
-                    error_code=exc.__class__.__name__,
+                    error_code=code,
                 )
                 if failed is not None:
                     self.events.job_failed(
                         research_id,
                         current.current_stage,
-                        exc.__class__.__name__,
+                        code,
                     )
             raise
 

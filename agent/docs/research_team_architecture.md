@@ -81,6 +81,23 @@ the shared tool budget. Token accounting uses the approved `max_tokens`, normall
 and staged report generation. Provider input/context and TPM limits are separate.
 Planning has its own preapproval completion budget.
 
+Low-budget execution reserves the final decision for submitting findings/edits
+and explicit evidence gaps. Each explorer/repair prompt receives live shared
+token balances and `must_finish`; finalization forbids additional search/read
+actions. Atomic completion headroom protects later synthesis/review/release
+roles within the approved total (see [generation budgets](research_generation_budget.md)).
+Only recoverable locator/range errors feed back as persisted `tool_error`
+observations; the failed tool attempt is still charged. Permission and source
+drift failures do not become recoverable observations. Task `error_code` and job
+failure codes retain safe stable reasons for diagnosis.
+Known provider JSON envelopes are normalized before strict validation. Malformed
+or truncated explorer outputs receive feedback within the existing decision cap;
+each failed output still counts. Interrupted finish decisions replay from durable
+data without extra model calls. Updated terminal outcomes are additional immutable
+records, with only the latest per agent shown in progress. Exact quoted references
+are retained and unquoted extras pruned; semantic support still requires Reviewer
+approval. Default report/control reasoning remains enabled through global settings.
+
 SQLite reservations are made before model/tool calls and token charges survive
 restart. Unknown transport usage stays reserved. The runtime propagates
 ContextVars into explorer and nested tool pools. Dependency scheduling, results,

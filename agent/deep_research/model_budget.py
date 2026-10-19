@@ -35,7 +35,7 @@ class CompletionBudget:
 
     def reserve(self, tokens: int) -> str | None:
         with self.lock:
-            if tokens > self.limit - self.spent:
+            if tokens + _HEADROOM.get() > self.limit - self.spent:
                 raise ResearchTokenBudgetExceeded("research_completion_budget_exceeded")
             reservation = self.reserve_hook(tokens) if self.reserve_hook else None
             self.spent += tokens
@@ -49,6 +49,25 @@ class CompletionBudget:
 
 
 _BUDGET: ContextVar[CompletionBudget | None] = ContextVar("research_completion_budget", default=None)
+_HEADROOM: ContextVar[int] = ContextVar("research_completion_headroom", default=0)
+
+
+def completion_budget_status() -> dict | None:
+    budget = _BUDGET.get()
+    if budget is None:
+        return None
+    with budget.lock:
+        return {"limit": budget.limit, "remaining": max(0, budget.limit - budget.spent)}
+
+
+@contextmanager
+def completion_headroom_scope(tokens: int):
+    """Keep shared tokens for later roles, including across concurrent reservations."""
+    token = _HEADROOM.set(max(tokens, _HEADROOM.get()))
+    try:
+        yield
+    finally:
+        _HEADROOM.reset(token)
 
 
 @contextmanager
@@ -67,7 +86,7 @@ def completion_budget_scope(limit: int | None = None, *, spent: int = 0, reserve
         _BUDGET.reset(token)
 
 
-def with_completion_budget(payload: dict, *, model: str) -> dict:
+def with_completion_budget(payload: dict, *, model: str, reasoning_tokens: int | None = None) -> dict:
     """Reserve reasoning in addition to visible output; the provider cap covers both."""
     result = dict(payload)
     result["messages"] = [dict(m) for m in payload.get("messages", [])]
@@ -76,7 +95,9 @@ def with_completion_budget(payload: dict, *, model: str) -> dict:
     thinking = result.get("enable_thinking")
     if thinking is None:
         thinking = (result.get("thinking") or {}).get("type", settings.LLM_THINKING_MODE) == "enabled"
-    reasoning = settings.RESEARCH_MODEL_REASONING_TOKENS if thinking or model.startswith("openai/gpt-oss-") else 0
+    reserve = settings.RESEARCH_MODEL_REASONING_TOKENS if reasoning_tokens is None else min(
+        max(0, reasoning_tokens), settings.RESEARCH_REVIEW_REASONING_TOKENS)
+    reasoning = reserve if thinking or model.startswith("openai/gpt-oss-") else 0
     result["max_tokens"] = output + reasoning
     instruction = (f"Completion budget: {output + reasoning} tokens including reasoning and final output. "
                    f"Aim to finish reasoning within {reasoning} tokens and reserve up to {output} tokens "
@@ -103,18 +124,31 @@ def _retry_delay(response) -> float | None:
 
 def post_completion(api_base: str, api_key: str, payload: dict, timeout: float) -> dict:
     """Two attempts at most. Reserve failed/unknown usage; reconcile successful usage."""
+    payload = dict(payload)
+    finalizing = payload.pop("_research_finalize", False) is True
     with completion_budget_scope() as budget, requests.Session() as session:
         proxy = os.getenv("LLM_HTTP_PROXY") or os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY")
         if proxy:
             session.proxies.update({"http": proxy, "https": proxy})
-        cap = int(payload.get("max_completion_tokens", payload.get("max_tokens", 2048)))
+        cap_key = "max_completion_tokens" if "max_completion_tokens" in payload else "max_tokens"
+        requested_cap = int(payload.get(cap_key, 2048))
         for attempt in range(2):
             check_research_model_access()
-            reservation = budget.reserve(cap)
+            with budget.lock:
+                cap = min(requested_cap, budget.limit - budget.spent - _HEADROOM.get()) if finalizing else requested_cap
+                if finalizing and cap < 128:
+                    raise ResearchTokenBudgetExceeded("research_completion_budget_exceeded")
+                reservation = budget.reserve(cap)
+            request_payload = {**payload, cap_key: cap}
+            if cap < requested_cap:
+                request_payload["messages"] = [*payload.get("messages", []), {"role": "system", "content":
+                    f"Finalization has only {cap} completion tokens including reasoning. This overrides earlier token targets. "
+                    "Finish concise structured results now, keeping reasoning brief and stating evidence gaps. "
+                    "Do not restart exploration or add unsupported facts."}]
             logger.info("Research model request model=%s completion_cap=%d budget_remaining=%d attempt=%d",
                         payload.get("model"), cap, budget.limit - budget.spent, attempt + 1)
             try:
-                response = session.post(api_base.rstrip("/") + "/chat/completions", json=payload,
+                response = session.post(api_base.rstrip("/") + "/chat/completions", json=request_payload,
                     headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
                     timeout=timeout)
             except requests.HTTPError as exc:

@@ -8,6 +8,27 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 from agent.schemas.research import ResearchContractModel, ResearchReport
+import re
+
+
+def research_error_code(exc: Exception) -> str:
+    """Expose stable codes, never arbitrary transport messages or source contents."""
+    code = str(exc).split(":", 1)[0]
+    if re.fullmatch(r"research_[a-z_]+", code) or code in {
+        "document_chunk_not_found", "invalid_document_range", "document_range_out_of_bounds",
+        "empty_document_excerpt", "document_version_changed", "document_outside_manifest",
+    }:
+        return code
+    return type(exc).__name__
+
+
+def unwrap_json_object(value):
+    """Only unwrap the known response-format echo, never free text or arbitrary data."""
+    if isinstance(value, dict) and value.get("type") == "json_object":
+        value = {key: item for key, item in value.items() if key != "type"}
+        if set(value) == {"content"} and isinstance(value["content"], dict):
+            value = value["content"]
+    return value
 
 
 def report_digest(report: ResearchReport) -> str:

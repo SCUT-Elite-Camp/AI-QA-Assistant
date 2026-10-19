@@ -64,7 +64,8 @@ class ResearchProgressService:
             return None
         reviews = self.repository.list_team_entities("report_review", research_id)
         statuses = {r.draft_id: r.status for r in reviews}
-        agents = [r.model_dump(mode="json") for r in self.repository.list_team_entities("agent_result", research_id)]
+        latest = {r.agent_id: r for r in self.repository.list_team_entities("agent_result", research_id)}
+        agents = [r.model_dump(mode="json") for r in latest.values()]
         completed = {a["agent_id"] for a in agents}
         for step in self.repository.list_team_entities("agent_step", research_id):
             if step.action == "started" and step.agent_id not in completed:

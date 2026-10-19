@@ -8,6 +8,7 @@ from agent.config.settings import settings
 from deep_research.access import ResearchAccessError, model_access_scope
 from deep_research.model_budget import (
     ResearchTokenBudgetExceeded, completion_budget_scope, post_completion, with_completion_budget,
+    completion_headroom_scope, completion_budget_status,
 )
 from deep_research.model_client import ResearchModelClient
 
@@ -36,6 +37,87 @@ def test_non_reasoning_payload_does_not_spend_reasoning_reserve():
     assert sent['max_tokens'] == 700
 
 
+@pytest.mark.parametrize('enabled', [False, True])
+def test_deepseek_uses_native_thinking_switch_and_matching_completion_cap(monkeypatch, enabled):
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_REASONING_TOKENS', 512)
+    client = ResearchModelClient(api_base='https://model.test/v1', api_key='test', model='deepseek-test')
+    sent = []
+    monkeypatch.setattr('deep_research.model_client.post_completion', lambda base, key, payload, timeout:
+        sent.append(payload) or {'choices': []})
+    client._chat({'model': 'deepseek-test', 'max_tokens': 700, 'enable_thinking': enabled,
+                  'messages': [{'role': 'user', 'content': 'Return a short supported summary.'}]})
+    assert sent[0]['thinking'] == {'type': 'enabled' if enabled else 'disabled'}
+    assert 'enable_thinking' not in sent[0]
+    assert sent[0]['max_tokens'] == 700 + (512 if enabled else 0)
+
+
+def test_reviewer_has_separate_reasoning_allowance_without_sending_internal_options(monkeypatch):
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_REASONING_TOKENS', 512)
+    monkeypatch.setattr(settings, 'RESEARCH_REVIEW_REASONING_TOKENS', 8192)
+    client = ResearchModelClient(api_base='https://model.test/v1', api_key='test', model='deepseek-test')
+    sent = []
+    monkeypatch.setattr('deep_research.model_client.post_completion', lambda base, key, payload, timeout:
+        sent.append(payload) or {'choices': []})
+    client._chat({'model': 'deepseek-test', 'max_tokens': 700, 'enable_thinking': True,
+        '_research_reasoning_tokens': 2048, 'messages': [{'role': 'user', 'content': 'Review supported facts.'}]})
+    assert sent[0]['max_tokens'] == 2748 and '_research_reasoning_tokens' not in sent[0]
+
+
+def test_research_timeout_is_configured_for_long_reasoning_but_explicit_override_is_preserved(monkeypatch):
+    from deep_research.planner import ModelResearchPlanner
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_TIMEOUT_SECONDS', 180)
+    assert ResearchModelClient(api_base='unused', api_key='test', model='test').timeout_seconds == 180
+    assert ResearchModelClient(api_base='unused', api_key='test', model='test', timeout_seconds=30).timeout_seconds == 30
+    assert ModelResearchPlanner(api_base='unused', api_key='test', model='test').timeout_seconds == 180
+    assert ModelResearchPlanner(api_base='unused', api_key='test', model='test', timeout_seconds=30).timeout_seconds == 30
+
+
+@pytest.mark.parametrize('enabled', [False, True])
+def test_control_thinking_option_preserves_explorer_and_global_defaults(monkeypatch, enabled):
+    from deep_research.team import ResearchRoleModel
+    monkeypatch.setattr(settings, 'RESEARCH_CONTROL_THINKING', enabled)
+    model = ResearchRoleModel(api_base='https://model.test', api_key='test', model='deepseek-test')
+    sent = []
+    monkeypatch.setattr(model.client, '_chat', lambda p:
+        sent.append(p) or choice('{}'))
+    for role in ['explorer', 'repair', 'reviewer', 'coordinator']:
+        model.json(role, 'Return a short decision.', {})
+    assert all('enable_thinking' not in p for p in sent[:2])
+    assert all(('enable_thinking' not in p) if enabled else p['enable_thinking'] is False for p in sent[2:])
+
+
+@pytest.mark.parametrize('content', [
+    '{"type":"json_object","content":{"findings":[],"missing":["No verified evidence."]}}',
+    '{"type":"json_object","findings":[],"missing":["No verified evidence."]}',
+    '{"action":"finish","findings":[],"missing":["No verified evidence."]}',
+])
+def test_provider_format_envelope_normalizes_without_inventing_evidence(monkeypatch, content):
+    from deep_research.team import ResearchRoleModel
+    model = ResearchRoleModel(api_base='https://model.test', api_key='test', model='deepseek-test')
+    monkeypatch.setattr(model.client, '_chat', lambda p: choice(content))
+    result = model.json('explorer', 'Finish from originals.', {})
+    assert result == {'action': 'finish', 'findings': [], 'missing': ['No verified evidence.']}
+
+
+def test_truncated_reviewer_stages_verdict_with_reasoning_and_original_inputs_preserved(monkeypatch):
+    from deep_research.team import ResearchRoleModel
+    monkeypatch.setattr(settings, 'RESEARCH_CONTROL_THINKING', True)
+    model = ResearchRoleModel(api_base='https://model.test', api_key='test', model='deepseek-test')
+    sent = []
+    def chat(payload):
+        sent.append(payload)
+        if len(sent) == 1:
+            return {'choices': [{'finish_reason': 'length', 'message': {'content': '',
+                'reasoning_content': 'Draft observation: check citation support against the original.'}}]}
+        return choice('{"status":"passed","checked_citation_numbers":[1],"checked_block_ids":[0],"issues":[]}')
+    monkeypatch.setattr(model.client, '_chat', chat)
+    result = model.json('reviewer', 'Audit the report against originals.', {'fresh_originals': ['original'], 'report_markdown': 'Report [1]'})
+    assert result['status'] == 'passed' and len(sent) == 2
+    assert sent[1]['messages'][:-1] == sent[0]['messages']
+    assert 'untrusted draft analysis' in sent[1]['messages'][-1]['content']
+    assert all('enable_thinking' not in p for p in sent)
+
+
 def test_shared_attempt_budget_accounts_usage_and_blocks_before_next_io(monkeypatch):
     post = Mock(return_value=response(usage={'completion_tokens': 800}, choices=[]))
     monkeypatch.setattr(requests.Session, 'post', post)
@@ -49,6 +131,50 @@ def test_shared_attempt_budget_accounts_usage_and_blocks_before_next_io(monkeypa
     assert post.call_count == 1
     with completion_budget_scope(1000) as fresh:
         assert fresh.spent == 0
+
+
+def test_parallel_explorers_cannot_spend_downstream_headroom(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from contextvars import copy_context
+    from threading import Barrier
+    barrier = Barrier(2)
+    def reserve():
+        barrier.wait(timeout=5)
+        try:
+            budget.reserve(400)
+            return True
+        except ResearchTokenBudgetExceeded:
+            return False
+    with completion_budget_scope(1000) as budget, completion_headroom_scope(500):
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(copy_context().run, reserve) for _ in range(2)]
+            assert sum(f.result() for f in futures) == 1
+        assert completion_budget_status()['remaining'] == 600
+    assert completion_budget_status() is None
+
+
+def test_downstream_role_can_use_reserved_tokens_but_explorer_cannot(monkeypatch):
+    post = Mock(return_value=response(usage={'completion_tokens': 50}, choices=[]))
+    monkeypatch.setattr(requests.Session, 'post', post)
+    with completion_budget_scope(1000):
+        with completion_headroom_scope(600), pytest.raises(ResearchTokenBudgetExceeded):
+            post_completion('https://model.test', 'key', {'max_tokens': 500}, 10)
+        post.assert_not_called()
+        post_completion('https://model.test', 'key', {'max_tokens': 500}, 10)
+        post.assert_called_once()
+
+
+def test_final_verdict_uses_remaining_tokens_instead_of_rejecting_its_larger_normal_cap(monkeypatch):
+    post = Mock(return_value=response(usage={'completion_tokens': 100}, choices=[]))
+    monkeypatch.setattr(requests.Session, 'post', post)
+    payload = {'max_tokens': 700, '_research_finalize': True, 'messages': [{'role': 'user', 'content': 'Return verdict.'}]}
+    with completion_budget_scope(1000, spent=750) as budget:
+        post_completion('https://model.test', 'key', payload, 10)
+        assert budget.spent == 850
+    sent = post.call_args.kwargs['json']
+    assert sent['max_tokens'] == 250 and '_research_finalize' not in sent
+    assert '250 completion tokens' in sent['messages'][-1]['content']
+    assert payload['max_tokens'] == 700 and len(payload['messages']) == 1
 
 
 def test_429_waits_then_rechecks_current_access_before_retry(monkeypatch):

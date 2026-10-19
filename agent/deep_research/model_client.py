@@ -15,11 +15,11 @@ class ResearchStagedGenerationError(ValueError):
 
 
 class ResearchModelClient(ReportContent):
-    def __init__(self, *, api_base: str, api_key: str, model: str, timeout_seconds: int = 90) -> None:
+    def __init__(self, *, api_base: str, api_key: str, model: str, timeout_seconds: int | None = None) -> None:
         self.api_base = api_base.rstrip("/")
         self.api_key = api_key
         self.model = model
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = timeout_seconds if timeout_seconds is not None else settings.RESEARCH_MODEL_TIMEOUT_SECONDS
 
     def _report_completion(self, payload: dict, language: str) -> dict:
         """An exhausted whole-report call transitions to bounded section generation."""
@@ -85,10 +85,10 @@ class ResearchModelClient(ReportContent):
         if str(payload.get("model", self.model)).casefold().startswith("qwen"):
             request_payload.setdefault("enable_thinking", settings.LLM_THINKING_MODE == "enabled")
         if str(payload.get("model", self.model)).casefold().startswith("deepseek"):
-            # The compatible provider enables reasoning by default. Bounded
-            # JSON audits/quote selection need answer tokens, not an exhausted
-            # reasoning-only completion. Explicit opt-in still takes precedence.
-            request_payload.setdefault("enable_thinking", settings.LLM_THINKING_MODE == "enabled")
+            # DeepSeek's native switch is `thinking.type`. Some compatible
+            # gateways silently ignore the Qwen-style enable_thinking field.
+            enabled = request_payload.pop("enable_thinking", settings.LLM_THINKING_MODE == "enabled")
+            request_payload.setdefault("thinking", {"type": "enabled" if enabled else "disabled"})
         if str(payload.get("model", self.model)).casefold().startswith("gemini"):
             # Google's compatible endpoint rejects provider-specific Qwen/DeepSeek
             # fields, including those requested by the bounded audit helpers.
@@ -102,6 +102,7 @@ class ResearchModelClient(ReportContent):
             request_payload.setdefault("thinking_budget", 2048)
             if request_payload.get("enable_thinking"):
                 request_payload["max_tokens"] = max(int(request_payload.get("max_tokens", 1800)), int(request_payload["thinking_budget"]) + 1800)
-        request_payload = with_completion_budget(request_payload, model=self.model)
+        reasoning_tokens = request_payload.pop("_research_reasoning_tokens", None)
+        request_payload = with_completion_budget(request_payload, model=self.model, reasoning_tokens=reasoning_tokens)
         request_payload = apply_provider_options(request_payload, self.api_base)
         return post_completion(self.api_base, self.api_key, request_payload, self.timeout_seconds)

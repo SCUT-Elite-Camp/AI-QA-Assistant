@@ -7,6 +7,7 @@ from agent.config.settings import settings
 from agent.llm.provider_options import apply_provider_options
 from typing import Protocol
 from .model_budget import completion_budget_scope, post_completion, with_completion_budget
+from .team_contracts import unwrap_json_object
 
 from agent.schemas.research import (
     AcceptanceCriterion,
@@ -48,12 +49,12 @@ class ModelResearchPlanner:
         api_base: str,
         api_key: str,
         model: str,
-        timeout_seconds: int = 60,
+        timeout_seconds: int | None = None,
     ) -> None:
         self.api_base = api_base.rstrip("/")
         self.api_key = api_key
         self.model = model
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = timeout_seconds if timeout_seconds is not None else settings.RESEARCH_MODEL_TIMEOUT_SECONDS
 
     def create_plan(self, request: ResearchRequest, manifest: SourceManifest, *, version: int = 1) -> ResearchPlan:
         with completion_budget_scope():
@@ -111,7 +112,7 @@ class ModelResearchPlanner:
         choice = data["choices"][0]
         if choice.get("finish_reason") == "length":
             raise PlannerError("research_plan_truncated")
-        raw = json.loads(choice["message"]["content"])
+        raw = unwrap_json_object(json.loads(choice["message"]["content"]))
         specs = raw.get("tasks", [])
         if not 2 <= len(specs) <= 5:
             raise PlannerError("research_plan_task_count")
@@ -133,6 +134,9 @@ class ModelResearchPlanner:
 
 
     def _chat(self, payload: dict) -> dict:
+        payload = dict(payload)
+        if self.model.casefold().startswith("deepseek"):
+            payload.setdefault("thinking", {"type": "enabled" if settings.LLM_THINKING_MODE == "enabled" else "disabled"})
         payload = with_completion_budget(payload, model=self.model)
         payload = apply_provider_options(payload, self.api_base)
         return post_completion(self.api_base, self.api_key, payload, self.timeout_seconds)

@@ -281,7 +281,8 @@ def test_restart_reuses_explorers_but_requires_review_of_repaired_revision(tmp_p
         resumed.close()
 
 
-def test_model_planner_receives_catalogue_and_returns_independent_strict_plan(tmp_path, monkeypatch):
+@pytest.mark.parametrize('envelope', [False, True])
+def test_model_planner_receives_catalogue_and_returns_independent_strict_plan(tmp_path, monkeypatch, envelope):
     from deep_research.planner import ModelResearchPlanner, PlannerError
     runtime, job = service(tmp_path, TeamModel())
     try:
@@ -289,10 +290,13 @@ def test_model_planner_receives_catalogue_and_returns_independent_strict_plan(tm
         calls = []
         def chat(payload):
             calls.append(payload)
-            return {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps({'tasks': [
+            result = {'tasks': [
                 {'task_id': f'task-{i}', 'question': f'Check the {name} access requirements.',
                  'purpose': 'Establish documented permission checks.', 'dependencies': [], 'source_numbers': [i],
-                 'criteria': ['Determine the native read permission requirement.']} for i, name in enumerate(['alpha', 'beta'], 1)]})}}]}
+                 'criteria': ['Determine the native read permission requirement.']} for i, name in enumerate(['alpha', 'beta'], 1)]}
+            if envelope:
+                result = {'type': 'json_object', 'content': result}
+            return {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(result)}}]}
         monkeypatch.setattr(planner, '_chat', chat)
         plan = planner.create_plan(job.request, runtime.control_plane.get_manifest(job.research_id))
         packet = json.loads(calls[0]['messages'][1]['content'])
@@ -436,7 +440,9 @@ def test_failed_dependency_blocks_every_descendant_without_starting_agents(tmp_p
         runtime.scan_once()
         results = runtime.control_plane.repository.list_team_entities('agent_result', job.research_id)
         assert {r.task_id: r.status for r in results} == {'task-1': 'failed', 'task-2': 'blocked', 'task-3': 'blocked'}
-        assert [data['task']['task_id'] for role, data in model.calls if role == 'explorer'] == ['task-1']
+        explorer_calls = [data['task']['task_id'] for role, data in model.calls if role == 'explorer']
+        assert explorer_calls and set(explorer_calls) == {'task-1'}
+        assert len(explorer_calls) <= runtime.control_plane.get_plan(job.research_id).budget.max_agent_iterations
         with pytest.raises(ResearchNotFoundError):
             runtime.control_plane.repository.get_report(job.research_id)
     finally:
@@ -482,5 +488,224 @@ def test_development_full_catalog_executes_harness_but_still_rechecks_sources(tm
         else:
             assert runtime.control_plane.repository.get_report(job.research_id).review_status == 'passed'
         native.assert_not_called()
+    finally:
+        runtime.close()
+
+
+def test_last_explorer_turn_returns_findings_instead_of_rereading(tmp_path, monkeypatch):
+    create = TeamPlanner.create_plan
+    def limited(self, *args, **kwargs):
+        plan = create(self, *args, **kwargs)
+        plan.budget.max_agent_iterations = 3
+        return plan
+    monkeypatch.setattr(TeamPlanner, 'create_plan', limited)
+    class ClosingModel(TeamModel):
+        def json(self, role, instructions, data):
+            if role == 'explorer' and data['evidence']:
+                assert data['budget']['must_finish']
+                assert data['budget']['allowed_actions'] == ['finish']
+                assert 'FINAL TURN' in instructions
+                assert all('evidence' not in observation for observation in data['observations'])
+            return super().json(role, instructions, data)
+    runtime, job = service(tmp_path, ClosingModel())
+    try:
+        approve(runtime, job)
+        runtime.scan_once()
+        repo = runtime.control_plane.repository
+        assert repo.get_job(job.research_id).status == 'completed'
+        assert len(repo.list_findings(job.research_id)) == 2
+        assert all(r.status == 'succeeded' for r in repo.list_team_entities('agent_result', job.research_id))
+    finally:
+        runtime.close()
+
+
+def test_invalid_locator_is_a_counted_recoverable_observation(tmp_path):
+    class RecoveringModel(TeamModel):
+        def json(self, role, instructions, data):
+            if role == 'explorer' and data['observations'] and not data['evidence']:
+                if 'tool_error' not in data['observations'][-1]:
+                    return {'action': 'read', 'doc_id': data['task']['source_ids'][0],
+                            'locator': data['task']['source_ids'][0]}
+                assert data['observations'][-1]['tool_error']['code'] == 'document_chunk_not_found'
+                return {'action': 'read', 'doc_id': data['task']['source_ids'][0], 'locator': 'line:1-80'}
+            return super().json(role, instructions, data)
+    runtime, job = service(tmp_path, RecoveringModel())
+    try:
+        approve(runtime, job)
+        runtime.scan_once()
+        repo = runtime.control_plane.repository
+        assert repo.get_job(job.research_id).status == 'completed'
+        results = repo.list_team_entities('agent_result', job.research_id)
+        assert all(r.actions_used == 3 for r in results)
+        errors = [s for s in repo.list_team_entities('agent_step', job.research_id) if s.action == 'tool_error']
+        assert len(errors) == 2 and all(s.detail['code'] == 'document_chunk_not_found' for s in errors)
+    finally:
+        runtime.close()
+
+
+def test_finalization_tool_request_is_rejected_without_spending_another_tool_call(tmp_path, monkeypatch):
+    create = TeamPlanner.create_plan
+    def limited(self, *args, **kwargs):
+        plan = create(self, *args, **kwargs)
+        plan.budget.max_agent_iterations = 2
+        return plan
+    monkeypatch.setattr(TeamPlanner, 'create_plan', limited)
+    runtime, job = service(tmp_path, TeamModel())
+    try:
+        approve(runtime, job)
+        runtime.scan_once()
+        repo = runtime.control_plane.repository
+        assert repo.get_job(job.research_id).error_code == 'research_no_original_evidence'
+        results = repo.list_team_entities('agent_result', job.research_id)
+        assert all(r.error_code == 'research_agent_finalization_required' and r.actions_used == 1 for r in results)
+        with pytest.raises(ResearchNotFoundError):
+            repo.get_report(job.research_id)
+    finally:
+        runtime.close()
+
+
+def test_low_token_balance_requests_finish_before_the_last_iteration(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from agent.config.settings import settings
+    from deep_research.model_budget import completion_headroom_scope
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_REASONING_TOKENS', 512)
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_OUTPUT_TOKENS', 1000)
+    monkeypatch.setattr(settings, 'LLM_THINKING_MODE', 'enabled')
+    runtime, job = service(tmp_path, TeamModel(parallel=False))
+    try:
+        plan = runtime.control_plane.get_plan(job.research_id)
+        context = SimpleNamespace(job=job, plan=plan)
+        with completion_budget_scope(6000, spent=1000) as shared:
+            state = runtime.team._agent_budget(context, 'explorer', 0, 'explorer-test', 4)
+            assert state['iterations_remaining'] > 1
+            assert state['must_finish'] and state['allowed_actions'] == ['finish']
+            with completion_headroom_scope(state['completion_tokens_reserved_for_later_roles']):
+                shared.reserve(runtime.team._model_call_cap())  # Finalization still fits.
+            assert shared.limit - shared.spent >= state['completion_tokens_reserved_for_later_roles']
+    finally:
+        runtime.close()
+
+
+def test_repair_can_submit_before_future_reserve_uses_the_remaining_balance(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from agent.config.settings import settings
+    from deep_research.model_budget import completion_headroom_scope
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_REASONING_TOKENS', 512)
+    monkeypatch.setattr(settings, 'RESEARCH_MODEL_OUTPUT_TOKENS', 1000)
+    monkeypatch.setattr(settings, 'LLM_THINKING_MODE', 'enabled')
+    runtime, job = service(tmp_path, TeamModel(parallel=False))
+    try:
+        context = SimpleNamespace(job=job, plan=runtime.control_plane.get_plan(job.research_id))
+        with completion_budget_scope(10000, spent=6000) as shared:
+            state = runtime.team._agent_budget(context, 'repair', 0, 'repair-test', 8)
+            assert state['must_finish']
+            with completion_headroom_scope(state['completion_tokens_reserved_for_later_roles']):
+                shared.reserve(runtime.team._model_call_cap('repair'))
+            assert 0 < shared.limit - shared.spent < 4000
+    finally:
+        runtime.close()
+
+
+def test_one_bad_finding_does_not_discard_other_verified_findings(tmp_path):
+    class PartialModel(TeamModel):
+        def json(self, role, instructions, data):
+            decision = super().json(role, instructions, data)
+            if role == 'explorer' and decision.get('action') == 'finish':
+                decision['findings'].append({**decision['findings'][0], 'evidence_ids': ['unread-evidence']})
+            return decision
+    runtime, job = service(tmp_path, PartialModel())
+    try:
+        approve(runtime, job)
+        runtime.scan_once()
+        repo = runtime.control_plane.repository
+        assert repo.get_job(job.research_id).status == 'completed'
+        assert len(repo.list_findings(job.research_id)) == 2
+        assert all(r.status == 'succeeded' and r.missing for r in repo.list_team_entities('agent_result', job.research_id))
+        assert repo.get_report(job.research_id).result_status == 'degraded'
+    finally:
+        runtime.close()
+
+
+def test_truncated_explorer_result_gets_bounded_feedback_and_keeps_its_decision_charge(tmp_path):
+    from deep_research.team import ResearchTeamProtocolError
+    class TruncatedOnce(TeamModel):
+        truncated = set()
+        def json(self, role, instructions, data):
+            result = super().json(role, instructions, data)
+            if role == 'explorer' and result.get('action') == 'finish' and data['agent_id'] not in self.truncated:
+                self.truncated.add(data['agent_id'])
+                raise ResearchTeamProtocolError('research_role_output_truncated')
+            return result
+    runtime, job = service(tmp_path, TruncatedOnce())
+    try:
+        approve(runtime, job)
+        runtime.scan_once()
+        repo = runtime.control_plane.repository
+        assert repo.get_job(job.research_id).status == 'completed'
+        steps = repo.list_team_entities('agent_step', job.research_id)
+        decisions = [s for s in steps if s.action == 'decision' and s.role == 'explorer']
+        assert len(decisions) == 8  # Both failed output calls count, not just parsed decisions.
+        assert sum('protocol_error' in s.detail for s in decisions) == 2
+        assert len(repo.list_findings(job.research_id)) == 2
+    finally:
+        runtime.close()
+
+
+def test_finish_replay_preserves_old_failed_result_and_does_not_repeat_model_calls(tmp_path, monkeypatch):
+    from deep_research.team_contracts import AgentResult
+    class ProcessStopped(BaseException):
+        pass
+    runtime, job = service(tmp_path, TeamModel())
+    repo = runtime.control_plane.repository
+    original = repo.save_team_entity
+    interrupted = False
+    def stop_after_legacy_failure(kind, entity_id, item):
+        nonlocal interrupted
+        if kind == 'agent_result' and not interrupted:
+            interrupted = True
+            original(kind, item.agent_id, AgentResult(agent_id=item.agent_id, research_id=item.research_id,
+                role='explorer', task_id=item.task_id, status='failed', error_code='ResearchTeamProtocolError'))
+            raise ProcessStopped()
+        return original(kind, entity_id, item)
+    monkeypatch.setattr(repo, 'save_team_entity', stop_after_legacy_failure)
+    approve(runtime, job)
+    try:
+        with pytest.raises(ProcessStopped):
+            runtime.scan_once()
+    finally:
+        runtime.close()
+    model = TeamModel(parallel=False)
+    resumed = ResearchRuntimeService.from_local_catalog(database_path=tmp_path / 'research.db',
+        documents_dir=tmp_path / 'documents', planner=TeamPlanner(), team_model=model)
+    try:
+        resumed.scan_once()
+        repo = resumed.control_plane.repository
+        assert repo.get_job(job.research_id).status == 'completed'
+        assert not any(role == 'explorer' for role, _ in model.calls)
+        history = repo.list_team_entities('agent_result', job.research_id)
+        assert len(history) == 3 and sum(r.status == 'failed' for r in history) == 1
+        visible = ResearchProgressService(repo).team_summary(job.research_id)['agents']
+        assert len(visible) == 2 and all(r['status'] == 'succeeded' for r in visible)
+    finally:
+        resumed.close()
+
+
+def test_unquoted_extra_references_are_pruned_without_discarding_verified_fact(tmp_path):
+    class ExtraReferenceModel(TeamModel):
+        def json(self, role, instructions, data):
+            result = super().json(role, instructions, data)
+            if role == 'explorer' and result.get('action') == 'finish':
+                result['findings'][0]['evidence_ids'].append('unread-unquoted-evidence')
+            return result
+    runtime, job = service(tmp_path, ExtraReferenceModel())
+    try:
+        approve(runtime, job)
+        runtime.scan_once()
+        repo = runtime.control_plane.repository
+        assert repo.get_job(job.research_id).status == 'completed'
+        findings = repo.list_findings(job.research_id)
+        assert len(findings) == 2
+        assert all(len(f.evidence_ids) == 1 and set(f.supporting_quotes) == set(f.evidence_ids) for f in findings)
+        assert all('unread-unquoted-evidence' not in f.evidence_ids for f in findings)
     finally:
         runtime.close()
