@@ -19,12 +19,11 @@ from agent.llm.observability import (
     start_llm_metrics,
 )
 from agent.memory.coordinator import MemoryCoordinator
-from agent.memory.fact_proposal_policy import FactProposalPolicy
 from agent.memory.memory_observability import MemoryObservability
 from agent.chat.result import OrchestrationResult
 from agent.runtime import AgentRunResult, AgentRunner, StopReason
 from agent.runtime.profile import ExecutionMode, ExecutionProfile
-from agent.schemas.chat import ChatRequest, ChatResponse, FactProposal, InternalChatRequest, MemoryDecision
+from agent.schemas.chat import ChatRequest, ChatResponse, InternalChatRequest, MemoryDecision
 from agent.schemas.common import StatusCode
 from agent.schemas.query_plan import QueryPlan
 from agent.schemas.retrieval import RetrievalResult
@@ -64,7 +63,6 @@ class Agent:
         permission_service: PermissionService | None = None,
         toolset_registry: ToolsetRegistry | None = None,
         audit_service: AuditService | None = None,
-        fact_proposal_policy: FactProposalPolicy | None = None,
         memory_observability: MemoryObservability | None = None,
     ) -> None:
         custom_llm_supplied = llm is not None
@@ -82,7 +80,6 @@ class Agent:
         self.trace_service = TraceService()
         self.audit_service = audit_service or AuditService()
         self.memory_observability = memory_observability or MemoryObservability()
-        self.fact_proposal_policy = fact_proposal_policy or FactProposalPolicy(observability=self.memory_observability)
         self.permission_service = permission_service or PermissionService()
 
         # Toolset owns registration; Agent only consumes it through an adapter.
@@ -176,7 +173,6 @@ class Agent:
         self.last_run_result = None
         self.last_orchestration = None
         self.last_citation_check = None
-        persistent_memory_request = self._is_persistent_memory_request(request)
         guard = AccessGuard(self.permission_service, request, trace_id)
         guard_token = CURRENT_ACCESS_GUARD.set(guard)
 
@@ -201,6 +197,12 @@ class Agent:
             execution = self._chat_internal(request, trace_id, query_plan=query_plan)
             response = execution.response
             response.evidence_provenance = guard.provenance()
+            if response.status == StatusCode.SUCCESS and execution.orchestration is not None:
+                from agent.evidence.answer_annotations import answer_annotations
+                run_result = execution.orchestration.run_result
+                response.answer_claims = answer_annotations(
+                    run_result.answer_grounding if run_result else None, response.answer, response.citations,
+                )
             latency_ms = self.audit_service.stop_timer(start_time)
             logger.debug("Agent request completed trace_id=%s latency_ms=%s", trace_id, latency_ms)
             return response
@@ -253,19 +255,15 @@ class Agent:
                 top_k=request.top_k,
             ))
 
-        if self._propose_explicit_facts(request):
-            return AgentChatExecution(ChatResponse(trace_id=trace_id, status=StatusCode.SUCCESS, answer="A session memory suggestion is ready. Please confirm it in the interface.", message="", citations=[]))
-
         if request.weight_mode in {None, "fast"}:
             turn = self.fast_pipeline.run(request, trace_id=trace_id, query_plan=query_plan)
-            recalled = turn.memory.recall is not None and turn.memory.recall.handled
-            self.last_run_result = None if recalled else turn.result
+            self.last_run_result = turn.result
             turn.result.llm_metrics = snapshot_llm_metrics()
             orchestration = OrchestrationResult(
                 query_plan=turn.plan,
                 run_result=self.last_run_result, history=turn.memory.history_for_model(),
                 retrieval_mode=request.retrieval_mode, top_k=request.top_k,
-                context_artifact=turn.memory.context_artifact, memory_recall=turn.memory.recall if recalled else None,
+                context_artifact=turn.memory.context_artifact,
                 execution_profile=ExecutionProfile("fast", ExecutionMode.FAST, "off", "explicit_fast"),
             )
             self.last_orchestration = orchestration
@@ -302,18 +300,8 @@ class Agent:
         plan = orchestration.query_plan
         run_result = orchestration.run_result
         self.last_run_result = run_result
-        if orchestration.context_artifact is not None and not (orchestration.memory_recall is not None and orchestration.memory_recall.handled):
+        if orchestration.context_artifact is not None:
             self.memory_observability.prompt(model_history_chars=sum(len(m.content) for m in orchestration.context_artifact.model_history))
-
-        memory_recall = orchestration.memory_recall
-        if memory_recall is not None and memory_recall.handled:
-            return AgentChatExecution(ChatResponse(
-                trace_id=trace_id,
-                status=StatusCode.SUCCESS,
-                answer=memory_recall.answer or "",
-                message="",
-                citations=[],
-            ), orchestration)
 
         if run_result is None:
             raise RuntimeError("orchestration returned no runtime result")
@@ -358,21 +346,7 @@ class Agent:
         )
         return AgentChatExecution(response, orchestration)
 
-    @staticmethod
-    def _is_persistent_memory_request(request: ChatRequest) -> bool:
-        return settings.PERSISTENT_MEMORY_ENABLED and isinstance(
-            request,
-            InternalChatRequest,
-        )
-
     def _audit_answer(self, response: ChatResponse) -> str:
-        memory_recall = (
-            self.last_orchestration.memory_recall
-            if self.last_orchestration is not None
-            else None
-        )
-        if memory_recall is not None and memory_recall.handled:
-            return "[memory_recall]"
         return response.answer or response.message
 
     def _map_run_result(
@@ -616,45 +590,19 @@ class Agent:
         if response.status == StatusCode.CLARIFICATION_REQUIRED:
             yield "token", {"content": content}
         yield "answer", {"content": content}
+        if response.status == StatusCode.SUCCESS and response.answer_claims:
+            yield "answer-claims", [item.model_dump() for item in response.answer_claims]
         yield "done", {"trace_id": response.trace_id, "status": response.status,
                        "citations_count": len(response.citations), "chat_title": response.chat_title,
                        "message": response.message,
                        "memory_decision": decision.model_dump() if decision is not None else None,
                        "evidence_provenance": response.evidence_provenance.model_dump()}
 
-    def _propose_explicit_facts(self, request: ChatRequest) -> list[FactProposal]:
-        """Parse one trusted explicit Fact command without invoking LLM/RAG."""
-        if (
-            not isinstance(request, InternalChatRequest)
-            or not self._is_persistent_memory_request(request)
-        ):
-            return []
-
-        try:
-            context = request.memory_context
-            return self.fact_proposal_policy.propose(
-                request.query,
-                actor_authenticated=context.actor.authenticated,
-                current_message_id=context.current_message_id,
-                persistent_memory_enabled=settings.PERSISTENT_MEMORY_ENABLED,
-                session_fact_enabled=settings.SESSION_FACT_ENABLED,
-            )
-        except Exception:
-            # Candidate generation is optional and must not expose user data in logs.
-            self.memory_observability.fact(action="suppressed", outcome="failed")
-            return []
-
 
     def chat_with_memory(self, request: InternalChatRequest, query_plan: QueryPlan | None = None) -> tuple[ChatResponse, MemoryDecision]:
         """Retain the strict infra Memory envelope while using the optimized Chat pipeline."""
         response = self.chat(request, query_plan=query_plan)
         orchestration = self.last_orchestration
-        proposals = self._propose_explicit_facts(request) if response.status == StatusCode.SUCCESS else []
-        if orchestration is not None and orchestration.memory_recall is not None and orchestration.memory_recall.handled:
-            self.memory_observability.fact(action="recalled", outcome="success" if orchestration.memory_recall.answer else "empty")
         return response, MemoryDecision(
             context_artifact=orchestration.context_artifact if orchestration is not None else None,
-            fact_proposals=proposals,
-            recall=orchestration.memory_recall if orchestration is not None else None,
         )
-

@@ -37,7 +37,11 @@ Do not answer a previous draft from memory when its evidence is no longer shown.
 Every model request, tool and verification consumes the same finite run budget.
 """
 
-ANSWER_INSTRUCTION = """Answer the user's original question using only the
+ANSWER_INSTRUCTION = """Write a natural answer to the user's original question.
+For multiple requested aspects, use separate Markdown bullet points with clear
+line breaks, optionally preceded by a brief lead-in. Keep headings and connective
+prose separate from factual assertions; do not present private claim metadata as
+the answer or cram all points into one paragraph. Use only the
 accepted numbered evidence and verified conversation context. Cover every
 requested aspect without adding speculative claims, dates, roles or conditions.
 Preserve table row/column meanings and all material qualifications. Write in

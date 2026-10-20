@@ -18,7 +18,7 @@ def source(content, *, doc="policy", chunk="section", **extra):
 
 
 def binding(evidence, quotes, text="The project document deadline is three days."):
-    draft = GroundedAnswer.model_validate({"claims":[{"text":text, "supports":[
+    draft = GroundedAnswer.model_validate({"answer":text,"claims":[{"text":text, "supports":[
         {"citation_id":citation, "quote":quote} for citation, quote in quotes
     ]}]})
     report = validate_grounded_answer(draft, evidence)
@@ -192,7 +192,7 @@ def test_unknown_lineage_is_not_backfilled():
 
 def test_image_binding_is_not_presented_as_text_validation():
     evidence = [source("Original image.", content_kind="file")]
-    draft = GroundedAnswer.model_validate({"claims":[{"text":"The chart shows growth.",
+    draft = GroundedAnswer.model_validate({"answer":"The chart shows growth.","claims":[{"text":"The chart shows growth.",
         "supports":[{"citation_id":1,"image_region":[0.0,0.0,1.0,1.0]}]}]})
     report = validate_grounded_answer(draft, evidence)
     assert report["valid"]

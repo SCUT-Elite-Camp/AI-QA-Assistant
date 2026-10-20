@@ -10,7 +10,6 @@ from agent.runtime import AgentRunResult, StopReason
 from agent.schemas.chat import (
     ContextArtifact,
     InternalChatRequest,
-    MemoryRecall,
     MemoryMessage,
 )
 from agent.schemas.query_plan import QueryPlan
@@ -53,14 +52,14 @@ def _trusted_request() -> InternalChatRequest:
                 "current_message_id": "message-2",
                 "current_sequence": 2,
                 "snapshot": None,
-                "facts": [],
+
                 "tail": [],
             },
         }
     )
 
 
-def _orchestration_result(*, recall: MemoryRecall | None = None) -> OrchestrationResult:
+def _orchestration_result() -> OrchestrationResult:
     artifact = ContextArtifact(
         memory_brief="",
         model_history=[
@@ -86,16 +85,11 @@ def _orchestration_result(*, recall: MemoryRecall | None = None) -> Orchestratio
             original_query="Use the prior context.",
             standalone_query="Use the prior context.",
         ),
-        run_result=(
-            None
-            if recall is not None
-            else AgentRunResult(stop_reason=StopReason.FINAL_ANSWER, answer="answer")
-        ),
+        run_result=AgentRunResult(stop_reason=StopReason.FINAL_ANSWER, answer="answer"),
         history=[],
         retrieval_mode="hybrid",
         top_k=5,
         context_artifact=artifact,
-        memory_recall=recall,
     )
 
 
@@ -115,7 +109,6 @@ def test_observability_emits_only_documented_content_free_payloads() -> None:
         tail_count=8,
         snapshot_version=2,
     )
-    observability.fact(action="recalled", outcome="success")
     observability.prompt(model_history_chars=18)
 
     assert events == [
@@ -127,7 +120,6 @@ def test_observability_emits_only_documented_content_free_payloads() -> None:
             "memory_compaction",
             {"outcome": "planned", "tail_count": 8, "snapshot_version": 2},
         ),
-        ("memory_fact", {"action": "recalled", "outcome": "success"}),
         ("memory_prompt", {"model_history_chars": 18}),
     ]
     forbidden = {
@@ -167,10 +159,6 @@ def test_observability_emits_only_documented_content_free_payloads() -> None:
             tail_count=0,
             snapshot_version=0,
         ),
-        lambda observer: observer.fact(
-            action="stored",  # type: ignore[arg-type]
-            outcome="success",
-        ),
         lambda observer: observer.prompt(model_history_chars=-1),
     ],
 )
@@ -183,7 +171,7 @@ def test_observability_sink_failure_does_not_escape() -> None:
     def fail_sink(_event: str, _payload: dict[str, str | int]) -> None:
         raise RuntimeError("user content must not be logged")
 
-    MemoryObservability(emit=fail_sink).fact(action="suppressed", outcome="failed")
+    MemoryObservability(emit=fail_sink).prompt(model_history_chars=1)
 
 
 def test_prompt_length_is_emitted_only_after_runner_uses_trusted_context(
@@ -207,25 +195,3 @@ def test_prompt_length_is_emitted_only_after_runner_uses_trusted_context(
     assert prompt_events == [("memory_prompt", {"model_history_chars": 27})]
     assert "Use the prior context." not in repr(events)
     assert "Memory context" not in repr(events)
-
-
-def test_prompt_length_is_not_emitted_for_exact_recall(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    events: list[tuple[str, dict[str, str | int]]] = []
-    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
-    agent = Agent(
-        tools=[],
-        tool_executor=_RequestContextToolExecutor(),  # type: ignore[arg-type]
-        orchestrator=_FixedOrchestrator(
-            _orchestration_result(recall=MemoryRecall(handled=True, answer="saved goal"))
-        ),  # type: ignore[arg-type]
-        memory_observability=MemoryObservability(
-            emit=lambda event, payload: events.append((event, payload))
-        ),
-    )
-
-    response, _ = agent.chat_with_memory(_trusted_request())
-
-    assert response.answer == "saved goal"
-    assert all(event != "memory_prompt" for event, _payload in events)

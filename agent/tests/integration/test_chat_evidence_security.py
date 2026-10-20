@@ -49,7 +49,7 @@ def fixture(tmp_path):
     guard = AccessGuard(permissions, InternalChatRequest(query='question',user_id='alice',session_id='chat-one',
         attachment_context={'allowed_attachment_ids':['att_one','att_bob'],'selected_attachment_ids':['att_one']},
         memory_context={'actor':{'user_id':'alice','authenticated':True},'chat_id':'chat-one','revision':1,
-                        'current_message_id':'current','current_sequence':2,'facts':[],'tail':[]}), 'security-trace')
+                        'current_message_id':'current','current_sequence':2,'tail':[]}), 'security-trace')
     guard._private_source = lambda storage_id, evidence=False: ({'items':[{'content_hash':'block-hash'}]} if evidence else library if storage_id == 'att_library' else remote)
     return guard, path, documents, remote, library
 

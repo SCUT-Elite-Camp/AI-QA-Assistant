@@ -3,9 +3,6 @@ from typing import Any, Literal, Optional, TypeAlias
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-MemoryFactCategory: TypeAlias = Literal["GOAL", "PREFERENCE", "PLAN_CONSTRAINT"]
-
-
 class _InternalMemoryContractModel(BaseModel):
     """Strict DTO base for trusted Web-to-Agent Memory requests only."""
 
@@ -97,12 +94,28 @@ class Citation(BaseModel):
     content_kind: Literal["excerpt", "file"] = "excerpt"
 
 
+class AnswerClaimQuote(BaseModel):
+    citation_id: int = Field(ge=1)
+    quote: str | None = None
+
+
+class AnswerClaimAnnotation(BaseModel):
+    """Display-only projection of an accepted binding; offsets count Unicode characters."""
+
+    claim_id: str
+    text: str
+    start: int = Field(ge=0)
+    end: int = Field(gt=0)
+    supports: list[AnswerClaimQuote]
+
+
 class ChatResponse(BaseModel):
     trace_id: str
     status: str
     answer: str
     message: str
     citations: list[Citation]
+    answer_claims: list[AnswerClaimAnnotation] = Field(default_factory=list)
     chat_title: Optional[str] = None
     evidence_provenance: Optional[EvidenceProvenance] = None
     diagnostics: Optional[dict[str, Any]] = None
@@ -133,16 +146,6 @@ class MemorySnapshotInput(_InternalMemoryContractModel):
     provenance_complete: bool = False
 
 
-class MemoryFactInput(_InternalMemoryContractModel):
-    id: str = Field(min_length=1)
-    category: MemoryFactCategory
-    value: str
-    # Unix epoch milliseconds in UTC, or null when the Fact does not expire.
-    expires_at: Optional[int] = Field(ge=0)
-    source_dependencies: list[SourceDependency] = Field(default_factory=list)
-    provenance_complete: bool = False
-
-
 class MemoryContextInput(_InternalMemoryContractModel):
     actor: InternalActor
     chat_id: str = Field(min_length=1)
@@ -150,7 +153,6 @@ class MemoryContextInput(_InternalMemoryContractModel):
     current_message_id: str = Field(min_length=1)
     current_sequence: int = Field(gt=0)
     snapshot: Optional[MemorySnapshotInput] = None
-    facts: list[MemoryFactInput]
     tail: list[MemoryMessage]
     source_dependencies: list[SourceDependency] = Field(default_factory=list)
     provenance_complete: bool = False
@@ -233,22 +235,8 @@ class ContextArtifact(_InternalMemoryContractModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class FactProposal(_InternalMemoryContractModel):
-    category: MemoryFactCategory
-    value: str
-    source_message_id: str = Field(min_length=1)
-    expires_at: Optional[int] = Field(ge=0)
-
-
-class MemoryRecall(_InternalMemoryContractModel):
-    handled: bool
-    answer: Optional[str] = None
-
-
 class MemoryDecision(_InternalMemoryContractModel):
     context_artifact: Optional[ContextArtifact] = None
-    fact_proposals: list[FactProposal] = Field(default_factory=list)
-    recall: Optional[MemoryRecall] = None
 
 
 class InternalChatResponse(_InternalMemoryContractModel):
@@ -317,4 +305,3 @@ class ResetShortWindowRequest(_InternalMemoryContractModel):
 
 class ResetShortWindowResponse(_InternalMemoryContractModel):
     status: Literal["ok"]
-

@@ -203,22 +203,6 @@ def test_revocation_after_generation_blocks_answer_release():
         CURRENT_ACCESS_GUARD.reset(token)
 
 
-def test_required_source_cannot_be_skipped_by_memory_recall():
-    from agent.memory.coordinator import MemoryView
-    from agent.schemas.chat import MemoryRecall
-
-    model, executor = Model(), Executor()
-    memory = SimpleNamespace(prepare=lambda request: MemoryView(
-        recall=MemoryRecall(handled=True, answer="Remembered answer")))
-    pipeline = FastPipeline(llm=model, executor=executor, memory=memory, citations=CitationChecker())
-    plan = QueryPlan(original_query="Question", standalone_query="Question",
-                     source_intent=SourceIntent(sources=[SourceKind.ENTERPRISE_KB]))
-    turn = pipeline.run(ChatRequest(query="Question"), trace_id="required", query_plan=plan)
-    assert turn.response.answer == "Answer [1]"
-    assert len(executor.calls) == len(model.calls) == 1
-    assert turn.memory.recall is None
-
-
 def test_context_budget_cannot_silently_drop_a_selected_file(monkeypatch):
     monkeypatch.setattr(settings, "FAST_CONTEXT_MAX_CHARS", 30)
     class Files(Executor):
@@ -236,3 +220,13 @@ def test_context_budget_cannot_silently_drop_a_selected_file(monkeypatch):
     turn, model, _ = run(request, executor=Files())
     assert turn.response.status == "no_relevant_context"
     assert turn.result.error_code == "fast_context_budget_exceeded" and not model.calls
+
+
+@pytest.mark.parametrize("query", ["Remember goal: Finish the report.", "What have you remembered?"])
+def test_retired_fact_commands_follow_the_normal_model_path(query):
+    turn, model, executor = run(ChatRequest(query=query, knowledge_base_retrieval_enabled=False),
+        model=Model(answer="A normal model response."))
+    assert turn.response.status == "success"
+    assert turn.response.answer == "A normal model response."
+    assert len(model.calls) == 1
+    assert executor.calls == []

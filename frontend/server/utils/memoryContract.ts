@@ -1,22 +1,11 @@
 import { z } from 'zod'
+import { answerClaimSchema } from '../../shared/answerClaims'
 import { sourceDependencySchema } from './evidenceContract'
 
 const sourceMetadata = {
   source_dependencies: z.array(sourceDependencySchema).optional(),
   provenance_complete: z.boolean().optional(),
 }
-
-export const memoryFactCategorySchema = z.enum([
-  'GOAL',
-  'PREFERENCE',
-  'PLAN_CONSTRAINT'
-])
-
-export const memoryFactStatusSchema = z.enum([
-  'PROPOSED',
-  'CONFIRMED',
-  'REVOKED'
-])
 
 export const memoryMessageSchema = z.object({
   id: z.string().min(1),
@@ -36,17 +25,6 @@ export const memorySnapshotInputSchema = z.object({
   ...sourceMetadata,
 }).strict()
 
-/** Unix epoch milliseconds in UTC, or null when the Fact does not expire. */
-export const memoryExpiresAtSchema = z.number().int().nonnegative().nullable()
-
-export const memoryFactInputSchema = z.object({
-  id: z.string().min(1),
-  category: memoryFactCategorySchema,
-  value: z.string(),
-  expires_at: memoryExpiresAtSchema,
-  ...sourceMetadata,
-}).strict()
-
 export const internalActorSchema = z.object({
   user_id: z.string().min(1),
   authenticated: z.literal(true)
@@ -59,7 +37,6 @@ export const memoryContextInputSchema = z.object({
   current_message_id: z.string().min(1),
   current_sequence: z.number().int().positive(),
   snapshot: memorySnapshotInputSchema.nullable().default(null),
-  facts: z.array(memoryFactInputSchema),
   tail: z.array(memoryMessageSchema),
   ...sourceMetadata,
 }).strict().superRefine((context, issue) => {
@@ -161,6 +138,7 @@ export const publicChatResponseSchema = z.object({
   answer: z.string(),
   message: z.string(),
   citations: z.array(citationSchema),
+  answer_claims: z.array(answerClaimSchema).optional(),
   chat_title: z.string().nullable().optional()
 }).strict()
 
@@ -170,40 +148,8 @@ export const contextArtifactSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).default({})
 }).strict()
 
-export const factProposalSchema = z.object({
-  category: memoryFactCategorySchema,
-  value: z.string(),
-  source_message_id: z.string().min(1),
-  expires_at: memoryExpiresAtSchema
-}).strict()
-
-/** Browser routes accept only a server-selected source message and category. */
-export const manualFactProposalRequestSchema = z.object({
-  source_message_id: z.string().min(1),
-  category: memoryFactCategorySchema
-}).strict()
-
-/** The only Fact shape serialised from the BFF to the browser. */
-export const factViewSchema = z.object({
-  id: z.string().min(1),
-  category: memoryFactCategorySchema,
-  status: memoryFactStatusSchema,
-  value: z.string(),
-  sourceMessageId: z.string().min(1).nullable(),
-  expiresAt: z.string().datetime().nullable(),
-  confirmedAt: z.string().datetime().nullable(),
-  createdAt: z.string().datetime()
-}).strict()
-
-export const memoryRecallSchema = z.object({
-  handled: z.boolean(),
-  answer: z.string().nullable().optional()
-}).strict()
-
 export const memoryDecisionSchema = z.object({
   context_artifact: contextArtifactSchema.nullable().optional(),
-  fact_proposals: z.array(factProposalSchema).default([]),
-  recall: memoryRecallSchema.nullable().optional()
 }).strict()
 
 export const internalChatResponseSchema = z.object({
@@ -274,6 +220,3 @@ export type InternalChatResponse = z.infer<typeof internalChatResponseSchema>
 export type MemoryContextInput = z.infer<typeof memoryContextInputSchema>
 export type CompactionPlanRequest = z.infer<typeof compactionPlanRequestSchema>
 export type CompactionPlanResponse = z.infer<typeof compactionPlanResponseSchema>
-export type FactProposal = z.infer<typeof factProposalSchema>
-export type FactView = z.infer<typeof factViewSchema>
-export type ManualFactProposalRequest = z.infer<typeof manualFactProposalRequestSchema>

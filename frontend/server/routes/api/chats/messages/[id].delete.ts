@@ -27,7 +27,7 @@ export default defineHandler(async (event) => {
   const db = useDrizzle()
 
   // Use the memory repository's optimistic locking to truncate DB messages
-  // and invalidate Memory Facts / Snapshots consistently.
+  // and invalidate Memory Snapshots consistently.
   let result: { historyRevision: number }
   try {
     result = await truncateHistoryAndInvalidateMemory(db, {

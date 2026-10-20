@@ -21,6 +21,9 @@ def chat_response_events(response: ChatResponse) -> Iterator[tuple[str, Any]]:
         yield "error", {"message": response.message or "Agent request failed"}
         return
 
+    if response.answer_claims:
+        yield "answer-claims", [item.model_dump() for item in response.answer_claims]
+
     for offset in range(0, len(response.answer), _TOKEN_CHUNK_SIZE):
         yield "token", {"content": response.answer[offset:offset + _TOKEN_CHUNK_SIZE]}
 

@@ -178,7 +178,7 @@ async function ensureLocalSchema(client: ReturnType<typeof createClient>) {
     ['is_favorite', 'ALTER TABLE messages ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0'],
     ['suggestion_text', 'ALTER TABLE messages ADD COLUMN suggestion_text TEXT'],
   ])
-  for (const table of ['memory_snapshots', 'memory_facts']) {
+  for (const table of ['memory_snapshots']) {
     await ensureColumns(client, table, [['evidence_provenance', `ALTER TABLE ${table} ADD COLUMN evidence_provenance TEXT`]])
   }
   await ensureColumns(client, 'library_documents', [

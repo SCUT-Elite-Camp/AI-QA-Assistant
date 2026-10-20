@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from agent.schemas.chat import MemoryContextInput, MemoryFactInput, MemoryMessage, MemorySnapshotInput
+from agent.schemas.chat import MemoryContextInput, MemoryMessage, MemorySnapshotInput
 
 
 class PersistentSnapshot(BaseModel):
@@ -36,28 +36,6 @@ class PersistentSnapshot(BaseModel):
         )
 
 
-class PersistentFact(BaseModel):
-    """A normalized fact whose lifecycle is filtered deterministically."""
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-
-    id: str = Field(min_length=1)
-    category: Literal["GOAL", "PREFERENCE", "PLAN_CONSTRAINT"]
-    value: str
-    status: Literal["PROPOSED", "CONFIRMED", "REVOKED"] = "CONFIRMED"
-    scope: Literal["SESSION", "USER"] = "SESSION"
-    expires_at: int | None = Field(default=None, ge=0)
-
-    @classmethod
-    def from_input(cls, fact: MemoryFactInput) -> "PersistentFact":
-        return cls(
-            id=fact.id,
-            category=fact.category,
-            value=fact.value,
-            expires_at=fact.expires_at,
-        )
-
-
 class PersistentMemoryContext(BaseModel):
     """Normalized trusted Memory projection shared within one Agent turn."""
 
@@ -67,7 +45,6 @@ class PersistentMemoryContext(BaseModel):
     current_sequence: int = Field(gt=0)
     revision: int = Field(gt=0)
     snapshot: PersistentSnapshot | None = None
-    facts: list[PersistentFact] = Field(default_factory=list)
     tail: list[MemoryMessage] = Field(default_factory=list)
     actor_authenticated: bool = True
 
@@ -82,7 +59,6 @@ class PersistentMemoryContext(BaseModel):
                 if context.snapshot is not None
                 else None
             ),
-            facts=[PersistentFact.from_input(fact) for fact in context.facts],
             tail=list(context.tail),
             actor_authenticated=context.actor.authenticated,
         )

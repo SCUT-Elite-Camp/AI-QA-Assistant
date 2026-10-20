@@ -36,19 +36,6 @@ class InspectingLLM:
         return {"role": "assistant", "content": self.answers.pop(0)}
 
 
-class NoModelCallLLM:
-    def __init__(self) -> None:
-        self.calls = 0
-
-    def generate(self, prompt: str) -> str:
-        return prompt
-
-    @grounded_model
-    def chat(self, messages: list[dict], tools=None, **kwargs) -> dict:
-        self.calls += 1
-        raise AssertionError("explicit memory recall must not call an LLM")
-
-
 class MemorySearchTool(BaseTool):
     @property
     def name(self) -> str:
@@ -89,7 +76,7 @@ class MemorySearchTool(BaseTool):
         }]
 
 
-def persistent_memory_context(*, facts: list[dict] | None = None) -> dict:
+def persistent_memory_context() -> dict:
     return {
         "actor": {"user_id": "user-a", "authenticated": True},
         "chat_id": "persistent-chat",
@@ -103,7 +90,7 @@ def persistent_memory_context(*, facts: list[dict] | None = None) -> dict:
             "covered_to_sequence": 1,
             "summary": "Earlier discussion summary.",
         },
-        "facts": facts or [],
+
         "tail": [
             {
                 "id": "message-2",
@@ -118,7 +105,6 @@ def persistent_memory_context(*, facts: list[dict] | None = None) -> dict:
 
 def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
-    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     llm = InspectingLLM(["Persistent answer [1]"])
     agent = Agent(llm=llm, tools=[MemorySearchTool()])
     request = InternalChatRequest(
@@ -127,14 +113,7 @@ def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
         is_first_message=False,
         weight_mode="thinking",
         memory_context=persistent_memory_context(
-            facts=[
-                {
-                    "id": "fact-1",
-                    "category": "PREFERENCE",
-                    "value": "Use concise English.",
-                    "expires_at": None,
-                }
-            ]
+
         ),
     )
 
@@ -152,7 +131,7 @@ def test_persistent_context_reaches_thinking_loop_once(monkeypatch) -> None:
         "user",
     ]
     assert "Memory Context follows" in runner_messages[1]["content"]
-    assert "Use concise English." in runner_messages[1]["content"]
+    assert "Earlier discussion summary." in runner_messages[1]["content"]
     assert runner_messages[2]["content"] == "Earlier assistant answer."
     assert runner_messages[-2]["content"] == "Current persistent question"
     assert sum(
@@ -167,7 +146,6 @@ def test_persistent_context_reaches_fast_pipeline_once(monkeypatch) -> None:
     from unittest.mock import Mock
 
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
-    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
     coordinator = MemoryCoordinator()
     coordinator.prepare = Mock(wraps=coordinator.prepare)  # type: ignore[method-assign]
     llm = InspectingLLM(["Fast persistent answer [1]"])
@@ -196,42 +174,6 @@ def test_persistent_context_reaches_fast_pipeline_once(monkeypatch) -> None:
     assert "Memory Context follows" in fast_messages[1]["content"]
     assert fast_messages[2]["content"] == "Earlier assistant answer."
     assert "Original question:\nCurrent persistent question" in fast_messages[-1]["content"]
-
-
-def test_chinese_memory_recall_language_capability(
-    monkeypatch,
-) -> None:
-    monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
-    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
-    llm = NoModelCallLLM()
-    coordinator = MemoryCoordinator(now_ms=lambda: 1000)
-    agent = Agent(llm=llm, tools=[], memory_coordinator=coordinator)
-    request = InternalChatRequest(
-        query="我之前确认的记忆是什么？",
-        session_id="persistent-chat",
-        is_first_message=False,
-        memory_context=persistent_memory_context(
-            facts=[
-                {
-                    "id": "fact-1",
-                    "category": "GOAL",
-                    "value": "完成答辩准备。",
-                    "expires_at": 1001,
-                }
-            ]
-        ),
-    )
-
-    response = agent.chat(request)
-
-    assert response.status == StatusCode.SUCCESS
-    assert response.answer == "已确认的记忆：\n- GOAL: 完成答辩准备。"
-    assert response.citations == []
-    assert llm.calls == 0
-    assert agent.last_run_result is None
-    assert agent.last_orchestration is not None
-    assert agent.last_orchestration.context_artifact is not None
-    assert "完成答辩准备。" in agent.last_orchestration.context_artifact.memory_brief
 
 
 def test_repeated_requests_do_not_share_implicit_session_history() -> None:

@@ -200,7 +200,7 @@ def test_plan_boundary_rebuilds_snapshot_plus_tail_without_current_query(
                 covered_to_sequence=plan.new_snapshot.covered_to_sequence,
                 summary=plan.new_snapshot.summary,
             ),
-            facts=[],
+
             tail=messages[12:20],
         )
     )

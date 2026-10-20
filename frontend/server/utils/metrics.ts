@@ -36,7 +36,6 @@ interface MetricsStore {
   memory: {
     compaction: Record<string, number>
     durations: Record<string, LatencyBucket>
-    fact: Record<string, number>
     fallback: Record<string, number>
     resolve: Record<string, number>
   }
@@ -98,7 +97,6 @@ const store: MetricsStore = {
   memory: {
     compaction: {},
     durations: {},
-    fact: {},
     fallback: {},
     resolve: {}
   },
@@ -115,8 +113,6 @@ const store: MetricsStore = {
 const MEMORY_RESOLVE_SOURCES = new Set(['disabled', 'trusted_context', 'legacy'])
 const MEMORY_RESOLVE_OUTCOMES = new Set(['success', 'fallback', 'rejected'])
 const MEMORY_COMPACTION_OUTCOMES = new Set(['skipped', 'planned', 'conflict', 'failed'])
-const MEMORY_FACT_ACTIONS = new Set(['proposed', 'suppressed', 'recalled'])
-const MEMORY_FACT_OUTCOMES = new Set(['success', 'disabled', 'sensitive', 'empty', 'failed'])
 const MEMORY_FALLBACK_REASONS = new Set(['agent_disabled', 'internal_error', 'context_error'])
 const MEMORY_DURATION_OPERATIONS = new Set(['context', 'internal_chat', 'compaction'])
 
@@ -138,11 +134,6 @@ export function recordMemoryResolve (source: string, outcome: string) {
 export function recordMemoryCompaction (outcome: string) {
   if (!MEMORY_COMPACTION_OUTCOMES.has(outcome)) return
   incrementMemoryCounter(store.memory.compaction, outcome)
-}
-
-export function recordMemoryFact (action: string, outcome: string) {
-  if (!MEMORY_FACT_ACTIONS.has(action) || !MEMORY_FACT_OUTCOMES.has(outcome)) return
-  incrementMemoryCounter(store.memory.fact, `${action}:${outcome}`)
 }
 
 export function recordMemoryFallback (reason: string) {
@@ -271,7 +262,6 @@ export function getMetrics() {
         totalMs: Math.round(bucket.totalMs),
         avgMs: bucket.count > 0 ? Math.round(bucket.totalMs / bucket.count) : 0
       }])),
-      fact: { ...store.memory.fact },
       fallback: { ...store.memory.fallback },
       resolve: { ...store.memory.resolve }
     },
@@ -411,8 +401,8 @@ export function resetMetrics() {
   store.startTime = Date.now()
   store.requests = { total: 0, byEndpoint: {} }
   store.db = { totalQueries: 0, totalDurationMs: 0, slowQueries: 0 }
+  store.memory = { compaction: {}, durations: {}, fallback: {}, resolve: {} }
   store.ai = { totalCalls: 0, totalDurationMs: 0, totalTokens: 0, ttftBuckets: createLatencyBucket() }
-  store.memory = { compaction: {}, durations: {}, fact: {}, fallback: {}, resolve: {} }
   store.libraryCleanup = {
     pending: 0,
     retry: 0,

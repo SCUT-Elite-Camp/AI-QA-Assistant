@@ -107,7 +107,6 @@ class Settings(BaseModel):
         ge=1,
     )
     PERSISTENT_MEMORY_ENABLED: bool = Field(default_factory=lambda: _env_bool("PERSISTENT_MEMORY_ENABLED", False))
-    SESSION_FACT_ENABLED: bool = Field(default_factory=lambda: _env_bool("SESSION_FACT_ENABLED", False))
     MEMORY_CACHE_ENABLED: bool = Field(default_factory=lambda: _env_bool("MEMORY_CACHE_ENABLED", False))
     MEMORY_TAIL_MESSAGES: int = Field(
         default_factory=lambda: _env_int("MEMORY_TAIL_MESSAGES", 8),

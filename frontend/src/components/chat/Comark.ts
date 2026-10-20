@@ -21,6 +21,10 @@ import toml from '@shikijs/langs/toml'
 import graphql from '@shikijs/langs/graphql'
 import SourceLink from './SourceLink.vue'
 import CiteMark from './CiteMark.vue'
+import AnswerClaim from './AnswerClaim.vue'
+import { createAnswerClaimMarkup } from '../../utils/answerClaimMarkup'
+import type { AnswerClaim as ClaimAnnotation } from '../../../shared/answerClaims'
+import type { PropType } from 'vue'
 import StreamGlyph from './StreamGlyph'
 import { createStreamTextFade } from '../../utils/streamTextFade'
 
@@ -34,6 +38,7 @@ const Markdown = defineComarkComponent({
   components: {
     'source-link': SourceLink,
     'cite-mark': CiteMark,
+    'answer-claim': AnswerClaim,
     'stream-glyph': StreamGlyph,
   },
   class: 'markdown-body comark-content *:first:mt-0 *:last:mb-0'
@@ -44,10 +49,13 @@ export default defineComponent({
   props: {
     markdown: String,
     streaming: Boolean,
+    answerSource: String,
+    answerClaims: { type: Array as PropType<ClaimAnnotation[]>, default: () => [] },
   },
   setup(props, { attrs, slots }) {
     const fade = createStreamTextFade(() => props.streaming)
-    return () => h(Markdown, { ...attrs, ...props, plugins: [fade] }, slots)
+    const claims = createAnswerClaimMarkup(() => props.answerSource || '', () => props.answerClaims)
+    return () => h(Markdown, { ...attrs, markdown: props.markdown, streaming: props.streaming, plugins: [claims, fade] }, slots)
   }
 })
 

@@ -101,3 +101,13 @@ loop; model infrastructure failure stops without an unchecked answer. Fast is
 binding-only. See [mode contract](chat_mode_contract.md) for configuration,
 protocol, release conditions and model limitations. Historical preparation-only
 results above remain preparation results.
+
+
+### 2026-10-20 answer protocol V4
+
+The binding input now contains the independent model `answer` plus private claims.
+`claims[].model_answer_spans` are Python character offsets into that original
+answer before citation insertion, resolved from exact claim text occurrences.
+The verifier still receives the same claim text and source-bound supports; it does
+not grade an alternate reconstructed answer. Binding rejects uncovered prose and
+overlapping spans before this builder or MiniCheck runs.

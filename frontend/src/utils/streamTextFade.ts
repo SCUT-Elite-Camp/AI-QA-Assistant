@@ -2,7 +2,7 @@
 import type { ComarkNode, ComarkPlugin } from '@comark/vue'
 
 export const STREAM_FADE_MS = 420
-const skipTags = new Set(['pre', 'code', 'script', 'style', 'cite-mark', 'source-link'])
+const skipTags = new Set(['pre', 'code', 'script', 'style', 'cite-mark', 'source-link', 'answer-claim'])
 
 /** One instance per message renderer; only recently revealed prose is decorated. */
 export function createStreamTextFade(streaming: () => boolean, now = () => Date.now()): ComarkPlugin {

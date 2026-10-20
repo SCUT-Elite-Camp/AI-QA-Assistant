@@ -10,6 +10,7 @@ import { requireOwnedChat } from '../../../utils/chatAccess'
 import { tables, useDrizzle, eq, and } from '../../../utils/drizzle'
 import { appendMessage, createCurrentMessageHandoff, persistCurrentUserMessage } from '../../../utils/messageLifecycle'
 import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
+import { parseAnswerClaims } from '../../../../shared/answerClaims'
 
 /** Selection exploration is an isolated server-owned conversation, not client-supplied memory. */
 export default defineHandler(async (event) => {
@@ -60,8 +61,10 @@ export default defineHandler(async (event) => {
     }
     await requireOwnedChat(event, chat.id)
     await assertDerivedSources(userId, proof)
+    const answerClaims = parseAnswerClaims(answer.answer_claims || [], answer.answer || '', answer.citations || [])
     saved = await appendMessage(db, { chatId: chat.id, requestId: current.id, role: 'assistant', parts: [
       { type: 'text', text: answer.answer || answer.message || '' },
+      ...(answerClaims.length ? [{ type: 'data-answer-claims', data: answerClaims }] : []),
       { type: 'tool-rag_search', toolCallId: current.id, state: 'output-available', input: { query },
         output: (answer.citations || []).map((citation: any, index: number) => ({ ...citation, index: index + 1, chunk_text: citation.snippet || '' })) },
       provenancePart(proof),
@@ -79,7 +82,7 @@ export default defineHandler(async (event) => {
       if (part.type === 'tool-rag_search' && part.output.length) {
         writer.write({ type: 'tool-input-available', toolCallId: message.id, toolName: 'rag_search', input: part.input })
         writer.write({ type: 'tool-output-available', toolCallId: message.id, output: part.output })
-      } else if (part.type === 'data-evidence-provenance') {
+      } else if (part.type === 'data-evidence-provenance' || part.type === 'data-answer-claims') {
         writer.write(part)
       } else if (part.type === 'text') {
         writer.write({ type: 'text-start', id: message.id })

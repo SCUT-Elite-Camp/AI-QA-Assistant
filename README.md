@@ -1,5 +1,7 @@
 # AI-QA-Assistant
 
+2026-10-20：Fact 实现已移除，包括提议、确认、撤销、固定命令召回、API、界面、配置开关和模型上下文。当前会话记忆只包含 Snapshot 与 Tail；Topic 摘要独立保留。历史 Fact 设计与迁移仅供追溯，现存 `memory_facts` 表不再由应用读写，本次不清空运行数据库。Web 与 Agent 必须同步更新；旧 `facts` / `fact_proposals` / `recall` 字段不再属于内部契约。
+
 AI-QA-Assistant is a multi-service question-answering application. The web UI, Agent API, retrieval/tooling code, and data services run as separate components.
 
 Browse the [documentation index](docs/README.md) for module guides, current contracts, test reports and archived Q1 specifications.

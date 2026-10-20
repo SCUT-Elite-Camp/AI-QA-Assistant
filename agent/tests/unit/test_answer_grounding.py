@@ -15,7 +15,7 @@ pytestmark = pytest.mark.no_storage
 
 
 def envelope(answer="Fusion was completed July 30 [1]", quote="Fusion completed July 30"):
-    return {"claims": [{"text": answer, "supports": [
+    return {"answer": answer, "claims": [{"text": answer, "supports": [
         {"citation_id": 1, "quote": quote},
     ]}]}
 
@@ -57,25 +57,25 @@ def test_quote_in_another_excerpt_of_same_document_does_not_validate_wrong_refer
                {"doc_id": "same", "content": "Fusion completed July 30"}]
     assert not validate_grounded_answer(draft, sources)["valid"]
     draft.claims[0].supports[0].citation_id = 2
-    draft.claims[0].text = "Fusion was completed July 30"
+    draft.answer = draft.claims[0].text = "Fusion was completed July 30"
     assert validate_grounded_answer(draft, sources)["answer"].endswith('[2]')
 
 
 def test_explicit_abstention_does_not_become_an_access_or_quality_error():
-    turn, model, _ = run(model=Model('{"claims":[]}'))
+    turn, model, _ = run(model=Model('{"answer":"","claims":[]}'))
     assert turn.response.status == "no_relevant_context"
     assert not turn.response.answer and not turn.response.citations
     assert len(model.calls) == 1
 
 
-def test_missing_claims_or_a_second_unbound_answer_is_rejected():
+def test_missing_claims_or_unbound_answer_is_rejected():
     payload = envelope()
     payload["claims"] = []
-    assert not check(payload)["valid"]
-    payload = envelope()
-    payload["answer"] = "The budget is one million."
     with pytest.raises(ValueError):
         check(payload)
+    payload = envelope()
+    payload["answer"] = "The budget is one million."
+    assert not check(payload)["valid"]
 
 
 def test_unknown_reference_or_unbound_inline_citation_is_rejected():
@@ -101,7 +101,7 @@ def test_missing_visible_citations_are_rendered_from_valid_bindings():
 
 
 def test_multiple_claims_render_separate_citations_without_duplicates():
-    payload = {"claims": [
+    payload = {"answer": "Alpha is done.\n\nBeta is active.", "claims": [
         {"text": "Alpha is done.", "supports": [{"citation_id": 1, "quote": "Alpha: done"}]},
         {"text": "Beta is active.", "supports": [{"citation_id": 2, "quote": "Beta: active"}]},
     ]}
@@ -109,6 +109,74 @@ def test_multiple_claims_render_separate_citations_without_duplicates():
         {"content": "Alpha: done"}, {"content": "Beta: active"}])
     assert report["valid"] and report["answer"] == "Alpha is done.[1]\n\nBeta is active.[2]"
     assert check(envelope())["answer"] == "Fusion was completed July 30 [1]"
+
+
+def test_independent_answer_preserves_layout_and_ignores_claim_list_order():
+    payload = {"answer": "**Alpha is done.** Beta is active.", "claims": [
+        {"text": "Beta is active.", "supports": [{"citation_id": 2, "quote": "Beta: active"}]},
+        {"text": "Alpha is done.", "supports": [{"citation_id": 1, "quote": "Alpha: done"}]},
+    ]}
+    report = validate_grounded_answer(parse_grounded_answer(json.dumps(payload)), [
+        {"content": "Alpha: done"}, {"content": "Beta: active"}])
+    assert report["valid"]
+    assert report["answer"] == "**Alpha is done.[1]** Beta is active.[2]"
+    assert report["claims"][0]["model_answer_spans"] == [{"start": 19, "end": 34}]
+
+
+def test_unbound_citations_still_reject_entire_answer():
+    payload = envelope(answer="Fusion completed July 30.")
+    payload["answer"] += " [1]"
+    report = check(payload)
+    assert not report["valid"] and report["answer"] == ""
+
+
+def test_presentation_text_and_bullet_labels_are_not_forced_into_assertions():
+    payload = envelope(answer="Fusion completed July 30.")
+    payload["answer"] = "Here are the requested details:\n\n- Completion date: " + payload["answer"]
+    report = check(payload)
+    assert report["valid"]
+    span = report["claims"][0]["model_answer_spans"][0]
+    assert span["start"] == len("Here are the requested details:\n\n- Completion date: ")
+    assert report["answer"].endswith("Fusion completed July 30.[1]")
+
+
+def test_binding_does_not_claim_to_detect_omitted_factual_assertions():
+    payload = envelope(answer="Fusion completed July 30.")
+    payload["answer"] += " The budget is one million."
+    report = check(payload)
+    assert report["valid"]
+    assert report["claim_completeness"] == "model_selected_not_verified"
+
+
+def test_repeated_claim_text_binds_every_occurrence_without_reconstructing_body():
+    payload = envelope(answer="Fusion completed July 30.")
+    payload["answer"] += "\n\n" + payload["answer"]
+    report = check(payload)
+    assert report["valid"]
+    assert len(report["claims"][0]["model_answer_spans"]) == 2
+    assert report["answer"] == "Fusion completed July 30.[1]\n\nFusion completed July 30.[1]"
+
+
+def test_overlapping_claims_are_rejected():
+    payload = envelope(answer="Fusion completed July 30.")
+    payload["claims"].append({"text": "July 30", "supports": payload["claims"][0]["supports"]})
+    assert "claim_2:overlapping_claims" in check(payload)["errors"]
+
+
+@pytest.mark.parametrize("payload", [{"claims": []}, {"answer": "Answer", "claims": []},
+                                    {"answer": "", "claims": envelope()["claims"]}])
+def test_answer_is_required_and_cannot_bypass_binding_as_abstention(payload):
+    turn, model, _ = run(model=Model(json.dumps(payload)))
+    assert turn.response.status == "quality_validation_failed"
+    assert not turn.response.answer and len(model.calls) == 1
+
+
+def test_unicode_capability_offsets_count_characters_in_original_body():
+    payload = envelope(answer="Café completed July 30.")
+    report = check(payload)
+    assert report["valid"]
+    span = report["claims"][0]["model_answer_spans"][0]
+    assert payload["answer"][span["start"]:span["end"]] == payload["claims"][0]["text"]
 
 
 def test_image_region_and_text_fragment_cannot_be_interchanged():

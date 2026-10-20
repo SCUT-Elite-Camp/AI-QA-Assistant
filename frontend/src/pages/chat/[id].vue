@@ -10,8 +10,6 @@ import { useModels } from '../../composables/useModels'
 import { useChats } from '../../composables/useChats'
 import { useCsrf } from '../../composables/useCsrf'
 import { useFavorites } from '../../composables/useFavorites'
-import { useSessionFacts } from '../../composables/useSessionFacts'
-import { useUserSession } from '../../composables/useUserSession'
 import { useRoute, useRouter } from 'vue-router'
 import ChatMessageContent from '../../components/chat/message/MessageContent.vue'
 import ChatMessageActions from '../../components/chat/message/MessageActions.vue'
@@ -26,8 +24,6 @@ import SoulModal from '../../components/chat/SoulModal.vue'
 import SuggestionModal from '../../components/chat/SuggestionModal.vue'
 import CascadingModeSelector from '../../components/chat/CascadingModeSelector.vue'
 import AttachmentTray from '../../components/chat/AttachmentTray.vue'
-import FactProposalCard from '../../components/chat/memory/FactProposalCard.vue'
-import SessionFactPanel from '../../components/chat/memory/SessionFactPanel.vue'
 import QuickNavDial from '../../components/chat/QuickNavDial.vue'
 import HitRateDrawer from '../../components/chat/HitRateDrawer.vue'
 import ProgressIndicator from '../../components/chat/ProgressIndicator.vue'
@@ -35,7 +31,6 @@ import ResearchModeNotice from '../../components/research/ResearchModeNotice.vue
 import { useResearchLaunch } from '../../composables/useResearchLaunch'
 import { useAdaptiveComposer } from '../../composables/useAdaptiveComposer'
 import type { Vote } from '../../../server/utils/drizzle'
-import type { FactCategory } from '../../types/memory'
 import { extractAttachmentSelection } from '../../../shared/utils/attachmentParts'
 import { knowledgeBaseRetrievalEnabled } from '../../../shared/utils/chatRetrieval'
 import { chatExplorationMode } from '../../../shared/utils/chatExploration'
@@ -58,18 +53,6 @@ const currentWeightMode = ref<'thinking' | 'auto' | 'fast'>('fast')
 const { model } = useModels()
 const { fetchChats, chats } = useChats()
 const { csrf, headerName } = useCsrf()
-const { loggedIn } = useUserSession()
-const sessionFacts = useSessionFacts()
-const memoryRecallMessageIds = ref<string[]>([])
-const hasPendingTrustedMemoryRecall = ref(false)
-const {
-  available: sessionFactsAvailable,
-  loading: sessionFactsLoading,
-  proposedFacts,
-  confirmedFacts
-} = sessionFacts
-
-
 const data = await $fetch(`/api/chats/${route.params.id}`).catch((e) => {
   console.error('[chat/[id]] fetch failed:', e)
   return null
@@ -82,64 +65,6 @@ const isOwner = computed(() => data?.isOwner ?? false)
 const visibility = ref<'public' | 'private'>(data?.visibility ?? 'private')
 const title = ref<string | null>(data?.title ?? null)
 const activeChatId = computed(() => typeof route.params.id === 'string' ? route.params.id : data?.id ?? '')
-const sessionFactsAllowed = computed(() => Boolean(
-  activeChatId.value
-  && isOwner.value
-  && visibility.value === 'private'
-  && loggedIn.value
-))
-
-function isMemoryRecallMessage(messageId: string): boolean {
-  return memoryRecallMessageIds.value.includes(messageId)
-}
-
-async function refreshSessionFacts(showFailure = false) {
-  const chatId = activeChatId.value
-  if (!sessionFactsAllowed.value || !chatId) {
-    sessionFacts.clear()
-    return
-  }
-  const result = await sessionFacts.load(chatId)
-  if (showFailure && result === 'failed') {
-    toast.add({ description: 'Failed to update memory', icon: 'i-lucide-alert-circle', color: 'error' })
-  }
-}
-
-watch([() => route.params.id, sessionFactsAllowed], () => {
-  if (sessionFactsAllowed.value && activeChatId.value) {
-    sessionFacts.activate(activeChatId.value)
-  } else {
-    sessionFacts.clear()
-  }
-  void refreshSessionFacts(true)
-}, { immediate: true })
-
-function showSessionFactsResult(result: { ok: boolean, code?: 'fact_sensitive' | 'operation_failed' }) {
-  if ('discarded' in result && result.discarded) return
-  if (result.ok) return
-  toast.add({
-    description: result.code === 'fact_sensitive' ? 'This content is sensitive and cannot be saved as memory' : 'Memory operation failed',
-    icon: 'i-lucide-alert-circle',
-    color: 'error'
-  })
-}
-
-async function saveMessageAsFact(message: UIMessage, category: FactCategory) {
-  if (!activeChatId.value || message.role !== 'user' || !sessionFactsAllowed.value) return
-  showSessionFactsResult(await sessionFacts.propose(activeChatId.value, message.id, category))
-}
-
-async function confirmFact(factId: string) {
-  if (!activeChatId.value || !sessionFactsAllowed.value) return
-  showSessionFactsResult(await sessionFacts.confirm(activeChatId.value, factId))
-}
-
-async function revokeFact(factId: string) {
-  if (!activeChatId.value || !sessionFactsAllowed.value) return
-  showSessionFactsResult(await sessionFacts.revoke(activeChatId.value, factId))
-}
-
-
 // Topic Space State
 const topic = ref<any>(null)
 if (data?.topicId) {
@@ -251,25 +176,10 @@ const chat = new Chat({
     if (dataPart.type === 'data-chat-title') {
       fetchChats()
     }
-    if (dataPart.type === 'data-memory-recall') {
-      // The server-generated persistence ID is not necessarily the ID created
-      // by the client streaming state. Associate this trusted marker only when
-      // Chat provides the completed assistant message below.
-      hasPendingTrustedMemoryRecall.value = true
-    }
   },
   onFinish: ({ message, isAbort, isDisconnect, isError }) => {
     if (isAbort || isDisconnect || isError) smoothAnswer.cancel()
     else smoothAnswer.commit(message.id)
-    if (hasPendingTrustedMemoryRecall.value && !isAbort && !isDisconnect && !isError && message.role === 'assistant') {
-      if (!memoryRecallMessageIds.value.includes(message.id)) {
-        memoryRecallMessageIds.value = [...memoryRecallMessageIds.value, message.id]
-      }
-    }
-    hasPendingTrustedMemoryRecall.value = false
-    if (!isAbort && !isDisconnect && !isError) {
-      void refreshSessionFacts(true)
-    }
   },
   onError(error) {
     smoothAnswer.cancel()
@@ -635,7 +545,6 @@ onBeforeUnmount(() => {
   smoothAnswer.cancel()
   chat.stop()
   document.removeEventListener('mousedown', handleGlobalMouseDown)
-  sessionFacts.clear()
 })
 </script>
 
@@ -858,13 +767,6 @@ onBeforeUnmount(() => {
                     @save="saveEdit"
                     @cancel-edit="cancelEdit"
                   />
-                  <p
-                    v-if="message.role === 'assistant' && isMemoryRecallMessage(message.id)"
-                    class="mt-2 text-xs text-muted"
-                    aria-label="From confirmed session memory"
-                  >
-                    From confirmed session memory
-                  </p>
                 </div>
               </template>
 
@@ -877,37 +779,14 @@ onBeforeUnmount(() => {
                   :streaming="isResponding && message.id === chat.messages[chat.messages.length - 1]?.id"
                   :editing="editingMessageId === message.id"
                   :vote="getVote(message.id)"
-                  :memory-enabled="sessionFactsAllowed && sessionFactsAvailable"
-                  :memory-busy="sessionFactsLoading || sessionFacts.isPending(message.id)"
                   @edit="startEdit"
                   @regenerate="regenerateMessage"
                   @vote="vote"
                   @favorite="handleFavoriteMessage"
                   @suggest="openSuggestModal"
-                  @save-memory="saveMessageAsFact"
                 />
               </template>
             </UChatMessages>
-
-            <section
-              v-if="sessionFactsAllowed && sessionFactsAvailable && (proposedFacts.length || confirmedFacts.length)"
-              class="space-y-3 pb-4"
-              aria-label="Session memory"
-            >
-              <FactProposalCard
-                v-for="fact in proposedFacts"
-                :key="fact.id"
-                :fact="fact"
-                :pending="sessionFacts.isPending(fact.id)"
-                @confirm="confirmFact"
-                @revoke="revokeFact"
-              />
-              <SessionFactPanel
-                :facts="confirmedFacts"
-                :is-pending="sessionFacts.isPending"
-                @revoke="revokeFact"
-              />
-            </section>
 
             <!-- Compact selection actions -->
             <div

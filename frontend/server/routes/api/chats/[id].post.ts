@@ -11,17 +11,9 @@ import {
   recordAiCall,
   recordMemoryCompaction,
   recordMemoryDuration,
-  recordMemoryFact
 } from '../../../utils/metrics'
 import { requireOwnedChat } from '../../../utils/chatAccess'
 import { compactAfterSuccessfulAssistantPersistence } from '../../../utils/postTurnCompaction'
-import {
-  createFactProposal,
-  readCurrentRevisionFactSource
-} from '../../../utils/memoryRepository'
-import { isSensitiveMemoryValue } from '../../../utils/sensitiveMemoryValue'
-import { isSessionFactEnabled } from '../../../utils/sessionFactGate'
-import type { FactProposal } from '../../../utils/memoryContract'
 import { requireAttachmentAccess } from '../../../utils/attachmentAccess'
 import { getOrCreateDefaultLibrary } from '../../../utils/library'
 import {
@@ -34,6 +26,7 @@ import { chatExplorationMode } from '../../../../shared/utils/chatExploration'
 import { buildPersistentMemoryContext } from '../../../utils/persistentMemoryContext'
 import { requireCsrf, requireTopicRole } from '../../../utils/attachmentAuth'
 import { assertDerivedSources, assertSourceDependencies, evidenceProvenanceSchema, provenancePart, citationsCovered, type EvidenceProvenance } from '../../../utils/sourceAccess'
+import { parseAnswerClaims, type AnswerClaim } from '../../../../shared/answerClaims'
 import {
   appendMessage,
   createAssistantStreamState,
@@ -41,102 +34,6 @@ import {
   persistCurrentUserMessage,
   shouldPersistAssistantMessage
 } from '../../../utils/messageLifecycle'
-
-type Database = NonNullable<ReturnType<typeof useDrizzle>>
-
-interface PersistAgentFactProposalsInput {
-  evidenceProvenance?: EvidenceProvenance
-  actorUserId: string
-  chatId: string
-  currentMessageId: string
-  historyRevision: number
-  proposals: FactProposal[]
-}
-
-const FACT_CATEGORIES = new Set<FactProposal['category']>([
-  'GOAL',
-  'PREFERENCE',
-  'PLAN_CONSTRAINT'
-])
-
-export async function persistAgentFactProposalsAfterAssistantPersistence (
-  db: Database,
-  input: PersistAgentFactProposalsInput
-): Promise<void> {
-  if (!isSessionFactEnabled()) {
-    recordMemoryFact('suppressed', 'disabled')
-    return
-  }
-  if (input.proposals.length === 0) {
-    recordMemoryFact('suppressed', 'empty')
-    return
-  }
-
-  let source
-  try {
-    source = await readCurrentRevisionFactSource(db, {
-      actorUserId: input.actorUserId,
-      chatId: input.chatId,
-      historyRevision: input.historyRevision,
-      sourceMessageId: input.currentMessageId
-    })
-  } catch {
-    recordMemoryFact('suppressed', 'failed')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
-    return
-  }
-
-  if (!source || source.role !== 'user') {
-    recordMemoryFact('suppressed', 'failed')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
-    return
-  }
-
-  if (input.proposals.length > 1) {
-    recordMemoryFact('suppressed', 'failed')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
-  }
-
-  const proposal = input.proposals[0]
-  if (!proposal) return
-  if (proposal.source_message_id !== input.currentMessageId) {
-    recordMemoryFact('suppressed', 'failed')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
-    return
-  }
-  if (!FACT_CATEGORIES.has(proposal.category)) {
-    recordMemoryFact('suppressed', 'failed')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
-    return
-  }
-  if (!proposal.value.trim()) {
-    recordMemoryFact('suppressed', 'empty')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'empty' })
-    return
-  }
-  if (isSensitiveMemoryValue(proposal.value)) {
-    recordMemoryFact('suppressed', 'sensitive')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'sensitive' })
-    return
-  }
-
-  try {
-    await createFactProposal(db, {
-      actorUserId: input.actorUserId,
-      category: proposal.category,
-      chatId: input.chatId,
-      historyRevision: input.historyRevision,
-      sourceMessageId: input.currentMessageId,
-      evidenceProvenance: input.evidenceProvenance,
-      value: proposal.value
-    })
-    recordMemoryFact('proposed', 'success')
-    logMemoryEvent({ event: 'memory_fact', action: 'proposed', outcome: 'success' })
-  } catch {
-    recordMemoryFact('suppressed', 'failed')
-    logMemoryEvent({ event: 'memory_fact', action: 'suppressed', outcome: 'failed' })
-  }
-}
 
 const uiMessageSchema = z.object({
   id: z.string().min(1),
@@ -190,10 +87,10 @@ export default defineHandler(async (event) => {
   const state = createAssistantStreamState()
   let provenance: EvidenceProvenance | undefined
   let citations: any[] = []
-  let factProposals: FactProposal[] = []
+  let answerClaims: AnswerClaim[] = []
+  let pendingClaims: unknown = []
   let savedAssistant: typeof tables.messages.$inferSelect | undefined
   let chatTitle: string | undefined
-  let memoryRecall = false
   let reasoning = ''
   let responseStarted = false
   let liveReasoning = false
@@ -219,6 +116,7 @@ export default defineHandler(async (event) => {
           const parts = Array.isArray(existing.parts) ? existing.parts : []
           state.assistantContent = parts.filter((part: any) => part.type === 'text').map((part: any) => part.text || '').join('')
           citations = parts.flatMap((part: any) => part.type === 'tool-rag_search' ? part.output || [] : [])
+          pendingClaims = parts.find((part: any) => part.type === 'data-answer-claims')?.data || []
         } else {
           let memoryContext = await buildPersistentMemoryContext(db, handoff)
           let topicSoul: string | undefined
@@ -292,6 +190,8 @@ export default defineHandler(async (event) => {
               // Quality repair may replace the streamed draft. Only this final
               // answer is persisted and released as a completed message.
               state.assistantContent = String(data.content || '')
+            } else if (eventType === 'answer-claims') {
+              pendingClaims = data
             } else if (eventType === 'citations') {
               if (!Array.isArray(data)) throw new Error('invalid_citations')
               citations = data.map((citation: any, index: number) => {
@@ -311,8 +211,6 @@ export default defineHandler(async (event) => {
               if (failure) throw failure
               provenance = evidenceProvenanceSchema.parse(data.evidence_provenance)
               agentStatus = data.status
-              factProposals = data.memory_decision?.fact_proposals || []
-              memoryRecall = data.memory_decision?.recall?.handled === true
               chatTitle = data.chat_title
               state.agentSucceeded = data.status === 'success' || data.status === 'clarification_required'
               completed = true
@@ -343,6 +241,7 @@ export default defineHandler(async (event) => {
         if (!provenance?.complete || !citationsCovered(provenance, citations)) throw new Error('source_provenance_incomplete')
         guardPhase = 'current_source_check'
         state.assistantContent = state.assistantContent.replace(/^\s*\[TITLE:[^\]]*\]\s*/i, '')
+        answerClaims = parseAnswerClaims(pendingClaims, state.assistantContent, citations)
         await assertSourceDependencies(actor.userId, provenance.dependencies)
         await requireOwnedChat(event, chat.id, 'editor')
         if (controller.signal.aborted) throw new Error('request_aborted')
@@ -365,6 +264,7 @@ export default defineHandler(async (event) => {
           savedAssistant = await appendMessage(db, { id: assistantId, chatId: chat.id, role: 'assistant',
             requestId: current.id, parts: [
               { type: 'text', text: state.assistantContent },
+              ...(answerClaims.length ? [{ type: 'data-answer-claims', data: answerClaims }] : []),
               { type: 'tool-rag_search', state: 'output-available', toolCallId: assistantId, input: { query }, output: citations },
               provenancePart(provenance),
             ] })
@@ -385,7 +285,7 @@ export default defineHandler(async (event) => {
           writer.write({ type: 'tool-output-available', toolCallId: assistantId, output: citations })
         }
         writer.write({ type: 'data-evidence-provenance', data: provenance } as any)
-        if (memoryRecall) writer.write({ type: 'data-memory-recall', data: { messageId: savedAssistant?.id || assistantId } } as any)
+        if (answerClaims.length) writer.write({ type: 'data-answer-claims', data: answerClaims } as any)
         writer.write({ type: 'data-answer-preview', transient: true, data: { messageId: assistantId, phase: 'complete', text: state.assistantContent } } as any)
         if (!responseStarted) writer.write({ type: 'text-start', id: assistantId })
         writer.write({ type: 'text-delta', id: assistantId, delta: state.assistantContent })
@@ -419,11 +319,6 @@ export default defineHandler(async (event) => {
       const assistant = savedAssistant
       if (!assistant) return
       if (chatTitle && handoff.currentSequence === 1) await db.update(tables.chats).set({ title: chatTitle, evidenceProvenance: provenance }).where(eq(tables.chats.id, chat.id))
-      if (factProposals.length) await persistAgentFactProposalsAfterAssistantPersistence(db, {
-        actorUserId: actor.userId, chatId: chat.id, currentMessageId: current.id,
-        historyRevision: assistant.historyRevision, proposals: factProposals,
-        evidenceProvenance: provenance,
-      })
       // Topic source pools are a view of successfully saved evidence, never
       // side effects of unverified intermediate retrieval frames.
       if (chat.topicId) {

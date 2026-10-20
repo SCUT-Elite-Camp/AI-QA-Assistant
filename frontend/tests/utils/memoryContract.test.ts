@@ -1,13 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import {
-  compactionPlanResponseSchema,
-  factViewSchema,
-  internalChatRequestSchema,
-  internalChatResponseSchema,
-  manualFactProposalRequestSchema,
-  memoryContextInputSchema
-} from '../../server/utils/memoryContract'
+import { compactionPlanResponseSchema, internalChatRequestSchema, internalChatResponseSchema, memoryContextInputSchema } from '../../server/utils/memoryContract'
 
 function readFixture (name: string): unknown {
   return JSON.parse(readFileSync(new URL(`../../../docs/memory-context-plan/evidence/fixtures/${name}`, import.meta.url), 'utf8'))
@@ -30,12 +23,6 @@ function createMemoryContext() {
       covered_to_sequence: 1,
       summary: 'A persisted summary.'
     },
-    facts: [{
-      id: 'fact-1',
-      category: 'PREFERENCE',
-      value: 'Use concise Chinese responses.',
-      expires_at: null
-    }],
     tail: [{
       id: 'message-2',
       sequence: 2,
@@ -52,22 +39,21 @@ describe('internal Memory contract', () => {
       memory_context: { chat_id: 'chat-fixture-1', current_sequence: 3 }
     })
     expect(internalChatResponseSchema.parse(readFixture('internal-chat-response.json'))).toMatchObject({
-      memory_decision: { fact_proposals: [expect.objectContaining({ source_message_id: 'message-fixture-3' })] },
+      memory_decision: {},
       response: { trace_id: 'trace-fixture-1' }
     })
   })
 
-  it('serializes the authenticated Memory context with a nullable expiration timestamp', () => {
+  it('serializes the authenticated Memory context with Snapshot and Tail', () => {
     const parsed = internalChatRequestSchema.parse({
       query: 'Continue the previous topic.',
       memory_context: createMemoryContext()
     })
 
     expect(parsed.memory_context).toEqual(createMemoryContext())
-    expect(JSON.parse(JSON.stringify(parsed)).memory_context.facts[0].expires_at).toBeNull()
   })
 
-  it('rejects unknown fields, invalid enums, unauthenticated actors, and inconsistent Tail data', () => {
+  it('rejects unknown fields, unauthenticated actors, and inconsistent Tail data', () => {
     const unknown = createMemoryContext() as Record<string, unknown>
     unknown.untrusted_user_id = 'user-b'
     expect(() => memoryContextInputSchema.parse(unknown)).toThrow()
@@ -75,10 +61,6 @@ describe('internal Memory contract', () => {
     const invalidActor = createMemoryContext()
     invalidActor.actor.authenticated = false
     expect(() => memoryContextInputSchema.parse(invalidActor)).toThrow()
-
-    const invalidFact = createMemoryContext()
-    invalidFact.facts[0]!.category = 'USER_SCOPE' as never
-    expect(() => memoryContextInputSchema.parse(invalidFact)).toThrow()
 
     const invalidTail = createMemoryContext()
     invalidTail.tail[0]!.sequence = invalidTail.current_sequence
@@ -98,41 +80,17 @@ describe('internal Memory contract', () => {
         message: '',
         citations: []
       },
-      memory_decision: {
-        fact_proposals: [{
-          category: 'GOAL',
-          value: 'Finish the memory implementation.',
-          source_message_id: 'message-3',
-          expires_at: null
-        }]
-      }
+      memory_decision: {}
     })
 
     expect(parsed.response).not.toHaveProperty('memory_decision')
-    expect(parsed.memory_decision.fact_proposals).toHaveLength(1)
   })
 
-  it('accepts only the browser-safe manual proposal request and FactView fields', () => {
-    expect(manualFactProposalRequestSchema.parse({
-      category: 'GOAL',
-      source_message_id: 'message-3'
-    })).toEqual({ category: 'GOAL', source_message_id: 'message-3' })
-    expect(() => manualFactProposalRequestSchema.parse({
-      category: 'GOAL',
-      source_message_id: 'message-3',
-      value: 'browser must not choose this'
-    })).toThrow()
-
-    expect(factViewSchema.parse({
-      id: 'fact-1',
-      category: 'GOAL',
-      status: 'CONFIRMED',
-      value: 'Finish the project.',
-      sourceMessageId: 'message-3',
-      expiresAt: '2026-11-21T00:00:00.000Z',
-      confirmedAt: '2026-08-23T00:00:00.000Z',
-      createdAt: '2026-08-23T00:00:00.000Z'
-    })).toMatchObject({ id: 'fact-1', status: 'CONFIRMED' })
+  it('rejects retired Fact input and decision fields', () => {
+    expect(() => memoryContextInputSchema.parse({ ...createMemoryContext(), facts: [] })).toThrow()
+    const response = { trace_id: 'trace-1', status: 'success', answer: 'Answer.', message: '', citations: [] }
+    expect(() => internalChatResponseSchema.parse({ response, memory_decision: { fact_proposals: [] } })).toThrow()
+    expect(() => internalChatResponseSchema.parse({ response, memory_decision: { recall: { handled: true } } })).toThrow()
   })
 
   it('accepts only the two fixed compaction response shapes', () => {

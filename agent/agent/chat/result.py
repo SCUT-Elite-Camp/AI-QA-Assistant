@@ -5,7 +5,7 @@ from typing import Any
 
 from agent.runtime.profile import ExecutionProfile
 from agent.runtime.state import AgentRunResult
-from agent.schemas.chat import ContextArtifact, MemoryRecall
+from agent.schemas.chat import ContextArtifact
 from agent.schemas.query_plan import QueryPlan
 
 
@@ -19,5 +19,4 @@ class OrchestrationResult:
     retrieval_mode: str
     top_k: int
     context_artifact: ContextArtifact | None = None
-    memory_recall: MemoryRecall | None = None
     execution_profile: ExecutionProfile | None = None

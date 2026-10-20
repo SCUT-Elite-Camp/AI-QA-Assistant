@@ -23,14 +23,7 @@ def memory_context_payload() -> dict:
             "covered_to_sequence": 1,
             "summary": "A persisted summary.",
         },
-        "facts": [
-            {
-                "id": "fact-1",
-                "category": "PREFERENCE",
-                "value": "Use concise Chinese responses.",
-                "expires_at": None,
-            }
-        ],
+
         "tail": [
             {
                 "id": "message-2",
@@ -51,7 +44,6 @@ def test_internal_chat_request_round_trips_the_memory_context() -> None:
 
     dumped = request.model_dump(mode="json")
     assert dumped["memory_context"]["actor"] == {"user_id": "user-a", "authenticated": True}
-    assert dumped["memory_context"]["facts"][0]["expires_at"] is None
     assert InternalChatRequest.model_validate(dumped) == request
 
 
@@ -65,11 +57,6 @@ def test_internal_memory_contract_rejects_untrusted_or_inconsistent_input() -> N
     invalid_actor["actor"]["authenticated"] = False
     with pytest.raises(ValidationError):
         InternalChatRequest(query="question", memory_context=invalid_actor)
-
-    invalid_category = memory_context_payload()
-    invalid_category["facts"][0]["category"] = "USER_SCOPE"
-    with pytest.raises(ValidationError):
-        InternalChatRequest(query="question", memory_context=invalid_category)
 
     invalid_tail = memory_context_payload()
     invalid_tail["tail"][0]["sequence"] = 3
@@ -101,5 +88,15 @@ def test_internal_response_keeps_memory_decision_outside_public_chat_response() 
         "answer",
         "message",
         "citations",
+        "answer_claims",
     }
-    assert internal_response.memory_decision.fact_proposals == []
+
+
+def test_removed_fact_fields_are_rejected_by_internal_contract() -> None:
+    context = memory_context_payload()
+    context["facts"] = []
+    with pytest.raises(ValidationError, match="facts"):
+        InternalChatRequest(query="Continue the discussion.", memory_context=context)
+    for field in ("fact_proposals", "recall"):
+        with pytest.raises(ValidationError, match=field):
+            MemoryDecision.model_validate({field: [] if field == "fact_proposals" else {"handled": True}})

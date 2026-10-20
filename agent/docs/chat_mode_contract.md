@@ -81,23 +81,39 @@ flowchart TD
 
 ## Private answer protocol
 
-Both evidence answer models generate this object in the same answer call:
+Both evidence answer models generate an independent `answer` plus private
+`claims` in the same final call. Protocol V5 asks the model to first write a
+natural answer, then extract its factual assertions. Multi-aspect questions use
+separate Markdown bullets with clear line breaks; brief introductions, headings,
+labels and connective prose remain ordinary answer text. Simple questions may
+receive one concise sentence. The answer must not become an extraction checklist.
 
 ```json
-{"claims":[{"text":"The release is planned.","supports":[{"citation_id":1,"quote":"The release is planned."}]}]}
+{"answer":"Here are the details:\n\n- Status: Alpha is complete.","claims":[{"text":"Alpha is complete.","supports":[{"citation_id":1,"quote":"Alpha: complete"}]}]}
 ```
 
-Each visible paragraph is `claim.text`. The server joins paragraphs and renders
-citation markers from supports. No second answer field, self-score or confidence
-threshold is allowed. Quotes bind to the exact numbered excerpt, with whitespace
-normalization only; image-region supports are separate from text quotes.
-An explicit empty claims list is abstention (`no_relevant_context`).
+Each claim text is copied verbatim from a meaningful factual span, preserving
+qualifiers, negation, units and dates. The server resolves exact occurrences into
+original-body character spans, rejects missing/overlapping claims and unbound
+citation markers, validates exact source quotes, and inserts missing citations.
+Repeated identical text binds every occurrence. Claim list order does not control
+answer layout/order. No score is generated. Abstention is `{"answer":"","claims":[]}`;
+a nonempty answer without claims or the old claims-only envelope is invalid.
+
+V5 removes V4's full-character coverage check, which forced presentation prose
+into artificial assertions. Assertion selection/completeness is model-produced,
+not deterministically established by binding: the private report explicitly records
+`claim_completeness=model_selected_not_verified`. Omitted factual assertions cannot
+be ruled out. Thinking MiniCheck checks the declared assertions, not all unmarked
+prose. The Prompt requires every factual assertion to be declared; this requirement
+is not a proven claim-extraction/completeness gate.
 
 Binding records source/answer offsets, identities, versions and hashes. Its
 `valid` means binding integrity; `semantic_validation=not_performed` remains
 accurate for that separate report. Thinking stores MiniCheck results separately.
-Private binding/verdict/feedback data never enters ChatResponse, SSE, frontend
-diagnostics or saved message text.
+The full binding/verdict/feedback report remains server-private. Since 2026-10-20,
+accepted display projections are exposed as `answer_claims` (see below); verdicts,
+model feedback and verification inputs are not exposed.
 
 ## MiniCheck release and regeneration
 
@@ -166,3 +182,29 @@ Ordinary saved snapshot browsing follows the separate local ownership policy.
 Tests use English controlled boundaries for the loop and the production guard.
 Real classifier/model smoke and its limits are recorded separately; unit tests
 are not live BFF/parser/native-source acceptance or an unseen quality benchmark.
+
+
+## Clickable answer claims (2026-10-20)
+
+Successful Fast/Thinking responses include `answer_claims`, default `[]`. Only
+accepted binding data is projected onto the final normalized/citation-renumbered
+answer. Items contain `claim_id`, `text`, `start`, `end`, and
+`supports: [{citation_id, quote}]`. Offsets count Unicode code points, end-exclusive,
+into the final answer; they are distinct from private original-model spans. The
+same ID can have multiple occurrences with distinct positions. Titles come from
+the matched public Citation. Image supports have `quote=null` and no invented text.
+
+The Agent stream emits `answer-claims` only after a successful complete answer.
+The BFF validates body slices, nonoverlap, quote containment and citation IDs,
+performs existing source/ownership/release checks, persists `data-answer-claims`
+in message parts, and releases it with the durable message. Selection Q&A supports
+the same projection. No model call or database migration is added. Binding cannot
+be projected onto changed text or mismatched source identities; no annotation is
+invented. Older messages have no annotations and are not backfilled.
+
+The UI preserves Markdown and underlines bound assertions with a keyboard/click
+control, at normal font weight. Presentation text and inter-claim spacing are not
+marked. A dialog shows each quote and source document title; opening the full
+source uses the message-bound Reader with current source permissions/version/hash
+checks. Stored quotes/titles are saved snapshots under the existing history
+ownership/membership policy, not positive grants or fresh Reader evidence.

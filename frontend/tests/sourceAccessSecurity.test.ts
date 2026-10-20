@@ -8,7 +8,6 @@ import { tables, useDrizzle } from '../server/utils/drizzle'
 import { assertDerivedSources, assertMessageSources, assertSourceDependencies, authoredProvenance,
   citationsCovered, filterReadableMessages, readableChatMetadata, readableChatMetadataBatch, requireEnabledActor, type SourceDependency } from '../server/utils/sourceAccess'
 import { appendMessage } from '../server/utils/messageLifecycle'
-import { createFactProposal } from '../server/utils/memoryRepository'
 import { requireOwnedChat } from '../server/utils/chatAccess'
 import { evidenceProvenanceSchema } from '../server/utils/evidenceContract'
 
@@ -158,16 +157,5 @@ describe('actual BFF guard with migrated SQLite and controlled upstream transpor
     expect(citationsCovered(proof, [{ doc_id: 'confluence-a', source_version: 2 }])).toBe(false)
     expect(citationsCovered(proof, [{ doc_id: 'confluence-a', source_type: 'personal' }])).toBe(false)
     expect(citationsCovered(proof, [{ doc_id: 'confluence-a', source_version: '1', content_hash: 'body-hash' }])).toBe(true)
-  })
-  it('automatic Fact candidates preserve model-context lineage, not only the authored user text', async () => {
-    const db = useDrizzle()
-    await db.insert(tables.chats).values({ id: 'fact-lineage', title: 'test', userId: 'alice' })
-    const source = await appendMessage(db, { id: 'fact-source', chatId: 'fact-lineage', role: 'user',
-      parts: [{ type: 'text', text: 'Remember this plan.' }, { type: 'data-evidence-provenance', data: authoredProvenance() }] })
-    const { fact } = await createFactProposal(db, { actorUserId: 'alice', chatId: source.chatId, historyRevision: source.historyRevision,
-      category: 'GOAL', sourceMessageId: source.id, value: 'A derived plan', evidenceProvenance: { ...authoredProvenance(), dependencies: [enterprise] } })
-    expect(fact.evidenceProvenance?.dependencies).toEqual([enterprise])
-    mocks.agent.mockResolvedValue(new Response(JSON.stringify({ allowed_doc_ids: [], denied_doc_ids: ['confluence-a'] })))
-    await expect(assertDerivedSources('alice', fact.evidenceProvenance)).rejects.toMatchObject({ status: 403 })
   })
 })

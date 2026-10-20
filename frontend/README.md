@@ -132,7 +132,7 @@ pnpm preview
 | `AGENT_API_KEY` | 调用 Agent 层业务接口的共享密钥（需与 Agent 层一致） | 必填 |
 | `AGENT_INTERNAL_TOKEN` | 可信内部 Chat/Memory 请求 | 必填且与 Agent 一致 |
 | `ATTACHMENT_INTERNAL_SECRET` | Agent `/private-files` 的内部凭据，地址复用 `AGENT_BASE_URL` | 启用附件/个人库时必填；加密 key 只由 Agent 使用 |
-| `PERSISTENT_MEMORY_ENABLED/SESSION_FACT_ENABLED` | 持久记忆与 Fact 功能 | 显式配置 |
+| `PERSISTENT_MEMORY_ENABLED` | Snapshot 与最近消息持久记忆 | 显式配置 |
 | `AI_QA_BUILD_DIR/TOPICS_DATA_DIR` | 构建与 Topic 文件目录 | 可独立覆盖 |
 | `SESSION_COOKIE_SECURE` | HTTPS secure Cookie；false 仅本机 HTTP 联调 | 生产 true |
 
@@ -212,3 +212,26 @@ Reviewer 不通过时由独立 Agent 修订并复审，主 Agent 确认后才发
 正式 Research 详情页会同时读取 Job、`/progress` 和 `/events`。阶段、百分比、
 任务状态及 Evidence/Claim 计数以 Agent 的 `research.progress.v1` 为准；最近活动
 通过 `after_event_id` 增量游标更新，终态后停止轮询。
+
+
+### Answer claim inspection (2026-10-20)
+
+New Fast/Thinking evidence answers underline their server-bound assertions at normal weight.
+Click or use Enter/Space to see supporting original quotes and document names;
+multiple source passages appear separately. Introductions, bullet labels and
+transitions remain ordinary text. The shared Prompt requests separate Markdown
+bullets for multiple aspects rather than a compressed assertion paragraph. Open source document uses the existing
+message-bound Reader and its current source checks. Markdown and citation widgets
+are preserved. Quotes/titles saved in history follow the existing snapshot policy.
+Old messages and unbound direct answers remain readable without added annotations.
+The server validates and saves `data-answer-claims`; the browser cannot submit
+assertion evidence for model use. No additional generation or schema migration is
+required. See [Agent contract](../agent/docs/chat_mode_contract.md#clickable-answer-claims-2026-10-20).
+
+
+Claim-linked answers now omit the old inline numbered citation badges. Assertion
+underlines/dialogs provide the source entry point. The saved answer, citation
+records and character offsets remain intact for verification, history and Reader;
+only rendering hides the known markers, leaving literal code indices untouched.
+Legacy answers without valid claim metadata retain their citation controls, and
+Research citation rendering is unchanged.

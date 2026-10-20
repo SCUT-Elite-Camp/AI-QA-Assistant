@@ -4,15 +4,12 @@ import type { UIMessage } from 'ai'
 import { isFileUIPart } from 'ai'
 import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
-import type { FactCategory } from '../../../types/memory'
 
 const props = defineProps<{
   message: UIMessage & { createdAt?: string | Date; isFavorite?: boolean }
   streaming: boolean
   editing: boolean
   vote: boolean | null
-  memoryEnabled?: boolean
-  memoryBusy?: boolean
 }>()
 
 const formattedDate = computed(() => {
@@ -37,7 +34,6 @@ const emit = defineEmits<{
   regenerate: [message: UIMessage]
   vote: [message: UIMessage, isUpvoted: boolean]
   favorite: [message: UIMessage, isFav: boolean]
-  saveMemory: [message: UIMessage, category: FactCategory]
   suggest: [message: UIMessage]
 }>()
 
@@ -61,21 +57,6 @@ function copy() {
 function toggleFavorite() {
   emit('favorite', props.message, !isFavorite.value)
 }
-
-const memoryCategoryItems = [
-  {
-    label: 'Save as Goal',
-    onSelect: () => emit('saveMemory', props.message, 'GOAL')
-  },
-  {
-    label: 'Save as Preference',
-    onSelect: () => emit('saveMemory', props.message, 'PREFERENCE')
-  },
-  {
-    label: 'Save as Constraint',
-    onSelect: () => emit('saveMemory', props.message, 'PLAN_CONSTRAINT')
-  }
-]
 
 function extractDateFromDoc(title?: string, docId?: string, lastUpdated?: string): Date | null {
   if (lastUpdated) {
@@ -146,8 +127,10 @@ const earliestDataDate = computed<string | null>(() => {
             size="sm"
             :color="isFavorite ? 'warning' : 'neutral'"
             variant="ghost"
-            :icon="isFavorite ? 'i-heroicons-star-20-solid' : 'i-heroicons-star'"
+            icon="i-lucide-star"
+            :ui="{ leadingIcon: isFavorite ? 'fill-current' : '' }"
             aria-label="Favorite response"
+            :aria-pressed="isFavorite"
             @click="toggleFavorite"
           />
         </UTooltip>
@@ -246,21 +229,6 @@ const earliestDataDate = computed<string | null>(() => {
           @click="emit('edit', message)"
         />
       </UTooltip>
-
-      <UDropdownMenu
-        v-if="memoryEnabled"
-        :items="memoryCategoryItems"
-        :content="{ align: 'end' }"
-      >
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-brain"
-          aria-label="Save as session memory"
-          :disabled="memoryBusy"
-        />
-      </UDropdownMenu>
     </div>
   </template>
 </template>

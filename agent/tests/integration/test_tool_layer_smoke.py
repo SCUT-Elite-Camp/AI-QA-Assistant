@@ -9,7 +9,7 @@ from agent.agent import Agent
 def test_real_tool_layer_smoke_path(monkeypatch) -> None:
     from agent.llm.llm_client import LLMClient
     monkeypatch.setattr(LLMClient, "chat", lambda *args, **kwargs: {"content": json.dumps({
-        "claims": [{"text": "Q1 focuses on a single-turn RAG Agent flow.",
+        "answer": "Q1 focuses on a single-turn RAG Agent flow.", "claims": [{"text": "Q1 focuses on a single-turn RAG Agent flow.",
                     "supports": [{"citation_id": 1, "quote": "Q1 focuses on a single-turn RAG Agent flow."}]}],
     })})
     monkeypatch.setattr(settings, "MIN_RETRIEVAL_SCORE", 0.0)

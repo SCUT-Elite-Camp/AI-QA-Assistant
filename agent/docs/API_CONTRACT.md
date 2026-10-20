@@ -40,25 +40,30 @@ durable Pipeline jobs index an independent owner-private Personal Library versio
 
 Current cross-layer contract (2026-10-09): [integration](../../docs/access-evidence/access-evidence-integration.md), [architecture](../../docs/access-evidence/access-evidence-architecture.md). Responses add verifiable `evidence_provenance` without removing existing fields. Knowledge use requires current enabled identity, local/native ACL and original version/hash checks. July Q1 anonymous/Mock specifications do not govern this build.
 
-Fast and Thinking evidence answers use a private same-generation JSON envelope
-containing only `claims[].{text,supports[]}`. The server joins claim paragraphs
-in order to build the public answer; no duplicate model-generated answer field
-is accepted. Final/repair requests pass
-`response_format={"type":"json_object"}`; unsupported formats fail without a
-Fast retry or plaintext downgrade. Each support supplies `citation_id` and a
-verbatim `quote` (or normalized `image_region` for original images). There are
-no self-assessment scores or acceptance-score configuration.
+Fast and Thinking evidence answers use the private V5 same-generation JSON
+envelope with required `answer` and `claims[].{text,supports[]}`. The model writes
+the complete answer independently and copies each claim text verbatim from it.
+Final answer requests pass `response_format={"type":"json_object"}`; unsupported
+formats fail without a Fast retry or plaintext downgrade. Each support supplies
+`citation_id` and a verbatim `quote` (or normalized `image_region` for original
+images). There are no self-assessment scores or acceptance-score configuration.
 
-Every visible paragraph comes from a bound claim by construction. The server
-checks real excerpts and source identities, then
-renders citation markers from supports. Missing duplicated inline markers alone
-do not fail an otherwise valid binding. Existing valid markers are not duplicated.
-Malformed bindings, forged excerpts or a separate unbound answer field reject the entire
-answer with `quality_validation_failed`, empty answer and no citations.
-The internal report records spans in the assembled pre-citation answer and original-excerpt offsets;
-`valid` means binding integrity only, with `validation_kind=binding` and
-`semantic_validation=not_performed`. Semantic entailment is not yet verified.
-No private report is sent in responses, SSE, diagnostics or persisted messages.
+The server resolves exact claim occurrences into the original answer, rejects
+overlapping spans and unbound citation markers, checks real excerpts/source identities,
+and inserts missing citation markers at span ends. Body layout and order are
+preserved independently of claim list order. A repeated exact claim binds all
+occurrences. Existing supported inline markers are not duplicated. Nonfactual introductions, headings, labels and connective prose may remain outside
+claims; V5 no longer claims full-character coverage proves assertion completeness. Abstention requires
+`{"answer":"","claims":[]}`; missing answer or mismatched empty fields is invalid.
+Malformed bindings and forged excerpts reject the entire candidate;
+Fast returns `quality_validation_failed`, empty answer and no citations.
+The internal report records character spans in the original model-generated answer
+before citation insertion and original-excerpt offsets. Its `valid` means binding
+integrity only, with `validation_kind=binding` and `semantic_validation=not_performed`.
+This structural check does not determine semantic entailment. No private report is
+sent in responses, SSE, diagnostics or persisted messages. The display-only
+`answer_claims` projection below is now public at the user's request.
+
 Thinking additionally runs local MiniCheck after binding. Unconfirmed claims return privately to the same Agent loop for more evidence or regeneration; no rejected draft is released. Fast retains one-call binding validation.
 
 2026-10-19: a private [verification context constructor](verification_context.md)
@@ -133,7 +138,7 @@ route never consumes browser-provided Memory fields.
 
 ```json
 {
-  "query": "继续刚才的话题",
+  "query": "Continue the previous discussion.",
   "memory_context": {
     "actor": { "user_id": "user-a", "authenticated": true },
     "chat_id": "chat-a",
@@ -141,24 +146,14 @@ route never consumes browser-provided Memory fields.
     "current_message_id": "message-3",
     "current_sequence": 3,
     "snapshot": null,
-    "facts": [
-      {
-        "id": "fact-1",
-        "category": "PREFERENCE",
-        "value": "使用简洁中文回复",
-        "expires_at": null
-      }
-    ],
     "tail": []
   }
 }
 ```
 
 - `actor.authenticated` is literal `true`; the browser never supplies this DTO.
-- `role` is `user`, `assistant`, or `system`; Fact categories are `GOAL`,
-  `PREFERENCE`, or `PLAN_CONSTRAINT`.
-- `snapshot` is nullable. `facts` and `tail` are arrays. `expires_at` is either
-  `null` or a non-negative Unix epoch-millisecond timestamp in UTC.
+- `role` is `user`, `assistant`, or `system`.
+- `snapshot` is nullable and `tail` is an array. Fact fields are no longer accepted.
 - Snapshot and Tail revisions must equal `memory_context.revision`; Tail is
   strictly sequence-ordered, follows `snapshot.covered_to_sequence` when a
   Snapshot exists, precedes the current message, and cannot repeat it.
@@ -300,25 +295,17 @@ defines their Pydantic DTOs and configuration.
 InternalActor { user_id, authenticated: true }
 MemoryMessage { id, sequence, revision, role, content }
 MemorySnapshotInput { id, version, revision, covered_to_sequence, summary }
-MemoryFactInput { id, category, value, expires_at: epoch-ms | null }
 MemoryContextInput { actor, chat_id, revision, current_message_id,
-                     current_sequence, snapshot: nullable, facts, tail }
+                     current_sequence, snapshot: nullable, tail }
 ```
 
 The future internal chat response is
 `InternalChatResponse { response: ChatResponse, memory_decision }`. Its
-`memory_decision` may contain a `context_artifact`, `recall`, and
-`fact_proposals`; `fact_proposals` is always an empty array through Units 01--08.
+`memory_decision` contains only the optional `context_artifact`. Fact proposals,
+confirmation/revocation and deterministic recall were removed on 2026-10-20.
+Internal requests reject the retired `facts` field.
 The compaction and short-window reset DTOs are also internal-only. BFF remains
-the only writer of ChatMessage, Snapshot, and Fact records.
-
-From Unit 09 onward, an internal response may contain one `FactProposal` only
-when both persistent Memory and `SESSION_FACT_ENABLED` are enabled and the
-authenticated user sent an exact supported remember command. The proposal is a
-four-field candidate with `expires_at: null`; it is neither persisted nor
-confirmed. The Web BFF remains the only writer and computes expiry on confirm.
-Explicit recall is limited to the documented exact queries and never creates a
-RAG citation.
+the only writer of ChatMessage and Snapshot records.
 
 Persistent Memory is disabled by default with `PERSISTENT_MEMORY_ENABLED=false`.
 `AGENT_INTERNAL_TOKEN` must be supplied only through environment configuration;
@@ -326,11 +313,8 @@ the example file intentionally leaves it empty.
 
 ## Unit 11 Memory flags and safe events
 
-`PERSISTENT_MEMORY_ENABLED=false` and `SESSION_FACT_ENABLED=false` are both
-safe defaults. With the Fact gate disabled, candidate proposals and deterministic
-recall are suppressed and `ContextArtifact.memory_brief` omits Facts, while
-trusted Snapshot/Tail context can still be resolved when persistent Memory is
-enabled. `MEMORY_CACHE_ENABLED=true` is rejected at Agent configuration time
+`PERSISTENT_MEMORY_ENABLED=false` is the safe default. When enabled,
+`ContextArtifact` combines trusted Snapshot and Tail context. `MEMORY_CACHE_ENABLED=true` is rejected at Agent configuration time
 with the fixed `memory_cache_not_supported` error; this release has no Redis
 support.
 
@@ -340,11 +324,10 @@ The Agent reads `MEMORY_TAIL_MESSAGES=8`,
 only Memory observability events contain finite enums and numbers:
 `memory_resolve {source, outcome, duration_ms}`,
 `memory_compaction {outcome, tail_count, snapshot_version?}`, and
-`memory_fact {action, outcome}`, and
 `memory_prompt {model_history_chars}`. The latter is emitted only after the
 Runner executes with trusted persistent context, and records the non-negative
 character count of its `model_history` only. These events never include user
-text, Fact values, Snapshot summaries, Tail messages, message/chat IDs,
+text, Snapshot summaries, Tail messages, message/chat IDs,
 prompts, or tokens.
 
 ## BFF-only internal Memory endpoints (Unit 04a)
@@ -357,8 +340,7 @@ missing, blank, or incorrect values all receive the same `403` response.
 - `/chat` accepts only `InternalChatRequest`. With the Agent persistent flag
   disabled it returns `409 { "code": "persistent_memory_disabled" }`. When
   enabled, it delegates to the shared Agent, resolves the trusted Memory context
-  and returns `InternalChatResponse`; `memory_decision.fact_proposals=[]`
-  remains fixed through Unit 08.
+  and returns `InternalChatResponse` with an optional `context_artifact`.
 - `/memory/compaction-plan` validates BFF-supplied current-revision messages
   and returns either `{ "should_compact": false }` or a pure optimistic
   Snapshot plan. It never reads or writes the Web database: the BFF applies a
@@ -373,7 +355,7 @@ missing, blank, or incorrect values all receive the same `403` response.
   settings remain the sole authority for all three thresholds; unknown fields
   are rejected and no public API version or DTO changes.
 - `/memory/reset-short-window` calls only the existing in-process
-  `ConversationMemory.clear(chat_id)`. It never writes Snapshot or Fact data.
+  `ConversationMemory.clear(chat_id)`. It never writes Snapshot data.
 
 The former unauthenticated `DELETE /api/chat/memory/{session_id}` endpoint has
 been removed. Public `/api/chat` and its response remain unchanged.
@@ -391,7 +373,8 @@ been removed. Public `/api/chat` and its response remain unchanged.
   tools and verified history/scope. The controller chooses native tool calls or
   a registered native control action: prepare_answer, ask_clarification or
   report_insufficient. tool_choice=required; no control JSON or final prose.
-- After answer, the same model receives a tool-free claims/supports request.
+- After prepare_answer, the same model receives one tool-free request that
+  generates both the complete answer and private claim/support bindings.
   Exact source binding precedes local MiniCheck; argmax label 1 means supported.
   No self-score, confidence threshold, heuristic evidence-count acceptance,
   complexity classifier or external judge participates in online release.
@@ -761,3 +744,33 @@ generation are documented in [Research generation budgets](research_generation_b
 New Plans use the configured `RESEARCH_MODEL_TOTAL_TOKENS` for `budget.max_tokens`;
 existing approved Plans retain their saved mode/cap. Coordinator API additions
 are specified in the Local Deep Research section above.
+
+
+## Answer claim display extension (2026-10-20)
+
+`ChatResponse.answer_claims` is a default-empty list for successful bound evidence
+answers. It is not the private model envelope or MiniCheck report:
+
+```json
+{"answer":"Alpha is complete.[1]","answer_claims":[{"claim_id":"claim_1","text":"Alpha is complete.","start":0,"end":18,"supports":[{"citation_id":1,"quote":"Alpha: complete"}]}]}
+```
+
+`start`/`end` are Unicode code point offsets in the final answer, end-exclusive.
+Citation IDs are remapped by exact source identity after citation pruning and
+renumbering. Each quote is the validated original fragment. Original-image supports
+use `quote=null`. Citation titles supply document names. The SSE `answer-claims`
+event carries the list after successful answer validation. Failures do not release
+annotations. Web saves and streams the separate `data-answer-claims` message part
+after its existing current-source and durable-write checks; browser-supplied
+annotations are never used for generation. Plain answers, older saved messages and
+Research outputs without these bindings retain their existing rendering. No model
+request or migration is added; full verification inputs/verdicts remain private.
+
+
+2026-10-20 V5 presentation correction: answer generation explicitly favors natural
+prose and separate Markdown bullets for multiple requested aspects. Declared
+assertions alone are underlined; presentation text stays ordinary. Full-character
+coverage has been removed. The private binding report records
+`claim_completeness=model_selected_not_verified`: source binding and MiniCheck of
+declared claims do not prove that every factual assertion was extracted. The
+public display schema and all native access/version/hash checks remain unchanged.

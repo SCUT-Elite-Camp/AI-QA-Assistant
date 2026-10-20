@@ -64,7 +64,7 @@ class RecordingAgent:
         self,
         request: ChatRequest,
     ) -> tuple[ChatResponse, MemoryDecision]:
-        return self.chat(request), MemoryDecision(fact_proposals=[])
+        return self.chat(request), MemoryDecision()
 
 
 class LifecycleStubLLM(BaseLLM):
@@ -125,7 +125,7 @@ def _memory_context() -> dict[str, object]:
             "covered_to_sequence": 1,
             "summary": "Earlier discussion.",
         },
-        "facts": [],
+
         "tail": [
             {
                 "id": "message-2",
@@ -220,7 +220,7 @@ def test_production_lifespan_reuses_one_agent_without_deep_research(
         self: Agent,
         request: ChatRequest,
     ) -> tuple[ChatResponse, MemoryDecision]:
-        return controlled_chat(self, request), MemoryDecision(fact_proposals=[])
+        return controlled_chat(self, request), MemoryDecision()
 
     container = ApplicationContainer(
         llm_factory=LifecycleStubLLM,
@@ -346,23 +346,6 @@ def test_internal_chat_returns_fixed_409_when_persistent_memory_is_disabled(
     assert response.status_code == 409
     assert response.json() == {"code": "persistent_memory_disabled"}
     assert agent.requests == []
-
-
-def test_internal_chat_uses_shared_agent_and_returns_empty_fact_proposals(
-    internal_client: tuple[TestClient, RecordingAgent],
-) -> None:
-    client, agent = internal_client
-
-    response = client.post(
-        "/api/internal/chat",
-        json=_internal_chat_payload(),
-        headers=_headers(),
-    )
-
-    assert response.status_code == 200
-    assert response.json()["response"]["trace_id"] == "trace-internal-memory"
-    assert response.json()["memory_decision"]["fact_proposals"] == []
-    assert len(agent.requests) == 1
 
 
 def test_internal_chat_accepts_the_shared_web_contract_fixture(

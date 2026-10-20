@@ -20,14 +20,6 @@
       "covered_to_sequence": 1,
       "summary": "The user is preparing a project presentation."
     },
-    "facts": [
-      {
-        "id": "fact-fixture-1",
-        "category": "PREFERENCE",
-        "value": "Use concise Chinese responses.",
-        "expires_at": null
-      }
-    ],
     "tail": [
       {
         "id": "message-fixture-2",

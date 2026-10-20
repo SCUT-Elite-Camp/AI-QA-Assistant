@@ -23,6 +23,10 @@
 | [MiniCheck 实际核验](quality/minicheck-structured-verification-20261019.md) | 真实分类推断、114 对共同样本对照与 12 对未核验；效果和耗时限制 |
 | [Thinking 与单次生成](quality/thinking-single-generation-20261019.md) | 同模型 21 题真实尝试、9 题共同答案比较、格式/上下文失败及每日额度阻断 |
 | [Thinking 预算循环与 MiniCheck 接入](quality/thinking-agent-loop-20261019.md) | 统一 Agent 循环、核验失败续答、632 项回归；真实 MiniCheck 正反例，完整真实问答受 Groq 日额度限制 |
+| [临时模型 Thinking 实测](quality/thinking-temporary-model-20261020.md) | DeepSeek V4.1 Flash 复测旧 Fast 补年份题；3 次模型、1 次读文档、3 条 MiniCheck 通过及完整可观测调用记录 |
+| [答案与断言协议 V4](quality/answer-claims-protocol-20261020.md) | 独立正文与精确绑定、673 项测试；原题真实重发，三轮核验后成功，含原始新包体 |
+| [答案断言点击展示](ui/answer-claim-display-20261020.md) | 断言加粗、quote/文档名弹窗与 Reader；633 项 Agent、279 项前端及类型/构建检查通过 |
+| [自然答案与断言划线](ui/natural-answer-presentation-20261020.md) | V5 分点作答、只标事实断言；632 项 Agent、280 项前端及真实浏览器展示，含断言漏标限制 |
 | [Confluence 与网页复测](ui/ui-retest-20261012.md) | 2026-10-12 来源更新、真实问答和网页复测 |
 | [选区问答 UI](ui/selection-ui-retest-20261012.md) | 2026-10-12 选区工具栏、抽屉与保存交互 |
 | [流式展示复测](ui/stream-presentation-retest-20261012.md) | 2026-10-12 正文渐进展示和动画 |

@@ -13,6 +13,7 @@ import { formatResearchCitations } from '../../../utils/researchMarkdown'
 import type { WeatherUIToolInvocation } from '../../../../server/utils/tools/weather'
 import type { ChartUIToolInvocation } from '../../../../server/utils/tools/chart'
 import type { ChunkCitation } from '../tool/Sources.vue'
+import { parseAnswerClaims, type AnswerClaim } from '../../../../shared/answerClaims'
 
 const props = defineProps<{
   message: UIMessage
@@ -62,6 +63,27 @@ const citationMap = computed(() => {
 const hasTextContent = computed(() => {
   return otherParts.value.some(part => isTextUIPart(part) && (part.text || '').trim().length > 0)
 })
+
+const answerClaims = computed<AnswerClaim[]>(() => {
+  const part = props.message.parts.find((item: any) => item.type === 'data-answer-claims') as any
+  if (!part) return []
+  const answer = otherParts.value.filter(isTextUIPart).map(item => item.text).join('')
+  try { return parseAnswerClaims(part.data, answer, [...citationMap.value.values()]) }
+  catch { return [] }
+})
+const selectedClaim = ref<AnswerClaim | null>(null)
+const claimOpen = ref(false)
+let claimTrigger: HTMLElement | null = null
+provide('openAnswerClaim', (id: string) => {
+  selectedClaim.value = answerClaims.value.find(claim => claim.claim_id === id) || null
+  if (!selectedClaim.value) return
+  claimTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  claimOpen.value = true
+})
+async function setClaimOpen(open: boolean) {
+  claimOpen.value = open
+  if (!open) { await nextTick(); claimTrigger?.focus() }
+}
 
 interface AttachmentPartData {
   attachment_id?: string
@@ -174,10 +196,24 @@ async function setCitationOpen(open: boolean) {
       />
       <ChatComark
         v-else-if="isTextUIPart(part)"
-        :markdown="citationMap.size ? formatResearchCitations(part.text, new Set(citationMap.keys())) : part.text"
+        :markdown="citationMap.size ? formatResearchCitations(part.text, new Set(citationMap.keys()), !answerClaims.length) : part.text"
         :streaming="isPartStreaming(part)"
+        :answer-source="part.text"
+        :answer-claims="answerClaims"
       />
     </template>
   </template>
   <ChatModalDocumentViewer :open="citationOpen" :doc="selectedCitation" :message-id="message.id" @update:open="setCitationOpen" />
+  <UModal :open="claimOpen" title="Supporting evidence" description="Quoted source passages for this statement." @update:open="setClaimOpen">
+    <template #body>
+      <div v-if="selectedClaim" class="space-y-5">
+        <p class="font-semibold">{{ selectedClaim.text }}</p>
+        <section v-for="(support, index) in selectedClaim.supports" :key="index" class="space-y-2">
+          <h3 class="text-sm font-semibold">{{ citationMap.get(support.citation_id)?.title }}</h3>
+          <blockquote class="border-l-2 border-primary pl-3 text-sm whitespace-pre-wrap break-words">{{ support.quote || 'This statement is supported by the original image.' }}</blockquote>
+          <UButton variant="link" size="sm" icon="i-lucide-file-text" @click="claimOpen = false; selectedCitation = citationMap.get(support.citation_id) || null; citationOpen = true">Open source document</UButton>
+        </section>
+      </div>
+    </template>
+  </UModal>
 </template>

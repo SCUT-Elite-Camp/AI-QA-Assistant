@@ -32,14 +32,7 @@ def _memory_context() -> dict[str, object]:
             "covered_to_sequence": 1,
             "summary": "Earlier discussion.",
         },
-        "facts": [
-            {
-                "id": "fact-1",
-                "category": "GOAL",
-                "value": "Prepare the project demo.",
-                "expires_at": None,
-            }
-        ],
+
         "tail": [
             {
                 "id": "message-2",
@@ -62,7 +55,6 @@ def test_internal_chat_request_accepts_strict_memory_context() -> None:
     )
 
     assert request.memory_context.actor.authenticated is True
-    assert request.memory_context.facts[0].category == "GOAL"
     assert request.memory_context.snapshot is not None
 
 
@@ -73,14 +65,6 @@ def test_internal_chat_request_accepts_strict_memory_context() -> None:
         (
             lambda context: context["actor"].update({"authenticated": False}),
             "authenticated",
-        ),
-        (
-            lambda context: context["facts"][0].update({"category": "USER_SCOPE"}),
-            "category",
-        ),
-        (
-            lambda context: context["facts"][0].update({"expires_at": "tomorrow"}),
-            "expires_at",
         ),
     ],
 )
@@ -209,11 +193,9 @@ def test_compaction_request_rejects_unknown_fields() -> None:
 
 def test_persistent_memory_settings_default_to_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("PERSISTENT_MEMORY_ENABLED", raising=False)
-    monkeypatch.delenv("SESSION_FACT_ENABLED", raising=False)
     monkeypatch.delenv("MEMORY_CACHE_ENABLED", raising=False)
     monkeypatch.delenv("AGENT_INTERNAL_TOKEN", raising=False)
     assert Settings().PERSISTENT_MEMORY_ENABLED is False
-    assert Settings().SESSION_FACT_ENABLED is False
     assert Settings().MEMORY_CACHE_ENABLED is False
     assert Settings().MEMORY_TAIL_MESSAGES == 8
     assert Settings().MEMORY_COMPACTION_MIN_MESSAGES == 12

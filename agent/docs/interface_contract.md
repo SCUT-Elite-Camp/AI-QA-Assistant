@@ -1,5 +1,7 @@
 # Web-Agent Interface Contract
 
+2026-10-20：Fact 实现已移除，包括提议、确认、撤销、固定命令召回、API、界面、配置开关和模型上下文。当前会话记忆只包含 Snapshot 与 Tail；Topic 摘要独立保留。历史 Fact 设计与迁移仅供追溯，现存 `memory_facts` 表不再由应用读写，本次不清空运行数据库。Web 与 Agent 必须同步更新；旧 `facts` / `fact_proposals` / `recall` 字段不再属于内部契约。
+
 2026-10-19: the internal [verification context constructor](verification_context.md)
 prepares bound claim/source inputs for online Thinking MiniCheck. Its output
 and verdicts remain private; only an accepted answer is released.
@@ -70,18 +72,27 @@ Specialized quality gates may withhold text until their validation completes.
 Fast and Thinking evidence answers buffer generated text and reasoning before
 binding, citation and current-source validation. The same model call produces a
 private JSON envelope (`response_format={"type":"json_object"}`;
-`claims[].text`, `supports[].citation_id`, and verbatim `quote` or original-image
-`image_region`). Self-scores, score thresholds and the temporary year rule have
-been removed. The model returns only claims; the server joins their text in
-order to build the answer and derives visible citation markers from supports;
-missing duplicated inline markers are allowed, but missing/invalid bindings,
-forged excerpts or an extra unbound answer field reject the entire answer.
+required `answer`, `claims[].text`, `supports[].citation_id`, and verbatim `quote`
+or original-image `image_region`). The V4 body is independent of claim order;
+claim text must match body substrings exactly. The server resolves character spans,
+rejects overlapping claims/unbound citation markers and inserts missing citation markers.
+Repeated identical text binds every occurrence. It preserves body layout and order.
+V5 permits nonfactual introductions, labels, headings and transitions outside claims.
+The Prompt asks for natural multi-aspect answers in Markdown bullets. Claim
+completeness is model-selected and not proven by binding; MiniCheck grades declared
+assertions only.
+Self-scores are absent. Missing/invalid bindings, forged excerpts
+reject the candidate. Abstention is `{"answer":"","claims":[]}`; claims-only or
+nonempty body with no claims is invalid. There is no extra model call.
 
 The request-local report records answer/source spans and source identity.
 Its `valid` field indicates binding integrity, not factuality; it explicitly
 reports `validation_kind=binding` and `semantic_validation=not_performed`.
-No private envelope/report is sent in HTTP, SSE, diagnostics or saved messages.
-Only the accepted plain answer is released. Thinking candidates must pass both
+No full private envelope/report is sent in HTTP, SSE, diagnostics or saved messages.
+The accepted answer now also carries an explicit display-only `answer_claims`
+projection: final-body Unicode code point spans and quote/citation bindings.
+This user-requested extension powers bold clickable assertions, quote/document-title
+dialogs and existing message-bound Reader links. See [mode contract](chat_mode_contract.md#clickable-answer-claims-2026-10-20). Thinking candidates must pass both
 binding and MiniCheck. Rejection feeds the same bounded Agent loop; exhaustion
 after rejection returns quality_validation_failed. Unavailable local weights
 return tool_error, without an unverified fallback. Fast still makes at most one generation call.

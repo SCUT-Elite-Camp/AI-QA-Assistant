@@ -174,7 +174,7 @@ class AgentRunner:
                 try:
                     draft = parse_grounded_answer(generated.get("content"))
                 except ValueError:
-                    feedback, rejected = {"kind": "invalid_grounding_format", "instruction": "Use the claims/supports JSON contract."}, True
+                    feedback, rejected = {"kind": "invalid_grounding_format", "instruction": "Use the answer plus claims/supports JSON contract."}, True
                     continue
                 if not draft.claims:
                     return finish(StopReason.NO_RELEVANT_CONTEXT, "model_abstained")

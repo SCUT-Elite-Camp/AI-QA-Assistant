@@ -7,14 +7,12 @@ from agent.config.settings import Settings, settings
 from agent.memory.context_resolver import ContextResolver
 from agent.memory.memory_observability import MemoryObservability
 from agent.memory.persistent_models import (
-    PersistentFact,
     PersistentMemoryContext,
     PersistentSnapshot,
 )
 from agent.schemas.chat import (
     InternalActor,
     MemoryContextInput,
-    MemoryFactInput,
     MemoryMessage,
     MemorySnapshotInput,
 )
@@ -43,7 +41,6 @@ def _message(
 @pytest.fixture(autouse=True)
 def _enable_persistent_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "PERSISTENT_MEMORY_ENABLED", True)
-    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", True)
 
 
 def _context(**overrides: object) -> PersistentMemoryContext:
@@ -52,7 +49,7 @@ def _context(**overrides: object) -> PersistentMemoryContext:
         "current_sequence": 20,
         "revision": 1,
         "snapshot": None,
-        "facts": [],
+
         "tail": [],
     }
     values.update(overrides)
@@ -72,7 +69,7 @@ def test_disabled_missing_or_unauthenticated_context_preserves_legacy_path(
 
 
 def test_trusted_internal_context_input_is_normalized_without_external_dependencies() -> None:
-    resolver = ContextResolver(now_ms=lambda: 100)
+    resolver = ContextResolver()
     artifact = resolver.resolve(
         MemoryContextInput(
             actor=InternalActor(user_id="user-1", authenticated=True),
@@ -87,26 +84,18 @@ def test_trusted_internal_context_input_is_normalized_without_external_dependenc
                 covered_to_sequence=2,
                 summary="trusted transport summary",
             ),
-            facts=[
-                MemoryFactInput(
-                    id="f1",
-                    category="GOAL",
-                    value="finish the task",
-                    expires_at=None,
-                )
-            ],
+
             tail=[_message("m3", 3)],
         )
     )
 
     assert artifact is not None
     assert "trusted transport summary" in artifact.memory_brief
-    assert "finish the task" in artifact.memory_brief
     assert [message.id for message in artifact.model_history[1:]] == ["m3"]
 
 
 def test_no_snapshot_valid_snapshot_and_stale_snapshot_fallback() -> None:
-    resolver = ContextResolver(now_ms=lambda: 100)
+    resolver = ContextResolver()
     no_snapshot = resolver.resolve(_context(tail=[_message("m1", 1)]))
     accepted = resolver.resolve(
         _context(
@@ -157,7 +146,7 @@ def test_no_snapshot_valid_snapshot_and_stale_snapshot_fallback() -> None:
 
 
 def test_tail_is_filtered_ordered_bounded_and_never_duplicates_current_query() -> None:
-    resolver = ContextResolver(tail_messages=2, now_ms=lambda: 100)
+    resolver = ContextResolver(tail_messages=2, )
     artifact = resolver.resolve(
         _context(
             snapshot=PersistentSnapshot(
@@ -190,7 +179,7 @@ def test_tail_is_filtered_ordered_bounded_and_never_duplicates_current_query() -
 
 
 def test_tail_includes_covered_boundary_plus_one_and_sorts_unordered_input() -> None:
-    resolver = ContextResolver(tail_messages=8, now_ms=lambda: 100)
+    resolver = ContextResolver(tail_messages=8, )
     artifact = resolver.resolve(
         _context(
             snapshot=PersistentSnapshot(
@@ -215,88 +204,6 @@ def test_tail_includes_covered_boundary_plus_one_and_sorts_unordered_input() -> 
         ("m4", 4),
         ("m5", 5),
     ]
-
-
-def test_fact_lifecycle_and_scope_filtering() -> None:
-    resolver = ContextResolver(now_ms=lambda: 100)
-    artifact = resolver.resolve(
-        _context(
-            facts=[
-                PersistentFact(id="f1", category="GOAL", value="finish the task"),
-                PersistentFact(
-                    id="f2",
-                    category="PREFERENCE",
-                    value="brief answer",
-                    status="PROPOSED",
-                ),
-                PersistentFact(
-                    id="f3",
-                    category="PLAN_CONSTRAINT",
-                    value="no deployment",
-                    status="REVOKED",
-                ),
-                PersistentFact(
-                    id="f4",
-                    category="GOAL",
-                    value="cross session",
-                    scope="USER",
-                ),
-                PersistentFact(
-                    id="f5",
-                    category="PREFERENCE",
-                    value="expired",
-                    expires_at=100,
-                ),
-            ]
-        )
-    )
-
-    assert artifact is not None
-    assert "finish the task" in artifact.memory_brief
-    assert "brief answer" not in artifact.memory_brief
-    assert "no deployment" not in artifact.memory_brief
-    assert "cross session" not in artifact.memory_brief
-    assert "expired" not in artifact.memory_brief
-    assert artifact.metadata["fact_count"] == 1
-
-
-def test_session_fact_gate_hides_facts_without_hiding_snapshot_or_tail(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(settings, "SESSION_FACT_ENABLED", False)
-    events: list[tuple[str, dict[str, str | int]]] = []
-    resolver = ContextResolver(
-        now_ms=lambda: 100,
-        observability=MemoryObservability(
-            emit=lambda event, payload: events.append((event, payload))
-        ),
-    )
-
-    artifact = resolver.resolve(
-        _context(
-            snapshot=PersistentSnapshot(
-                id="snapshot-1",
-                version=1,
-                revision=1,
-                covered_to_sequence=2,
-                summary="snapshot remains visible",
-            ),
-            facts=[PersistentFact(id="fact-1", category="GOAL", value="hidden fact")],
-            tail=[_message("m3", 3, content="tail remains visible")],
-        )
-    )
-
-    assert artifact is not None
-    assert "hidden fact" not in artifact.memory_brief
-    assert "snapshot remains visible" in artifact.memory_brief
-    assert [message.id for message in artifact.model_history[1:]] == ["m3"]
-    assert artifact.metadata["fact_count"] == 0
-    assert len(events) == 1
-    assert events[0][0] == "memory_resolve"
-    assert events[0][1]["source"] == "trusted_context"
-    assert events[0][1]["outcome"] == "success"
-    assert isinstance(events[0][1]["duration_ms"], int)
-    assert events[0][1]["duration_ms"] >= 0
 
 
 def test_resolver_failure_is_content_free_and_preserves_legacy_path(
@@ -326,11 +233,11 @@ def test_untrusted_memory_is_isolated_in_system_context_and_bounded() -> None:
     resolver = ContextResolver(
         memory_brief_max_chars=500,
         model_history_max_chars=300,
-        now_ms=lambda: 100,
-    )
+        )
     artifact = resolver.resolve(
         _context(
-            facts=[PersistentFact(id="f1", category="PREFERENCE", value=injected)],
+
+            snapshot=PersistentSnapshot(id="s1", version=1, revision=1, covered_to_sequence=1, summary=injected),
             tail=[_message("m19", 19, content="x" * 500)],
         )
     )
@@ -348,8 +255,7 @@ def test_snapshot_summary_injection_is_isolated_as_untrusted_context() -> None:
     resolver = ContextResolver(
         memory_brief_max_chars=500,
         model_history_max_chars=800,
-        now_ms=lambda: 100,
-    )
+        )
     artifact = resolver.resolve(
         _context(
             snapshot=PersistentSnapshot(

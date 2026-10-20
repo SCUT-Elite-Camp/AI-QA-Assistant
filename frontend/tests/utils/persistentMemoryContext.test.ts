@@ -26,21 +26,6 @@ describe('persistent Memory BFF context', () => {
         createdAt: new Date()
       },
       [{
-        id: 'fact-1',
-        chatId: 'chat-a',
-        historyRevision: 2,
-        category: 'PREFERENCE',
-        value: 'Use concise Chinese.',
-        scope: 'SESSION',
-        status: 'CONFIRMED',
-        proposalKey: 'key',
-        sourceMessageId: 'message-1',
-        expiresAt: null,
-        confirmedAt: new Date(),
-        revokedAt: null,
-        createdAt: new Date()
-      }],
-      [{
         id: 'message-2',
         historyRevision: 2,
         sequence: 2,

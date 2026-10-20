@@ -51,12 +51,11 @@ class AccessGuard:
             snapshot = context.snapshot
             if snapshot is not None and (not snapshot.provenance_complete or not self._inherit_if_allowed(snapshot.source_dependencies)):
                 snapshot = None
-            facts = [item for item in context.facts if item.provenance_complete and self._inherit_if_allowed(item.source_dependencies)]
             if context.provenance_complete:
                 # Includes derived workspace context, not merely final citations.
                 if self._inherit_if_allowed(context.source_dependencies):
                     updates.update(soul_content=self.request.soul_content, topic_titles=self.request.topic_titles, topic_doc_ids=self.request.topic_doc_ids)
-            updates["memory_context"] = context.model_copy(update={"tail": tail, "snapshot": snapshot, "facts": facts})
+            updates["memory_context"] = context.model_copy(update={"tail": tail, "snapshot": snapshot})
             library = self.request.personal_library_context
             if library is not None and library.owner_user_id != self.user_id:
                 raise PermissionResolutionError("private_source_forbidden", 403)

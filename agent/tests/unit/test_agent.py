@@ -87,7 +87,7 @@ def test_llm_error_returns_llm_error(monkeypatch) -> None:
 
 def test_chat_service_passes_week2_retrieval_parameters(monkeypatch) -> None:
     monkeypatch.setattr(LLMClient, "chat", lambda *args, **kwargs: {"content": json.dumps({
-        "claims": [{"text": "Test source context",
+        "answer": "Test source context", "claims": [{"text": "Test source context",
             "supports": [{"citation_id": 1, "quote": "Test source context"}]}],
     }, ensure_ascii=False)})
     called_params = {}
@@ -156,8 +156,6 @@ def test_empty_llm_answer_returns_llm_error(monkeypatch) -> None:
     assert response.citations == []
 
 
-
-
 def test_agent_configures_non_thinking_fast_answer_model(monkeypatch) -> None:
     monkeypatch.setattr("agent.agent.settings.LLM_MODEL", "main-answer-model")
     monkeypatch.setattr("agent.agent.settings.ANSWER_FAST_MODEL", "qwen-flash")
@@ -172,43 +170,3 @@ def test_agent_configures_non_thinking_fast_answer_model(monkeypatch) -> None:
     assert not hasattr(agent, "query_understanding")
     assert not hasattr(agent, "title_llm")
     assert agent.llm.attempts_per_model == 1
-
-
-
-
-
-
-def test_explicit_internal_fact_command_bypasses_llm_and_rag(monkeypatch) -> None:
-    monkeypatch.setattr("agent.config.settings.settings.PERSISTENT_MEMORY_ENABLED", True)
-    monkeypatch.setattr("agent.config.settings.settings.SESSION_FACT_ENABLED", True)
-
-    agent = Agent()
-    monkeypatch.setattr(
-        agent.orchestrator,
-        "run",
-        lambda *args, **kwargs: pytest.fail("explicit Fact commands must not invoke orchestration"),
-    )
-
-    response, decision = agent.chat_with_memory(
-        InternalChatRequest(
-            query="Remember goal: Complete the local Memory demo",
-            session_id="fact-command-session",
-            memory_context={
-                "actor": {"user_id": "user-1", "authenticated": True},
-                "chat_id": "chat-1",
-                "revision": 1,
-                "current_message_id": "message-1",
-                "current_sequence": 1,
-                "snapshot": None,
-                "facts": [],
-                "tail": [],
-            },
-        )
-    )
-
-    assert response.status == StatusCode.SUCCESS
-    assert response.citations == []
-    assert response.answer == "A session memory suggestion is ready. Please confirm it in the interface."
-    assert [(proposal.category, proposal.value, proposal.source_message_id, proposal.expires_at) for proposal in decision.fact_proposals] == [
-        ("GOAL", "Complete the local Memory demo", "message-1", None),
-    ]

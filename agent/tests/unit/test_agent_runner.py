@@ -48,7 +48,7 @@ def tool(name='search_documents', **arguments):
 
 
 def draft(text='The release is planned.', quote='The release is planned.'):
-    return json.dumps({"claims":[{"text":text,"supports":[{"citation_id":1,"quote":quote}]}]})
+    return json.dumps({"answer":text,"claims":[{"text":text,"supports":[{"citation_id":1,"quote":quote}]}]})
 
 
 def evidence(doc='a', text='The release is planned.', source='knowledge'):

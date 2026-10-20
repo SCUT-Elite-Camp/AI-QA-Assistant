@@ -2,7 +2,7 @@
 
 The helper deliberately has no access to request bodies or storage.  Its
 public methods only accept the finite labels and numbers documented by Unit
-11, so callers cannot accidentally emit a Fact, Snapshot, Tail, query, ID, or
+11, so callers cannot accidentally emit a Snapshot, Tail, query, ID, or
 token through this seam.
 """
 
@@ -18,8 +18,6 @@ _LOGGER = logging.getLogger("agent-layer.memory")
 MemoryResolveSource = Literal["disabled", "trusted_context", "legacy"]
 MemoryResolveOutcome = Literal["success", "fallback", "rejected"]
 MemoryCompactionOutcome = Literal["skipped", "planned", "conflict", "failed"]
-MemoryFactAction = Literal["proposed", "suppressed", "recalled"]
-MemoryFactOutcome = Literal["success", "disabled", "sensitive", "empty", "failed"]
 MemoryEventPayload = dict[str, str | int]
 MemoryEventSink = Callable[[str, MemoryEventPayload], None]
 
@@ -61,19 +59,6 @@ class MemoryObservability:
             payload["snapshot_version"] = snapshot_version
         self._publish("memory_compaction", payload)
 
-    def fact(
-        self,
-        *,
-        action: MemoryFactAction,
-        outcome: MemoryFactOutcome,
-    ) -> None:
-        self._require(action, {"proposed", "suppressed", "recalled"}, "action")
-        self._require(
-            outcome,
-            {"success", "disabled", "sensitive", "empty", "failed"},
-            "outcome",
-        )
-        self._publish("memory_fact", {"action": action, "outcome": outcome})
 
     def prompt(self, *, model_history_chars: int) -> None:
         """Record only the bounded character count passed to the Runner.

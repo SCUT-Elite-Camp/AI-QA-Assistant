@@ -1,5 +1,7 @@
 # Web / Agent / Toolset 接入契约
 
+2026-10-20：Fact 实现已移除，包括提议、确认、撤销、固定命令召回、API、界面、配置开关和模型上下文。当前会话记忆只包含 Snapshot 与 Tail；Topic 摘要独立保留。历史 Fact 设计与迁移仅供追溯，现存 `memory_facts` 表不再由应用读写，本次不清空运行数据库。Web 与 Agent 必须同步更新；旧 `facts` / `fact_proposals` / `recall` 字段不再属于内部契约。
+
 2026-10-16 检索默认使用本地英文 Cross-Encoder，把 20 个候选重排到 TopK（默认 5）。
 重排输入先验证当前权限、来源版本/hash 与原文；权威 chunk 未匹配的旧向量文本不进入模型。
 原 score 保留用于既有阈值，rerank_score 单独表示相关性。主命中可附带有独立标识/hash
@@ -244,3 +246,47 @@ text, citation widgets and highlighted code retain their normal rendering.
 The effect inherits the current theme's text color, does not move or blur text,
 and is disabled by `prefers-reduced-motion`. Historical messages do not animate
 on load.
+
+
+### 2026-10-20: independent answer and private claim bindings
+
+Fast and Thinking share answer protocol V4: one final model call returns required
+`answer` plus private `claims` copied verbatim from its body. Exact spans and body
+coverage are checked before release; unsupported extra body text cannot bypass
+MiniCheck through a separate answer field. Body layout/order are preserved.
+Public ChatResponse/SSE fields and source-native permission/version/hash release
+checks remain unchanged. Fast adds no model call; Thinking retains bounded retry
+on binding or MiniCheck rejection. See [mode contract](../../agent/docs/chat_mode_contract.md).
+
+
+### 2026-10-20: clickable assertion display
+
+At the user's request, accepted answer bindings now expose a bounded display-only
+`answer_claims` projection, with final-body Unicode character spans and original
+quotes linked to existing citation IDs. The full MiniCheck/binding/feedback report
+remains private. BFF validates the projection, saves `data-answer-claims` alongside
+the answer and releases it only after the existing permission/provenance/durable
+release checks. Ordinary saved quote/title browsing follows the 2026-10-15 snapshot
+policy; Open source document still uses current message-bound Reader checks.
+Fast/Thinking and selection Q&A share the feature. No extra model call, grant cache
+or database migration is introduced; old messages have no invented backfill.
+
+
+### 2026-10-20: natural answers and selective assertion marking (V5)
+
+The user requested natural answers with only their assertions underlined, plus
+multi-aspect Markdown bullet formatting in the Prompt. V5 permits nonfactual
+presentation prose outside selected claims, removing V4's full-character coverage
+constraint. Binding still checks exact body occurrences, nonoverlap, quote/source
+identity and citation markers; native source/version/hash release checks remain.
+The private report states `claim_completeness=model_selected_not_verified`.
+Completeness of factual-claim extraction is a model obligation, not established by
+the binding check; MiniCheck grades declared assertions only. Display schema is
+unchanged. Full reports/scores/feedback remain private, and Fast adds no model call.
+
+
+2026-10-20 display simplification: Chat answers with valid assertion bindings hide
+the original inline numbered citation controls. Assertions remain clickable for
+quote/title/Reader access. This is a rendering change only: saved body text,
+citation IDs, source lineage, offsets and native Reader checks are retained.
+Historical messages without claim bindings and Research keep existing source controls.

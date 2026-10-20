@@ -55,7 +55,7 @@ def grounded_content(answer, messages):
     for ref in sorted({int(value) for value in re.findall(r"\[(\d+)\]", answer)}):
         fragment = {"image_region": [0.0, 0.0, 1.0, 1.0]} if ref in images else {"quote": sources.get(ref, "missing test source")}
         supports.append({"citation_id": ref, **fragment})
-    return json.dumps({"claims": [{"text": answer, "supports": supports}]}, ensure_ascii=False)
+    return json.dumps({"answer": answer, "claims": [{"text": answer, "supports": supports}]}, ensure_ascii=False)
 
 
 def grounded_model(chat):

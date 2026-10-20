@@ -2,7 +2,6 @@ const ENABLED_VALUES = new Set(['1', 'true', 'yes', 'on'])
 
 export interface MemoryFeatureFlags {
   persistentMemoryEnabled: boolean
-  sessionFactEnabled: boolean
 }
 
 export class MemoryFeatureConfigurationError extends Error {
@@ -34,7 +33,6 @@ export function getMemoryFeatureFlags (
 
   return {
     persistentMemoryEnabled: isEnabled(environment.PERSISTENT_MEMORY_ENABLED),
-    sessionFactEnabled: isEnabled(environment.SESSION_FACT_ENABLED)
   }
 }
 

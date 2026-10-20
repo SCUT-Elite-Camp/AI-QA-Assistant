@@ -7,19 +7,32 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
-GROUNDING_INSTRUCTION = '''[ANSWER_GROUNDING_V3]
+GROUNDING_INSTRUCTION = r'''[ANSWER_GROUNDING_V5]
 When answering from numbered source evidence, return exactly one JSON object, no
 Markdown fence, preamble, TITLE metadata or text outside JSON:
-{"claims":[
+{"answer":"Here are the requested details:\n\n- Status: Alpha is complete.\n- Scope: Beta has three steps.","claims":[
 {"text":"Alpha is complete.","supports":[{"citation_id":1,"quote":"Alpha: complete"}]},
 {"text":"Beta has three steps.","supports":[{"citation_id":2,"quote":"Beta: 3 steps"}]}]}
-Each claim.text is a user-visible paragraph. The server joins these paragraphs
-in order to form the complete answer; supports remains private validation data.
-Return only the object with its claims list, never a separate answer field. Avoid headings or
-unbound introductions. Express all answer content in these grounded paragraphs.
-Write short sentences, each expressing one independently checkable fact with an
-explicit subject. Different owners, dates, counts or statuses are separate claims,
-even if they come from the same row. Do not wrap a multi-fact answer as one claim.
+Write answer FIRST as a helpful, natural response to the user's actual question.
+For questions with multiple requested aspects, use separate Markdown bullet
+points, one aspect per bullet, with readable line breaks. Do not cram all points
+into one paragraph. A short lead-in and descriptive labels are welcome when
+useful. For a simple question, a concise direct sentence is enough.
+Do not write an extraction checklist of rigid subject/predicate statements.
+Do not distort the answer's wording or repeat its subject just to suit a verifier.
+Then extract claims as separate private validation data, not a replacement for
+answer. Bind the factual assertions in the answer, including qualifiers, negation,
+units and dates. Leave nonfactual introductions, headings, labels, connective
+phrases and bullet/list formatting OUTSIDE claim.text so they display normally.
+Copy each claim.text VERBATIM from a contiguous part of answer. Claim spans must
+not overlap. Select meaningful factual spans, not individual names or numbers
+stripped of the relationship they assert. Do not expand a span to cover nearby
+presentation text. The server computes character spans
+from these exact texts; do not output offsets. A repeated identical claim text
+binds every occurrence in answer to the same supports. Claim list order does not
+control answer order. Preserve the complete answer in the answer field.
+Each claim should express an independently checkable assertion. Preserve the
+answer's natural wording rather than rewriting it as an artificial claim list.
 Each support must reference the numbered evidence for that claim and provide a
 short verbatim quote. Do not output confidence, scores or verification verdicts.
 Reference numbers identify individual excerpts, NOT documents or titles. Copy
@@ -30,13 +43,13 @@ each quote against the Content of its selected current reference before output.
 Never infer an unrecorded year,
 number, owner or status. Preserve the source's precision, including month/day-only dates.
 The server renders [n] citations from supports; do not duplicate them in answer.
-Do not invent a quote or reference. To abstain, return {"claims":[]}.
+Do not invent a quote or reference. To abstain, return {"answer":"","claims":[]}.
 For an original-image reference (content_kind=file), use quote=null and
 image_region=[left,top,right,bottom] in normalized coordinates [0,1] instead of
 inventing textual evidence. Textual references require quote and no image_region.
 Tool calls may still be used when tools are offered; a final evidence-based
 answer must obey this JSON contract. Never put claim metadata in reasoning output.
-[/ANSWER_GROUNDING_V3]'''
+[/ANSWER_GROUNDING_V5]'''
 
 
 class ClaimSupport(BaseModel):
@@ -69,16 +82,13 @@ class AnswerClaim(BaseModel):
 class GroundedAnswer(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
+    answer: str = Field(max_length=40000)
     claims: list[AnswerClaim] = Field(max_length=100)
-
-    @property
-    def answer(self) -> str:
-        return "\n\n".join(claim.text for claim in self.claims)
 
     @model_validator(mode="after")
     def bounded_answer(self):
-        if len(self.answer) > 40000:
-            raise ValueError("answer too long")
+        if bool(self.answer.strip()) != bool(self.claims):
+            raise ValueError("answer and claims must both be present or both empty")
         return self
 
 
@@ -122,8 +132,8 @@ def validate_grounded_answer(draft: GroundedAnswer, evidence) -> dict[str, Any]:
     """
     sources = [item if isinstance(item, dict) else item.model_dump() for item in evidence]
     errors, resolved = [], []
-    paragraphs = []
-    answer_offset = 0
+    covered = bytearray(len(draft.answer))
+    insertions = {}
     for index, claim in enumerate(draft.claims):
         claim_key = f"claim_{index + 1}"
         if not any(char.isalnum() for char in claim.text):
@@ -160,14 +170,32 @@ def validate_grounded_answer(draft: GroundedAnswer, evidence) -> dict[str, Any]:
         present = {int(value) for value in re.findall(r"\[(\d+)\]", claim.text)}
         if present - refs:
             errors.append(f"{claim_key}:citation_without_claim_support")
-        spans = [{"start": answer_offset, "end": answer_offset + len(claim.text)}]
-        answer_offset += len(claim.text) + 2
-        paragraphs.append(claim.text + "".join(f"[{ref}]" for ref in sorted(refs - present)))
+        # Resolve against the actual body, never reconstruct it from claim order.
+        spans = [{"start": match.start(), "end": match.end()}
+                 for match in re.finditer(re.escape(claim.text), draft.answer)]
+        if not spans:
+            errors.append(f"{claim_key}:claim_not_in_answer")
+        for span in spans:
+            start, end = span["start"], span["end"]
+            if any(covered[start:end]):
+                errors.append(f"{claim_key}:overlapping_claims")
+            covered[start:end] = b"\x01" * (end - start)
+            insertions[end] = "".join(f"[{ref}]" for ref in sorted(refs - present))
         resolved.append({"claim_id": claim_key, "text": claim.text,
                          "model_answer_spans": spans, "supports": fragments})
     if not draft.answer.strip() or not draft.claims:
         errors.append("missing_answer_or_claims")
-    rendered = "\n\n".join(paragraphs) if not errors else ""
+    # Presentation prose is allowed outside assertions. Exact binding cannot
+    # determine whether the model has omitted a factual assertion.
+    if any(not all(covered[match.start():match.end()])
+           for match in re.finditer(r"\[\d+\]", draft.answer)):
+        errors.append("unbound_answer_citation")
+    rendered = draft.answer
+    for offset in sorted(insertions, reverse=True):
+        rendered = rendered[:offset] + insertions[offset] + rendered[offset:]
+    if errors:
+        rendered = ""
     return {"valid": not errors, "validation_kind": "binding", "semantic_validation": "not_performed",
+            "claim_completeness": "model_selected_not_verified",
             "model_answer": draft.answer, "answer": rendered, "errors": list(dict.fromkeys(errors)),
             "claims": resolved}

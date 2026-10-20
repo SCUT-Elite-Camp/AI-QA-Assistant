@@ -1,5 +1,7 @@
 # 隔离联调运行与复现
 
+2026-10-20：Fact 实现已移除，包括提议、确认、撤销、固定命令召回、API、界面、配置开关和模型上下文。当前会话记忆只包含 Snapshot 与 Tail；Topic 摘要独立保留。历史 Fact 设计与迁移仅供追溯，现存 `memory_facts` 表不再由应用读写，本次不清空运行数据库。Web 与 Agent 必须同步更新；旧 `facts` / `fact_proposals` / `recall` 字段不再属于内部契约。
+
 2026-10-15 上传运行变更：仅启动 Web 与 Agent；附件 HTTP API 已合入 Agent 的
 `/private-files`，不再启动独立的 8200/8219 进程，`ATTACHMENT_SERVICE_URL` 已废弃。
 Web 设置正确的 `AGENT_BASE_URL`，Web 与 Agent 使用匹配的 `ATTACHMENT_INTERNAL_SECRET`。Python 内部工具直接调用 Pipeline/存储，不通过同步 HTTP 回调 Agent 自身。

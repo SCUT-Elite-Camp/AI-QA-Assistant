@@ -1,9 +1,10 @@
 /** Use Comark inline components so citations cannot swallow following prose. */
-export function formatResearchCitations(markdown: string, availableIndices?: ReadonlySet<number>): string {
+export function formatResearchCitations(markdown: string, availableIndices?: ReadonlySet<number>, showMarkers = true): string {
   // A live model may not have emitted the closing fence/backtick yet.
   return markdown.replace(/(```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`\n]*(?:`|$))|\[(\d+(?:\s*,\s*\d+)*)\]/g, (match, code, digits) => {
     if (code || !digits) return match
     if (availableIndices && digits.split(',').some((number: string) => !availableIndices.has(Number(number.trim())))) return match
+    if (!showMarkers) return ''
     return ` ${digits.split(',').map((number: string) => `:cite-mark{index="${number.trim()}"}`).join(' ')} `
   })
 }

@@ -1,6 +1,5 @@
-import { getActiveSnapshot, getVisibleFacts, readTailMessages, type MemoryFactDto, type MemorySnapshotDto, type TailMessageDto } from './memoryRepository'
+import { getActiveSnapshot, readTailMessages, type MemorySnapshotDto, type TailMessageDto } from './memoryRepository'
 import { memoryContextInputSchema, type MemoryContextInput } from './memoryContract'
-import { isSessionFactEnabled } from './sessionFactGate'
 import type { CurrentMessageHandoff } from './messageLifecycle'
 import type { useDrizzle } from './drizzle'
 import { assertMessageSources, assertSourceDependencies, messageProvenance } from './sourceAccess'
@@ -25,7 +24,6 @@ function partsToText (parts: unknown): string {
 export function createPersistentMemoryContext (
   handoff: CurrentMessageHandoff,
   snapshot: MemorySnapshotDto | undefined,
-  facts: MemoryFactDto[],
   tail: TailMessageDto[]
 ): MemoryContextInput {
   return memoryContextInputSchema.parse({
@@ -48,14 +46,6 @@ export function createPersistentMemoryContext (
           provenance_complete: snapshot.evidenceProvenance?.complete ?? false,
         }
       : null,
-    facts: facts.map(fact => ({
-      id: fact.id,
-      category: fact.category,
-      value: fact.value,
-      expires_at: fact.expiresAt?.getTime() ?? null,
-      source_dependencies: fact.evidenceProvenance?.dependencies ?? [],
-      provenance_complete: fact.evidenceProvenance?.complete ?? false,
-    })),
     tail: tail
       .filter(message => message.id !== handoff.currentMessageId)
       .map(message => ({
@@ -73,19 +63,17 @@ export function createPersistentMemoryContext (
 /** The BFF is the only component that reads persistent Memory records. */
 export async function buildPersistentMemoryContext (
   db: Database,
-  handoff: CurrentMessageHandoff,
-  options: { includeFacts?: boolean } = {}
+  handoff: CurrentMessageHandoff
 ): Promise<MemoryContextInput> {
   const memoryInput = {
     actorUserId: handoff.actorUserId,
     chatId: handoff.chatId,
     historyRevision: handoff.historyRevision
   }
-  // Legacy snapshots and Facts have no dependency provenance. Do not promote
-  // them to trusted context just because an owner previously confirmed them.
-  const [candidateSnapshot, candidateFacts, tail] = await Promise.all([
+  // Legacy snapshots have no dependency provenance. Do not promote
+  // them to trusted context merely because they were previously saved.
+  const [candidateSnapshot, tail] = await Promise.all([
     getActiveSnapshot(db, memoryInput),
-    options.includeFacts !== false && isSessionFactEnabled() ? getVisibleFacts(db, memoryInput) : Promise.resolve([] as MemoryFactDto[]),
     readTailMessages(db, {
       ...memoryInput,
       afterSequence: 0,
@@ -98,16 +86,10 @@ export async function buildPersistentMemoryContext (
   if (candidateSnapshot?.evidenceProvenance?.complete) {
     try { await assertSourceDependencies(handoff.actorUserId, candidateSnapshot.evidenceProvenance.dependencies); snapshot = candidateSnapshot } catch { /* quarantine */ }
   }
-  const facts: MemoryFactDto[] = []
-  for (const fact of candidateFacts) {
-    if (!fact.evidenceProvenance?.complete) continue
-    try { await assertSourceDependencies(handoff.actorUserId, fact.evidenceProvenance.dependencies); facts.push(fact) } catch { /* quarantine */ }
-  }
-
   const trustedTail = []
   for (const message of tail) {
     if (message.id === handoff.currentMessageId || message.sequence >= handoff.currentSequence || message.sequence <= (snapshot?.coveredToSequence ?? 0)) continue
     try { await assertMessageSources(handoff.actorUserId, message); trustedTail.push(message) } catch { /* never replay denied or unknown content */ }
   }
-  return createPersistentMemoryContext(handoff, snapshot, facts, trustedTail)
+  return createPersistentMemoryContext(handoff, snapshot, trustedTail)
 }

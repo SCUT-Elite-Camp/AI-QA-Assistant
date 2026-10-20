@@ -96,7 +96,7 @@ Agent 层开发以 [`docs/development_guide.md`](docs/development_guide.md) 为�
 - 不接未经授权的客户/员工业务数据；授权的真实项目 Confluence 与本地 ACL 可用于验收
 - 不在 Agent 层直接连接 Milvus、BM25 或 embedding API；真实检索通过 Tool Layer 接口接入
 - 不自动把普通 Chat 升级为 Research，不使用匿名检索兜底
-- 进程内短期会话记忆仍不跨 worker 共享；BFF 的持久历史、Snapshot、Fact 是独立机制
+- 进程内短期会话记忆仍不跨 worker 共享；BFF 的持久历史、Snapshot 是独立机制
 
 ## 目录结构
 

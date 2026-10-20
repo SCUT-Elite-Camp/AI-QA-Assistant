@@ -51,7 +51,7 @@ def memory_context() -> dict:
         "current_message_id": "message-2",
         "current_sequence": 2,
         "snapshot": None,
-        "facts": [],
+
         "tail": [
             {
                 "id": "message-1",

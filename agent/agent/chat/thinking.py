@@ -39,19 +39,16 @@ class ThinkingPipeline:
                         SourceKind.PERSONAL_LIBRARY: ("search_library",),
                         SourceKind.CONVERSATION_ATTACHMENT: ("search_attachments", "read_attachment_context")}
         memory = self.memory_coordinator.prepare(request)
-        recall = memory.recall if not required else None
-        run_result = None
-        if not (recall is not None and recall.handled):
-            run_result = self.runner.run(plan, trace_id=trace_id, history=memory.history_for_model(),
-                mode=request.retrieval_mode, top_k=request.top_k, tool_executor=self.tool_executor,
-                evidence_gate=self.evidence_gate,
-                allowed_tools=tuple(name for source in sources for name in capabilities[source]),
-                required_sources=tuple(source_types[source] for source in required),
-                required_attachments=tuple(attachments.selected_attachment_ids) if attachments else (),
-                require_evidence=bool(sources), soul_content=request.soul_content)
+        run_result = self.runner.run(plan, trace_id=trace_id, history=memory.history_for_model(),
+            mode=request.retrieval_mode, top_k=request.top_k, tool_executor=self.tool_executor,
+            evidence_gate=self.evidence_gate,
+            allowed_tools=tuple(name for source in sources for name in capabilities[source]),
+            required_sources=tuple(source_types[source] for source in required),
+            required_attachments=tuple(attachments.selected_attachment_ids) if attachments else (),
+            require_evidence=bool(sources), soul_content=request.soul_content)
         return OrchestrationResult(query_plan=plan, run_result=run_result,
             history=memory.history_for_model(), retrieval_mode=request.retrieval_mode, top_k=request.top_k,
-            context_artifact=memory.context_artifact, memory_recall=recall,
+            context_artifact=memory.context_artifact,
             execution_profile=ExecutionProfileResolver().resolve(request.weight_mode, exploration_mode=request.exploration_mode))
 
     def validate_citations(self, answer, citations, evidence):

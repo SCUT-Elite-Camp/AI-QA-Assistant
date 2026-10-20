@@ -148,7 +148,7 @@ def test_thinking_rejection_retries_privately_before_verified_release(fixture,st
             if count==1:
                 return {'tool_calls':[{'id':'search','function':{'name':'search_documents','arguments':'{"query":"evidence"}'}}]}
             if tools:return control_response("answer")
-            return {'content':json.dumps({'claims':[{'text':'Rejected candidate' if count==3 else 'Verified candidate',
+            return {'content':json.dumps({'answer':'Rejected candidate' if count==3 else 'Verified candidate','claims':[{'text':'Rejected candidate' if count==3 else 'Verified candidate',
                 'supports':[{'citation_id':1,'quote':'Authorized original evidence.'}]}]})}
     class Verifier:
         def __init__(self):self.calls=0
@@ -163,7 +163,10 @@ def test_thinking_rejection_retries_privately_before_verified_release(fixture,st
         events=list(agent.stream_chat(request))
         response={**events[-1][1], 'answer':''.join(v['content'] for n,v in events if n=='token')}
         assert [v['content'] for name,v in events if name=='token']==['Verified candidate[1]']
-        assert 'Rejected candidate' not in json.dumps(events) and 'claim_id' not in json.dumps(events)
+        assert 'Rejected candidate' not in json.dumps(events) and 'minicheck_argmax' not in json.dumps(events)
+        displayed = next(value for name, value in events if name == 'answer-claims')
+        assert displayed[0]['text'] == 'Verified candidate'
+        assert set(displayed[0]) == {'claim_id', 'text', 'start', 'end', 'supports'}
     else:
         response=agent.chat(request).model_dump()
     assert response['status']=='success' and response['answer']=='Verified candidate[1]'
@@ -184,7 +187,7 @@ def test_thinking_source_change_during_verification_prevents_release(fixture):
             if self.calls==1:
                 return {'tool_calls':[{'id':'s','function':{'name':'search_documents','arguments':'{"query":"evidence"}'}}]}
             if tools:return control_response('answer')
-            return {'content':json.dumps({'claims':[{'text':'Evidence exists.',
+            return {'content':json.dumps({'answer':'Evidence exists.','claims':[{'text':'Evidence exists.',
                 'supports':[{'citation_id':1,'quote':'Authorized original evidence.'}]}]})}
     class Verifier:
         def check(self,binding,evidence,budget):

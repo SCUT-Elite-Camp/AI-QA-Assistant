@@ -21,7 +21,7 @@ def _internal_request(query: str) -> InternalChatRequest:
             "revision": 1,
             "current_message_id": "message-a",
             "current_sequence": 1,
-            "facts": [],
+
             "tail": [],
         },
         attachment_context=AttachmentContext(

@@ -7,14 +7,8 @@ const timestamps = {
 }
 
 export const memorySnapshotStatuses = ['ACTIVE', 'ARCHIVED'] as const
-export const memoryFactCategories = ['GOAL', 'PREFERENCE', 'PLAN_CONSTRAINT'] as const
-export const memoryFactScopes = ['SESSION'] as const
-export const memoryFactStatuses = ['PROPOSED', 'CONFIRMED', 'REVOKED'] as const
 
 export type MemorySnapshotStatus = typeof memorySnapshotStatuses[number]
-export type MemoryFactCategory = typeof memoryFactCategories[number]
-export type MemoryFactScope = typeof memoryFactScopes[number]
-export type MemoryFactStatus = typeof memoryFactStatuses[number]
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -35,7 +29,6 @@ export const users = sqliteTable('users', {
 
 export const usersRelations = relations(users, ({ many }) => ({
   chats: many(chats),
-  memoryFacts: many(memoryFacts),
   memorySnapshots: many(memorySnapshots)
 }))
 
@@ -192,7 +185,6 @@ export const chatsRelations = relations(chats, ({ one, many }) => ({
     references: [topics.id]
   }),
   messages: many(messages),
-  memoryFacts: many(memoryFacts),
   memorySnapshots: many(memorySnapshots)
 }))
 
@@ -246,7 +238,6 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
     references: [chats.id]
   }),
   feedbacks: many(messageFeedbacks),
-  memoryFacts: many(memoryFacts),
   attachments: many(messageAttachments)
 }))
 
@@ -332,49 +323,6 @@ export const memorySnapshotsRelations = relations(memorySnapshots, ({ one }) => 
   }),
   user: one(users, {
     fields: [memorySnapshots.userId],
-    references: [users.id]
-  })
-}))
-
-export const memoryFacts = sqliteTable('memory_facts', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  // See memorySnapshots.userId: ownership is enforced by the owned chat query,
-  // not by a local users-table foreign key.
-  userId: text('user_id').notNull(),
-  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
-  historyRevision: integer('history_revision').notNull(),
-  sourceMessageId: text('source_message_id').references(() => messages.id, { onDelete: 'set null' }),
-  category: text('category', { enum: memoryFactCategories }).notNull(),
-  scope: text('scope', { enum: memoryFactScopes }).notNull(),
-  status: text('status', { enum: memoryFactStatuses }).notNull(),
-  value: text('value').notNull(),
-  evidenceProvenance: text('evidence_provenance', { mode: 'json' }).$type<EvidenceProvenance>(),
-  proposalKey: text('proposal_key').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }),
-  confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
-  revokedAt: integer('revoked_at', { mode: 'timestamp' }),
-  ...timestamps
-}, table => [
-  check('memory_facts_category_check', sql`${table.category} IN ('GOAL', 'PREFERENCE', 'PLAN_CONSTRAINT')`),
-  check('memory_facts_scope_check', sql`${table.scope} = 'SESSION'`),
-  check('memory_facts_status_check', sql`${table.status} IN ('PROPOSED', 'CONFIRMED', 'REVOKED')`),
-  index('memory_facts_user_chat_revision_status_expires_idx')
-    .on(table.userId, table.chatId, table.historyRevision, table.status, table.expiresAt),
-  uniqueIndex('memory_facts_chat_revision_proposal_key_idx')
-    .on(table.chatId, table.historyRevision, table.proposalKey)
-])
-
-export const memoryFactsRelations = relations(memoryFacts, ({ one }) => ({
-  chat: one(chats, {
-    fields: [memoryFacts.chatId],
-    references: [chats.id]
-  }),
-  sourceMessage: one(messages, {
-    fields: [memoryFacts.sourceMessageId],
-    references: [messages.id]
-  }),
-  user: one(users, {
-    fields: [memoryFacts.userId],
     references: [users.id]
   })
 }))
